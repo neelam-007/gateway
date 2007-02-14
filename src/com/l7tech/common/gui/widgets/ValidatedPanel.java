@@ -9,9 +9,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Note: every concrete implementation *must* call {@link #init} from each constructor!
+ * @param <V> the payload value type (returned from {@link #getModel()})
  * @author alex
  */
-public abstract class ValidatedPanel extends JPanel {
+public abstract class ValidatedPanel<V> extends JPanel {
     private static final Pattern SPACER = Pattern.compile("\\s+");
 
     protected String propertyName;
@@ -51,7 +53,7 @@ public abstract class ValidatedPanel extends JPanel {
      * Return an object representing your model, whether valid or not.
      * @return an object representing this panel's model.
      */
-    protected abstract Object getModel();
+    protected abstract V getModel();
 
     /**
      * Validate the syntax of the entered model, and return null if it's valid, or an error message if
@@ -61,7 +63,7 @@ public abstract class ValidatedPanel extends JPanel {
      * @param model the model to validate
      * @return null if the text is valid, or an error message if it's invalid
      */
-    protected String getSyntaxError(Object model) {
+    protected String getSyntaxError(V model) {
         return null;
     }
 
@@ -73,7 +75,7 @@ public abstract class ValidatedPanel extends JPanel {
      * @param model the model to validate
      * @return null if the text is valid, or an error message if it's invalid
      */
-    protected String getSemanticError(Object model) {
+    protected String getSemanticError(V model) {
         return null;
     }
 
@@ -101,7 +103,7 @@ public abstract class ValidatedPanel extends JPanel {
      * frequent events, e.g. {@link javax.swing.event.DocumentListener} for text components.
      */
     protected void checkSyntax() {
-        Object model = getModel();
+        V model = getModel();
         if (model == null) return;
 
         String statusString = getSyntaxError(model);
@@ -127,7 +129,7 @@ public abstract class ValidatedPanel extends JPanel {
     protected void checkSemantic() {
         if (!syntaxOk) return;
 
-        Object model = getModel();
+        V model = getModel();
         if (model == null) return;
 
         String err = getSemanticError(model);
@@ -153,7 +155,8 @@ public abstract class ValidatedPanel extends JPanel {
     }
 
     /**
-     * Call this at the end of your constructor.
+     * This <em>must</em> be called at the end of your constructor(s), for unknown reasons related to the way the IDEA 
+     * GUI builder works.
      */
     protected void init() {
         checkSyntax();
@@ -165,7 +168,7 @@ public abstract class ValidatedPanel extends JPanel {
         return syntaxOk;
     }
 
-    private void fireGood(Object model) {
+    private void fireGood(V model) {
         firePropertyChange(propertyName, null, model);
         firePropertyChange("ok", false, true);
     }
@@ -181,4 +184,13 @@ public abstract class ValidatedPanel extends JPanel {
     }
 
     public abstract void focusFirstComponent();
+
+    /**
+     * Called when the OK button is pressed; it's now time to update the model from the view.
+     */
+    void updateModel() {
+        doUpdateModel();
+    }
+
+    protected abstract void doUpdateModel();
 }

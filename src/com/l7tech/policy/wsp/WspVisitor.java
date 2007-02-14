@@ -12,7 +12,7 @@ import org.w3c.dom.Element;
  * Interface implemented by callers who desire more control over the behaviour of WspReader when unrecognized
  * elements/assertions/attributes are encountered during parsing.
  */
-interface WspVisitor {
+public interface WspVisitor {
     /**
      * Report a problem setting a parameter from the serialized policy.
      *

@@ -14,19 +14,21 @@ public class VariableMetadata implements Serializable {
     private final boolean multivalued;
     private final String canonicalName;
     private final boolean settable;
+    private final DataType type;
 
-    public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable) {
+    public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type) {
         this.name = name;
         this.prefixed = prefixed;
         this.multivalued = multivalued;
         this.canonicalName = canonicalName == null ? name : canonicalName;
         this.settable = settable;
+        this.type = type;
     }
 
-
-    public VariableMetadata(String name) {
-        this(name, true, true, name, true);        
+    public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable) {
+        this(name, prefixed, multivalued, canonicalName, settable, DataType.STRING);
     }
+
 
     /**
      * The name of the variable. If {@link #isPrefixed} is true, this name is just a prefix:
@@ -70,6 +72,13 @@ public class VariableMetadata implements Serializable {
      */
     public boolean isSettable() {
         return settable;
+    }
+
+    /**
+     * @return the declared type of this variable (may be {@link DataType#UNKNOWN})
+     */
+    public DataType getType() {
+        return type;
     }
 
     public String toString() {

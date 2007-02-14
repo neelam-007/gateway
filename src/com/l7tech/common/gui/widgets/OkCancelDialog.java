@@ -12,8 +12,11 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-public class OkCancelDialog extends JDialog {
-    private Object value;
+/**
+ * @param <V> the payload value type
+ */
+public class OkCancelDialog<V> extends JDialog {
+    private V value;
     private boolean wasoked = false;
 
     private JButton cancelButton;
@@ -63,13 +66,14 @@ public class OkCancelDialog extends JDialog {
 
         validatedPanel.addPropertyChangeListener(validatedPanel.getPropertyName(), new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
-                value = evt.getNewValue();
+                value = (V) evt.getNewValue();
             }
         });
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 wasoked = true;
+                validatedPanel.updateModel();
                 dispose();
             }
         });
@@ -100,7 +104,7 @@ public class OkCancelDialog extends JDialog {
         dispose();
     }
 
-    public Object getValue() {
+    public V getValue() {
         return value;
     }
 

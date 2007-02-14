@@ -22,15 +22,15 @@ public class UrlPanel extends TextEntryPanel {
         super(label, "url", initialValue);
     }
 
-    protected String getSemanticError(Object model) {
-        if (model == null || model.toString().length() == 0) return null;
+    protected String getSemanticError(String model) {
+        if (model == null || model.length() == 0) return null;
         // if the URL contains context variable, you just can't check semantic
-        String[] tmp = ExpandVariables.getReferencedNames(model.toString());
+        String[] tmp = ExpandVariables.getReferencedNames(model);
         if (tmp != null && tmp.length > 0) {
             return null;
         }
         try {
-            URL url = new URL(model.toString());
+            URL url = new URL(model);
             //noinspection ResultOfMethodCallIgnored
             InetAddress.getByName(url.getHost());
             return null;
@@ -43,15 +43,15 @@ public class UrlPanel extends TextEntryPanel {
         }
     }
 
-    protected String getSyntaxError(Object model) {
-        if (model == null || model.toString().length() == 0) return null;
+    protected String getSyntaxError(String model) {
+        if (model == null || model.length() == 0) return null;
         // if the URL contains context variable, you just can't check syntax
-        String[] tmp = ExpandVariables.getReferencedNames(model.toString());
+        String[] tmp = ExpandVariables.getReferencedNames(model);
         if (tmp != null && tmp.length > 0) {
             return null;
         }
         try {
-            URL url = new URL(model.toString());
+            URL url = new URL(model);
             if (url.getHost() == null || url.getHost().length() == 0) {
                 return "no host";
             } else {

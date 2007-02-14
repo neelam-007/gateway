@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.policy;
@@ -37,7 +35,6 @@ import java.util.Arrays;
  * The canonical list of legacy assertions known to a new AssertionRegistry instance on startup.
  *
  * @author alex
- * @version $Revision$
  */
 public class AllAssertions {
 
@@ -108,7 +105,6 @@ public class AllAssertions {
         new ThroughputQuota(),
         new EmailAlertAssertion(),
         new CommentAssertion(),
-        new ComparisonAssertion(),
         new SqlAttackAssertion(),
         new OversizedTextAssertion(),
         new RequestSizeLimit(),
@@ -168,7 +164,6 @@ public class AllAssertions {
         new ThroughputQuota(),
         new EmailAlertAssertion(),
         new CommentAssertion(),
-        new ComparisonAssertion(),
         new SqlAttackAssertion(),
         new OversizedTextAssertion(),
         new RequestSizeLimit(),

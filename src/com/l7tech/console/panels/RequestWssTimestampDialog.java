@@ -12,7 +12,7 @@ import java.util.ResourceBundle;
 /**
  * @author alex
  */
-public class RequestWssTimestampDialog extends OkCancelDialog {
+public class RequestWssTimestampDialog extends OkCancelDialog<RequestWssTimestamp> {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequestWssTimestampDialog");
 
     public RequestWssTimestampDialog(Frame owner, boolean modal, RequestWssTimestamp assertion) {

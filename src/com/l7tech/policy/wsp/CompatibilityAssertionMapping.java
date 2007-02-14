@@ -12,7 +12,7 @@ import org.w3c.dom.Element;
 /**
  * A mapping that knows how to read, but not write, obsolete and now-nonexistent Layer 7 policy assertions.
  */
-abstract class CompatibilityAssertionMapping extends AssertionMapping {
+public abstract class CompatibilityAssertionMapping extends AssertionMapping {
     /**
      * Create a new CompatibilityAssertionMapping that will thaw elements with the specified externalName
      * as a new, empty instance of the specified Assertion, and then call {@link #populateObject} to fill in
@@ -30,7 +30,7 @@ abstract class CompatibilityAssertionMapping extends AssertionMapping {
         throw new InvalidPolicyTreeException("Unable to create new policies containing " + externalName + "; can only read them for backward-compatibility purposes");
     }
 
-    protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+    public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         configureAssertion((Assertion)object.target, source, visitor);
     };
 

@@ -6,6 +6,7 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.common.util.SyspropUtil;
 import org.w3c.dom.Element;
 
 import java.lang.reflect.InvocationTargetException;
@@ -14,16 +15,14 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.logging.Logger;
 
-import com.l7tech.common.util.SyspropUtil;
-
 /**
  * A TypeMapping that supports a bean-like object with a default constructor and some getters and setters.
  */
-class BeanTypeMapping extends ComplexTypeMapping {
+public class BeanTypeMapping extends ComplexTypeMapping {
     private static final Logger log = Logger.getLogger(BeanTypeMapping.class.getName());
     static boolean checkForNonPublicAccessors = SyspropUtil.getBoolean("com.l7tech.policy.wsp.checkAccessors");
 
-    BeanTypeMapping(Class clazz, String externalName) {
+    public BeanTypeMapping(Class clazz, String externalName) {
         super(clazz, externalName);
         if (checkForNonPublicAccessors) doCheckForNonPublicAccessors();
     }
@@ -68,7 +67,7 @@ class BeanTypeMapping extends ComplexTypeMapping {
         }
     }
 
-    protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+    public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         Object target = object.target;
 
         // gather properties

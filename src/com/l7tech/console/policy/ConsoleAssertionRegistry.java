@@ -226,7 +226,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             final Class<AT> assclass = meta.getAssertionClass();
             String apeClassname = (String)meta.get(PROPERTIES_EDITOR_CLASSNAME);
             Functions.Binary<AssertionPropertiesEditor<AT>, Frame, AT> factory =
-                    ConsoleAssertionRegistry.findPropertiesEditorFactory(assclass.getClassLoader(), apeClassname, assclass);
+                    findPropertiesEditorFactory(assclass.getClassLoader(), apeClassname, assclass);
             if (factory != null)
                 return cache(meta, key, factory);
 

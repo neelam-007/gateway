@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 
@@ -9,18 +10,16 @@ import java.util.Arrays;
 
 public class VariablesDialogTest {
     public static void main(String[] args) {
-        final ComparisonAssertion comp = new ComparisonAssertion();
+        final HttpBasic basic = new HttpBasic();
 
-        AllAssertion ass = new AllAssertion(Arrays.asList(new Assertion[] {
-            new RequestXpathAssertion(),
-            new ResponseXpathAssertion(),
-            new SamlBrowserArtifact(),
-            new HttpRoutingAssertion(),
-            comp,
-        }
-        ));
+        AllAssertion ass = new AllAssertion(Arrays.asList(
+                new RequestXpathAssertion(),
+                new ResponseXpathAssertion(),
+                new SamlBrowserArtifact(),
+                new HttpRoutingAssertion(),
+                basic));
 
-        VariablesDialog me = new VariablesDialog(null, comp, true);
+        VariablesDialog me = new VariablesDialog(null, basic, true);
         me.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         me.pack();
         me.setVisible(true);

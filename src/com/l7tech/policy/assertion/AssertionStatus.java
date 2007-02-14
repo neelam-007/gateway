@@ -11,7 +11,6 @@ import java.util.logging.Level;
  * that could result from processing an assertion.
  *
  * @author alex
- * @version $Revision$
  */
 public class AssertionStatus {
     static final int CLIENT = 400;
@@ -25,6 +24,8 @@ public class AssertionStatus {
 
     /** Assertion finished successfully */
     public static final AssertionStatus NONE              = make( statuses,          0, Level.FINE, "No Error" );
+
+    /** The message is not syntactically or semantically valid */
     public static final AssertionStatus BAD_REQUEST       = make( statuses, CLIENT + 0, Level.INFO, "Bad Request" );
     /** Credentials required but missing */
     public static final AssertionStatus AUTH_REQUIRED     = make( statuses, CLIENT + 1, Level.INFO, "Authentication Required", true );
@@ -45,8 +46,9 @@ public class AssertionStatus {
     public static final AssertionStatus BAD_RESPONSE        = make( statuses, SERVER + 2, Level.INFO, "Bad Response from Protected Service" );
     public static final AssertionStatus SERVICE_UNAVAILABLE = make( statuses, SERVER + 3, Level.INFO, "Service Temporarily Unavailable" );
 
-    /** A generic negative result */
+    /** The message may be valid, but does not satisfy a logical predicate */
     public static final AssertionStatus FALSIFIED = make( statuses, POLICY + 0, Level.INFO, "Assertion Falsified" );
+    /** The assertion is unable to determine whether the message is acceptable; this does not automatically imply that the message is valid or invalid */
     public static final AssertionStatus FAILED    = make( statuses, POLICY + 1, Level.INFO, "Error in Assertion Processing" );
 
     public int getNumeric() {

@@ -1,6 +1,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.DataType;
 
 /**
  * Superclass of {@link RequestXpathAssertion} and {@link ResponseXpathAssertion} that
@@ -73,10 +74,10 @@ public abstract class SimpleXpathAssertion
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
             // Note default prefixes are used here for property lookup purposes
-            new VariableMetadata(foundVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_FOUND, false),
-            new VariableMetadata(countVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_COUNT, false),
-            new VariableMetadata(resultVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_RESULT, false),
-            new VariableMetadata(elementVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_ELEMENT, false),
+            new VariableMetadata(foundVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_FOUND, false, DataType.BOOLEAN),
+            new VariableMetadata(countVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_COUNT, false, DataType.INTEGER),
+            new VariableMetadata(resultVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_RESULT, false, DataType.STRING),
+            new VariableMetadata(elementVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_ELEMENT, false, DataType.ELEMENT),
         };
     }
 

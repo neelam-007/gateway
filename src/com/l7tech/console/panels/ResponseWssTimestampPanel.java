@@ -21,7 +21,7 @@ import java.text.DecimalFormat;
 /**
  * @author alex
  */
-public class ResponseWssTimestampPanel extends ValidatedPanel {
+public class ResponseWssTimestampPanel extends ValidatedPanel<ResponseWssTimestamp> {
     private JPanel mainPanel;
     private JFormattedTextField expiryTimeField;
     private JCheckBox signatureRequiredCheckBox;
@@ -61,9 +61,9 @@ public class ResponseWssTimestampPanel extends ValidatedPanel {
         });
         expiryTimeField.setValue(new Double((double)assertion.getExpiryMilliseconds() / timeUnit.getMultiplier()));
         expiryTimeField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) {updateModel();}
-            public void removeUpdate(DocumentEvent e) {updateModel();}
-            public void changedUpdate(DocumentEvent e) {updateModel();}
+            public void insertUpdate(DocumentEvent e) {checkSyntax();}
+            public void removeUpdate(DocumentEvent e) {checkSyntax();}
+            public void changedUpdate(DocumentEvent e) {checkSyntax();}
         });
 
         expiryTimeUnitCombo.addActionListener(new ActionListener() {
@@ -74,7 +74,7 @@ public class ResponseWssTimestampPanel extends ValidatedPanel {
                     long oldMillis = (long)(oldTimeUnit.getMultiplier() * time.doubleValue());
                     expiryTimeField.setValue(new Double((double)oldMillis / newTimeUnit.getMultiplier()));
                 }
-                updateModel();
+                checkSyntax();
                 oldTimeUnit = newTimeUnit;
             }
         });
@@ -82,7 +82,7 @@ public class ResponseWssTimestampPanel extends ValidatedPanel {
         ActionListener modelUpdateActionListener = new ActionListener(){
             public void actionPerformed(ActionEvent e) {
                 updateComponents();
-                updateModel();
+                checkSyntax();
             }
         };
         signatureRequiredCheckBox.addActionListener(modelUpdateActionListener);
@@ -102,7 +102,7 @@ public class ResponseWssTimestampPanel extends ValidatedPanel {
         Utilities.setEnabled(signingOptionsPanel, signatureRequiredCheckBox.isSelected());
     }
 
-    private void updateModel() {
+    protected void doUpdateModel() {
         TimeUnit tu = (TimeUnit)expiryTimeUnitCombo.getSelectedItem();
         Double num = (Double)expiryTimeField.getValue();
         assertion.setTimeUnit(tu);
@@ -115,22 +115,13 @@ public class ResponseWssTimestampPanel extends ValidatedPanel {
         } else {
             throw new IllegalStateException("Neither BST nor SKI selected");
         }
-        checkSyntax();
     }
 
-    protected Object getModel() {
+    protected ResponseWssTimestamp getModel() {
         return assertion;
     }
 
     public void focusFirstComponent() {
         expiryTimeField.requestFocus();
-    }
-
-    protected String getSyntaxError(Object model) {
-        return null;
-    }
-
-    protected String getSemanticError(Object model) {
-        return null;
     }
 }

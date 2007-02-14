@@ -19,7 +19,7 @@ import java.text.DecimalFormat;
 /**
  * @author alex
  */
-public class RequestWssTimestampPanel extends ValidatedPanel {
+public class RequestWssTimestampPanel extends ValidatedPanel<RequestWssTimestamp> {
     private JPanel mainPanel;
     private JFormattedTextField expiryTimeField;
     private JComboBox expiryTimeUnitCombo;
@@ -47,7 +47,7 @@ public class RequestWssTimestampPanel extends ValidatedPanel {
         requireSignatureCheckBox.setSelected(assertion.isSignatureRequired());
         requireSignatureCheckBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                updateModel();
+                checkSyntax();
             }
         });
         expiryTimeField.setFormatterFactory(new JFormattedTextField.AbstractFormatterFactory() {
@@ -57,9 +57,9 @@ public class RequestWssTimestampPanel extends ValidatedPanel {
         });
         expiryTimeField.setValue(new Double((double)assertion.getMaxExpiryMilliseconds() / timeUnit.getMultiplier()));
         expiryTimeField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) {updateModel();}
-            public void removeUpdate(DocumentEvent e) {updateModel();}
-            public void changedUpdate(DocumentEvent e) {updateModel();}
+            public void insertUpdate(DocumentEvent e) {checkSyntax();}
+            public void removeUpdate(DocumentEvent e) {checkSyntax();}
+            public void changedUpdate(DocumentEvent e) {checkSyntax();}
         });
 
         expiryTimeUnitCombo.addActionListener(new ActionListener() {
@@ -70,7 +70,7 @@ public class RequestWssTimestampPanel extends ValidatedPanel {
                     long oldMillis = (long)(oldTimeUnit.getMultiplier() * time.doubleValue());
                     expiryTimeField.setValue(new Double((double)oldMillis / newTimeUnit.getMultiplier()));
                 }
-                updateModel();
+                checkSyntax();
                 oldTimeUnit = newTimeUnit;
             }
         });
@@ -78,16 +78,15 @@ public class RequestWssTimestampPanel extends ValidatedPanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    private void updateModel() {
+    protected void doUpdateModel() {
         TimeUnit tu = (TimeUnit)expiryTimeUnitCombo.getSelectedItem();
         Double num = (Double)expiryTimeField.getValue();
         assertion.setTimeUnit(tu);
         assertion.setMaxExpiryMilliseconds((int)(num.doubleValue() * tu.getMultiplier()));
         assertion.setSignatureRequired(requireSignatureCheckBox.isSelected());
-        checkSyntax();
     }
 
-    protected Object getModel() {
+    protected RequestWssTimestamp getModel() {
         return assertion;
     }
 
@@ -95,11 +94,4 @@ public class RequestWssTimestampPanel extends ValidatedPanel {
         expiryTimeField.requestFocus();
     }
 
-    protected String getSyntaxError(Object model) {
-        return null;
-    }
-
-    protected String getSemanticError(Object model) {
-        return null;
-    }
 }

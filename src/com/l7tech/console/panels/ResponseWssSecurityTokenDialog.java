@@ -9,7 +9,7 @@ import java.util.ResourceBundle;
 /**
  * @author alex
  */
-public class ResponseWssSecurityTokenDialog extends OkCancelDialog {
+public class ResponseWssSecurityTokenDialog extends OkCancelDialog<ResponseWssSecurityToken> {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.ResponseWssSecurityTokenDialog");
 
 

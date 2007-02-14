@@ -11,7 +11,7 @@ import java.awt.*;
 /**
  * @author alex
  */
-public class ResponseWssTimestampDialog extends OkCancelDialog {
+public class ResponseWssTimestampDialog extends OkCancelDialog<ResponseWssTimestamp> {
     public ResponseWssTimestampDialog(Frame owner, boolean modal, ResponseWssTimestamp assertion) {
         super(owner, "Response Timestamp Validity Period", modal, new ResponseWssTimestampPanel(assertion));
     }

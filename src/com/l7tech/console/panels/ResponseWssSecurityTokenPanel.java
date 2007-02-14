@@ -13,7 +13,7 @@ import java.awt.event.ActionListener;
 /**
  * @author alex
  */
-public class ResponseWssSecurityTokenPanel extends ValidatedPanel {
+public class ResponseWssSecurityTokenPanel extends ValidatedPanel<ResponseWssSecurityToken> {
     private JPanel mainPanel;
     private JComboBox tokenTypeCombo;
     private JRadioButton bstRadio;
@@ -24,7 +24,7 @@ public class ResponseWssSecurityTokenPanel extends ValidatedPanel {
 
     private final ActionListener updater = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
-            updateModel();
+            checkSyntax();
         }
     };
 
@@ -60,7 +60,7 @@ public class ResponseWssSecurityTokenPanel extends ValidatedPanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    private void updateModel() {
+    protected void doUpdateModel() {
         SecurityTokenType type = (SecurityTokenType)tokenTypeCombo.getSelectedItem();
         includePasswordCheckBox.setEnabled(type == SecurityTokenType.WSS_USERNAME);
         assertion.setIncludePassword(includePasswordCheckBox.isSelected());
@@ -72,21 +72,12 @@ public class ResponseWssSecurityTokenPanel extends ValidatedPanel {
         } else {
             throw new IllegalStateException("Neither BST nor SKI selected");
         }
-        checkSyntax();
     }
 
-    protected Object getModel() {
+    protected ResponseWssSecurityToken getModel() {
         return assertion;
     }
 
     public void focusFirstComponent() {
-    }
-
-    protected String getSyntaxError(Object model) {
-        return null;
-    }
-
-    protected String getSemanticError(Object model) {
-        return null;
     }
 }

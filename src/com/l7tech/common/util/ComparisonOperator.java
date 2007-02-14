@@ -20,8 +20,8 @@ public class ComparisonOperator implements Serializable {
     public static final ComparisonOperator GT = new ComparisonOperator(n++, "GT", "greater than", false, 1, 1);
     public static final ComparisonOperator GE = new ComparisonOperator(n++, "GE", "greater than or equal to", false, 1, 0);
     public static final ComparisonOperator EMPTY = new EmptyOperator(n++, "EMPTY", "empty");
-    public static final ComparisonOperator CONTAINS = new ContainsOperator(n++, "CONTAINS", "contains");
-    public static final ComparisonOperator NE = new NotEqualsOperator(n++, "NE", "not equals to");
+    public static final ComparisonOperator CONTAINS = new ContainsOperator(n++, "CONTAINS", "contain");
+    public static final ComparisonOperator NE = new NotEqualsOperator(n++, "NE", "not equal to");
 
     private static ComparisonOperator[] VALUES = { LT, LE, EQ, GT, GE, EMPTY, CONTAINS }; // NE not included
     private static final Map byShortName = new HashMap();

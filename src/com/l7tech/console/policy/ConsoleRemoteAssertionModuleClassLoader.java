@@ -3,17 +3,17 @@ package com.l7tech.console.policy;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.util.ExceptionUtils;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.rmi.RemoteException;
-import java.io.InputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.logging.Level;
+import java.io.InputStream;
+import java.net.URL;
+import java.rmi.RemoteException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.net.URL;
+import java.util.logging.Level;
 
 /**
  * A ClassLoader that knows how to load classes from inside an assertion module installed on the Gateway.
@@ -49,7 +49,7 @@ class ConsoleRemoteAssertionModuleClassLoader extends ClassLoader {
             return got;
 
         got = cluster.getAssertionModuleResource(moduleFilename, path);
-        cache.put(path, got);
+        if (got != null) cache.put(path, got);
         return got;
     }
 

@@ -314,7 +314,7 @@ public class GatewayFeatureSets {
             fs(core),
             fs(branching),
             ass(CommentAssertion.class),
-            ass(ComparisonAssertion.class),
+            mass("assertion:Comparison"),
             ass(TrueAssertion.class),
             ass(FalseAssertion.class),
             ass(SetVariableAssertion.class),

@@ -98,7 +98,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(HttpFormPost.class, HttpFormPostPolicyNode.class);
         assertionMap.put(InverseHttpFormPost.class, InverseHttpFormPostPolicyNode.class);
         assertionMap.put(CommentAssertion.class, CommentAssertionPolicyNode.class);
-        assertionMap.put(ComparisonAssertion.class, ComparisonAssertionPolicyNode.class);
         assertionMap.put(SqlAttackAssertion.class, SqlAttackAssertionTreeNode.class);
         assertionMap.put(OversizedTextAssertion.class, OversizedTextAssertionTreeNode.class);
         assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);

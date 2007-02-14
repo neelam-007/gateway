@@ -33,6 +33,7 @@ public class ExpandVariables {
     private static final String REGEX_PREFIX = "(?:\\$\\{)";
     private static final String REGEX_SUFFIX = "(?:\\})";
     private static final Pattern regexPattern = Pattern.compile(REGEX_PREFIX +"(.+?)"+REGEX_SUFFIX);
+    private static final Pattern oneVarPattern = Pattern.compile("^" + REGEX_PREFIX +"(.+?)"+REGEX_SUFFIX + "$");
 
     public static String[] getReferencedNames(String s) {
         if (s == null) {
@@ -49,6 +50,20 @@ public class ExpandVariables {
             vars.add(var);
         }
         return (String[])vars.toArray(new String[0]);
+    }
+
+    public static Object processSingleVariableAsObject(String expr, Map vars) {
+        if (expr == null) {
+            throw new IllegalArgumentException();
+        }
+
+        Matcher matcher = oneVarPattern.matcher(expr);
+        if (matcher.matches()) {
+            String name = matcher.group(1);
+            return vars.get(name);
+        } else {
+            return process(expr, vars);
+        }
     }
 
     /**

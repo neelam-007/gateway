@@ -9,7 +9,7 @@ package com.l7tech.policy.wsp;
 /**
  * A reference that knows the nominal type of its target, even when it is null.
  */
-class TypedReference {
+public class TypedReference {
     public final Class type;
     public final Object target;
     public final String name;
@@ -24,7 +24,7 @@ class TypedReference {
             throw new IllegalArgumentException("Only named references may have a null target");
     }
 
-    TypedReference(Class type, Object target) {
+    public TypedReference(Class type, Object target) {
         this(type, target, null);
     }
 }

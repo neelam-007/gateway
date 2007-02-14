@@ -15,7 +15,7 @@ import java.awt.*;
 /**
  * @author alex
  */
-public abstract class TextEntryPanel extends ValidatedPanel {
+public abstract class TextEntryPanel extends ValidatedPanel<String> {
     protected SquigglyTextField textField;
     protected JLabel promptLabel;
     protected JPanel mainPanel;
@@ -93,18 +93,48 @@ public abstract class TextEntryPanel extends ValidatedPanel {
         textField.requestFocus();
     }
 
-    protected void goodSyntax() {
-        textField.setNone();
-    }
-
-    protected Object getModel() {
+    protected String getModel() {
         if (textField == null) return null;
         return textField.getText();
+    }
+
+    /** Nothing to do here--in this case {@link #textField#getText()} <em>is</em> the model */
+    protected void doUpdateModel() {
+    }
+
+    protected void goodSyntax() {
+        textField.setNone();
     }
 
     protected void badSyntax() {
         textField.setColor(Color.RED);
         textField.setDotted();
-        textField.setAll();
+        Range r = getHighlightRange();
+        if (r.from < 0 && r.to < 0) {
+            textField.setAll();
+        } else {
+            textField.setRange(r.from, r.to);
+        }
+
+    }
+
+    /**
+     * Override to indicate a range of characters that is erroneous.  Specify negative values for {@link Range#from} and
+     * {@link Range#to} == -1 to select the entire string.
+     */
+    protected Range getHighlightRange() {
+        return DEFAULT_RANGE_ALL;
+    }
+
+    protected static final Range DEFAULT_RANGE_ALL = new Range(-1, -1);
+
+    protected static class Range {
+        protected final int from;
+        protected final int to;
+
+        protected Range(int from, int to) {
+            this.from = from;
+            this.to = to;
+        }
     }
 }

@@ -15,10 +15,12 @@ import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.logic.*;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -188,7 +190,7 @@ public class WspConstants {
         new MessagePredicateMapping(new RequestXpathAssertion(), "MessagePredicate", "RequestXpathAssertion"), // freeze RequestXpathAssertion as MessagePredicate or pre32 form; thaw MessagePredicate
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion") { // thaw pre32 form
             // Compatibility with old 2.1 instances of this assertion
-            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+            public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 super.populateObject(object, source, new WspUpgradeUtilFrom21.RequestXpathAssertionPropertyVisitor(visitor));
             }
         },
@@ -208,7 +210,7 @@ public class WspConstants {
         new AssertionMapping(new SslAssertion(), "SslAssertion"),
         new AssertionMapping(new JmsRoutingAssertion(), "JmsRoutingAssertion"),
         new AssertionMapping(new HttpRoutingAssertion(), "HttpRoutingAssertion") {
-            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+            public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 super.populateObject(object, source, new WspUpgradeUtilFrom365.HttpRoutingPropertyVisitor(visitor));
             }
         },
@@ -223,12 +225,12 @@ public class WspConstants {
         new AssertionMapping(new RequestWssReplayProtection(), "RequestWssReplayProtection"),
         new AssertionMapping(new ResponseXpathAssertion(), "ResponseXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation") {
-            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+            public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 super.populateObject(object, source, new WspUpgradeUtilFrom35.SchemaValidationPropertyVisitor(visitor));
             }
         },
         new AssertionMapping(new XslTransformation(), "XslTransformation") {
-            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+            public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 super.populateObject(object, source, new WspUpgradeUtilFrom35.XslTransformationPropertyVisitor(visitor));
             }
         },
@@ -239,7 +241,7 @@ public class WspConstants {
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
         new AssertionMapping(new Regex(), "Regex"),
         new AssertionMapping(new EmailAlertAssertion(), "EmailAlert") {
-            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+            public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 if (source == null) { throw new IllegalArgumentException("Source cannot be null");}
                 NodeList messageNodes = source.getElementsByTagName("L7p:Message");
                 if (messageNodes.getLength() == 0) {
@@ -261,7 +263,6 @@ public class WspConstants {
             }
         },
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
-        new AssertionMapping(new ComparisonAssertion(), "ComparisonAssertion"),
         new AssertionMapping(new Operation(), "WSDLOperation"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
         new AssertionMapping(new EchoRoutingAssertion(), "EchoRoutingAssertion"),
@@ -270,7 +271,7 @@ public class WspConstants {
                 super.populateElement(wspWriter, element, object);
             }
 
-            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+            public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 if (source == null) { throw new IllegalArgumentException("Source cannot be null");}
                 NodeList responseBodyNodes = source.getElementsByTagName("L7p:ResponseBody");
                 if (responseBodyNodes.getLength() == 0) {
@@ -330,6 +331,18 @@ public class WspConstants {
         new BeanTypeMapping(HttpPassthroughRuleSet.class, "httpPassthroughRuleSet"),
         new BeanTypeMapping(HtmlFormDataAssertion.FieldSpec.class, "htmlFormFieldSpec"),
         new ArrayTypeMapping(new HtmlFormDataAssertion.FieldSpec[0], "htmlFormFieldSpecArray"),
+
+        // TODO these Comparison Assertion dependencies should get modularized
+        new ArrayTypeMapping(new Predicate[0], "predicates"),
+        new AbstractClassTypeMapping(Predicate.class, "predicate"),
+        new BeanTypeMapping(BinaryPredicate.class, "binary"),
+        new BeanTypeMapping(CardinalityPredicate.class, "cardinality"),
+        new BeanTypeMapping(StringLengthPredicate.class, "stringLength"),
+        new BeanTypeMapping(RegexPredicate.class, "regex"),
+        new BeanTypeMapping(DataTypePredicate.class, "dataType"),
+        new WspEnumTypeMapping(DataType.class, "type"),
+        new BeanTypeMapping(EmptyPredicate.class, "empty"),
+
     };
 
     final static TypeMapping[] readOnlyTypeMappings = new TypeMapping[] {
@@ -340,7 +353,8 @@ public class WspConstants {
         WspUpgradeUtilFrom30.samlSecurityCompatibilityMapping,
         WspUpgradeUtilFrom30.wssDigestCompatibilityMapping,
 
-        EqualityRenamedToComparison.equalityCompatibilityMapping,
+        // TODO figure out where to put this
+        // EqualityRenamedToComparison.equalityCompatibilityMapping,
         StealthReplacedByFaultLevel.faultDropCompatibilityMapping
     };
 
