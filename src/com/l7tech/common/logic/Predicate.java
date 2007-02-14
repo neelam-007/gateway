@@ -3,10 +3,12 @@
  */
 package com.l7tech.common.logic;
 
+import java.io.Serializable;
+
 /**
  * @author alex
  */
-public abstract class Predicate {
+public abstract class Predicate implements Serializable {
     protected boolean negated;
 
     public Predicate() {
