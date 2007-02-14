@@ -19,6 +19,7 @@ import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.criterion.Order;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
@@ -74,7 +75,7 @@ public class AuditRecordManagerImpl
 
             // TODO For some dumb reason this yellow becomes a red in IDEA if I autobox it...
             if (fromTime != null) query.add(Restrictions.ge(PROP_TIME, Long.valueOf(fromTime.getTime())));
-            if (toTime != null) query.add(Restrictions.le(PROP_TIME, Long.valueOf(toTime.getTime())));
+            if (toTime != null) query.add(Restrictions.lt(PROP_TIME, Long.valueOf(toTime.getTime())));
 
             Level fromLevel = criteria.fromLevel;
             if (fromLevel == null) fromLevel = Level.FINEST;
@@ -95,11 +96,12 @@ public class AuditRecordManagerImpl
             }
 
             // TODO For some dumb reason this yellow becomes a red in IDEA if I autobox it...
-            // The semantics of these start & end parameters seem to be kinda backwards
-            if (criteria.startMessageNumber > 0) query.add(Restrictions.le(PROP_OID, Long.valueOf(criteria.startMessageNumber)));
-            if (criteria.endMessageNumber > 0) query.add(Restrictions.gt(PROP_OID, Long.valueOf(criteria.endMessageNumber)));
+            if (criteria.startMessageNumber > 0) query.add(Restrictions.ge(PROP_OID, Long.valueOf(criteria.startMessageNumber)));
+            if (criteria.endMessageNumber > 0) query.add(Restrictions.lt(PROP_OID, Long.valueOf(criteria.endMessageNumber)));
 
             if (criteria.nodeId != null) query.add(Restrictions.eq(PROP_NODEID, criteria.nodeId));
+
+            query.addOrder(Order.desc(PROP_TIME));
 
             //noinspection unchecked
             return query.list();

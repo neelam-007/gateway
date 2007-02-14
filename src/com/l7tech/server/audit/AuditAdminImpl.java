@@ -353,15 +353,24 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         return chunk;
     }
 
+    /**
+     * Find audit records using the given parameters
+     *
+     * @param nodeid The node identifier
+     * @param startMsgDate The starting date
+     * @param endMsgDate The ending date 
+     * @param size The maximum number of records to return
+     * @return
+     * @throws RemoteException
+     * @throws FindException
+     */
     public Collection<AuditRecord> findAuditRecords(final String nodeid,
-                                                    final long startMsgNumber,
-                                                    final long endMsgNumber,
                                                     final Date startMsgDate,
                                                     final Date endMsgDate,
                                                     final int size)
                                              throws RemoteException, FindException {
-        logger.finest("Get audits interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
-        return auditRecordManager.find(new AuditSearchCriteria(startMsgDate, endMsgDate, null, null, null, nodeid, startMsgNumber, endMsgNumber, size));
+        logger.finest("Get audits interval ["+startMsgDate+", "+endMsgDate+"] for node '"+nodeid+"'");
+        return auditRecordManager.find(new AuditSearchCriteria(startMsgDate, endMsgDate, null, null, null, nodeid, -1, -1, size));
     }
 
     public Date getLastAcknowledgedAuditDate() throws RemoteException {
@@ -420,7 +429,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
                                        final int size)
                                 throws RemoteException, FindException {
         logger.finest("Get logs interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
-        return logRecordManager.find(nodeid, endMsgNumber, size);
+        return logRecordManager.find(nodeid, startMsgNumber, size);
     }
 
     public int getSystemLogRefresh(final int typeId) {

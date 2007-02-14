@@ -127,7 +127,7 @@ public class LogRecordRingBuffer {
     }
 
     /**
-     * Get all the records more recent than X.
+     * Get all the records more recent than X (inclusive).
      *
      * @return the new records
      */
@@ -137,7 +137,7 @@ public class LogRecordRingBuffer {
         int startOfNewRecords = recordSnapshot.length;
         for (int i = 0; i < recordSnapshot.length; i++) {
             LogRecord logRecord = recordSnapshot[i];
-            if(logRecord.getSequenceNumber() > sequenceNumber) {
+            if(logRecord.getSequenceNumber() >= sequenceNumber) {
                 startOfNewRecords = i;
                 break;
             }

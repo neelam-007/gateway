@@ -79,8 +79,7 @@ public interface AuditAdmin extends GenericLogAdmin {
     void deleteOldAuditRecords() throws RemoteException, DeleteException;
 
     @Secured(stereotype=FIND_ENTITIES)
-    Collection<AuditRecord> findAuditRecords(String nodeid, long startMsgNumber, long endMsgNumber,
-                                             Date startMsgDate, Date endMsgDate, int size)
+    Collection<AuditRecord> findAuditRecords(String nodeid, Date startMsgDate, Date endMsgDate, int size)
                                       throws RemoteException, FindException;
 
     /**

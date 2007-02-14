@@ -11,7 +11,7 @@ import java.util.Date;
  *
  * $Id$
  */
-public class LogMessage {
+public class LogMessage implements Comparable {
     private final SSGLogRecord log;
     private final String time;
     private final String msgClass;
@@ -77,26 +77,53 @@ public class LogMessage {
         return log;
     }
 
-    private boolean safeEquals(Object left, Object right) {
-        if (left == null) return right == null;
-        return left.equals(right);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        LogMessage that = (LogMessage) o;
+
+        if (log.getOid() != that.log.getOid()) return false;
+        if (nodeName != null ? !nodeName.equals(that.nodeName) : that.nodeName != null) return false;
+
+        return true;
     }
 
-    public boolean equals(Object other) {
-        boolean equal = false;
+    public int hashCode() {
+        int result;
+        result = Long.valueOf(log.getOid()).hashCode();
+        result = 31 * result + (nodeName != null ? nodeName.hashCode() : 0);
+        return result;
+    }
 
-        if(this==other) {
-            equal = true;
-        }
-        else if(other instanceof LogMessage) {
-            LogMessage om = (LogMessage) other;
-            if (log == null) return om.log == null;
-            if (om.log == null) return false;
-            equal = log.getMillis()==om.log.getMillis() &&
-                    safeEquals(log.getLevel(), om.log.getLevel()) &&
-                    safeEquals(log.getMessage(), om.log.getMessage());
+    public int compareTo(Object o) {
+        int compareValue;
+
+        if (!(o instanceof LogMessage)) {
+            throw new IllegalStateException("Can only compare to other LogMessages ("+o.getClass()+")");
         }
 
-        return equal;
+        LogMessage other = (LogMessage) o;
+
+        if ( this.equals(other) ) {
+            compareValue = 0;
+        } else {
+            if ( other.getSSGLogRecord().getMillis() < getSSGLogRecord().getMillis()) {
+                compareValue = -1;
+            } else if ( other.getSSGLogRecord().getMillis() > getSSGLogRecord().getMillis()) {
+                compareValue = 1;
+            } else {
+                if (other.getNodeId().compareTo(getNodeId()) == -1) {
+                    compareValue = -1;
+                } else if (other.getNodeId().compareTo(getNodeId()) == 1) {
+                    compareValue = 1;
+                } else {
+                    // this may not be meaningful for audit records, but is at least definitive
+                    compareValue = Long.valueOf(other.getMsgNumber()).compareTo(getMsgNumber());
+                }
+            }
+        }
+
+        return compareValue;
     }
 }

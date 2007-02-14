@@ -165,7 +165,7 @@ public class ClusterLogWorker extends SwingWorker {
         if (requests.size() > 0) {
 
             for (LogRequest logRequest : requests) {
-                Collection<LogMessage> newLogs = new LinkedHashSet<LogMessage>();
+                Collection<LogMessage> newLogs = new LinkedHashSet<LogMessage>(512);
 
                 try {
                     rawLogs = new SSGLogRecord[]{};
@@ -173,7 +173,10 @@ public class ClusterLogWorker extends SwingWorker {
                     //System.out.println("Calling getSystemLog with start#='"+logRequest.getStartMsgNumber()+"', end#='"+logRequest.getEndMsgNumber()+"', startDate='"+logRequest.getStartMsgDate()+"', endDate='"+logRequest.getEndMsgDate()+"'.");
                     switch (logType) {
                         case GenericLogAdmin.TYPE_AUDIT:
-                            rawLogs = logService.findAuditRecords(logRequest.getNodeId(), logRequest.getStartMsgNumber(), logRequest.getEndMsgNumber(), logRequest.getStartMsgDate(), logRequest.getEndMsgDate(), logRequest.getRetrievedLogCount()).toArray(new SSGLogRecord[0]);
+                            rawLogs = logService.findAuditRecords(logRequest.getNodeId(),
+                                    logRequest.getStartMsgDate(),
+                                    logRequest.getEndMsgDate(),
+                                    FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE).toArray(new SSGLogRecord[0]);
                             break;
                         case GenericLogAdmin.TYPE_LOG:
                             rawLogs = logService.getSystemLog(logRequest.getNodeId(),
@@ -193,16 +196,24 @@ public class ClusterLogWorker extends SwingWorker {
 
                     if (rawLogs.length > 0) {
                         long lowest = -1;
+                        long oldest = -1;
                         for (int j = 0; j < (rawLogs.length) && (newLogs.size() < FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES); j++)
                         {
 
                             logMsg = new LogMessage(rawLogs[j]);
-                            if (j == 0) lowest = logMsg.getMsgNumber();
-                            else if (lowest > logMsg.getMsgNumber()) lowest = logMsg.getMsgNumber();
+                            if (j == 0) {
+                                lowest = logMsg.getMsgNumber();
+                                oldest = logMsg.getSSGLogRecord().getMillis();
+                            }
+                            else if (lowest > logMsg.getMsgNumber()) {
+                                lowest = logMsg.getMsgNumber();
+                                oldest = logMsg.getSSGLogRecord().getMillis();
+                            }
                             newLogs.add(logMsg);
                         }
-                        logRequest.setStartMsgNumber(lowest);
-
+                        logRequest.setEndMsgNumber(lowest);
+                        logRequest.setEndMsgDate(new Date(oldest+1)); // end date is exclusive
+                        
                     }
                 } catch (RemoteException e) {
                     throw new RuntimeException("Unable to retrieve logs from server", e);
@@ -215,9 +226,10 @@ public class ClusterLogWorker extends SwingWorker {
                     logRequest.addRetrievedLogCount(newLogs.size());
                 }
 
+                // We add a bit to the MAX_NUMBER_OF_LOG_MESSGAES to allow for duplicate logs
                 if (this.logType == GenericLogAdmin.TYPE_LOG ||
                         rawLogs.length < FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE ||
-                        logRequest.getRetrievedLogCount() >= FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES) {
+                        logRequest.getRetrievedLogCount() >= (FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES + (FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES/20))) {
 
                     requestCompleted.add(logRequest);
                 }

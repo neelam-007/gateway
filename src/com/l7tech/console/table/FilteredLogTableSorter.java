@@ -86,18 +86,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     }
 
     /**
-     * Append the new logs to the cache.
-     *
-     * @param nodeList  A list of node objects accompanied with their new logs.
-     */
-    private void appendLogs(Map<String, Collection<LogMessage>> nodeList) {
-        for (String node : nodeList.keySet()) {
-            Collection<LogMessage> logs = nodeList.get(node);
-            addLogs(node, logs, false);
-        }
-    }
-
-    /**
      * Add the new logs to head of the cache.
      *
      * @param nodeList  A list of node objects accompanied with their new logs.
@@ -105,7 +93,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private void addLogs(Map<String, Collection<LogMessage>> nodeList) {
         for (String node : nodeList.keySet()) {
             Collection<LogMessage> logs = nodeList.get(node);
-            addLogs(node, logs, true);
+            addLogs(node, logs);
         }
     }
 
@@ -115,7 +103,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param nodeId  The Id of the node which is the source of the new logs.
      * @param newLogs  The new logs.
      */
-    private void addLogs(String nodeId, Collection<LogMessage> newLogs, boolean front) {
+    private void addLogs(String nodeId, Collection<LogMessage> newLogs) {
 
         // add new logs to the cache
         if (newLogs.size() > 0) {
@@ -125,30 +113,31 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 gatewayLogs = cachedLogs;
             } else {
                 // create a empty cache for the new node
-                gatewayLogs = new LinkedHashSet<LogMessage>();
+                gatewayLogs = new TreeSet<LogMessage>();
             }
 
+            // try to remove first to make room
             Iterator setIter = gatewayLogs.iterator();
-            for(int i=0; i<gatewayLogs.size(); i++) {
+            int additionalLogCount = newLogs.size() - (MAX_MESSAGE_BLOCK_SIZE/10); // allow for 10% duplicates
+            for(int i=0; setIter.hasNext(); i++) {
                 // remove the last element
                 setIter.next();
-                if(i+newLogs.size()>MAX_NUMBER_OF_LOG_MESSGAES) {
+                if(i+additionalLogCount>=MAX_NUMBER_OF_LOG_MESSGAES) {
                     setIter.remove();
                 }
             }
 
-            if (front) {
-                // append the old logs to the cache
-                newLogs.addAll(gatewayLogs);
+            // add logs
+            gatewayLogs.addAll(newLogs);
 
-                if(newLogs instanceof LinkedHashSet) {
-                    gatewayLogs = newLogs;
+            // remove after to ensure correct size
+            setIter = gatewayLogs.iterator();
+            for(int i=0; setIter.hasNext(); i++) {
+                // remove the last element
+                setIter.next();
+                if(i>=MAX_NUMBER_OF_LOG_MESSGAES) {
+                    setIter.remove();
                 }
-                else {
-                    gatewayLogs = new LinkedHashSet<LogMessage>(newLogs);
-                }
-            } else {
-                gatewayLogs.addAll(newLogs);
             }
 
             // update the logsCache
@@ -458,7 +447,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     public void refreshLogs(final LogPanel logPane, final boolean restartTimer, final String nodeId) {
         // Load the last 3 hours initially
         Date startDate =  new Date(System.currentTimeMillis()-timeOffset);
-        doRefreshLogs(logPane, restartTimer, startDate, null, null, nodeId, true);
+        doRefreshLogs(logPane, restartTimer, startDate, null, null, nodeId, 0);
     }
 
     /**
@@ -470,7 +459,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param nodeId the node to filter requests by (may be null)
      */
     public void refreshLogs(final LogPanel logPane, final Date start, final Date end, final String nodeId) {
-        doRefreshLogs(logPane, false, start, end, null, nodeId, true);
+        doRefreshLogs(logPane, false, start, end, null, nodeId, 0);
     }
 
     /**
@@ -532,9 +521,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param end The end date for log records.
      * @param requests  The list of requests for retrieving logs. One request per node.
      * @param nodeId the node to filter requests by (may be null)
-     * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
+     * @param count Number of records retrieved in the current refresh cycle.
      */
-    private void doRefreshLogs(final LogPanel logPane, final boolean restartTimer, final Date start, final Date end, List<LogRequest> requests, final String nodeId, final boolean newRefresh) {
+    private void doRefreshLogs(final LogPanel logPane, final boolean restartTimer, final Date start, final Date end, List<LogRequest> requests, final String nodeId, final int count) {
 
         if(displayingFromFile) {
             displayingFromFile = false;
@@ -542,7 +531,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
 
         // New request or still working on an old request?
-        if (newRefresh) {
+        if (count == 0) {
             // create request for each node
             requests = new ArrayList<LogRequest>();
             for (String s : currentNodeList.keySet()) {
@@ -552,19 +541,24 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                     continue;
 
                 Collection<LogMessage> logCache = rawLogCache.get(gatewayStatus.getNodeId());
-                long highest = -1;
+                long latest = -1;
                 if (logCache != null && logCache.size() > 0) {
                     // remove any cached logs that are outside of our current range.
                     purgeOutOfRange(logCache, start, end);
 
                     // find limit
                     for (LogMessage lm : logCache) {
-                        if (lm.getMsgNumber() > highest) highest = lm.getMsgNumber();
+                        if (lm.getSSGLogRecord().getMillis() > latest) latest = lm.getSSGLogRecord().getMillis();
                     }
                 }
 
                 // add the request for retrieving logs from the node
-                requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, highest, start, end));
+                Date latestDate = new Date(latest);
+                if (latestDate.after(start)) {
+                    requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, -1, latestDate, end));
+                } else {
+                    requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, -1, start, end));
+                }
             }
         }
 
@@ -588,41 +582,51 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                         // Note: the get() operation is a blocking operation.
                         if (this.get() != null) {
 
-                            if (newRefresh) {
-                                removeLogsOfNonExistNodes(getNewNodeList());
-                                currentNodeList = getNewNodeList();
-                                addLogs(getNewLogs());
-                            } else {
-                                appendLogs(getNewLogs());
+                            Map<String, Collection<LogMessage>> newLogs = getNewLogs();
+                            int logCount = countLogs(newLogs);
+                            boolean updated = logCount > 0;
+
+                            if (count==0) {
+                                Map<String, GatewayStatus> newNodeList = getNewNodeList();
+                                removeLogsOfNonExistNodes(newNodeList);
+                                updated = updated || currentNodeList==null || !currentNodeList.keySet().equals(newNodeList.keySet());
+                                currentNodeList = newNodeList;
+                            }
+                            
+                            addLogs(newLogs);
+
+                            if (updated) {
+
+                                String msgNumSelected = logPane.getSelectedMsgNumber();
+
+                                // filter the logs
+                                filterData(logPane.getMsgFilterLevel(),
+                                        logPane.getMsgFilterNodeName(),
+                                        logPane.getMsgFilterService(),
+                                        logPane.getMsgFilterThreadId(),
+                                        logPane.getMsgFilterMessage());
+
+                                // sort the logs
+                                sortData(columnToSort, false);
+
+                                // populate the change to the display
+                                realModel.fireTableDataChanged();
+                                logPane.updateMsgTotal();
+
+                                logPane.setSelectedRow(msgNumSelected);
                             }
 
-                            String msgNumSelected = logPane.getSelectedMsgNumber();
-
-                            // filter the logs
-                            filterData(logPane.getMsgFilterLevel(),
-                                    logPane.getMsgFilterNodeName(),
-                                    logPane.getMsgFilterService(),
-                                    logPane.getMsgFilterThreadId(),
-                                    logPane.getMsgFilterMessage());
-
-                            // sort the logs
-                            sortData(columnToSort, false);
-
-                            // populate the change to the display
-                            realModel.fireTableDataChanged();
                             logPane.updateTimeStamp(getCurrentClusterSystemTime());
-                            logPane.updateMsgTotal();
-
-                            logPane.setSelectedRow(msgNumSelected);
 
                             final List<LogRequest> unfilledRequest = getUnfilledRequest();
 
                             // if there unfilled requests
-                            if (unfilledRequest.size() > 0) {
+                            final int total = count + logCount;
+                            if (unfilledRequest.size() > 0 && total < MAX_NUMBER_OF_LOG_MESSGAES) {
                                 SwingUtilities.invokeLater(
                                         new Runnable() {
                                             public void run() {
-                                                doRefreshLogs(logPane, restartTimer, start, end, unfilledRequest, nodeId, false);
+                                                doRefreshLogs(logPane, restartTimer, start, end, unfilledRequest, nodeId, total);
                                             }
                                         });
 
@@ -634,6 +638,16 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
                         }
                     }
+                }
+
+                private int countLogs(Map<String, Collection<LogMessage>> newLogs) {
+                    int count = 0;
+
+                    for (Collection<LogMessage> logs : newLogs.values()) {
+                        count += logs.size();
+                    }
+
+                    return count;
                 }
             };
 

@@ -33,7 +33,7 @@ public class AuditAdminStub implements AuditAdmin {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
-    public Collection<AuditRecord> findAuditRecords(String nodeid, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate, int size) throws RemoteException, FindException {
+    public Collection<AuditRecord> findAuditRecords(String nodeid, Date startMsgDate, Date endMsgDate, int size) throws RemoteException, FindException {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
