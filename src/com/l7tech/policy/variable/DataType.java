@@ -11,11 +11,13 @@ import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.HashMap;
+import java.io.Serializable;
+import java.io.ObjectStreamException;
 
 /**
  * @author alex
 */
-public final class DataType {
+public final class DataType implements Serializable {
     private static final Map nameMap = new HashMap();
 
     public static final DataType STRING = new DataType("string", "String", new Class[] { CharSequence.class, char[].class, Character.class, Character.TYPE });
@@ -57,7 +59,7 @@ public final class DataType {
         this.shortName = shortName;
         this.name = name;
         this.valueClasses = classes;
-        nameMap.put(shortName, this);
+        if (nameMap.put(shortName, this) != null) throw new IllegalArgumentException("Duplicate shortName: " + shortName);
     }
 
     public String toString() {
@@ -74,5 +76,9 @@ public final class DataType {
                 return ((DataType)o).getShortName();
             }
         };
+    }
+
+    protected Object readResolve() throws ObjectStreamException {
+        return nameMap.get(shortName);
     }
 }
