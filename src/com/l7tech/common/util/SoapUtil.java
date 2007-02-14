@@ -530,13 +530,15 @@ public class SoapUtil {
      * @param doc  the Document to examine.
      * @return a Map of wsu:Id String to Element.  May be empty, but never null.
      */
-    public static Map getElementByWsuIdMap(Document doc) {
+    public static Map getElementByWsuIdMap(Document doc) throws InvalidDocumentFormatException {
         Map map = new HashMap();
         NodeList elements = doc.getElementsByTagName("*");
         for (int i = 0; i < elements.getLength(); i++) {
             Element element = (Element)elements.item(i);
             String id = getElementWsuId(element);
-            map.put(id, element);
+            Element existing = (Element)map.put(id, element);
+            if (existing != null)
+                throw new InvalidDocumentFormatException("Duplicate wsu:Id:" + id);
         }
         return map;
     }
