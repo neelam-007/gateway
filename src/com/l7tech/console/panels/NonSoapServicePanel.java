@@ -1,8 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.MainWindow;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
 import java.awt.*;
@@ -102,14 +101,16 @@ public class NonSoapServicePanel extends WizardStepPanel {
             // empty is ok
             downstreamURL = null;
         } else {
-            // check that this is a valid url
-            try {
-                new URL(downstreamURL);
-            } catch (MalformedURLException e) {
-                String msg = downstreamURL + " is not a valid url. " + e.getMessage();
-                logger.info(msg);
-                bark(targetURL, msg);
-                return false;
+            // check that this is a valid url; if it does not contain context variables
+            if (!downstreamURL.contains("${")) {
+                try {
+                    new URL(downstreamURL);
+                } catch (MalformedURLException e) {
+                    String msg = downstreamURL + " is not a valid url. " + e.getMessage();
+                    logger.info(msg);
+                    bark(targetURL, msg);
+                    return false;
+                }
             }
         }
         return true;
