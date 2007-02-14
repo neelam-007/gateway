@@ -91,8 +91,8 @@ public class WsdlComposer {
 
         if (changes.getTypes() == null) {
             Types t = outputWsdl.getTypes();
-            if (t != null)
-                t.getExtensibilityElements().clear();
+//            if (t != null)
+//                t.getExtensibilityElements().clear();
         }
         
         Map messages = outputWsdl.getMessages();
@@ -136,9 +136,9 @@ public class WsdlComposer {
             Map.Entry entry = (Map.Entry) o;
             outputWsdl.addNamespace((String)entry.getKey(), (String)entry.getValue());
         }
-        
+
         String targetNamespace = sourceDef.getTargetNamespace();
-        
+
         if (!targetNamespaces.contains(targetNamespace))
             targetNamespaces.add(targetNamespace);
     }
@@ -146,7 +146,6 @@ public class WsdlComposer {
     public List<String> getTargetNamespaces() {
         return targetNamespaces;
     }
-
 
     public Definition getOutputWsdl() {
         return outputWsdl;
