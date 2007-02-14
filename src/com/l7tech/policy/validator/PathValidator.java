@@ -511,12 +511,15 @@ class PathValidator {
               "The assertion might not work as configured." +
               " The protected service URL is empty.", null));
         } else {
-            try {
-                new URL(url);
-            } catch (MalformedURLException e) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "The assertion might not work as configured." +
-                  " The protected service URL is malformed.", null));
+            // only do this if the url has no context variables
+            if (url.indexOf("${") < 0) {
+                try {
+                    new URL(url);
+                } catch (MalformedURLException e) {
+                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                      "The assertion might not work as configured." +
+                      " The protected service URL is malformed.", null));
+                }
             }
         }
 
