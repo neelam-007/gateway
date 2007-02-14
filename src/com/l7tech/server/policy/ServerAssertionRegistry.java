@@ -256,7 +256,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
      *
      * @param dir       the directory to examine.  Must not be null
      * @param extsList  a space-separated list of file extensions that are of interest, including the initial dot.
-     *                  if null, a default list will be used that includes ".jar .ass .assn.assertion".
+     *                  if null, a default list will be used that includes ".jar .assertion .ass .assn .aar".
      * @param optionalSuffix if non-null, files will be considered a match if they would otherwise match without this
      *                       suffix.  For example, with extsList of ".foo .bar" and optionalSuffix of ".awesome",
      *                       this would match the filenames "bletch.foo" and "blortch.bar.awesome" but not
@@ -266,7 +266,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
      */
     private static Collection<File> getMatchingFiles(File dir, String extsList, String optionalSuffix) throws IOException {
         if (extsList == null || extsList.length() < 1)
-            extsList = ".jar .ass .assn .assertion";
+            extsList = ".jar .assertion .ass .assn .aar";
         final String[] exts = PATTERN_WHITESPACE.split(extsList.toLowerCase());
         final String[] extsDisabled;
         if (optionalSuffix == null) {

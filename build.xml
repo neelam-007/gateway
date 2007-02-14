@@ -601,7 +601,7 @@
 
     <target name="test.intensive"
             description="Run intensive JUnit tests."
-            depends="clean.test, test.work, test.intensive.work, test.modules.work, test.report">
+            depends="clean.test, test.work, test.intensive.work, test.modules, test.report">
         <checkfail/>
     </target>
 
@@ -662,13 +662,21 @@
         </junit>
     </target>
 
-    <target name="test.modules.work" depends="dev">
+    <target name="test.modules" depends="dev">
+        <echo level="info">Testing modules</echo>
+        <!--
+          NOTE: using subant here because if we use ant it can mess up the
+          base directory for the modules (which also use subant)
+        -->
         <subant target="test" inheritAll="false" verbose="true">
-            <fileset dir="." includes="modules/assertions/build.xml"/>
+            <fileset dir="." includes="modules/build.xml"/>
+            <propertyset>
+                <propertyref name="build.version"/>
+            </propertyset>
         </subant>
     </target>
 
-    <target name="test.all" description="Run testpackage and test.intensive" depends="test.work, test.intensive.work, test.modules.work, testpackage.work, test.report, testpackage.report">
+    <target name="test.all" description="Run testpackage and test.intensive" depends="test.work, test.intensive.work, test.modules, testpackage.work, test.report, testpackage.report">
         <checkfail/>
     </target>
 
@@ -2723,6 +2731,7 @@
         <property name="install.src.bin" value="${install.src.base}/${install.rel.bin}"/>
         <property name="install.src.lib" value="${install.src.base}/lib"/>
         <property name="install.src.mods" value="${install.src.base}/modules/lib"/>
+        <property name="install.src.aarmods" value="${install.src.base}/modules/assertions"/> 
         <property name="install.src.dist" value="${install.src.base}/${install.rel.dist}"/>
         <property name="install.src.doc" value="${install.src.base}/${install.rel.doc}"/>
         <property name="install.src.jdk" value="${install.src.base}/${install.rel.jdk}"/>
@@ -2765,6 +2774,7 @@
         <mkdir dir="${install.src.base}"/>
         <mkdir dir="${install.src.lib}"/>
         <mkdir dir="${install.src.mods}"/>
+        <mkdir dir="${install.src.aarmods}"/>
         <mkdir dir="${install.src.dist}"/>
         <mkdir dir="${install.src.doc}"/>
         <mkdir dir="${install.src.etc}"/>
@@ -2834,6 +2844,11 @@
 
         <!-- Copy modules -->
         <copy file="${build.dir}/ssg-uddi-module-systinetv3.jar" todir="${install.src.mods}"/>
+
+        <!-- Copy bundled modular assertions -->
+        <copy todir="${install.src.aarmods}">
+            <fileset dir="${src.root}/modules/assertions/RateLimitAssertion/build" includes="*.aar"/>
+        </copy>
 
         <!-- Copy LDAP templates -->
         <copy todir="${install.src.ldap}">

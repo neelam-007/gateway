@@ -33,4 +33,10 @@
         </subant>
     </target>
 
+    <target name="test" description="Runs test on all assertion modules.">
+        <subant target="test" inheritAll="false" verbose="true">
+            <fileset dir="." includes="*/build.xml"/>
+        </subant>
+    </target>
+
 </project>

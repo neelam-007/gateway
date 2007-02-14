@@ -47,6 +47,8 @@
         </javac>
     </target>
 
+    <target name="test" description="Runs any tests for this module."/>
+
     <!-- Create JAR file -->
     <target name="-jar" depends="-compile">
         <mkdir dir="build/ssg/tomcat/webapps/ROOT/WEB-INF/lib"/>

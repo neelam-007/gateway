@@ -7,6 +7,24 @@
     Do not invoke it directly.
   -->
 
+    <property name="moduleFileExtension" value="aar"/>
+
+    <!-- Compose the version number; if not already assigned. -->
+    <property file="${UneasyRooster.dir}/build.version"/>
+    <fail unless="build.version.major">Missing build version property "build.version.major"</fail>
+    <fail unless="build.version.minor">Missing build version property "build.version.minor"</fail>
+    <!-- Declare props to keep idea happy -->
+    <property name="build.version.major" value=""/>
+    <property name="build.version.minor" value=""/>
+    <property name="build.version.subminor" value=""/>
+    <condition property="build.version"
+               value="${build.version.major}.${build.version.minor}"
+               else="${build.version.major}.${build.version.minor}.${build.version.subminor}">
+        <!-- Append dot subminor only if not empty. -->
+        <equals arg1="${build.version.subminor}" arg2=""/>
+    </condition>
+    <tstamp/>
+
     <!--
       Idea form compiler
     -->
@@ -125,23 +143,8 @@
 
 
     <!-- Create JAR file -->
-    <target name="-jar" depends="-compile">
-        <!-- Compose the version number; if not already assigned. -->
-        <property file="${UneasyRooster.dir}/build.version"/>
-        <fail unless="build.version.major">Missing build version property "build.version.major"</fail>
-        <fail unless="build.version.minor">Missing build version property "build.version.minor"</fail>
-        <!-- Declare props to keep idea happy -->
-        <property name="build.version.major" value=""/>
-        <property name="build.version.minor" value=""/>
-        <property name="build.version.subminor" value=""/>
-        <condition property="build.version"
-                   value="${build.version.major}.${build.version.minor}"
-                   else="${build.version.major}.${build.version.minor}.${build.version.subminor}">
-            <!-- Append dot subminor only if not empty. -->
-            <equals arg1="${build.version.subminor}" arg2=""/>
-        </condition>
-        <tstamp/>
-        <jar destfile="build/${moduleName}-${build.version}.jar" basedir="build/classes" duplicate="fail">
+    <target name="-aar" depends="-compile">
+        <jar destfile="build/${moduleName}-${build.version}.${moduleFileExtension}" basedir="build/classes" duplicate="fail">
             <manifest>
                 <attribute name="Specification-Title" value="ModularAssertion"/>
                 <attribute name="Specification-Version" value="3.7.0"/>
@@ -157,7 +160,7 @@
     </target>
 
     <!-- Create distribution package -->
-    <target name="package" depends="-jar"
+    <target name="package" depends="-aar"
             description="Creates the distributable JAR file for this assertion.">
     </target>
 
@@ -171,12 +174,12 @@
             depends="OFFICIAL-package-version-check,package">
     </target>
 
-    <target name="deploy" depends="-jar,-common.init.ssg.home"
+    <target name="deploy" depends="-aar,-common.init.ssg.home"
             description="Deploys to SSG at ${ssg.home}. (For developer use)">
         <echo>Deploying to ${ssg.home}.</echo>
         <copy overwrite="true" todir="${ssg.home}/modules/assertions" verbose="true">
             <fileset dir="build">
-                <include name="*.jar"/>
+                <include name="*.${moduleFileExtension}"/>
             </fileset>
         </copy>
     </target>
@@ -185,7 +188,7 @@
             description="Undeploys from SSG at ${ssg.home}. Deletes all deployed files. (For developer use)">
         <delete verbose="true">
             <fileset dir="${ssg.home}/modules/assertions">
-                <include name="${moduleName}-*.jar"/>
+                <include name="${moduleName}-*.${moduleFileExtension}"/>
             </fileset>
         </delete>
     </target>
