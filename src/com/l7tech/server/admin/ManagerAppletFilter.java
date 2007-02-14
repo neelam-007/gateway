@@ -16,6 +16,7 @@ import com.l7tech.common.message.HttpServletResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ClassUtils;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -383,7 +384,7 @@ public class ManagerAppletFilter implements Filter {
         prefixLength += codebasePrefix.length();
         if (prefixLength+6 < filePath.length()) {
             String className = filePath.substring(prefixLength);
-            className = className.substring(0, className.length() - 6); // remove .class
+            className = ClassUtils.stripSuffix(className, ".class");
             name = className.replace('/', '.');
         }
 
@@ -436,7 +437,7 @@ public class ManagerAppletFilter implements Filter {
         return handled;
     }
 
-    private static final Pattern STRIPCLASS = Pattern.compile("\\.[^.]+$");
+    private static final Pattern STRIPCLASS = Pattern.compile("\\/[^/]+$");
 
     private boolean handleAssertionModuleClassRequest(final HttpServletRequest hreq,
                                                       final HttpServletResponse hresp,
@@ -452,19 +453,24 @@ public class ManagerAppletFilter implements Filter {
 
         boolean handled = false;
 
-        String className = pathToClassname(contextPath, filePath);
-        if (className == null)
+        int prefixLength = contextPath==null ? 0 : contextPath.length();
+        prefixLength += codebasePrefix.length();
+        if (prefixLength < filePath.length()) {
+            filePath = filePath.substring(prefixLength);
+        }
+
+        String packageName = STRIPCLASS.matcher(filePath).replaceAll("").replace('/', '.');
+        Set<AssertionModule> possibleModules = findAssertionModulesThatOfferPackage(packageName);
+
+        if (possibleModules == null || possibleModules.isEmpty())
             return false;
 
-        String packageName = STRIPCLASS.matcher(className).replaceAll("");
-        Set<AssertionModule> possibleModules = findAssertionModulesThatOfferPackage(packageName);
-        String resourcePath = className.replace('.', '/').concat(".class");
 
         for (AssertionModule module : possibleModules) {
-            byte[] data = module.getResourceBytes(resourcePath);
+            byte[] data = module.getResourceBytes(filePath);
             if (data != null) {
                 handled = true;
-                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_MODULE_CLASS_DL, new String[] {className, module.getName()});
+                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_MODULE_CLASS_DL, new String[] {filePath, module.getName()});
                 sendClass(hresp, data);
             }
         }
