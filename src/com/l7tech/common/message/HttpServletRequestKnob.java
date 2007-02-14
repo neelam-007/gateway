@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.common.message;
@@ -26,12 +26,12 @@ import java.util.*;
  * from a servlet request.
  */
 public class HttpServletRequestKnob implements HttpRequestKnob {
-    /** Map&lt;String, String[]&gt; of parameters found in the URL query string. */
-    private Map queryParams;
-    /** Map&lt;String, String[]&gt; of parameters found in the request message body. */
-    private Map requestBodyParams;
-    /** Map&lt;String, String[]&gt; of all request parameters; i.e., union of {@link #queryParams} and {@link #requestBodyParams}. */
-    private Map allParams;
+    /** parameters found in the URL query string. */
+    private Map<String, String[]> queryParams;
+    /** parameters found in the request message body. */
+    private Map<String, String[]> requestBodyParams;
+    /** all request parameters; i.e., union of {@link #queryParams} and {@link #requestBodyParams}. */
+    private Map<String, String[]> allParams;
 
     private final HttpServletRequest request;
     private final URL url;
@@ -50,14 +50,13 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
     public HttpCookie[] getCookies() {
         Cookie[] cookies = request.getCookies();
-        List out = new ArrayList();
+        List<HttpCookie> out = new ArrayList<HttpCookie>();
         if(cookies!=null) {
-            for (Iterator i = out.iterator(); i.hasNext();) {
-                Cookie cookie = (Cookie) i.next();
+            for (Cookie cookie : cookies) {
                 out.add(CookieUtils.fromServletCookie(cookie, false));
             }
         }
-        return (HttpCookie[]) out.toArray(new HttpCookie[out.size()]);
+        return out.toArray(new HttpCookie[out.size()]);
     }
 
     public String getMethod() {
@@ -72,7 +71,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         if (queryParams == null || requestBodyParams == null) {
             collectParameters();
         }
-        String[] values = (String[]) allParams.get(name);
+        String[] values = allParams.get(name);
         if (values != null && values.length >= 1) {
             return values[0];
         } else {
@@ -90,7 +89,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
         // Check for PUT or POST; otherwise there can't be body params
         int len = request.getContentLength();
-        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Type = {0} bytes)", new Object[] { Integer.valueOf(len) }));
+        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Type = {0} bytes)", Integer.valueOf(len)));
         if (len == -1 || !("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod()))) {
             nobody();
             return;
@@ -116,11 +115,10 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         }
 
         // Combines queryParams and requestBodyParams into allParams.
-        Map allParams = new HashMap(queryParams);
-        for (Iterator i = requestBodyParams.keySet().iterator(); i.hasNext(); ) {
-            String name = (String) i.next();
-            String[] bodyValues = (String[]) requestBodyParams.get(name);
-            String[] queryValues = (String[]) queryParams.get(name);
+        Map<String, String[]> allParams = new HashMap<String, String[]>(queryParams);
+        for (String name : requestBodyParams.keySet()) {
+            String[] bodyValues = requestBodyParams.get(name);
+            String[] queryValues = queryParams.get(name);
             if (queryValues == null) {
                 allParams.put(name, bodyValues);
             } else {
@@ -148,26 +146,26 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     /**
      * @return the Map&lt;String, String[]&gt; of this request's parameters
      */
-    public Map getParameterMap() throws IOException {
+    public Map<String, String[]> getParameterMap() throws IOException {
         if (allParams == null) collectParameters();
         return allParams;
     }
 
     public String[] getParameterValues(String s) throws IOException {
         if (allParams == null) collectParameters();
-        return (String[]) allParams.get(s);
+        return allParams.get(s);
     }
 
-    public Enumeration getParameterNames() throws IOException {
+    public Enumeration<String> getParameterNames() throws IOException {
         if (allParams == null) collectParameters();
-        return new IteratorEnumeration(allParams.keySet().iterator());
+        return new IteratorEnumeration<String>(allParams.keySet().iterator());
     }
 
     /**
      * @return the Map&lt;String, String[]&gt; of parameters found in the URL query string.
      * @since SecureSpan 3.7
      */
-    public Map getQueryParameterMap() throws IOException {
+    public Map<String, String[]> getQueryParameterMap() throws IOException {
         if (queryParams == null) collectParameters();
         return queryParams;
     }
@@ -176,7 +174,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
      * @return the Map&lt;String, String[]&gt; of parameters found in the request message body.
      * @since SecureSpan 3.7
      */
-    public Map getRequestBodyParameterMap() throws IOException {
+    public Map<String, String[]> getRequestBodyParameterMap() throws IOException {
         if (requestBodyParams == null) collectParameters();
         return requestBodyParams;
     }
@@ -196,15 +194,14 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     public int getIntHeader(String name) {
         try {
             return request.getIntHeader(name);
-        }
-        catch(NumberFormatException nfe) {
+        } catch (NumberFormatException nfe) {
             return -1;
         }
     }
 
     public String getHeaderSingleValue(String name) throws IOException {
         Enumeration en = request.getHeaders(name);
-        while (en.hasMoreElements()) {
+        if (en.hasMoreElements()) {
             String value = (String)en.nextElement();
             if (en.hasMoreElements())
                 throw new IOException("More than one value found for HTTP request header " + name);
@@ -215,22 +212,22 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
     public String[] getHeaderNames() {
         Enumeration names = request.getHeaderNames();
-        List out = new ArrayList();
+        List<String> out = new ArrayList();
         while (names.hasMoreElements()) {
             String name = (String)names.nextElement();
             out.add(name);
         }
-        return (String[])out.toArray(new String[0]);
+        return out.toArray(new String[0]);
     }
 
     public String[] getHeaderValues(String name) {
         Enumeration values = request.getHeaders(name);
-        List out = new ArrayList();
+        List<String> out = new ArrayList();
         while (values.hasMoreElements()) {
             String value = (String)values.nextElement();
             out.add(value);
         }
-        return (String[])out.toArray(new String[0]);
+        return out.toArray(new String[0]);
     }
 
     public X509Certificate[] getClientCertificate() throws IOException {
