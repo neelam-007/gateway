@@ -461,7 +461,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
      * @return the hex dump of the SHA-1 digest of the specified file.
      * @throws java.io.IOException if there is a problem reading the file
      */
-    private String getFileSha1(File file) throws IOException {
+    static String getFileSha1(File file) throws IOException {
         FileInputStream fis = null;
         try {
             fis = new FileInputStream(file);
@@ -469,7 +469,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             digest.reset();
             byte[] buf = new byte[8192];
             int got;
-            while ((got = fis.read()) > 0)
+            while ((got = fis.read(buf)) > 0)
                 digest.update(buf, 0, got);
             return HexUtils.hexDump(digest.digest());
 
