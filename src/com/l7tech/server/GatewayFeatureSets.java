@@ -403,7 +403,8 @@ public class GatewayFeatureSets {
             fs(availabilityAccel),
             fs(auditAccel),
             fs(policyAccel),
-            fs(threatAccel));
+            fs(threatAccel),
+            fs(moduleLoader));
 
         fsp("set:Profile:Firewall", "SecureSpan Firewall",
             "XML firewall with custom assertions.  No BRA, no JMS, no special XML VPN Client support",
