@@ -84,6 +84,8 @@
             <include name="commons-logging-1.0.4.jar"/>
             <include name="mailapi-1.4.jar"/>
             <include name="forms_rt-l7p1.jar"/>
+            <include name="xss4j.jar"/>
+            <include name="commons-*.jar"/>
         </fileset>
         <pathelement location="${UneasyRooster.dir}/build/classes"/>
     </path>
