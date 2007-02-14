@@ -144,7 +144,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     }
 
     /**
-     * @return the Map&lt;String, String[]&gt; of this request's parameters
+     * @return this request's parameters
      */
     public Map<String, String[]> getParameterMap() throws IOException {
         if (allParams == null) collectParameters();
