@@ -24,6 +24,7 @@ import com.l7tech.service.PublishedService;
 import javax.wsdl.Operation;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * A MessageSummaryAuditRecord must be generated upon the conclusion of the processing of a message,
@@ -85,37 +86,44 @@ public class MessageSummaryAuditFactory {
         Message request = context.getRequest();
         String requestId;
         requestId = context.getRequestId().toString();
-        if (context.isAuditSaveRequest()) {
-            try {
-                byte[] req = HexUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(true));
-                String encoding = request.getMimeKnob().getFirstPart().getContentType().getEncoding();
-                requestXml = new String(req, encoding);
-                requestContentLength = requestXml.length();
-            } catch (Throwable t) {
-                requestXml = null;
+        try {
+            if (context.isAuditSaveRequest() && request.isXml()) {
+                try {
+                    byte[] req = HexUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(true));
+                    String encoding = request.getMimeKnob().getFirstPart().getContentType().getEncoding();
+                    requestXml = new String(req, encoding);
+                    requestContentLength = requestXml.length();
+                } catch (Throwable t) {
+                    requestXml = null;
+                }
+
+                if ( requestContentLength == -1 && requestXml != null ) requestContentLength = requestXml.length();
             }
-
-            if ( requestContentLength == -1 && requestXml != null ) requestContentLength = requestXml.length();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "unexpected problem while testing for xml content");
         }
-
         TcpKnob reqTcp = (TcpKnob)request.getKnob(TcpKnob.class);
         if (reqTcp != null)
             clientAddr = reqTcp.getRemoteAddress();
 
         // Response info
         Message response = context.getResponse();
-        if (context.isAuditSaveResponse()) {
-            if (response.getKnob(MimeKnob.class) != null) {
-                try {
-                    byte[] resp = HexUtils.slurpStream(response.getMimeKnob().getFirstPart().getInputStream(false));
-                    String encoding = response.getMimeKnob().getFirstPart().getContentType().getEncoding();
-                    responseXml = new String(resp, encoding);
-                } catch (Throwable t) {
-                    responseXml = null;
+        try {
+            if (context.isAuditSaveResponse() && response.isXml()) {
+                if (response.getKnob(MimeKnob.class) != null) {
+                    try {
+                        byte[] resp = HexUtils.slurpStream(response.getMimeKnob().getFirstPart().getInputStream(false));
+                        String encoding = response.getMimeKnob().getFirstPart().getContentType().getEncoding();
+                        responseXml = new String(resp, encoding);
+                    } catch (Throwable t) {
+                        responseXml = null;
+                    }
                 }
-            }
 
-            if (responseXml != null) responseContentLength = responseXml.length();
+                if (responseXml != null) responseContentLength = responseXml.length();
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "unexpected problem while testing for xml content");
         }
 
         int responseHttpStatus = -1;
