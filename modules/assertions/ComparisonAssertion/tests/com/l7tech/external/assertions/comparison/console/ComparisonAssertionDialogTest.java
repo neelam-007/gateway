@@ -15,7 +15,7 @@ public class ComparisonAssertionDialogTest {
         ComparisonAssertion ca = new ComparisonAssertion();
         JFrame owner = new JFrame();
         owner.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        ComparisonPropertiesDialog dialog = new ComparisonPropertiesDialog(owner, true, ca);
+        ComparisonPropertiesDialog dialog = new ComparisonPropertiesDialog(owner, ca);
         dialog.pack();
         dialog.setVisible(true);
     }
