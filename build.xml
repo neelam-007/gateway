@@ -572,7 +572,7 @@
             <test name="com.l7tech.common.security.wsfederation.FederationPassiveClientTest" haltonfailure="no"/>
             <test name="com.l7tech.common.util.EncryptionUtilTest" haltonfailure="no"/>
             <test name="com.l7tech.server.GatewayFeatureSetsTest" haltonfailure="no"/>
-            <test name="com.l7tech.server.polciy.ServerAssertionRegistryTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.policy.ServerAssertionRegistryTest" haltonfailure="no"/>
 
             <!--
               Move these WS-SecurityPolicy tests to test.intensive after a release
