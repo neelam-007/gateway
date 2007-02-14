@@ -336,15 +336,24 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
     private class CustomServiceResponse extends CustomService implements ServiceResponse {
         private final PolicyEnforcementContext pec;
         private final Map context = new HashMap();
-        private final Document document;
-        private final Document requestDocument;
+        private Document document;
+        private Document requestDocument;
         private final SecurityContext securityContext;
 
         public CustomServiceResponse(PolicyEnforcementContext pec) throws IOException, SAXException {
             this.pec = pec;
-            this.document = (Document)pec.getResponse().getXmlKnob().getDocumentReadOnly().cloneNode(true);
-            this.requestDocument = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
-
+            try {
+                this.document = (Document)pec.getResponse().getXmlKnob().getDocumentReadOnly().cloneNode(true);
+            } catch (Exception e) {
+                this.document = null;
+                logger.log(Level.FINE, "cannot get response xml", e);
+            }
+            try {
+                this.requestDocument = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
+            } catch (Exception e) {
+                this.requestDocument = null;
+                logger.log(Level.FINE, "cannot get request xml", e);
+            }
             saveServletKnobs(pec, context);
 
             // plug in the message parts in here
@@ -418,13 +427,19 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
     private class CustomServiceRequest extends CustomService implements ServiceRequest {
         private final PolicyEnforcementContext pec;
         private final Map context = new HashMap();
-        private final Document document;
+        private Document document;
         private final SecurityContext securityContext;
 
         public CustomServiceRequest(PolicyEnforcementContext pec)
           throws IOException, SAXException {
             this.pec = pec;
-            this.document = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
+
+            try {
+                this.document = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
+            } catch (Exception e) {
+                logger.log(Level.FINE, "This request may not be XML", e);
+                this.document = null;
+            }
             Vector newCookies = toServletCookies(pec.getCookies());
 
             saveServletKnobs(pec, context);
