@@ -10,7 +10,7 @@ import com.l7tech.common.util.ComparisonOperator;
 */
 public class BinaryPredicate extends Predicate {
     private String rightValue;
-    private ComparisonOperator operator;
+    private ComparisonOperator operator = ComparisonOperator.EQ;
     private boolean caseSensitive;
 
     public BinaryPredicate() {
