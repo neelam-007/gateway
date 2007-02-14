@@ -537,7 +537,7 @@ public class SoapUtil {
             Element element = (Element)elements.item(i);
             String id = getElementWsuId(element);
             Element existing = (Element)map.put(id, element);
-            if (existing != null)
+            if (existing != null && id != null)
                 throw new InvalidDocumentFormatException("Duplicate wsu:Id:" + id);
         }
         return map;
