@@ -6,7 +6,6 @@ import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -18,13 +17,12 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
-import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * User: megery
@@ -38,7 +36,6 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     private JLabel panelHeader;
     private JPanel mainPanel;
     private JButton addWSDL;
-    private JButton deleteWSDL;
 
     private WsdlListModel wsdlListModel;
     private JList sourceWsdlList;
@@ -49,7 +46,6 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     private JList sourceOperationsList;
     private DefaultListModel sourceOperationsListModel;
 
-    private JPanel sourceTreePanel;
     private JTree sourcePreviewTree;
     private WsdlTreeModel sourceWsdlTreeModel;
 
@@ -122,11 +118,11 @@ public class WSDLCompositionPanel extends WizardStepPanel{
             }
         });
 
-        deleteWSDL.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                doDeleteWsdl();
-            }
-        });
+//        deleteWSDL.addActionListener(new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//                doDeleteWsdl();
+//            }
+//        });
 
         sourceWsdlList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent listSelectionEvent) {
@@ -185,17 +181,17 @@ public class WSDLCompositionPanel extends WizardStepPanel{
 
     }
 
-    private void doDeleteWsdl() {
-        int selectedIndex = sourceWsdlList.getSelectedIndex();
-        if (selectedIndex >= 0 && selectedIndex < wsdlListModel.getSize()) {
-            Object selObj = sourceWsdlList.getModel().getElementAt(selectedIndex);
-            if (selObj instanceof WsdlComposer.WsdlHolder) {
-                WsdlComposer.WsdlHolder holder = (WsdlComposer.WsdlHolder) selObj;
-                String s = new String(holder.wsdl.toString());
-                JOptionPane.showMessageDialog(WSDLCompositionPanel.this, "<code>" + s+ "</code>");
-            }
-        }
-    }
+//    private void doDeleteWsdl() {
+//        int selectedIndex = sourceWsdlList.getSelectedIndex();
+//        if (selectedIndex >= 0 && selectedIndex < wsdlListModel.getSize()) {
+//            Object selObj = sourceWsdlList.getModel().getElementAt(selectedIndex);
+//            if (selObj instanceof WsdlComposer.WsdlHolder) {
+//                WsdlComposer.WsdlHolder holder = (WsdlComposer.WsdlHolder) selObj;
+//                String s = new String(holder.wsdl.toString());
+//                JOptionPane.showMessageDialog(WSDLCompositionPanel.this, "<code>" + s+ "</code>");
+//            }
+//        }
+//    }
 
     private void doAddWsdl() {
         ChooseWsdlDialog dlg = new ChooseWsdlDialog(getOwner(), logger, "Choose WSDL");
@@ -220,13 +216,12 @@ public class WSDLCompositionPanel extends WizardStepPanel{
 
     public void readSettings(Object settings) throws IllegalArgumentException {
         WsdlComposer wsdlComposer = (WsdlComposer) settings;
-
-        resultOperationsListModel = new WsdlOperationsListModel(wsdlComposer);
-        resultOperationsList.setModel(resultOperationsListModel);
-
         resultingDef = wsdlComposer.getOutputWsdl();
-//        if (wsdlComposer == null)
-//            wsdlComposer = new WsdlComposer(resultingDef);
+
+        if (resultOperationsListModel == null) {
+            resultOperationsListModel = new WsdlOperationsListModel(wsdlComposer);
+            resultOperationsList.setModel(resultOperationsListModel);
+        }
         updateResultingWsdlView();
     }
 
@@ -280,10 +275,11 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     private void addToResultingWsdl() {
         Object[] selected = sourceOperationsList.getSelectedValues();
         if (selected != null && selected.length > 0) {
+            List<BindingOperation> ops = new ArrayList<BindingOperation>();
             for (Object o : selected) {
-                BindingOperation bo = (BindingOperation) o;
-                resultOperationsListModel.addBindingOperation(bo);
+                ops.add((BindingOperation) o);
             }
+            resultOperationsListModel.addBindingOperations(ops);
         }
         updateResultingWsdlView();
     }
@@ -291,10 +287,11 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     private void removeFromResultingWsdl() {
         Object[] selected = resultOperationsList.getSelectedValues();
         if (selected != null && selected.length > 0) {
+            List<BindingOperationHolder> ops = new ArrayList<BindingOperationHolder>();
             for (Object o : selected) {
-                BindingOperationHolder boh = (BindingOperationHolder) o;
-                resultOperationsListModel.removeBindingOperation(boh);
+                ops.add((BindingOperationHolder) o);
             }
+            resultOperationsListModel.removeBindingOperations(ops);
         }
         updateResultingWsdlView();
     }
@@ -315,6 +312,10 @@ public class WSDLCompositionPanel extends WizardStepPanel{
             return wsdlList.get(index);
         }
 
+        public void update() {
+            fireContentsChanged(sourceWsdlList, 0, wsdlList.size());
+        }
+        
         public void addWsdl(Wsdl wsdl, String wsdlLocation) {
             if (wsdl != null) {
                 WsdlComposer.WsdlHolder holder = new WsdlComposer.WsdlHolder(wsdl, wsdlLocation);
@@ -379,7 +380,6 @@ public class WSDLCompositionPanel extends WizardStepPanel{
             dispose();
         }
 
-
         public boolean wasCancelled() {
             return wasCancelled;
         }
@@ -432,13 +432,13 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         private BindingOperation bindingOperation;
         private WsdlComposer.WsdlHolder sourceWsdlHolder;
 
-        public BindingOperationHolder(BindingOperation bo, WsdlComposer.WsdlHolder sourceWsdl) {
+        public BindingOperationHolder(BindingOperation bo ,WsdlComposer.WsdlHolder sourceWsdl) {
             this.bindingOperation = bo;
             this.sourceWsdlHolder = sourceWsdl;
         }
 
         public String toString() {
-            return sourceWsdlHolder.toString();
+            return bindingOperation.getName();
         }
     }
 
@@ -448,26 +448,33 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         public WsdlOperationsListModel(WsdlComposer wsdlComposer) {
             super();
             this.wsdlComposer = wsdlComposer;
+            populate();
         }
 
-        public void addBindingOperation(BindingOperation realOperation) {
-            try {
-                WsdlComposer.WsdlHolder sourceWsdl = getSelectedSourceWsdl();
+        private void populate() {
+            if (wsdlComposer != null)
+                addBindingOperations(wsdlComposer.getBindingOperations());
+        }
+
+        public void addBindingOperations(List<BindingOperation> operations) {
+
+            WsdlComposer.WsdlHolder sourceWsdl = getSelectedSourceWsdl();
+            wsdlComposer.addBindingOperations(operations, sourceWsdl);
+
+            for (BindingOperation realOperation: operations) {
                 BindingOperationHolder operationHolder = new BindingOperationHolder(realOperation, sourceWsdl);
                 this.addElement(operationHolder);
-                wsdlComposer.addBindingOperation(realOperation, sourceWsdl);
-            } catch (WSDLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (SAXException e) {
-                e.printStackTrace();
             }
         }
 
-        public void removeBindingOperation(BindingOperationHolder operationHolder) {
-            this.removeElement(operationHolder);
-            wsdlComposer.removeBindingOperation(operationHolder.bindingOperation, operationHolder.sourceWsdlHolder);
+        public void removeBindingOperations(List<BindingOperationHolder> operationHolders) {
+            for (BindingOperationHolder operationHolder : operationHolders) {
+                WsdlComposer.WsdlHolder wsdlHolder = operationHolder.sourceWsdlHolder;
+                wsdlComposer.removeBindingOperation(operationHolder.bindingOperation, wsdlHolder);
+                this.removeElement(operationHolder);
+
+
+            }
         }
     }
 }

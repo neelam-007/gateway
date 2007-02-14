@@ -15,6 +15,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -22,60 +23,125 @@ import java.util.*;
  * Time: 10:28:18 AM
  */
 public class WsdlComposer {
-    private Map<WsdlHolder, List<String>> operationsAdded;
+    private static final Logger logger = Logger.getLogger(WsdlComposer.class.getName());
+
+    private Map<WsdlHolder, ContentChanges> contentsAdded;
     private Definition outputWsdl;
     WSDLFactory wsdlFactory;
     private ExtensionRegistry extensionRegistry;
     private List<String> targetNamespaces;
 
-    public WsdlComposer(Definition def) {
-        operationsAdded = new HashMap<WsdlHolder, List<String>>();
+    public WsdlComposer(Definition def) throws WSDLException {
+        contentsAdded = new HashMap<WsdlHolder, ContentChanges>();
         targetNamespaces = new ArrayList<String>();
         outputWsdl = def;
-        try {
-            wsdlFactory = WSDLFactory.newInstance();
-            extensionRegistry = wsdlFactory.newPopulatedExtensionRegistry();
-        } catch (WSDLException e) {
-            e.printStackTrace();
-        }
+
+        wsdlFactory = WSDLFactory.newInstance();
+        extensionRegistry = wsdlFactory.newPopulatedExtensionRegistry();
     }
 
-    public void removeBindingOperation(BindingOperation bo, WsdlHolder sourceWsdlHolder) {
-        if (bo == null) return;
-        System.out.println("removing operations and types from output wsdl for " + sourceWsdlHolder);
-    }
+    public void removeBindingOperation(BindingOperation bopToRemove, WsdlHolder sourceWsdlHolder) {
+        if (bopToRemove == null) return;
 
-    public void addBindingOperation(BindingOperation oldBop, WsdlHolder sourceWsdl) throws WSDLException, IOException, SAXException {
-        if (oldBop == null) return;
-
-        List<String> opsAdded = operationsAdded.get(sourceWsdl);
-        if (opsAdded != null) {
-            if (opsAdded.contains(oldBop.getName())) {
-                return;
+        for (Object o : outputWsdl.getBindings().values()) {
+            Binding b = (Binding) o;
+            List bops = b.getBindingOperations();
+            int i = 0;
+            while(i < bops.size()) {
+                Object eachObj = bops.get(i);
+                BindingOperation eachBop  = (BindingOperation) eachObj;
+                if (eachBop.getName().equals(bopToRemove.getName())) {
+                    bops.remove(i);
+                    break;
+                }
+                i++;
             }
         }
 
-        Definition sourceDef = sourceWsdl.wsdl.getDefinition();
-        BindingOperation newBop = outputWsdl.createBindingOperation();
-        copyBindingOperation(oldBop, newBop);
-        addOperationsForBindingOperation(newBop);
-        addOperationToBindings(newBop);
-        updateTargetNamespaces(sourceDef);
-
-        if (opsAdded == null || opsAdded.size() == 0) {
-            opsAdded = new ArrayList<String>();
-            operationsAdded.put(sourceWsdl, opsAdded);
-            addTypes(sourceDef, sourceWsdl);
-        }
-        opsAdded.add(oldBop.getName());
+        updateResultDefinition(sourceWsdlHolder);
+        System.out.println("removing operations and types from output wsdl for " + sourceWsdlHolder);
     }
 
-    private void updateTargetNamespaces(Definition def) {
-        String targetNamespace = def.getTargetNamespace();
+    public void addBindingOperations(List<BindingOperation> oldBops, WsdlHolder sourceWsdlHolder) {
+        if (oldBops == null || oldBops.size() == 0) return;
+
+        for (BindingOperation oldBop : oldBops) {
+            ContentChanges changes = contentsAdded.get(sourceWsdlHolder);
+            if (changes != null) {
+                List<BindingOperation> bindingOperationsAdded = changes.getBindingOperations();
+                if (bindingOperationsAdded.contains(oldBop)) {
+                    return;
+                }
+            }
+
+            BindingOperation newBop = outputWsdl.createBindingOperation();
+            copyBindingOperation(oldBop, newBop);
+            addOperationToBindings(newBop);
+        }
+
+        if (sourceWsdlHolder != null)
+            updateResultDefinition(sourceWsdlHolder);
+    }
+
+    private void updateResultDefinition(WsdlHolder sourceWsdl) {
+        ContentChanges changes = contentsAdded.get(sourceWsdl);
+        if (changes == null) {
+            changes = new ContentChanges();
+        }
+
+        if (changes.getTypes() == null) {
+            Types t = outputWsdl.getTypes();
+            if (t != null)
+                t.getExtensibilityElements().clear();
+        }
+        
+        Map messages = outputWsdl.getMessages();
+        if (messages != null)
+            messages.clear();
+
+        for (Object portType : outputWsdl.getPortTypes().values()) {
+            PortType pt = (PortType) portType;
+            pt.getOperations().clear();
+        }
+
+        for (Object b : outputWsdl.getBindings().values()) {
+            Binding binding = (Binding) b;
+            for (Object bo : binding.getBindingOperations()) {
+                BindingOperation bindingOp = (BindingOperation) bo;
+                addOperationsForBindingOperations(bindingOp);
+                List<BindingOperation> bindingOpsAdded = changes.getBindingOperations();
+                if (bindingOpsAdded == null)
+                    bindingOpsAdded = new ArrayList<BindingOperation>();
+                bindingOpsAdded.add(bindingOp);
+                changes.setBindingOperations(bindingOpsAdded);
+                contentsAdded.put(sourceWsdl, changes);
+
+                try {
+                    addTypes(sourceWsdl.wsdl.getDefinition(), sourceWsdl);
+                } catch (WSDLException e) {
+                    logger.warning("Could not add types to the resulting WSDL: " + e.getMessage());
+                } catch (IOException e) {
+                    logger.warning("Could not add types to the resulting WSDL: " + e.getMessage());
+                } catch (SAXException e) {
+                    logger.warning("Could not add types to the resulting WSDL: " + e.getMessage());
+                }
+                addNamespaces(sourceWsdl.wsdl.getDefinition());
+            }
+        }
+    }
+
+    private void addNamespaces(Definition sourceDef) {
+        Map nsMap = sourceDef.getNamespaces();
+        for (Object o : nsMap.entrySet()) {
+            Map.Entry entry = (Map.Entry) o;
+            outputWsdl.addNamespace((String)entry.getKey(), (String)entry.getValue());
+        }
+        
+        String targetNamespace = sourceDef.getTargetNamespace();
+        
         if (!targetNamespaces.contains(targetNamespace))
             targetNamespaces.add(targetNamespace);
     }
-
 
     public List<String> getTargetNamespaces() {
         return targetNamespaces;
@@ -94,6 +160,14 @@ public class WsdlComposer {
     }
 
     private void addTypes(Definition sourceDef, WsdlHolder sourceWsdl) throws WSDLException, IOException, SAXException {
+        ContentChanges changes = contentsAdded.get(sourceWsdl);
+        if (changes != null) {
+            if (changes.getTypes() != null)
+                return;
+        } else {
+            changes = new ContentChanges();
+        }
+
         Types inputTypes = sourceDef.getTypes();
         Types outputTypes = outputWsdl.getTypes();
         if (outputTypes == null) {
@@ -117,14 +191,16 @@ public class WsdlComposer {
         }
 
         outputWsdl.setTypes(outputTypes);
+        changes.setTypes(outputTypes);
+        contentsAdded.put(sourceWsdl, changes);
     }
 
-    private void addOperationsForBindingOperation(BindingOperation newBop) {
+    private void addOperationsForBindingOperations(BindingOperation newBop) {
         for (Object o: outputWsdl.getPortTypes().values()) {
             PortType pt = (PortType) o;
             Operation op = newBop.getOperation();
-            addMessagesForOperation(op);
             pt.addOperation(op);
+            addMessagesForOperation(op);
         }
     }
 
@@ -132,14 +208,17 @@ public class WsdlComposer {
         Input input = op.getInput();
         Output output = op.getOutput();
 
+        if (input != null) {
+            Message inMess = input.getMessage();
+            if (inMess != null)
+                outputWsdl.addMessage(inMess);
+        }
 
-        Message m = input.getMessage();
-        m.getParts();
-        if (input != null)
-            outputWsdl.addMessage(input.getMessage());
-
-        if (output != null)
-            outputWsdl.addMessage(output.getMessage());
+        if (output != null) {
+            Message outMess = output.getMessage();
+            if (outMess != null)
+                outputWsdl.addMessage(outMess);
+        }
 
         for (Object o : op.getFaults().values()) {
             Fault f = (Fault) o;
@@ -164,7 +243,15 @@ public class WsdlComposer {
             ExtensibilityElement exel = (ExtensibilityElement) extElementObj;
             newBop.addExtensibilityElement(exel);
         }
+    }
 
+    public List<BindingOperation> getBindingOperations() {
+        List<BindingOperation> ops = new ArrayList<BindingOperation>();
+        for (Object o : outputWsdl.getBindings().values()) {
+            Binding b = (Binding) o;
+            ops.addAll(b.getBindingOperations());
+        }
+        return ops;
     }
 
     public static class WsdlHolder {
@@ -186,6 +273,27 @@ public class WsdlComposer {
 
         public boolean equals(Object obj) {
             return wsdl.equals(obj);
+        }
+    }
+
+    private class ContentChanges {
+        private Types types;
+        private List<BindingOperation> bindingOperations;
+
+        public List<BindingOperation> getBindingOperations() {
+            return bindingOperations;
+        }
+
+        public void setBindingOperations(List<BindingOperation> bindingOperations) {
+            this.bindingOperations = bindingOperations;
+        }
+
+        public Types getTypes() {
+            return types;
+        }
+
+        public void setTypes(Types types) {
+            this.types = types;
         }
     }
 }

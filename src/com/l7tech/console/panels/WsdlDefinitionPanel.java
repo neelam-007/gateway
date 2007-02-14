@@ -22,7 +22,6 @@ import java.util.Vector;
 public class WsdlDefinitionPanel extends WizardStepPanel {
 
     private JPanel mainPanel;
-    private JPanel namePanel;
     private JTextField nameField;
     private JComboBox targetNameSpaceField;
     private JTextField defaultNameSpaceField;
@@ -108,7 +107,8 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
         WsdlComposer wsdlComposer = (WsdlComposer) settings;
         Definition definition = wsdlComposer.getOutputWsdl();
 
-        nameField.setText(definition.getQName().getLocalPart());
+        QName qn = definition.getQName();
+        nameField.setText(qn == null?"":qn.getLocalPart());
 
         if (!namespacesModel.contains(definition.getTargetNamespace()))
             targetNameSpaceField.addItem(definition.getTargetNamespace());
