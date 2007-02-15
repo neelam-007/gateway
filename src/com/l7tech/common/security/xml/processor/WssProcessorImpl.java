@@ -1473,6 +1473,9 @@ public class WssProcessorImpl implements WssProcessor {
         for (int i = 0; i < numberOfReferences; i++) {
             // Resolve each elements one by one.
             String elementCoveredURI = validity.getReferenceURI(i);
+            if (elementCoveredURI!=null && elementCoveredURI.charAt(0) == '#') {
+                elementCoveredURI = elementCoveredURI.substring(1);
+            }
             Element elementCovered = (Element)cntx.elementsByWsuId.get(elementCoveredURI);
             if (elementCovered == null)
                 elementCovered = SoapUtil.getElementByWsuId(sigElement.getOwnerDocument(), elementCoveredURI);
