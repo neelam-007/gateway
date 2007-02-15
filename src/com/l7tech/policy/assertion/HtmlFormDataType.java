@@ -23,15 +23,24 @@ public class HtmlFormDataType implements Serializable {
 
     private final int _ordinal = _nextOrdinal ++;
 
-    private final String _name;
+    /** String representation used in XML serialization. Must not change for backward compatibility. */
+    private final String _wspName;
 
-    /** Map for looking up instance by name.
+    /** For UI display. Can be internationalized. */
+    private final String _displayName;
+
+    /** Map for looking up instance by wspName.
         The keys are of type String. The values are of type {@link HtmlFormDataType}. */
-    private static final Map _byName = new HashMap();
+    private static final Map _byWspName = new HashMap();
 
-    public static final HtmlFormDataType ANY = new HtmlFormDataType("<any>");
-    public static final HtmlFormDataType NUMBER = new HtmlFormDataType("number");
-    public static final HtmlFormDataType FILE = new HtmlFormDataType("file");
+    /** Map for looking up instance by displayName.
+        The keys are of type String. The values are of type {@link HtmlFormDataType}. */
+    private static final Map _byDisplayName = new HashMap();
+
+    // Warning: Never change wspName; in order to maintain backward compatibility.
+    public static final HtmlFormDataType ANY = new HtmlFormDataType("any", "<any>");
+    public static final HtmlFormDataType NUMBER = new HtmlFormDataType("number", "number");
+    public static final HtmlFormDataType FILE = new HtmlFormDataType("file", "file");
 
     private static final HtmlFormDataType[] _values = new HtmlFormDataType[]{ANY, NUMBER, FILE};
 
@@ -39,19 +48,32 @@ public class HtmlFormDataType implements Serializable {
         return (HtmlFormDataType[])_values.clone();
     }
 
-    public static HtmlFormDataType valueOf(final String name) {
-        return (HtmlFormDataType)_byName.get(name);
+    public static HtmlFormDataType fromWspName(final String wspName) {
+        return (HtmlFormDataType) _byWspName.get(wspName);
     }
 
-    private HtmlFormDataType(final String name) {
-        _name = name;
-        //noinspection unchecked
-        _byName.put(name, this);
+    public static HtmlFormDataType fromDisplayName(final String displayName) {
+        return (HtmlFormDataType) _byDisplayName.get(displayName);
+    }
+
+    private HtmlFormDataType(final String wspName, final String displayName) {
+        _wspName = wspName;
+        _displayName = displayName;
+        _byWspName.put(wspName, this);
+        _byDisplayName.put(displayName, this);
+    }
+
+    public String getWspName() {
+        return _wspName;
+    }
+
+    public String getDisplayName() {
+        return _displayName;
     }
 
     /** @return a String representation suitable for UI display */
     public String toString() {
-        return _name;
+        return _displayName;
     }
 
     protected Object readResolve() throws ObjectStreamException {
@@ -63,12 +85,12 @@ public class HtmlFormDataType implements Serializable {
         return new EnumTranslator() {
             public String objectToString(Object target) {
                 HtmlFormDataType dataType = (HtmlFormDataType)target;
-                return dataType.toString();
+                return dataType.getWspName();
             }
 
-            public Object stringToObject(String name) throws IllegalArgumentException {
-                HtmlFormDataType dataType = HtmlFormDataType.valueOf(name);
-                if (dataType == null) throw new IllegalArgumentException("Unknown HtmlFormDataType name: '" + name + "'");
+            public Object stringToObject(String wspName) throws IllegalArgumentException {
+                HtmlFormDataType dataType = HtmlFormDataType.fromWspName(wspName);
+                if (dataType == null) throw new IllegalArgumentException("Unknown HtmlFormDataType: '" + wspName + "'");
                 return dataType;
             }
         };

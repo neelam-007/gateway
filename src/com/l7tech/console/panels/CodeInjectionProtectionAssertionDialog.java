@@ -71,7 +71,7 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
                 for (Enumeration<AbstractButton> i = _protectionButtons.getElements(); i.hasMoreElements();) {
                     final JRadioButton button = (JRadioButton) i.nextElement();
                     final String name = button.getText();
-                    final CodeInjectionProtectionType protection = CodeInjectionProtectionType.valueOf(name);
+                    final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromDisplayName(name);
                     button.setEnabled(!_responseRadioButton.isSelected() || protection.isApplicableToResponse());
                 }
                 enableOkButton();
@@ -92,13 +92,13 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
         c.gridx = 1;
         c.anchor = GridBagConstraints.WEST;
         for (CodeInjectionProtectionType protection : CodeInjectionProtectionType.values()) {
-            final JRadioButton radioButton = new JRadioButton(protection.getName());
-            radioButton.setActionCommand(protection.getName());
+            final JRadioButton radioButton = new JRadioButton(protection.getDisplayName());
+            radioButton.setActionCommand(protection.getDisplayName());
             radioButton.setSelected(protection == _assertion.getProtection());
             radioButton.addMouseListener(new MouseAdapter() {
                 public void mouseEntered(MouseEvent e) {
                     final String name = ((JRadioButton) e.getComponent()).getText();
-                    final CodeInjectionProtectionType protection = CodeInjectionProtectionType.valueOf(name);
+                    final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromDisplayName(name);
                     _descriptionText.setText(protection.getDescription());
                 }
 
@@ -151,7 +151,7 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
         _assertion.setIncludeResponseBody(_responseRadioButton.isSelected());
 
         final String name = _protectionButtons.getSelection().getActionCommand();
-        final CodeInjectionProtectionType protection = CodeInjectionProtectionType.valueOf(name);
+        final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromWspName(name);
         _assertion.setProtection(protection);
         
         _modified = true;

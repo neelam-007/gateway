@@ -23,15 +23,24 @@ public class HtmlFormDataLocation implements Serializable {
 
     private final int _ordinal = _nextOrdinal ++;
 
-    private final String _name;
+    /** String representation used in XML serialization. Must not change for backward compatibility. */
+    private final String _wspName;
 
-    /** Map for looking up instance by name.
+    /** For UI display. Can be internationalized. */
+    private final String _displayName;
+
+    /** Map for looking up instance by wspName.
         The keys are of type String. The values are of type {@link HtmlFormDataLocation}. */
-    private static final Map _byName = new HashMap();
+    private static final Map _byWspName = new HashMap();
 
-    public static final HtmlFormDataLocation ANYWHERE = new HtmlFormDataLocation("anywhere");
-    public static final HtmlFormDataLocation URL = new HtmlFormDataLocation("request URL");
-    public static final HtmlFormDataLocation BODY = new HtmlFormDataLocation("request body");
+    /** Map for looking up instance by displayName.
+        The keys are of type String. The values are of type {@link HtmlFormDataLocation}. */
+    private static final Map _byDisplayName = new HashMap();
+
+    // Warning: Never change wspName; in order to maintain backward compatibility.
+    public static final HtmlFormDataLocation ANYWHERE = new HtmlFormDataLocation("anywhere", "anywhere");
+    public static final HtmlFormDataLocation URL = new HtmlFormDataLocation("request URL", "request URL");
+    public static final HtmlFormDataLocation BODY = new HtmlFormDataLocation("request body", "request body");
 
     private static final HtmlFormDataLocation[] _values = new HtmlFormDataLocation[]{ANYWHERE, URL, BODY};
 
@@ -39,19 +48,32 @@ public class HtmlFormDataLocation implements Serializable {
         return (HtmlFormDataLocation[])_values.clone();
     }
 
-    public static HtmlFormDataLocation valueOf(final String name) {
-        return (HtmlFormDataLocation)_byName.get(name);
+    public static HtmlFormDataLocation fromWspName(final String wspName) {
+        return (HtmlFormDataLocation) _byWspName.get(wspName);
     }
 
-    private HtmlFormDataLocation(final String name) {
-        _name = name;
-        //noinspection unchecked
-        _byName.put(name, this);
+    public static HtmlFormDataLocation fromDisplayName(final String displayName) {
+        return (HtmlFormDataLocation) _byDisplayName.get(displayName);
+    }
+
+    private HtmlFormDataLocation(final String wspName, final String displayName) {
+        _wspName = wspName;
+        _displayName = displayName;
+        _byWspName.put(wspName, this);
+        _byDisplayName.put(displayName, this);
+    }
+
+    public String getWspName() {
+        return _wspName;
+    }
+
+    public String getDisplayName() {
+        return _displayName;
     }
 
     /** @return a String representation suitable for UI display */
     public String toString() {
-        return _name;
+        return _displayName;
     }
 
     protected Object readResolve() throws ObjectStreamException {
@@ -63,12 +85,12 @@ public class HtmlFormDataLocation implements Serializable {
         return new EnumTranslator() {
             public String objectToString(Object target) {
                 HtmlFormDataLocation location = (HtmlFormDataLocation)target;
-                return location.toString();
+                return location.getWspName();
             }
 
-            public Object stringToObject(String name) throws IllegalArgumentException {
-                HtmlFormDataLocation location = HtmlFormDataLocation.valueOf(name);
-                if (location == null) throw new IllegalArgumentException("Unknown HtmlFormDataLocation name: '" + name + "'");
+            public Object stringToObject(String wspName) throws IllegalArgumentException {
+                HtmlFormDataLocation location = HtmlFormDataLocation.fromWspName(wspName);
+                if (location == null) throw new IllegalArgumentException("Unknown HtmlFormDataLocation: '" + wspName + "'");
                 return location;
             }
         };

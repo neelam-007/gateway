@@ -24,30 +24,43 @@ public class CodeInjectionProtectionType implements Serializable {
 
     private final int _ordinal = _nextOrdinal ++;
 
-    private final String _name;
+    /** String representation used in XML serialization. Must not change for backward compatibility. */
+    private final String _wspName;
+
+    /** For UI display. Can be internationalized. */
+    private final String _displayName;
 
     private final String _description;
 
     /** Regular expression pattern to detect code injection. */
     private final Pattern _pattern;
 
+    /** Whether this type of protection is applicable to response messages. */
     private final boolean _applicableToResponse;
 
-    /** Map for looking up instance by name.
-        The keys are of type String. The values are of type {@link HtmlFormDataLocation}. */
-    private static final Map _byName = new HashMap();
+    /** Map for looking up instance by wspName.
+        The keys are of type String. The values are of type {@link CodeInjectionProtectionType}. */
+    private static final Map _byWspName = new HashMap();
 
+    /** Map for looking up instance by displayName.
+        The keys are of type String. The values are of type {@link CodeInjectionProtectionType}. */
+    private static final Map _byDisplayName = new HashMap();
+
+    // Warning: Never change wspName; in order to maintain backward compatibility.
     public static final CodeInjectionProtectionType HTML_JAVASCRIPT = new CodeInjectionProtectionType(
+            "HTML/JavaScript injection (Cross Site Scripting)",
             "HTML/JavaScript injection (Cross Site Scripting)",
             "Blocks messages which appear to contain JavaScript by scanning for <script> tag.",
             Pattern.compile("<\\s*script", Pattern.CASE_INSENSITIVE),
             true);
     public static final CodeInjectionProtectionType PHP_EVAL_INJECTION = new CodeInjectionProtectionType(
             "PHP eval injection",
+            "PHP eval injection",
             "Blocks messages which contains metacharacters that can be used to inject PHP code into a PHP eval statement. These metacharacters are ';\"\\.",
             Pattern.compile("[';\"\\\\]"),
             false);
     public static final CodeInjectionProtectionType SHELL_INJECTION = new CodeInjectionProtectionType(
+            "Shell injection",
             "Shell injection",
             "Blocks messages which contains metacharacters that can be used to inject shell script into a system call statement.  These metacharacters are `;|&>\\.",
             Pattern.compile("[`;|&>\\\\]"),
@@ -60,30 +73,40 @@ public class CodeInjectionProtectionType implements Serializable {
     }
 
     /**
-     * Returns the enum constant of this type with the specified name.
+     * Returns the enum constant of this type with the specified wspName.
      *
-     * @param name  name of enum constant
-     * @return the enum constant with the specified name; <code>null</code> if
-     *         this enum type has no constant with the specified name
+     * @param wspName  wspName of enum constant
+     * @return the enum constant with the specified wspName; <code>null</code> if
+     *         this enum type has no constant with the specified wspName
      */
-    public static CodeInjectionProtectionType valueOf(final String name) {
-        return (CodeInjectionProtectionType)_byName.get(name);
+    public static CodeInjectionProtectionType fromWspName(final String wspName) {
+        return (CodeInjectionProtectionType) _byWspName.get(wspName);
     }
 
-    private CodeInjectionProtectionType(final String name,
+    public static CodeInjectionProtectionType fromDisplayName(final String displayName) {
+        return (CodeInjectionProtectionType) _byDisplayName.get(displayName);
+    }
+
+    private CodeInjectionProtectionType(final String wspName,
+                                        final String displayName,
                                         final String description,
                                         final Pattern pattern,
                                         final boolean applicableToResponse) {
-        _name = name;
+        _wspName = wspName;
+        _displayName = displayName;
         _description = description;
         _pattern = pattern;
         _applicableToResponse = applicableToResponse;
-        //noinspection unchecked
-        _byName.put(name, this);
+        _byWspName.put(wspName, this);
+        _byDisplayName.put(displayName, this);
     }
 
-    public String getName() {
-        return _name;
+    public String getWspName() {
+        return _wspName;
+    }
+
+    public String getDisplayName() {
+        return _displayName;
     }
 
     public String getDescription() {
@@ -99,8 +122,9 @@ public class CodeInjectionProtectionType implements Serializable {
         return _applicableToResponse;
     }
 
+    /** @return a String representation suitable for UI display */
     public String toString() {
-        return _name;
+        return _displayName;
     }
 
     protected Object readResolve() throws ObjectStreamException {
@@ -112,12 +136,12 @@ public class CodeInjectionProtectionType implements Serializable {
         return new EnumTranslator() {
             public String objectToString(Object target) {
                 CodeInjectionProtectionType type = (CodeInjectionProtectionType)target;
-                return type.toString();
+                return type.getWspName();
             }
 
-            public Object stringToObject(String name) throws IllegalArgumentException {
-                CodeInjectionProtectionType type = CodeInjectionProtectionType.valueOf(name);
-                if (type == null) throw new IllegalArgumentException("Unknown CodeInjectionProtectionType name: '" + name + "'");
+            public Object stringToObject(String wspName) throws IllegalArgumentException {
+                CodeInjectionProtectionType type = CodeInjectionProtectionType.fromWspName(wspName);
+                if (type == null) throw new IllegalArgumentException("Unknown CodeInjectionProtectionType: '" + wspName + "'");
                 return type;
             }
         };

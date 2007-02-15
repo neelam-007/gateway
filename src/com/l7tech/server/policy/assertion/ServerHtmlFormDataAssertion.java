@@ -152,12 +152,12 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                         try {
                             Double.valueOf(fieldValue.value);
                         } catch (NumberFormatException e) {
-                            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, new String[]{field.name, fieldValue.value, allowedDataType.toString()});
+                            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, new String[]{field.name, fieldValue.value, allowedDataType.getWspName()});
                             return AssertionStatus.FAILED;
                         }
                     } else if (allowedDataType == HtmlFormDataType.FILE) {
                         if (!fieldValue.isFile) {
-                            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, new String[]{field.name, fieldValue.value, allowedDataType.toString()});
+                            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, new String[]{field.name, fieldValue.value, allowedDataType.getWspName()});
                         }
                     } else {
                         throw new IllegalArgumentException("Internal Error: Missing handler for data type " + allowedDataType);
