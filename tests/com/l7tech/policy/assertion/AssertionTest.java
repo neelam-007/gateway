@@ -85,4 +85,10 @@ public class AssertionTest extends TestCase {
         assertEquals(10, ct2.getOrdinal());
         assertTrue(root.getAssertionWithOrdinal(9) == ct1);
     }
+
+    public void testFindFeatureName() throws Exception {
+        String compClassname = "com.l7tech.external.assertions.comparison.ComparisonAssertion";
+        String defaultCompFs = Assertion.makeDefaultFeatureSetName(compClassname, "com.l7tech.external.assertions.comparison");
+        assertEquals("assertion:Comparison", defaultCompFs);
+    }
 }

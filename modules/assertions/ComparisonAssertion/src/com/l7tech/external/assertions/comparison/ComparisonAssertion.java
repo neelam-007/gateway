@@ -128,6 +128,10 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.comparison.server.ServerComparisonAssertion");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.comparison.console.ComparisonPropertiesDialog");
 
+        // request default feature set name for our class name, since we are a known optional module
+        // that is, we want our required feature set to be "assertion:Comparison" rather than "set:modularAssertions"
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/check16.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME, new Functions.Unary<String, ComparisonAssertion>() {

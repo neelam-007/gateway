@@ -527,7 +527,11 @@ public abstract class Assertion implements Cloneable, Serializable {
     final String getDefaultFeatureSetName() {
         String fullName = getClass().getName();
         String basePackage = (String)meta().get(AssertionMetadata.BASE_PACKAGE);
-        String rest = ClassUtils.stripPrefix(fullName, basePackage + "."); // "com.yoyodyne.assertion.a.b.FooAssertion" => "assertion.a.b.FooAssertion"
+        return makeDefaultFeatureSetName(fullName, basePackage);
+    }
+
+    static String makeDefaultFeatureSetName(String fullClassname, String basePackage) {
+        String rest = ClassUtils.stripPrefix(fullClassname, basePackage + "."); // "com.yoyodyne.assertion.a.b.FooAssertion" => "assertion.a.b.FooAssertion"
         rest = ClassUtils.stripPrefix(rest, "policy.");
         rest = ClassUtils.stripPrefix(rest, "assertion.");                 // "assertion.a.b.FooAssertion" => "a.b.FooAssertion"
         rest = ClassUtils.stripSuffix(rest, "Assertion");
