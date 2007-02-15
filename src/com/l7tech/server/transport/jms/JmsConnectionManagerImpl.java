@@ -13,6 +13,7 @@ import org.springframework.beans.factory.InitializingBean;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -27,18 +28,19 @@ public class JmsConnectionManagerImpl
         extends HibernateEntityManager<JmsConnection, EntityHeader>
         implements InitializingBean, JmsConnectionManager
 {
-    private List<JmsProvider> _allProviders = null;
+    private final List<JmsProvider> _allProviders;
+
+    public JmsConnectionManagerImpl() {
+        // TODO make this real, eh?!!
+        JmsProvider tibcoEmsProvider = new JmsProvider("Tibco EMS", "com.tibco.tibjms.naming.TibjmsInitialContextFactory", "QueueConnectionFactory");
+        JmsProvider mqSeriesOverLdapProvider = new JmsProvider("WebSphere MQ over LDAP", "com.sun.jndi.ldap.LdapCtxFactory", "QueueConnectionFactory");
+        List<JmsProvider> list = new ArrayList<JmsProvider>();
+        list.add(tibcoEmsProvider);
+        list.add(mqSeriesOverLdapProvider);
+        _allProviders = Collections.unmodifiableList(list);
+    }
 
     public Collection<JmsProvider> findAllProviders() throws FindException {
-        // TODO make this real, eh?!!
-        if (_allProviders == null) {
-            JmsProvider jbossmq = new JmsProvider("JBossMQ", "org.jnp.interfaces.NamingContextFactory", "QueueConnectionFactory");
-            JmsProvider mqLdap = new JmsProvider("WebSphere MQ over LDAP", "com.sun.jndi.ldap.LdapCtxFactory", "L7QueueConnectionFactory");
-            List<JmsProvider> list = new ArrayList<JmsProvider>();
-            list.add(jbossmq);
-            list.add(mqLdap);
-            _allProviders = list;
-        }
         return _allProviders;
     }
 
