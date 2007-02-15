@@ -6,12 +6,15 @@ package com.l7tech.policy.assertion;
  * @see DefaultAssertionMetadata  for the default implementation
  */
 public interface AssertionMetadata {
-    /** String.  Base name of this assertion, ie "OneOrMore". */
+    /**
+     * String.  Base name of this assertion, ie "OneOrMore".
+     * Defaults to assertion classname with the package name and any trailing "Assertion" removed.
+     */
     String BASE_NAME = "baseName";
 
     /**
      * String.  Base package name of this assertion, ie "com.l7tech".
-     * Defaults to assertion package name with any trailing "assertion" package removed.
+     * Defaults to assertion package name with any trailing "policy.assertion", "policy", or "assertion" packages removed.
      */
     String BASE_PACKAGE = "basePackage";
 
@@ -27,19 +30,38 @@ public interface AssertionMetadata {
      */
     String CLIENT_ASSERTION_CLASSNAME = "clientAssertionClassname";
 
-    /** String.  Name to display on "Properties..." pop-up menu action if using the DefaultAssertionPropertiesAction. */
+    /**
+     * String.  Name to display on "Properties..." pop-up menu action if using the DefaultAssertionPropertiesAction.
+     * <P/>
+     * Defaults to SHORT_NAME converted to title caps, then followed by " Properties".
+     * For example, a SHORT_NAME of "Request XML integrity" would lead to a default properties action name of
+     * "Request XML Integrity Properties".
+     */
     String PROPERTIES_ACTION_NAME = "propertiesActionName";
 
-    /** String.  Tooltip/description for "Properties..." pop-up menu action if using the DefaultAssertionPropertiesAction. */
+    /**
+     * String.  Tooltip/description for "Properties..." pop-up menu action if using the DefaultAssertionPropertiesAction.
+     * Defaults to "Change the properties of the ${shortName} assertion."
+     */
     String PROPERTIES_ACTION_DESC = "propertiesActionDesc";
 
-    /** String.  Name to display on the palette node for this assertion, if using DefaultAssertionPaletteNode. */
+    /**
+     * String.  Name to display on the palette node for this assertion, if using DefaultAssertionPaletteNode.
+     * Defaults to SHORT_NAME.
+     */
     String PALETTE_NODE_NAME = "paletteNodeName";
 
-    /** String file path.  Icon to display for the palette node for this assertion, if using DefaultAssertionPaletteNode. */
+    /**
+     * String file path.  Icon to display for the palette node for this assertion, if using DefaultAssertionPaletteNode.
+     * Defaults to "com/l7tech/console/resources/policy16.gif", which is a picture of a small piece of paper with
+     * writing, and is always available on both SSM and manager applet.
+     */
     String PALETTE_NODE_ICON = "paletteNodeIcon";
 
-    /** String classname.  Name of AbstractAssertionPaletteNode subclass to use when creating palette nodes for this assertion. */
+    /**
+     * String classname.  Name of AbstractAssertionPaletteNode subclass to use when creating palette nodes for this assertion.
+     * Defaults to "${basePackage}.console.tree.${baseName}PaletteNode".
+     */
     String PALETTE_NODE_CLASSNAME = "paletteNodeClassname";
 
     /**
@@ -83,15 +105,22 @@ public interface AssertionMetadata {
      * Functions.Unary< String, Assertion >.  Generator of name to display on the policy node for this assertion,
      * if using DefaultAssertionPolicyNode.  This is a generator rather than just simple String so that it can
      * vary based on the configuration of the particular assertion whose policy node is being displayed.
+     * <p/>
+     * Defaults to a generator that always returns SHORT_NAME.
      */
     String POLICY_NODE_NAME = "policyNodeName";
 
-    /** String file path.  Icon to display for the policy node for this assertion, if using DefaultAssertionPolicyNode. */
+    /**
+     * String file path.  Icon to display for the policy node for this assertion, if using DefaultAssertionPolicyNode.
+     * Defaults to "com/l7tech/console/resources/policy16.gif", which is a picture of a small piece of paper with
+     * writing, and is always available on both SSM and manager applet.
+     */
     String POLICY_NODE_ICON = "policyNodeIcon";
 
     /**
      * String classname.  Name of AssertionTreeNode subclass to use when creating tree nodes for this assertion.
      * Ignored if a valid POLICY_NODE_FACTORY is provided.
+     * Defaults to "${basePackate}.console.tree.policy.${baseName}PolicyNode".
      */
     String POLICY_NODE_CLASSNAME = "policyNodeClassname";
 
@@ -115,7 +144,7 @@ public interface AssertionMetadata {
      * <p/>
      * Ignored if a valid POLICY_ADVICE_INSTANCE is provided.
      * <p/>
-     * The default value is com.l7tech.console.tree.policy.advice.${BASE_NAME}Advice
+     * The default value is "${basePackate}.console.tree.policy.advice.${baseName}Advice"
      */
     String POLICY_ADVICE_CLASSNAME = "policyAdviceClassname";
 
@@ -134,6 +163,8 @@ public interface AssertionMetadata {
      * String classname.  Name of ActionListener subclass to invoke when the Properties.. action is invoked.
      * <p/>
      * This is ingored if a valid PROPERTIES_ACTION_FACTORY is provided.
+     * <p/>
+     * The default value is "${basePackage}.console.action.${baseName}PropertiesAction".
      * <p/>
      * If this is null, or this class can't be found (or doesn't work), the
      * SSM's default MetadataFinder for the PROPERTIES_ACTION_FACTORY will attempt to use the
@@ -156,6 +187,8 @@ public interface AssertionMetadata {
      * String classname.  Name of AssertionPropertiesEditor implementor to invoke when the default properties action is invoked.
      * <p/>
      * This is ignored if a valid PROPERTIES_EDITOR_FACTORY is provided.
+     * <p/>
+     * The default value is "${basePackage}.console.panels.${baseName}PropertiesDialog".
      * <p/>
      * If this is null, or this class can't be found (or doesn't work), the SSM's default MetadataFinder
      * for the PROPERTIES_EDITOR_FACTORY will currently just give up and return null, disabling the "Properties..."
@@ -188,28 +221,39 @@ public interface AssertionMetadata {
 
     /**
      * Boolean.  Set to Boolean.TRUE if your properties dialog won't display properly as a sheet and you don't have
-     * access to DialogDisplayer to turn it off yourself.
-     * (Sheet display is a mechanism used by the Manager Applet to display assertion properties dialogs as
-     * internal frames, within the browser tab, whenever possible.  It is not used by the standalone SSM.)
-     * The DefaultAssertionPropertiesAction will disable sheet display on your dialog if this is TRUE.
+     * access to DialogDisplayer to turn it off yourself.  Default is Boolean.FALSE.
+     * <p/>
+     * Sheet display is a mechanism used by the Manager Applet to display assertion properties dialogs as
+     * internal frames, within the browser tab, whenever possible.  It is not used by the standalone SSM.
+     * <p/>
+     * The DefaultAssertionPropertiesAction will disable sheet display for your dialog instances if this is TRUE.
      */
     String PROPERTIES_EDITOR_SUPPRESS_SHEET_DISPLAY = "propertiesEditorSuppressSheetDisplay";
 
     /**
      * String classname.  Name of custom TypeMapping to use for serializing this assertion, or null to just use AssertionTypeMapping.
      * If non-null, the specified TypeMapping class must exist and must have a nullary constructor.
+     * <p/>
+     * The default value is "${basePackage}.policy.wsp.${baseName}AssertionMapping".
      */
     String WSP_TYPE_MAPPING_CLASSNAME = "wspTypeMappingClassname";
 
     /**
      * TypeMapping instance.  Actual ready-to-use TypeMapping instance for serializing/parsing this assertion.
      * If null, this assertion will NOT be convertable to/from L7 policy XML.
+     * <p/>
+     * The default MetadataFinder for this property will attempt to instantiate WSP_TYPE_MAPPING_CLASSNAME
+     * with its nullary constructor.  If this class can't be found, or doesn't work, it will create an
+     * instance of AssertionMapping, passing to the constructor the assertion class and and WSP_EXTERNAL_NAME.
      */
     String WSP_TYPE_MAPPING_INSTANCE = "wspTypeMappingInstance";
 
     /**
      * String.  Name of XML element local part that represents this assertion in a policy XML.
      * If null, this assertion will NOT be convertable to/from L7 policy XML.
+     * <p/>
+     * The default value is BASE_NAME with any characters other than letters, numbers, or the underscore replaced
+     * with underscore.
      */
     String WSP_EXTERNAL_NAME = "wspExternalName";
 
@@ -218,6 +262,8 @@ public interface AssertionMetadata {
      * or external names while freezing or thawing instances of this assertion.
      * <p/>
      * If null, now new types will be recognized while freezing or thawing instances of this assertion.
+     * <p/>
+     * The default value is null.
      */
     String WSP_SUBTYPE_FINDER = "wspSubtypeFinder";
 
@@ -228,22 +274,45 @@ public interface AssertionMetadata {
      * to translate older versions of this serialized assertion into the modern version.
      * <p/>
      * If null, no new global mappings will be installed.
+     * <p/>
+     * The default value is null.
      */
     String WSP_COMPATIBILITY_MAPPINGS = "wspCompatibilityMappings";
     
-    /** Boolean. True if this assertion should be passed through to the Bridge. */
+    /**
+     * Boolean. True if this assertion should be passed through to the Bridge.
+     * <p/>
+     * The default MetadataFinder returns TRUE for any assertion listed in AllAssertions.BRIDGE_EVERYTHING,
+     * and FALSE for all other assertions.
+     */
     String USED_BY_CLIENT = "usedByClient";
 
-    /** String. Short name to use for this assertion, ie "Response XPath pattern". */
+    /**
+     * String. Short name to use for this assertion, ie "Response XPath pattern".
+     * The default value is BASE_NAME with space inserted before uppercase characters after the first.
+     * For example, for an assertion with a BASE_NAME of "EnhancedLeafRaker", this will default to "Enhanced Leaf Raker".
+     */
     String SHORT_NAME = "shortName";
 
-    /** String. Long name to use for this assertion, ie "The response must match a specified XPath pattern". */
+    /**
+     * String. Long name to use for this assertion, ie "The response must match a specified XPath pattern".
+     * The default value is SHORT_NAME followed by " Assertion".
+     */
     String LONG_NAME = "longName";
 
-    /** String. Description to use for this assertion, if any. */
+    /**
+     * String. Description to use for this assertion, if any.
+     * The default value is "This is the ${shortName} assertion."
+     */
     String DESCRIPTION = "description";
 
-    /** String. If a GUI properties file should be used for this assertion, this holds its base name (default locale). */
+    /**
+     * String. If a GUI properties file should be used for this assertion, this holds its base name (default locale).
+     * <p/>
+     * This property is currently ignored by the SSM but is reserved for future use.
+     * <p/>
+     * The default value is "${basePackate}.console.resources.${baseName}Assertion.properties".
+     */
     String PROPERTIES_FILE = "propertiesFile";
 
     /**
@@ -262,6 +331,8 @@ public interface AssertionMetadata {
      * all variant configuraitons offered by this assertion, and each variant provides its own prototype which
      * can be added to the palette folders.  Each variant prototype is then free to customize its returned metadata
      * for such things as paletteNodeName, assertionFactory, or even propertiesEditorFactory.
+     * <p/>
+     * The default value is null.
      */
     String VARIANT_PROTOTYPES = "variantPrototypes";
 
@@ -279,6 +350,9 @@ public interface AssertionMetadata {
      *  policyLogic
      *  threatProtection
      * </pre>
+     * <p/>
+     * The default value is an empty array.
+     * <p/>
      * If this is null, or does not match any palette folder offered by this SSM version, this assertion
      * will not be offered in the palette (although it can still be XML copy/pasted).
      */
@@ -292,8 +366,8 @@ public interface AssertionMetadata {
      * return value will currently be ignored by {@link com.l7tech.policy.assertion.Assertion#getFeatureSetName()}
      * and treated as though this property had returned null.
      * <p/>
-     * AssertionRegistry installs a default MetadataFinder for this property that returns null for any assertion
-     * present in AllAssertions on this system, and "set:modularAssertions" for any other assertion.
+     * The default value is "(fromClass)" for any recognized assertion present in AllAssertions on the current
+     * system, and "set:modularAssertions" for any unrecognized assertions.
      */
     String FEATURE_SET_NAME = "featureSetName";
 
@@ -301,6 +375,8 @@ public interface AssertionMetadata {
      * Map<String, String[2]>.  Possibly-new cluster properties used by this assertion's server implementation, or null.
      * Keys are names of cluster properties (and server config keys).  Values are tuples of [description, default].
      * This is the same format returned by ClusterStatusAdmin#getKnownProperties.
+     * <p/>
+     * The default value is an empty HashMap.
      */
     String CLUSTER_PROPERTIES = "clusterProperties";
 

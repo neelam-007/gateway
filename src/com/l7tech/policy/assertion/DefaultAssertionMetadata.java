@@ -126,7 +126,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(PALETTE_NODE_ICON, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, basepath(meta) + "/console/resources/policy16.gif");
+                return cache(meta, key, "com/l7tech/console/resources/policy16.gif");
             }
         });
 
@@ -144,7 +144,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(POLICY_NODE_ICON, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, basepath(meta) + "/console/resources/policy16.gif");
+                return cache(meta, key, "com/l7tech/console/resources/policy16.gif");
             }
         });
 

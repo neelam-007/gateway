@@ -274,7 +274,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
                 Class assertionClass = meta.getAssertionClass();
                 for (Assertion ass : AllAssertions.SERIALIZABLE_EVERYTHING) {
                     if (ass.getClass() == assertionClass)
-                        return DefaultAssertionMetadata.cache(meta, key, null);
+                        return DefaultAssertionMetadata.cache(meta, key, "(fromClass)");
                 }
 
                 // Unknown assertion; treat as modular
