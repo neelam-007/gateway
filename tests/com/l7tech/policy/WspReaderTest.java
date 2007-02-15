@@ -519,7 +519,6 @@ public class WspReaderTest extends TestCase {
     }
 
     public void testBug3456() throws Exception {
-        // TODO reverse this test (so it must NOT throw the exception) if it is decided that "string (any)" should be valid after all  
         try {
             WspReader.getDefault().parseStrictly(BUG_3456_POLICY);
             fail("Expected exception not thrown for invalid attribute Unknown HtmlFormDataType name: 'string (any)'");
