@@ -1,14 +1,19 @@
 package com.l7tech.external.assertions.comparison;
 
-import com.l7tech.common.logic.BinaryPredicate;
-import com.l7tech.common.logic.Predicate;
+import com.l7tech.common.logic.*;
 import com.l7tech.common.util.ComparisonOperator;
 import com.l7tech.common.util.Functions;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.wsp.*;
+import com.l7tech.external.assertions.comparison.wsp.EqualityRenamedToComparison;
+
+import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  * Processes the value resulting from the evaluation of an expression through any number of {@link Predicate}s.
@@ -159,6 +164,24 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
                 return name.toString();
             }
         });
+
+        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+            new WspEnumTypeMapping(ComparisonOperator.class, "operator"),
+            new ArrayTypeMapping(new Predicate[0], "predicates"),
+            new AbstractClassTypeMapping(Predicate.class, "predicate"),
+            new BeanTypeMapping(BinaryPredicate.class, "binary"),
+            new BeanTypeMapping(CardinalityPredicate.class, "cardinality"),
+            new BeanTypeMapping(StringLengthPredicate.class, "stringLength"),
+            new BeanTypeMapping(RegexPredicate.class, "regex"),
+            new BeanTypeMapping(DataTypePredicate.class, "dataType"),
+            new WspEnumTypeMapping(DataType.class, "type"),
+            new BeanTypeMapping(EmptyPredicate.class, "empty")
+        )));
+
+        meta.put(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS, new HashMap<String, TypeMapping>() {{
+            put(EqualityRenamedToComparison.equalityCompatibilityMapping.getExternalName(), EqualityRenamedToComparison.equalityCompatibilityMapping);
+        }});
+
         return meta;
     }
 

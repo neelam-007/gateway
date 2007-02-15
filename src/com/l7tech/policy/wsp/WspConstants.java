@@ -6,7 +6,6 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.security.token.SecurityTokenType;
-import com.l7tech.common.util.ComparisonOperator;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.wsdl.BindingInfo;
@@ -15,12 +14,10 @@ import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.logic.*;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
-import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -153,7 +150,6 @@ public class WspConstants {
         // Typesafe enumerations
         new WspEnumTypeMapping(WsTrustRequestType.class, "requestType"),
         new WspEnumTypeMapping(AuthenticationProperties.Method.class, "authenticationMethod"),
-        new WspEnumTypeMapping(ComparisonOperator.class, "operator"),
         new WspEnumTypeMapping(TimeUnit.class, "abbreviation"),
         new WspEnumTypeMapping(AssertionResourceType.class, "resourceType"),
         new WspEnumTypeMapping(HtmlFormDataType.class, "fieldDataType"),
@@ -331,17 +327,6 @@ public class WspConstants {
         new BeanTypeMapping(HttpPassthroughRuleSet.class, "httpPassthroughRuleSet"),
         new BeanTypeMapping(HtmlFormDataAssertion.FieldSpec.class, "htmlFormFieldSpec"),
         new ArrayTypeMapping(new HtmlFormDataAssertion.FieldSpec[0], "htmlFormFieldSpecArray"),
-
-        // TODO these Comparison Assertion dependencies should get modularized
-        new ArrayTypeMapping(new Predicate[0], "predicates"),
-        new AbstractClassTypeMapping(Predicate.class, "predicate"),
-        new BeanTypeMapping(BinaryPredicate.class, "binary"),
-        new BeanTypeMapping(CardinalityPredicate.class, "cardinality"),
-        new BeanTypeMapping(StringLengthPredicate.class, "stringLength"),
-        new BeanTypeMapping(RegexPredicate.class, "regex"),
-        new BeanTypeMapping(DataTypePredicate.class, "dataType"),
-        new WspEnumTypeMapping(DataType.class, "type"),
-        new BeanTypeMapping(EmptyPredicate.class, "empty"),
 
     };
 

@@ -3,14 +3,13 @@
  */
 package com.l7tech.external.assertions.comparison.server;
 
-import com.l7tech.policy.variable.VariableMap;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.common.logic.Predicate;
-import com.l7tech.common.logic.DataTypePredicate;
 import com.l7tech.common.logic.BinaryPredicate;
+import com.l7tech.common.logic.DataTypePredicate;
+import com.l7tech.common.logic.Predicate;
 import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.MultiValuedEvaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.SingleValuedEvaluator;
+import com.l7tech.policy.variable.VariableMap;
 
 import java.util.Map;
 
@@ -30,7 +29,8 @@ class MVState extends State {
         Evaluator eval = evaluators.get(pred);
         boolean predResult;
         if (pred instanceof DataTypePredicate) {
-            DataType type = ((DataTypePredicate) pred).getType();
+            if (this.type != null) throw new IllegalStateException("DataType already set");
+            this.type = ((DataTypePredicate) pred).getType();
 
             // Try to convert all the values; fail without mutating if any one cannot be converted
             Object[] newvals = new Object[values.length];

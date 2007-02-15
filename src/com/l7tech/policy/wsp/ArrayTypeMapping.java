@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * TypeMapping that knows how to serialize arrays of objects of some specific class.
  */
-class ArrayTypeMapping extends ComplexTypeMapping {
+public class ArrayTypeMapping extends ComplexTypeMapping {
     private final Object[] prototype;
 
     public ArrayTypeMapping(Object[] prototype, String externalName) {

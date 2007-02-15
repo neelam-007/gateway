@@ -12,7 +12,7 @@ import org.w3c.dom.Element;
  * @author alex
  */
 public class EqualityRenamedToComparison {
-    static final TypeMapping equalityCompatibilityMapping =
+    public static final TypeMapping equalityCompatibilityMapping =
         new CompatibilityAssertionMapping(new ComparisonAssertion(), "EqualityAssertion") {
             protected void configureAssertion(Assertion ass, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 new BeanTypeMapping(ComparisonAssertion.class, "").populateObject(new TypedReference(ComparisonAssertion.class, ass), source, visitor);

@@ -119,6 +119,7 @@
         </copy>
         <javac srcdir="src"
                destdir="${build.classes}"
+               debug="on"
                classpathref="compile.classpath">
         </javac>
 
@@ -134,6 +135,7 @@
             </fileset>
         </copy>
         <javac srcdir="tests"
+               debug="on"
                destdir="${build.classes}-test">
             <classpath>
                 <path refid="compile.classpath"/>

@@ -216,7 +216,8 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
      * @param pos negative if the predicate is new
      */
     private void edit(final Predicate predicate, final int pos) {
-        final PredicateDialog dlg = PredicateDialog.make(this, predicate, expressionField.getText());
+        DataType type = (DataType) dataTypeComboBox.getSelectedItem();
+        final PredicateDialog dlg = PredicateDialog.make(this, type, predicate, expressionField.getText());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

@@ -26,6 +26,8 @@ abstract class State {
     protected final Map<Predicate, Evaluator> evaluators;
     protected final VariableMap vars;
 
+    protected DataType type;
+
     /**
      * True iff all predicates processed thus far have evaluated to true. 
      */
@@ -42,7 +44,7 @@ abstract class State {
 
     protected abstract void evaluate(Predicate pred);
 
-    static State make(Map<Predicate, Evaluator> evaluators, Object left, VariableMap vars) {
+    protected static State make(Map<Predicate, Evaluator> evaluators, Object left, VariableMap vars) {
         Class leftClass = left.getClass();
         if (leftClass.isArray()) {
             return new MVState(evaluators, (Object[])left, vars);
@@ -53,7 +55,7 @@ abstract class State {
         }
     }
 
-    static Object convertValue(Object value, DataType type) {
+    protected Object convertValue(Object value, DataType type) {
         for (Class clazz : type.getValueClasses()) {
             if (clazz.isAssignableFrom(value.getClass())) {
                 // no conversion required
@@ -73,7 +75,7 @@ abstract class State {
         }
     }
 
-    static boolean evalBinary(final Object value, final BinaryPredicate bpred, final VariableMap vars) {
+    protected boolean evalBinary(final Object value, final BinaryPredicate bpred, final VariableMap vars) {
         Comparable cleft;
         if (value instanceof Comparable) {
             cleft = (Comparable)value;
@@ -84,6 +86,7 @@ abstract class State {
         }
 
         Object right = ServerComparisonAssertion.getValue(bpred.getRightValue(), vars);
+        if (type != null) right = convertValue(right, type);
         Comparable cright;
         if (right instanceof Comparable) {
             cright = (Comparable) right;
