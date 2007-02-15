@@ -115,8 +115,8 @@ Section "SecureSpan XML VPN Client" SecCopyUI
   Call CheckPreviousInstalls
 
   ; Before copying anything, let's stop the Windows service (if any)
-  ExecWait 'sc stop "SecureSpan Bridge"' $0
-  DetailPrint "stopped windows service SSB. return code $0"
+  ExecWait 'sc stop "SecureSpan XML VPN Client"' $0
+  DetailPrint "stopped windows service SSXVC. return code $0"
   Sleep 1000
 
   ;ADD YOUR OWN STUFF HERE!
