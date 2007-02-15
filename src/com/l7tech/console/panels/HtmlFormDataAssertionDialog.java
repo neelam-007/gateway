@@ -355,7 +355,7 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
     private boolean _modified;
 
     public HtmlFormDataAssertionDialog(Frame owner, final HtmlFormDataAssertion assertion) throws HeadlessException {
-        super(owner, "HTML Form Data", true);
+        super(owner, "HTML Form Data Properties", true);
         _assertion = assertion;
 
         _allowGetCheckbox.setSelected(assertion.isAllowGet());
