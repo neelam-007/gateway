@@ -262,7 +262,6 @@ public class WspConstants {
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
         new AssertionMapping(new Operation(), "WSDLOperation"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
-        new AssertionMapping(new EchoRoutingAssertion(), "EchoRoutingAssertion"),
         new AssertionMapping(new HardcodedResponseAssertion(), "HardcodedResponse") {
             protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) {
                 super.populateElement(wspWriter, element, object);

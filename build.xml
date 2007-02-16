@@ -1054,7 +1054,6 @@
                 <include name="odmg.jar"/>
                 <include name="concurrent-1.3.4.jar"/>
                 <include name="qname.jar"/>
-                <include name="snmp4j.jar"/>
                 <include name="log4j-1.2.14.jar"/>
 
                 <include name="systinet-*.jar" if="include.systinet"/>
@@ -2348,7 +2347,6 @@
                 <!-- the default crypto provider -->
                 <include name="crypto/bc/bcprov*.jar"/>
                 <include name="gateway/cluster/*.jar"/>
-                <include name="gateway/snmp/*.jar"/>
                 <include name="gateway/adminws/*.jar"/>
                 <include name="gateway/ftp/*.jar"/>
 
@@ -2851,6 +2849,7 @@
             <fileset dir="${src.root}/modules/assertions/RateLimitAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/ComparisonAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/SnmpTrapAssertion/build" includes="*.aar"/>
+            <fileset dir="${src.root}/modules/assertions/EchoRoutingAssertion/build" includes="*.aar"/>
         </copy>
 
         <!-- Copy LDAP templates -->

@@ -280,13 +280,12 @@ public class IdentityPolicyPanel extends JPanel {
             } else if (existingRoutingAssertion instanceof JmsRoutingAssertion) {
                 JmsRoutingAssertion jra = (JmsRoutingAssertion) existingRoutingAssertion;
                 JmsUtilities.selectEndpoint(jmsQueueComboBox, jra.getEndpointOid());
-            } else if (existingRoutingAssertion instanceof EchoRoutingAssertion) {
-                routeModifiable = false;
             } else if (existingRoutingAssertion instanceof HardcodedResponseAssertion) {
                 routeModifiable = false;
             } else {
-                throw new RuntimeException("Unrecognized type of routing assertion: " +
-                  existingRoutingAssertion.getClass().getName());
+                // Some routing assertion that either isn't modifiable or didn't exist yet in
+                // this version of the code.
+                routeModifiable = false;
             }
             if (othersRouteAssertions.contains(existingRoutingAssertion)) {
                 routeModifiable = false;

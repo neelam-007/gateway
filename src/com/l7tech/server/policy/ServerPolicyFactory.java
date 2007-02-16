@@ -114,6 +114,8 @@ public class ServerPolicyFactory implements ApplicationContextAware {
                 return (ServerAssertion)ctor.newInstance(genericAssertion, applicationContext);
 
             ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, new Class[] { genericAssertionClass });
+            if (ctor == null)
+                throw new ServerPolicyException(genericAssertion, productClassname + " does not have at least a public constructor-from-" + genericAssertionClass);
             return (ServerAssertion)ctor.newInstance(genericAssertion);
         } catch (LicenseException le) {
             throw le;

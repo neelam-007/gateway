@@ -1,4 +1,4 @@
-package com.l7tech.policy.assertion;
+package com.l7tech.external.assertions.echorouting;
 
 import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
 import com.l7tech.common.util.SoapUtil;
@@ -6,17 +6,28 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
+import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
+import com.l7tech.server.audit.AuditContextStub;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServicesHelper;
+import com.l7tech.external.assertions.echorouting.server.ServerEchoRoutingAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPMessage;
@@ -121,5 +132,22 @@ public class EchoAssertionTest extends TestCase {
         return policy;
     }
 
+    /**
+     * Test the Echo individually - this assertion is part of the
+     * test source tree only
+     *
+     * @throws Exception
+     */
+    public void testInstantiateEchoAssertion() throws Exception {
+        ApplicationContext testApplicationContext = ApplicationContexts.getTestApplicationContext();
+        AllAssertion echo = new AllAssertion(Arrays.asList(new Assertion[]{
+            new EchoRoutingAssertion()
+        }));
+        PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message());
+        pp.setAuditContext(new AuditContextStub());
+        ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
+        ServerAssertion serverAll = pfac.compilePolicy(echo, true);
+        assertTrue(((ServerCompositeAssertion)serverAll).getChildren()[0] instanceof ServerEchoRoutingAssertion);
+    }
 
 }

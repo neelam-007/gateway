@@ -119,7 +119,6 @@ public class Advices {
                 put(CookieCredentialSourceAssertion.class, ary(AddCookieCredentialSourceAssertionAdvice.class));
                 put(WsiBspAssertion.class, ary(AddWsiBspAssertionAdvice.class));
                 put(WsiSamlAssertion.class, ary(AddWsiSamlAssertionAdvice.class));
-                put(EchoRoutingAssertion.class, ary(AddEchoRoutingAssertionAdvice.class));
                 put(HtmlFormDataAssertion.class, ary(HtmlFormDataAssertionAdvice.class));
                 put(CodeInjectionProtectionAssertion.class, ary(CodeInjectionProtectionAssertionAdvice.class));
             }};

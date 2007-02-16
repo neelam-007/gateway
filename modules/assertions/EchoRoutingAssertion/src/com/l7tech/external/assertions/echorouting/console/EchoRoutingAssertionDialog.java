@@ -1,4 +1,4 @@
-package com.l7tech.console.panels;
+package com.l7tech.external.assertions.echorouting.console;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -8,12 +8,13 @@ import javax.swing.*;
 import javax.swing.event.EventListenerList;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.EchoRoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyEvent;
+import com.l7tech.console.panels.AssertionPropertiesEditor;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.external.assertions.echorouting.EchoRoutingAssertion;
 
 
 /**
@@ -22,12 +23,14 @@ import com.l7tech.common.gui.util.Utilities;
  * @author $Author$
  * @version $Revision$
  */
-public class EchoRoutingAssertionDialog extends JDialog {
+public class EchoRoutingAssertionDialog extends JDialog implements AssertionPropertiesEditor<EchoRoutingAssertion> {
 
     //- PUBLIC
 
     /**
      * Creates new form ServicePanel
+     * @param owner  parent for dialog
+     * @param a      assertion to edit
      */
     public EchoRoutingAssertionDialog(Frame owner, EchoRoutingAssertion a) {
         super(owner, true);
@@ -93,8 +96,8 @@ public class EchoRoutingAssertionDialog extends JDialog {
                   PolicyEvent event = new
                     PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
                   EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
-                  for (int i = 0; i < listeners.length; i++) {
-                      ((PolicyListener)listeners[i]).assertionsChanged(event);
+                  for (EventListener listener : listeners) {
+                      ((PolicyListener)listener).assertionsChanged(event);
                   }
               }
           });
@@ -119,14 +122,7 @@ public class EchoRoutingAssertionDialog extends JDialog {
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                // copy view into model
-                if (securityHeaderRemoveRadioButton.isSelected())
-                    assertion.setCurrentSecurityHeaderHandling(EchoRoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER);
-                else
-                    assertion.setCurrentSecurityHeaderHandling(EchoRoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
-
-                assertion.setGroupMembershipStatement(false);
-                assertion.setAttachSamlSenderVouches(false);
+                getData(assertion);
                 fireEventAssertionChanged(assertion);
                 wasOkButtonPressed = true;
                 dispose();
@@ -145,5 +141,29 @@ public class EchoRoutingAssertionDialog extends JDialog {
             securityHeaderRemoveRadioButton.setSelected(true);
         else
             securityHeaderLeaveRadioButton.setSelected(true);
+    }
+
+    public JDialog getDialog() {
+        return this;
+    }
+
+    public boolean isConfirmed() {
+        return wasOkButtonPressed;
+    }
+
+    public void setData(EchoRoutingAssertion assertion) {
+        this.assertion = assertion;
+        initFormData();
+    }
+
+    public EchoRoutingAssertion getData(EchoRoutingAssertion assertion) {
+        // copy view into model
+        if (securityHeaderRemoveRadioButton.isSelected())
+            assertion.setCurrentSecurityHeaderHandling(EchoRoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER);
+        else
+            assertion.setCurrentSecurityHeaderHandling(EchoRoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
+        assertion.setGroupMembershipStatement(false);
+        assertion.setAttachSamlSenderVouches(false);
+        return assertion;
     }
 }

@@ -452,8 +452,6 @@ class PathValidator {
             }
         } else if (a instanceof JmsRoutingAssertion) {
             processJmsRouting((JmsRoutingAssertion)a);
-        } else if (a instanceof EchoRoutingAssertion) {
-            // Nothing to see here, folks. Move along...
         } else if (a instanceof HardcodedResponseAssertion) {
             //validations for this assertion
             HardcodedResponseAssertion ass = (HardcodedResponseAssertion)a;
@@ -464,6 +462,9 @@ class PathValidator {
                     "the content type is invalid. " + e.getMessage(),
                     null));
             }
+        } else if (a != null) {
+            // Some routing assertion that either doesn't need any further validation, or that
+            // didn't exist when this version of the validator was current
         } else {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath,
               "This message routing protocol is not supported.",

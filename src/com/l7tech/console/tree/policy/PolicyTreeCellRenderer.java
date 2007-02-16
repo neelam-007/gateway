@@ -1,5 +1,8 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
+
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import java.awt.*;
@@ -35,25 +38,29 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
 
         setFont(plainFont);
         this.setBackgroundNonSelectionColor(tree.getBackground());
-        Icon icon = null;
         if (!(value instanceof AssertionTreeNode)) return this;
         AssertionTreeNode node = ((AssertionTreeNode)value);
         setText(node.getName());
         validated = node.getValidatorMessages().isEmpty();
         setToolTipText(node.getTooltipText());
 
-        icon = expanded ?
+        setIcon(expanded ?
           new ImageIcon(node.getOpenedIcon()) :
-          new ImageIcon(node.getIcon());
+          new ImageIcon(node.getIcon()));
 
-        if (icon != null) {
-            setIcon(icon);
-        }
-        if (node instanceof HttpRoutingAssertionTreeNode || node instanceof EchoRoutingAssertionPolicyNode ||
-            node instanceof HardcodedResponseTreeNode || node instanceof JmsRoutingAssertionTreeNode) {
+        if (isRoutingAssertionNode(node))
             setFont(boldFont);
-        }
+
         return this;
+    }
+
+    private boolean isRoutingAssertionNode(AssertionTreeNode node) {
+        if  (node instanceof HttpRoutingAssertionTreeNode ||
+            node instanceof HardcodedResponseTreeNode || node instanceof JmsRoutingAssertionTreeNode)
+            return true;
+
+        Assertion ass = node.asAssertion();
+        return ass instanceof RoutingAssertion;
     }
 
     public void paintComponent(Graphics g) {
@@ -71,17 +78,17 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         Rectangle viewRect = new Rectangle(i.left, i.top, getWidth() -
           (i.right + i.left), getHeight() - (i.bottom + i.top));
 
-        String text = SwingUtilities.layoutCompoundLabel(
+        SwingUtilities.layoutCompoundLabel(
           this, fm, getText(), getIcon(),
           getVerticalAlignment(), getHorizontalAlignment(),
           getVerticalTextPosition(),
           getHorizontalTextPosition(), viewRect, new
             Rectangle(), textRect,
           getText() == null ? 0 :
-          ((Integer)UIManager.get("Button.textIconGap")).intValue());
+          (Integer)UIManager.get("Button.textIconGap"));
 
-        g.fillRect(textRect.x + ((Integer)UIManager.get("Button.textShiftOffset")).intValue() - 4,
-          textRect.y + fm.getAscent() + ((Integer)UIManager.get("Button.textShiftOffset")).intValue() + 2,
+        g.fillRect(textRect.x + (Integer)UIManager.get("Button.textShiftOffset") - 4,
+          textRect.y + fm.getAscent() + (Integer)UIManager.get("Button.textShiftOffset") + 2,
           textRect.width, 1);
     }
 
@@ -94,14 +101,14 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         Rectangle viewRect = new Rectangle(i.left, i.top, getWidth() -
           (i.right + i.left), getHeight() - (i.bottom + i.top));
 
-        String text = SwingUtilities.layoutCompoundLabel(
+        SwingUtilities.layoutCompoundLabel(
           this, fm, getText(), getIcon(),
           getVerticalAlignment(), getHorizontalAlignment(),
           getVerticalTextPosition(),
           getHorizontalTextPosition(), viewRect, new
             Rectangle(), textRect,
           getText() == null ? 0 :
-          ((Integer)UIManager.get("Button.textIconGap")).intValue());
+          (Integer)UIManager.get("Button.textIconGap"));
 
         int x = textRect.x;
         int y = textRect.y + textRect.height;

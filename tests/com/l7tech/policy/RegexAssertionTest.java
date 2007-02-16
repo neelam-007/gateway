@@ -14,10 +14,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.LicenseException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.server.MockServletApi;
-import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.server.TestMessageProcessor;
-import com.l7tech.server.MessageProcessorListener;
+import com.l7tech.server.*;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -302,18 +299,13 @@ public class RegexAssertionTest extends TestCase {
         assertEquals(verifiedTokens, tokenCount);
     }
 
-
     private static Assertion getPolicy(String matchPattern, String replace) {
         Regex regex = new Regex();
         regex.setRegex(matchPattern);
         regex.setReplacement(replace);
         regex.setReplace(true);
-        Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
-                                                              regex,
-                                                              new EchoRoutingAssertion()
-                                                            }));
 
-        return policy;
+        return new AllAssertion(Arrays.asList(regex, new TestEchoAssertion()));
     }
 
 
@@ -328,12 +320,6 @@ public class RegexAssertionTest extends TestCase {
         regex2.setRegex(matchPattern2);
         regex2.setReplacement(replace2);
 
-        Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
-                                                              regex,
-                                                              regex2,
-                                                              new EchoRoutingAssertion()
-                                                            }));
-
-        return policy;
+        return new AllAssertion(Arrays.asList(regex, regex2, new TestEchoAssertion()));
     }
 }

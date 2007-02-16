@@ -267,7 +267,7 @@ public class GatewayFeatureSets {
             fs(httpFront),
             fs(httpBack),
             ass(HardcodedResponseAssertion.class),
-            ass(EchoRoutingAssertion.class));
+            mass("assertion:EchoRouting"));
 
         GatewayFeatureSet routingFw =
         fsr("set:Routing:Firewall", "SecureSpan Firewall message routing",
@@ -317,7 +317,7 @@ public class GatewayFeatureSets {
             ass(TrueAssertion.class),
             ass(FalseAssertion.class),
             ass(SetVariableAssertion.class),
-            ass(EchoRoutingAssertion.class),
+            mass("assertion:EchoRouting"),
             ass(HardcodedResponseAssertion.class));
 
         GatewayFeatureSet threatIps =

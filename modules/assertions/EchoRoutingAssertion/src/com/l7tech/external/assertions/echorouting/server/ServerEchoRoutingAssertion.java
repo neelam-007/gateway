@@ -1,4 +1,4 @@
-package com.l7tech.server.policy.assertion;
+package com.l7tech.external.assertions.echorouting.server;
 
 import com.l7tech.common.message.*;
 import com.l7tech.common.mime.StashManager;
@@ -6,10 +6,11 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.EchoRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
+import com.l7tech.external.assertions.echorouting.EchoRoutingAssertion;
 
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -24,7 +25,7 @@ import java.util.logging.Level;
  * @author emil
  * @version 21-Mar-2005
  */
-public class ServerEchoRoutingAssertion extends ServerRoutingAssertion {
+public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRoutingAssertion> {
 
     //- PUBLIC
 
@@ -33,14 +34,6 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion {
         stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
-    /**
-     * SSG Server-side processing of the given request.
-     *
-     * @param context
-     * @return AssertionStatus.NONE if this Assertion did its business successfully; otherwise, some error code
-     * @throws com.l7tech.policy.assertion.PolicyAssertionException
-     *          something is wrong in the policy dont throw this if there is an issue with the request or the response
-     */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Message request = context.getRequest();
         final Message response = context.getResponse();

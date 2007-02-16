@@ -40,7 +40,7 @@ public interface AssertionPropertiesEditor<AT extends Assertion> {
 
     /**
      * Copy the data out of the view into an assertion bean instance.
-     * The provided bean should be filled and returned, if possible, but impelementors may create and return
+     * The provided bean should be filled and returned, if possible, but implementors may create and return
      * a new bean instead, if they must.
      *
      * @param assertion a bean to which the data from the view can be copied, if possible.  Must not be null.

@@ -3,10 +3,8 @@ package com.l7tech.console.tree.policy.advice;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.JmsRoutingAssertionDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
-import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.service.PublishedService;
@@ -86,9 +84,7 @@ public class AddRoutingAssertionAdvice implements Advice {
                 });
             } else
                 pc.proceed();
-        } else if (assertions[0] instanceof EchoRoutingAssertion) {
-            pc.proceed();
-        } else if (assertions[0] instanceof HardcodedResponseAssertion) {
+        } else if (assertions[0] instanceof RoutingAssertion) {
             pc.proceed();
         } else {
             throw new IllegalArgumentException("Can't handle " + assertions[0].getClass().getName());

@@ -121,7 +121,6 @@
                 <L7p:EncryptedUsernameToken/>
                 <L7p:WsiBspAssertion/>
                 <L7p:WsiSamlAssertion/>
-                <L7p:EchoRoutingAssertion/>
                 <L7p:WsspAssertion/>
                 <L7p:FaultLevel>
                     <L7p:LevelInfo soapFaultLevel="included"/>

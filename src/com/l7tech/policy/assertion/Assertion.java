@@ -451,9 +451,6 @@ public abstract class Assertion implements Cloneable, Serializable {
     /**
      * Get the (possibly cached) DefaultAssertionMetadata for the current assertion class.
      *
-     * Direct subclasses of Assertion (but ONLY direct subclasses) can safely downcast the returned
-     * value to DefaultAssertionMetadata.
-     *
      * @return a DefaultAssertionMetadata instance for this assertion class.  Never null.
      */
     protected final DefaultAssertionMetadata defaultMeta() {
