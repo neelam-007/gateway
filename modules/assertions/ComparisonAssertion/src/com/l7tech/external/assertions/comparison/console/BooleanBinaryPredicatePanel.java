@@ -3,7 +3,7 @@
  */
 package com.l7tech.external.assertions.comparison.console;
 
-import com.l7tech.common.logic.BinaryPredicate;
+import com.l7tech.external.assertions.comparison.BinaryPredicate;
 import com.l7tech.common.util.ComparisonOperator;
 
 import javax.swing.*;

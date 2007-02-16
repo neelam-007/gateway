@@ -3,7 +3,7 @@
  */
 package com.l7tech.external.assertions.comparison.server.evaluate;
 
-import com.l7tech.common.logic.*;
+import com.l7tech.external.assertions.comparison.*;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -29,7 +29,7 @@ public final class EvaluatorFactory {
         Class<? extends Evaluator> evalClass = evaluatorMap.get(predicate.getClass());
         if (evalClass == null) throw new IllegalArgumentException("No Evaluator class registered for " + predicate.getClass().getName());
         try {
-            // TODO caching
+            // TODO caching?
             Constructor<? extends Evaluator> ctor = evalClass.getConstructor(predicate.getClass());
             //noinspection unchecked
             return ctor.newInstance(predicate);

@@ -4,21 +4,18 @@
 package com.l7tech.external.assertions.comparison.console;
 
 import com.l7tech.common.gui.widgets.OkCancelDialog;
-import com.l7tech.common.logic.*;
+import com.l7tech.external.assertions.comparison.*;
 import com.l7tech.policy.variable.DataType;
 
 import java.awt.*;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.ResourceBundle;
 
 /**
  * @author alex
  */
 public class PredicateDialog extends OkCancelDialog<Predicate> {
-    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.console.resources.ComparisonAssertion");
-
     private static final Map<Class<? extends Predicate>, Class<? extends PredicatePanel>> predicatePanelMap =
             new HashMap<Class<? extends Predicate>, Class<? extends PredicatePanel>>();
 
@@ -54,10 +51,10 @@ public class PredicateDialog extends OkCancelDialog<Predicate> {
     }
 
     private PredicateDialog(Predicate pred, Frame owner, PredicatePanel panel) throws HeadlessException {
-        super(owner, resources.getString(pred.getSimpleName() + "PredicatePanel.dialogTitle"), true, panel);
+        super(owner, ComparisonAssertion.resources.getString(pred.getSimpleName() + "PredicatePanel.dialogTitle"), true, panel);
     }
 
     private PredicateDialog(Predicate pred, Dialog owner, PredicatePanel panel) throws HeadlessException {
-        super(owner, resources.getString(pred.getSimpleName() + "PredicatePanel.dialogTitle"), true, panel);
+        super(owner, ComparisonAssertion.resources.getString(pred.getSimpleName() + "PredicatePanel.dialogTitle"), true, panel);
     }
 }

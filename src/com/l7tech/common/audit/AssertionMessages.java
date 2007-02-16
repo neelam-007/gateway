@@ -375,10 +375,13 @@ public class AssertionMessages extends Messages {
     public static final M CANNOT_ECHO_NON_XML = m(7050, Level.INFO, "Request cannot be echoed because it is not XML (Content-Type {0}).");
 
     // ComparisonAssertion (formerly known as EqualityAssertion)
-    public static final M COMPARISON_OK           = m(7100, Level.FINE, "Comparison matched");
-    public static final M COMPARISON_NOT          = m(7101, Level.FINE, "Comparison did not match");
-    public static final M COMPARISON_BAD_OPERATOR = m(7102, Level.WARNING, "Unsupported operator: {0}");
-    public static final M COMPARISON_NULL         = m(7103, Level.WARNING, "At least one comparison value was null");
+    public static final M COMPARISON_OK             = m(7100, Level.FINE, "Comparison matched");
+    public static final M COMPARISON_NOT            = m(7101, Level.FINE, "Comparison did not match");
+    public static final M COMPARISON_BAD_OPERATOR   = m(7102, Level.WARNING, "Unsupported operator: {0}");
+    public static final M COMPARISON_NULL           = m(7103, Level.WARNING, "At least one comparison value was null");
+    public static final M COMPARISON_CONVERTING     = m(7104, Level.FINE, "Converting {0} value into {1}");
+    public static final M COMPARISON_CANT_CONVERT   = m(7105, Level.WARNING, "Value of type {0} cannot be converted to {1}");
+    public static final M COMPARISON_NOT_COMPARABLE = m(7106, Level.WARNING, "{0} Value for binary predicate ''{1}'' is not Comparable; using value.toString() instead");
 
     // CodeInjectionProtectionAssertion
     public static final M CODEINJECTIONPROTECTION_NOT_HTTP = m(7150, Level.FINE, "Request is not HTTP.");

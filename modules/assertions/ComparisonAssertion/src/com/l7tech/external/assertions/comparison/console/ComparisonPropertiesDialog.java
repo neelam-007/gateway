@@ -5,14 +5,15 @@ package com.l7tech.external.assertions.comparison.console;
 
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.logic.*;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
-import com.l7tech.external.assertions.comparison.ComparisonAssertion;
+import com.l7tech.external.assertions.comparison.*;
 import com.l7tech.policy.variable.DataType;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -21,14 +22,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.ResourceBundle;
 
 /**
  * @author alex
  */
 public class ComparisonPropertiesDialog extends JDialog implements AssertionPropertiesEditor<ComparisonAssertion> {
-    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.console.resources.ComparisonAssertion");
-
     private JTextField expressionField;
     private JComboBox dataTypeComboBox;
     private JTable predicatesTable;
@@ -44,15 +42,22 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
     private ComparisonAssertion assertion;
     private final java.util.List<Predicate> predicates = new ArrayList<Predicate>();
     private final PredicatesTableModel predicatesTableModel = new PredicatesTableModel();
+    private static final DataType[] DATA_TYPES = new DataType[] {
+        DataType.UNKNOWN,
+        DataType.STRING,
+        DataType.INTEGER,
+        DataType.DECIMAL,
+        DataType.BOOLEAN,
+    };
 
     public ComparisonPropertiesDialog(Frame owner, ComparisonAssertion assertion) throws HeadlessException {
-        super(owner, resources.getString("dialog.title"), true);
+        super(owner, ComparisonAssertion.resources.getString("dialog.title"), true);
         this.assertion = assertion;
         init();
     }
 
     public ComparisonPropertiesDialog(Dialog owner, ComparisonAssertion assertion) throws HeadlessException {
-        super(owner, resources.getString("dialog.title"), true);
+        super(owner, ComparisonAssertion.resources.getString("dialog.title"), true);
         this.assertion = assertion;
         init();
     }
@@ -88,10 +93,10 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
         }
     }
 
-    private static final PredicateSelection BINARY = new PredicateSelection(resources.getString("binaryPredicate.name"), BinaryPredicate.class);
-    private static final PredicateSelection CARDINALITY = new PredicateSelection(resources.getString("cardinalityPredicate.name"), CardinalityPredicate.class);
-    private static final PredicateSelection REGEX = new PredicateSelection(resources.getString("regexPredicate.name"), RegexPredicate.class);
-    private static final PredicateSelection LENGTH = new PredicateSelection(resources.getString("stringLengthPredicate.name"), StringLengthPredicate.class);
+    private static final PredicateSelection BINARY = new PredicateSelection(ComparisonAssertion.resources.getString("binaryPredicate.name"), BinaryPredicate.class);
+    private static final PredicateSelection CARDINALITY = new PredicateSelection(ComparisonAssertion.resources.getString("cardinalityPredicate.name"), CardinalityPredicate.class);
+    private static final PredicateSelection REGEX = new PredicateSelection(ComparisonAssertion.resources.getString("regexPredicate.name"), RegexPredicate.class);
+    private static final PredicateSelection LENGTH = new PredicateSelection(ComparisonAssertion.resources.getString("stringLengthPredicate.name"), StringLengthPredicate.class);
     private static final PredicateSelection[] VALUES = { BINARY, CARDINALITY, REGEX, LENGTH };
 
     private void init() {
@@ -106,6 +111,11 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
         }
 
         expressionField.setText(assertion.getExpression1());
+        expressionField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { enableButtons(); }
+            public void removeUpdate(DocumentEvent e) { enableButtons(); }
+            public void changedUpdate(DocumentEvent e) { enableButtons(); }
+        });
 
         predicatesTable.setModel(predicatesTableModel);
         predicatesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -121,12 +131,12 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
             }
         });
 
-        dataTypeComboBox.setModel(new DefaultComboBoxModel(DataType.VALUES));
+        dataTypeComboBox.setModel(new DefaultComboBoxModel(DATA_TYPES));
         dataTypeComboBox.setSelectedItem(dtp == null ? DataType.UNKNOWN : dtp.getType());
 
         addPredicateButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                DialogDisplayer.showInputDialog(ComparisonPropertiesDialog.this, resources.getString("predicateSelection.text"), resources.getString("predicateSelection.title"), JOptionPane.QUESTION_MESSAGE, null, VALUES, BINARY, new DialogDisplayer.InputListener() {
+                DialogDisplayer.showInputDialog(ComparisonPropertiesDialog.this, ComparisonAssertion.resources.getString("predicateSelection.text"), ComparisonAssertion.resources.getString("predicateSelection.title"), JOptionPane.QUESTION_MESSAGE, null, VALUES, BINARY, new DialogDisplayer.InputListener() {
                     public void reportResult(Object option) {
                         PredicateSelection sel = (PredicateSelection) option;
                         if (sel == null) return;
@@ -174,6 +184,8 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
             }
         });
 
+        enableButtons();
+
         add(mainPanel);
     }
 
@@ -218,8 +230,8 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
     private void edit(final Predicate predicate, final int pos) {
         DataType type = (DataType) dataTypeComboBox.getSelectedItem();
         final PredicateDialog dlg = PredicateDialog.make(this, type, predicate, expressionField.getText());
-        dlg.pack();
         Utilities.centerOnScreen(dlg);
+        dlg.pack();
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.wasOKed()) {

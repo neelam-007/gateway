@@ -4,24 +4,25 @@
 package com.l7tech.external.assertions.comparison.server;
 
 import com.l7tech.policy.variable.VariableMap;
-import com.l7tech.common.logic.Predicate;
-import com.l7tech.common.logic.DataTypePredicate;
-import com.l7tech.common.logic.BinaryPredicate;
+import com.l7tech.external.assertions.comparison.Predicate;
+import com.l7tech.external.assertions.comparison.DataTypePredicate;
+import com.l7tech.external.assertions.comparison.BinaryPredicate;
 import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.MultiValuedEvaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.SingleValuedEvaluator;
+import com.l7tech.common.audit.Auditor;
 
 import java.util.Map;
 
 /**
- * Manages the progress of a single-valued value through {@link ServerComparisonAssertion}.
+ * Manages the progress of a <b>single-valued value</b> through {@link ServerComparisonAssertion}.
  * @author alex
  */
 class SVState extends State {
     private Object value;
 
-    SVState(final Map<Predicate, Evaluator> evaluators, Object value, VariableMap vars) {
-        super(evaluators, vars);
+    SVState(final Map<Predicate, Evaluator> evaluators, Object value, VariableMap vars, Auditor auditor) {
+        super(evaluators, vars, auditor);
         this.value = value;
     }
 

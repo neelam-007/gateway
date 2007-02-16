@@ -3,7 +3,7 @@
  */
 package com.l7tech.external.assertions.comparison.server.evaluate;
 
-import com.l7tech.common.logic.RegexPredicate;
+import com.l7tech.external.assertions.comparison.RegexPredicate;
 
 import java.util.regex.Pattern;
 

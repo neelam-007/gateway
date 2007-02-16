@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.comparison;
 
-import com.l7tech.common.logic.*;
 import com.l7tech.common.util.ComparisonOperator;
 import com.l7tech.common.util.Functions;
 import com.l7tech.policy.assertion.Assertion;
@@ -14,17 +13,23 @@ import com.l7tech.external.assertions.comparison.wsp.EqualityRenamedToComparison
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.ResourceBundle;
+import java.text.MessageFormat;
 
 /**
  * Processes the value resulting from the evaluation of an expression through any number of {@link Predicate}s.
  *
- * Variable names are supported using ${assertion.var} syntax.
+ * If the use of a {@link DataTypePredicate} is desired, it must come first in the {@link #predicates} array.
+ *
+ * Context variables are supported in {@link #leftValue} at runtime using ${var} syntax.  
+ *  
  * @see com.l7tech.server.message.PolicyEnforcementContext#getVariable(String)
  * @see com.l7tech.server.message.PolicyEnforcementContext#setVariable(String, Object)
  */
 public class ComparisonAssertion extends Assertion implements UsesVariables {
     private String leftValue;
     private Predicate[] predicates = new Predicate[0];
+    public static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.ComparisonAssertion");
 
     /**
      * Returns the variables referenced in {@link #leftValue}, as well as any referenced in the
@@ -50,7 +55,17 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         return predicates;
     }
 
+    /**
+     * The predicates for this assertion.  Any {@link DataTypePredicate} included in {@link #predicates} <b>must</b>
+     * come first in the array.
+     */
     public void setPredicates(Predicate... predicates) {
+        for (int i = 0; i < predicates.length; i++) {
+            Predicate predicate = predicates[i];
+            if (predicate instanceof DataTypePredicate && i > 0) {
+                throw new IllegalArgumentException("DataType predicate found at index " + i + "; it must be the first predicate");
+            }
+        }
         this.predicates = predicates;
     }
 
@@ -137,30 +152,25 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         // that is, we want our required feature set to be "assertion:Comparison" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
+        final ResourceBundle res = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.ComparisonAssertion");
+
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/check16.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME, new Functions.Unary<String, ComparisonAssertion>() {
             public String call(ComparisonAssertion ass) {
-                StringBuffer name = new StringBuffer("Proceed if ");
-                name.append(ass.getExpression1());
-                if (ass.getPredicates().length == 1 && ass.getPredicates()[0] instanceof BinaryPredicate) {
-                    if (ass.getOperator() == ComparisonOperator.CONTAINS) {
-                        if (ass.isNegate()) {
-                            name.append(" does not contain ");
-                        } else {
-                            name.append(" contains ");
-                        }
-                    } else {
-                        name.append(" is ");
-                        if (ass.isNegate()) name.append("not ");
-                        name.append(ass.getOperator().toString());
-                    }
-                    if (!ass.getOperator().isUnary()) {
-                        name.append(" ").append(ass.getExpression2());
-                    }
-                } else {
-                    name.append(" matches rules (TODO Describe them!)"); // TODO
+                StringBuffer name = new StringBuffer(res.getString("proceed")).append(" ");
+                name.append(ass.getExpression1()).append(" ");
+
+                for (int i = 0; i < predicates.length; i++) {
+                    Predicate pred = predicates[i];
+                    name.append(pred.toString());
+
+                    if (i == predicates.length-2)
+                        name.append(" and ");
+                    else if (i < predicates.length-1) 
+                        name.append(", ");
                 }
+                
                 return name.toString();
             }
         });
@@ -183,6 +193,24 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         }});
 
         return meta;
+    }
+
+    private void dostuff(StringBuffer name, Predicate pred, ResourceBundle res, String predprefix, String negatedVerb, String notNegatedVerb, int predmin, int predmax) {
+        String verb = pred.isNegated() ? negatedVerb : notNegatedVerb;
+        String fmt;
+        if (predmin == 1 && predmax == 1) {
+            fmt = res.getString(predprefix + "Predicate.desc.1");
+            name.append(MessageFormat.format(fmt, verb, predmin));
+        } else if (predmin == predmax) {
+            fmt = res.getString(predprefix + "Predicate.desc.n");
+            name.append(MessageFormat.format(fmt, verb, predmin));
+        } else if (predmax < 0) {
+            fmt = res.getString(predmin == 1 ? predprefix + "Predicate.desc.atLeast1" : predprefix + "Predicate.desc.atLeastN");
+            name.append(MessageFormat.format(fmt, verb, predmin));
+        } else {
+            fmt = res.getString(predprefix + "Predicate.desc");
+            name.append(MessageFormat.format(fmt, verb, predmin, predmax));
+        }
     }
 
 }

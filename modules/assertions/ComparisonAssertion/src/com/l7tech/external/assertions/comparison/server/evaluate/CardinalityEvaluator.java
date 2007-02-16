@@ -3,7 +3,7 @@
  */
 package com.l7tech.external.assertions.comparison.server.evaluate;
 
-import com.l7tech.common.logic.CardinalityPredicate;
+import com.l7tech.external.assertions.comparison.CardinalityPredicate;
 
 /**
  * Evaluator for {@link CardinalityPredicate}s.
@@ -16,6 +16,8 @@ public class CardinalityEvaluator extends MultiValuedEvaluator<CardinalityPredic
 
     public boolean evaluate(Object[] leftValue) {
         int num = leftValue == null ? 0 : leftValue.length;
-        return num >= predicate.getMinValues() && num <= predicate.getMaxValues();
+        int min = predicate.getMin();
+        int max = predicate.getMax();
+        return num >= min && (max < 0 || num <= max);
     }
 }

@@ -3,23 +3,21 @@
  */
 package com.l7tech.external.assertions.comparison.console;
 
-import com.l7tech.common.logic.BinaryPredicate;
 import com.l7tech.common.util.ComparisonOperator;
+import com.l7tech.external.assertions.comparison.BinaryPredicate;
+import com.l7tech.external.assertions.comparison.ComparisonAssertion;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.util.ResourceBundle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * @author alex
  */
 public class BinaryPredicatePanel extends PredicatePanel<BinaryPredicate> {
-    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.console.resources.ComparisonAssertion");
-
     private JPanel mainPanel;
     private JTextField rightValueField;
     private JComboBox operatorCombo;
@@ -30,8 +28,9 @@ public class BinaryPredicatePanel extends PredicatePanel<BinaryPredicate> {
 
     private final BinaryPredicate predicate;
     private final UpdateActionListener updateListener = new UpdateActionListener();
-    private final DefaultComboBoxModel isModel = new DefaultComboBoxModel(new Object[] { IS, IS_NOT });
-    private final DefaultComboBoxModel doesModel = new DefaultComboBoxModel(new Object[] { DOES, DOES_NOT });
+
+    private final NegateComboEntry NOT_NEGATED = new NegateComboEntry(false);
+    private final NegateComboEntry NEGATED = new NegateComboEntry(true);
 
     public BinaryPredicatePanel(BinaryPredicate predicate, String expression) {
         super(predicate, expression);
@@ -40,10 +39,28 @@ public class BinaryPredicatePanel extends PredicatePanel<BinaryPredicate> {
         init();
     }
 
-    private static final String IS = resources.getString("binaryPredicatePanel.negateCombo.notNegatedLabel");
-    private static final String IS_NOT = resources.getString("binaryPredicatePanel.negateCombo.negatedLabel");
-    private static final String DOES = resources.getString("binaryPredicatePanel.negateCombo.doesContainLabel");
-    private static final String DOES_NOT = resources.getString("binaryPredicatePanel.negateCombo.doesNotContainLabel");
+    private static final String IS = ComparisonAssertion.resources.getString("verb.is");
+    private static final String IS_NOT = ComparisonAssertion.resources.getString("verb.isNot");
+    private static final String DOES = ComparisonAssertion.resources.getString("verb.does");
+    private static final String DOES_NOT = ComparisonAssertion.resources.getString("verb.doesNot");
+
+    private class NegateComboEntry {
+        public NegateComboEntry(boolean negate) {
+            this.negate = negate;
+        }
+
+        @Override
+        public String toString() {
+            ComparisonOperator op = (ComparisonOperator) operatorCombo.getSelectedItem();
+            if (op == ComparisonOperator.CONTAINS) {
+                return negate ? DOES_NOT : DOES;
+            } else {
+                return negate ? IS_NOT : IS;
+            }
+        }
+
+        private final boolean negate;
+    }
 
     protected void initComponents() {
         operatorCombo.setModel(new DefaultComboBoxModel(ComparisonOperator.getValues()));
@@ -63,8 +80,8 @@ public class BinaryPredicatePanel extends PredicatePanel<BinaryPredicate> {
         rightValueField.setText(predicate.getRightValue());
         ComparisonOperator op = predicate.getOperator();
         operatorCombo.setSelectedItem(op == null ? ComparisonOperator.EQ : op);
-        negateCombo.setModel(isModel);
-        negateCombo.setSelectedItem(predicate.isNegated() ? IS_NOT : IS);
+        negateCombo.setModel(new DefaultComboBoxModel(new NegateComboEntry[]{NOT_NEGATED, NEGATED}));
+        negateCombo.setSelectedItem(predicate.isNegated() ? NEGATED : NOT_NEGATED);
         caseCheckbox.setSelected(predicate.isCaseSensitive());
 
         updateState();
@@ -79,14 +96,6 @@ public class BinaryPredicatePanel extends PredicatePanel<BinaryPredicate> {
         } else {
             rightValueField.setEnabled(true);
         }
-
-        int sel = negateCombo.getSelectedIndex();
-        if (op == ComparisonOperator.CONTAINS) {
-            negateCombo.setModel(doesModel);
-        } else {
-            negateCombo.setModel(isModel);
-        }
-        negateCombo.setSelectedIndex(sel);
     }
 
     public void focusFirstComponent() {
@@ -96,18 +105,19 @@ public class BinaryPredicatePanel extends PredicatePanel<BinaryPredicate> {
     protected void doUpdateModel() {
         predicate.setOperator((ComparisonOperator)operatorCombo.getSelectedItem());
         predicate.setRightValue(rightValueField.getText());
-        predicate.setNegated(negateCombo.getSelectedItem() == IS_NOT);
+        final NegateComboEntry sel = (NegateComboEntry) negateCombo.getSelectedItem();
+        predicate.setNegated(sel.negate);
         predicate.setCaseSensitive(caseCheckbox.isSelected());
     }
 
     @Override
     protected String getSyntaxError(BinaryPredicate model) {
         ComparisonOperator op = (ComparisonOperator)operatorCombo.getSelectedItem();
-        if (op == null) return resources.getString("binaryPredicatePanel.error.operatorRequired");
+        if (op == null) return ComparisonAssertion.resources.getString("binaryPredicatePanel.error.operatorRequired");
         if (op.isUnary()) return null;
 
         String s = rightValueField.getText();
-        if (s == null || s.length() == 0) return resources.getString("binaryPredicatePanel.error.rightValueRequired");
+        if (s == null || s.length() == 0) return ComparisonAssertion.resources.getString("binaryPredicatePanel.error.rightValueRequired");
         return null;
     }
 

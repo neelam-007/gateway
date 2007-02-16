@@ -3,25 +3,26 @@
  */
 package com.l7tech.external.assertions.comparison.server;
 
-import com.l7tech.common.logic.BinaryPredicate;
-import com.l7tech.common.logic.DataTypePredicate;
-import com.l7tech.common.logic.Predicate;
+import com.l7tech.external.assertions.comparison.BinaryPredicate;
+import com.l7tech.external.assertions.comparison.DataTypePredicate;
+import com.l7tech.external.assertions.comparison.Predicate;
 import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.MultiValuedEvaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.SingleValuedEvaluator;
 import com.l7tech.policy.variable.VariableMap;
+import com.l7tech.common.audit.Auditor;
 
 import java.util.Map;
 
 /**
- * Manages the progress of a multivalued value through {@link ServerComparisonAssertion}.
+ * Manages the progress of a <b>multivalued value</b> through {@link ServerComparisonAssertion}.
  * @author alex
 */
 class MVState extends State {
     private Object[] values;
 
-    MVState(Map<Predicate,Evaluator> evaluators, Object[] values, VariableMap vars) {
-        super(evaluators, vars);
+    MVState(Map<Predicate, Evaluator> evaluators, Object[] values, VariableMap vars, Auditor auditor) {
+        super(evaluators, vars, auditor);
         this.values = values;
     }
 

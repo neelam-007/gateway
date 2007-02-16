@@ -4,7 +4,7 @@
 package com.l7tech.external.assertions.comparison.console;
 
 import com.l7tech.common.gui.widgets.ValidatedPanel;
-import com.l7tech.common.logic.Predicate;
+import com.l7tech.external.assertions.comparison.Predicate;
 
 /**
  * @author alex

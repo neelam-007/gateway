@@ -3,7 +3,7 @@
  */
 package com.l7tech.external.assertions.comparison.server.evaluate;
 
-import com.l7tech.common.logic.NumericRangePredicate;
+import com.l7tech.external.assertions.comparison.NumericRangePredicate;
 
 import java.math.BigDecimal;
 

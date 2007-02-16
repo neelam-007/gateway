@@ -3,10 +3,10 @@
  */
 package com.l7tech.external.assertions.comparison.server.evaluate;
 
-import com.l7tech.common.logic.EmptyPredicate;
+import com.l7tech.external.assertions.comparison.EmptyPredicate;
 
 /**
- * Evaluator for {@link EmptyPredicate}s.
+ * Evaluator for {@link com.l7tech.external.assertions.comparison.EmptyPredicate}s.
  * @author alex
  */
 public class EmptyEvaluator extends SingleValuedEvaluator<EmptyPredicate> {

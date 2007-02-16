@@ -54,7 +54,7 @@ public class Auditor {
         return "";
     }
 
-    public void logAndAudit(AuditDetailMessage msg, String[] params) {
+    public void logAndAudit(AuditDetailMessage msg, String... params) {
         logAndAudit(msg, params, null);
     }
 

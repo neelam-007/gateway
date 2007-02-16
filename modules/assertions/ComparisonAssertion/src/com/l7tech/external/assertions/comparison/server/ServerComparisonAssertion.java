@@ -2,9 +2,9 @@ package com.l7tech.external.assertions.comparison.server;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.logic.BinaryPredicate;
-import com.l7tech.common.logic.Predicate;
-import com.l7tech.common.logic.DataTypePredicate;
+import com.l7tech.external.assertions.comparison.BinaryPredicate;
+import com.l7tech.external.assertions.comparison.Predicate;
+import com.l7tech.external.assertions.comparison.DataTypePredicate;
 import com.l7tech.external.assertions.comparison.ComparisonAssertion;
 import com.l7tech.external.assertions.comparison.server.evaluate.EvaluatorFactory;
 import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * Tests a list of boolean {@link Predicate}s against a preconfigured left value; if all return true, the assertion
+ * Tests a list of boolean {@link com.l7tech.external.assertions.comparison.Predicate}s against a preconfigured left value; if all return true, the assertion
  * succeeds.
  *
  * @see com.l7tech.external.assertions.comparison.ComparisonAssertion
@@ -63,7 +63,7 @@ public class ServerComparisonAssertion extends AbstractServerAssertion<Compariso
             return AssertionStatus.FAILED;
         }
 
-        State state = State.make(evaluators, left, vars);
+        State state = State.make(evaluators, left, vars, auditor);
 
         for (Predicate predicate : predicates) {
             state.evaluate(predicate);

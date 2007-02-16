@@ -3,7 +3,7 @@
  */
 package com.l7tech.external.assertions.comparison.console;
 
-import com.l7tech.common.logic.RegexPredicate;
+import com.l7tech.external.assertions.comparison.RegexPredicate;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;

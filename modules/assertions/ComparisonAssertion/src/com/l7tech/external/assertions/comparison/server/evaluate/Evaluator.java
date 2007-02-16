@@ -3,7 +3,7 @@
  */
 package com.l7tech.external.assertions.comparison.server.evaluate;
 
-import com.l7tech.common.logic.Predicate;
+import com.l7tech.external.assertions.comparison.Predicate;
 
 /**
  * Each concrete subclass evaluates a particular type of {@link Predicate} against a value.
