@@ -361,7 +361,13 @@ public class CommonsHttpClient implements GenericHttpClient {
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);
                     contentLength = clh == null || clh.getValue() == null ? null : new Long(Long.parseLong(clh.getValue()));
                 } catch (IOException e) {
-                    throw new GenericHttpException("Unable to obtain HTTP response: " + ExceptionUtils.getMessage(e), e);
+                    String target = null;
+                    try {
+                        target = method.getURI().toString();
+                    } catch (URIException e1) {
+                        logger.log(Level.WARNING, "cannot get URI", e1);
+                    }
+                    throw new GenericHttpException("Unable to obtain HTTP response from " + target, e);
                 }
 
                 final GenericHttpResponse genericHttpResponse = new GenericHttpResponse() {
