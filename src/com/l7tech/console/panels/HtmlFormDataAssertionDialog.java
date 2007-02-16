@@ -65,7 +65,7 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
                     if (_warningLabel.getIcon() == null) {
                         _warningLabel.setText(null);
                     } else {
-                        _warningLabel.setText("One or more value is invalid. Select a highlighted cell to see the associated error message.");
+                        _warningLabel.setText("Invalid value(s) detected; select a highlighted cell for more information");
                     }
                 } else {
                     _warningLabel.setText(warning);
@@ -169,12 +169,12 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
             if (column == FIELD_NAME_COLUMN.index) {
                 final String fieldName = (String)getValueAt(row, column);
                 if (fieldName.trim().length() == 0) {
-                    return "Field name must not be blank.";
+                    return "Field name must not be blank";
                 }
                 for (int r = 0; r < getRowCount(); ++ r) {
                     if (r != row) {
                         if (getValueAt(r, column).equals(fieldName)) {
-                            return "Duplicate field name.";
+                            return "Duplicate field name";
                         }
                     }
                 }
@@ -182,28 +182,28 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
                 final HtmlFormDataType dataType = (HtmlFormDataType) getValueAt(row, column);
                 if (dataType == HtmlFormDataType.FILE) {
                     if (!_allowPostCheckbox.isSelected()) {
-                        return "Data type must not be \"" + HtmlFormDataType.FILE + "\" when POST is not selected.";
+                        return "Data type \"" + HtmlFormDataType.FILE + "\" requires the POST submission method";
                     }
                     final HtmlFormDataLocation location = (HtmlFormDataLocation) getValueAt(row, FIELD_LOCATION_COLUMN.index);
                     if (location == HtmlFormDataLocation.URL) {
-                        return "Data type must not be \"" + HtmlFormDataType.FILE + "\" when location is \"" + HtmlFormDataLocation.URL + "\".";
+                        return "Data type must not be \"" + HtmlFormDataType.FILE + "\" when location is \"" + HtmlFormDataLocation.URL + "\"";
                     }
                 }
             } else if (column == FIELD_MIN_OCCURS_COLUMN.index) {
                 final Integer minValue = (Integer) getValueAt(row, column);
                 if (minValue == null) {
-                    return "Min occurs must not be blank.";
+                    return "Minimum must not be blank";
                 }
                 final int minOccurs = minValue.intValue();
                 if (minOccurs < 0) {
-                    return "Min occurs must be >= 0.";
+                    return "Minimum must be >= 0";
                 } else {
                     final Integer maxValue = (Integer) getValueAt(row, FIELD_MAX_OCCURS_COLUMN.index);
                     if (maxValue != null) {
                         final int maxOccurs = maxValue.intValue();
                         if (maxOccurs >= 0) {
                             if (minOccurs > maxOccurs) {
-                                return "Min occurs must be <= max occurs.";
+                                return "Minimum must be <= maximum";
                             }
                         }
                     }
@@ -211,18 +211,18 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
             } else if (column == FIELD_MAX_OCCURS_COLUMN.index) {
                 final Integer maxValue = (Integer) getValueAt(row, column);
                 if (maxValue == null) {
-                    return "Max occurs must not be blank.";
+                    return "Maximum must not be blank";
                 }
                 final int maxOccurs = maxValue.intValue();
                 if (maxOccurs < 0) {
-                    return "Max occurs must be >= 0.";
+                    return "Maximum must be >= 0";
                 } else {
                     final Integer minValue = (Integer) getValueAt(row, FIELD_MIN_OCCURS_COLUMN.index);
                     if (minValue != null) {
                         final int minOccurs = minValue.intValue();
                         if (minOccurs >= 0) {
                             if (minOccurs > maxOccurs) {
-                                return "Max occurs must be <= min occurs.";
+                                return "Maximum must be >= minimum";
                             }
                         }
                     }
@@ -232,11 +232,11 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
                 if (location == HtmlFormDataLocation.URL) {
                     final HtmlFormDataType dataType = (HtmlFormDataType) getValueAt(row, FIELD_DATA_TYPE_COLUMN.index);
                     if (dataType == HtmlFormDataType.FILE) {
-                        return "Location must not be \"" + HtmlFormDataLocation.URL + "\" when data type is \"" + HtmlFormDataType.FILE + "\".";
+                        return "Location must not be \"" + HtmlFormDataLocation.URL + "\" when data type is \"" + HtmlFormDataType.FILE + "\"";
                     }
                 } else if (location == HtmlFormDataLocation.BODY) {
                     if (!_allowPostCheckbox.isSelected()) {
-                        return "Location must not be \"" + HtmlFormDataLocation.BODY + "\" when POST is not selected.";
+                        return "Location \"" + HtmlFormDataLocation.BODY + "\" requires the POST submission method";
                     }
                 }
             }
@@ -556,7 +556,7 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
             final ImageIcon warningIcon = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Alert16x16.gif"));
             _warningLabel.setIcon(warningIcon);
             if (_warningLabel.getText() == null) {
-                _warningLabel.setText("One or more value is invalid. Select a highlighted cell to see the associated error message.");
+                _warningLabel.setText("Invalid value(s) detected; select a highlighted cell for more information");
             }
         } else {
             _warningLabel.setIcon(null);
