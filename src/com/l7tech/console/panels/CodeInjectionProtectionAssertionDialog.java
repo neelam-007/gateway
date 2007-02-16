@@ -70,8 +70,8 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
             public void itemStateChanged(ItemEvent e) {
                 for (Enumeration<AbstractButton> i = _protectionButtons.getElements(); i.hasMoreElements();) {
                     final JRadioButton button = (JRadioButton) i.nextElement();
-                    final String name = button.getText();
-                    final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromDisplayName(name);
+                    final String action = button.getActionCommand();
+                    final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromWspName(action);
                     button.setEnabled(!_responseRadioButton.isSelected() || protection.isApplicableToResponse());
                 }
                 enableOkButton();
@@ -93,12 +93,12 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
         c.anchor = GridBagConstraints.WEST;
         for (CodeInjectionProtectionType protection : CodeInjectionProtectionType.values()) {
             final JRadioButton radioButton = new JRadioButton(protection.getDisplayName());
-            radioButton.setActionCommand(protection.getDisplayName());
+            radioButton.setActionCommand(protection.getWspName());
             radioButton.setSelected(protection == _assertion.getProtection());
             radioButton.addMouseListener(new MouseAdapter() {
                 public void mouseEntered(MouseEvent e) {
-                    final String name = ((JRadioButton) e.getComponent()).getText();
-                    final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromDisplayName(name);
+                    final String action = ((JRadioButton) e.getComponent()).getActionCommand();
+                    final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromWspName(action);
                     _descriptionText.setText(protection.getDescription());
                 }
 

@@ -39,8 +39,8 @@ public class HtmlFormDataLocation implements Serializable {
 
     // Warning: Never change wspName; in order to maintain backward compatibility.
     public static final HtmlFormDataLocation ANYWHERE = new HtmlFormDataLocation("anywhere", "anywhere");
-    public static final HtmlFormDataLocation URL = new HtmlFormDataLocation("request URL", "request URL");
-    public static final HtmlFormDataLocation BODY = new HtmlFormDataLocation("request body", "request body");
+    public static final HtmlFormDataLocation URL = new HtmlFormDataLocation("requestUrl", "request URL");
+    public static final HtmlFormDataLocation BODY = new HtmlFormDataLocation("requestBody", "request body");
 
     private static final HtmlFormDataLocation[] _values = new HtmlFormDataLocation[]{ANYWHERE, URL, BODY};
 
