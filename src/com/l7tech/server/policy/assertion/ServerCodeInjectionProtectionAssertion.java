@@ -77,7 +77,9 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
         }
 
         // Scans request message body.
-        if (_assertion.isIncludeRequestBody()) {
+        if (_assertion.isIncludeRequestBody() &&
+                ("POST".equalsIgnoreCase(httpServletRequestKnob.getMethod()) ||
+                 "PUT".equalsIgnoreCase(httpServletRequestKnob.getMethod()))) {
             status = scanRequestBody(requestMessage);
             if (status != AssertionStatus.NONE)
                 return status;
@@ -116,19 +118,13 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
     }
 
     private AssertionStatus scanRequestBody(final Message requestMessage) throws IOException {
-        final HttpServletRequestKnob httpServletRequestKnob = (HttpServletRequestKnob) requestMessage.getKnob(HttpServletRequestKnob.class);
-
-        ContentTypeHeader contentType = ContentTypeHeader.TEXT_DEFAULT;     // Default.
-        final String contentTypeString = httpServletRequestKnob.getHeaderSingleValue("Content-Type");
-        if (contentTypeString != null) {
-            contentType = ContentTypeHeader.parseValue(contentTypeString);
-        }
-
         AssertionStatus status = AssertionStatus.NONE;
-        final StringBuilder evidence = new StringBuilder();
 
+        final ContentTypeHeader contentType = requestMessage.getMimeKnob().getOuterContentType();
         if (contentType.matches("application", "x-www-form-urlencoded")) {
             _logger.finer("Scanning request message body as application/x-www-form-urlencoded.");
+            final StringBuilder evidence = new StringBuilder();
+            final HttpServletRequestKnob httpServletRequestKnob = (HttpServletRequestKnob) requestMessage.getKnob(HttpServletRequestKnob.class);
             final Map<String, String[]> urlParams = httpServletRequestKnob.getRequestBodyParameterMap();
             for (String urlParamName : urlParams.keySet()) {
                 for (String urlParamValue : urlParams.get(urlParamName)) {
@@ -151,16 +147,9 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
     }
 
     private AssertionStatus scanResponseBody(final Message responseMessage) throws IOException {
-        final HttpServletResponseKnob httpServletResponseKnob = (HttpServletResponseKnob) responseMessage.getKnob(HttpServletResponseKnob.class);
-
-        ContentTypeHeader contentType = ContentTypeHeader.TEXT_DEFAULT;   // Default.
-        final String contentTypeString[] = httpServletResponseKnob.getHeaderValues("Content-Type");
-        if (contentTypeString.length > 0) {
-            contentType = ContentTypeHeader.parseValue(contentTypeString[0]);
-        }
-
         AssertionStatus status = AssertionStatus.NONE;
 
+        final ContentTypeHeader contentType = responseMessage.getMimeKnob().getOuterContentType();
         if (contentType.matches("multipart", "form-data")) {
             status = scanBodyAsMultipartFormData(responseMessage, Direction.response);
         } else if (contentType.matches("text", "xml")) {
