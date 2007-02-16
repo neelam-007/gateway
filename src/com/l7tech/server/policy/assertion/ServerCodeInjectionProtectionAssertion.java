@@ -171,7 +171,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
      */
     private AssertionStatus scanBodyAsMultipartFormData(final Message message, final Direction direction) throws IOException {
         if (_logger.isLoggable(Level.FINER)) {
-            _logger.finer("Scanning " + direction + " message body as mulitpart/form-data.");
+            _logger.finer("Scanning " + direction + " message body as multipart/form-data.");
         }
         final MimeKnob mimeKnob = message.getMimeKnob();
         try {
