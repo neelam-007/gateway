@@ -102,7 +102,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
             }
         } else {
             _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_METHOD_NOT_ALLOWED, new String[]{httpMethod});
-            return AssertionStatus.FAILED;
+            return AssertionStatus.FALSIFIED;
         }
 
         // Map of all parsed fields. Map key is field name.
@@ -134,7 +134,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
         for (HtmlFormDataAssertion.FieldSpec required : fieldSpecs.values()) {
             if (required.getMinOccurs() > 0 && !fields.containsKey(required.getName())) {
                 _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FIELD_NOT_FOUND, new String[]{required.getName()});
-                return AssertionStatus.FAILED;
+                return AssertionStatus.FALSIFIED;
             }
         }
 
@@ -153,7 +153,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                             Double.valueOf(fieldValue.value);
                         } catch (NumberFormatException e) {
                             _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, new String[]{field.name, fieldValue.value, allowedDataType.getWspName()});
-                            return AssertionStatus.FAILED;
+                            return AssertionStatus.FALSIFIED;
                         }
                     } else if (allowedDataType == HtmlFormDataType.FILE) {
                         if (!fieldValue.isFile) {
@@ -170,11 +170,11 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                 // Enforces min. and max. occurrences:
                 if (field.fieldValues.size() < fieldSpec.getMinOccurs()) {
                     _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_MINOCCURS, new String[]{field.name, Integer.toString(field.fieldValues.size()), Integer.toString(fieldSpec.getMinOccurs())});
-                    return AssertionStatus.FAILED;
+                    return AssertionStatus.FALSIFIED;
                 }
                 if (field.fieldValues.size() > fieldSpec.getMaxOccurs()) {
                     _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_MAXOCCURS, new String[]{field.name, Integer.toString(field.fieldValues.size()), Integer.toString(fieldSpec.getMaxOccurs())});
-                    return AssertionStatus.FAILED;
+                    return AssertionStatus.FALSIFIED;
                 }
                 if (_logger.isLoggable(Level.FINER)) {
                     _logger.finer("Verified: Form field occurrences (name=" + field.name + ", occurs=" + field.fieldValues.size() + ", minOccurs=" + fieldSpec.getMinOccurs() + ", maxOccurs=" + fieldSpec.getMaxOccurs() + ")");
@@ -187,11 +187,11 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                 } else {
                     if (field.inUri && allowedLocation != HtmlFormDataLocation.URL) {
                         _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, new String[]{field.name, HtmlFormDataLocation.URL.toString()});
-                        return AssertionStatus.FAILED;
+                        return AssertionStatus.FALSIFIED;
                     }
                     if (field.inBody && allowedLocation != HtmlFormDataLocation.BODY) {
                         _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, new String[]{field.name, HtmlFormDataLocation.BODY.toString()});
-                        return AssertionStatus.FAILED;
+                        return AssertionStatus.FALSIFIED;
                     }
                 }
                 if (_logger.isLoggable(Level.FINER)) {
@@ -201,7 +201,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
             } else {
                 if (_assertion.isDisallowOtherFields()) {
                     _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_NOT_ALLOWED, new String[]{field.name});
-                    return AssertionStatus.FAILED;
+                    return AssertionStatus.FALSIFIED;
                 } else {
                     _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_ALLOWED, new String[]{field.name});
                 }
