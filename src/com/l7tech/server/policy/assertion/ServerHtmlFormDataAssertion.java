@@ -245,10 +245,19 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
      */
     private void parseMultipartFormData(final Map<String, Field> holder, final MimeKnob mimeKnob)
             throws IOException {
-        final PartIterator itor = mimeKnob.getParts();
         try {
+            final PartIterator itor = mimeKnob.getParts();
             for (int partPosition = 0; itor.hasNext(); ++ partPosition) {
-                final PartInfo partInfo = itor.next();
+                PartInfo partInfo = null;
+                try {
+                    partInfo = itor.next();
+                } catch (NoSuchPartException e) {
+                    _logger.info("Multipart/form-data may have improperly terminated MIME body.");
+                    break;  // This does not warrant a BAD_REQUEST.
+                }
+
+                // Force body to be stashed. Neccessary for PartIterator to work. (Bug 3470)
+                partInfo.getInputStream(false).close();
 
                 final MimeHeader contentDispositionHeader = partInfo.getHeader("Content-Disposition");
                 if (contentDispositionHeader == null) {
