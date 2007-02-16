@@ -18,7 +18,7 @@
     <target name="test" depends="-compile-tests">
         <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">
             <classpath>
-                <path refid="compile.classpath"/>
+                <path refid="compile.test.classpath"/>
                 <pathelement location="${UneasyRooster.dir}/build/test-classes"/>
                 <pathelement location="${build.classes}"/>
                 <pathelement location="${build.classes}-test"/>

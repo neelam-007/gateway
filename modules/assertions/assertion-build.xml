@@ -104,6 +104,21 @@
         <pathelement location="${UneasyRooster.dir}/build/classes"/>
     </path>
 
+    <path id="compile.test.classpath">
+        <path refid="compile.classpath"/>
+        <fileset dir="${UneasyRooster.dir}/lib">
+            <include name="saaj.jar"/>
+            <include name="saaj-impl.jar"/>
+            <include name="servlet-api.jar"/>
+            <include name="policy-1.0.jar"/>
+            <include name="whirlycache-1.0.1.jar"/>
+            <include name="concurrent-1.3.4.jar"/>
+        </fileset>
+        <fileset dir="${UneasyRooster.dir}/lib/crypto/bc">
+            <include name="bcprov*.jar"/>
+        </fileset>
+    </path>
+
 
     <!-- Initializes the ssg.home property. -->
     <target name="-common.init.ssg.home.init">
@@ -153,7 +168,7 @@
                debug="on"
                destdir="${build.classes}-test">
             <classpath>
-                <path refid="compile.classpath"/>
+                <path refid="compile.test.classpath"/>
                 <pathelement location="${build.classes}"/>
                 <pathelement location="${UneasyRooster.dir}/build/test-classes"/>
             </classpath>
