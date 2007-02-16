@@ -237,7 +237,15 @@ public class ServerVariables {
                 // get HttpResponseKnob from pec
                 HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
                 if (hrk == null) return new String[0];
-                String[] vals = hrk.getHeaderValues(name);
+
+                String suffix = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER.length());
+                if (!suffix.startsWith(".")) {
+                    logger.warning("Variable '" + name + "' does not have a period before the header name.");
+                    return new String[0];
+                }
+                String hname = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER.length()+1);
+
+                String[] vals = hrk.getHeaderValues(hname);
                 if (vals.length > 0) return vals[0];
                 return null;
             }
@@ -248,7 +256,15 @@ public class ServerVariables {
                 // get HttpResponseKnob from pec
                 HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
                 if (hrk == null) return new String[0];
-                return hrk.getHeaderValues(name);
+
+                String suffix = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER.length());
+                if (!suffix.startsWith(".")) {
+                    logger.warning("Variable '" + name + "' does not have a period before the header name.");
+                    return new String[0];
+                }
+                String hname = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER.length()+1);
+
+                return hrk.getHeaderValues(hname);
             }
         }),
 
