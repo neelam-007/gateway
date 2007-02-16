@@ -53,7 +53,7 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
                 tmp.add(pair);
             }
         }
-        String[] output = new String[headersToSend.size()];
+        String[] output = new String[tmp.size()];
         int i = 0;
         for (Pair pair : tmp) {
             output[i] = pair.getValue().toString();
