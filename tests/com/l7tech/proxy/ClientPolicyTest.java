@@ -16,14 +16,13 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.policy.assertion.ClientSslAssertion;
-import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
+import com.l7tech.proxy.policy.assertion.*;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpBasic;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -51,6 +50,10 @@ public class ClientPolicyTest extends TestCase {
 
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
+    }
+
+    protected void setUp() throws Exception {
+        AssertionRegistry.installEnhancedMetadataDefaults();
     }
 
     /** Decorate a message with an empty policy. */
@@ -140,6 +143,8 @@ public class ClientPolicyTest extends TestCase {
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
 
             if (clientPolicy != null) {
+                assertTrue(noUnknowns(clientPolicy));
+
                 // Test empty username
                 ssg.setUsername("");
                 ssg.getRuntime().setCachedPassword("".toCharArray());
@@ -187,5 +192,18 @@ public class ClientPolicyTest extends TestCase {
                 assertTrue(context.isDigestAuthRequired());
             }
         }
+    }
+
+    private boolean noUnknowns(ClientAssertion clientPolicy) {
+        final boolean[] sawUnknown = new boolean[] { false };
+        clientPolicy.visit(new ClientAssertion.ClientAssertionVisitor() {
+            public void visit(ClientAssertion clientAssertion) {
+                if (clientAssertion instanceof ClientUnknownAssertion || clientAssertion instanceof UnimplementedClientAssertion) {
+                    System.err.println("Unimplemented assertion: " + clientAssertion.getName());
+                    sawUnknown[0] = true;
+                }
+            }
+        });
+        return !sawUnknown[0];
     }
 }

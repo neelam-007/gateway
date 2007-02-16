@@ -1,29 +1,31 @@
 package com.l7tech.policy;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import static com.l7tech.policy.assertion.DefaultAssertionMetadata.*;
+import com.l7tech.common.util.ClassUtils;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.MetadataFinder;
+import com.l7tech.policy.wsp.AssertionMapping;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.TypeMappingFinder;
 import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.policy.wsp.AssertionMapping;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.Functions;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContextAware;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 
 import java.util.HashSet;
-import java.util.Set;
-import java.util.Map;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An AssertionRegistry keeps track of a set of Assertion classes, each represented by a single prototype
@@ -56,6 +58,11 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
         // Pre-populate with hardcoded assertions
         for (Assertion assertion : AllAssertions.SERIALIZABLE_EVERYTHING)
             registerAssertion(assertion.getClass());
+
+        onApplicationContextSet();
+    }
+
+    protected void onApplicationContextSet() {        
     }
 
     public ApplicationContext getApplicationContext() {
@@ -167,7 +174,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
     public TypeMapping getTypeMapping(String externalName) {
         Assertion ass = findByExternalName(externalName);
         if (ass != null)
-            return (TypeMapping)ass.meta().get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
+            return (TypeMapping)ass.meta().get(WSP_TYPE_MAPPING_INSTANCE);
 
         // Check for globally-visible compatibility mappings
         for (Assertion assertion : getAssertions()) {
@@ -184,7 +191,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
         if (Assertion.class.isAssignableFrom(unrecognizedType)) {
             try {
                 Assertion instance = (Assertion)unrecognizedType.newInstance();
-                return (TypeMapping)instance.meta().get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
+                return (TypeMapping)instance.meta().get(WSP_TYPE_MAPPING_INSTANCE);
             } catch (InstantiationException e) {
                 throw new RuntimeException(e); // broken bean
             } catch (IllegalAccessException e) {
@@ -205,7 +212,19 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
         if (enhancedMetadataDefaultsInstalled.get())
             return;
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.ASSERTION_FACTORY, new MetadataFinder() {
+        putDefaultGetter(SERVER_ASSERTION_CLASSNAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, makeDefaultSpecificClass(meta, "server", "Server"));
+            }
+        });
+
+        putDefaultGetter(CLIENT_ASSERTION_CLASSNAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, makeDefaultSpecificClass(meta, "proxy", "Client"));
+            }
+        });
+
+        putDefaultGetter(ASSERTION_FACTORY, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 final Class metadataClass = meta.getAssertionClass();
                 return new Functions.Unary< Assertion, Assertion > () {
@@ -223,9 +242,9 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
             }
         });
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.POLICY_NODE_NAME, new MetadataFinder() {
+        putDefaultGetter(POLICY_NODE_NAME, new MetadataFinder() {
             public Object get(final AssertionMetadata meta, String key) {
-                return DefaultAssertionMetadata.cache(meta, key, new Functions.Unary< String, Assertion >() {
+                return cache(meta, key, new Functions.Unary< String, Assertion >() {
                     public String call(Assertion assertion) {
                         return (String)meta.get(AssertionMetadata.SHORT_NAME);
                     }
@@ -233,10 +252,11 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
             }
         });
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE, new MetadataFinder() {
+        putDefaultGetter(WSP_TYPE_MAPPING_INSTANCE, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                Class assClass = meta.getAssertionClass();
-                String typeMappingClassname = (String)meta.get(AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME);
+                //noinspection unchecked
+                Class<? extends Assertion> assClass = meta.getAssertionClass();
+                String typeMappingClassname = (String)meta.get(WSP_TYPE_MAPPING_CLASSNAME);
                 if (typeMappingClassname != null) {
                     try {
                         Class typeMappingClass = Class.forName(typeMappingClassname);
@@ -254,28 +274,26 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
                     }
                 }
                 String externalName = (String)meta.get(AssertionMetadata.WSP_EXTERNAL_NAME);
-                return DefaultAssertionMetadata.cache(meta, key, new AssertionMapping(assClass, externalName));
+                return cache(meta, key, new AssertionMapping(assClass, externalName));
             }
         });
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.USED_BY_CLIENT, new MetadataFinder() {
+        putDefaultGetter(USED_BY_CLIENT, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 Class assertionClass = meta.getAssertionClass();
                 for (Assertion ass : AllAssertions.BRIDGE_EVERYTHING) {
                     if (ass.getClass() == assertionClass)
-                        return DefaultAssertionMetadata.cache(meta, key, Boolean.TRUE);
+                        return cache(meta, key, Boolean.TRUE);
                 }
-                return DefaultAssertionMetadata.cache(meta, key, Boolean.FALSE);
+                return cache(meta, key, Boolean.FALSE);
             }
         });
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.FEATURE_SET_NAME, new MetadataFinder() {
+        putDefaultGetter(AssertionMetadata.FEATURE_SET_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 Class assertionClass = meta.getAssertionClass();
-                for (Assertion ass : AllAssertions.SERIALIZABLE_EVERYTHING) {
-                    if (ass.getClass() == assertionClass)
-                        return DefaultAssertionMetadata.cache(meta, key, "(fromClass)");
-                }
+                if (isCoreAssertion(assertionClass))
+                    return cache(meta, key, "(fromClass)");
 
                 // Unknown assertion; treat as modular
                 return "set:modularAssertions";
@@ -283,6 +301,53 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
         });
 
         enhancedMetadataDefaultsInstalled.set(true);
+    }
+
+    /**
+     * Check if the specified assertion class is part of the core product (that is, not from a modular assertion).
+     * Assertions are considered part of the core if and only if they are listed in {@link AllAssertions#SERIALIZABLE_EVERYTHING}
+     * or {@link AllAssertions#GATEWAY_EVERYTHING}.
+     *
+     * @param assertionClass  the assertion class to check. Required.
+     * @return true iff. the specified assertion class is recognized as a core assertion.
+     */
+    private static boolean isCoreAssertion(Class assertionClass) {
+        for (Assertion ass : AllAssertions.SERIALIZABLE_EVERYTHING) {
+            if (ass.getClass() == assertionClass)
+                return true;
+        }
+        for (Assertion ass : AllAssertions.GATEWAY_EVERYTHING) {
+            if (ass.getClass() == assertionClass)
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Make the default specific class for the specified assertion metadata, per the descriptions of
+     * {@link AssertionMetadata#SERVER_ASSERTION_CLASSNAME} and {@link AssertionMetadata#CLIENT_ASSERTION_CLASSNAME}. 
+     *
+     * @param meta  the AssertionMetadata.  Required.
+     * @param packageInsert the package to insert after the base packe, ie "proxy" or "server".  Required.
+     * @param classPrefix  the prepend to the base classname, ie "Client" or "Server", with initial capital.  Required.
+     * @return the default specific class name for this metadata and type.
+     */
+    private static String makeDefaultSpecificClass(AssertionMetadata meta, String packageInsert, String classPrefix) {
+        Class assclass = meta.getAssertionClass();
+        String assname = assclass.getName();                  // assertion full classname, ie "com.yoyodyne.assertion.a.b.FooAssertion"
+        String className = ClassUtils.getClassName(assname);  // assertion classname without package, ie "FooAssertion"
+        String basepack = basepack(meta);
+        String rest = ClassUtils.stripPrefix(assname, basepack + "."); // "com.yoyodyne.assertion.a.b.FooAssertion" => "assertion.a.b.FooAssertion"
+
+        if (!isCoreAssertion(assclass))
+            return basepack + "." + classPrefix.toLowerCase() + "." + classPrefix + className;
+
+        rest = ClassUtils.stripPrefix(rest, "policy.");
+        rest = ClassUtils.stripPrefix(rest, "assertion.");                 // "assertion.a.b.FooAssertion" => "a.b.FooAssertion"
+        rest = ClassUtils.stripSuffix(rest, className);// "a.b.FooAssertion" => "a.b"
+        rest = ClassUtils.stripSuffix(rest, ".");
+        if (rest.length() > 0) rest = rest + ".";
+        return basepack + "." + packageInsert + ".policy.assertion." + rest + classPrefix + className;
     }
 
     public void afterPropertiesSet() throws Exception {

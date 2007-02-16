@@ -135,4 +135,11 @@ public abstract class ClientCompositeAssertion extends ClientAssertion {
         if (data.getChildren().isEmpty())
             throw new PolicyAssertionException(bean, "CompositeAssertion has no children: " + this);
     }
+
+    public void visit(ClientAssertionVisitor visitor) {
+        visitor.visit(this);
+        for (ClientAssertion child : children) {
+            child.visit(visitor);
+        }        
+    }
 }

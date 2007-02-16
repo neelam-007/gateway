@@ -6,7 +6,6 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -101,7 +100,6 @@ public class AllAssertions {
         new EncryptedUsernameTokenAssertion(),
         new Regex(),
         new UnknownAssertion(),
-        new SnmpTrapAssertion(),
         new ThroughputQuota(),
         new EmailAlertAssertion(),
         new CommentAssertion(),
@@ -160,7 +158,6 @@ public class AllAssertions {
         new WsFederationPassiveTokenRequest(),
         new Regex(),
         new UnknownAssertion(),
-        new SnmpTrapAssertion(),
         new ThroughputQuota(),
         new EmailAlertAssertion(),
         new CommentAssertion(),

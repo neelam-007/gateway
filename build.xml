@@ -2850,6 +2850,7 @@
         <copy todir="${install.src.aarmods}">
             <fileset dir="${src.root}/modules/assertions/RateLimitAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/ComparisonAssertion/build" includes="*.aar"/>
+            <fileset dir="${src.root}/modules/assertions/SnmpTrapAssertion/build" includes="*.aar"/>
         </copy>
 
         <!-- Copy LDAP templates -->

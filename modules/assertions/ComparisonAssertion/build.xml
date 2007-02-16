@@ -25,6 +25,7 @@
             <formatter type="xml" if="build.junit.xmlformat"/>
             <!-- <test name="com.l7tech.external.assertions.comparison.server.ServerComparisonAssertionTest" haltonfailure="no"/> Look it works now! -->
         </junit>
+        <checkfail/>
     </target>
 
 

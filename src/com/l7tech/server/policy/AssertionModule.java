@@ -104,7 +104,7 @@ public class AssertionModule {
     /**
      * @return the ClassLoader providing classes for this jarfile
      */
-    ClassLoader getModuleClassLoader() {
+    AssertionModuleClassLoader getModuleClassLoader() {
         return classLoader;
     }
 

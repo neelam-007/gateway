@@ -46,6 +46,7 @@ public class Pre32WspConstants {
         "CredentialSource", // computed by an assertion to signal that is a credential source
         "CredentialModifier", // computed by an assertion to signal that is a credential source
         "RequireProofOfPosession", // computed by an saml assertion to indicate that the proof of posesions has been required
+        "FeatureSetName", // computed by Assertion to determine what feature set name the assertion requires
     };
 
     static final Pre32TypeMapping typeMappingObject = new Pre32ObjectTypeMapping(Object.class, "objectValue");

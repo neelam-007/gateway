@@ -31,7 +31,6 @@ public class AuditFolderNode extends AbstractPaletteFolderNode {
         children = null;
         insert( new AuditAssertionPaletteNode(), index++ );
         insert( new AuditDetailAssertionPaletteNode(), index++ );
-        insert( new SnmpTrapAssertionPaletteNode(), index++ );
         insert( new EmailAlertAssertionPaletteNode(), index++ );
         index = insertMatchingModularAssertions(index);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();

@@ -48,4 +48,12 @@ public abstract class ClientAssertion implements ClientDecorator {
      * @return a string such as "com/l7tech/proxy/resources/tree/assertion.png"
      */
     public abstract String iconResource(boolean open);
+
+    public static interface ClientAssertionVisitor {
+        void visit(ClientAssertion clientAssertion);
+    }
+
+    public void visit(ClientAssertionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

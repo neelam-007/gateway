@@ -2,22 +2,18 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.IteratorEnumeration;
 import com.l7tech.common.util.ResourceUtils;
 
-import java.net.URLClassLoader;
-import java.net.URL;
-import java.util.Set;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-
-import sun.misc.Resource;
+import java.io.FileNotFoundException;
+import java.io.ByteArrayInputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.net.*;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A URLClassloader that keeps track of loaded classes so they can be notified when it is time to unload them.
@@ -25,19 +21,41 @@ import sun.misc.Resource;
 class AssertionModuleClassLoader extends URLClassLoader {
     protected static final Logger logger = Logger.getLogger(AssertionModuleClassLoader.class.getName());
 
+    /** Protocol that we register. */
+    public static final String NR_PROTO = "assnmod";
+
+    static ServerAssertionRegistry registry = null;
+
     /** Classes that have been loaded from this module. */
     private final Set<Class> classes = Collections.synchronizedSet(new HashSet<Class>());
     private final String moduleName;
+    private final Set<PreloadedZipFile> nestedJarFiles;
 
-    public AssertionModuleClassLoader(String moduleName, URL jarUrl, ClassLoader parent) {
+    public AssertionModuleClassLoader(String moduleName, URL jarUrl, ClassLoader parent, Set<PreloadedZipFile> nestedJarFiles) {
         super(new URL[] { jarUrl }, parent);
         this.moduleName = moduleName;
+        this.nestedJarFiles = nestedJarFiles == null ? Collections.<PreloadedZipFile>emptySet() : nestedJarFiles;
     }
 
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
-        final Class<?> found = super.findClass(name);
+        Class<?> found;
+        try {
+            found = super.findClass(name);
+        } catch (ClassNotFoundException e) {
+            found = findClassFromNestedJars(name);
+            if (found == null)
+                throw new ClassNotFoundException(ExceptionUtils.getMessage(e), e);
+        }
         classes.add(found);
         return found;
+    }
+
+    private Class findClassFromNestedJars(String name) {
+        String path = name.replace('.', '/').concat(".class");
+        byte[] bytecode = getResourceBytesFromNestedJars(path);
+        if (bytecode == null)
+            return null;
+        return defineClass(name, bytecode, 0, bytecode.length);
     }
 
     /**
@@ -49,9 +67,9 @@ class AssertionModuleClassLoader extends URLClassLoader {
      * @throws IOException if there is an error reading the resource
      */
     byte[] getResourceBytes(final String path) throws IOException {
-        URL url = findResource(path);
+        URL url = super.findResource(path);
         if (url == null)
-            return null;
+            return getResourceBytesFromNestedJars(path);
         InputStream is = null;
         try {
             is = url.openStream();
@@ -59,6 +77,57 @@ class AssertionModuleClassLoader extends URLClassLoader {
         } finally {
             ResourceUtils.closeQuietly(is);
         }
+    }
+
+    private byte[] getResourceBytesFromNestedJars(String path) {
+        for (PreloadedZipFile nested : nestedJarFiles) {
+            byte[] bytes = nested.getFile(path);
+            if (bytes != null)
+                return bytes;
+        }
+        return null;
+    }
+
+    public URL findResource(final String name) {
+        URL url = super.findResource(name);
+        return url == null ? findResourceFromNestedJars(name) : url;
+    }
+
+    private URL findResourceFromNestedJars(String name) {
+        for (PreloadedZipFile nested : nestedJarFiles) {
+            byte[] bytes = nested.getFile(name);
+            if (bytes != null) return makeResourceUrl(nested, name, bytes);
+        }
+        return null;
+    }
+
+    private URL makeResourceUrl(PreloadedZipFile nested, String name, final byte[] bytes) {
+        try {
+            return new URL(NR_PROTO, null, -1, moduleName + "!" + nested.getName() + "!" + name, new URLStreamHandler() {
+                protected URLConnection openConnection(URL url) throws IOException {
+                    return new URLConnection(url) {
+                        public void connect() throws IOException { }
+                        public InputStream getInputStream() throws IOException {
+                            return new ByteArrayInputStream(bytes);
+                        }
+                    };
+                }
+            });
+        } catch (MalformedURLException e) {
+            logger.log(Level.SEVERE, "Unable to create resource URL: " + ExceptionUtils.getMessage(e), e);
+            return null;
+        }
+    }
+
+    public Enumeration<URL> findResources(final String name) throws IOException {
+        List<URL> urls = new ArrayList<URL>();
+        Enumeration<URL> resen = super.findResources(name);
+        while (resen != null && resen.hasMoreElements()) {
+            URL url = resen.nextElement();
+            urls.add(url);
+        }
+        urls.add(findResourceFromNestedJars(name));
+        return new IteratorEnumeration<URL>(urls.iterator());
     }
 
     /**
@@ -87,12 +156,77 @@ class AssertionModuleClassLoader extends URLClassLoader {
     private void onModuleUnloaded(Class clazz) {
         try {
             clazz.getMethod("onModuleUnloaded").invoke(null);
+        } catch (NoClassDefFoundError e) {
+            // Must be not-entirely-initialized class
+            logger.log(Level.WARNING, "Module " + moduleName + ": unable to notify class " + clazz.getName() + " of module unload: " + ExceptionUtils.getMessage(e));
         } catch (NoSuchMethodException e) {
             // Ok, it doesn't care to be notified
         } catch (IllegalAccessException e) {
-            logger.log(Level.WARNING, "Module " + moduleName + ": unable to notify class " + clazz.getName() + " of module unload: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Module " + moduleName + ": unable to notify class " + clazz.getName() + " of module unload: " + ExceptionUtils.getMessage(e));
         } catch (InvocationTargetException e) {
             logger.log(Level.SEVERE, "Module " + moduleName + ": exception while notifying class " + clazz.getName() + " of module unload: " + ExceptionUtils.getMessage(e), e);
         }
     }
+
+    /** @return registry we will use for locating modules when resolving assnmod: URLs. */
+    public static ServerAssertionRegistry getRegistry() {
+        return registry;
+    }
+
+    /** @param registry registry to use for locating modules when resolving assnmod: URLs. */
+    public static void setRegistry(ServerAssertionRegistry registry) {
+        AssertionModuleClassLoader.registry = registry;
+    }
+
+    private PreloadedZipFile getNestedJarFile(String nestedJarPath) {
+        for (PreloadedZipFile nested : nestedJarFiles) {
+            if (nestedJarPath.equals(nested.getName()))
+                return nested;
+        }
+        return null;
+    }
+
+    /**
+     * Find a resource by looking up the module, nested jarfile, and urlpath.
+     *
+     * @param urlpath the url path in the format "moduleName!nestedJarPath!resourcePath".
+     *                For example: "SnmpQuery-3.7.0.jar!AAR-INF/lib/snmp4j.jar!org/snmp4j/smi/OctetString.class"
+     * @return an InputStream that will produce the requested resource. Never null.
+     * @throws FileNotFoundException if the module, nested jar, or resource could not be found
+     * @throws IOException if the module, nested jar, or resource could not be read
+     * @noinspection UnusedDeclaration  // TODO remove this method if it turns out not to be needed
+     *                                     Need to test the ability to use getResource() to get a working URL
+     *                                     to a resource inside a jar nested inside this AAR file.  If it doesn't
+     *                                     work, or if a globally-visible URL is needed, this method might be
+     *                                     needed again (along with the globally-visible Handler inner class).
+     */
+    private static InputStream getInputStreamForGlobalPath(String urlpath) throws IOException {
+        ServerAssertionRegistry registry = getRegistry();
+        if (registry == null)
+            throw new IOException("No registry defined");
+
+        String[] components = urlpath.split("\\!");
+        if (components.length > 3)
+            throw new IOException("Too many !'s in " + NR_PROTO + ": URL");
+
+        String moduleName = components[0];
+        String nestedJarPath = components[1];
+        String resourcePath = components[2];
+
+        AssertionModule module = registry.getModule(moduleName);
+        if (module == null)
+            throw new FileNotFoundException("No such loaded module: " + moduleName);
+
+        AssertionModuleClassLoader loader = module.getModuleClassLoader();
+        PreloadedZipFile nestedJar = loader.getNestedJarFile(nestedJarPath);
+        if (nestedJar == null)
+            throw new FileNotFoundException("No such nested Jar path: " + nestedJarPath);
+
+        byte[] bytes = loader.getResourceBytes(resourcePath);
+        if (bytes == null)
+            throw new FileNotFoundException("No such resource path: " + resourcePath);
+
+        return new ByteArrayInputStream(bytes);
+    }
+
 }

@@ -105,6 +105,7 @@ public class WspConstants {
         //"RequireProofOfPosession", // computed by an saml assertion to indicate that the proof of posesions has been required
         "VariablesUsed",
         "VariablesSet",
+        "FeatureSetName",
     };
 
     static final TypeMapping typeMappingObject = new ObjectTypeMapping(Object.class, "objectValue");

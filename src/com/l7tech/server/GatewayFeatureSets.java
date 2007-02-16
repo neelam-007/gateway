@@ -9,7 +9,6 @@ import com.l7tech.common.License;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -136,7 +135,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet snmp =
         fsr("set:snmp", "SNMP features",
             srv(SERVICE_SNMPQUERY, "HTTP SNMP query service"),
-            ass(SnmpTrapAssertion.class));
+            mass("assertion:SnmpTrap"));
 
         GatewayFeatureSet trustStore =
         fsr("set:trustStore", "Ability to configure Trusted Certificates",

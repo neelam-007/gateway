@@ -3,7 +3,10 @@ package com.l7tech.policy.assertion;
 /**
  * Provides information about an assertions client and server implementation, GUI, policy serialization,
  * validation types, licensing requirements, audit message IDs, and other information.
- * @see DefaultAssertionMetadata  for the default implementation
+ * <p/>
+ * Implementations must be threadsafe.
+ *
+ * @see DefaultAssertionMetadata DefaultAssertionMetadata, the default implementation
  */
 public interface AssertionMetadata {
     /**
@@ -14,19 +17,58 @@ public interface AssertionMetadata {
 
     /**
      * String.  Base package name of this assertion, ie "com.l7tech".
-     * Defaults to assertion package name with any trailing "policy.assertion", "policy", or "assertion" packages removed.
+     * Defaults to assertion package name with any trailing ".policy.assertion" removed.
      */
     String BASE_PACKAGE = "basePackage";
 
     /**
-     * String.  Class name of server assertion instance.
-     * Defaults to assertion classname with baseName replaced by "Server${baseName}" and basePackage replaced by "${basePackage}.server".
+     * String.  Class name of server assertion instance.  If null, or if this class can't be found or doesn't
+     * have a public constructor accepting either FooAssertion or (FooAssertion, Applicationcontext),
+     * this assertion cannot be used in policies enforced by the Gateway.
+     * <p/>
+     * The {@link com.l7tech.policy.AssertionRegistry} installs a default {@link MetadataFinder} for this property
+     * whose behavior varies depending on
+     * whether this assertion is part of the core product.  An assertion is considered part of the core product
+     * if it is listed in either {@link com.l7tech.policy.AllAssertions#SERIALIZABLE_EVERYTHING} or
+     * {@link com.l7tech.policy.AllAssertions#GATEWAY_EVERYTHING}.
+     * <h3>For core assertions (present in AllAssertions):</h3>
+     * The default is "${basePackage}.server.policy.assertion${localPackage}.Server${className}",
+     * where className is the assertion class name not including the package name, and localPackage is
+     * the assertion package name
+     * with basePackage and any leading ".policy" and/or ".assertion" removed from the front.
+     * <p/>
+     * For example,
+     * for the assertion "com.l7tech.policy.assertion.composite.OneOrMoreAssertion",
+     * this defaults to "com.l7tech.server.policy.assertion.composite.ServerOneOrMoreAssertion".
+     * <h3>For all other assertions (not present in AllAssertions):</h3>
+     * The default is "${basePackage}.server.Server${className}".  For example, for the
+     * assertion "com.yoyodyne.assertions.sqlquery.SqlQueryAssertion", this defaults to
+     * "com.yoyodyne.assertions.sqlquery.server.ServerSqlQueryAssertion".
      */
     String SERVER_ASSERTION_CLASSNAME = "serverAssertionClassname";
 
     /**
-     * String.  Class name of client assertion instance.
-     * Defaults to assertion classname with baseName replaced by "Client${baseName}" and basePackage replaced by "${basePackage}.proxy".
+     * String.  Class name of client assertion instance.  If null, or if this class can't be found or doesn't have
+     * a public constructor accepting FooAssertion, this assertion will be ignored by the XML VPN client.
+     * <p/>
+     * The {@link com.l7tech.policy.AssertionRegistry} installs a default {@link MetadataFinder} for this property
+     * whose behavior varies depending on
+     * whether this assertion is part of the core product.  An assertion is considered part of the core product
+     * if it is listed in either {@link com.l7tech.policy.AllAssertions#SERIALIZABLE_EVERYTHING} or
+     * {@link com.l7tech.policy.AllAssertions#GATEWAY_EVERYTHING}.
+     * <h3>For core assertions (present in AllAssertions):</h3>
+     * The default is "${basePackage}.proxy.policy.assertion${localPackage}.Client${className}",
+     * where className is the assertion class name not including the package name, and localPackage is
+     * the assertion package name
+     * with basePackage and any leading ".policy" and/or ".assertion" removed from the front.
+     * <p/>
+     * For example,
+     * for the assertion "com.l7tech.policy.assertion.composite.OneOrMoreAssertion",
+     * this defaults to "com.l7tech.proxy.policy.assertion.composite.ClientOneOrMoreAssertion".
+     * <h3>For all other assertions (not present in AllAssertions):</h3>
+     * The default is "${basePackage}.client.Client${className}".  For example, for the
+     * assertion "com.yoyodyne.assertions.sqlquery.SqlQueryAssertion", this defaults to
+     * "com.yoyodyne.assertions.sqlquery.client.ClientSqlQueryAssertion".
      */
     String CLIENT_ASSERTION_CLASSNAME = "clientAssertionClassname";
 
@@ -60,7 +102,7 @@ public interface AssertionMetadata {
 
     /**
      * String classname.  Name of AbstractAssertionPaletteNode subclass to use when creating palette nodes for this assertion.
-     * Defaults to "${basePackage}.console.tree.${baseName}PaletteNode".
+     * Defaults to "${basePackage}.console.${baseName}PaletteNode".
      */
     String PALETTE_NODE_CLASSNAME = "paletteNodeClassname";
 
@@ -112,15 +154,14 @@ public interface AssertionMetadata {
 
     /**
      * String file path.  Icon to display for the policy node for this assertion, if using DefaultAssertionPolicyNode.
-     * Defaults to "com/l7tech/console/resources/policy16.gif", which is a picture of a small piece of paper with
-     * writing, and is always available on both SSM and manager applet.
+     * Defaults to PALETTE_NODE_ICON.
      */
     String POLICY_NODE_ICON = "policyNodeIcon";
 
     /**
      * String classname.  Name of AssertionTreeNode subclass to use when creating tree nodes for this assertion.
      * Ignored if a valid POLICY_NODE_FACTORY is provided.
-     * Defaults to "${basePackate}.console.tree.policy.${baseName}PolicyNode".
+     * Defaults to "${basePackate}.console.${baseName}PolicyNode".
      */
     String POLICY_NODE_CLASSNAME = "policyNodeClassname";
 
@@ -144,7 +185,7 @@ public interface AssertionMetadata {
      * <p/>
      * Ignored if a valid POLICY_ADVICE_INSTANCE is provided.
      * <p/>
-     * The default value is "${basePackate}.console.tree.policy.advice.${baseName}Advice"
+     * The default value is "${basePackage}.console.${baseName}Advice"
      */
     String POLICY_ADVICE_CLASSNAME = "policyAdviceClassname";
 
@@ -188,7 +229,7 @@ public interface AssertionMetadata {
      * <p/>
      * This is ignored if a valid PROPERTIES_EDITOR_FACTORY is provided.
      * <p/>
-     * The default value is "${basePackage}.console.panels.${baseName}PropertiesDialog".
+     * The default value is "${basePackage}.console.${baseName}PropertiesDialog".
      * <p/>
      * If this is null, or this class can't be found (or doesn't work), the SSM's default MetadataFinder
      * for the PROPERTIES_EDITOR_FACTORY will currently just give up and return null, disabling the "Properties..."
@@ -234,7 +275,7 @@ public interface AssertionMetadata {
      * String classname.  Name of custom TypeMapping to use for serializing this assertion, or null to just use AssertionTypeMapping.
      * If non-null, the specified TypeMapping class must exist and must have a nullary constructor.
      * <p/>
-     * The default value is "${basePackage}.policy.wsp.${baseName}AssertionMapping".
+     * The default value is "${basePackage}.wsp.${baseName}AssertionMapping".
      */
     String WSP_TYPE_MAPPING_CLASSNAME = "wspTypeMappingClassname";
 
@@ -361,9 +402,10 @@ public interface AssertionMetadata {
     /**
      * String. Feature set name for this assertion.
      * <p/>
-     * An assertion can claim to be a modular assertion by returning "set:modularAssertions" here, or it can
-     * return null to be assigned the default feature set name for its class.  For security reasons, any other
-     * return value will currently be ignored by {@link com.l7tech.policy.assertion.Assertion#getFeatureSetName()}
+     * Currently, an assertion can claim to be a modular assertion by returning "set:modularAssertions" here, or it can
+     * return "(fromClass)" (or null) to be assigned the default feature set name for its classname.
+     * For security reasons, any other return value will currently be ignored by
+     * {@link com.l7tech.policy.assertion.Assertion#getFeatureSetName()}
      * and treated as though this property had returned null.
      * <p/>
      * The default value is "(fromClass)" for any recognized assertion present in AllAssertions on the current

@@ -1,14 +1,15 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.common.util.*;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.util.*;
+import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.MetadataFinder;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.ServerConfig;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,9 +21,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
-import java.util.jar.JarEntry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -59,7 +60,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
     private final LicenseManager licenseManager;
     private final Map<String, AssertionModule> loadedModules = new HashMap<String, AssertionModule>();
     private final Map<String, Long> failModTimes = new HashMap<String, Long>();    // should not be loaded (until mod time changes) because last time we tried it, it failed
-    private Map<String, String[]> newClusterProps; // do not initialize -- clobbers info collected during super c'tor
+    private final Map<String, String[]> newClusterProps = new ConcurrentHashMap<String, String[]>();
     private File lastScannedDir = null;
     private long lastScannedDirModTime = 0;
 
@@ -78,6 +79,12 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         installGatewayMetadataDefaults();
     }
 
+    protected void onApplicationContextSet() {
+        for (Assertion assertion : AllAssertions.GATEWAY_EVERYTHING) {
+            if (!isAssertionRegistered(assertion.getClass().getName()))
+                registerAssertion(assertion.getClass());
+        }
+    }
 
     public synchronized Assertion registerAssertion(Class<? extends Assertion> assertionClass) {
         Assertion prototype = super.registerAssertion(assertionClass);
@@ -87,9 +94,6 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         //noinspection unchecked
         Map<String, String[]> newProps = (Map<String, String[]>)meta.get(AssertionMetadata.CLUSTER_PROPERTIES);
         if (newProps != null) {
-            // We may be called during superclass c'tor, so may need to initialize our own field here
-            if (newClusterProps == null) newClusterProps = new ConcurrentHashMap<String, String[]>();
-
             for (Map.Entry<String, String[]> entry : newProps.entrySet()) {
                 final String name = entry.getKey();
                 final String[] tuple = entry.getValue();
@@ -336,21 +340,45 @@ public class ServerAssertionRegistry extends AssertionRegistry {
 
             // Save set of exported packages so we can quickly trace future classlaoder queries to the correct module
             Set<String> packages = new HashSet<String>();
+            Set<PreloadedZipFile> nestedJarfiles = new HashSet<PreloadedZipFile>();
             Enumeration<JarEntry> entries = jar.entries();
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
+                String name = entry.getName();
+
+                if (name.startsWith("AAR-INF/lib/") && name.toLowerCase().endsWith(".jar")) {
+                    // Preload nested jar file, and record the packages it offers
+                    logger.info("Preloading nested JAR file " + name + " from module " + filename);
+                    PreloadedZipFile preloadedZipFile = PreloadedZipFile.preloadZipFile(name, jar.getInputStream(entry));
+                    nestedJarfiles.add(preloadedZipFile);
+                    for (String dir : preloadedZipFile.getDirectories()) {
+                        if (dir == null || !dir.contains("/"))
+                            continue;
+                        String[] dircomps = dir.split("/");
+                        if (dircomps.length < 2)
+                            continue;
+                        if (dircomps[0].endsWith("-INF"))
+                            continue;
+                        String packageName = name.replaceAll("/", ".");
+                        packageName = ClassUtils.stripSuffix(packageName, ".");
+                        packages.add(packageName);
+                    }
+                    continue;
+                }
+                
                 if (entry.isDirectory()) {
-                    String name = entry.getName();
+                    // Maybe record directory as potential package
                     if (name == null || !name.contains("/"))
                         continue;
                     String[] components = name.split("/");
                     if (components.length < 2)
                         continue;
+
                     if (components[0].endsWith("-INF"))
                         continue;
 
                     String packageName = name.replaceAll("/", ".");
-                    if (packageName.endsWith(".")) packageName = packageName.substring(0, packageName.length() - 1);
+                    packageName = ClassUtils.stripSuffix(packageName, ".");
                     packages.add(packageName);
                 }
             }
@@ -358,7 +386,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             jar.close();
             jar = null;
 
-            AssertionModuleClassLoader assloader = new AssertionModuleClassLoader(filename, file.toURL(), getClass().getClassLoader());
+            AssertionModuleClassLoader assloader = new AssertionModuleClassLoader(filename, file.toURL(), getClass().getClassLoader(), nestedJarfiles);
             Set<Assertion> protos = new HashSet<Assertion>();
             for (String assertionClassname : assertionClassnames) {
                 if (classExists(getClass().getClassLoader(), assertionClassname))

@@ -1,13 +1,16 @@
 package com.l7tech.policy.assertion;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
+import com.l7tech.testuncust.UncustomizedMetadataAssertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.policy.wsp.TypeMapping;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -42,14 +45,21 @@ public class AssertionMetadataTest extends TestCase {
         AssertionMetadata am = ass.meta();
         assertNotNull(am);
 
-        assertEquals("UncustomizedMetadata", am.get(AssertionMetadata.BASE_NAME));
-        assertEquals("Uncustomized Metadata Assertion", am.get(AssertionMetadata.LONG_NAME));
-        assertEquals("Uncustomized Metadata", am.get(AssertionMetadata.SHORT_NAME));
-        assertEquals(Boolean.FALSE, am.get(AssertionMetadata.USED_BY_CLIENT));
-        assertEquals("com.l7tech.policy.wsp.UncustomizedMetadataAssertionMapping", am.get(AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME));
-        assertEquals("com.l7tech.policy.wsp.AssertionMapping", am.get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE).getClass().getName());
-        assertEquals("com.l7tech.console.action.UncustomizedMetadataPropertiesAction", am.get(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME));
-        assertEquals("UncustomizedMetadata", am.get(AssertionMetadata.WSP_EXTERNAL_NAME));
+        assertEquals("UncustomizedMetadata", am.get(BASE_NAME));
+        assertEquals("com.l7tech.testuncust", am.get(BASE_PACKAGE));
+        assertEquals("Uncustomized Metadata Assertion", am.get(LONG_NAME));
+        assertEquals("Uncustomized Metadata", am.get(SHORT_NAME));
+        assertEquals(Boolean.FALSE, am.get(USED_BY_CLIENT));
+        assertEquals("com.l7tech.testuncust.wsp.UncustomizedMetadataAssertionMapping", am.get(WSP_TYPE_MAPPING_CLASSNAME));
+        assertEquals("com.l7tech.policy.wsp.AssertionMapping", am.get(WSP_TYPE_MAPPING_INSTANCE).getClass().getName());
+        assertEquals("com.l7tech.testuncust.console.UncustomizedMetadataPropertiesAction", am.get(PROPERTIES_ACTION_CLASSNAME));
+        assertEquals("com.l7tech.testuncust.console.UncustomizedMetadataPaletteNode", am.get(PALETTE_NODE_CLASSNAME));
+        assertEquals("com.l7tech.testuncust.console.UncustomizedMetadataPropertiesDialog", am.get(PROPERTIES_EDITOR_CLASSNAME));
+        assertEquals("com.l7tech.testuncust.console.UncustomizedMetadataAdvice", am.get(POLICY_ADVICE_CLASSNAME));
+        assertEquals("com.l7tech.testuncust.console.UncustomizedMetadataPolicyNode", am.get(POLICY_NODE_CLASSNAME));
+        assertEquals("UncustomizedMetadata", am.get(WSP_EXTERNAL_NAME));
+        assertEquals("com.l7tech.testuncust.server.ServerUncustomizedMetadataAssertion", am.get(SERVER_ASSERTION_CLASSNAME));
+        assertEquals("com.l7tech.testuncust.client.ClientUncustomizedMetadataAssertion", am.get(CLIENT_ASSERTION_CLASSNAME));
         log.info("Generated defaults test OK");
     }
 
@@ -57,15 +67,27 @@ public class AssertionMetadataTest extends TestCase {
         // Ensures that caching works
         testDefaults();
         AssertionMetadata am2 = new UncustomizedMetadataAssertion().meta();
-        TypeMapping tm2 = (TypeMapping)am2.get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
+        TypeMapping tm2 = (TypeMapping)am2.get(WSP_TYPE_MAPPING_INSTANCE);
         testDefaults();
         AssertionMetadata am4 = new UncustomizedMetadataAssertion().meta();
-        TypeMapping tm4 = (TypeMapping)am4.get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
+        TypeMapping tm4 = (TypeMapping)am4.get(WSP_TYPE_MAPPING_INSTANCE);
         testDefaults();
         AssertionMetadata am6 = new UncustomizedMetadataAssertion().meta();
-        TypeMapping tm6 = (TypeMapping)am6.get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
+        TypeMapping tm6 = (TypeMapping)am6.get(WSP_TYPE_MAPPING_INSTANCE);
         assertTrue(am2 == am4 && am4 == am6);
         assertTrue(tm2 == tm4 && tm4 == tm6);
+    }
+
+    public void testCoreAssertionWspNames() throws Exception {
+
+        assertEquals("com.l7tech.server.policy.assertion.identity.ServerAuthenticationAssertion",
+                     new AuthenticationAssertion().meta().get(SERVER_ASSERTION_CLASSNAME));
+
+        assertEquals("com.l7tech.server.policy.assertion.ServerTrueAssertion",
+                     new TrueAssertion().meta().get(SERVER_ASSERTION_CLASSNAME));
+
+        assertEquals("com.l7tech.proxy.policy.assertion.composite.ClientOneOrMoreAssertion",
+                     new OneOrMoreAssertion().meta().get(CLIENT_ASSERTION_CLASSNAME));
     }
     
     public void testDyanmicWsp() throws Exception {

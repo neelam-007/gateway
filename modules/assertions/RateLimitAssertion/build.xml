@@ -8,7 +8,7 @@
 
     <property name="UneasyRooster.dir" location="../../.."/>
     <property name="moduleName" value="RateLimitAssertion"/>
-    <property name="assertionList" value="com.l7tech.external.policy.assertion.${moduleName}"/>
+    <property name="assertionList" value="com.l7tech.external.assertions.ratelimit.${moduleName}"/>
     <property name="build.classes" location="build/classes"/>
 
 
@@ -25,8 +25,9 @@
             </classpath>
             <formatter type="plain" unless="build.junit.xmlformat"/>
             <formatter type="xml" if="build.junit.xmlformat"/>
-            <test name="com.l7tech.external.server.policy.assertion.ServerRateLimitAssertionTest" haltonfailure="no"/>
+            <test name="com.l7tech.external.assertions.ratelimit.server.ServerRateLimitAssertionTest" haltonfailure="no"/>
         </junit>
+        <checkfail/>
     </target>
 
 

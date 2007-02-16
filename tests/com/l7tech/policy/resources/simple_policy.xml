@@ -111,7 +111,6 @@
                 <L7p:WsFederationPassiveTokenRequest/>
                 <L7p:Regex/>
                 <L7p:UnknownAssertion/>
-                <L7p:SnmpTrap/>
                 <L7p:ThroughputQuota/>
                 <L7p:EmailAlert/>
                 <L7p:CommentAssertion/>

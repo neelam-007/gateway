@@ -1,6 +1,7 @@
 package com.l7tech.proxy.policy;
 
 import com.l7tech.policy.AllAssertions;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -34,7 +35,7 @@ public class ClientPolicyFactoryTest extends TestCase {
     }
 
     public void setUp() throws Exception {
-        // put set up code here
+        AssertionRegistry.installEnhancedMetadataDefaults();
     }
 
     public void tearDown() throws Exception {

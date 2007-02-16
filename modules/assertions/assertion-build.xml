@@ -63,6 +63,17 @@
     </macrodef>
 
 
+    <!--
+      Task to check if the build should be failed
+    -->
+    <macrodef name="checkfail">
+        <sequential>
+            <fail if="fail">Exiting due to build failures.</fail>
+            <fail if="test.failure">Exiting due to test failures.</fail>
+        </sequential>
+    </macrodef>
+
+
     <path id="compile.classpath">
         <fileset dir="${UneasyRooster.dir}/lib">
             <include name="0500-wsdl4j.jar"/>
@@ -87,6 +98,9 @@
             <include name="xss4j.jar"/>
             <include name="commons-*.jar"/>
         </fileset>
+        <fileset dir="lib">
+            <include name="*.jar"/>
+        </fileset>
         <pathelement location="${UneasyRooster.dir}/build/classes"/>
     </path>
 
@@ -110,6 +124,7 @@
     <target name="-compile">
         <available property="classes.available" file="${UneasyRooster.dir}/build/classes"/>
         <fail unless="classes.available">UneasyRooster does not seem to have been built yet (missing ${UneasyRooster.dir}/build/classes).</fail>
+        <mkdir dir="lib"/>
         <mkdir dir="${build.classes}"/>
         <copy todir="${build.classes}">
             <fileset dir="src">
@@ -145,10 +160,13 @@
         </javac>
     </target>
 
-
     <!-- Create JAR file -->
     <target name="-aar" depends="-compile">
-        <jar destfile="build/${moduleName}-${build.version}.${moduleFileExtension}" basedir="build/classes" duplicate="fail">
+        <mkdir dir="build/AAR-INF/lib"/>
+        <copy todir="build/AAR-INF/lib">
+            <fileset dir="lib" includes="*.jar"/>
+        </copy>
+        <jar destfile="build/${moduleName}-${build.version}.${moduleFileExtension}" duplicate="fail">
             <manifest>
                 <attribute name="Specification-Title" value="ModularAssertion"/>
                 <attribute name="Specification-Version" value="3.7.0"/>
@@ -160,6 +178,8 @@
                 <attribute name="Implementation-Vendor-Id" value="com.l7tech"/>
                 <attribute name="ModularAssertion-List" value="${assertionList}"/>
             </manifest>
+            <fileset dir="build/classes" excludes="**/*.form"/>
+            <fileset dir="build" includes="AAR-INF/**/*"/>
         </jar>
     </target>
 
@@ -200,6 +220,9 @@
     <target name="clean"
             description="Deletes all generated files.">
         <delete dir="build"/>
+        <delete>
+            <fileset dir="." includes="TEST-*"/>
+        </delete>
     </target>
 
 </project>

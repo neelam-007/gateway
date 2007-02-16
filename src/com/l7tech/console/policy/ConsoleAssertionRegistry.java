@@ -230,17 +230,6 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             if (factory != null)
                 return cache(meta, key, factory);
 
-            // Since we have no fallback otherwise, try two likely possibilities before giving up
-            apeClassname = basepack(meta) + ".console.panels." + meta.get(BASE_NAME) + "PropertiesDialog";
-            factory = findPropertiesEditorFactory(assclass.getClassLoader(), apeClassname, assclass);
-            if (factory != null)
-                return cache(meta, key, factory);
-
-            apeClassname = basepack(meta) + ".console.panels." + meta.get(BASE_NAME) + "AssertionPropertiesDialog";
-            factory = findPropertiesEditorFactory(assclass.getClassLoader(), apeClassname, assclass);
-            if (factory != null)
-                return cache(meta, key, factory);
-
             // No default available -- just return null, disabling "Properties..." for this assertion.
             // TODO maybe someday we can build a simple bean editor GUI for the assertion
             return cache(meta, key, null);

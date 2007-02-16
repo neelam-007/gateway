@@ -1,7 +1,5 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.common.util.ClassUtils;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,11 +8,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Provides information about an assertions client and server implementation, GUI, policy serialization,
+ * Provides default information about an {@link Assertion}'s client and server implementation, GUI, policy serialization,
  * validation types, licensing requirements, audit message IDs, and other information.
  * <p/>
- * A new assertion can override these properties with static values (or with Getter instances that will find
- * them lazily).  In your new Assertion direct subclass:
+ * A new assertion can override these properties with static values (or with {@link MetadataFinder} instances that will find
+ * them lazily).  In your new {@link Assertion} direct subclass:
  *<pre>
  *   public AssertionMetadata meta() {
  *       DefaultAssertionMetadata meta = super.defaultMeta();
@@ -64,26 +62,12 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(BASE_PACKAGE, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                String pack = ClassUtils.getPackageName(meta.getAssertionClass());
+                String pack = getPackageName(meta.getAssertionClass().getName());
                 if (pack.startsWith(".")) // can't happen
                     return "";
 
-                String spass = ".policy.assertion.";
+                String spass = ".policy.assertion";
                 int ps = pack.indexOf(spass);
-                if (ps >= 0) {
-                    pack = pack.substring(0, ps);
-                    return cache(meta, key, pack);
-                }
-
-                String sass = ".assertion.";
-                ps = pack.indexOf(sass);
-                if (ps >= 0) {
-                    pack = pack.substring(0, ps);
-                    return cache(meta, key, pack);
-                }
-
-                String sp = ".policy.";
-                ps = pack.indexOf(sp);
                 if (ps >= 0) {
                     pack = pack.substring(0, ps);
                     return cache(meta, key, pack);
@@ -91,19 +75,20 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
                 return cache(meta, key, pack);
             }
-        });
 
-        put(SERVER_ASSERTION_CLASSNAME, new MetadataFinder() {
-            public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, makeDefaultSpecificClass(meta, "server", "Server"));
+            public String getPackageName(String fullName) {
+                int di = fullName.lastIndexOf(".");
+                if (di < 2)
+                    return "";
+                return fullName.substring(0, di);
             }
         });
 
-        put(CLIENT_ASSERTION_CLASSNAME, new MetadataFinder() {
-            public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, makeDefaultSpecificClass(meta, "proxy", "Client"));
-            }
-        });
+        // installed by AssertionRegistry because it relies on non-API classes
+        put(SERVER_ASSERTION_CLASSNAME, null);
+
+        // installed by AssertionRegistry because it relies on non-API classes
+        put(CLIENT_ASSERTION_CLASSNAME, null);
 
         put(PROPERTIES_ACTION_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
@@ -132,7 +117,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(PALETTE_NODE_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, basepack(meta) + ".console.tree." + meta.get(BASE_NAME) + "PaletteNode");
+                return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "PaletteNode");
             }
         });
 
@@ -144,13 +129,13 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(POLICY_NODE_ICON, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, "com/l7tech/console/resources/policy16.gif");
+                return cache(meta, key, meta.get(PALETTE_NODE_ICON));
             }
         });
 
         put(POLICY_NODE_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, basepack(meta) + ".console.tree.policy." + meta.get(BASE_NAME) + "PolicyNode");
+                return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "PolicyNode");
             }
         });
 
@@ -158,7 +143,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(POLICY_ADVICE_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, basepack(meta) + ".console.tree.policy.advice." + meta.get(BASE_NAME) + "Advice");
+                return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "Advice");
             }
         });
 
@@ -166,7 +151,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(PROPERTIES_ACTION_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, basepack(meta) + ".console.action." + meta.get(BASE_NAME) + "PropertiesAction");
+                return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "PropertiesAction");
             }
         });
 
@@ -174,7 +159,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(PROPERTIES_EDITOR_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, basepack(meta) + ".console.panels." + meta.get(BASE_NAME) + "PropertiesDialog");
+                return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "PropertiesDialog");
             }
         });
 
@@ -188,7 +173,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(WSP_TYPE_MAPPING_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, basepack(meta) + ".policy.wsp." + meta.get(BASE_NAME) + "AssertionMapping");
+                return cache(meta, key, basepack(meta) + ".wsp." + basename(meta) + "AssertionMapping");
             }
         });
 
@@ -245,7 +230,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(PROPERTIES_FILE, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, basepack(meta) + ".console.resources." + meta.get(BASE_NAME) + "Assertion.properties");
+                return cache(meta, key, basepack(meta) + ".console.resources." + basename(meta) + "Assertion.properties");
             }
         });
 
@@ -281,35 +266,6 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
     }});
-
-    /**
-     * Make the default specific class for the specified assertion metadata.
-     * <p/>
-     * For example,
-     * for the assertion "com.l7tech.policy.assertion.composite.OneOrMoreAssertion"
-     * and the type "Server",
-     * this returns "com.l7tech.server.policy.assertion.composite.ServerOneOrMoreAssertion".
-     * <p/>
-     * For the assertion "com.yoyodyne.layer7.policy.assertion.test.muggo.FumpleSnortz"
-     * and the type "Client",
-     * this returns 'com.yoyodyne.layer7.client.policy.assertion.test.muggo.ClientFumpleSnortz".
-     *
-     * @param meta  the AssertionMetadata.  Required.
-     * @param packageInsert the package to insert after the base packe, ie "proxy" or "server".  Required. 
-     * @param classPrefix  the prepend to the base classname, ie "Client" or "Server", with initial capital.  Required.
-     * @return the default specific class name for this metadata and type.
-     */
-    private static String makeDefaultSpecificClass(AssertionMetadata meta, String packageInsert, String classPrefix) {
-        String assname = meta.getAssertionClass().getName();
-        String basePack = basepack(meta);
-        String rest = ClassUtils.stripPrefix(assname, basePack + "."); // "com.yoyodyne.assertion.a.b.FooAssertion" => "assertion.a.b.FooAssertion"
-        rest = ClassUtils.stripPrefix(rest, "policy.");
-        rest = ClassUtils.stripPrefix(rest, "assertion.");                 // "assertion.a.b.FooAssertion" => "a.b.FooAssertion"
-        rest = ClassUtils.stripSuffix(rest, ClassUtils.getClassName(rest));// "a.b.FooAssertion" => "a.b"
-        rest = ClassUtils.stripSuffix(rest, ".");
-        if (rest.length() > 0) rest = rest + ".";
-        return basepack(meta) + "." + packageInsert + ".policy.assertion." + rest + classPrefix + ClassUtils.getClassName(assname);
-    }
 
     /**
      * Get the base name for this assertion, ie "OneOrMore".

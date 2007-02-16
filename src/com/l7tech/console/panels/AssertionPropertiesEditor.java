@@ -43,8 +43,8 @@ public interface AssertionPropertiesEditor<AT extends Assertion> {
      * The provided bean should be filled and returned, if possible, but impelementors may create and return
      * a new bean instead, if they must.
      *
-     * @param assertion a bean to which the data from the view should be copied.  Must not be null.
-     * @return an assertion bean populated with data from the view.  Not necessarily the same bean that was passed in.
+     * @param assertion a bean to which the data from the view can be copied, if possible.  Must not be null.
+     * @return a possibly-new assertion bean populated with data from the view.  Not necessarily the same bean that was passed in.
      *         Never null.
      */
     AT getData(AT assertion);

@@ -3,7 +3,6 @@ package com.l7tech.console.tree.policy.advice;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
@@ -105,7 +104,6 @@ public class Advices {
                 put(SamlBrowserArtifact.class, ary(AddSamlBrowserArtifactAdvice.class));
                 put(Regex.class, ary(RegexAdvice.class));
                 put(HttpFormPost.class, ary(HttpFormPostAdvice.class));
-                put(SnmpTrapAssertion.class, ary(AddSnmpTrapAssertionAdvice.class));
                 put(InverseHttpFormPost.class, ary(InverseHttpFormPostAdvice.class));
                 put(EmailAlertAssertion.class, ary(AddEmailAlertAssertionAdvice.class));
                 put(ThroughputQuota.class, ary(AddThroughputQuotaAssertionAdvice.class));

@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion.alert;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
@@ -87,7 +88,8 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion implement
         try {
             fromaddr = new InternetAddress(ass.getSourceEmailAddress());
         } catch (AddressException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Unable to initialize EmailAlertAssert: invalid destination email address"}, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                                new String[] {"Unable to initialize EmailAlertAssert: invalid destination email address: " + ExceptionUtils.getMessage(e)});
             fromaddr = null;
         }
         fromAddress = fromaddr;
