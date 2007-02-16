@@ -43,10 +43,10 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
     private enum Direction {request, response};
 
     /** Number of characters in front of the suspicious code to log when detected. */
-    private static final int SUSPECT_MARGIN_BEFORE = 16;
+    private static final int EVIDENCE_MARGIN_BEFORE = 16;
 
     /** Number of characters behind the suspicious code to log when detected. */
-    private static final int SUSPECT_MARGIN_AFTER = 24;
+    private static final int EVIDENCE_MARGIN_AFTER = 24;
 
     private final CodeInjectionProtectionAssertion _assertion;
     private final Auditor _auditor;
@@ -100,13 +100,13 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
 
     private AssertionStatus scanRequestUrl(final HttpServletRequestKnob httpServletRequestKnob) throws IOException {
         _logger.finer("Scanning request URL.");
-        final StringBuilder suspect = new StringBuilder();
+        final StringBuilder evidence = new StringBuilder();
         final Map<String, String[]> urlParams = httpServletRequestKnob.getQueryParameterMap();
         for (String urlParamName : urlParams.keySet()) {
             for (String urlParamValue : urlParams.get(urlParamName)) {
-                if (scan(urlParamValue, _assertion.getProtection().getPattern(), suspect)) {
+                if (scan(urlParamValue, _assertion.getProtection().getPattern(), evidence)) {
                     _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
-                            new String[]{"request URL", urlParamName, suspect.toString()});
+                            new String[]{"request URL", urlParamName, evidence.toString()});
                     return AssertionStatus.FALSIFIED;
                 }
             }
@@ -125,16 +125,16 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
         }
 
         AssertionStatus status = AssertionStatus.NONE;
-        final StringBuilder suspect = new StringBuilder();
+        final StringBuilder evidence = new StringBuilder();
 
         if (contentType.matches("application", "x-www-form-urlencoded")) {
             _logger.finer("Scanning request message body as application/x-www-form-urlencoded.");
             final Map<String, String[]> urlParams = httpServletRequestKnob.getRequestBodyParameterMap();
             for (String urlParamName : urlParams.keySet()) {
                 for (String urlParamValue : urlParams.get(urlParamName)) {
-                    if (scan(urlParamValue, _assertion.getProtection().getPattern(), suspect)) {
+                    if (scan(urlParamValue, _assertion.getProtection().getPattern(), evidence)) {
                         _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
-                                new String[]{"request message body", urlParamName, suspect.toString()});
+                                new String[]{"request message body", urlParamName, evidence.toString()});
                         return AssertionStatus.FALSIFIED;
                     }
                 }
@@ -212,10 +212,10 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
                     try {
                         final byte[] partBytes = HexUtils.slurpStream(partInfo.getInputStream(false));
                         final String partString = new String(partBytes, partContentType.getEncoding());
-                        StringBuilder suspect = new StringBuilder();
-                        if (scan(partString, _assertion.getProtection().getPattern(), suspect)) {
+                        StringBuilder evidence = new StringBuilder();
+                        if (scan(partString, _assertion.getProtection().getPattern(), evidence)) {
                             _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                                    new String[]{where, suspect.toString()});
+                                    new String[]{where, evidence.toString()});
                             return AssertionStatus.FALSIFIED;
                         }
                     } catch (NoSuchPartException e) {
@@ -262,10 +262,10 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
         try {
             final byte[] bodyBytes = HexUtils.slurpStream(mimeKnob.getEntireMessageBodyAsInputStream());
             final String bodyString = new String(bodyBytes, encoding);
-            final StringBuilder suspect = new StringBuilder();
-            if (scan(bodyString, _assertion.getProtection().getPattern(), suspect)) {
+            final StringBuilder evidence = new StringBuilder();
+            if (scan(bodyString, _assertion.getProtection().getPattern(), evidence)) {
                 _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                        new String[]{where, suspect.toString()});
+                        new String[]{where, evidence.toString()});
                 return AssertionStatus.FALSIFIED;
             }
         } catch (NoSuchPartException e) {
@@ -285,7 +285,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
      * @return <code>true</code> if code injection detected
      */
     private boolean scanXml(final Node node, final String where) {
-        final StringBuilder suspect = new StringBuilder(SUSPECT_MARGIN_BEFORE + 1 + SUSPECT_MARGIN_AFTER);
+        final StringBuilder evidence = new StringBuilder(EVIDENCE_MARGIN_BEFORE + 1 + EVIDENCE_MARGIN_AFTER);
         int type = node.getNodeType();
         switch (type) {
             case Node.DOCUMENT_NODE:
@@ -307,9 +307,9 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
             case Node.ATTRIBUTE_NODE:
             case Node.CDATA_SECTION_NODE:
             case Node.TEXT_NODE:
-                if (scan(node.getNodeValue(), _assertion.getProtection().getPattern(), suspect)) {
+                if (scan(node.getNodeValue(), _assertion.getProtection().getPattern(), evidence)) {
                     _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                            new String[]{where + " in " + node.getParentNode().getNodeName() + "@" + node.getNodeName(), suspect.toString()});
+                            new String[]{where + " in " + node.getParentNode().getNodeName() + "@" + node.getNodeName(), evidence.toString()});
                     return true;
                 }
                 break;
@@ -323,28 +323,29 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
      *
      * @param s         string to scan
      * @param pattern   regular expression pattern to search for
-     * @param suspect   for passing back snippet of string surrounding the first match (if found)
-     * @return <code>true</code> if found; then <code>suspect</code> is populated
+     * @param evidence  for passing back snippet of string surrounding the first
+     *                  match, for logging purpose (if found)
+     * @return <code>true</code> if found; then <code>evidence</code> is populated
      */
-    private static boolean scan(final String s, final Pattern pattern, final StringBuilder suspect) {
+    private static boolean scan(final String s, final Pattern pattern, final StringBuilder evidence) {
         final Matcher matcher = pattern.matcher(s);
         if (matcher.find()) {
-            suspect.setLength(0);
+            evidence.setLength(0);
 
-            int start = matcher.start() - SUSPECT_MARGIN_BEFORE;
+            int start = matcher.start() - EVIDENCE_MARGIN_BEFORE;
             if (start <= 0) {
                 start = 0;
             } else {
-                suspect.append("...");
+                evidence.append("...");
             }
 
-            int end = matcher.end() + SUSPECT_MARGIN_AFTER;
+            int end = matcher.end() + EVIDENCE_MARGIN_AFTER;
             if (end >= s.length()) {
                 end = s.length();
-                suspect.append(s.substring(start, end));
+                evidence.append(s.substring(start, end));
             } else {
-                suspect.append(s.substring(start, end));
-                suspect.append("...");
+                evidence.append(s.substring(start, end));
+                evidence.append("...");
             }
 
             return true;
