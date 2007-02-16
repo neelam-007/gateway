@@ -235,7 +235,7 @@ public class ServerVariables {
         new Variable(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 // get HttpResponseKnob from pec
-                HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
                 if (hrk == null) return new String[0];
                 String[] vals = hrk.getHeaderValues(name);
                 if (vals.length > 0) return vals[0];
@@ -246,7 +246,7 @@ public class ServerVariables {
         new Variable(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER_VALUES, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 // get HttpResponseKnob from pec
-                HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
                 if (hrk == null) return new String[0];
                 return hrk.getHeaderValues(name);
             }

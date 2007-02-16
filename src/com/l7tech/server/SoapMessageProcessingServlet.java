@@ -197,7 +197,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
                 // Transmit the response and return
                 hresponse.setStatus(routeStat);
-                hresponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
+                String[] ct = response.getHttpResponseKnob().getHeaderValues("content-type");
+                if (ct == null || ct.length <= 0) {
+                    hresponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
+                }
                 OutputStream responseos = hresponse.getOutputStream();
                 HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
                 responseos.close();
