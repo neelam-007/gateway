@@ -241,7 +241,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
         final String where = direction + " message body";
         try {
             final XmlKnob xmlKnob = message.getXmlKnob();
-            final Document xmlDoc = xmlKnob.getOriginalDocument();
+            final Document xmlDoc = xmlKnob.getDocumentReadOnly();
             if (scanXml(xmlDoc, where))
                 return AssertionStatus.FALSIFIED;
         } catch (SAXException e) {
