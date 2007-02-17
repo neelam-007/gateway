@@ -1,12 +1,19 @@
 package com.l7tech.common.gui.util;
 
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
-import java.lang.ref.*;
-import java.util.*;
-import java.net.URL;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The <code>ImageCache</code> registers all loaded images into the
@@ -16,6 +23,8 @@ import java.net.URL;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public final class ImageCache {
+    protected static final Logger logger = Logger.getLogger(ImageCache.class.getName());
+
     /** singleton instance */
     protected static final ImageCache iconManager = new ImageCache();
 
@@ -68,7 +77,7 @@ public final class ImageCache {
      * @return the <code>Image</code> or <b>null</b> if the resource
      *         cannot be found
      */
-    private Image getIcon(String name, ClassLoader loader) {
+    public Image getIcon(String name, ClassLoader loader) {
         Object img = map.get(name);
 
         // no icon for this name (already tested)
@@ -98,9 +107,17 @@ public final class ImageCache {
                 return (Image) img;
 
             // we have to load it
-            URL url = loader.getResource(name);
+            InputStream stream = loader.getResourceAsStream(name);
+            byte[] imageBytes = null;
+            if (stream != null) {
+                try {
+                    imageBytes = HexUtils.slurpStream(stream);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Unable to load image resource: " + ExceptionUtils.getMessage(e), e);
+                }
+            }
 
-            img = url == null ? null : Toolkit.getDefaultToolkit().createImage(url);
+            img = imageBytes == null ? null : Toolkit.getDefaultToolkit().createImage(imageBytes);
             if (img != null) {
                 Image img2 = toBufferedImage((Image)img);
 
