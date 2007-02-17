@@ -150,7 +150,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
 
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME, new Functions.Unary<String, RateLimitAssertion>() {
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RateLimitAssertion>() {
             public String call(RateLimitAssertion ass) {
                 int concurrency = ass.getMaxConcurrency();
                 StringBuffer sb = new StringBuffer("Rate Limit: ");

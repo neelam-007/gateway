@@ -2,7 +2,6 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.common.util.Functions;
 
 import javax.swing.*;
@@ -26,10 +25,22 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
 
     public String getName() {
         //noinspection unchecked
-        final Functions.Unary< String, Assertion > s =
-                (Functions.Unary<String, Assertion>)
-                        asAssertion().meta().get(AssertionMetadata.POLICY_NODE_NAME);
-        return s != null ? s.call(asAssertion()) : asAssertion().getClass().getName();
+        AssertionMetadata meta = asAssertion().meta();
+        Object factory = meta.get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
+        String name = null;
+        if (factory instanceof Functions.Unary) {
+            //noinspection unchecked
+            Functions.Unary<String, Assertion> unary = (Functions.Unary<String, Assertion>)factory;
+            name = unary.call(asAssertion());
+        } else if (factory != null) {
+            // Very common error to set this to a string instead of a factory, so we'll support it here
+            name = factory.toString();
+        } else {
+            Object obj = meta.get(AssertionMetadata.POLICY_NODE_NAME);
+            if (obj != null)
+                name = obj.toString();
+        }
+        return name != null ? name : asAssertion().getClass().getName();
     }
 
     protected String iconResource(boolean open) {

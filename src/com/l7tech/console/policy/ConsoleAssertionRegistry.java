@@ -52,9 +52,24 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
         putDefaultGetter(PALETTE_NODE_FACTORY, new PaletteNodeFactoryMetadataFinder());
 
+        putDefaultGetter(POLICY_ADVICE_INSTANCE, new PolicyAdviceInstanceMetadataFinder());
+
         putDefaultGetter(POLICY_NODE_FACTORY, new PolicyNodeFactoryMetadataFinder());
 
-        putDefaultGetter(POLICY_ADVICE_INSTANCE, new PolicyAdviceInstanceMetadataFinder());
+        putDefaultGetter(POLICY_NODE_NAME_FACTORY, new MetadataFinder() {
+            public Object get(final AssertionMetadata meta, String key) {
+                return cache(meta, key, new Functions.Unary<String, Assertion>() {
+                    public String call(Assertion assertion) {
+                        Object name = meta.get(POLICY_NODE_NAME);
+                        if (name != null)
+                            return name.toString();
+                        if (assertion != null)
+                            return assertion.getClass().toString();
+                        return meta.getAssertionClass().toString();
+                    }
+                });
+            }
+        });
 
         putDefaultGetter(PROPERTIES_ACTION_FACTORY, new PropertiesActionMetadataFinder());
 

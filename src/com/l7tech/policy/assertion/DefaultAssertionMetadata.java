@@ -125,7 +125,13 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(ASSERTION_FACTORY, null); // installed by AssertionRegistry because it relies on non-API classes
 
-        put(POLICY_NODE_NAME, null); // installed by AssertionRegistry because it relies on non-API classes
+        put(POLICY_NODE_NAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, meta.get(SHORT_NAME));
+            }
+        });
+
+        put(POLICY_NODE_NAME_FACTORY, null); // installed by AssertionRegistry because it relies on non-API classes
 
         put(POLICY_NODE_ICON, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {

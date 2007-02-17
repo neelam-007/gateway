@@ -7,9 +7,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
 import java.rmi.RemoteException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,12 +78,16 @@ class ConsoleRemoteAssertionModuleClassLoader extends ClassLoader {
     }
 
     public InputStream getResourceAsStream(String name) {
-        try {
-            byte[] got = getAssertionModuleResourceCached(name);
-            if (got == null)
-                return null;
+        InputStream sup = super.getResourceAsStream(name);
+        if (sup != null)
+            return sup;
+        byte[] got = getResourceBytes(name);
+        return got == null ? null : new ByteArrayInputStream(got);
+    }
 
-            return new ByteArrayInputStream(got);
+    private byte[] getResourceBytes(String name) {
+        try {
+            return getAssertionModuleResourceCached(name);
         } catch (ClusterStatusAdmin.ModuleNotFoundException e) {
             ConsoleAssertionRegistry.logger.log(Level.WARNING, "Unable to find resource from module: " + ExceptionUtils.getMessage(e), e);
             return null;
@@ -89,9 +97,34 @@ class ConsoleRemoteAssertionModuleClassLoader extends ClassLoader {
         }
     }
 
-    protected URL findResource(String name) {
-        ConsoleAssertionRegistry.logger.log(Level.WARNING, "*** findResource called on module class loader: resource=" + name);
-        return super.findResource(name);
+    protected URL findResource(final String name) {
+        URL sup = super.findResource(name);
+        if (sup != null)
+            return sup;
+        final byte[] gotBytes = getResourceBytes(name);
+        if (gotBytes == null)
+            return null;
+
+        try {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<URL>() {
+                public URL run() throws Exception {
+                    return new URL("file", null, -1, "!!" + toString() + "!" + name, new URLStreamHandler() {
+                        protected URLConnection openConnection(URL u) throws IOException {
+                            return new URLConnection(u) {
+                                public void connect() throws IOException { }
+                                public InputStream getInputStream() throws IOException {
+                                    return new ByteArrayInputStream(gotBytes);
+                                }
+                            };
+                        }
+                    });
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            // Probably running applet in untrusted mode, and disallowed from specifying URLStreamHandler
+            ConsoleAssertionRegistry.logger.log(Level.WARNING, "*** findResource unable to create URL with URLStreamHandler for module class loader: resource=" + name, e);
+        }
+        return null;
     }
 
     protected Enumeration<URL> findResources(String name) throws IOException {

@@ -78,7 +78,7 @@ public class UnknownAssertion extends Assertion {
         DefaultAssertionMetadata meta = super.defaultMeta();
 
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/unknown.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME, new Functions.Unary< String, UnknownAssertion >() {
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary< String, UnknownAssertion >() {
             public String call(UnknownAssertion unknownAssertion) {
                 return unknownAssertion.getDetailMessage();
             }

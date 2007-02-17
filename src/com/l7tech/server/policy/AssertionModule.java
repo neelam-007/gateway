@@ -2,28 +2,33 @@ package com.l7tech.server.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Closeable;
 import java.util.Collections;
 import java.util.Set;
+import java.util.jar.JarFile;
 
 /**
  * Represents a module jarfile that contains at least one assertion, loaded from /ssg/modules/assertions.
+ * <p/>
+ * This takes ownership of the jar file and keeps it open -- call {@link #close()} to close it.
  */
-public class AssertionModule {
-    private final File jarfile;
+public class AssertionModule implements Closeable {
+    private final String moduleName;
+    private final JarFile jarfile;
     private final long jarfileModifiedTime;
     private final String jarfileSha1;
     private final AssertionModuleClassLoader classLoader;
     private final Set<? extends Assertion> assertionPrototypes;
     private final Set<String> packages;
 
-    AssertionModule(File jarfile, long modifiedTime, String jarfileSha1, AssertionModuleClassLoader classLoader, Set<? extends Assertion> assertionPrototypes, Set<String> packages) {
+    AssertionModule(String moduleName, JarFile jarfile, long modifiedTime, String jarfileSha1, AssertionModuleClassLoader classLoader, Set<? extends Assertion> assertionPrototypes, Set<String> packages) {
+        if (moduleName == null || moduleName.length() < 1) throw new IllegalArgumentException("non-empty moduleName required");
+        if (jarfile == null) throw new IllegalArgumentException("jarfile required");
         if (assertionPrototypes == null || assertionPrototypes.isEmpty()) throw new IllegalArgumentException("assertionPrototypes must contain at least one prototype instance");
         if (classLoader == null) throw new IllegalArgumentException("classLoader required");
         if (packages == null || packages.isEmpty()) throw new IllegalArgumentException("packages must be specified and contain at least one package name");
+        this.moduleName = moduleName;
         this.jarfile = jarfile;
         this.jarfileModifiedTime = modifiedTime;
         this.jarfileSha1 = jarfileSha1;
@@ -34,7 +39,7 @@ public class AssertionModule {
 
     /** @return the name of this assertion module, ie "RateLimitAssertion-3.7.0.jar". */
     public String getName() {
-        return jarfile.getName();
+        return moduleName;
     }
 
     /** @return the SHA-1 of this assertion module file, ie "deadbeefcafebabeface4d7721111be8b56c4d77". */
@@ -45,14 +50,6 @@ public class AssertionModule {
     /** @return prototype instances of each assertion added by this module.  Never null, and always contains at least one assertion. */
     public Set<? extends Assertion> getAssertionPrototypes() {
         return assertionPrototypes;
-    }
-
-    /**
-     * @return an InputStream that produces the entire module jarfile bytes. Never null.  Caller is responsible for closing this.
-     * @throws java.io.IOException if the jarfile can't be read.
-     */
-    public InputStream getJarfile() throws IOException {
-        return new FileInputStream(jarfile);
     }
 
     /**
@@ -109,9 +106,15 @@ public class AssertionModule {
     }
 
     /**
-     * Notify interested classes that this module is being unloaded.
+     * Relesae any resources used by this module and close the jarfile.
+     *
+     * @throws IOException if there is an error closing the jarfile or the class loader
      */
-    void onModuleUnloaded() {
-        classLoader.onModuleUnloaded();
+    public void close() throws IOException {
+        try {
+            classLoader.close();
+        } finally {
+            jarfile.close();
+        }
     }
 }

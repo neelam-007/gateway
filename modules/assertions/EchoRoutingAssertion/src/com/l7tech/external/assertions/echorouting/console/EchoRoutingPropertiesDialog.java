@@ -23,7 +23,7 @@ import com.l7tech.external.assertions.echorouting.EchoRoutingAssertion;
  * @author $Author$
  * @version $Revision$
  */
-public class EchoRoutingAssertionDialog extends JDialog implements AssertionPropertiesEditor<EchoRoutingAssertion> {
+public class EchoRoutingPropertiesDialog extends JDialog implements AssertionPropertiesEditor<EchoRoutingAssertion> {
 
     //- PUBLIC
 
@@ -32,7 +32,7 @@ public class EchoRoutingAssertionDialog extends JDialog implements AssertionProp
      * @param owner  parent for dialog
      * @param a      assertion to edit
      */
-    public EchoRoutingAssertionDialog(Frame owner, EchoRoutingAssertion a) {
+    public EchoRoutingPropertiesDialog(Frame owner, EchoRoutingAssertion a) {
         super(owner, true);
         setTitle("Echo Routing Properties");
         assertion = a;
@@ -131,7 +131,7 @@ public class EchoRoutingAssertionDialog extends JDialog implements AssertionProp
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                EchoRoutingAssertionDialog.this.dispose();
+                EchoRoutingPropertiesDialog.this.dispose();
             }
         });
     }

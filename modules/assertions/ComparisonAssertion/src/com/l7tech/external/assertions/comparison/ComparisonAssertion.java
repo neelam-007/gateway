@@ -156,7 +156,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
 
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/check16.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME, new Functions.Unary<String, ComparisonAssertion>() {
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, ComparisonAssertion>() {
             public String call(ComparisonAssertion ass) {
                 StringBuffer name = new StringBuffer(res.getString("proceed")).append(" ");
                 name.append(ass.getExpression1()).append(" ");

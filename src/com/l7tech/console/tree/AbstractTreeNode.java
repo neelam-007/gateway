@@ -322,8 +322,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * @return the <code>ImageIcon</code> or null if not found
      */
     public Image getIcon() {
-        return ImageCache.getInstance().getIcon(iconResource(false));
-
+        return getCachedImage(false);
     }
 
     /**
@@ -334,7 +333,17 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * @return icon to use to represent the bean when opened
      */
     public Image getOpenedIcon() {
-        return ImageCache.getInstance().getIcon(iconResource(true));
+        return getCachedImage(true);
+    }
+
+    private Image getCachedImage(boolean open) {
+        ImageCache cache = ImageCache.getInstance();
+        ClassLoader loader = iconClassLoader();
+        String path = iconResource(open);
+        Image ret = loader == null
+               ? cache.getIcon(path)
+               : cache.getIcon(path, loader);
+        return ret;
     }
 
     /**
@@ -347,6 +356,16 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      */
     public String getTooltipText() {
         return tooltip;
+    }
+
+    /**
+     * @return custom classloader to use when loading icon resources, or null to allow image cache to just use its own
+     */
+    protected ClassLoader iconClassLoader() {
+        Object obj = asAssertion();
+        if (obj == null)
+            obj = getUserObject();        
+        return obj == null ? null : obj.getClass().getClassLoader();
     }
 
     /**

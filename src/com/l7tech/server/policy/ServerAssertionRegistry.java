@@ -316,7 +316,6 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         String filename = file.getName();
         AssertionModule previousVersion = loadedModules.get(filename);
 
-        JarFile jar = null;
         try {
             // TODO XXX some annoying race conditions here if the file is changed in between getting timestamp <-> getting sha1 <-> loading jar.. doctor's answer for now
             long modifiedTime = file.lastModified();
@@ -327,7 +326,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 return;
             }
 
-            jar = new JarFile(file, false);
+            JarFile jar = new JarFile(file, false);
 
             Manifest manifest = jar.getManifest();
             Attributes attr = manifest.getMainAttributes();
@@ -340,7 +339,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
 
             // Save set of exported packages so we can quickly trace future classlaoder queries to the correct module
             Set<String> packages = new HashSet<String>();
-            Set<PreloadedZipFile> nestedJarfiles = new HashSet<PreloadedZipFile>();
+            Set<NestedZipFile> nestedJarfiles = new HashSet<NestedZipFile>();
             Enumeration<JarEntry> entries = jar.entries();
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
@@ -349,9 +348,9 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 if (name.startsWith("AAR-INF/lib/") && name.toLowerCase().endsWith(".jar")) {
                     // Preload nested jar file, and record the packages it offers
                     logger.info("Preloading nested JAR file " + name + " from module " + filename);
-                    PreloadedZipFile preloadedZipFile = PreloadedZipFile.preloadZipFile(name, jar.getInputStream(entry));
-                    nestedJarfiles.add(preloadedZipFile);
-                    for (String dir : preloadedZipFile.getDirectories()) {
+                    NestedZipFile nestedZipFile = new NestedZipFile(jar, name);
+                    nestedJarfiles.add(nestedZipFile);
+                    for (String dir : nestedZipFile.getDirectories()) {
                         if (dir == null || !dir.contains("/"))
                             continue;
                         String[] dircomps = dir.split("/");
@@ -383,9 +382,6 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 }
             }
 
-            jar.close();
-            jar = null;
-
             AssertionModuleClassLoader assloader = new AssertionModuleClassLoader(filename, file.toURL(), getClass().getClassLoader(), nestedJarfiles);
             Set<Assertion> protos = new HashSet<Assertion>();
             for (String assertionClassname : assertionClassnames) {
@@ -410,16 +406,19 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             }
 
 
-            AssertionModule module = new AssertionModule(file, modifiedTime, sha1, assloader, protos, packages);
-            loadedModules.put(filename, module);
+            AssertionModule module = new AssertionModule(filename, jar, modifiedTime, sha1, assloader, protos, packages);
+            previousVersion = loadedModules.put(filename, module);
             failModTimes.clear(); // retry all failures whenever a module is loaded or unloaded
-            for (Assertion proto : protos) {
-                String adjective = previousVersion == null ? "newly-registered" : "just-upgraded";
-                logger.info("Registering dynamic assertion " + proto.getClass().getName() + " from " + adjective + " module " + filename + " (module SHA-1 " + sha1 + ")");
-                registerAssertion(proto.getClass());
+            try {
+                for (Assertion proto : protos) {
+                    String adjective = previousVersion == null ? "newly-registered" : "just-upgraded";
+                    logger.info("Registering dynamic assertion " + proto.getClass().getName() + " from " + adjective + " module " + filename + " (module SHA-1 " + sha1 + ")");
+                    registerAssertion(proto.getClass());
+                }
+            } finally {
+                if (previousVersion != null)
+                    onModuleUnloaded(previousVersion);
             }
-            if (previousVersion != null)
-                onModuleUnloaded(previousVersion);
             publishEvent(new AssertionModuleRegistrationEvent(this, module));
 
         } catch (IOException e) {
@@ -432,14 +431,6 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             throw new ModuleException("Unable to instantiate modular assertion: " + ExceptionUtils.getMessage(e), e);
         } catch (InstantiationException e) {
             throw new ModuleException("Unable to instantiate modular assertion: " + ExceptionUtils.getMessage(e), e);
-        } finally {
-            if (jar != null) {
-                try {
-                    jar.close();
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Unable to close jarfile", e);
-                }
-            }
         }
     }
 
@@ -481,7 +472,11 @@ public class ServerAssertionRegistry extends AssertionRegistry {
     private void onModuleUnloaded(AssertionModule module) {
         Background.cancelAllTasksFromClassLoader(module.getModuleClassLoader());
         publishEvent(new AssertionModuleUnregistrationEvent(this, module));
-        module.onModuleUnloaded();
+        try {
+            module.close();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Error while closing module " + module.getName() + ": " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     /**

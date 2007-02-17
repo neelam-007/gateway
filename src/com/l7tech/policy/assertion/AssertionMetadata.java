@@ -144,13 +144,21 @@ public interface AssertionMetadata {
     String ASSERTION_FACTORY = "assertionFactory";
 
     /**
+     * String.  Name to display on the policy node for this assertion, if using DefaultAssertionPolicyNode and
+     * a custom {@link #POLICY_NODE_NAME_FACTORY} is not provided.
+     * <p/>
+     * Defaults to SHORT_NAME.
+     */
+    String POLICY_NODE_NAME = "policyNodeName";
+
+    /**
      * Functions.Unary< String, Assertion >.  Generator of name to display on the policy node for this assertion,
      * if using DefaultAssertionPolicyNode.  This is a generator rather than just simple String so that it can
      * vary based on the configuration of the particular assertion whose policy node is being displayed.
      * <p/>
-     * Defaults to a generator that always returns SHORT_NAME.
+     * Defaults to a generator that returns POLICY_NODE_NAME, if there is one, or the assertion classname otherwise.
      */
-    String POLICY_NODE_NAME = "policyNodeName";
+    String POLICY_NODE_NAME_FACTORY = "policyNodeNameFactory";
 
     /**
      * String file path.  Icon to display for the policy node for this assertion, if using DefaultAssertionPolicyNode.

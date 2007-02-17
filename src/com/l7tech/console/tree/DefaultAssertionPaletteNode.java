@@ -1,8 +1,11 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.common.util.Functions;
+import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+
+import java.awt.*;
 
 /**
  * Palette node used for modular assertions that do not specify a custom palette node factory in their
@@ -15,6 +18,10 @@ public class DefaultAssertionPaletteNode<AT extends Assertion> extends AbstractL
         super((String)prototype.meta().get(AssertionMetadata.PALETTE_NODE_NAME), 
               (String)prototype.meta().get(AssertionMetadata.PALETTE_NODE_ICON));
         this.prototype = prototype;
+    }
+
+    protected ClassLoader iconClassLoader() {
+        return prototype.getClass().getClassLoader();
     }
 
     public Assertion asAssertion() {

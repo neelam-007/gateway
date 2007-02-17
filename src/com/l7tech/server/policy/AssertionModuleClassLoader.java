@@ -5,20 +5,18 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.IteratorEnumeration;
 import com.l7tech.common.util.ResourceUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.FileNotFoundException;
-import java.io.ByteArrayInputStream;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * A URLClassloader that keeps track of loaded classes so they can be notified when it is time to unload them.
  */
-class AssertionModuleClassLoader extends URLClassLoader {
+class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
     protected static final Logger logger = Logger.getLogger(AssertionModuleClassLoader.class.getName());
 
     /** Protocol that we register. */
@@ -29,12 +27,14 @@ class AssertionModuleClassLoader extends URLClassLoader {
     /** Classes that have been loaded from this module. */
     private final Set<Class> classes = Collections.synchronizedSet(new HashSet<Class>());
     private final String moduleName;
-    private final Set<PreloadedZipFile> nestedJarFiles;
+    private final Map<NestedZipFile, Object> nestedJarFiles;
 
-    public AssertionModuleClassLoader(String moduleName, URL jarUrl, ClassLoader parent, Set<PreloadedZipFile> nestedJarFiles) {
+    public AssertionModuleClassLoader(String moduleName, URL jarUrl, ClassLoader parent, Set<NestedZipFile> nestedJarFiles) {
         super(new URL[] { jarUrl }, parent);
         this.moduleName = moduleName;
-        this.nestedJarFiles = nestedJarFiles == null ? Collections.<PreloadedZipFile>emptySet() : nestedJarFiles;
+        this.nestedJarFiles = new ConcurrentHashMap<NestedZipFile, Object>();
+        for (NestedZipFile file : nestedJarFiles)
+            this.nestedJarFiles.put(file, new Object());
     }
 
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
@@ -80,10 +80,15 @@ class AssertionModuleClassLoader extends URLClassLoader {
     }
 
     private byte[] getResourceBytesFromNestedJars(String path) {
-        for (PreloadedZipFile nested : nestedJarFiles) {
-            byte[] bytes = nested.getFile(path);
-            if (bytes != null)
-                return bytes;
+        for (NestedZipFile nested : nestedJarFiles.keySet()) {
+            try {
+                byte[] bytes = nested.getFile(path);
+                if (bytes != null)
+                    return bytes;
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "Unable to read resource from nested jar file " + nested.getEntryName() + " in module " +
+                                         moduleName + ": " + ExceptionUtils.getMessage(e), e);
+            }
         }
         return null;
     }
@@ -94,16 +99,23 @@ class AssertionModuleClassLoader extends URLClassLoader {
     }
 
     private URL findResourceFromNestedJars(String name) {
-        for (PreloadedZipFile nested : nestedJarFiles) {
-            byte[] bytes = nested.getFile(name);
-            if (bytes != null) return makeResourceUrl(nested, name, bytes);
+        for (NestedZipFile nested : nestedJarFiles.keySet()) {
+            try {
+                final byte[] bytes = nested.getFile(name);
+                if (bytes != null)
+                    return makeResourceUrl(nested, name, bytes);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "Unable to read resource from nested jar file " + nested.getEntryName() + " in module " +
+                                         moduleName + ": " + ExceptionUtils.getMessage(e), e);
+                return null;
+            }
         }
         return null;
     }
 
-    private URL makeResourceUrl(PreloadedZipFile nested, String name, final byte[] bytes) {
+    private URL makeResourceUrl(NestedZipFile nested, String name, final byte[] bytes) {
         try {
-            return new URL(NR_PROTO, null, -1, moduleName + "!" + nested.getName() + "!" + name, new URLStreamHandler() {
+            return new URL(NR_PROTO, null, -1, moduleName + "!" + nested.getEntryName() + "!" + name, new URLStreamHandler() {
                 protected URLConnection openConnection(URL url) throws IOException {
                     return new URLConnection(url) {
                         public void connect() throws IOException { }
@@ -178,9 +190,9 @@ class AssertionModuleClassLoader extends URLClassLoader {
         AssertionModuleClassLoader.registry = registry;
     }
 
-    private PreloadedZipFile getNestedJarFile(String nestedJarPath) {
-        for (PreloadedZipFile nested : nestedJarFiles) {
-            if (nestedJarPath.equals(nested.getName()))
+    private NestedZipFile getNestedJarFile(String nestedJarPath) {
+        for (NestedZipFile nested : nestedJarFiles.keySet()) {
+            if (nestedJarPath.equals(nested.getEntryName()))
                 return nested;
         }
         return null;
@@ -218,7 +230,7 @@ class AssertionModuleClassLoader extends URLClassLoader {
             throw new FileNotFoundException("No such loaded module: " + moduleName);
 
         AssertionModuleClassLoader loader = module.getModuleClassLoader();
-        PreloadedZipFile nestedJar = loader.getNestedJarFile(nestedJarPath);
+        NestedZipFile nestedJar = loader.getNestedJarFile(nestedJarPath);
         if (nestedJar == null)
             throw new FileNotFoundException("No such nested Jar path: " + nestedJarPath);
 
@@ -229,4 +241,12 @@ class AssertionModuleClassLoader extends URLClassLoader {
         return new ByteArrayInputStream(bytes);
     }
 
+    public void close() throws IOException {
+        onModuleUnloaded();
+        Set<NestedZipFile> toClose = new HashSet<NestedZipFile>(nestedJarFiles.keySet());
+        for (NestedZipFile nested : toClose) {
+            nested.close();
+            nestedJarFiles.remove(nested);
+        }
+    }
 }
