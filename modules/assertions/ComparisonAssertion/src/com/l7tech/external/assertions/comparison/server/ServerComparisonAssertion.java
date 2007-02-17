@@ -35,7 +35,7 @@ public class ServerComparisonAssertion extends AbstractServerAssertion<Compariso
     private final Auditor auditor;
     private final ComparisonAssertion assertion;
     private final String[] variablesUsed;
-    final Map<Predicate, Evaluator> evaluators;
+    private final Map<Predicate, Evaluator> evaluators;
     private final Predicate[] predicates;
 
     public ServerComparisonAssertion(ComparisonAssertion assertion, ApplicationContext springContext) {
