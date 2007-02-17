@@ -3,18 +3,17 @@ package com.l7tech.external.assertions.comparison.server;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.external.assertions.comparison.BinaryPredicate;
-import com.l7tech.external.assertions.comparison.Predicate;
-import com.l7tech.external.assertions.comparison.DataTypePredicate;
 import com.l7tech.external.assertions.comparison.ComparisonAssertion;
-import com.l7tech.external.assertions.comparison.server.evaluate.EvaluatorFactory;
+import com.l7tech.external.assertions.comparison.DataTypePredicate;
+import com.l7tech.external.assertions.comparison.Predicate;
 import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
+import com.l7tech.external.assertions.comparison.server.evaluate.EvaluatorFactory;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -29,7 +28,7 @@ import java.util.logging.Logger;
  *
  * @see com.l7tech.external.assertions.comparison.ComparisonAssertion
  */
-public class ServerComparisonAssertion extends AbstractServerAssertion<ComparisonAssertion> implements ServerAssertion {
+public class ServerComparisonAssertion extends AbstractServerAssertion<ComparisonAssertion> {
     private static final Logger logger = Logger.getLogger(ServerComparisonAssertion.class.getName());
 
     private final Auditor auditor;

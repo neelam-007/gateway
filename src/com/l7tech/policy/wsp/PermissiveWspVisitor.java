@@ -16,12 +16,12 @@ import java.util.logging.Logger;
 /**
  * WspVisitor implementation that ignores unknown properties, and tries to preserve unknown elements as UnknownAssertions.
  */
-class PermissiveWspVisitor implements WspVisitor {
+public class PermissiveWspVisitor implements WspVisitor {
     private static final Logger logger = Logger.getLogger(PermissiveWspVisitor.class.getName());
 
     private final TypeMappingFinder typeMappingFinder;
 
-    PermissiveWspVisitor(TypeMappingFinder typeMappingFinder) {
+    public PermissiveWspVisitor(TypeMappingFinder typeMappingFinder) {
         this.typeMappingFinder = typeMappingFinder;
     }
 

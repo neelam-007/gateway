@@ -32,6 +32,10 @@ public class EchoRoutingAssertion extends RoutingAssertion {
         meta.put(POLICY_NODE_NAME, "Echo request to response");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
 
+        // request default feature set name for our class name, since we are a known optional module
+        // that is, we want our required feature set to be "assertion:EchoRouting" rather than "set:modularAssertions"
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+
         return meta;
     }
 }

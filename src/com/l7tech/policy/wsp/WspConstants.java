@@ -262,28 +262,6 @@ public class WspConstants {
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
         new AssertionMapping(new Operation(), "WSDLOperation"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
-        new AssertionMapping(new HardcodedResponseAssertion(), "HardcodedResponse") {
-            protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) {
-                super.populateElement(wspWriter, element, object);
-            }
-
-            public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-                if (source == null) { throw new IllegalArgumentException("Source cannot be null");}
-                NodeList responseBodyNodes = source.getElementsByTagName("L7p:ResponseBody");
-                if (responseBodyNodes.getLength() == 0) {
-                    super.populateObject(object, source, visitor);
-                } else {
-                    //this is an old style HardCodedResponse Assertion
-                    Element bodyNode = (Element)responseBodyNodes.item(0);
-                    Node bodyAttr = bodyNode.getAttributeNode("stringValue");
-                    String responseBody = bodyAttr.getNodeValue();
-
-                    HardcodedResponseAssertion hra = (HardcodedResponseAssertion) object.target;
-                    hra.responseBodyString(responseBody);
-                    super.populateObject(object, source, new PermissiveWspVisitor(visitor.getTypeMappingFinder()));
-                }
-            }
-        },
         new AssertionMapping(new ResponseWssTimestamp(), "ResponseWssTimestamp"),
         new AssertionMapping(new RequestWssTimestamp(), "RequestWssTimestamp"),
         new AssertionMapping(new ResponseWssSecurityToken(), "ResponseWssSecurityToken"),
@@ -342,5 +320,4 @@ public class WspConstants {
         // EqualityRenamedToComparison.equalityCompatibilityMapping,
         StealthReplacedByFaultLevel.faultDropCompatibilityMapping
     };
-
 }

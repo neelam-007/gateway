@@ -155,6 +155,12 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(POLICY_ADVICE_INSTANCE, null); // installed by ConsoleAssertionRegistry because it relies on console classes
 
+        put(POLICY_VALIDATOR_CLASSNAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, basepack(meta) + ".policy." + basename(meta) + "AssertionValidator");
+            }
+        });
+
         put(PROPERTIES_ACTION_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "PropertiesAction");

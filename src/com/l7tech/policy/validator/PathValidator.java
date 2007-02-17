@@ -1,29 +1,28 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.AssertionLicense;
-import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
-import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
-import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
 
@@ -32,14 +31,20 @@ import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
 import java.nio.charset.Charset;
+import java.util.*;
 
 /**
  * validate single path, and collect the validation results in the
  * <code>PolicyValidatorResult</code>.
  * <p/>
  * TODO: refactor this into asserton specific validators (expand the ValidatorFactory).
+ *
+ * TODO: change assertion validators so that they are instantiated once per assertion instance, at the start of
+ * validation, instead of once per assertion instance per path.  Validators would do assertion-specific validation
+ * (things like ensuring that the xpath expression is valid -- internal to assertion and doesn't vary between paths)
+ * just once per assertion instance, right after being created, instead of once per assertion instance per path.
+ * PathValidator would be passed a map of assertion instances to validator instances.
  */
 class PathValidator {
 
@@ -452,16 +457,6 @@ class PathValidator {
             }
         } else if (a instanceof JmsRoutingAssertion) {
             processJmsRouting((JmsRoutingAssertion)a);
-        } else if (a instanceof HardcodedResponseAssertion) {
-            //validations for this assertion
-            HardcodedResponseAssertion ass = (HardcodedResponseAssertion)a;
-            try {
-                ContentTypeHeader.parseValue(ass.getResponseContentType());
-            } catch (IOException e) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                    "the content type is invalid. " + e.getMessage(),
-                    null));
-            }
         } else if (a != null) {
             // Some routing assertion that either doesn't need any further validation, or that
             // didn't exist when this version of the validator was current

@@ -6,6 +6,21 @@
         Builds all modular assertions.
     </description>
 
+    <property file="../../build.version"/>
+    <fail unless="build.version.major">Missing build version property "build.version.major"</fail>
+    <fail unless="build.version.minor">Missing build version property "build.version.minor"</fail>
+    <!-- Declare props to keep idea happy -->
+    <property name="build.version.major" value=""/>
+    <property name="build.version.minor" value=""/>
+    <property name="build.version.subminor" value=""/>
+    <condition property="build.version"
+               value="${build.version.major}.${build.version.minor}"
+               else="${build.version.major}.${build.version.minor}.${build.version.subminor}">
+        <!-- Append dot subminor only if not empty. -->
+        <equals arg1="${build.version.subminor}" arg2=""/>
+    </condition>
+    <tstamp/>
+
     <target name="OFFICIAL-package-init-version" unless="build.version">
         <!-- Prompt for version number if not already supplied by a calling build file. -->
         <input message="Enter a version number:" addproperty="build.version"/>
@@ -22,6 +37,20 @@
 
     <target name="package" description="Creates the distributables.">
         <subant genericantfile="build.xml" target="package" inheritAll="false" verbose="true">
+            <property name="build.version" value="${build.version}"/>
+            <fileset dir="." includes="*/build.xml"/>
+        </subant>
+    </target>
+
+    <target name="deploy" description="Deploys all .aar files to ssg.home/modules/assertions">
+        <subant genericantfile="build.xml" target="deploy" inheritAll="false" verbose="true">
+            <property name="build.version" value="${build.version}"/>
+            <fileset dir="." includes="*/build.xml"/>
+        </subant>
+    </target>
+
+    <target name="undeploy" description="Removes all deployed .aar files from ssg.home/modules/assertions">
+        <subant genericantfile="build.xml" target="undeploy" inheritAll="false" verbose="true">
             <property name="build.version" value="${build.version}"/>
             <fileset dir="." includes="*/build.xml"/>
         </subant>

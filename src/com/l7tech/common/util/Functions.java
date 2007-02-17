@@ -49,13 +49,45 @@ public interface Functions {
         void call(P1 p1, P2 p2, P3 p3);
     }
 
+    /** A function that takes four arguments and returns a value. */
+    public interface Quaternary<R, P1, P2, P3, P4> {
+        R call(P1 p1, P2 p2, P3 p3, P4 p4);
+    }
+
+    /** A function that takes four arguments and returns void. */
+    public interface QuaternaryVoid<P1, P2, P3, P4> {
+        void call(P1 p1, P2 p2, P3 p3, P4 p4);
+    }
+
+    /** A funciton that takes five arguments and returns a value. */
+    public interface Quinary<R, P1, P2, P3, P4, P5> {
+        R call(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5);
+    }
+
+    /** A function that takes five arguments and returns void. */
+    public interface QuinaryVoid<P1, P2, P3, P4, P5> {
+        void call(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5);
+    }
+
+    /** A function that takes six arguments and returns a value. */
+    public interface Sestary<R, P1, P2, P3, P4, P5, P6> {
+        R call(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6);
+    }
+
+    /** A function that takes six arguments and returns void. */
+    public interface SestaryVoid<P1, P2, P3, P4, P5, P6> {
+        void call(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6);
+    }
+
+    // That's probably plenty ridiculous enough; past that, can switch to Variadic
+
     /** A function that takes any number of arguments and returns a value. */
-    public interface Variant<R, P> {
+    public interface Variadic<R, P> {
         R call(P ... args);
     }
 
     /** A function that takes any number of arguments and returns void. */
-    public interface VariantVoid<P> {
+    public interface VariadicVoid<P> {
         void call(P ... args);
     }
 }

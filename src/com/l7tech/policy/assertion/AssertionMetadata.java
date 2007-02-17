@@ -209,6 +209,32 @@ public interface AssertionMetadata {
     String POLICY_ADVICE_INSTANCE = "policyAdviceInstance";
 
     /**
+     * String classname.  Name of an AssertionValidator subclass that can be used to validate instances of this
+     * assertion in the SSM and/or on the Gateway.
+     * <p/>
+     * This class should have a public unary constructor from the Assertion bean subtype.
+     * <p/>
+     * If one of these is provided, PathValidator will invoke it whenever this assertion is located in the
+     * policy.
+     * <p/>
+     * The validator will be invoked once per path and so should return as quickly as possible, avoiding any time-consuming
+     * computation.  In particular, it should try to avoid iterating over the AssertionPath as this may
+     * exacerbate the exponential slowdown as new paths are added to the policy (an added OneOrMoreAssertion
+     * with six children multiplies the number of paths by six).
+     * <p/>
+     * Even without providing a validator class, a new assertion can enjoy the benefit of certain validation features
+     * by extending an existing Assertion superclass: for example, any assertion derived from RoutingAssertion
+     * will be considered as a routing event by the path validator.
+     * <p/>
+     * The default value is "${basePackage}.policy.${baseName}AssertionValidator".
+     * <p/>
+     * If this class doesn't exist or doesn't work, no validation hook will be invoked by the PathValidator for this
+     * assertion (although any normal validation rules that may apply to its superclasses will continue to be
+     * in effect).
+     */
+    String POLICY_VALIDATOR_CLASSNAME = "policyValidatorClassname";
+
+    /**
      * String classname.  Name of ActionListener subclass to invoke when the Properties.. action is invoked.
      * <p/>
      * This is ingored if a valid PROPERTIES_ACTION_FACTORY is provided.

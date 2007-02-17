@@ -1,21 +1,20 @@
 package com.l7tech.external.assertions.ratelimit.server;
 
-import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.cluster.ClusterInfoManager;
+import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.cluster.ClusterInfoManager;
-import com.l7tech.cluster.ClusterNodeInfo;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -33,7 +32,7 @@ import java.util.logging.Logger;
  * Server side implementation of the RateLimitAssertion.
  * @see com.l7tech.external.assertions.ratelimit.RateLimitAssertion
  */
-public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitAssertion> implements ServerAssertion {
+public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitAssertion> {
     private static final Logger logger = Logger.getLogger(ServerRateLimitAssertion.class.getName());
     private static final long CLUSTER_POLL_INTERVAL = 1000 * 43; // Check every 43 seconds to see if cluster size has changed
     private static final int DEFAULT_MAX_QUEUED_THREADS = 20;
@@ -267,7 +266,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             });
 
             if (newConcurrency > maxConcurrency) {
-                auditor.logAndAudit(AssertionMessages.RATELIMIT_CONCURRENCY_EXCEEDED, new String[] { counterName });
+                auditor.logAndAudit(AssertionMessages.RATELIMIT_CONCURRENCY_EXCEEDED, counterName);
                 return AssertionStatus.SERVICE_UNAVAILABLE;
             }
         }
@@ -289,7 +288,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             return AssertionStatus.NONE;
         }
 
-        auditor.logAndAudit(AssertionMessages.RATELIMIT_RATE_EXCEEDED, new String[] { counterName });
+        auditor.logAndAudit(AssertionMessages.RATELIMIT_RATE_EXCEEDED, counterName);
         return AssertionStatus.SERVICE_UNAVAILABLE;
     }
 
@@ -302,10 +301,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         try {
             int result = counter.pushTokenAndWaitUntilFirst(startTime, token);
             if (result == 1) {
-                auditor.logAndAudit(AssertionMessages.RATELIMIT_NODE_CONCURRENCY, new String[] { counterName });
+                auditor.logAndAudit(AssertionMessages.RATELIMIT_NODE_CONCURRENCY, counterName);
                 return AssertionStatus.SERVICE_UNAVAILABLE;
             } else if (result != 0) {
-                auditor.logAndAudit(AssertionMessages.RATELIMIT_SLEPT_TOO_LONG, new String[] { counterName });
+                auditor.logAndAudit(AssertionMessages.RATELIMIT_SLEPT_TOO_LONG, counterName);
                 return AssertionStatus.SERVICE_UNAVAILABLE;
             }
 
@@ -318,7 +317,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                     return AssertionStatus.NONE;
 
                 if (isOverslept(startTime, now)) {
-                    auditor.logAndAudit(AssertionMessages.RATELIMIT_SLEPT_TOO_LONG, new String[] { counterName });
+                    auditor.logAndAudit(AssertionMessages.RATELIMIT_SLEPT_TOO_LONG, counterName);
                     return AssertionStatus.SERVICE_UNAVAILABLE;
                 }
 
@@ -330,7 +329,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 if (sleepTime > maxnap) sleepTime = maxnap; // don't sleep for too long
 
                 if (!sleepIfPossible(curSleepThreads, maxSleepThreads.get(), sleepTime, (int)sleepNanos)) {
-                    auditor.logAndAudit(AssertionMessages.RATELIMIT_NODE_CONCURRENCY, new String[] { counterName });
+                    auditor.logAndAudit(AssertionMessages.RATELIMIT_NODE_CONCURRENCY, counterName);
                     return AssertionStatus.SERVICE_UNAVAILABLE;
                 }
             }

@@ -280,8 +280,6 @@ public class IdentityPolicyPanel extends JPanel {
             } else if (existingRoutingAssertion instanceof JmsRoutingAssertion) {
                 JmsRoutingAssertion jra = (JmsRoutingAssertion) existingRoutingAssertion;
                 JmsUtilities.selectEndpoint(jmsQueueComboBox, jra.getEndpointOid());
-            } else if (existingRoutingAssertion instanceof HardcodedResponseAssertion) {
-                routeModifiable = false;
             } else {
                 // Some routing assertion that either isn't modifiable or didn't exist yet in
                 // this version of the code.

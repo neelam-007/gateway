@@ -111,7 +111,6 @@ public class Advices {
                 put(SqlAttackAssertion.class, ary(SqlAttackAssertionAdvice.class));
                 put(OversizedTextAssertion.class, ary(OversizedTextAssertionAdvice.class));
                 put(RequestSizeLimit.class, ary(RequestSizeLimitAdvice.class));
-                put(HardcodedResponseAssertion.class, ary(HardcodedResponseAssertionAdvice.class));
                 put(MappingAssertion.class, ary(MappingAssertionAdvice.class));
                 put(AuditDetailAssertion.class, ary(AddAuditAdviceAssertion.class));
                 put(Operation.class, ary(AddWSDLOperationAssertionAdvice.class));

@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 /**
  * The Server side Hardcoded Response.
  */
-public class ServerHardcodedResponseAssertion extends AbstractServerAssertion implements ServerAssertion {
+public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<HardcodedResponseAssertion> {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;

@@ -17,7 +17,7 @@ import java.io.IOException;
 /**
  * Config dialog for HardcodedResponseAssertion.
  */
-public class HardcodedResponseDialog extends JDialog {
+public class HardcodedResponseDialog extends JDialog implements AssertionPropertiesEditor<HardcodedResponseAssertion> {
     private static final String TITLE = "Template Response Properties";
     private final InputValidator validator = new InputValidator(this, TITLE);
     private JPanel mainPanel;
@@ -31,8 +31,8 @@ public class HardcodedResponseDialog extends JDialog {
     private boolean modified;
     private boolean confirmed = false;
 
-    public HardcodedResponseDialog(Frame owner, HardcodedResponseAssertion assertion, boolean modal) throws HeadlessException {
-        super(owner, TITLE, modal);
+    public HardcodedResponseDialog(Frame owner, HardcodedResponseAssertion assertion) throws HeadlessException {
+        super(owner, TITLE, true);
         doInit(assertion);
     }
 
@@ -129,5 +129,22 @@ public class HardcodedResponseDialog extends JDialog {
 
     public HardcodedResponseAssertion getAssertion() {
         return assertion;
+    }
+
+    public JDialog getDialog() {
+        return this;
+    }
+
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+
+    public void setData(HardcodedResponseAssertion assertion) {
+        this.assertion = assertion;
+        updateView();
+    }
+
+    public HardcodedResponseAssertion getData(HardcodedResponseAssertion assertion) {
+        return getAssertion();
     }
 }

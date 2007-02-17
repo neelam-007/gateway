@@ -3,12 +3,7 @@ package com.l7tech.policy.validator;
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RequestSwAAssertion;
-import com.l7tech.policy.assertion.RequestXpathAssertion;
-import com.l7tech.policy.assertion.ResponseXpathAssertion;
-import com.l7tech.policy.assertion.WsiBspAssertion;
-import com.l7tech.policy.assertion.WsspAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.service.PublishedService;
 
@@ -64,6 +59,14 @@ class ValidatorFactory {
         }
         // assertion lookup, find the  assertion tree node
         Class classNode = (Class)assertionMap.get(assertion.getClass());
+        if (null == classNode) {
+            String classname = (String)assertion.meta().get(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME);
+            try {
+                classNode = assertion.getClass().getClassLoader().loadClass(classname);
+            } catch (ClassNotFoundException e) {
+                // fallthrough and leave it null
+            }
+        }
         if (null == classNode) {
             return new NullValidator(assertion);
         }

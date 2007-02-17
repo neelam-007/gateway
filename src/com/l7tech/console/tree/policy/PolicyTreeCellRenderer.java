@@ -55,8 +55,7 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
     }
 
     private boolean isRoutingAssertionNode(AssertionTreeNode node) {
-        if  (node instanceof HttpRoutingAssertionTreeNode ||
-            node instanceof HardcodedResponseTreeNode || node instanceof JmsRoutingAssertionTreeNode)
+        if  (node instanceof HttpRoutingAssertionTreeNode || node instanceof JmsRoutingAssertionTreeNode)
             return true;
 
         Assertion ass = node.asAssertion();

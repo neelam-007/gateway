@@ -145,6 +145,7 @@
             <fileset dir="src">
                 <include name="**/resources/*"/>
                 <include name="**/resources/**/*"/>
+                <include name="**/*.properties*"/>
             </fileset>
         </copy>
         <javac srcdir="src"

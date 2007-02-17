@@ -2,6 +2,20 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.variable.ExpandVariables;
+import static com.l7tech.policy.assertion.AssertionMetadata.SHORT_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.LONG_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_ICON;
+import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_FOLDERS;
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_ADVICE_CLASSNAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_ICON;
+import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_DESC;
+import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_CLASSNAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.WSP_EXTERNAL_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME;
 
 import java.io.IOException;
 
@@ -56,5 +70,36 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
     public void setBase64ResponseBody(String body) {
         if (body == null) body = "";
         base64ResponseBody = body;
+    }
+
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(SHORT_NAME, "Template Response");
+        meta.put(LONG_NAME, "Return a template response message");
+
+        meta.put(PALETTE_NODE_NAME, "Template Response");
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/MessageLength-16x16.gif");
+        meta.put(PALETTE_FOLDERS, new String[] { "routing" });
+
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+
+        meta.put(POLICY_NODE_NAME, "Template Response");
+        meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/MessageLength-16x16.gif");
+
+        meta.put(PROPERTIES_ACTION_NAME, "Template Response Properties");
+        meta.put(PROPERTIES_ACTION_DESC, "View and edit template response properties");
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.HardcodedResponseDialog");
+
+        meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.HardcodedResponseAssertionValidator");
+
+        meta.put(WSP_EXTERNAL_NAME, "HardcodedResponse");
+        meta.put(WSP_TYPE_MAPPING_CLASSNAME, "com.l7tech.policy.wsp.HardcodedResponseAssertionMapping");
+
+        // request default feature set name for our class name, since we are a known optional module
+        // that is, we want our required feature set to be "assertion:HardcodedResponse" rather than "set:modularAssertions"
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+
+        return meta;
     }
 }
