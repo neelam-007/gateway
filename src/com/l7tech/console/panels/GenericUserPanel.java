@@ -398,7 +398,7 @@ public class GenericUserPanel extends UserPanel {
             firstNameTextField.setMinimumSize(new Dimension(200, 20));
             firstNameTextField.setPreferredSize(new Dimension(200, 20));
             firstNameTextField.setEditable(true);
-            firstNameTextField.setDocument(new MaxLengthDocument(50));
+            firstNameTextField.setDocument(new MaxLengthDocument(32));
             // Register listeners
             firstNameTextField.getDocument().addDocumentListener(documentListener);
         }
@@ -436,7 +436,7 @@ public class GenericUserPanel extends UserPanel {
             lastNameTextField.setMinimumSize(new Dimension(200, 20));
             lastNameTextField.setPreferredSize(new Dimension(200, 20));
             lastNameTextField.setEditable(true);
-            lastNameTextField.setDocument(new MaxLengthDocument(50));
+            lastNameTextField.setDocument(new MaxLengthDocument(32));
             // Register listeners
             lastNameTextField.getDocument().addDocumentListener(documentListener);
         }
@@ -474,7 +474,7 @@ public class GenericUserPanel extends UserPanel {
             emailTextField.setMinimumSize(new Dimension(200, 20));
             emailTextField.setPreferredSize(new Dimension(200, 20));
             emailTextField.setEditable(true);
-            emailTextField.setDocument(new MaxLengthDocument(50));
+            emailTextField.setDocument(new MaxLengthDocument(128));
             // Register listeners
             emailTextField.getDocument().addDocumentListener(documentListener);
         }
