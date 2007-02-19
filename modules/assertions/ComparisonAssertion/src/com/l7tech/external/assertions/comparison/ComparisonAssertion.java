@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.comparison;
 
 import com.l7tech.common.util.ComparisonOperator;
 import com.l7tech.common.util.Functions;
+import com.l7tech.external.assertions.comparison.wsp.EqualityRenamedToComparison;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
@@ -9,12 +10,10 @@ import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.wsp.*;
-import com.l7tech.external.assertions.comparison.wsp.EqualityRenamedToComparison;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ResourceBundle;
-import java.text.MessageFormat;
 
 /**
  * Processes the value resulting from the evaluation of an expression through any number of {@link Predicate}s.
@@ -194,23 +193,4 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
 
         return meta;
     }
-
-    private void dostuff(StringBuffer name, Predicate pred, ResourceBundle res, String predprefix, String negatedVerb, String notNegatedVerb, int predmin, int predmax) {
-        String verb = pred.isNegated() ? negatedVerb : notNegatedVerb;
-        String fmt;
-        if (predmin == 1 && predmax == 1) {
-            fmt = res.getString(predprefix + "Predicate.desc.1");
-            name.append(MessageFormat.format(fmt, verb, predmin));
-        } else if (predmin == predmax) {
-            fmt = res.getString(predprefix + "Predicate.desc.n");
-            name.append(MessageFormat.format(fmt, verb, predmin));
-        } else if (predmax < 0) {
-            fmt = res.getString(predmin == 1 ? predprefix + "Predicate.desc.atLeast1" : predprefix + "Predicate.desc.atLeastN");
-            name.append(MessageFormat.format(fmt, verb, predmin));
-        } else {
-            fmt = res.getString(predprefix + "Predicate.desc");
-            name.append(MessageFormat.format(fmt, verb, predmin, predmax));
-        }
-    }
-
 }
