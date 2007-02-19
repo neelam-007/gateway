@@ -89,17 +89,21 @@ abstract class State {
             cleft = value.toString();
         }
 
-        Object right = ServerComparisonAssertion.getValue(bpred.getRightValue(), vars);
-        if (type != null) {
-            // Convert this rvalue before comparing if there's a DataTypePredicate present
-            right = convertValue(right, type);
-        }
         Comparable cright;
-        if (right instanceof Comparable) {
-            cright = (Comparable) right;
+        if (bpred.getOperator().isUnary()) {
+            cright = null;
         } else {
-            auditor.logAndAudit(AssertionMessages.COMPARISON_NOT_COMPARABLE, value.getClass().getSimpleName(), bpred.toString());
-            cright = value.toString();
+            Object right = ServerComparisonAssertion.getValue(bpred.getRightValue(), vars);
+            if (type != null) {
+                // Convert this rvalue before comparing if there's a DataTypePredicate present
+                right = convertValue(right, type);
+            }
+            if (right instanceof Comparable) {
+                cright = (Comparable) right;
+            } else {
+                auditor.logAndAudit(AssertionMessages.COMPARISON_NOT_COMPARABLE, value.getClass().getSimpleName(), bpred.toString());
+                cright = value.toString();
+            }
         }
         return bpred.getOperator().compare(cleft, cright, !bpred.isCaseSensitive());
     }
