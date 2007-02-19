@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationContext;
 import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -238,7 +239,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
     /**
      * Parses multipart/form-data for fields; in particular, scan for file uploads.
      *
-     * @param holder    map to put results into
+     * @param holder    map to add results into
      * @param mimeKnob  the request MIME knob
      * @throws IOException if parsing error
      * @see <a href="http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.2">HTML 4.0 specification for Form submission using multipart/form-data</a>
@@ -256,7 +257,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                     break;  // This does not warrant a BAD_REQUEST.
                 }
 
-                // Force body to be stashed. Neccessary for PartIterator to work. (Bug 3470)
+                // Forces body to be read. Neccessary for PartIterator to work. (Bug 3470)
                 partInfo.getInputStream(false).close();
 
                 final MimeHeader contentDispositionHeader = partInfo.getHeader("Content-Disposition");
@@ -268,11 +269,13 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
 
                 final String disposition = contentDisposition.getDisposition();
                 if (!"form-data".equals(disposition)) {
+                    // RFC 2388 says this is required.
                     throw new IOException("Content-Disposition in a multipart/form-data part is not \"form-data\". (part position=" + partPosition + ", header=" + contentDispositionHeader.getFullValue() + ")");
                 }
 
                 final String name = contentDisposition.getParameter("name");
                 if (name == null) {
+                    // RFC 2388 says this is required.
                     throw new IOException("Content-Disposition in a multipart/form-data part is missing the \"name\" parameter. (part position=" + partPosition + ", header=" + contentDispositionHeader.getFullValue() + ")");
                 }
 
@@ -285,7 +288,11 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
 
                 final ContentTypeHeader partContentType = partInfo.getContentType();
                 if (partContentType.matches("multipart", "mixed")) {
-                    throw new UnsupportedOperationException("Multipart/mixed not supported.");
+                    // This is a multipart/mixed subpart embedded within a multipart/form-data.
+                    // Currently, this assertion doesn't validate the filenames.
+                    // So we don't need to waste CPU parsing into the subparts.
+                    // But if needed to, just uncomment the following line.
+//                    parseMultipartMixed(field, partInfo.getInputStream(false), partContentType);
                 } else {
                     String value = null;
                     final String filename = contentDisposition.getParameter("filename");
@@ -305,6 +312,65 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
             throw new IOException("Cannot read multipart/form-data: " + e.toString());
         } catch (ParseException e) {
             throw new IOException("Cannot parse Content-Disposition of a multipart/form-data part. Cause: " + e.toString());
+        }
+    }
+
+    /**
+     * Parses for file upload in a multipart/mixed subpart embedded within a
+     * multipart/form-data.
+     *
+     * @param field                 where to save parsed filename(s)
+     * @param is                    input stream for the multipart/mixed MIME part
+     * @param outerContentType      content type of the multipart/mixed
+     * @throws IOException if parsing error
+     */
+    private void parseMultipartMixed(final Field field, final InputStream is, final ContentTypeHeader outerContentType) throws IOException {
+        try {
+            final MimeBody mimeBody = new MimeBody(new ByteArrayStashManager(), outerContentType, is);
+            final PartIterator itor = mimeBody.iterator();
+            for (int subpartPosition = 0; itor.hasNext(); ++ subpartPosition) {
+                PartInfo subpartInfo = null;
+                try {
+                    subpartInfo = itor.next();
+                } catch (NoSuchPartException e) {
+                    _logger.info("Nested multipart/mixed may have improperly terminated MIME body.");
+                    break;  // This does not warrant a BAD_REQUEST.
+                }
+
+                // Forces subpart body to be read. Neccessary for PartIterator to work.
+                subpartInfo.getInputStream(true).close();
+
+                final MimeHeader contentDispositionHeader = subpartInfo.getHeader("Content-Disposition");
+                if (contentDispositionHeader == null) {
+                    throw new IOException("Missing Content-Disposition header in a multipart/mixed subpart. (subpart position=" + subpartPosition + ")");
+                }
+
+                final ContentDisposition contentDisposition = new ContentDisposition(contentDispositionHeader.getFullValue());
+
+                final String disposition = contentDisposition.getDisposition();
+                if (!"file".equals(disposition)) {
+                    // RFC 2388 does not explicitly forbid otherwise.
+                    if (_logger.isLoggable(Level.FINE)) {
+                        _logger.fine("Ignoring non-file multipart/mixed subpart. (subpart position=" + subpartPosition + ", header=" + contentDispositionHeader.getFullValue() + ")");
+                    }
+                    continue;
+                }
+
+                final String filename = contentDisposition.getParameter("filename");
+                if (filename == null) {
+                    // RFC 2388 does not explicitly forbid otherwise.
+                    if (_logger.isLoggable(Level.FINE)) {
+                        _logger.fine("Ignoring a multipart/mixed file subpart without the \"filename\" parameter. (subpart position=" + subpartPosition + ", header=" + contentDispositionHeader.getFullValue() + ")");
+                    }
+                    continue;
+                }
+
+                field.fieldValues.add(new FieldValue(filename, true));
+            }
+        } catch (NoSuchPartException e) {
+            throw new IOException("Cannot read nested multipart/mixed: " + e.toString());
+        } catch (ParseException e) {
+            throw new IOException("Cannot parse Content-Disposition of a multipart/mixed subpart. Cause: " + e.toString());
         }
     }
 }
