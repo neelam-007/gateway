@@ -588,8 +588,10 @@ public class MessageProcessor {
         final Ssg ssg = context.getSsg();
 
         GenericHttpRequestParams params = new GenericHttpRequestParams(url);
-        String cookieHeader = getSessionCookiesHeaderValue(context);
-        params.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, cookieHeader));
+        if (!ssg.isHttpHeaderPassthrough()) { // Bug #3006
+            String cookieHeader = getSessionCookiesHeaderValue(context);
+            params.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, cookieHeader));
+        }
         params.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_USER_AGENT, SecureSpanConstants.USER_AGENT));
 
         final Message request = context.getRequest();
@@ -676,7 +678,7 @@ public class MessageProcessor {
             log.info("POST to Gateway completed with HTTP status code " + status);
 
             HttpHeaders responseHeaders = httpResponse.getHeaders();
-            gatherCookies(url, responseHeaders, context);
+            if (!ssg.isHttpHeaderPassthrough()) gatherCookies(url, responseHeaders, context);  // Bug #3006
             String certStatus = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.CERT_STATUS);
 
             if (SecureSpanConstants.CERT_INVALID.equalsIgnoreCase(certStatus)) {
@@ -783,8 +785,8 @@ public class MessageProcessor {
                 });
             }
 
-            // Replace any cookies in the response.
-            gatherCookies(url, responseHeaders, context);
+            // Replace any cookies in the response, only if not passing through cookies (Bug #3006)
+            if (!ssg.isHttpHeaderPassthrough()) gatherCookies(url, responseHeaders, context);
 
             final GenericHttpResponse cleanup = httpResponse;
             context.runOnClose(new Runnable() {
