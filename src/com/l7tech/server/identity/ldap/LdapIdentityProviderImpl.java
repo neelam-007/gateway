@@ -514,9 +514,11 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
             } catch (NamingException e) {
                 logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e));
                 ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+                continue;
             } catch (IllegalArgumentException e) {
                 logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e));
                 ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+                continue;
             }
 
             env.lock();
