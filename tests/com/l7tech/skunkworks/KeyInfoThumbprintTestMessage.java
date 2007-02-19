@@ -22,9 +22,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import java.io.ByteArrayOutputStream;
@@ -218,12 +215,7 @@ public class KeyInfoThumbprintTestMessage extends TestCase {
                 return e;
             }
         });
-        sigContext.setEntityResolver(new EntityResolver() {
-            public InputSource resolveEntity(String publicId, String systemId) throws SAXException {
-                throw new SAXException("Unsupported external entity reference publicId=" + publicId +
-                  ", systemId=" + systemId);
-            }
-        });
+        sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
             public Transform getTransform(String s) throws NoSuchAlgorithmException {
                 if (SoapUtil.TRANSFORM_STR.equals(s))

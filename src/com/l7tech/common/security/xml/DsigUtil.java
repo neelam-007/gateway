@@ -8,31 +8,26 @@ package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
-
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
-import java.util.logging.Logger;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Utility class to help with XML digital signatures.
@@ -132,11 +127,7 @@ public class DsigUtil {
                 return s.equals(finalRootId) ? root : null;
             }
         });
-        sigContext.setEntityResolver(new EntityResolver() {
-            public InputSource resolveEntity(String publicId, String systemId) throws IOException {
-                throw new FileNotFoundException("No external ref should have been present");
-            }
-        });
+        sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         sigContext.setResourceShower(new ResourceShower() {
             public void showSignedResource(Element element, int i, String s, String s1, byte[] bytes, String s2) {
 
@@ -208,13 +199,7 @@ public class DsigUtil {
         }
 
         SignatureContext sigContext = new SignatureContext();
-        sigContext.setEntityResolver(new EntityResolver() {
-            public InputSource resolveEntity(String publicId, String systemId) throws IOException {
-                // this works but SAXException doesn't... I guess XSS4J uses SAXException internally to signal some normal condition.
-                throw new IOException("References to external resources are not permitted");
-            }
-        });
-
+        sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         sigContext.setIDResolver(new IDResolver() {
             public Element resolveID(Document doc, String s) {
                 return SoapUtil.getElementByWsuId(doc, s);

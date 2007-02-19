@@ -301,6 +301,7 @@ public class SamlAssertionV1 extends SamlAssertion {
                     return assertionElement;
                 }
             });
+            sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
             sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
                 public Transform getTransform(String transform) throws NoSuchAlgorithmException {
                     if (Transform.ENVELOPED.equals(transform)) {

@@ -1,42 +1,27 @@
 package com.l7tech.common.security.saml;
 
-import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.KeyInfoDetails;
+import com.ibm.xml.dsig.*;
 import com.l7tech.common.security.xml.DsigUtil;
+import com.l7tech.common.security.xml.KeyInfoDetails;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TooManyChildElementsException;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.NamespaceFactory;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.HexUtils;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.net.InetAddress;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
-import java.security.PrivateKey;
-import java.util.TimeZone;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Set;
-
-import com.ibm.xml.dsig.TemplateGenerator;
-import com.ibm.xml.dsig.XSignature;
-import com.ibm.xml.dsig.Canonicalizer;
-import com.ibm.xml.dsig.SignatureMethod;
-import com.ibm.xml.dsig.Reference;
-import com.ibm.xml.dsig.Transform;
-import com.ibm.xml.dsig.IDResolver;
-import com.ibm.xml.dsig.SignatureContext;
-import com.ibm.xml.dsig.KeyInfo;
-import com.ibm.xml.dsig.XSignatureException;
+import java.util.TimeZone;
 
 /**
  * Class <code>SamlAssertionGenerator</code> is a central entry point
@@ -179,6 +164,7 @@ public class SamlAssertionGenerator {
         template.addReference(ref);
 
         SignatureContext context = new SignatureContext();
+        context.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         context.setIDResolver(new IDResolver() {
             public Element resolveID(Document document, String s) {
                 if (id.equals(s))

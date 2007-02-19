@@ -20,8 +20,6 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.UnsupportedDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import org.w3c.dom.*;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.crypto.NoSuchPaddingException;
@@ -1354,12 +1352,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Validate signature
         SignatureContext sigContext = new SignatureContext();
-        sigContext.setEntityResolver(new EntityResolver() {
-            public InputSource resolveEntity(String publicId, String systemId) throws IOException {
-                // this works but SAXException doesn't... I guess XSS4J uses SAXException internally to signal some normal condition.
-                throw new IOException("References to external resources are not permitted");
-            }
-        });
+        sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         sigContext.setIDResolver(new IDResolver() {
             public Element resolveID(Document doc, String s) {
                 Element found = (Element)cntx.elementsByWsuId.get(s);

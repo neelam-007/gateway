@@ -13,7 +13,6 @@ import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
@@ -235,6 +234,7 @@ public class Xss4jWrapper {
 
         // Setup context and sign document
         SignatureContext sigContext = new SignatureContext();
+        sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         AdHocIDResolver idResolver = new AdHocIDResolver(document);
         sigContext.setIDResolver(idResolver);
 
@@ -499,6 +499,7 @@ public class Xss4jWrapper {
         }
 
         SignatureContext sigContext = new SignatureContext();
+        sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         AdHocIDResolver idResolver = new AdHocIDResolver(soapMsg);
         sigContext.setIDResolver(idResolver);
 

@@ -57,6 +57,17 @@ public class XmlUtil {
         }
     };
 
+    /**
+     * Different from {@link #SAFE_ENTITY_RESOLVER} in that it throws {@link IOException} rather than {@link SAXException}.
+     */
+    private static final EntityResolver XSS4J_SAFE_ENTITY_RESOLVER = new EntityResolver() {
+        public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+            String msg = "Document referred to an external entity with system id '" + systemId + "'";
+            logger.warning( msg );
+            throw new IOException(msg);
+        }
+    };
+
     private static final LSResourceResolver SAFE_LS_RESOURCE_RESOLVER = new LSResourceResolver() {
         public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
             String msg = "Document referred to an external entity with system id '" + systemId + "' of type '" + type + "'";
@@ -104,6 +115,18 @@ public class XmlUtil {
     }
 
     /**
+     * Returns a stateless, thread-safe {@link EntityResolver} that throws a SAXException upon encountering
+     * external entity references but otherwise works as expected.
+     *
+     * This EntityResolver should be used in ALL XML parsing to avoid DOS attacks.
+     * @return a safe {@link EntityResolver} instance.
+     */
+    public static EntityResolver getXss4jEntityResolver() {
+        return XSS4J_SAFE_ENTITY_RESOLVER;
+    }
+
+
+    /**
      * Returns a stateless, thread-safe {@link LSResourceResolver} that resolves all schema and entity
      * references to an uninitialized LSInput implementation.
      *
@@ -131,7 +154,7 @@ public class XmlUtil {
         protected synchronized Object initialValue() {
             try {
                 DocumentBuilder builder = dbf.newDocumentBuilder();
-                builder.setEntityResolver(SAFE_ENTITY_RESOLVER);
+                builder.setEntityResolver(XSS4J_SAFE_ENTITY_RESOLVER);
                 builder.setErrorHandler(QUIET_ERROR_HANDLER);
                 return builder;
             } catch (ParserConfigurationException e) {
@@ -144,7 +167,7 @@ public class XmlUtil {
         protected synchronized Object initialValue() {
             try {
                 DocumentBuilder builder = dbfAllowingDoctype.newDocumentBuilder();
-                builder.setEntityResolver(SAFE_ENTITY_RESOLVER);
+                builder.setEntityResolver(XSS4J_SAFE_ENTITY_RESOLVER);
                 builder.setErrorHandler(QUIET_ERROR_HANDLER);
                 return builder;
             } catch (ParserConfigurationException e) {

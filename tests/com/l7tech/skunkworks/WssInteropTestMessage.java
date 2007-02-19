@@ -24,7 +24,6 @@ import com.l7tech.common.security.xml.*;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
-import com.l7tech.common.security.xml.processor.WssProcessorUtil;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TestDocuments;
@@ -33,9 +32,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import java.io.ByteArrayOutputStream;
@@ -365,12 +361,7 @@ public class WssInteropTestMessage extends TestCase {
                 return e;
             }
         });
-        sigContext.setEntityResolver(new EntityResolver() {
-            public InputSource resolveEntity(String publicId, String systemId) throws SAXException {
-                throw new SAXException("Unsupported external entity reference publicId=" + publicId +
-                  ", systemId=" + systemId);
-            }
-        });
+        sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
             public Transform getTransform(String s) throws NoSuchAlgorithmException {
                 if (SoapUtil.TRANSFORM_STR.equals(s))
