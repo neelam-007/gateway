@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.http.*;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
