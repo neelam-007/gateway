@@ -19,6 +19,8 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * @author alex
@@ -80,6 +82,29 @@ public class ServerComparisonAssertionTest extends TestCase {
             new NumericRangePredicate(12345, 12346)
         );
 
+        ServerComparisonAssertion sca = new ServerComparisonAssertion(comp, ApplicationContexts.getTestApplicationContext());
+        AssertionStatus stat = sca.checkRequest(context);
+        assertEquals(stat, AssertionStatus.NONE);
+    }
+
+    public void testGeneratedIntegerComparison() throws Exception {
+        int value = 12345;
+        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        context.setVariable("asdf", Integer.toString(value));
+        ComparisonAssertion comp = new ComparisonAssertion();
+        comp.setExpression1("${asdf}");
+        List<Predicate> preds = new ArrayList<Predicate>();
+        preds.add(new BinaryPredicate(ComparisonOperator.EQ, "12345", false, false));
+        preds.add(new BinaryPredicate(ComparisonOperator.NE, "2345", false, false));
+        preds.add(new BinaryPredicate(ComparisonOperator.LT, "12346", false, false));
+        preds.add(new BinaryPredicate(ComparisonOperator.LE, "12345", false, false));
+        preds.add(new BinaryPredicate(ComparisonOperator.LE, "12346", false, false));
+        preds.add(new BinaryPredicate(ComparisonOperator.GT, "12344", false, false));
+        preds.add(new BinaryPredicate(ComparisonOperator.GE, "12345", false, false));
+        preds.add(new BinaryPredicate(ComparisonOperator.GE, "12344", false, false));
+        preds.add(new BinaryPredicate(ComparisonOperator.CONTAINS, "234", false, false));
+        preds.add(new BinaryPredicate(ComparisonOperator.EMPTY, null, false, true));
+        comp.setPredicates(preds.toArray(new Predicate[0]));
         ServerComparisonAssertion sca = new ServerComparisonAssertion(comp, ApplicationContexts.getTestApplicationContext());
         AssertionStatus stat = sca.checkRequest(context);
         assertEquals(stat, AssertionStatus.NONE);
