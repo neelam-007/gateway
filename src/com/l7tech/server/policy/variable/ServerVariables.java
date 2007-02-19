@@ -257,12 +257,12 @@ public class ServerVariables {
                 HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
                 if (hrk == null) return new String[0];
 
-                String suffix = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER.length());
+                String suffix = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER_VALUES.length());
                 if (!suffix.startsWith(".")) {
                     logger.warning("Variable '" + name + "' does not have a period before the header name.");
                     return new String[0];
                 }
-                String hname = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER.length()+1);
+                String hname = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER_VALUES.length()+1);
 
                 return hrk.getHeaderValues(hname);
             }
