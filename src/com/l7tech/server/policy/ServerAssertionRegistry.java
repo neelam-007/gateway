@@ -200,7 +200,8 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         }
 
         // Check for removed modules
-        for (AssertionModule module : loadedModules.values()) {
+        Collection<AssertionModule> modules = new ArrayList<AssertionModule>(loadedModules.values());
+        for (AssertionModule module : modules) {
             String name = module.getName();
             if (!jarnames.contains(name)) {
                 logger.info("Unregistering assertion module that has been removed or disabled: " + name);
