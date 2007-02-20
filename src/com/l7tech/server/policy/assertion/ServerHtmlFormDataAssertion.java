@@ -289,10 +289,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                 final ContentTypeHeader partContentType = partInfo.getContentType();
                 if (partContentType.matches("multipart", "mixed")) {
                     // This is a multipart/mixed subpart embedded within a multipart/form-data.
-                    // Currently, this assertion doesn't validate the filenames.
-                    // So we don't need to waste CPU parsing into the subparts.
-                    // But if needed to, just uncomment the following line.
-//                    parseMultipartMixed(field, partInfo.getInputStream(false), partContentType);
+                    parseMultipartMixed(field, partInfo.getInputStream(false), partContentType);
                 } else {
                     String value = null;
                     final String filename = contentDisposition.getParameter("filename");
