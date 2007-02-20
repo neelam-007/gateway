@@ -152,6 +152,7 @@ public class DBDumpUtil {
         String output = in.replace("\"", "\\\"");
         output = output.replace("\'", "\\\'");
         output = output.replace("\n", "\\n");
+        output = output.replace("\r", "\\r");
         return output;
     }
 
