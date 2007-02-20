@@ -481,6 +481,21 @@ public class ServerAssertionRegistry extends AssertionRegistry {
     }
 
     /**
+     * Find the assertion module, if any, that owns the specified class loader.
+     *
+     * @param classLoader the class loader to check.  Any code that suspects it may be running as a modular
+     *                    assertion can just pass as this argument the result of <tt>getClass().getClassLoader()</tt>.
+     * @return the {@link AssertionModule} that provides this class loader, or null if no currently registered AssertionModule owns
+     *         the specified ClassLoader.
+     */
+    public AssertionModule getModuleForClassLoader(ClassLoader classLoader) {
+        for (AssertionModule module : loadedModules.values())
+            if (classLoader == module.getModuleClassLoader())
+                return module;
+        return null;
+    }
+
+    /**
      * @param file the file to digest.  Must not be null.
      * @return the hex dump of the SHA-1 digest of the specified file.
      * @throws java.io.IOException if there is a problem reading the file
