@@ -22,7 +22,8 @@ public class HttpPassthroughRuleSet implements Serializable  {
     public static final int BLOCK = 3;
 
     public static final String[] HEADERS_NOT_TO_IMPLICITELY_FORWARD = {"host", "keep-alive", "connection",
-                                                                       "server", "content-type", "date"};
+                                                                       "server", "content-type", "date",
+                                                                       "content-length"};
 
     private boolean forwardAll;
     private HttpPassthroughRule[] rules;
@@ -94,7 +95,7 @@ public class HttpPassthroughRuleSet implements Serializable  {
         if (rules != null) {
             boolean custom = false;
             boolean original = false;
-            for (int i = 0; i < rules.length; i++) {
+                for (int i = 0; i < rules.length; i++) {
                 if (rules[i].getName().compareToIgnoreCase(name) == 0) {
                     if (rules[i].isUsesCustomizedValue()) custom = true;
                     else original = true;
