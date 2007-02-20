@@ -15,7 +15,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URISyntaxException;
-import java.net.ConnectException;
 import java.net.SocketException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
@@ -460,71 +459,95 @@ public class WsdlLocationPanel extends JPanel {
                         return wsdl;
                     }
                 } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
-                    if(dlg.isVisible()) {
-                        dlg.setVisible(false);
-                        TopComponents.getInstance().showNoPrivilegesErrorMessage();
-                    }
-                } catch (WSDLException e1) {
-                    if(dlg.isVisible()) {
-                        logger.log(Level.INFO, "Could not parse WSDL.", e1); // this used to do e.printStackTrace() this is slightly better.
-                        String message = ExceptionUtils.getMessage(e1);
-                        Pattern messageCleanup = Pattern.compile("WSDLException(?: \\(at [a-zA-Z0-9_\\-:/]{0,1024}\\)){0,1}: faultCode=[a-zA-Z0-9_\\-]{0,256}: (.*)");
-                        Matcher messageMatcher = messageCleanup.matcher(message);
-                        if (messageMatcher.matches()) {
-                            message = messageMatcher.group(1);
+                    SwingUtilities.invokeLater(new Runnable(){
+                        public void run() {
+                            if(dlg.isVisible()) {
+                                dlg.setVisible(false);
+                                TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                            }
                         }
-                        dlg.setVisible(false);
-                        JOptionPane.showMessageDialog(null,
-                                                      "Unable to parse the WSDL at location '" + wsdlUrl + "'\nError detail: " + message + "\n",
-                                                      "Error",
-                                                      JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (MalformedURLException e1) {
-                    if(dlg.isVisible()) {
-                        logger.log(Level.INFO, "Could not parse URL.", e1);
-                        dlg.setVisible(false);
-                        JOptionPane.showMessageDialog(null,
-                                                      "Illegal URL string '" + wsdlUrl + "'\n",
-                                                      "Error",
-                                                      JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (URISyntaxException e1) {
-                    if(dlg.isVisible()) {
-                        logger.log(Level.INFO, "Could not parse URL.", e1);
-                        dlg.setVisible(false);
-                        JOptionPane.showMessageDialog(null,
-                                                      "Illegal URL string '" + wsdlUrl + "'\n",
-                                                      "Error",
-                                                      JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (IOException e1) {
-                    if(dlg.isVisible()) {
-                        logger.log(Level.INFO, "IO Error.", e1);
-                        dlg.setVisible(false);
-                        if (ExceptionUtils.causedBy(e1, SocketException.class)) {
-                            JOptionPane.showMessageDialog(null,
-                                                          "Could not fetch the WSDL at location '" + wsdlUrlTextField.getText() +
-                                                          "'\n",
-                                                          "Error",
-                                                          JOptionPane.ERROR_MESSAGE);
-                        } else {
-                            JOptionPane.showMessageDialog(null,
-                                                          "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +
-                                                          "'\n",
-                                                          "Error",
-                                                          JOptionPane.ERROR_MESSAGE);
+                    });
+                } catch (final WSDLException e1) {
+                    SwingUtilities.invokeLater(new Runnable(){
+                        public void run() {
+                            if(dlg.isVisible()) {
+                                dlg.setVisible(false);
+                                logger.log(Level.INFO, "Could not parse WSDL.", e1); // this used to do e.printStackTrace() this is slightly better.
+                                String message = ExceptionUtils.getMessage(e1);
+                                Pattern messageCleanup = Pattern.compile("WSDLException(?: \\(at [a-zA-Z0-9_\\-:/]{0,1024}\\)){0,1}: faultCode=[a-zA-Z0-9_\\-]{0,256}: (.*)");
+                                Matcher messageMatcher = messageCleanup.matcher(message);
+                                if (messageMatcher.matches()) {
+                                    message = messageMatcher.group(1);
+                                }
+                                JOptionPane.showMessageDialog(null,
+                                                              "Unable to parse the WSDL at location '" + wsdlUrl + "'\nError detail: " + message + "\n",
+                                                              "Error",
+                                                              JOptionPane.ERROR_MESSAGE);
+                            }
                         }
-                    }
-                } catch (SAXException e1) {
-                    if(dlg.isVisible()) {
-                        logger.log(Level.INFO, "XML parsing error.", e1);
-                        dlg.setVisible(false);
-                        JOptionPane.showMessageDialog(null,
-                                                      "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +
-                                                      "'\n",
-                                                      "Error",
-                                                      JOptionPane.ERROR_MESSAGE);
-                    }
+                    });
+                } catch (final MalformedURLException e1) {
+                    SwingUtilities.invokeLater(new Runnable(){
+                        public void run() {
+                            if(dlg.isVisible()) {
+                                logger.log(Level.INFO, "Could not parse URL.", e1);
+                                dlg.setVisible(false);
+                                JOptionPane.showMessageDialog(null,
+                                                              "Illegal URL string '" + wsdlUrl + "'\n",
+                                                              "Error",
+                                                              JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    });
+                } catch (final URISyntaxException e1) {
+                    SwingUtilities.invokeLater(new Runnable(){
+                        public void run() {
+                            if(dlg.isVisible()) {
+                                logger.log(Level.INFO, "Could not parse URL.", e1);
+                                dlg.setVisible(false);
+                                JOptionPane.showMessageDialog(null,
+                                                              "Illegal URL string '" + wsdlUrl + "'\n",
+                                                              "Error",
+                                                              JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    });
+                } catch (final IOException e1) {
+                    SwingUtilities.invokeLater(new Runnable(){
+                        public void run() {
+                            if(dlg.isVisible()) {
+                                logger.log(Level.INFO, "IO Error.", e1);
+                                dlg.setVisible(false);
+                                if (ExceptionUtils.causedBy(e1, SocketException.class)) {
+                                    JOptionPane.showMessageDialog(null,
+                                                                  "Could not fetch the WSDL at location '" + wsdlUrlTextField.getText() +
+                                                                  "'\n",
+                                                                  "Error",
+                                                                  JOptionPane.ERROR_MESSAGE);
+                                } else {
+                                    JOptionPane.showMessageDialog(null,
+                                                                  "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +
+                                                                  "'\n",
+                                                                  "Error",
+                                                                  JOptionPane.ERROR_MESSAGE);
+                                }
+                            }
+                        }
+                    });
+                } catch (final SAXException e1) {
+                    SwingUtilities.invokeLater(new Runnable(){
+                        public void run() {
+                            if(dlg.isVisible()) {
+                                logger.log(Level.INFO, "XML parsing error.", e1);
+                                dlg.setVisible(false);
+                                JOptionPane.showMessageDialog(null,
+                                                              "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +
+                                                              "'\n",
+                                                              "Error",
+                                                              JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    });
                 }
 
                 return null;
@@ -537,7 +560,10 @@ public class WsdlLocationPanel extends JPanel {
 
         worker.start();
         dlg.setVisible(true);
-        worker.interrupt(); // cancel
+        if (dlg.wasCancelled()) {
+            worker.interrupt(); // cancel
+            return null;
+        }
 
         return (Wsdl) worker.get();
     }

@@ -20,6 +20,7 @@ import java.awt.event.ActionListener;
  */
 public class CancelableOperationDialog extends JDialog {
     private final JLabel messageLabel = new JLabel();
+    private boolean wasCancel;
 
     public static CancelableOperationDialog newCancelableOperationDialog(Component component, String title, String message) {
         CancelableOperationDialog dialog;
@@ -53,6 +54,8 @@ public class CancelableOperationDialog extends JDialog {
     }
 
     private void doInit(String message, JProgressBar progressBar) {
+        wasCancel = false;
+
         setResizable(false);
         Utilities.setAlwaysOnTop(this, true);
 
@@ -67,6 +70,7 @@ public class CancelableOperationDialog extends JDialog {
         JButton cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                wasCancel = true;
                 CancelableOperationDialog.this.dispose();
             }
         });
@@ -93,5 +97,9 @@ public class CancelableOperationDialog extends JDialog {
 
     public String getMessage() {
         return messageLabel.getText();
+    }
+
+    public boolean wasCancelled() {
+        return wasCancel;
     }
 }
