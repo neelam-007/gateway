@@ -112,10 +112,16 @@ public enum MethodStereotype {
     SET_PROPERTY_OF_ENTITY,
 
     /**
-     * A {@link Secured#relevantArg} argument argument must be a {@link Long} or {@link String}, and the caller must
+     * A {@link Secured#relevantArg} argument must be a {@link Long} or {@link String}, and the caller must
      * hold {@link OperationType#UPDATE} permission on the corresponding {@link com.l7tech.objectmodel.Entity}.
      */
     SET_PROPERTY_BY_ID,
+
+    /**
+     * A {@link Secured#relevantArg} argument must be a {@link Long} or {@link String}, and the caller must
+     * hold {@link OperationType#READ} permission on the corresponding {@link com.l7tech.objectmodel.Entity}.
+     */
+    GET_PROPERTY_BY_ID,
 
     /**
      * Caller must hold {@link OperationType#UPDATE} permission on all entities of the declared type (we are currently

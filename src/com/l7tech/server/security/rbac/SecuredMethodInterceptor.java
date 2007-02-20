@@ -231,6 +231,9 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                         checkIdentityFromId(args, check, READ);
                         break;
                     case SET_PROPERTY_BY_ID:
+                        checkEntityFromId(check, args, UPDATE);
+                        break;
+                    case GET_PROPERTY_BY_ID:
                         checkEntityFromId(check, args, READ);
                         break;
                     case GET_PROPERTY_OF_ENTITY:
