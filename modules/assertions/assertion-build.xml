@@ -190,7 +190,7 @@
                 <attribute name="Specification-Vendor-Id" value="com.l7tech"/>
                 <attribute name="Implementation-Title" value="${moduleName}"/>
                 <attribute name="Implementation-Version" value="${build.version} ${TODAY}"/>
-                <attribute name="Implementation-Vendor" value="Layer 7 Technologoes"/>
+                <attribute name="Implementation-Vendor" value="Layer 7 Technologies"/>
                 <attribute name="Implementation-Vendor-Id" value="com.l7tech"/>
                 <attribute name="ModularAssertion-List" value="${assertionList}"/>
             </manifest>
