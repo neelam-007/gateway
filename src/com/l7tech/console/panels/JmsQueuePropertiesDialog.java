@@ -395,26 +395,34 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 }
 
                 if (usingCustom) {
-                    items = new ProviderComboBoxItem[providers.length + 1];
+                    items = new ProviderComboBoxItem[providers.length + 2];
 
-                    JmsProvider customProvider = null;
-                    customProvider = new JmsProvider();
+                    JmsProvider customProvider = new JmsProvider();
                     customProvider.setName("(Custom)");
                     customProvider.setDefaultDestinationFactoryUrl(connection.getDestinationFactoryUrl());
                     customProvider.setDefaultQueueFactoryUrl(connection.getQueueFactoryUrl());
                     customProvider.setDefaultTopicFactoryUrl(connection.getTopicFactoryUrl());
                     customProvider.setInitialContextFactoryClassname(connection.getInitialContextFactoryClassname());
-
-                    items[0] = new ProviderComboBoxItem(customProvider);
+                    items[1] = new ProviderComboBoxItem(customProvider);
 
                     for (int i = 0; i < providers.length; i++)
-                        items[i + 1] = new ProviderComboBoxItem(providers[i]);
+                        items[i + 2] = new ProviderComboBoxItem(providers[i]);
                 } else {
                     // No "custom" provider required
-                    items = new ProviderComboBoxItem[providers.length];
+                    items = new ProviderComboBoxItem[providers.length + 1];
                     for (int i = 0; i < providers.length; i++)
-                        items[i] = new ProviderComboBoxItem(providers[i]);
+                        items[i + 1] = new ProviderComboBoxItem(providers[i]);
                 }
+
+                // include "other" (empty)
+                JmsProvider blankProvider = new JmsProvider();
+                blankProvider.setName("");
+                blankProvider.setDefaultDestinationFactoryUrl("");
+                blankProvider.setDefaultQueueFactoryUrl("");
+                blankProvider.setDefaultTopicFactoryUrl("");
+                blankProvider.setInitialContextFactoryClassname("");
+
+                items[0] = new ProviderComboBoxItem(blankProvider);
 
                 driverComboBox = new JComboBox(items);
                 driverComboBox.setSelectedIndex(-1);
@@ -530,6 +538,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 conn = provider.createConnection(getNameTextField().getText(),
                   getJndiUrlTextField().getText());
             }
+            if (conn.getName()==null || conn.getName().trim().length()==0)
+                conn.setName("Custom");
         }
 
         if (getOptionalCredentialsPanel().isUsernameAndPasswordRequired()) {
