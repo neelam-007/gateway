@@ -19,6 +19,7 @@ import org.springframework.jdbc.SQLWarningException;
 import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.orm.hibernate3.HibernateSystemException;
 
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.identity.User;
@@ -98,6 +99,8 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
                             SQLWarningException.class,
                             UncategorizedSQLException.class,
                             ObjectOptimisticLockingFailureException.class,
+                            // spring hibernate dao
+                            HibernateSystemException.class,
                             // connection pooling exceptions
                             com.mchange.lang.PotentiallySecondaryException.class,
                             com.mchange.util.AssertException.class,
