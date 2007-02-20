@@ -39,6 +39,10 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
         return null;
     }
 
+    public byte[] getAssertionResourceBytes(String path) throws RemoteException {
+        return null;
+    }
+
     /**
      * @return the list of all assertions known to the runtime
      * @throws java.rmi.RemoteException

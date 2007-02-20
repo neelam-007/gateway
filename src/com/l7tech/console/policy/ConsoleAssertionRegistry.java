@@ -15,6 +15,7 @@ import com.l7tech.console.tree.policy.advice.DefaultAssertionAdvice;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import static com.l7tech.policy.assertion.DefaultAssertionMetadata.*;
@@ -104,7 +105,11 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             public Object run() {
                 ClassLoader assloader = TopComponents.getInstance().isApplet()
                                         ? getClass().getClassLoader()
-                                        : new ConsoleRemoteAssertionModuleClassLoader(getClass().getClassLoader(), cluster, moduleFilename);
+                                        : null;
+                if (assloader == null)
+                    assloader = ClassLoaderUtil.getClassLoader();
+                if (assloader == null)
+                    throw new IllegalStateException("Not running as applet but no WSP class loader set");
                 for (String assertionClassname : assertionClassnames) {
                     try {
                         Class assclass = assloader.loadClass(assertionClassname);

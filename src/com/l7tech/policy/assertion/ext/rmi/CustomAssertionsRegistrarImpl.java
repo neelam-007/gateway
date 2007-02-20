@@ -49,6 +49,11 @@ public class CustomAssertionsRegistrarImpl
         return delegate.getAssertionClass(className);
     }
 
+    public byte[] getAssertionResourceBytes(String path) throws RemoteException {
+        checkLicense();
+        return delegate.getAssertionResourceBytes(path);
+    }
+
     /**
      * @return the list of all assertions known to the runtime
      * @throws java.rmi.RemoteException

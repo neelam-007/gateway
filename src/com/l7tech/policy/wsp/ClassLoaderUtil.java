@@ -10,13 +10,21 @@ package com.l7tech.policy.wsp;
  */
 public class ClassLoaderUtil
 {
+    private static ClassLoader wspClassLoader = null;
+
     /**
      * Set the ClassLoader to use when loading classes.
      *
      * @param classLoader The classloader to use
      */
     public static void setClassloader(ClassLoader classLoader) {
+        wspClassLoader = classLoader;
+
         // any WSP classes with configurable classloaders go here.
         SerializedJavaClassMapping.setClassloader(classLoader);
+    }
+
+    public static ClassLoader getClassLoader() {
+        return wspClassLoader;
     }
 }

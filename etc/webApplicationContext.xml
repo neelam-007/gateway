@@ -291,6 +291,7 @@
     </bean>
     <!-- server side custom assertions registrar -->
     <bean id="customAssertionRegistrar" class="com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarImpl">
+        <constructor-arg ref="assertionRegistry"/>
         <property name="serverConfig">
             <ref bean="serverConfig"/>
         </property>

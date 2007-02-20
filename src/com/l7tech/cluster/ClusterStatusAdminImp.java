@@ -252,18 +252,6 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return ret;
     }
 
-    @Transactional(propagation = Propagation.SUPPORTS)
-    public byte[] getAssertionModuleResource(String moduleFilename, String resourcePath) throws ModuleNotFoundException, RemoteException {
-        AssertionModule module = assertionRegistry.getModule(moduleFilename);
-        if (module == null)
-            throw new ModuleNotFoundException();
-        try {
-            return module.getResourceBytes(resourcePath);
-        } catch (IOException e) {
-            throw new RemoteException("Unable to read resource " + resourcePath + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e) , e);
-        }
-    }
-
     public String getHardwareCapability(String capability) {
         if (!ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability)) return null;
         return TarariLoader.getGlobalContext() != null ? ClusterStatusAdmin.CAPABILITY_HWXPATH_TARARI : null;

@@ -292,19 +292,6 @@ public interface ClusterStatusAdmin {
     }
 
     /**
-     * Get the bytes for a resource from a particular assertion module.
-     *
-     * @param moduleFilename  the module from which to load the specified class, as returned by {@link #getAssertionModuleInfo()}.  Required.
-     * @param resourcePath       the name of the resource to load, ie. "com/l7tech/policy/assertion/MySpecialAssertion$3.class". Required.
-     * @return the bytes for the specified resource, or null if the specified resource was not found in this module.
-     * @throws ModuleNotFoundException  if the specified module is not loaded on this Gateway node.  Keep in mind that modules
-     *                                    can be unloaded at any time.
-     * @throws RemoteException on remote communication error, or error reading the resource bytes
-     */
-    @Transactional(propagation=Propagation.SUPPORTS)
-    byte[] getAssertionModuleResource(String moduleFilename, String resourcePath) throws ModuleNotFoundException, RemoteException;
-
-    /**
      * Check hardware capabilities of the node that receives this admin request.
      * TODO this information should be moved to ClusterNodeInfo instead, since it is really per-node.
      *

@@ -1,8 +1,21 @@
 package com.l7tech.console.util;
 
 import java.rmi.RemoteException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.net.URL;
+import java.net.URLStreamHandler;
+import java.net.URLConnection;
+import java.net.MalformedURLException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedActionException;
 
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.common.util.ExceptionUtils;
 
 /**
  * ClassLoader for loading CustomAssertion classes from the connected SSG.
@@ -11,6 +24,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
  * @version $Revision$
  */
 public class CustomAssertionClassLoader extends ClassLoader {
+    protected static final Logger logger = Logger.getLogger(CustomAssertionClassLoader.class.getName());
 
     //- PUBLIC
 
@@ -32,6 +46,74 @@ public class CustomAssertionClassLoader extends ClassLoader {
 
     //- PROTECTED
 
+    protected byte[] findResourceBytes(String path) {
+        Registry registry = Registry.getDefault();
+        if (registry == null) {
+            logger.warning("Unable to load custom/modular assertion class or resource: No default Registry available");
+            return null;
+        }
+
+        CustomAssertionsRegistrar car = null;
+        try {
+            car = registry.getCustomAssertionsRegistrar();
+        } catch (IllegalStateException e) {
+            logger.log(Level.WARNING, "Unable to load custom/modular assertion class or resource: " + ExceptionUtils.getMessage(e), e);
+        }
+        if (car == null) {
+            logger.warning("Unable to load custom/modular assertion class or resource: No CustomAssertionRegistrar available");
+            return null;
+        }
+
+        try {
+            return car.getAssertionResourceBytes(path);
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "Unable to load custom/modular assertion class or resource: " + ExceptionUtils.getMessage(e), e);
+            return null;
+        }
+    }
+
+    public InputStream getResourceAsStream(String name) {
+        ClassLoader parent = getParent();
+        if (parent == null)
+            return super.getResourceAsStream(name);
+
+        InputStream ret = parent.getResourceAsStream(name);
+        if (ret != null)
+            return ret;
+        
+        final byte[] resourceBytes = findResourceBytes(name);
+        return resourceBytes == null ? null : new ByteArrayInputStream(resourceBytes);
+    }
+
+    protected URL findResource(final String name) {
+        final byte[] resourceBytes = findResourceBytes(name);
+        if (resourceBytes == null)
+            return null;
+        try {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<URL>() {
+                public URL run() throws Exception {
+                    return makeUrl(name, resourceBytes);
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            logger.log(Level.WARNING, "Unable to load remote resource: " + ExceptionUtils.getMessage(e), e);
+            return null;
+        }
+    }
+
+    private URL makeUrl(String name, final byte[] resourceBytes) throws MalformedURLException {
+        return new URL("file", null, -1, name, new URLStreamHandler() {
+                protected URLConnection openConnection(URL u) throws IOException {
+                    return new URLConnection(u) {
+                        public void connect() throws IOException { }
+                        public InputStream getInputStream() throws IOException {
+                            return new ByteArrayInputStream(resourceBytes);
+                        }
+                    };
+                }
+            });
+    }
+
     /**
      * Find the class from the SSG.
      *
@@ -40,31 +122,10 @@ public class CustomAssertionClassLoader extends ClassLoader {
      * @throws ClassNotFoundException if not available from the attached SSG
      */
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        Class<?> clazz = null;
-
-        try {
-            Registry registry = Registry.getDefault();
-            if (registry != null) {
-                CustomAssertionsRegistrar customAssertionsRegistrar = null;
-                try {
-                    customAssertionsRegistrar = registry.getCustomAssertionsRegistrar();
-                }
-                catch(IllegalStateException ise) {
-                    throw new ClassNotFoundException(name, ise);            
-                }
-                if (customAssertionsRegistrar != null) {
-                    byte[] classData = customAssertionsRegistrar.getAssertionClass(name);
-                    if (classData != null)
-                        clazz = defineClass(name, classData, 0, classData.length);
-                }
-            }
-        }
-        catch(RemoteException re) {
-            throw new ClassNotFoundException(name, re);
-        }
-
-        if (clazz == null) throw new ClassNotFoundException(name);
-
-        return clazz;
+        String path = name.replace('.','/') + ".class";
+        byte[] classBytes = findResourceBytes(path);
+        if (classBytes == null || classBytes.length < 1)
+            throw new ClassNotFoundException(name);
+        return defineClass(name, classBytes, 0, classBytes.length);
     }
 }

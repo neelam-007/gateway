@@ -23,6 +23,15 @@ public interface CustomAssertionsRegistrar {
     byte[] getAssertionClass(String className) throws RemoteException;
 
     /**
+     * Get the bytes for a CustomAssertion class or resource.
+     *
+     * @param path  the path of the resource to load.  Required.
+     * @return the resource bytes, or null if not found
+     * @throws RemoteException on remote communication error
+     */
+    byte[] getAssertionResourceBytes(String path) throws RemoteException;
+
+    /**
      * @return the list of all assertions known to the runtime
      * @throws RemoteException on remote communication error
      */

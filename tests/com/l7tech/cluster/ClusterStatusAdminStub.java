@@ -174,11 +174,6 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         return Collections.emptyList();
     }
 
-    @Transactional(propagation = Propagation.SUPPORTS)
-    public byte[] getAssertionModuleResource(String moduleFilename, String resourcePath) throws ModuleNotFoundException, RemoteException {
-        throw new ModuleNotFoundException();
-    }
-
     public String getHardwareCapability(String capability) {
         return null;
     }

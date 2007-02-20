@@ -2,11 +2,14 @@ package com.l7tech.policy.assertion.ext;
 
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.util.ModuleClassLoader;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -32,33 +35,58 @@ public class CustomAssertionsRegistrarImpl
 
     //- PUBLIC
 
+    public CustomAssertionsRegistrarImpl(ServerAssertionRegistry assertionRegistry) {
+        if (assertionRegistry == null) throw new IllegalArgumentException("assertionRegistry is required");
+        this.assertionRegistry = assertionRegistry;
+    }
+
     public byte[] getAssertionClass(String className) throws RemoteException {
         byte[] classData = null;
 
         // ensure a name such as "com.something.MyClass"
-        if (className != null && className.lastIndexOf('.') > className.indexOf('.')) {
-            String classAsResource = className.replace('.','/') + ".class";
-            if (logger.isLoggable(Level.FINEST))
-                logger.finest("Serving custom assertion class '"+className+"' as resource '"+classAsResource+"'.");
-            if (customAssertionClassloader != null) {
-                InputStream classIn = null;
-                try {
-                    if (isCustomAssertionResource(classAsResource)) {
-                        classIn = customAssertionClassloader.getResourceAsStream(classAsResource);
-                        if (classIn != null)
-                            classData = HexUtils.slurpStream(classIn);
-                    }
-                }
-                catch(IOException ioe) {
-                    logger.log(Level.WARNING, "Error loading custom assertion class '"+className+"'.", ioe);
-                }
-                finally {
-                    ResourceUtils.closeQuietly(classIn);
-                }
+        if (className == null || className.lastIndexOf('.') <= className.indexOf('.'))
+            return null;
+
+        String classAsResource = className.replace('.','/') + ".class";
+        return getAssertionResourceBytes(classAsResource);
+    }
+
+    public byte[] getAssertionResourceBytes(String path) throws RemoteException {
+        if (logger.isLoggable(Level.FINEST))
+            logger.finest("Serving custom assertion resource: " + path);
+
+        if (customAssertionClassloader == null)
+            return null;
+
+        InputStream classIn = null;
+        try {
+            if (isCustomAssertionResource(path)) {
+                classIn = customAssertionClassloader.getResourceAsStream(path);
+                if (classIn != null)
+                    return HexUtils.slurpStream(classIn);
             }
         }
+        catch(IOException ioe) {
+            logger.log(Level.WARNING, "Error loading custom assertion resource: " + path + ": " + ExceptionUtils.getMessage(ioe), ioe);
+        }
+        finally {
+            ResourceUtils.closeQuietly(classIn);
+        }
 
-        return classData;
+        // Check for modular assertion resource
+        Set<AssertionModule> mods = assertionRegistry.getLoadedModules();
+        for (AssertionModule mod : mods) {
+            try {
+                byte[] resourceBytes = mod.getResourceBytes(path);
+                if (resourceBytes != null)
+                    return resourceBytes;
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Error loading resource from module " + mod.getName() + ": " + path + ": " + ExceptionUtils.getMessage(e), e);
+            }
+
+        }
+
+        return null;
     }
 
     /**
@@ -147,6 +175,7 @@ public class CustomAssertionsRegistrarImpl
     private boolean initialized = false;
     private ServerConfig serverConfig;
     private ClassLoader customAssertionClassloader;
+    private final ServerAssertionRegistry assertionRegistry;
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection result = new ArrayList();
