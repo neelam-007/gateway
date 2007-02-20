@@ -1369,6 +1369,7 @@
                 <include name="com/l7tech/service/ServiceAdmin.class"/>
                 <include name="com/l7tech/service/ServiceAdminPublic.class"/>
                 <include name="com/l7tech/service/PublishedService*.class"/>
+                <include name="com/l7tech/service/ServiceDocument.class"/>
                 <include name="com/l7tech/service/SampleMessage.class"/>
                 <include name="com/l7tech/service/ServiceStatistics.class"/>
                 <include name="com/l7tech/service/MetricsBin.class"/>

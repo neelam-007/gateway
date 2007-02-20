@@ -9,25 +9,33 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URISyntaxException;
+import java.net.ConnectException;
+import java.net.SocketException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Collection;
+import java.util.ArrayList;
 import java.security.AccessControlException;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 import javax.wsdl.WSDLException;
+import javax.wsdl.xml.WSDLLocator;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import org.xml.sax.InputSource;
 
 import com.l7tech.common.gui.util.FontUtil;
 import com.l7tech.common.gui.util.SwingWorker;
@@ -37,6 +45,12 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.util.ResourceTrackingWSDLLocator;
+import com.l7tech.common.util.Closeable;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.io.IOExceptionThrowingReader;
+import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.console.event.WsdlListener;
 import com.l7tech.console.util.Registry;
@@ -44,6 +58,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.ServiceAdmin;
 
 /**
  * Panel for use loading a Wsdl from a file or URL.
@@ -57,6 +72,8 @@ import com.l7tech.objectmodel.FindException;
 public class WsdlLocationPanel extends JPanel {
 
     //- PUBLIC
+
+    public static final String SYSPROP_NO_WSDL_IMPORTS = "com.l7tech.console.noWsdlImports"; 
 
     /**
      * Create a panel with the given owner and logger.
@@ -120,6 +137,41 @@ public class WsdlLocationPanel extends JPanel {
     }
 
     /**
+     * Get the total number of WSDL documents.
+     *
+     * <p>This includes the main document and any imports.</p>
+     *
+     * @return The count.
+     */
+    public int getWsdlCount() {
+        return wsdlResources==null ? 0 : wsdlResources.size();
+    }
+
+    /**
+     * Get the URI for the WSDL at the given index.
+     *
+     * <p>Index is zero based, with zero being the top-level WSDL.</p>
+     *
+     * @param index The index of the wsdl.
+     * @return The URI.
+     */
+    public String getWsdlUri(int index) {
+        return wsdlResources.toArray(new ResourceTrackingWSDLLocator.WSDLResource[0])[index].getUri();
+    }
+
+    /**
+     * Get the content for the WSDL at the given index.
+     *
+     * <p>Index is zero based, with zero being the top-level WSDL.</p>
+     *
+     * @param index The index of the wsdl.
+     * @return The wsdl document.
+     */
+    public String getWsdlContent(int index) {
+        return wsdlResources.toArray(new ResourceTrackingWSDLLocator.WSDLResource[0])[index].getWsdl();        
+    }
+
+    /**
      * Get the WSDL URL.
      *
      * @return the URL / path.
@@ -156,6 +208,7 @@ public class WsdlLocationPanel extends JPanel {
     private JFrame ownerf;
     private Logger logger;
     private Document wsdlDocument;
+    private Collection<ResourceTrackingWSDLLocator.WSDLResource> wsdlResources;
     private PropertyChangeListener pcl;
     private final boolean allowFile;
     private final boolean allowUddi;
@@ -326,155 +379,202 @@ public class WsdlLocationPanel extends JPanel {
         urlChanged();
 
         final String wsdlUrl = wsdlUrlTextField.getText();
-        try {
-
-            Object result = null;
-            if (isUrlOk(wsdlUrl, null) && !isUrlOk(wsdlUrl, "file")) { // then it is http or https so the Gateway should resolve it
-                result = gatewayFetchWsdlUrl(wsdlUrl);
-            }
-            else { // it is a file url or
-               result = readFile(wsdlUrl);
-            }
-            if (result == null)
-                // canceled
-                return null;
-
-            Document resolvedDoc = null;
-
-            if (result instanceof String) {
-                // this can be either a WSDL or a WSIL document
-                String xmlResult = (String) result;
-                resolvedDoc = XmlUtil.stringToDocument(xmlResult);
-            }
-            else {
-                resolvedDoc = (Document) result;
-            }
-
-            // is this a WSIL?
-            Element root = resolvedDoc.getDocumentElement();
-            if (root.getLocalName().equals("inspection") &&
-                root.getNamespaceURI().equals("http://schemas.xmlsoap.org/ws/2001/10/inspection/")) {
-                // parse wsil and choose the wsdl url
-                WSILSelectorPanel chooser = ownerd!=null ? new WSILSelectorPanel(ownerd, resolvedDoc) : new WSILSelectorPanel(ownerf, resolvedDoc);
-                chooser.pack();
-                Utilities.centerOnScreen(chooser);
-                chooser.setVisible(true); // TODO change to use DialogDisplayer
-                if (!chooser.wasCancelled() && chooser.selectedWSDLURL() != null) {
-                    String chooserUrlStr = chooser.selectedWSDLURL();
-                    // If previous url contained userinfo stuff but the wsil target does
-                    // not, modify new url so the userinfo is added
-                    //
-                    if (wsdlUrl.startsWith("http")) {
-                        URL currentUrl = new URL(wsdlUrl);
-                        URL newUrl = new URL(chooserUrlStr);
-                        if (newUrl.getUserInfo() == null && currentUrl.getUserInfo() != null) {
-                            StringBuffer combinedurl = new StringBuffer(newUrl.toString());
-                            combinedurl.insert(newUrl.getProtocol().length()+3, currentUrl.getUserInfo() + "@");
-                            chooserUrlStr = new URL(combinedurl.toString()).toString();
-                        }
-                    }
-                    wsdlUrlTextField.setText(chooserUrlStr);
-                    return processWsdlLocation();
-                }
-            } else {
-                String baseUri = Wsdl.extractBaseURI(wsdlUrl);
-                if (!wsdlUrl.startsWith("http")) {
-                    baseUri = "local file"; // looks odd but makes the error messages nicer ...
-                }
-                Wsdl wsdl = Wsdl.newInstance(WsdlUtils.getWSDLFactory(), baseUri, new StringReader(XmlUtil.nodeToString(resolvedDoc)), false);
-                wsdlDocument = resolvedDoc;
-                return wsdl;
-            }
-        } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
-            TopComponents.getInstance().showNoPrivilegesErrorMessage();
-        } catch (WSDLException e1) {
-            logger.log(Level.INFO, "Could not parse WSDL.", e1); // this used to do e.printStackTrace() this is slightly better.
-            String message = ExceptionUtils.getMessage(e1);
-            Pattern messageCleanup = Pattern.compile("WSDLException(?: \\(at [a-zA-Z0-9_\\-:/]{0,1024}\\)){0,1}: faultCode=[a-zA-Z0-9_\\-]{0,256}: (.*)");
-            Matcher messageMatcher = messageCleanup.matcher(message);
-            if (messageMatcher.matches()) {
-                message = messageMatcher.group(1);
-            }
-            JOptionPane.showMessageDialog(null,
-              "Unable to parse the WSDL at location '" + wsdlUrl + "'\nError detail: " + message + "\n",
-              "Error",
-              JOptionPane.ERROR_MESSAGE);
-        } catch (MalformedURLException e1) {
-            logger.log(Level.INFO, "Could not parse URL.", e1); // this used to do e.printStackTrace() this is slightly better.
-            JOptionPane.showMessageDialog(null,
-              "Illegal URL string '" + wsdlUrl + "'\n",
-              "Error",
-              JOptionPane.ERROR_MESSAGE);
-        } catch (URISyntaxException e1) {
-            logger.log(Level.INFO, "Could not parse URL.", e1); // this used to do e.printStackTrace() this is slightly better.
-            JOptionPane.showMessageDialog(null,
-              "Illegal URL string '" + wsdlUrl + "'\n",
-              "Error",
-              JOptionPane.ERROR_MESSAGE);
-        } catch (IOException e1) {
-            logger.log(Level.INFO, "IO Error.", e1); // this used to do e.printStackTrace() this is slightly better.
-            JOptionPane.showMessageDialog(null,
-                                          "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +
-                                          "'\n",
-                                          "Error",
-                                          JOptionPane.ERROR_MESSAGE);
-        } catch (SAXException e1) {
-            logger.log(Level.INFO, "XML parsing error.", e1); // this used to do e.printStackTrace() this is slightly better.
-            JOptionPane.showMessageDialog(null,
-                                          "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +
-                                          "'\n",
-                                          "Error",
-                                          JOptionPane.ERROR_MESSAGE);
+        WSDLLocator locator = null;
+        if (isUrlOk(wsdlUrl, null) && !isUrlOk(wsdlUrl, "file")) { // then it is http or https so the Gateway should resolve it
+            locator = gatewayHttpWSDLLocator(wsdlUrl);
+        }
+        else { // it is a file url or is invalid
+           locator = fileWSDLLocator(wsdlUrl);
         }
 
-        return null;
-    }
-
-    private String gatewayFetchWsdlUrl(final String wsdlUrl) throws IOException {
-        final CancelableOperationDialog dlg = new CancelableOperationDialog(TopComponents.getInstance().getTopParent(),
-                                                                            "Resolving target",
-                                                                            "Please wait, resolving target...");
+        // WSDLLocator may point to a WSIL document
+        final WSDLLocator wsdlLocator = locator;
+        final CancelableOperationDialog dlg =
+                CancelableOperationDialog.newCancelableOperationDialog(this, "Resolving target", "Please wait, resolving target...");
+        
         SwingWorker worker = new SwingWorker() {
             public Object construct() {
                 try {
-                    return Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrl);
-                } catch (Exception e) {
-                    return e;
+                    new URI(wsdlUrl); // ensure valid url
+                    Document resolvedDoc = XmlUtil.parse(wsdlLocator.getBaseInputSource(), true);
+
+                    // is this a WSIL?
+                    Element root = resolvedDoc.getDocumentElement();
+                    if (root.getLocalName().equals("inspection") &&
+                        root.getNamespaceURI().equals("http://schemas.xmlsoap.org/ws/2001/10/inspection/")) {
+
+                        // hide cancel dialog
+                        dlg.setVisible(false);
+
+                        // parse wsil and choose the wsdl url
+                        WSILSelectorPanel chooser = ownerd!=null ?
+                                new WSILSelectorPanel(ownerd, resolvedDoc) :
+                                new WSILSelectorPanel(ownerf, resolvedDoc);
+                        chooser.pack();
+                        Utilities.centerOnScreen(chooser);
+                        chooser.setVisible(true); // TODO change to use DialogDisplayer
+                        if (!chooser.wasCancelled() && chooser.selectedWSDLURL() != null) {
+                            String chooserUrlStr = chooser.selectedWSDLURL();
+                            // If previous url contained userinfo stuff but the wsil target does
+                            // not, modify new url so the userinfo is added
+                            //
+                            if (wsdlUrl.startsWith("http")) {
+                                URL currentUrl = new URL(wsdlUrl);
+                                URL newUrl = new URL(chooserUrlStr);
+                                if (newUrl.getUserInfo() == null && currentUrl.getUserInfo() != null) {
+                                    StringBuffer combinedurl = new StringBuffer(newUrl.toString());
+                                    combinedurl.insert(newUrl.getProtocol().length()+3, currentUrl.getUserInfo() + "@");
+                                    chooserUrlStr = new URL(combinedurl.toString()).toString();
+                                }
+                            }
+                            wsdlUrlTextField.setText(chooserUrlStr);
+                            return processWsdlLocation();
+                        }
+                    } else {
+                        String baseUri = wsdlUrl;
+                        if (!isUrlOk(baseUri, null)) {
+                            baseUri = new File(baseUri).toURI().toString();
+                        }
+                        Wsdl wsdl;
+                        if (Boolean.getBoolean(SYSPROP_NO_WSDL_IMPORTS)) {
+                            // Old technique, don't process imports correctly
+                            String wsdlStr = XmlUtil.nodeToString(resolvedDoc);
+                            wsdl = Wsdl.newInstance(WsdlUtils.getWSDLFactory(), baseUri, new StringReader(wsdlStr), false);
+                            wsdlDocument = resolvedDoc;
+                            wsdlResources = new ArrayList<ResourceTrackingWSDLLocator.WSDLResource>();
+                            wsdlResources.add(new ResourceTrackingWSDLLocator.WSDLResource(baseUri, "text/xml", wsdlStr));
+                        } else {
+                            // New technique,process imports via SSG and save them for later
+                            InputSource is = new InputSource();
+                            is.setSystemId(baseUri);
+                            is.setCharacterStream(new StringReader(XmlUtil.nodeToString(resolvedDoc)));
+                            ResourceTrackingWSDLLocator wloc = new ResourceTrackingWSDLLocator(new GatewayWSDLLocator(Wsdl.getWSDLLocator(is, false)), true, true, true);
+                            wsdl = Wsdl.newInstance(WsdlUtils.getWSDLFactory(), wloc);
+
+                            Collection<ResourceTrackingWSDLLocator.WSDLResource> wsdls = wloc.getWSDLResources();
+                            String document = wsdls.iterator().next().getWsdl();
+
+                            wsdlDocument = XmlUtil.stringToDocument(document);
+                            wsdlResources = wsdls;
+                        }
+                        return wsdl;
+                    }
+                } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
+                    if(dlg.isVisible()) {
+                        dlg.setVisible(false);
+                        TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                    }
+                } catch (WSDLException e1) {
+                    if(dlg.isVisible()) {
+                        logger.log(Level.INFO, "Could not parse WSDL.", e1); // this used to do e.printStackTrace() this is slightly better.
+                        String message = ExceptionUtils.getMessage(e1);
+                        Pattern messageCleanup = Pattern.compile("WSDLException(?: \\(at [a-zA-Z0-9_\\-:/]{0,1024}\\)){0,1}: faultCode=[a-zA-Z0-9_\\-]{0,256}: (.*)");
+                        Matcher messageMatcher = messageCleanup.matcher(message);
+                        if (messageMatcher.matches()) {
+                            message = messageMatcher.group(1);
+                        }
+                        dlg.setVisible(false);
+                        JOptionPane.showMessageDialog(null,
+                                                      "Unable to parse the WSDL at location '" + wsdlUrl + "'\nError detail: " + message + "\n",
+                                                      "Error",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (MalformedURLException e1) {
+                    if(dlg.isVisible()) {
+                        logger.log(Level.INFO, "Could not parse URL.", e1);
+                        dlg.setVisible(false);
+                        JOptionPane.showMessageDialog(null,
+                                                      "Illegal URL string '" + wsdlUrl + "'\n",
+                                                      "Error",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (URISyntaxException e1) {
+                    if(dlg.isVisible()) {
+                        logger.log(Level.INFO, "Could not parse URL.", e1);
+                        dlg.setVisible(false);
+                        JOptionPane.showMessageDialog(null,
+                                                      "Illegal URL string '" + wsdlUrl + "'\n",
+                                                      "Error",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (IOException e1) {
+                    if(dlg.isVisible()) {
+                        logger.log(Level.INFO, "IO Error.", e1);
+                        dlg.setVisible(false);
+                        if (ExceptionUtils.causedBy(e1, SocketException.class)) {
+                            JOptionPane.showMessageDialog(null,
+                                                          "Could not fetch the WSDL at location '" + wsdlUrlTextField.getText() +
+                                                          "'\n",
+                                                          "Error",
+                                                          JOptionPane.ERROR_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(null,
+                                                          "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +
+                                                          "'\n",
+                                                          "Error",
+                                                          JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                } catch (SAXException e1) {
+                    if(dlg.isVisible()) {
+                        logger.log(Level.INFO, "XML parsing error.", e1);
+                        dlg.setVisible(false);
+                        JOptionPane.showMessageDialog(null,
+                                                      "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +
+                                                      "'\n",
+                                                      "Error",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
                 }
+
+                return null;
             }
 
             public void finished() {
                 dlg.setVisible(false);
             }
         };
+
         worker.start();
         dlg.setVisible(true);
-        worker.interrupt();
+        worker.interrupt(); // cancel
 
-        Object result = worker.get();
-
-        if (result instanceof Throwable) {
-            if (result instanceof RuntimeException) {
-                throw (RuntimeException) result;
-            }
-            else if (result instanceof IOException) {
-                throw (IOException) result;
-            }
-            else {
-                throw new RuntimeException("Unexpected exception when fetching WSDL.", (Throwable)result);
-            }
-        }
-
-        return (String) result;
+        return (Wsdl) worker.get();
     }
 
-    /**
-     * Returns a WSDL Document.
-     */
-    private Document readFile(final String wsdlUrl) throws URISyntaxException, IOException, SAXException {
-        File wsdlFile = null;
+    private static String gatewayFetchWsdlUrl(final String wsdlUrl) throws IOException {
+        ServiceAdmin manager = Registry.getDefault().getServiceManager();
+
+        if (manager == null)
+            throw new IOException("Service not available.");
+
+        return manager.resolveWsdlTarget(wsdlUrl);
+    }
+
+    private WSDLLocator gatewayHttpWSDLLocator(final String wsdlUrl) {
+        InputSource is = new InputSource() {
+            public Reader getCharacterStream() {
+                try {
+                    return new StringReader(gatewayFetchWsdlUrl(wsdlUrl));
+                }
+                catch(IOException ioe) {
+                    return new IOExceptionThrowingReader(ioe);
+                }
+            }
+            
+            public String getSystemId() {
+                return wsdlUrl;
+            }
+        };
+
+        return Wsdl.getWSDLLocator(is, false);
+    }
+
+    private WSDLLocator fileWSDLLocator(final String wsdlUrl) {
         FileInputStream fin = null;
+        InputSource is = new InputSource();
         try {
+            File wsdlFile = null;
             if (isUrlOk(wsdlUrl, "file")) {
                 wsdlFile = new File(new URI(wsdlUrl));
             }
@@ -482,13 +582,67 @@ public class WsdlLocationPanel extends JPanel {
                 wsdlFile = new File(wsdlUrl);
             }
 
-            if (wsdlFile.length() > 8000000) throw new IllegalStateException("File is too large.");
+            if (wsdlFile.length() > 8000000) throw new IOException("File is too large.");
 
+            is.setSystemId(wsdlFile.toURI().toString());
             fin = new FileInputStream(wsdlFile);
-            return XmlUtil.parse(fin, true);
+            is.setByteStream(new ByteArrayInputStream(HexUtils.slurpStream(fin, 8000000)));
+        }
+        catch (IOException ioe) {
+            is.setByteStream(new IOExceptionThrowingInputStream(ioe));        
+        }
+        catch (URISyntaxException uise) {
+            is.setByteStream(new IOExceptionThrowingInputStream(new CausedIOException(uise)));        
         }
         finally {
             ResourceUtils.closeQuietly(fin);
+        }
+
+        return Wsdl.getWSDLLocator(is, false);
+    }
+
+
+    private static class GatewayWSDLLocator implements Closeable, WSDLLocator {
+        private final WSDLLocator wsdlLocator;
+
+        private GatewayWSDLLocator(final WSDLLocator wsdlLocator) {
+            this.wsdlLocator = wsdlLocator;
+        }
+
+        public void close() {
+        }
+
+        public InputSource getBaseInputSource() {
+            return wsdlLocator.getBaseInputSource();
+        }
+
+        public String getBaseURI() {
+            return wsdlLocator.getBaseURI();
+        }
+
+        public InputSource getImportInputSource(String parentLocation, String importLocation) {
+            InputSource result = null;
+            InputSource input = wsdlLocator.getImportInputSource(parentLocation, importLocation);
+
+            if (input != null && input.getSystemId() != null) {
+                String uri = input.getSystemId();
+
+                if (uri.startsWith("http")) {
+                    result = new InputSource();
+                    result.setSystemId(uri);
+                    try {
+                        result.setCharacterStream(new StringReader(gatewayFetchWsdlUrl(uri)));
+                    } catch(IOException ioe) {
+                        result.setCharacterStream(new IOExceptionThrowingReader(ioe));
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public String getLatestImportURI() {
+            return wsdlLocator.getLatestImportURI();
         }
     }
 

@@ -342,4 +342,18 @@
         <property name="interval" column="interval_size" type="int"/>
     </class>
 
+    <class name="com.l7tech.service.ServiceDocument" table="service_documents">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+
+        <property name="serviceId" column="service_oid" type="long"/>
+        <property name="uri" column="uri" type="string"/>
+        <property name="type" column="type" type="string"/>
+        <property name="contentType" column="content_type" type="string"/>
+        <property name="contents" column="content" type="string"/>
+    </class>
+
 </hibernate-mapping>

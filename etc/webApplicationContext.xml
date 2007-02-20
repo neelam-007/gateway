@@ -18,7 +18,7 @@
     </bean>
 
     <!-- SSG boot process -->
-    <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties">
+    <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties serviceWsdlImportChecker">
         <property name="serverConfig">
             <ref local="serverConfig"/>
         </property>
@@ -214,6 +214,15 @@
             <ref bean="policyFactory"/>
         </constructor-arg>
         <constructor-arg>
+            <list>
+                <bean class="com.l7tech.server.service.SafeWsdlPublishedServiceDecorator">
+                    <constructor-arg>
+                        <ref local="serviceDocumentManager"/>
+                    </constructor-arg>
+                </bean>
+            </list>
+        </constructor-arg>                
+        <constructor-arg>
             <bean class="com.l7tech.server.util.ManagedTimer">
                 <constructor-arg value="Service cache refresh"/>
             </bean>
@@ -267,6 +276,15 @@
     </bean>
     <!-- server side resolution manager -->
     <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ReolutionManagerImpl">
+        <constructor-arg>
+            <list>
+                <bean class="com.l7tech.server.service.SafeWsdlPublishedServiceDecorator">
+                    <constructor-arg>
+                        <ref local="serviceDocumentManager"/>
+                    </constructor-arg>
+                </bean>
+            </list>
+        </constructor-arg>        
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -282,6 +300,15 @@
     </bean>
     <!-- server side SampleMessage manager -->
     <bean id="sampleMessageManager" class="com.l7tech.server.service.SampleMessageManagerImp">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+    </bean>
+    <!-- server side ServiceDocumentManager manager -->
+    <bean id="serviceDocumentManager" class="com.l7tech.server.service.ServiceDocumentManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -854,5 +881,20 @@
 
     <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">
         <constructor-arg ref="assertionRegistry"/>
+    </bean>
+
+    <bean id="serviceWsdlImportChecker" class="com.l7tech.server.service.ServiceWsdlImportChecker" depends-on="systemAuditListener systemProperties">
+        <constructor-arg>
+            <ref local="serverConfig"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="transactionManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref local="serviceManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref local="serviceDocumentManager"/>
+        </constructor-arg>
     </bean>
 </beans>

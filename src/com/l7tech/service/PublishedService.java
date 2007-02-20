@@ -149,10 +149,22 @@ public class PublishedService extends NamedEntityImp {
         if (_parsedWsdl == null) {
             String cachedWsdl = getWsdlXml();
             if (cachedWsdl != null) {
-                _parsedWsdl = Wsdl.newInstance(getBaseURI(), new InputSource(new StringReader(cachedWsdl)));
+                WsdlStrategy strategy = wsdlStrategy;
+                if (strategy == null)
+                    strategy = new DefaultWsdlStrategy();
+                _parsedWsdl = strategy.parseWsdl(getBaseURI(), cachedWsdl);
             }
         }
         return _parsedWsdl;
+    }
+
+    /**
+     * Set the WsdlStrategy to use when parsing the wsdl for the service.
+     *
+     * @param strategy The new strategy (null for default)
+     */
+    public void parseWsdlStrategy(WsdlStrategy strategy) {
+        wsdlStrategy = strategy;
     }
 
     /**
@@ -432,6 +444,13 @@ public class PublishedService extends NamedEntityImp {
         }
     }
 
+    /**
+     *
+     */
+    public static interface WsdlStrategy {
+        public Wsdl parseWsdl(String uri, String wsdl) throws WSDLException;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -444,6 +463,7 @@ public class PublishedService extends NamedEntityImp {
     private String routingUri;
     private String httpMethodNames = METHODNAMES_SOAP; // invariants: never null, always in sync with httpMethods
 
+    private transient WsdlStrategy wsdlStrategy;
     private transient Wsdl _parsedWsdl;
     private transient Port _wsdlPort;
     private transient URL _serviceUrl;
@@ -488,5 +508,14 @@ public class PublishedService extends NamedEntityImp {
             if (i.hasNext()) sb.append(",");
         }
         return sb.toString();
+    }
+
+    /**
+     * 
+     */
+    private static class DefaultWsdlStrategy implements WsdlStrategy {
+        public Wsdl parseWsdl(String uri, String wsdl) throws WSDLException {
+            return Wsdl.newInstance(uri, new InputSource(new StringReader(wsdl)));
+        }
     }
 }

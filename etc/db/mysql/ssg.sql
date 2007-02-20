@@ -521,6 +521,24 @@ CREATE TABLE service_metrics (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Table structure for table 'service_documents'
+--
+
+DROP TABLE IF EXISTS service_documents;
+CREATE TABLE service_documents (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  service_oid bigint(20) NOT NULL,
+  uri MEDIUMTEXT,
+  type VARCHAR(32) NOT NULL,
+  content_type VARCHAR(32) NOT NULL,
+  content MEDIUMTEXT,
+  INDEX i_sd_service_type (service_oid, type),
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
 -- Table structure for table rbac_role
 --
 

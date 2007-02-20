@@ -7,16 +7,16 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.ArrayList;
 import javax.swing.*;
 import javax.wsdl.Port;
 
-import org.w3c.dom.Document;
-
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceDocument;
 
 /**
  * Service panel is the first stage for the Publish Service wizard.
@@ -74,6 +74,9 @@ public class ServicePanel extends WizardStepPanel {
             publishedService.setWsdlUrl(service.getWsdlUrl());
             publishedService.setWsdlXml(service.getWsdlXml());
 
+            sa.getServiceDocuments().clear();
+            sa.getServiceDocuments().addAll(serviceDocuments);
+
             if (sa.getRoutingAssertion() == null) {
                 Port port = wsdl.getSoapPort();
                 sa.setRoutingAssertion(new HttpRoutingAssertion());
@@ -109,6 +112,7 @@ public class ServicePanel extends WizardStepPanel {
 
     // local service copy
     private PublishedService service = new PublishedService();
+    private Collection<ServiceDocument> serviceDocuments = new ArrayList();
     private WsdlLocationPanel wsdlLocationPanel;
     private Wsdl wsdl;
 
@@ -141,7 +145,7 @@ public class ServicePanel extends WizardStepPanel {
         try {
             wsdl = wsdlLocationPanel.getWsdl();
             if (wsdl != null) {
-                final Document resolvedDoc = wsdlLocationPanel.getWsdlDocument();
+                final String resolvedDoc = wsdlLocationPanel.getWsdlContent(0);
 
                 final String serviceName = wsdl.getServiceName();
                 // if service name not obtained service name is WSDL URL
@@ -151,7 +155,17 @@ public class ServicePanel extends WizardStepPanel {
                     service.setName(serviceName);
                 }
                 service.setWsdlUrl(wsdlUrl.startsWith("http") ? wsdlUrl : null);
-                service.setWsdlXml(XmlUtil.nodeToString(resolvedDoc));
+                service.setWsdlXml(resolvedDoc);
+                serviceDocuments.clear();
+
+                for (int i=1; i<wsdlLocationPanel.getWsdlCount(); i++) {
+                    ServiceDocument sd = new ServiceDocument();
+                    sd.setUri(wsdlLocationPanel.getWsdlUri(i)); 
+                    sd.setContentType("text/xml");
+                    sd.setType("WSDL-IMPORT");
+                    sd.setContents(wsdlLocationPanel.getWsdlContent(i));
+                    serviceDocuments.add(sd);
+                }
 
                 processed = true;
                 notifyListeners();

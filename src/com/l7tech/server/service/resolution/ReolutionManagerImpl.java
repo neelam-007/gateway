@@ -5,6 +5,8 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.common.util.Decorator;
+
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +40,10 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
 
     private static final String HQL_FIND_ALL = "FROM sr IN CLASS " + ResolutionParameters.class.getName();
 
+    public ReolutionManagerImpl(Collection<Decorator<PublishedService>> decorators) {
+        this.decorators = decorators;
+    }
+
     /**
      * Records resolution parameters for the passed service.
      * <p/>
@@ -47,12 +53,13 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
      * This sould be called by service manager when saving and updating services. If this throws, a rollback
      * should occur.
      *
-     * @param service the service whose resolution parameters should be recorded
+     * @param publishedService the service whose resolution parameters should be recorded
      * @throws DuplicateObjectException this is thrown when there is a conflict between the resolution parameters of
      *                                  the passed service and the ones of another service. should rollback at that point.
      * @throws UpdateException          something went wrong, should rollback at that point
      */
-    public void recordResolutionParameters(PublishedService service) throws DuplicateObjectException, UpdateException {
+    public void recordResolutionParameters(PublishedService publishedService) throws DuplicateObjectException, UpdateException {
+        PublishedService service = decorate(publishedService);
         Collection distinctItemsToSave;
         try {
             distinctItemsToSave = getDistinct(service);
@@ -140,11 +147,12 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
     }
 
     private boolean isSameParameters(Collection paramcol1, Collection paramcol2) {
-        if (paramcol1.size() != paramcol2.size()) {
-            return false;
+        boolean sameParams = false;
+        if (paramcol1.size() == paramcol2.size()) {
+            sameParams = paramcol2.containsAll(paramcol1);
         }
 
-        return paramcol2.containsAll(paramcol1);
+        return sameParams;
     }
 
     private Collection getDistinct(PublishedService service) throws ServiceResolutionException {
@@ -231,5 +239,17 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
         }
     }
 
+    /**
+     * Run decorators
+     */
+    private PublishedService decorate(PublishedService publishedService) {
+        PublishedService decorated = publishedService;
+        for(Decorator<PublishedService> decorator : decorators) {
+            decorated = decorator.decorate(decorated);
+        }
+        return decorated;
+    }    
+
     protected final Logger logger = Logger.getLogger(getClass().getName());
+    private final Collection<Decorator<PublishedService>> decorators;        
 }

@@ -12,7 +12,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.security.AccessControlException;
 
 /**
  * Simple "Please Wait.." dialog.
@@ -21,6 +20,22 @@ import java.security.AccessControlException;
  */
 public class CancelableOperationDialog extends JDialog {
     private final JLabel messageLabel = new JLabel();
+
+    public static CancelableOperationDialog newCancelableOperationDialog(Component component, String title, String message) {
+        CancelableOperationDialog dialog;
+
+        Window window = SwingUtilities.getWindowAncestor(component);
+        if (window instanceof Dialog) {
+            dialog = new CancelableOperationDialog((Dialog)window, title, message);
+        }
+        else {
+            dialog = new CancelableOperationDialog((Frame)window, title, message);
+        }
+
+        Utilities.centerOnParentWindow(dialog);
+
+        return dialog;
+    }
 
     public CancelableOperationDialog(Frame owner, String title, String message, JProgressBar progressBar) {
         super(owner, title, true);

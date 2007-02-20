@@ -246,6 +246,7 @@
         <constructor-arg ref="serviceManager"/>
         <constructor-arg ref="policyValidator"/>
         <constructor-arg ref="sampleMessageManager"/>
+        <constructor-arg ref="serviceDocumentManager"/>
         <constructor-arg ref="counterIDManager"/>
         <constructor-arg ref="trustManager"/>
         <constructor-arg ref="roleManager"/>

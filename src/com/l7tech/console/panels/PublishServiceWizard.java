@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceDocument;
 import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.EntityListener;
@@ -30,6 +31,7 @@ import java.awt.event.ActionEvent;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EventListener;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,6 +53,10 @@ public class PublishServiceWizard extends Wizard {
          */
         public PublishedService getService() {
             return service;
+        }
+
+        public Collection<ServiceDocument> getServiceDocuments() {
+            return serviceDocuments;
         }
 
         public CompositeAssertion getAssertion() {
@@ -94,6 +100,7 @@ public class PublishServiceWizard extends Wizard {
         private boolean sharedPolicy = false;
         private RoutingAssertion routingAssertion;
         private PublishedService service = new PublishedService();
+        private Collection<ServiceDocument> serviceDocuments = new ArrayList();
         private CompositeAssertion assertions = new AllAssertion();
     }
 
@@ -173,7 +180,7 @@ public class PublishServiceWizard extends Wizard {
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
                 WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
             }
-            long oid = Registry.getDefault().getServiceManager().savePublishedService(saBundle.getService());
+            long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(saBundle.getService(), saBundle.getServiceDocuments());
             Registry.getDefault().getSecurityProvider().refreshPermissionCache();
             
             EntityHeader header = new EntityHeader();

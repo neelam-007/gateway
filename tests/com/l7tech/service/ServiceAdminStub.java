@@ -1,6 +1,7 @@
 package com.l7tech.service;
 
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -11,10 +12,12 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.console.util.Registry;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -60,6 +63,31 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     public long savePublishedService(PublishedService service)
             throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException {
         return serviceManager.save(service);
+    }
+
+    /**
+     * saves a published service along with it's policy assertions
+     *
+     * @param service
+     * @param docs ignored
+     * @return
+     * @throws RemoteException
+     */
+    public long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> docs)
+            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException {
+        return serviceManager.save(service);
+    }
+
+    /**
+     * Find service docs by service id
+     *
+     * @param serviceID The service id
+     * @return The documents
+     * @throws RemoteException on remote error
+     * @throws FindException on find error
+     */
+    public Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws RemoteException, FindException {
+        return Collections.EMPTY_LIST;
     }
 
     /**

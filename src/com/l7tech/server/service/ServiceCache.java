@@ -3,6 +3,7 @@ package com.l7tech.server.service;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Background;
+import com.l7tech.common.util.Decorator;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.audit.Auditor;
@@ -57,19 +58,21 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
     private ServerPolicyFactory policyFactory;
     private Auditor auditor;
+    private Collection<Decorator<PublishedService>> decorators;
     private boolean hasCatchAllService = false;
     //public static final long INTEGRITY_CHECK_FREQUENCY = 10;
 
     /**
      * Constructor for bean usage via subclassing.
      */
-    public ServiceCache(ServerPolicyFactory policyFactory, Timer timer) {
+    public ServiceCache(ServerPolicyFactory policyFactory, Collection<Decorator<PublishedService>> decorators, Timer timer) {
         if (policyFactory == null) {
             throw new IllegalArgumentException("Policy Factory is required");
         }
         if (timer == null) timer = new Timer("Service cache refresh", true);
 
         this.policyFactory = policyFactory;
+        this.decorators = decorators == null ? Collections.EMPTY_LIST : decorators;
         this.checker = timer;
     }
 
@@ -260,7 +263,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
     public void cache(PublishedService service) throws InterruptedException, ServerPolicyException {
         rwlock.writeLock().lock();
         try {
-            cacheNoLock(service);
+            cacheNoLock(decorate(service));
             updateCatchAll();
         } finally {
             rwlock.writeLock().unlock();
@@ -386,7 +389,6 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
     }
 
     public boolean hasCatchAllService() throws InterruptedException {
-        PublishedService out = null;
         rwlock.readLock().lock();
         try {
             return hasCatchAllService;
@@ -612,6 +614,16 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
         }
     }
 
+    /**
+     * Run service decorators
+     */
+    private PublishedService decorate(PublishedService publishedService) {
+        PublishedService decorated = publishedService;
+        for(Decorator<PublishedService> decorator : decorators) {
+            decorated = decorator.decorate(decorated);
+        }
+        return decorated;
+    }
 
     // the cache data itself
     private final Map<Long, PublishedService> services = new HashMap<Long, PublishedService>();

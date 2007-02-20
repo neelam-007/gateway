@@ -15,6 +15,8 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.CreateServiceWsdlAction;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceDocument;
+
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -30,6 +32,9 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,6 +51,7 @@ public class ServicePropertiesDialog extends JDialog {
     private PublishedService subject;
     private XMLEditor editor;
     private final Logger logger = Logger.getLogger(ServicePropertiesDialog.class.getName());
+    private Collection<ServiceDocument> newWsdlDocuments = Collections.EMPTY_LIST;
     private Document newWSDL = null;
     private String newWSDLUrl = null;
     private boolean wasoked = false;
@@ -272,6 +278,10 @@ public class ServicePropertiesDialog extends JDialog {
         return wasoked;
     }
 
+    public Collection<ServiceDocument> getServiceDocuments() {
+        return Collections.unmodifiableCollection(newWsdlDocuments);
+    }
+
     private void ok() {
 
         // validate the name
@@ -419,6 +429,17 @@ public class ServicePropertiesDialog extends JDialog {
                 if (wsdl != null) {
                     newWSDL = rwd.getWsdlDocument();
                     newWSDLUrl = rwd.getWsdlUrl();
+
+                    newWsdlDocuments = new ArrayList();
+                    for (int i=1; i<rwd.getWsdlCount(); i++) {
+                        ServiceDocument sd = new ServiceDocument();
+                        sd.setUri(rwd.getWsdlUri(i));
+                        sd.setContentType("text/xml");
+                        sd.setType("WSDL-IMPORT");
+                        sd.setContents(rwd.getWsdlContent(i));
+                        newWsdlDocuments.add(sd);
+                    }
+
                     // display new xml in xml display
                     try {
                         editor.setText(XmlUtil.nodeToFormattedString(newWSDL));

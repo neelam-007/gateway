@@ -86,6 +86,38 @@ public class SelectWsdlDialog extends JDialog {
         wsdlLocationPanel.setWsdlUrl(urlOrPath);
     }
 
+    /**
+     * Get the URI from which the Wsdl at the index was loaded.
+     *
+     * <p>Note that this should NOT be used as the base URI for the WSDL unless
+     * it is an http (or https) url.</p>
+     *
+     * @return The Wsdl URI.
+     */
+    public String getWsdlUri(int index) {
+        return wsdlLocationPanel.getWsdlUri(index);
+    }
+
+    /**
+     * Get the content of the Wsdl at the index.
+     *
+     * @return The Wsdl XML.
+     */
+    public String getWsdlContent(int index) {
+        return wsdlLocationPanel.getWsdlContent(index);
+    }
+
+    /**
+     * Get the number of WSDL documents retrieved.
+     *
+     * <p>0 is the main document, the rest are imports.</p>
+     *
+     * @return The number of WSDLs
+     */
+    public int getWsdlCount() {
+        return wsdlLocationPanel.getWsdlCount();
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(SelectWsdlDialog.class.getName());

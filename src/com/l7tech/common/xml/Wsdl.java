@@ -3,6 +3,8 @@ package com.l7tech.common.xml;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SchemaUtil;
+
 import org.apache.ws.policy.Assertion;
 import org.apache.ws.policy.Policy;
 import org.apache.ws.policy.PolicyReference;
@@ -206,21 +208,85 @@ public class Wsdl {
      */
     public static Wsdl newInstance(final WSDLFactory fac, final String documentBaseURI, final Reader reader, final boolean allowLocalImports)
             throws WSDLException {
-        WSDLReader wsdlReader = fac.newWSDLReader();
-        disableSchemaExtensions(fac, wsdlReader);       
 
-        return new Wsdl(wsdlReader.readWSDL(new WSDLLocator() {
+        InputSource is = new InputSource();
+        is.setCharacterStream(reader);
+        is.setSystemId(documentBaseURI);
+
+        return newInstance(fac, getWSDLLocator(is, allowLocalImports));
+    }
+
+    /**
+     * Create the instance by reading a WSDL document into from
+     * the given <code>WSDLLocator</code>.
+     *
+     * @param locator         the WSDLLocator to use
+     * @return the <code>Wsdl</code> instance
+     * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
+     */
+    public static Wsdl newInstance(final WSDLLocator locator)
+            throws WSDLException {
+        return newInstance(WSDLFactory.newInstance(), locator);
+    }
+
+    /**
+     * Create the instance by reading a WSDL document into from
+     * the given <code>WSDLLocator</code>.
+     *
+     * @param fac             the WSDLFactory to use
+     * @param locator         the WSDLLocator to use
+     * @return the <code>Wsdl</code> instance
+     * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
+     */
+    public static Wsdl newInstance(final WSDLFactory fac, final WSDLLocator locator)
+            throws WSDLException {
+        WSDLReader wsdlReader = fac.newWSDLReader();
+        disableSchemaExtensions(fac, wsdlReader);
+
+        return new Wsdl(wsdlReader.readWSDL(locator));
+    }
+
+    /**
+     * Create the instance by reading a WSDL document into from
+     * the <code>Reader</code> character stream.
+     *
+     * @param documentBaseURI the document base URI of the WSDL definition
+     *                        described by the document.
+     *                        Can be <b>null</b>, in which case it will be
+     *                        ignored.
+     * @param inputSource     the <i>sax</i> XML document input source obeying
+     *                        the WSDL schema.
+     * @return the <code>Wsdl</code> instance
+     * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
+     */
+    public static Wsdl newInstance(String documentBaseURI, InputSource inputSource)
+      throws WSDLException {
+        WSDLFactory fac = WSDLFactory.newInstance();
+        WSDLReader reader = fac.newWSDLReader();
+        disableSchemaExtensions(fac, reader);
+        return new Wsdl(reader.readWSDL(documentBaseURI, inputSource));
+    }
+
+    /**
+     * Get a WSDLLocator that resolves http and file documents.
+     *
+     * <p>The system identifier in the baseInputSource is returned from getBaseURI.</p>
+     *
+     * @param baseInputSource the base input source
+     * @param allowLocalImports True to allow local (file) imports
+     * @return a WSDLLocator instance
+     */
+    public static WSDLLocator getWSDLLocator(final InputSource baseInputSource, final boolean allowLocalImports) {
+        return new WSDLLocator() {
             private String lastResolvedUri = null;
 
             public InputSource getBaseInputSource() {
-                InputSource is = new InputSource();
-                is.setCharacterStream(reader);
-                is.setSystemId(documentBaseURI);
-                return is;
+                lastResolvedUri = getBaseURI();
+                return baseInputSource;
             }
 
             public String getBaseURI() {
-                return documentBaseURI;
+                return baseInputSource.getSystemId();
             }
 
             /**
@@ -267,29 +333,7 @@ public class Wsdl {
             public String getLatestImportURI() {
                 return lastResolvedUri;
             }
-        }));
-    }
-
-
-    /**
-     * Create the instance by reading a WSDL document into from
-     * the <code>Reader</code> character stream.
-     *
-     * @param documentBaseURI the document base URI of the WSDL definition
-     *                        described by the document.
-     *                        Can be <b>null</b>, in which case it will be
-     *                        ignored.
-     * @param inputSource     the <i>sax</i> XML document input source obeying
-     *                        the WSDL schema.
-     * @return the <code>Wsdl</code> instance
-     * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
-     */
-    public static Wsdl newInstance(String documentBaseURI, InputSource inputSource)
-      throws WSDLException {
-        WSDLFactory fac = WSDLFactory.newInstance();
-        WSDLReader reader = fac.newWSDLReader();
-        disableSchemaExtensions(fac, reader);
-        return new Wsdl(reader.readWSDL(documentBaseURI, inputSource));
+        };
     }
 
     /**
@@ -1358,12 +1402,6 @@ public class Wsdl {
         return schemaElement;
     }
 
-    private static final Collection<QName> XMLSCHEMA_ELEMENTS = Collections.unmodifiableList(Arrays.asList(
-            new QName("http://www.w3.org/1999/XMLSchema", "schema"),
-            new QName("http://www.w3.org/2000/10/XMLSchema", "schema"),
-            new QName("http://www.w3.org/2001/XMLSchema", "schema")
-    ));
-
     private Definition definition;
 
     private transient Logger logger = Logger.getLogger(getClass().getName());
@@ -1418,17 +1456,17 @@ public class Wsdl {
         }
 
         public ExtensionDeserializer queryDeserializer(Class parentType, QName elementType) throws WSDLException {
-            if (XMLSCHEMA_ELEMENTS.contains(elementType)) return delegate.getDefaultDeserializer();
+            if (SchemaUtil.isSchema(elementType)) return delegate.getDefaultDeserializer();
             return delegate.queryDeserializer(parentType, elementType);
         }
 
         public int queryExtensionAttributeType(Class parentType, QName attrName) {
-            if (XMLSCHEMA_ELEMENTS.contains(attrName)) return AttributeExtensible.NO_DECLARED_TYPE;
+            if (SchemaUtil.isSchema(attrName)) return AttributeExtensible.NO_DECLARED_TYPE;
             return delegate.queryExtensionAttributeType(parentType, attrName);
         }
 
         public ExtensionSerializer querySerializer(Class parentType, QName elementType) throws WSDLException {
-            if (XMLSCHEMA_ELEMENTS.contains(elementType)) return delegate.getDefaultSerializer();
+            if (SchemaUtil.isSchema(elementType)) return delegate.getDefaultSerializer();
             return delegate.querySerializer(parentType, elementType);
         }
 

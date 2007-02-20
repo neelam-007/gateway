@@ -1,6 +1,7 @@
 package com.l7tech.service;
 
 import static com.l7tech.common.security.rbac.EntityType.SAMPLE_MESSAGE;
+import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.security.rbac.RbacAdmin;
@@ -12,6 +13,7 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.rmi.RemoteException;
+import java.util.Collection;
 
 /**
  * Provides a remote interface for publishing searching and updating published services
@@ -24,6 +26,18 @@ import java.rmi.RemoteException;
 public interface ServiceAdmin extends ServiceAdminPublic {
     String ROLE_NAME_TYPE_SUFFIX = "Service";
     String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
+
+    /**
+     * Retrieve all available service documents for the given published service.
+     *
+     * @param serviceID The unique identifier of the service
+     * @return The collection of ServiceDocuments
+     * @throws RemoteException on remote communication error
+     * @throws FindException if there was a problem accessing the requested information.
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=SERVICE, stereotype=GET_IDENTITY_PROPERTY_BY_ID)
+    Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws RemoteException, FindException;
 
     /**
      * Retrieve a chunk of the available {@link PublishedService} headers  This is a version of
@@ -53,6 +67,24 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
     long savePublishedService(PublishedService service)
+            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException;
+
+    /**
+     * Store the specified new or existing published service. If the specified {@link PublishedService} contains a
+     * unique object ID that already exists, this will replace the objects current configuration with the new configuration.
+     * Otherwise, a new object will be created.
+     *
+     * @param service the published service to create or update.  Must not be null.
+     * @param serviceDocuments the serviceDocuments to save. Null means no documents.
+     * @return the unique object ID that was updated or created.
+     * @throws RemoteException on remote communication error
+     * @throws SaveException   if the requested information could not be saved
+     * @throws UpdateException if the requested information could not be updated
+     * @throws VersionException if the service version conflict is detected
+     * @throws PolicyAssertionException if the server policy could not be instantiated for this policy
+     */
+    @Secured(stereotype=SAVE_OR_UPDATE)
+    long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
             throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException;
 
     /**

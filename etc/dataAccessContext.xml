@@ -83,6 +83,7 @@
                 <idref bean="auditRecordManager"/>
                 <idref bean="statusUpdateManager"/>
                 <idref bean="sampleMessageManager"/>
+                <idref bean="serviceDocumentManager"/>
                 <idref bean="resolutionManager"/>
                 <idref bean="clusterInfoManager"/>
                 <idref bean="serviceUsageManager"/>

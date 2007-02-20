@@ -23,6 +23,8 @@ import com.l7tech.server.systinet.RegistryPublicationManager;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.service.ServiceDocument;
+
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -55,19 +57,20 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 6, 2003
  */
-public class ServiceAdminImpl implements ServiceAdmin {
+public final class ServiceAdminImpl implements ServiceAdmin {
     private SSLContext sslContext;
 
-    private AssertionLicense licenseManager;
-    private RegistryPublicationManager registryPublicationManager;
-    private UddiAgentFactory uddiAgentFactory;
-    private ServiceManager serviceManager;
-    private PolicyValidator policyValidator;
-    private SampleMessageManager sampleMessageManager;
-    private CounterIDManager counterIDManager;
-    private X509TrustManager trustManager;
-    private RoleManager roleManager;
-    private WspReader wspReader;
+    private final AssertionLicense licenseManager;
+    private final RegistryPublicationManager registryPublicationManager;
+    private final UddiAgentFactory uddiAgentFactory;
+    private final ServiceManager serviceManager;
+    private final PolicyValidator policyValidator;
+    private final SampleMessageManager sampleMessageManager;
+    private final ServiceDocumentManager serviceDocumentManager;
+    private final CounterIDManager counterIDManager;
+    private final X509TrustManager trustManager;
+    private final RoleManager roleManager;
+    private final WspReader wspReader;
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
                             RegistryPublicationManager registryPublicationManager,
@@ -75,6 +78,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
                             ServiceManager serviceManager,
                             PolicyValidator policyValidator,
                             SampleMessageManager sampleMessageManager,
+                            ServiceDocumentManager serviceDocumentManager,
                             CounterIDManager counterIDManager,
                             X509TrustManager trustManager,
                             RoleManager roleManager,
@@ -85,6 +89,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
         this.serviceManager = serviceManager;
         this.policyValidator = policyValidator;
         this.sampleMessageManager = sampleMessageManager;
+        this.serviceDocumentManager = serviceDocumentManager;
         this.counterIDManager = counterIDManager;
         this.trustManager = trustManager;
         this.roleManager = roleManager;
@@ -163,6 +168,11 @@ public class ServiceAdminImpl implements ServiceAdmin {
         return service;
     }
 
+    public Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws RemoteException, FindException  {
+        long oid = toLong(serviceID);
+        return serviceDocumentManager.findByServiceId(oid);
+    }
+
     public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
         Collection<EntityHeader> res = serviceManager.findAllHeaders();
         return collectionToHeaderArray(res);
@@ -213,6 +223,49 @@ public class ServiceAdminImpl implements ServiceAdmin {
             oid = serviceManager.save(service);
             serviceManager.addManageServiceRole(service);
         }
+        return oid;
+    }
+
+    /**
+     * this save method handles both save and updates.
+     * the distinction happens on the server side by inspecting the oid of the object
+     * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
+     * @param service the object to be saved or upodated
+     * @throws RemoteException
+     */
+    public long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
+            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException
+    {
+        checkLicense();
+        long oid;
+        boolean newService = true;
+
+        if (service.getOid() > 0) {
+            newService = false;
+        }
+        
+        oid = savePublishedService(service);
+
+        try {
+            Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId(oid);
+            for (ServiceDocument serviceDocument : existingServiceDocuments) {
+                serviceDocumentManager.delete(serviceDocument);
+            }
+            for (ServiceDocument serviceDocument : serviceDocuments) {
+                serviceDocument.setOid(-1);
+                serviceDocument.setServiceId(oid);
+                serviceDocumentManager.save(serviceDocument);
+            }
+        } catch (FindException fe) {
+            String message = "Error getting service documents '"+fe.getMessage()+"'.";
+            if (newService) throw new SaveException(message);
+            else throw new UpdateException(message); 
+        } catch (DeleteException de) {
+            String message = "Error removing old service document '"+de.getMessage()+"'.";
+            if (newService) throw new SaveException(message);
+            else throw new UpdateException(message);             
+        }
+
         return oid;
     }
 
@@ -393,7 +446,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
                     return getSSLContext().getSocketFactory().createSocket(host, port);
                 }
 
-                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException, UnknownHostException, ConnectTimeoutException {
+                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
                     Socket socket = getSSLContext().getSocketFactory().createSocket();
                     int connectTimeout = httpConnectionParams.getConnectionTimeout();
 

@@ -109,7 +109,7 @@ public class EditServiceProperties extends ServiceNodeAction {
             public void run() {
                 if (dlg.wasOKed()) {
                     try {
-                        Registry.getDefault().getServiceManager().savePublishedService(svc);
+                        Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(svc, dlg.getServiceDocuments());
                     } catch (DuplicateObjectException e) {
                         JOptionPane.showMessageDialog(mw,
                               "Unable to save the service '" + svc.getName() + "'\n" +
@@ -119,7 +119,9 @@ public class EditServiceProperties extends ServiceNodeAction {
                     } catch (Exception e) {
                         String msg = "Error while changing service properties";
                         logger.log(Level.INFO, msg, e);
-                        JOptionPane.showMessageDialog(mw, msg + e.getMessage());
+                        String errorMessage = e.getMessage();
+                        if (errorMessage != null) msg += ":\n" + errorMessage;
+                        JOptionPane.showMessageDialog(mw, msg);
                     }
                     resultCallback.call(true);
                     return;
