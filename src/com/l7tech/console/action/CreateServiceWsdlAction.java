@@ -130,10 +130,13 @@ public class CreateServiceWsdlAction extends SecureAction {
             PublishedService service = new PublishedService();
             try {
                 Wizard w = (Wizard)we.getSource();
-                Definition def = ((WsdlComposer)w.getWizardInput()).getOutputWsdl();
+                WsdlComposer composer = (WsdlComposer) w.getWizardInput();
+                Definition def = composer.buildOutputWsdl();
+
 
                 service.setDisabled(true);
                 WSDLFactory fac = WsdlUtils.getWSDLFactory();
+//                ExtensionRegistry reg =  composer.getExtensionRegistry();
                 ExtensionRegistry reg =  Wsdl.disableSchemaExtensions(fac.newPopulatedExtensionRegistry());
                 WSDLWriter wsdlWriter = fac.newWSDLWriter();
                 def.setExtensionRegistry(reg);

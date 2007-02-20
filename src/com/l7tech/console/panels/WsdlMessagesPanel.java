@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
 
-import com.l7tech.common.xml.XmlSchemaConstants;
 import com.l7tech.common.xml.WsdlComposer;
+import com.l7tech.common.xml.XmlSchemaConstants;
 import com.l7tech.console.table.WsdlMessagePartsTableModel;
 import com.l7tech.console.table.WsdlMessagesTableModel;
 
@@ -11,15 +11,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.wsdl.Definition;
 import javax.wsdl.Message;
 import javax.wsdl.Part;
 import javax.xml.namespace.QName;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.logging.Logger;
 
 /**
@@ -41,7 +38,8 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     private JButton removeMessageButton;
     private JButton addMessagePartButton;
     private JButton removeMessagePartButton;
-    private Definition definition;
+//    private Definition definition;
+    private WsdlComposer wsdlComposer;
     private JComboBox partTypesComboBox;
     private JLabel panelHeader;
 
@@ -99,7 +97,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         });
         partsTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
         partsTable.setSurrendersFocusOnKeystroke(true);
-        partsTable.setDefaultRenderer(Object.class, new PartsTableCellRenderer(definition, partsTable));
+        partsTable.setDefaultRenderer(Object.class, new PartsTableCellRenderer(wsdlComposer, partsTable));
 
         partTypesComboBox = new JComboBox(XmlSchemaConstants.QNAMES.toArray());
         partTypesComboBox.setBackground(partsTable.getBackground());
@@ -114,7 +112,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
 
                 QName qName = (QName) value;
                 if (qName != null)
-                    setText(WsdlCreateWizard.prefixedName(qName, definition));
+                    setText(WsdlCreateWizard.prefixedName(qName, wsdlComposer));
                 else
                     setText("");
 
@@ -159,18 +157,16 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         if (!(settings instanceof WsdlComposer)) {
             throw new IllegalArgumentException("Unexpected type. " + settings.getClass() + ". Expected " + WsdlComposer.class);
         }
-//        if (settings != definition) {
-            WsdlComposer composer = (WsdlComposer) settings;
-            definition = composer.getOutputWsdl();
-            updateMessageTable();
-//        }
+
+        wsdlComposer = (WsdlComposer) settings;
+        updateMessageTable();
     }
 
     /**
      * update the message table model, renderer, and cell editor
      */
     private void updateMessageTable() {
-        messagesTableModel = new WsdlMessagesTableModel(definition);
+        messagesTableModel = new WsdlMessagesTableModel(wsdlComposer);
         messagesTable.setModel(messagesTableModel);
 
         if (messagesTableModel.getRowCount()==0) {
@@ -191,19 +187,19 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof WsdlComposer) {
-            definition = ((WsdlComposer)settings).getOutputWsdl();
+            wsdlComposer = (WsdlComposer)settings;
         } else {
             throw new IllegalArgumentException("Unexpected type. " + settings.getClass() + ". Expected " + WsdlComposer.class);
         }
-        ensureValid(messagesTableModel.getMessages(), definition);
+        ensureValid(messagesTableModel.getMessages(), wsdlComposer);
     }
 
     private static class PartsTableCellRenderer extends UniqueTableCellRenderer {
-        private final Definition definition;
+        private final WsdlComposer wsdlComposer;
 
-        PartsTableCellRenderer(final Definition definition, final JTable table) {
+        PartsTableCellRenderer(final WsdlComposer composer, final JTable table) {
             super(table, "Part names must be unique (within each message)");
-            this.definition = definition;
+            this.wsdlComposer = composer;
         }
 
         /**
@@ -229,7 +225,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
               String text = null;
               if (value instanceof QName) {
                   QName qName = (QName)value;
-                  text = WsdlCreateWizard.prefixedName(qName, definition);
+                  text = WsdlCreateWizard.prefixedName(qName, wsdlComposer);
               } else {
                   text = value == null ? "" : value.toString();
               }
@@ -263,9 +259,9 @@ public class WsdlMessagesPanel extends WizardStepPanel {
               java.util.List<Part> parts = messagesTableModel.getMessageParts(selectedRow);
 
               if (parts != null) {
-                  partsTableModel = new WsdlMessagePartsTableModel(parts, definition);
+                  partsTableModel = new WsdlMessagePartsTableModel(parts, wsdlComposer);
                   partsTable.setModel(partsTableModel);
-                  partsTable.setDefaultRenderer(Object.class, new PartsTableCellRenderer(definition, partsTable));
+                  partsTable.setDefaultRenderer(Object.class, new PartsTableCellRenderer(wsdlComposer, partsTable));
                   partsTable.getTableHeader().setReorderingAllowed(false);
 
                   DefaultCellEditor cellEditor = new DefaultCellEditor(new JTextField());
@@ -396,22 +392,19 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      * may not be aware of this.
      * 
      * @param messages the list of wsdl messages
-     * @param def      the wsdl definition
+     * @param composer      the wsdl composer used by this panel
      */
-    private void ensureValid(java.util.List<Message> messages, Definition def) {
+    private void ensureValid(java.util.List<Message> messages, WsdlComposer composer) {
         // remove old
-        Set names = new HashSet(def.getMessages().keySet());
-        for (Object name : names) {
-            def.removeMessage((QName)name);            
-        }
+        composer.getMessages().clear();
 
         // update and add new
-        final String defTargetNamespace = def.getTargetNamespace();
+        final String defTargetNamespace = composer.getTargetNamespace();
         for (Message message : messages) {
             if (!defTargetNamespace.equals(message.getQName().getNamespaceURI())) {
                 message.setQName(new QName(defTargetNamespace, message.getQName().getLocalPart()));
             }
-            def.addMessage(message);
+            composer.addMessage(message);
         }
     }
 }

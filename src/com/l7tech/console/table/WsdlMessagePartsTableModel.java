@@ -1,9 +1,9 @@
 package com.l7tech.console.table;
 
+import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.common.xml.XmlSchemaConstants;
 
 import javax.swing.table.AbstractTableModel;
-import javax.wsdl.Definition;
 import javax.wsdl.Part;
 import javax.xml.namespace.QName;
 import java.util.List;
@@ -20,21 +20,21 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class WsdlMessagePartsTableModel extends AbstractTableModel {
-    private final Definition definition;
+    private final WsdlComposer composer;
     private final List<Part> parts;
 
     /**
      * Create the new <code>WsdlMessagePartsTableModel</code>
      * 
      * @param parts the Parts that this model represents
-     * @param definition the definition that the Parts belong to
+     * @param composer the WsdlComposer object that this panel manipulates
      */
-    public WsdlMessagePartsTableModel(final List<Part> parts, final Definition definition) {
-        if (parts == null || definition == null) {
+    public WsdlMessagePartsTableModel(final List<Part> parts, final WsdlComposer composer) {
+        if (parts == null || composer == null) {
             throw new IllegalArgumentException();
         }
 
-        this.definition = definition;
+        this.composer = composer;
         this.parts = parts;
     }
 
@@ -147,7 +147,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @return the newly created message
      */
     public Part addPart(String name) {
-        Part p = definition.createPart();
+        Part p = composer.createPart();
         p.setName(name);
         p.setTypeName(XmlSchemaConstants.QNAME_TYPE_STRING);
         addPart(p);

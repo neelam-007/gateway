@@ -24,7 +24,8 @@ public class WsdlServicePanel extends WizardStepPanel {
     private JTextField nameField;
     private JTextField portNameField;
     private JTextField portAddressField;
-    private Definition definition;
+//    private Definition definition;
+    private WsdlComposer wsdlComposer;
     private JLabel panelHeader;
 
     public WsdlServicePanel(WizardStepPanel next) {
@@ -54,14 +55,16 @@ public class WsdlServicePanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
+        WsdlComposer wsdlComposer = null;
         if (settings instanceof WsdlComposer) {
-            definition = ((WsdlComposer)settings).getOutputWsdl();
+            wsdlComposer = (WsdlComposer) settings;
+//            definition = ((WsdlComposer)settings).getOutputWsdl();
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
         String s = nameField.getText();
         if (s == null || "".equals(s)) {
-            nameField.setText(definition.getQName().getLocalPart() + "Service");
+            nameField.setText(wsdlComposer.getQName().getLocalPart() + "Service");
         }
         s = portAddressField.getText();
         if (s == null || "".equals(s)) {
@@ -69,9 +72,9 @@ public class WsdlServicePanel extends WizardStepPanel {
         }
         s = portNameField.getText();
         if (s == null || "".equals(s)) {
-            portNameField.setText(definition.getQName().getLocalPart() + "Port");
+            portNameField.setText(wsdlComposer.getQName().getLocalPart() + "Port");
         }
-        bindingLabel.setText(getBinding(definition).getQName().getLocalPart());       
+        bindingLabel.setText(wsdlComposer.getBinding().getQName().getLocalPart());       
     }
 
     /**
@@ -89,13 +92,16 @@ public class WsdlServicePanel extends WizardStepPanel {
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof WsdlComposer) {
-            definition = ((WsdlComposer)settings).getOutputWsdl();
+            wsdlComposer = (WsdlComposer)settings;
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
-        definition.getServices().clear();
+        Map services = wsdlComposer.getServices();
+        if (services != null)
+            services.clear();
+        
         try {
-            getService(definition);
+            getService();
         } catch (WSDLException e) {
             //todo: error manager
         }
@@ -108,37 +114,37 @@ public class WsdlServicePanel extends WizardStepPanel {
         return "Service";
     }
 
-    private Service getService(Definition def) throws WSDLException {
-        Map services = def.getServices();
+    private Service getService() throws WSDLException {
+        Map services = wsdlComposer.getServices();
         Service sv;
-        if (services.isEmpty()) {
-            sv = def.createService();
-            def.addService(sv);
+        if (services == null || services.isEmpty()) {
+            sv = wsdlComposer.createService();
+            wsdlComposer.addService(sv);
         } else {
             sv = (Service)services.values().iterator().next();
         }
         sv.setQName(new QName(nameField.getText()));
-        getPort(sv);
+        getPort(wsdlComposer, sv);
         return sv;
     }
 
-    private Port getPort(Service service) throws WSDLException {
+    private Port getPort(WsdlComposer wsdlComposer, Service service) throws WSDLException {
         Map ports = service.getPorts();
         Port port;
         if (ports.isEmpty()) {
-            port = definition.createPort();
+            port = wsdlComposer.createPort();
             service.addPort(port);
         } else {
             port = (Port)ports.values().iterator().next();
         }
         port.setName(portNameField.getText());
-        port.setBinding(getBinding(definition));
-        collectSoapAddress(port);
+        port.setBinding(wsdlComposer.getBinding());
+        collectSoapAddress(wsdlComposer, port);
         return port;
     }
 
-    private void collectSoapAddress(Port port) throws WSDLException {
-        ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
+    private void collectSoapAddress(WsdlComposer wsdlComposer, Port port) throws WSDLException {
+        ExtensionRegistry extensionRegistry = wsdlComposer.getExtensionRegistry();
         ExtensibilityElement ee;
 
         java.util.List<SOAPAddress> remove = new ArrayList<SOAPAddress>();
@@ -161,17 +167,17 @@ public class WsdlServicePanel extends WizardStepPanel {
         port.addExtensibilityElement(ee);
     }
 
-    /**
-     * @param def the service definition
-     * @return the currently edited binding
-     */
-    private Binding getBinding(Definition def) {
-        Map bindings = def.getBindings();
-        if (bindings.isEmpty()) {
-            throw new IllegalStateException("Should have at least one binding");
-        }
-        return (Binding)bindings.values().iterator().next();
-    }
+//    /**
+//     * @param def the service definition
+//     * @return the currently edited binding
+//     */
+//    private Binding getBinding(Definition def) {
+//        Map bindings = def.getBindings();
+//        if (bindings.isEmpty()) {
+//            throw new IllegalStateException("Should have at least one binding");
+//        }
+//        return (Binding)bindings.values().iterator().next();
+//    }
 
 
 }

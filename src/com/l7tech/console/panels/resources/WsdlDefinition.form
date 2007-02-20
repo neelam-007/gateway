@@ -40,7 +40,7 @@
               <text value="Target Namespace:"/>
             </properties>
           </component>
-          <component id="62baf" class="javax.swing.JComboBox" binding="targetNameSpaceField">
+          <component id="572a1" class="javax.swing.JTextField" binding="targetNameSpaceField">
             <constraints>
               <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>

@@ -1,7 +1,8 @@
 package com.l7tech.console.table;
 
+import com.l7tech.common.xml.WsdlComposer;
+
 import javax.swing.table.AbstractTableModel;
-import javax.wsdl.Definition;
 import javax.wsdl.Message;
 import javax.wsdl.Part;
 import javax.xml.namespace.QName;
@@ -19,24 +20,24 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class WsdlMessagesTableModel extends AbstractTableModel {
-    private final Definition definition;
+    private final WsdlComposer wsdlComposer;
     private final List<MessageInfo> messageList = new ArrayList<MessageInfo>();
 
     /**
      * Create the new <code>WsdlMessagesTableModel</code>
      * 
-     * @param definition The wsdl Definition 
+     * @param composer The wsdl Definition
      */
-    public WsdlMessagesTableModel(final Definition definition) {
-        if (definition == null) {
+    public WsdlMessagesTableModel(final WsdlComposer composer) {
+        if (composer == null) {
             throw new IllegalArgumentException();
         }
-        this.definition = definition;
+        this.wsdlComposer = composer;
         populate();
     }
 
     public void populate() {
-        for (Object messageObject : definition.getMessages().values()) {
+        for (Object messageObject : wsdlComposer.getMessages().values()) {
             Message message = (Message) messageObject;
             this.messageList.add(new MessageInfo(message, message.getOrderedParts(null)));
         }
@@ -75,7 +76,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
         List<Message> messages = new ArrayList();
 
         for (MessageInfo messageInfo : messageList) {
-            Message message = definition.createMessage();
+            Message message = wsdlComposer.createMessage();
             message.setQName(messageInfo.message.getQName());
             message.setUndefined(messageInfo.message.isUndefined());
             for (Part part : messageInfo.messageParts) {
@@ -126,7 +127,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @return the newly created message
      */
     public Message addMessage(String name) {
-        return addMessage(new QName(definition.getTargetNamespace(), name));
+        return addMessage(new QName(wsdlComposer.getTargetNamespace(), name));
     }
 
     /**
@@ -137,7 +138,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @return the newly created message
      */
     public Message addMessage(QName name) {
-        Message m = definition.createMessage();
+        Message m = wsdlComposer.createMessage();
         m.setQName(name);
         addMessage(m);
         return m;
@@ -171,7 +172,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @param name the message name local part
      */
     public void removeMessage(String name) {
-        removeMessage(new QName(definition.getTargetNamespace(), name));
+        removeMessage(new QName(wsdlComposer.getTargetNamespace(), name));
     }
 
     /**
@@ -248,7 +249,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
                 // Preserve position in the list but remove / re-add to the definition
                 // since the key is changed (QName)
                 MessageInfo messageInfo = messageList.get(rowIndex);
-                messageInfo.message.setQName(new QName(definition.getTargetNamespace(), (String) aValue));
+                messageInfo.message.setQName(new QName(wsdlComposer.getTargetNamespace(), (String) aValue));
                 this.fireTableDataChanged();                
             }
         }

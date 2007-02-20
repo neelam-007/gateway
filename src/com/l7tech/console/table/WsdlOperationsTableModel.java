@@ -1,5 +1,7 @@
 package com.l7tech.console.table;
 
+import com.l7tech.common.xml.WsdlComposer;
+
 import javax.swing.table.AbstractTableModel;
 import javax.wsdl.*;
 import java.util.Iterator;
@@ -12,19 +14,18 @@ import java.util.Map;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
 public class WsdlOperationsTableModel extends AbstractTableModel {
-    private Definition definition;
+    private WsdlComposer composer;
     private PortType portType;
 
     /**
      * Create the new <code>WsdlMessagesTableModel</code>
-     * @param def the WSDL definition
-     * @param def the port type these operations belong to
+     * @param wc the WSDL Composer
      */
-    public WsdlOperationsTableModel(Definition def, PortType pt) {
-        if (def == null || pt == null) {
+    public WsdlOperationsTableModel(WsdlComposer wc, PortType pt) {
+        if (wc == null || pt == null) {
             throw new IllegalArgumentException();
         }
-        definition = def;
+        composer = wc;
         portType = pt;
     }
 
@@ -148,7 +149,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      *
      */
     public Operation addOperation(String name) {
-        Operation op = definition.createOperation();
+        Operation op = composer.createOperation();
         op.setName(name);
         op.setUndefined(false);
         addOperation(op);
@@ -161,9 +162,9 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @param operation the message to add
      */
     public void addOperation(Operation operation) {
+        operation.setInput(composer.createInput());
+        operation.setOutput(composer.createOutput());
         portType.addOperation(operation);
-        operation.setInput(definition.createInput());
-        operation.setOutput(definition.createOutput());
 
         this.fireTableStructureChanged();
     }
@@ -284,7 +285,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @param operation The operation to check
      */
     private void ensureInputOutputMessages(Operation operation) {
-        Map messages = definition.getMessages();
+        Map messages = composer.getMessages();
         if(messages != null && !messages.isEmpty()) {
             Message defaultMessage = (Message) messages.values().iterator().next();
 

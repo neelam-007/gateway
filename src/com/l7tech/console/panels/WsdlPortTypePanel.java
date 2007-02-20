@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.table.WsdlOperationsTableModel;
 import com.l7tech.common.xml.WsdlComposer;
+import com.l7tech.console.table.WsdlOperationsTableModel;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -12,10 +12,8 @@ import javax.xml.namespace.QName;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -32,9 +30,10 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     private WsdlOperationsTableModel operationsModel;
     private JButton addOperationButton;
     private JButton removeOperatonButton;
-    private Definition definition;
+//    private Definition definition;
     private JComboBox messagesComboBox = new JComboBox();
     private JLabel panelHeader;
+    private WsdlComposer wsdlCompser;
 
     public WsdlPortTypePanel(WizardStepPanel next) {
         super(next);
@@ -103,18 +102,18 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof WsdlComposer) {
-            definition = ((WsdlComposer)settings).getOutputWsdl();
+            wsdlCompser = (WsdlComposer)settings;
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
-        validate(definition);
-        PortType portType = getOrCreatePortType(definition);
+        validate(wsdlCompser);
+        PortType portType = getOrCreatePortType(wsdlCompser);
 
-        operationsModel = new WsdlOperationsTableModel(definition, portType);
+        operationsModel = new WsdlOperationsTableModel(wsdlCompser, portType);
         operationsTable.setModel(operationsModel);
         operationsTable.getTableHeader().setReorderingAllowed(false);
 
-        Collection cm = new ArrayList(definition.getMessages().values());
+        Collection cm = new ArrayList(wsdlCompser.getMessages().values());
         cm.add(null);
         final Object[] messages = cm.toArray();
         messagesComboBox.setModel(new DefaultComboBoxModel(messages));
@@ -129,7 +128,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
 
                 if (value != null) {
                     QName qName = ((Message)value).getQName();
-                    setText(WsdlCreateWizard.prefixedName(qName, definition));
+                    setText(WsdlCreateWizard.prefixedName(qName, wsdlCompser));
                 } else {
                     setText("             ");
                 }
@@ -172,12 +171,12 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof WsdlComposer) {
-            definition = ((WsdlComposer)settings).getOutputWsdl();
+            wsdlCompser = (WsdlComposer)settings;
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
 
-        validate(definition);
+        validate(wsdlCompser);
 
     }
 
@@ -241,7 +240,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
           private void renderMessage(JTable table, Message msg, boolean isSelected) {
               String text = msg == null ?
                       "" :
-                      WsdlCreateWizard.prefixedName(msg.getQName(), definition);
+                      WsdlCreateWizard.prefixedName(msg.getQName(), wsdlCompser);
 
               setText(text);
           }
@@ -252,17 +251,21 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * 
      * @return the port type
      */
-    private PortType getOrCreatePortType(Definition def) {
-        PortType portType = null;
-        Map portTypes = def.getPortTypes();
-        if (portTypes.isEmpty()) {
-            portType = def.createPortType();
-            portType.setQName(new QName(def.getTargetNamespace(), portTypeNameField.getText()));
+    private PortType getOrCreatePortType(WsdlComposer composer) {
+        PortType portType = composer.getPortType();
+        if (portType != null)
+            return portType;
+
+
+//        Map portTypes = composer.getPortTypes();
+//        if (portTypes.isEmpty()) {
+            portType = composer.createPortType();
+            portType.setQName(new QName(composer.getTargetNamespace(), portTypeNameField.getText()));
             portType.setUndefined(false);
-            def.addPortType(portType);
-        } else {
-            portType = (PortType)portTypes.values().iterator().next();
-        }
+            composer.addPortType(portType, null);
+//        } else {
+//            portType = (PortType)portTypes.values().iterator().next();
+//        }
         return portType;
     }
 
@@ -272,49 +275,50 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * WSDL definition (through different wsdl elements) and the port
      * type may not be aware of this.
      * 
-     * @param def the wsdl definition
+     * @param composer the wsdl definition
      */
-    private void validate(Definition def) {
-        PortType p = getOrCreatePortType(def);
+    private void validate(WsdlComposer composer) {
+        PortType portType = getOrCreatePortType(composer);
 
-        if (needPortTypeUpdate(def, p)) {
+        if (needPortTypeUpdate(composer, portType)) {
             logger.fine("target namespace changed, updating port type....");
-            updatePortType(p, def);
+            updatePortType(portType, composer);
         }
-        validateOperations(def);
+        validateOperations(composer);
     }
 
-    private boolean needPortTypeUpdate(Definition def, PortType p) {
+    private boolean needPortTypeUpdate(WsdlComposer def, PortType p) {
         return
           !def.getTargetNamespace().equals(p.getQName().getNamespaceURI()) ||
           !portTypeNameField.getText().equals(p.getQName().getLocalPart());
 
     }
 
-    private void updatePortType(PortType p, Definition def) {
-        def.removePortType(p.getQName());
-        PortType portType = def.createPortType();
-        portType.setQName(new QName(def.getTargetNamespace(), portTypeNameField.getText()));
-        portType.setUndefined(false);
-        def.addPortType(portType);
-        java.util.List operations = p.getOperations();
-        for (Iterator iterator = operations.iterator(); iterator.hasNext();) {
-            Operation op = (Operation)iterator.next();
-            portType.addOperation(op);
+    private void updatePortType(PortType p, WsdlComposer composer) {
+        composer.removePortType(p);
+        PortType newPortType = composer.createPortType();
+        newPortType.setQName(new QName(composer.getTargetNamespace(), portTypeNameField.getText()));
+        newPortType.setUndefined(false);
+
+        List originalOperations = p.getOperations();
+        for (Object o : originalOperations) {
+            Operation op = (Operation)o;
+            newPortType.addOperation(op);
         }
+        composer.addPortType(newPortType, null);
     }
 
-    private void validateOperations(Definition def) {
-        PortType p = getOrCreatePortType(def);
+    private void validateOperations(WsdlComposer composer) {
+        PortType portType = getOrCreatePortType(composer);
 
-        java.util.List operations = p.getOperations();
-        for (Iterator iterator = operations.iterator(); iterator.hasNext();) {
-            Operation op = (Operation)iterator.next();
+        java.util.List operations = portType.getOperations();
+        for (Object o : operations) {
+            Operation op = (Operation)o;
             Input input = op.getInput();
             if (input != null) {
                 Message m = input.getMessage();
                 if (m != null) {
-                    if (!def.getMessages().containsKey(m.getQName())) {
+                    if (!composer.getMessages().containsKey(m.getQName())) {
                         input.setMessage(null);
                     }
                 }
@@ -323,13 +327,11 @@ public class WsdlPortTypePanel extends WizardStepPanel {
             if (output != null) {
                 Message m = output.getMessage();
                 if (m != null) {
-                    if (!def.getMessages().containsKey(m.getQName())) {
+                    if (!composer.getMessages().containsKey(m.getQName())) {
                         output.setMessage(null);
                     }
                 }
             }
         }
     }
-
-
 }

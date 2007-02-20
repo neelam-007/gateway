@@ -10,6 +10,7 @@ import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.console.xmlviewer.Viewer;
 import org.dom4j.DocumentException;
 import org.xml.sax.SAXParseException;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -101,7 +102,7 @@ public class WsdlCreateWizard extends Wizard {
                         WSDLWriter wsdlWriter = fac.newWSDLWriter();
 
                         StringWriter writer = new StringWriter();
-                        Definition definition = wsdlComposer.getOutputWsdl();
+                        Definition definition = wsdlComposer.buildOutputWsdl();
                         definition.setExtensionRegistry(reg);
                         wsdlWriter.writeWSDL(definition, writer);
 
@@ -116,7 +117,7 @@ public class WsdlCreateWizard extends Wizard {
                         throw new RuntimeException(e1);
                     } catch (IOException e1) {
                         throw new RuntimeException(e1);
-                    } catch (SAXParseException e1) {
+                    } catch (SAXException e1) {
                         throw new RuntimeException(e1);
                     }
                 }
@@ -135,18 +136,22 @@ public class WsdlCreateWizard extends Wizard {
     }
 
     private void initModel(Definition defToUse) throws WSDLException {
-        if (defToUse == null) {
-            defToUse = WsdlUtils.getWSDLFactory().newDefinition();
 
-            defToUse.setQName(new QName("NewService"));
-            defToUse.setTargetNamespace("http://tempuri.org/");
-            defToUse.addNamespace("tns", defToUse.getTargetNamespace());
-            defToUse.addNamespace("xsd", XSD_NAME_SPACE);
-            defToUse.addNamespace("soap", SOAP_NAME_SPACE);
-            defToUse.addNamespace(null, DEFAULT_NAME_SPACE);
+        if (defToUse == null) {
+            wsdlComposer = new WsdlComposer();
+//            defToUse = WsdlUtils.getWSDLFactory().newDefinition();
+
+            wsdlComposer.setQName(new QName("NewService"));
+            String tns = "http://tempuri.org/";
+            wsdlComposer.setTargetNamespace(tns);
+            wsdlComposer.addNamespace("tns", tns);
+            wsdlComposer.addNamespace("xsd", XSD_NAME_SPACE);
+            wsdlComposer.addNamespace("soap", SOAP_NAME_SPACE);
+            wsdlComposer.addNamespace(null, DEFAULT_NAME_SPACE);
+        } else {
+            wsdlComposer = new WsdlComposer(defToUse);
         }
 
-        wsdlComposer = new WsdlComposer(defToUse);
         wizardInput = wsdlComposer;
     }
 
@@ -183,7 +188,7 @@ public class WsdlCreateWizard extends Wizard {
      * @return the string containing the NS preefix and the localpart or
      *         the localpart only if the namespace could not be found
      */
-    static String prefixedName(QName localName, Definition definition) {
+    static String prefixedName(QName localName, WsdlComposer definition) {
         String prefix = "";
         Set entries = definition.getNamespaces().entrySet();
         for (java.util.Iterator iterator = entries.iterator(); iterator.hasNext();) {

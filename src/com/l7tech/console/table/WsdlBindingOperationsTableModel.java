@@ -1,5 +1,7 @@
 package com.l7tech.console.table;
 
+import com.l7tech.common.xml.WsdlComposer;
+
 import javax.swing.table.AbstractTableModel;
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
@@ -14,19 +16,20 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
 public class WsdlBindingOperationsTableModel extends AbstractTableModel {
-    private Definition definition;
+//    private Definition definition;
     private Binding binding;
+    private WsdlComposer wsdlComposer;
 
     /**
      * Create the new <code>WsdlMessagesTableModel</code>
-     * @param def the WSDL definition
-     * @param def the port type these operations belong to
+     * @param composer the WSDL Composer object that this model updates
+     * @param b the binding that these operations belong to
      */
-    public WsdlBindingOperationsTableModel(Definition def, Binding b) {
-        if (def == null || b == null) {
+    public WsdlBindingOperationsTableModel(WsdlComposer composer, Binding b) {
+        if (composer == null || b == null) {
             throw new IllegalArgumentException();
         }
-        definition = def;
+        wsdlComposer = composer;
         binding = b;
     }
 
@@ -115,7 +118,7 @@ public class WsdlBindingOperationsTableModel extends AbstractTableModel {
      * @return the newly created message
      */
     public BindingOperation addOperation(String name) {
-        BindingOperation op = definition.createBindingOperation();
+        BindingOperation op = wsdlComposer.createBindingOperation();
         op.setName(name);
         addOperation(op);
         return op;
@@ -254,7 +257,7 @@ public class WsdlBindingOperationsTableModel extends AbstractTableModel {
         }
         QName qn = new QName(action);
         ExtensibilityElement ee =
-          definition.getExtensionRegistry().createExtension(SOAPOperation.class, qn);
+          wsdlComposer.getExtensionRegistry().createExtension(SOAPOperation.class, qn);
         operation.addExtensibilityElement(ee);
     }
 

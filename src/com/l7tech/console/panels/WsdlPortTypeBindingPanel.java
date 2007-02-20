@@ -33,8 +33,9 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
 
     private JTextField portTypeBindingTransportField; // http://schemas.xmlsoap.org/soap/http
     private JComboBox portTypeBindingStyle;
-    private Definition definition;
+
     private JLabel panelHeader;
+    private WsdlComposer wsdlComposer;
 
     public WsdlPortTypeBindingPanel(WizardStepPanel next) {
         super(next);
@@ -94,7 +95,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof WsdlComposer) {
-            definition = ((WsdlComposer)settings).getOutputWsdl();
+            wsdlComposer = (WsdlComposer)settings;
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
@@ -113,7 +114,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
             throw new RuntimeException(e);
         }
         WsdlBindingOperationsTableModel model =
-          new WsdlBindingOperationsTableModel(definition, binding);
+          new WsdlBindingOperationsTableModel(wsdlComposer, binding);
 
         bindingOperationsTable.setModel(model);
         bindingOperationsTable.getTableHeader().setReorderingAllowed(false);
@@ -148,36 +149,36 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      */
     private Binding getEditedBinding() throws WSDLException {
         PortType portType = getPortType();
-        Map bindings = definition.getBindings();
+        Map bindings = wsdlComposer.getBindings();
         Binding binding;
         if (bindings.isEmpty()) {
-            binding = definition.createBinding();
-            binding.setQName(new QName(definition.getTargetNamespace(),
+            binding = wsdlComposer.createBinding();
+            binding.setQName(new QName(wsdlComposer.getTargetNamespace(),
               portTypeBindingNameField.getText()));
             binding.setPortType(portType);
             binding.setUndefined(false);
             collectSoapBinding(binding);
-            definition.addBinding(binding);
+            wsdlComposer.addBinding(binding, null);
         } else {
             binding = (Binding)bindings.values().iterator().next();
-            definition.removeBinding(binding.getQName());
+            wsdlComposer.removeBinding(binding);
             return getEditedBinding();
         }
         binding.getBindingOperations().clear();
-        for (Iterator it = portType.getOperations().iterator(); it.hasNext();) {
-            Operation op = (Operation)it.next();
-            BindingOperation bop = definition.createBindingOperation();
+        for (Object o : portType.getOperations()) {
+            Operation op = (Operation)o;
+            BindingOperation bop = wsdlComposer.createBindingOperation();
             bop.setName(op.getName());
             bop.setOperation(op);
 
             // binding input
-            BindingInput bi = definition.createBindingInput();
+            BindingInput bi = wsdlComposer.createBindingInput();
             bi.setName(op.getInput().getName());
             bi.addExtensibilityElement(getSoapBody());
             bop.setBindingInput(bi);
 
             // binding output
-            BindingOutput bout = definition.createBindingOutput();
+            BindingOutput bout = wsdlComposer.createBindingOutput();
             bout.setName(op.getOutput().getName());
             bout.addExtensibilityElement(getSoapBody());
             bop.setBindingOutput(bout);
@@ -186,7 +187,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
             String action =
               portType.getQName().getLocalPart() + "#" + bop.getName();
             ExtensibilityElement ee = null;
-            ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
+            ExtensionRegistry extensionRegistry = wsdlComposer.getExtensionRegistry();
             ee = extensionRegistry.createExtension(BindingOperation.class, new QName(Wsdl.WSDL_SOAP_NAMESPACE, "operation"));
             if (ee instanceof SOAPOperation) {
                 SOAPOperation sop = (SOAPOperation)ee;
@@ -209,11 +210,11 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      */
     private ExtensibilityElement getSoapBody() throws WSDLException {
         ExtensibilityElement ee;
-        ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
+        ExtensionRegistry extensionRegistry = wsdlComposer.getExtensionRegistry();
         ee = extensionRegistry.createExtension(BindingInput.class, new QName(Wsdl.WSDL_SOAP_NAMESPACE, "body"));
         if (ee instanceof SOAPBody) {
             SOAPBody sob = (SOAPBody)ee;
-            sob.setNamespaceURI(definition.getTargetNamespace());
+            sob.setNamespaceURI(wsdlComposer.getTargetNamespace());
             sob.setUse("encoded"); //soap encoded
             java.util.List encodingStyles =
               Arrays.asList(new String[]{"http://schemas.xmlsoap.org/soap/encoding/"});
@@ -226,7 +227,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
 
     private void collectSoapBinding(Binding binding) throws WSDLException {
         ExtensionRegistry extensionRegistry =
-          definition.getExtensionRegistry();
+          wsdlComposer.getExtensionRegistry();
 
         java.util.List extElements = binding.getExtensibilityElements();
         java.util.List remove = new ArrayList();
@@ -258,7 +259,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      * @throws IllegalStateException if there is no port type in the definition
      */
     private PortType getPortType() throws IllegalStateException {
-        Map portTypes = definition.getPortTypes();
+        Map portTypes = wsdlComposer.getPortTypes();
         if (portTypes.isEmpty()) {
             throw new IllegalStateException("Should have at least one port type");
         }
