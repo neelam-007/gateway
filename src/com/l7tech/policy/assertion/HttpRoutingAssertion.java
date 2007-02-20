@@ -47,6 +47,7 @@ public class HttpRoutingAssertion
                                                              new HttpPassthroughRule("SOAPAction", false, null)});
     protected HttpPassthroughRuleSet requestParamRules = new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{});
     protected boolean followRedirects = false;
+    protected boolean failOnErrorStatus = true;
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);
@@ -115,6 +116,13 @@ public class HttpRoutingAssertion
         this.timeout = timeout;
     }
 
+    public boolean isFailOnErrorStatus() {
+        return failOnErrorStatus;
+    }
+
+    public void setFailOnErrorStatus(boolean failOnErrorStatus) {
+        this.failOnErrorStatus = failOnErrorStatus;
+    }
 
     public HttpPassthroughRuleSet getResponseHeaderRules() {
         return responseHeaderRules;

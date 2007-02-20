@@ -99,6 +99,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JButton editReqHrButton;
     private JButton editReqPmButton;
     private JButton editResHrButton;
+    private JRadioButton failOnErrorRadio;
+    private JRadioButton neverFailRadio;
 
     private final SecureAction okButtonAction;
 
@@ -475,6 +477,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 assertion.getRequestParamRules().setForwardAll(reqParamsAll.isSelected());
             }
             assertion.setFollowRedirects(followRedirectCheck.isSelected());
+            assertion.setFailOnErrorStatus(failOnErrorRadio.isSelected());
 
             fireEventAssertionChanged(assertion);
 
@@ -550,6 +553,11 @@ public class HttpRoutingAssertionDialog extends JDialog {
         }
 
         followRedirectCheck.setSelected(assertion.isFollowRedirects());
+        if (assertion.isFailOnErrorStatus()) {
+            failOnErrorRadio.setSelected(true);
+        } else {
+            neverFailRadio.setSelected(true);
+        }
     }
 
     /**

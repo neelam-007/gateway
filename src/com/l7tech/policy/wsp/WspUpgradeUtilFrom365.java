@@ -40,10 +40,7 @@ public class WspUpgradeUtilFrom365 {
                     ass.getRequestHeaderRules().remove("cookie");
                     ass.getResponseHeaderRules().remove("set-cookie");
                 }
-            } else {
-                logger.warning("unknown property not accounted for: " + parameterName);
             }
-
         }
     }
 }
