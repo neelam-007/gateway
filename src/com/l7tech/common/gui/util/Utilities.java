@@ -268,6 +268,43 @@ public class Utilities {
                            (parentSize.height - compSize.height) / 2);
     }
 
+    public static void centerOnParentWindow(Component component) {
+        Window toCenter;
+        if (component instanceof Window) {
+            toCenter = (Window) component;
+        } else {
+            toCenter = SwingUtilities.getWindowAncestor(component);
+        }
+        Window parent = toCenter.getOwner();
+
+        if (parent == null) {
+            centerOnScreen(toCenter);
+        }
+        else {
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            Dimension parentSize = parent.getSize();
+            Dimension compSize = component.getSize();
+
+            // if larger than parent display slightly to the right and below
+            if (compSize.height > parentSize.height)
+                compSize.height = parentSize.height - 40;
+            if (compSize.width > parentSize.width)
+                compSize.width = parentSize.width - 40;
+
+            int x = ((int)parent.getLocationOnScreen().getX()) + ((parentSize.width - compSize.width) / 2);
+            int y = ((int)parent.getLocationOnScreen().getY()) + ((parentSize.height - compSize.height) / 2);
+
+            // fix offscreen
+            if (x < 0) x = 0;
+            if (y < 0) y = 0;
+            if ((x+compSize.width) > screenSize.width) x = screenSize.width - compSize.width;
+            if ((y+compSize.height) > screenSize.height) y = screenSize.height - compSize.height;
+
+            toCenter.setLocation(x, y);
+        }
+    }
+
+
 
     /**
      * Loads an image from the specified resourceD.
