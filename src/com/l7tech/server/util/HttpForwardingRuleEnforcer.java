@@ -6,6 +6,7 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
+import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.policy.variable.ExpandVariables;
@@ -214,11 +215,9 @@ public class HttpForwardingRuleEnforcer {
     public static List<Param> handleRequestParameters(PolicyEnforcementContext context,
                                                       HttpPassthroughRuleSet rules, Auditor auditor, Map vars,
                                                       String[] varNames) throws IOException {
-        // 1st, make sure we have a HttpRequestKnob
-        HttpRequestKnob knob;
-        try {
-            knob = context.getRequest().getHttpRequestKnob();
-        } catch (IllegalStateException e) {
+        // 1st, make sure we have a HttpServletRequestKnob
+        HttpServletRequestKnob knob = (HttpServletRequestKnob) context.getRequest().getKnob(HttpServletRequestKnob.class);
+        if (knob == null) {
             logger.log(Level.FINE, "no parameter to forward cause the incoming request is not http");
             return null;
         }
@@ -232,10 +231,11 @@ public class HttpForwardingRuleEnforcer {
         ArrayList<Param> output = new ArrayList<Param>();
 
         // 3rd, apply the rules
+        Map<String, String[]> requestBodyParams = knob.getRequestBodyParameterMap();
         if (rules.isForwardAll()) {
-            for (Enumeration i = knob.getParameterNames(); i.hasMoreElements();) {
-                String paramName = (String)i.nextElement();
-                String[] vals = knob.getParameterValues(paramName);
+            for (Map.Entry<String, String[]> param : requestBodyParams.entrySet()) {
+                String paramName = param.getKey();
+                String[] vals = param.getValue();
                 for (String paramVal : vals) {
                     output.add(new Param(paramName, paramVal));
                 }
@@ -256,7 +256,7 @@ public class HttpForwardingRuleEnforcer {
                     }
                     output.add(new Param(paramName, paramVal));
                 } else {
-                    String[] vals = knob.getParameterValues(paramName);
+                    String[] vals = requestBodyParams.get(paramName);
                     if (vals != null && vals.length > 0) {
                         for (String paramVal : vals) {
                             output.add(new Param(paramName, paramVal));
