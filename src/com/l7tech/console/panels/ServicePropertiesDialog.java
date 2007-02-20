@@ -51,7 +51,7 @@ public class ServicePropertiesDialog extends JDialog {
     private PublishedService subject;
     private XMLEditor editor;
     private final Logger logger = Logger.getLogger(ServicePropertiesDialog.class.getName());
-    private Collection<ServiceDocument> newWsdlDocuments = Collections.EMPTY_LIST;
+    private Collection<ServiceDocument> newWsdlDocuments;
     private Document newWSDL = null;
     private String newWSDLUrl = null;
     private boolean wasoked = false;
@@ -279,7 +279,10 @@ public class ServicePropertiesDialog extends JDialog {
     }
 
     public Collection<ServiceDocument> getServiceDocuments() {
-        return Collections.unmodifiableCollection(newWsdlDocuments);
+        Collection<ServiceDocument> docs = null;
+        if (newWsdlDocuments != null)
+            docs = Collections.unmodifiableCollection(newWsdlDocuments);        
+        return docs;
     }
 
     private void ok() {

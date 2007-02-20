@@ -14,12 +14,14 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceDocument;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
+import java.util.Collection;
 
 /**
  * Action to edit the published service properties
@@ -109,7 +111,11 @@ public class EditServiceProperties extends ServiceNodeAction {
             public void run() {
                 if (dlg.wasOKed()) {
                     try {
-                        Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(svc, dlg.getServiceDocuments());
+                        Collection<ServiceDocument> documents = dlg.getServiceDocuments();
+                        if (documents == null)
+                            Registry.getDefault().getServiceManager().savePublishedService(svc);
+                        else
+                            Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(svc, documents);                        
                     } catch (DuplicateObjectException e) {
                         JOptionPane.showMessageDialog(mw,
                               "Unable to save the service '" + svc.getName() + "'\n" +
