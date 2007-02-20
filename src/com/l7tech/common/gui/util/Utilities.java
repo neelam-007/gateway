@@ -277,7 +277,7 @@ public class Utilities {
         }
         Window parent = toCenter.getOwner();
 
-        if (parent == null) {
+        if (parent == null || !parent.isVisible()) {
             centerOnScreen(toCenter);
         }
         else {
