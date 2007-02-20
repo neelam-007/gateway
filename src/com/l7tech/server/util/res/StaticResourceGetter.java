@@ -7,6 +7,7 @@ package com.l7tech.server.util.res;
 
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.Closeable;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
@@ -15,6 +16,7 @@ import com.l7tech.server.policy.ServerPolicyException;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -22,6 +24,7 @@ import java.util.regex.Pattern;
  * communication needed, and corresponding to {@link com.l7tech.policy.StaticResourceInfo}.
  */
 class StaticResourceGetter<R> extends ResourceGetter<R> {
+    private static final Logger logger = Logger.getLogger(StaticResourceGetter.class.getName());
     private final R userObject;
 
     StaticResourceGetter(Assertion assertion,
@@ -43,7 +46,13 @@ class StaticResourceGetter<R> extends ResourceGetter<R> {
     }
 
     public void close() {
-        ResourceUtils.closeQuietly(userObject);
+        if (userObject instanceof java.io.Closeable) {
+            ResourceUtils.closeQuietly((java.io.Closeable)userObject);
+        } else if (userObject instanceof Closeable) {
+            ResourceUtils.closeQuietly((Closeable)userObject);
+        } else if (userObject != null) {
+            logger.warning("ERROR: Cannot close object of type '"+userObject.getClass().getName()+"'.");
+        }
     }
 
     public Pattern[] getUrlWhitelist() {
