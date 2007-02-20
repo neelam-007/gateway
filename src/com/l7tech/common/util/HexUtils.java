@@ -48,6 +48,22 @@ public class HexUtils {
         return getSha1().digest(stuffToDigest);
     }
 
+    /**
+     * if the passed string is not null and is longer than the max passed, then it will be truncated
+     * in the middle with "..." in place of the truncated portion. the returning string has a length
+     * of max or a little shorter. if the incoming string does not exceed desired max or is null, it
+     * will simply be returned as is (untouched)
+     * @return truncated string
+     * @param s string to trim
+     * @param max lenght beyond which the string is trimmed
+     */
+    public static String truncStringMiddle(String s, int max) {
+        if (s != null && s.length() > max) {
+            s = s.substring(0, ((max/2) - 3)) + "..." + s.substring(s.length() - ((max/2) - 3));
+        }
+        return s;
+    }
+
     private HexUtils() {}
 
     private static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};

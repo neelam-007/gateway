@@ -10,6 +10,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.common.util.HexUtils;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -53,12 +54,17 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
      * @param userId the OID or DN of the user who was authenticated, or null if the request was not authenticated.
      */
     protected AuditRecord(Level level, String nodeId, String ipAddress, long identityProviderOid, String userName, String userId, String name, String message) {
-        super(level, nodeId, message);
-        this.name = name;
+        super(level, nodeId, HexUtils.truncStringMiddle(message, 254));
+        this.name = HexUtils.truncStringMiddle(name, 254);
         this.ipAddress = ipAddress;
         this.identityProviderOid = identityProviderOid;
         this.userName = userName;
         this.userId = userId;
+    }
+
+    public void setMessage(String message) {
+        message = HexUtils.truncStringMiddle(message, 254);
+        super.setMessage(message);
     }
 
     public String getId() {

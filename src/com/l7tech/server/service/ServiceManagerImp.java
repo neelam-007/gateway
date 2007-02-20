@@ -12,6 +12,7 @@ import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.JaasUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
@@ -310,9 +311,7 @@ public class ServiceManagerImp
         // truncate service name in the role name to avoid going beyond 128 limit
         String svcname = service.getName();
         // cutoff is arbitrarily set to 50
-        if (svcname != null && svcname.length() > 50) {
-            svcname = svcname.substring(0, 23) + "..." + svcname.substring(svcname.length() - 23);
-        }
+        svcname = HexUtils.truncStringMiddle(svcname, 50);
         String name = MessageFormat.format(ServiceAdmin.ROLE_NAME_PATTERN, svcname, service.getOid());
 
         logger.info("Creating new Role: " + name);

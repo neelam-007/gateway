@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.common.util.HexUtils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -51,6 +52,11 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
 
     protected void setUserAssignments(Set<UserRoleAssignment> userAssignments) {
         this.userAssignments = userAssignments;
+    }
+
+    public void setName(String name) {
+        name = HexUtils.truncStringMiddle(name, 128);
+        super.setName(name);
     }
 
     /**
