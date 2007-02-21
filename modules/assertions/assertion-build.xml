@@ -159,6 +159,7 @@
     </target>
 
     <target name="-compile-tests" depends="-compile">
+        <mkdir dir="tests"/>
         <mkdir dir="${build.classes}-test"/>
         <copy todir="${build.classes}-test">
             <fileset dir="tests">
