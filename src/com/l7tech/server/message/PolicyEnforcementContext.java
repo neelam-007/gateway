@@ -319,6 +319,13 @@ public class PolicyEnforcementContext extends ProcessingContext {
         }
     }
 
+    /**
+     * Get the value of a context variable.
+     *  
+     * @param name the name of the variable to get, ie "requestXpath.result".  Required.
+     * @return  the Object representing the value of the specified variable.  Never null.
+     * @throws NoSuchVariableException  if no value is set for the specified variable
+     */
     public Object getVariable(String name) throws NoSuchVariableException {
         Object value;
         if (BuiltinVariables.isSupported(name)) {
