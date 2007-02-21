@@ -32,9 +32,9 @@ PATH=$PATH:$JAVA_HOME/bin:$SSG_HOME/bin
 
 # Set rmi hostname for cluster correctness
 
-if  [ -e "/ssg/etc/conf/cluster_hostname" ];
+if  [ -e "/ssg/etc/conf/partitions/default_/cluster_hostname" ];
 then
-        default_java_opts="$default_java_opts -Djava.rmi.server.hostname=`cat /ssg/etc/conf/cluster_hostname`"
+        default_java_opts="$default_java_opts -Djava.rmi.server.hostname=`cat /ssg/etc/conf/partitions/default_/cluster_hostname`"
 else
         default_java_opts="$default_java_opts -Djava.rmi.server.hostname=`hostname -f`"
 fi
