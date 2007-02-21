@@ -53,7 +53,7 @@ public class ConfigurationWizard extends Wizard {
 //    private OSSpecificFunctions osFunctions;
     private String hostname;
 
-    public static final String RESOURCE_PATH = "com/l7tech/console/resources";
+    public static final String RESOURCE_PATH = "com/l7tech/server/config/resources";
 
     boolean hadFailures = false;
     private static String currentVersion;

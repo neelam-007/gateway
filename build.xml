@@ -1801,63 +1801,21 @@
                 <attribute name="Main-Class" value="com.l7tech.server.config.ConfigurationWizardLauncher"/>
             </section>
         </generate-manifest>
+        <classfileset id="package.configwiz.classfileset" dir="${build.classes}">
+            <!-- Entry points, GUI, console and API -->
+            <root classname="com.l7tech.server.config.ConfigurationWizardLauncher" />
+
+            <!-- Providers -->
+            <root classname="com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine" />
+            <root classname="com.l7tech.common.security.prov.luna.BouncyCastleToLunaProvider" />
+            <root classname="com.l7tech.common.security.prov.luna.LunaJceProviderEngine" />
+            <root classname="com.l7tech.common.util.DnParserBc" />
+            <root classname="com.l7tech.common.util.SingleLineLogFormatter" />
+        </classfileset>
         <jar jarfile="${build.dir}/configwizard/ConfigWizard.jar" manifest="${build.etc}/ConfigWizard.mf">
+            <fileset refid="package.configwiz.classfileset"/>
             <fileset dir="${build.classes}">
-                <include name="com/l7tech/identity/CannotDeleteAdminAccountException.class"/>
-                <include name="com/l7tech/common/BuildInfo.class"/>
-
-                <include name="com/l7tech/common/gui/util/RunOnChangeListener*.class"/>
-                <include name="com/l7tech/common/gui/NumberField*.class"/>
-                <include name="com/l7tech/common/util/ConfigurableLogFormatter*.class"/>
-                <include name="com/l7tech/common/util/FileUtils.class"/>
-                <include name="com/l7tech/common/util/ResourceUtils.class"/>
-                <include name="com/l7tech/common/util/XmlUtil*.class"/>
-                <include name="com/l7tech/common/util/PaddingCharSequence*.class"/>
-                <include name="com/l7tech/common/util/HexUtils*.class"/>
-                <include name="com/l7tech/common/util/EnumTranslator*.class"/>
-                <include name="com/l7tech/common/util/CausedIOException*.class"/>
-                <include name="com/l7tech/common/util/DnParserJava15.class"/>
-                <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
-                <include name="com/l7tech/common/util/BufferPool*.class"/>
-
-                <include name="com/l7tech/common/util/CertUtils*.class"/>
-                <include name="com/l7tech/common/util/WhirlycacheFactory*.class"/>
-                <include name="com/l7tech/common/util/ExceptionUtils.class"/>
-                <include name="com/l7tech/common/util/SyspropUtil.class"/>
-                <include name="com/l7tech/common/gui/util/Utilities*.class"/>
-                <include name="com/l7tech/common/gui/util/ImageCache.class"/>
-                <include name="com/l7tech/common/gui/widgets/PleaseWaitDialog.class"/>
-                <include name="com/l7tech/common/util/JdkLoggerConfigurator*.class"/>
-                <include name="com/l7tech/common/xml/*.class"/>
-                <include name="com/l7tech/common/gui/FilterDocument*.class"/>
-                <include name="com/l7tech/console/panels/Wizard*.class"/>
-                <include name="com/l7tech/console/event/Wizard*.class"/>
-                <include name="com/l7tech/console/event/WeakEventListenerList.class"/>
-                <include name="com/l7tech/console/resources/layer7_logo_small_32x32.png"/>
-
-                <include name="com/l7tech/objectmodel/DeleteException.class"/>
-                <include name="com/l7tech/objectmodel/ObjectModelException.class"/>
-                <include name="com/l7tech/objectmodel/Entity.class"/>
-                <include name="com/l7tech/objectmodel/NamedEntity.class"/>
-                <include name="com/l7tech/objectmodel/PersistentEntity.class"/>
-                <include name="com/l7tech/objectmodel/imp/EntityImp.class"/>
-                <include name="com/l7tech/objectmodel/imp/NamedEntityImp.class"/>
-                <include name="com/l7tech/objectmodel/imp/PersistentEntityImp.class"/>
-
-                <include name="com/l7tech/server/partition/*.class"/>
-                <include name="com/l7tech/server/config/**/*"/>
-                <include name="com/l7tech/server/util/MakeLunaCerts*.class"/>
-                <include name="com/l7tech/server/util/SetKeys*.class"/>
-
-                <include name="com/l7tech/common/security/*.class"/>
-                <include name="com/l7tech/common/security/prov/luna/*.class"/>
-                <include name="com/l7tech/common/security/prov/bc/*.class"/>
-
-                <exclude name="com/l7tech/common/xml/SoapMessageGenerator*.class"/>
-                <exclude name="com/l7tech/common/xml/Wsdl*.class"/>
-                <exclude name="com/l7tech/common/xml/DOMResultXMLStreamWriter.class"/>
-                <exclude name="com/l7tech/common/xml/XpathEvaluator.class"/>
-                <exclude name="com/l7tech/common/xml/XpathExpression.class"/>
+                <include name="com/l7tech/server/config/resources/**/*"/>
             </fileset>
         </jar>
     </target>
@@ -1891,39 +1849,15 @@
                 <attribute name="Main-Class" value="com.l7tech.server.config.systemconfig.SysConfigWizardLauncher"/>
             </section>
         </generate-manifest>
+        <classfileset id="package.systemconfigwiz.classfileset" dir="${build.classes}">
+            <!-- Entry points, GUI, console and API -->
+            <root classname="com.l7tech.server.config.systemconfig.SysConfigWizardLauncher" />
+
+            <!-- Providers -->
+            <root classname="com.l7tech.common.util.SingleLineLogFormatter" />
+        </classfileset>
         <jar jarfile="${build.dir}/sysconfigwizard/SystemConfigWizard.jar" manifest="${build.etc}/SystemConfigWizard.mf">
-            <fileset dir="${build.classes}">
-                <include name="com/l7tech/common/util/XmlUtil*.class"/>
-                <include name="com/l7tech/common/xml/*.class"/>
-                <include name="com/l7tech/common/util/ResourceUtils.class"/>
-                <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
-                <include name="com/l7tech/common/util/BufferPool*.class"/>
-                <include name="com/l7tech/server/partition/PartitionInformation*.class"/>
-                <include name="com/l7tech/server/partition/PartitionManager*.class"/>
-                <include name="com/l7tech/server/partition/PartitionActions*.class"/>
-                <include name="com/l7tech/common/util/SyspropUtil.class"/>
-                <include name="com/l7tech/common/util/ConfigurableLogFormatter*.class"/>
-                <include name="com/l7tech/common/util/JdkLoggerConfigurator*.class"/>
-                <include name="com/l7tech/server/config/ui/console/ConfigurationWizard.class"/>
-                <include name="com/l7tech/server/config/ui/console/ConfigWizardConsoleStep.class"/>
-                <include name="com/l7tech/server/config/ui/console/BaseConsoleStep.class"/>
-                <include name="com/l7tech/server/config/ui/console/ConsoleWizardUtils.class"/>
-                <include name="com/l7tech/server/config/ui/console/ConfigWizardConsoleSummaryStep.class"/>
-                <include name="com/l7tech/server/config/ui/console/ConfigWizardConsoleResultsStep.class"/>
-                <include name="com/l7tech/server/config/commands/ConfigurationCommand.class"/>
-                <include name="com/l7tech/server/config/commands/BaseConfigurationCommand.class"/>
-                <include name="com/l7tech/server/config/beans/ConfigurationBean.class"/>
-                <include name="com/l7tech/server/config/beans/BaseConfigurationBean.class"/>
-                <include name="com/l7tech/server/config/exceptions/*.class"/>
-                <include name="com/l7tech/server/config/systemconfig**/*"/>
-                <include name="com/l7tech/server/config/*.class"/>
-                <exclude name="com/l7tech/common/xml/WsTrustRequestType*.class"/>
-                <exclude name="com/l7tech/common/xml/SoapMessageGenerator*.class"/>
-                <exclude name="com/l7tech/common/xml/Wsdl*.class"/>
-                <exclude name="com/l7tech/common/xml/DOMResultXMLStreamWriter.class"/>
-                <exclude name="com/l7tech/common/xml/XpathEvaluator.class"/>
-                <exclude name="com/l7tech/common/xml/XpathExpression.class"/>
-            </fileset>
+            <fileset refid="package.systemconfigwiz.classfileset"/>
         </jar>
     </target>
 
@@ -2115,6 +2049,7 @@
         <attribute name="jarfile"/>
         <attribute name="resultproperty"/>
         <attribute name="ignoreclasses" default=""/>
+        <attribute name="failpackages" default=""/>
         <sequential>
             <java classname="com.l7tech.tools.JarChecker" fork="true" resultproperty="@{resultproperty}">
                 <classpath>
@@ -2123,6 +2058,7 @@
                     <pathelement location="@{jarfile}"/>
                 </classpath>
                 <sysproperty key="java.awt.headless" value="true"/>
+                <sysproperty key="com.l7tech.tools.JarChecker.failpackages" value="@{failpackages}"/>
                 <arg value="@{jarfile}"/>
                 <arg line="@{ignoreclasses}"/>
             </java>
@@ -2195,6 +2131,7 @@
         </fileset>
         <checkdeps jarfile="build/configwizard/ConfigWizard.jar"
                    libfilesetref="configwizard.testpackage.fileset"
+                   failpackages="com.l7tech.admin com.l7tech.cluster com.l7tech.internal com.l7tech.service com.l7tech.spring"
                    resultproperty="testpackage.configwizard.result"
                    ignoreclasses="com.l7tech.common.security.prov.luna.BouncyCastleToLunaProvider com.l7tech.common.security.prov.luna.LunaJceProviderEngine"/>
 
@@ -2212,6 +2149,7 @@
         </fileset>
         <checkdeps jarfile="build/sysconfigwizard/SystemConfigWizard.jar"
                    libfilesetref="sysconfigwizard.testpackage.fileset"
+                   failpackages="com.l7tech.admin com.l7tech.cluster com.l7tech.internal com.l7tech.service com.l7tech.spring"
                    resultproperty="testpackage.sysconfigwizard.result"/>
 
         <!-- This just stops idea complaining -->
