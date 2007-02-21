@@ -98,7 +98,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     }
 
     private void populateSourceWsdlView() {
-        if (wsdlComposer == null || wsdlComposer.getSourceWsdls().isEmpty())
+        if ((wsdlComposer == null || wsdlComposer.getSourceWsdls().isEmpty()) && wsdlComposer.getOriginalWsdl() == null)
             return;
 
         sourceWsdlListModel.clear();
