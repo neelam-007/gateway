@@ -15,6 +15,8 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -106,6 +108,11 @@ public class JmsRoutingAssertionDialog extends JDialog {
     private JComboBox queueComboBox;
     private JRadioButton securityHeaderRemoveRadioButton;
     private JRadioButton securityHeaderLeaveRadioButton;
+    private JRadioButton authNoneRadio;
+    private JRadioButton authSamlRadio;
+    private JComboBox samlVersionComboBox;
+    private JSpinner samlExpiryInMinutesSpinner;
+    private JPanel samlPanel;
 
     /**
      * notfy the listeners
@@ -145,6 +152,18 @@ public class JmsRoutingAssertionDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
 
         queueComboBox.setModel(new DefaultComboBoxModel(getQueueItems()));
+
+        ButtonGroup secButtonGroup = new ButtonGroup();
+        secButtonGroup.add(authNoneRadio);
+        secButtonGroup.add(authSamlRadio);
+        samlVersionComboBox.setModel(new DefaultComboBoxModel(new String[]{"1.1", "2.0"}));
+        samlExpiryInMinutesSpinner.setModel(new SpinnerNumberModel(new Integer(5), new Integer(1), new Integer(120), new Integer(1)));
+
+        authSamlRadio.addChangeListener(new ChangeListener(){
+            public void stateChanged(ChangeEvent e) {
+                samlPanel.setVisible(authSamlRadio.isSelected());
+            }
+        });
 
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(securityHeaderRemoveRadioButton);
@@ -189,7 +208,14 @@ public class JmsRoutingAssertionDialog extends JDialog {
                 }
 
                 assertion.setGroupMembershipStatement(false);
-                assertion.setAttachSamlSenderVouches(false);
+                assertion.setAttachSamlSenderVouches(authSamlRadio.isSelected());
+                if (assertion.isAttachSamlSenderVouches()) {
+                    assertion.setSamlAssertionVersion("1.1".equals(samlVersionComboBox.getSelectedItem()) ? 1 : 2);
+                    assertion.setSamlAssertionExpiry(((Integer)samlExpiryInMinutesSpinner.getValue()).intValue());
+                } else {
+                    assertion.setSamlAssertionVersion(1);
+                    assertion.setSamlAssertionExpiry(5);
+                }
                 fireEventAssertionChanged(assertion);
                 wasOkButtonPressed = true;
                 newlyCreatedConnection = null; // prevent disposal from deleting our new serviceQueue
@@ -220,6 +246,16 @@ public class JmsRoutingAssertionDialog extends JDialog {
     }
 
     private void initFormData() {
+        int expiry = assertion.getSamlAssertionExpiry();
+        if (expiry == 0) {
+            expiry = 5;
+        }
+        samlExpiryInMinutesSpinner.setValue(new Integer(expiry));
+        samlVersionComboBox.setSelectedItem(assertion.getSamlAssertionVersion()==1 ? "1.1" : "2.0");
+        authNoneRadio.setSelected(!assertion.isAttachSamlSenderVouches());
+        authSamlRadio.setSelected(assertion.isAttachSamlSenderVouches());
+        samlPanel.setVisible(assertion.isAttachSamlSenderVouches());
+
         if (assertion.getCurrentSecurityHeaderHandling() == JmsRoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER)
             securityHeaderRemoveRadioButton.setSelected(true);
         else

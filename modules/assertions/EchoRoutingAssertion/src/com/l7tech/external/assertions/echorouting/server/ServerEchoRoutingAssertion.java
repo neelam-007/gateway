@@ -5,6 +5,7 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -30,7 +31,8 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRouti
     //- PUBLIC
 
     public ServerEchoRoutingAssertion(EchoRoutingAssertion ea, ApplicationContext applicationContext) {
-        super(ea, applicationContext);
+        super(ea, applicationContext, logger);
+        auditor = new Auditor(this, applicationContext, logger);
         stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
@@ -79,5 +81,6 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRouti
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ServerEchoRoutingAssertion.class.getName());
+    private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
 }

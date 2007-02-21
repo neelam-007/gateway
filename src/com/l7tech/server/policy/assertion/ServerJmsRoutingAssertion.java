@@ -19,12 +19,14 @@ import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.jms.*;
 import org.springframework.context.ApplicationContext;
@@ -35,6 +37,7 @@ import javax.naming.NamingException;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 /**
@@ -43,10 +46,19 @@ import java.util.regex.Pattern;
 public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
     public ServerJmsRoutingAssertion(JmsRoutingAssertion data, ApplicationContext ctx) {
-        super(data, ctx);
+        super(data, ctx, logger);
         this.data = data;
         auditor = new Auditor(this, ctx, logger);
         stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        SignerInfo signerInfo = null;
+        try {
+            KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
+            signerInfo = ku.getSslSignerInfo();
+        }
+        catch(Exception e) {
+            logger.log(Level.WARNING, "Error getting SAML signer information.", e);
+        }
+        senderVouchesSignerInfo = signerInfo;
     }
 
     // TODO synchronized?
@@ -67,6 +79,14 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             handleProcessedSecurityHeader(context,
                                           data.getCurrentSecurityHeaderHandling(),
                                           data.getXmlSecurityActorToPromote());
+
+            if (data.isAttachSamlSenderVouches()) {
+                if (senderVouchesSignerInfo == null) {
+                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_SAML_SIGNER);
+                    return AssertionStatus.FAILED;
+                }
+                doAttachSamlSenderVouches(context, senderVouchesSignerInfo);
+            }
 
             while (true) {
                 try {
@@ -379,6 +399,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private final JmsRoutingAssertion data;
     private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
+    private final SignerInfo senderVouchesSignerInfo;
 
     private JmsConnection routedRequestConnection;
     private JmsEndpoint routedRequestEndpoint;

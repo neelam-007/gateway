@@ -242,7 +242,7 @@ public class AssertionMessages extends Messages {
     public static final M XSLT_BAD_XSL       = m(5909, Level.WARNING, "Unable to parse XSL: {0}");
     public static final M XSLT_NO_PI         = m(5910, Level.WARNING, "No <?xml-stylesheet?> processing instruction was found in the message");
     public static final M XSLT_BAD_URL       = m(5911, Level.WARNING, "Stylesheet URL {0} did not match any configured regular expression");
-    
+
     // TODO move this message, now that it is shared among multiple assertion (XSLT + schema)
     public static final M RR_CANT_READ_REMOTE_RESOURCE = m(5912, Level.WARNING, "Couldn''t retrieve remote resource at {0}: {1}; continuing using previous version");
 
@@ -267,6 +267,7 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_ROUTE_REQUEST_WITH_NO_REPLY     = m(6017, Level.FINE, "Routed request endpoint specified NO_REPLY, won''t set JMSReplyTo and JMSCorrelationID");
     public static final M JMS_ROUTING_SET_REPLYTO_CORRELCTIONID       = m(6018, Level.FINE, "Setting JMSReplyTo and JMSCorrelationID");
     public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #{0}");
+    public static final M JMS_ROUTING_NO_SAML_SIGNER                  = m(6020, Level.WARNING, "JmsRoutingAssertion cannot access SAML signing information");
 
     // ServerRequestWssSaml
     public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate SAML Statement");

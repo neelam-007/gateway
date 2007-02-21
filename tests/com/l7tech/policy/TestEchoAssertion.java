@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * Bean and server impl for TestEchoAssertion, a simple echo assertion for use in core test classes.
@@ -23,6 +24,8 @@ import java.io.IOException;
  * features of the real echo assertion.
  */
 public class TestEchoAssertion extends RoutingAssertion {
+    private static final Logger logger = Logger.getLogger(TestEchoAssertion.class.getName());
+
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, ServerTestEcho.class.getName());
@@ -31,7 +34,7 @@ public class TestEchoAssertion extends RoutingAssertion {
 
     public static class ServerTestEcho extends ServerRoutingAssertion<TestEchoAssertion> {
         public ServerTestEcho(TestEchoAssertion data, ApplicationContext applicationContext) {
-            super(data, applicationContext);
+            super(data, applicationContext, logger);
         }
 
         public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {

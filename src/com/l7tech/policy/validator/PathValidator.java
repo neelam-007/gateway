@@ -498,6 +498,11 @@ class PathValidator {
               "The assertion might not work as configured." +
               " There is no protected service JMS queue defined.", null));
         } 
+
+        if (a.isAttachSamlSenderVouches() && !seenAccessControl) {
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                    "Routing with SAML Sender-Vouches but credentials are not authenticated.", null));
+        }
     }
 
     private void processHttpRouting(HttpRoutingAssertion a) {

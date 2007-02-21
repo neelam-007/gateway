@@ -2,27 +2,14 @@ package com.l7tech.server.policy.assertion;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.security.cert.CertificateException;
-import java.security.SignatureException;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.net.URL;
 import java.net.MalformedURLException;
 
 import org.springframework.context.ApplicationContext;
-import org.xml.sax.SAXException;
-import org.w3c.dom.Document;
 
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.security.saml.SamlAssertionGenerator;
-import com.l7tech.common.security.saml.SubjectStatement;
-import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.message.TcpKnob;
-import com.l7tech.server.message.PolicyEnforcementContext;
 
 /**
  * Base class for Server HTTP routing assertions
@@ -45,7 +32,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
     protected AbstractServerHttpRoutingAssertion(final HRAT assertion,
                                                  final ApplicationContext applicationContext,
                                                  final Logger logger) {
-        super(assertion, applicationContext);
+        super(assertion, applicationContext, logger);
         this.logger = logger;
         this.auditor = new Auditor(this, applicationContext, logger);
     }
@@ -116,46 +103,6 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
             }
         }
         return true;
-    }
-
-    /**
-     * Attach a sender-vouches SAML assertion to the request.
-     *
-     * @param context The pec to use
-     * @param signerInfo For signing the assertion / message
-     * @throws SAXException If the request is not XML
-     * @throws IOException If there is an error getting the request document
-     * @throws SignatureException If an error occurs when signing
-     * @throws CertificateException If the signing certificate is invalid.
-     */
-    protected void doAttachSamlSenderVouches(PolicyEnforcementContext context, SignerInfo signerInfo)
-            throws SAXException, IOException, SignatureException, CertificateException {
-        LoginCredentials svInputCredentials = context.getCredentials();
-        if (svInputCredentials == null) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SAML_SV_NOT_AUTH);
-        } else {
-            Document document = context.getRequest().getXmlKnob().getDocumentWritable();
-            SamlAssertionGenerator ag = new SamlAssertionGenerator(signerInfo);
-            SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-            samlOptions.setAttestingEntity(signerInfo);
-            TcpKnob requestTcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
-            if (requestTcp != null) {
-                try {
-                    InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
-                    samlOptions.setClientAddress(clientAddress);
-                } catch (UnknownHostException e) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
-                }
-            }
-            samlOptions.setVersion(data.getSamlAssertionVersion());
-            samlOptions.setExpiryMinutes(data.getSamlAssertionExpiry());
-            samlOptions.setUseThumbprintForSignature(data.isUseThumbprintInSamlSignature());
-            SubjectStatement statement = SubjectStatement.createAuthenticationStatement(
-                                                            svInputCredentials,
-                                                            SubjectStatement.SENDER_VOUCHES,
-                                                            data.isUseThumbprintInSamlSubject());
-            ag.attachStatement(document, statement, samlOptions);
-        }
     }
 
     /**
