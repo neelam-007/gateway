@@ -36,7 +36,7 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly=true)
-    @Secured(types=SERVICE, stereotype=GET_IDENTITY_PROPERTY_BY_ID)
+    @Secured(types=SERVICE, stereotype=GET_PROPERTY_BY_ID)
     Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws RemoteException, FindException;
 
     /**
