@@ -6,6 +6,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
 import com.l7tech.console.action.DefaultAssertionPropertiesAction;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.DefaultAssertionPropertiesEditor;
 import com.l7tech.console.tree.AbstractAssertionPaletteNode;
 import com.l7tech.console.tree.DefaultAssertionPaletteNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
@@ -15,11 +16,11 @@ import com.l7tech.console.tree.policy.advice.DefaultAssertionAdvice;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import static com.l7tech.policy.assertion.DefaultAssertionMetadata.*;
 import com.l7tech.policy.assertion.MetadataFinder;
+import com.l7tech.policy.wsp.ClassLoaderUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -85,7 +86,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
             Collection<ClusterStatusAdmin.ModuleInfo> modules = cluster.getAssertionModuleInfo();
             for (ClusterStatusAdmin.ModuleInfo module : modules)
-                registerAssertionsFromModule(cluster, module);
+                registerAssertionsFromModule(module);
         } catch (RuntimeException e) {
             if (ExceptionUtils.causedBy(e, NoSuchMethodException.class)) {
                 logger.fine("Gateway does not support modular assertions");
@@ -96,7 +97,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         }
     }
 
-    private void registerAssertionsFromModule(final ClusterStatusAdmin cluster, final ClusterStatusAdmin.ModuleInfo module) {
+    private void registerAssertionsFromModule(final ClusterStatusAdmin.ModuleInfo module) {
         final Collection<String> assertionClassnames = module.assertionClasses;
 
         final String moduleFilename = module.moduleFilename;
@@ -250,8 +251,17 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             if (factory != null)
                 return cache(meta, key, factory);
 
-            // No default available -- just return null, disabling "Properties..." for this assertion.
-            // TODO maybe someday we can build a simple bean editor GUI for the assertion
+            // No default available -- can we use the default bean editor?
+            if (DefaultAssertionPropertiesEditor.hasEditableProperties(assclass)) {
+                // Yep -- use the default
+                return cache(meta, key, new Functions.Binary<AssertionPropertiesEditor<AT>, Frame, AT>() {
+                    public AssertionPropertiesEditor<AT> call(Frame frame, AT at) {
+                        return new DefaultAssertionPropertiesEditor<AT>(frame, at);
+                    }
+                });
+            }
+
+            // Nope -- no properties editor here
             return cache(meta, key, null);
         }
     }

@@ -36,7 +36,7 @@ public class TypeMappingUtils {
           char.class.equals(type));
     }
 
-    static boolean isIgnorableProperty(String parm) {
+    public static boolean isIgnorableProperty(String parm) {
         for (String ignoreProperty : WspConstants.ignoreAssertionProperties) {
             if (ignoreProperty.equals(parm))
                 return true;

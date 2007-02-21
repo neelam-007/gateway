@@ -10,6 +10,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.util.CausedIllegalStateException;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.http.HttpConstants;
 
@@ -18,6 +19,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 
 /**
  * Represents an abstract Message in the system.  This can be a request or a reply; over HTTP or JMS or transport
@@ -129,6 +131,31 @@ public final class Message {
             throw new RuntimeException(e); // can't happen, it's a byte array input stream
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen, the content type is set to xml
+        }
+    }
+
+    /**
+     * Initialize, or re-initialize, a Message with a memory-based MIME facet containing the specified body
+     * bytes.
+     *
+     * @param contentType  the MIME content type.  Required.
+     * @param bodyBytes the body bytes.  May be empty but must not be null.
+     * @throws IOException if contentType is multipart, but the body does not contain the boundary or contains no parts
+     */
+    public void initialize(ContentTypeHeader contentType, byte[] bodyBytes) throws IOException {
+        try {
+            HttpRequestKnob reqKnob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
+            HttpResponseKnob respKnob = (HttpResponseKnob)getKnob(HttpResponseKnob.class);
+            if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
+            rootFacet = null;
+            rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentType, new ByteArrayInputStream(bodyBytes));
+            invalidateCachedKnobs();
+            if (reqKnob != null) attachHttpRequestKnob(reqKnob);
+            if (respKnob != null) attachHttpResponseKnob(respKnob);
+        } catch (NoSuchPartException e) {
+            throw new CausedIOException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen, it's a byte array input stream
         }
     }
 

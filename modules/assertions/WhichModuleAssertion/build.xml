@@ -8,8 +8,7 @@
 
     <property name="UneasyRooster.dir" location="../../.."/>
     <property name="moduleName" value="WhichModuleAssertion"/>
-    <property name="assertionList" value="com.l7tech.skunkworks.WhichModuleAssertion com.l7tech.skunkworks.DumpModulesAssertion"/>
-    <property name="build.classes" location="build/classes"/>
+    <property name="assertionList" value="com.l7tech.skunkworks.WhichModuleAssertion com.l7tech.skunkworks.DumpModulesAssertion com.l7tech.skunkworks.HelloWorldAssertion"/>
 
 
     <import file="../assertion-build.xml"/>

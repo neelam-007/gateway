@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 public class DefaultAssertionMetadata implements AssertionMetadata {
     protected static final Logger logger = Logger.getLogger(DefaultAssertionMetadata.class.getName());
 
+    private static final Object NO_VALUE = new Object();
     private static final Pattern ucfirst = Pattern.compile("(\\b[a-z])");
     private static final Pattern badlocalnamechars = Pattern.compile("[^a-zA-Z0-9_]"); // very, very conservative.. us-ascii only!
 
@@ -51,6 +52,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
     /**
      * Contains the code that generates the default metadata properties for this assertion.
+     * Never put NO_VALUE into this map; instead, just use null or don't provide a default getter for that property.
      */
     private static final Map defaultGetters = Collections.synchronizedMap(new HashMap() {{
         put(BASE_NAME, new MetadataFinder() {
@@ -411,6 +413,8 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
     public Object get(String key) {
         Object got = get(properties, key);
+        if (NO_VALUE == got)
+            return null;
         return got != null ? got : get(defaultGetters, key);
     }
 
@@ -419,7 +423,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
      *
      * @param map the Map to examine.  Must not be null.
      * @param key the property name to get.  Must not be null.
-     * @return The specified property value, if it exists, otherwise null.
+     * @return The specified property value, if it exists; NO_VALUE if it is explicitly set to nothing; otherwise null.
      */
     protected Object get(Map map, String key) {
         Object got = map.get(key);
@@ -437,5 +441,14 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             properties.remove(key);
         else
             properties.put(key, value);
+    }
+
+    /**
+     * Uncustomize the specified property, clearing it to null, and prevent any default Getter from overriding this.
+     *
+     * @param key the property that should be cleared.
+     */
+    public void putNull(String key) {
+        properties.put(key, NO_VALUE);
     }
 }
