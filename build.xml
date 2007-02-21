@@ -1818,6 +1818,7 @@
                 <include name="com/l7tech/common/util/CausedIOException*.class"/>
                 <include name="com/l7tech/common/util/DnParserJava15.class"/>
                 <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
+                <include name="com/l7tech/common/util/BufferPool*.class"/>
 
                 <include name="com/l7tech/common/util/CertUtils*.class"/>
                 <include name="com/l7tech/common/util/WhirlycacheFactory*.class"/>
@@ -1896,6 +1897,7 @@
                 <include name="com/l7tech/common/xml/*.class"/>
                 <include name="com/l7tech/common/util/ResourceUtils.class"/>
                 <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
+                <include name="com/l7tech/common/util/BufferPool*.class"/>
                 <include name="com/l7tech/server/partition/PartitionInformation*.class"/>
                 <include name="com/l7tech/server/partition/PartitionManager*.class"/>
                 <include name="com/l7tech/server/partition/PartitionActions*.class"/>
