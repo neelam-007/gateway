@@ -15,9 +15,7 @@
     <import file="../assertion-build.xml"/>
 
 
-    <target name="test" depends="-compile-tests">
-        <checkfail/>
-    </target>
+    <target name="test"/>
 
 
 </project>
