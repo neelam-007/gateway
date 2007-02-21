@@ -545,7 +545,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     /**
      * Read the routing response and copy into the SSG response.
      *
-     * @return false if falsified (if a non-xml response was wrapped)
+     * @return true if a valid response is read
      */
     private boolean readResponse(PolicyEnforcementContext context, GenericHttpResponse routedResponse, int status) {
         boolean responseOk = true;
@@ -554,21 +554,16 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             String ctype = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_TYPE);
             ContentTypeHeader outerContentType = ctype !=null ? ContentTypeHeader.parseValue(ctype) : null;
             // Handle missing content type error
-            if (status == HttpConstants.STATUS_OK && outerContentType==null) {
+            if (status == HttpConstants.STATUS_OK && outerContentType == null) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOCONTENTTYPE, new String[]{Integer.toString(status)});
                 responseOk = false;
-            } else if (data.isPassthroughHttpAuthentication() &&
-                       status == HttpConstants.STATUS_UNAUTHORIZED) {
+            } else if (data.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
                 context.getResponse().initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
                 responseOk = false;
-            } else if (status != HttpConstants.STATUS_OK && outerContentType!=null &&
-                       (outerContentType.isText() || outerContentType.isHtml()) && !outerContentType.isXml()) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOXML, new String[] {Integer.toString(status)});
+            } else if (status >= 400 && data.isFailOnErrorStatus()) {
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, new String[] {Integer.toString(status)});
                 responseOk = false;
-            }
-            // response OK
-            else if(outerContentType!=null)
-            {
+            } else if (outerContentType != null) { // response OK
                 StashManager stashManager = stashManagerFactory.createStashManager();
                 context.getResponse().initialize(stashManager, outerContentType, responseStream);
             }

@@ -49,6 +49,7 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_RESPONSE_NOXML          = m(4035, Level.WARNING, "Downstream service returned status ({0}) with non-XML payload.");
     public static final M HTTPROUTE_INVALIDCOOKIE           = m(4036, Level.INFO, "Ignoring invalid cookie header ''{0}''");
     public static final M HTTPROUTE_RESPONSE_CHALLENGE      = m(4037, Level.INFO, "Protected service requires authentication.");
+    public static final M HTTPROUTE_RESPONSE_BADSTATUS      = m(4038, Level.INFO, "Downstream service returned status ({0}). This is considered a failure case.");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED = m(4100, Level.INFO, "Authentication Required");
