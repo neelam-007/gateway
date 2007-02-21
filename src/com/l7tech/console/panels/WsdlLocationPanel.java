@@ -394,7 +394,7 @@ public class WsdlLocationPanel extends JPanel {
         SwingWorker worker = new SwingWorker() {
             public Object construct() {
                 try {
-                    new URI(wsdlUrl); // ensure valid url
+                    new URI(wsdlLocator.getBaseURI()); // ensure valid url
                     Document resolvedDoc = XmlUtil.parse(wsdlLocator.getBaseInputSource(), true);
 
                     // is this a WSIL?
