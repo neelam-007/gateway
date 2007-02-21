@@ -81,6 +81,10 @@ public class JmsClient {
         routedRequestEndpoint.setDestinationName((String)data.get("destination"));
         routedRequestEndpoint.setMaxConcurrentRequests(1);
         routedRequestEndpoint.setMessageSource(false);
+
+        if (data.containsKey("responseType") && "noreply".equals(data.get("responseType")) ) {
+            routedRequestEndpoint.setReplyType(JmsReplyType.NO_REPLY);
+        }
     }
 
     /**
