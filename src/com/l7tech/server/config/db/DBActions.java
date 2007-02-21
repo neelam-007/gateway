@@ -14,6 +14,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.text.MessageFormat;
 
 /**
  * Various DB manipulaton and checking methods used by the configuration wizard. Can probably be made more generic to be
@@ -379,8 +380,9 @@ public class DBActions {
                     break;
                 case DBActions.DB_AUTHORIZATION_FAILURE:
                     logger.info(CONNECTION_UNSUCCESSFUL_MSG);
-                    errorMsg = "There was an authentication error when attempting to connect to the database \"" + dbName + "\" using the username \"" +
-                            username + "\". Perhaps the password is wrong. Please check your input and try again.";
+                    errorMsg = MessageFormat.format("There was a connection error when attempting to connect to the database \"{0}\" using the username \"{1}\". " +
+                            "Perhaps the password is wrong. Either the username and/or password is incorrect, or the database \"{2}\" does not exist.",
+                            dbName, username, dbName);
                     if (ui != null) ui.showErrorMessage(errorMsg);
                     logger.warning("There was an authentication error when attempting to connect to the database \"" + dbName + "\" using the username \"" +
                             username + "\" and password \"" + password + "\".");
