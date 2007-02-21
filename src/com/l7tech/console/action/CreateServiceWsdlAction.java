@@ -26,8 +26,8 @@ import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceDocument;
+import org.w3c.dom.Document;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -58,7 +58,7 @@ import java.util.logging.Logger;
  */
 public class CreateServiceWsdlAction extends SecureAction {
     static final Logger log = Logger.getLogger(CreateServiceWsdlAction.class.getName());
-    private Definition defToUse;
+    private Document originalWsdl;
     private Set<WsdlComposer.WsdlHolder> importedWsdls;
 
     public CreateServiceWsdlAction() {
@@ -100,18 +100,18 @@ public class CreateServiceWsdlAction extends SecureAction {
                 try {
                     WizardStepPanel defPanel =
                       new WSDLCompositionPanel(new WsdlDefinitionPanel(new WsdlMessagesPanel(new WsdlPortTypePanel(new WsdlPortTypeBindingPanel(new WsdlServicePanel(null))))));
-                    WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
-                    Frame f = TopComponents.getInstance().getTopParent();
-                    Wizard w = null;
-                    if (defToUse != null)
-                        w = new WsdlCreateWizard(f, p, defToUse, importedWsdls);
+                    WsdlCreateOverviewPanel overviewPanel = new WsdlCreateOverviewPanel(defPanel);
+                    Frame parent = TopComponents.getInstance().getTopParent();
+                    Wizard wizard = null;
+                    if (originalWsdl != null)
+                        wizard = new WsdlCreateWizard(parent, overviewPanel, originalWsdl, importedWsdls);
                     else
-                        w = new WsdlCreateWizard(f, p);
-                    w.addWizardListener(wizardListener);
-                    Utilities.setEscKeyStrokeDisposes(w);
-                    w.pack();
-                    Utilities.centerOnScreen(w);
-                    DialogDisplayer.display(w);
+                        wizard = new WsdlCreateWizard(parent, overviewPanel);
+                    wizard.addWizardListener(wizardListener);
+                    Utilities.setEscKeyStrokeDisposes(wizard);
+                    wizard.pack();
+                    Utilities.centerOnScreen(wizard);
+                    DialogDisplayer.display(wizard);
                 } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
                     TopComponents.getInstance().showNoPrivilegesErrorMessage();
                 } catch (WSDLException we) {
@@ -121,6 +121,7 @@ public class CreateServiceWsdlAction extends SecureAction {
         });
     }
 
+    private PublishedService existingService;
     private WizardListener wizardListener = new WizardAdapter() {
         /**
          * Invoked when the wizard has finished.
@@ -128,7 +129,12 @@ public class CreateServiceWsdlAction extends SecureAction {
          * @param we the event describing the wizard finish
          */
         public void wizardFinished(WizardEvent we) {
-            PublishedService service = new PublishedService();
+            PublishedService service = null;
+            if (existingService == null)
+                service = new PublishedService();
+            else
+                service = existingService;
+
             try {
                 Wizard w = (Wizard)we.getSource();
                 WsdlComposer composer = (WsdlComposer) w.getWizardInput();
@@ -143,10 +149,14 @@ public class CreateServiceWsdlAction extends SecureAction {
                 StringWriter sw = new StringWriter();
                 wsdlWriter.writeWSDL(def, sw);
                 Wsdl ws = new Wsdl(def);
-                service.setName(ws.getServiceName());
                 service.setWsdlXml(sw.toString());
+                //if this is an "edit" then we are only interested in the WSDL and don't need to save the service.
+                if (existingService != null)
+                    return;                
+
+                service.setName(ws.getServiceName());
                 final String serviceAddress = getServiceAddress(def);
-                service.setWsdlUrl(serviceAddress);
+//                service.setWsdlUrl(serviceAddress);
                 RoutingAssertion ra;
                 if (serviceAddress != null) {
                     ra = new HttpRoutingAssertion(serviceAddress);
@@ -161,7 +171,6 @@ public class CreateServiceWsdlAction extends SecureAction {
 
                 service.setPolicyXml(bo.toString());
 
-                ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
                 Set<WsdlComposer.WsdlHolder> sourceWsdls = composer.getSourceWsdls();
                 Collection<ServiceDocument> sourceDocs = new HashSet<ServiceDocument>();
                 for (WsdlComposer.WsdlHolder sourceWsdl : sourceWsdls) {
@@ -175,10 +184,11 @@ public class CreateServiceWsdlAction extends SecureAction {
                     sd.setContents(writer.toString());
                     sourceDocs.add(sd);
                 }
-                long oid = serviceManager.savePublishedServiceWithDocuments(service, sourceDocs);
-
-
-//                long oid = serviceManager.savePublishedService(service);
+                long oid = 0;
+                if (sourceDocs == null)
+                    oid = Registry.getDefault().getServiceManager().savePublishedService(service);
+                else
+                    oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(service, sourceDocs);
 
                 Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                 EntityHeader header = new EntityHeader();
@@ -261,8 +271,9 @@ public class CreateServiceWsdlAction extends SecureAction {
         throw new IllegalArgumentException("missing SOAP address port definition");
     }
 
-    public void setWsdls(Definition definition, Set<WsdlComposer.WsdlHolder> importedWsdls) {
-        this.defToUse = definition;
+    public void setOriginalInformation(PublishedService origService, Document origWsdl, Set<WsdlComposer.WsdlHolder> importedWsdls) {
+        this.existingService = origService;
+        this.originalWsdl = origWsdl;
         this.importedWsdls = importedWsdls;
     }
 }

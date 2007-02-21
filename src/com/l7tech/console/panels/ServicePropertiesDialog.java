@@ -425,7 +425,7 @@ public class ServicePropertiesDialog extends JDialog {
                 }
             }
 
-            action.setWsdls(Wsdl.newInstance("", dom).getDefinition(), importedWsdls);
+            action.setOriginalInformation(subject, dom, importedWsdls);
             action.actionPerformed(null);
         } catch (Exception e) {
             logger.log(Level.WARNING, "cannot display new wsdl ", e);

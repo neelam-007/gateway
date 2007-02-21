@@ -5,6 +5,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
+import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.ExtensionDeserializer;
 import javax.wsdl.extensions.ExtensionRegistry;
@@ -26,6 +27,7 @@ import java.util.logging.Logger;
 public class WsdlComposer {
     private static final Logger logger = Logger.getLogger(WsdlComposer.class.getName());
 
+    private Document originalWsdl;
     private Definition delegateWsdl;
 
     private WSDLFactory wsdlFactory;
@@ -55,10 +57,16 @@ public class WsdlComposer {
         initialise(null);
     }
 
-    private void initialise(Definition def) throws WSDLException {
+    public WsdlComposer(Document origWsdl) throws WSDLException {
+        initialise(origWsdl);
+    }
+
+    private void initialise(Document wsdl) throws WSDLException {
+        originalWsdl = wsdl;
         wsdlFactory = WSDLFactory.newInstance();
         delegateWsdl = wsdlFactory.newDefinition();
         extensionRegistry = wsdlFactory.newPopulatedExtensionRegistry();
+        extensionRegistry = Wsdl.disableSchemaExtensions(extensionRegistry);
 
         sourceWsdls = new HashSet<WsdlHolder>();
         otherNamespaces = new HashMap<String, String>();
@@ -80,13 +88,14 @@ public class WsdlComposer {
 
         builder = new Builder();
 
-        populateFromDefinition(def);
+        populateFromDefinition();
     }
 
-    private void populateFromDefinition(Definition def) {
-        if (def == null)
+    private void populateFromDefinition() throws WSDLException {
+        if (originalWsdl == null)
             return;
 
+        Definition def = Wsdl.newInstance(originalWsdl.getDocumentElement().getBaseURI(), originalWsdl).getDefinition();
         setTargetNamespace(def.getTargetNamespace());
         for (Object o : def.getNamespaces().keySet()) {
             String key = (String) o;
@@ -102,10 +111,6 @@ public class WsdlComposer {
         for (Object o : def.getBindings().values()) {
             addBinding((Binding) o, null);
         }
-    }
-
-    public WsdlComposer(Definition def) throws WSDLException {
-        initialise(def);
     }
 
     public boolean addBindingOperation(BindingOperation opToAdd, WsdlHolder sourceWsdlHolder) {
@@ -476,6 +481,14 @@ public class WsdlComposer {
         return sourceWsdls;
     }
 
+    public Document getOriginalWsdl() {
+        return originalWsdl;
+    }
+
+    public void setOriginalWsdl(Document origWsdl) {
+        originalWsdl = origWsdl;        
+    }
+
     public static class WsdlHolder {
         public Wsdl wsdl;
         private String wsdlLocation;
@@ -486,7 +499,7 @@ public class WsdlComposer {
         }
 
         public String toString() {
-            return wsdlLocation;
+            return wsdl.getServiceName();
         }
 
         public int hashCode() {
@@ -511,15 +524,23 @@ public class WsdlComposer {
 
         public Definition buildWsdl() throws IOException, SAXException, WSDLException {
             nsPrefixCounter = 0;
-            Definition workingWsdl = wsdlFactory.newDefinition();
-            workingWsdl.setQName(qname);
-            buildNamespaces(workingWsdl);
-            buildTypes(workingWsdl);
-            buildMessages(workingWsdl);
-            buildOperations(workingWsdl);
-            buildBindingOperations(workingWsdl);
-            for (Map.Entry<QName,Service> serviceEntry : services.entrySet()) {
-                workingWsdl.addService(serviceEntry.getValue());
+            Definition workingWsdl = null;
+            if (originalWsdl == null) {
+                workingWsdl = wsdlFactory.newDefinition();
+                workingWsdl.setQName(qname);
+                buildNamespaces(workingWsdl);
+                buildTypes(workingWsdl);
+                buildMessages(workingWsdl);
+                buildOperations(workingWsdl);
+                buildBindingOperations(workingWsdl);
+                for (Map.Entry<QName,Service> serviceEntry : services.entrySet()) {
+                    workingWsdl.addService(serviceEntry.getValue());
+                }
+            }
+            else {
+                WSDLReader reader = wsdlFactory.newWSDLReader();
+                reader.setExtensionRegistry(extensionRegistry);
+                workingWsdl = reader.readWSDL(originalWsdl.getDocumentURI(), originalWsdl);
             }
             return workingWsdl;
         }

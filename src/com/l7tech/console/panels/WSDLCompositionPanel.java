@@ -100,8 +100,17 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     private void populateSourceWsdlView() {
         if (wsdlComposer == null || wsdlComposer.getSourceWsdls().isEmpty())
             return;
-        
+
         sourceWsdlListModel.clear();
+        if (wsdlComposer.getOriginalWsdl() != null) {
+            try {
+                Wsdl w = Wsdl.newInstance(wsdlComposer.getOriginalWsdl().getDocumentElement().getBaseURI(), wsdlComposer.getOriginalWsdl());
+                WsdlComposer.WsdlHolder origHolder = new WsdlComposer.WsdlHolder(w, wsdlComposer.getOriginalWsdl().getDocumentURI());
+                sourceWsdlListModel.addWsdl(origHolder.wsdl, origHolder.toString());
+            } catch (WSDLException e) {
+                logger.warning("Could not parse original WSDL: " + e.getMessage());
+            }
+        }
         for (WsdlComposer.WsdlHolder wsdlHolder : wsdlComposer.getSourceWsdls())
             sourceWsdlListModel.addWsdl(wsdlHolder.wsdl, wsdlHolder.toString());
     }

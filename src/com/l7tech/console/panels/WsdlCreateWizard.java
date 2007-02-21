@@ -11,6 +11,7 @@ import com.l7tech.console.xmlviewer.Viewer;
 import org.dom4j.DocumentException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -47,9 +48,9 @@ public class WsdlCreateWizard extends Wizard {
     private JButton buttonPreview;
     private WsdlComposer wsdlComposer;
 
-    public WsdlCreateWizard(Frame parent, WizardStepPanel panel, Definition defToUse, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
+    public WsdlCreateWizard(Frame parent, WizardStepPanel panel, Document origWsdl, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
         super(parent, panel);
-        initialise(defToUse, originalWsdls);
+        initialise(origWsdl, originalWsdls);
     }
 
     public WsdlCreateWizard(Frame parent, WizardStepPanel panel) throws WSDLException {
@@ -57,12 +58,12 @@ public class WsdlCreateWizard extends Wizard {
         initialise(null, null);
     }
 
-    private void initialise(Definition def, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
+    private void initialise(Document origWsdl, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
         setResizable(true);
-        setTitle(def == null?"Create WSDL Wizard":"Edit WSDL Wizard");
+        setTitle(origWsdl == null?"Create WSDL Wizard":"Edit WSDL Wizard");
 
         // initialize the WSDL definition
-        initModel(def, originalWsdls);
+        initModel(origWsdl, originalWsdls);
         collect();
 
         getButtonHelp().addActionListener(new ActionListener() {
@@ -108,7 +109,7 @@ public class WsdlCreateWizard extends Wizard {
 
                         Frame mw = TopComponents.getInstance().getTopParent();
                         DialogDisplayer.display(
-                                new RawWsdlDialog(mw, writer.toString(), definition.getQName().getLocalPart()));
+                                new RawWsdlDialog(mw, writer.toString(), "Preview"));
                     } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
                         TopComponents.getInstance().showNoPrivilegesErrorMessage();    
                     } catch (WSDLException e1) {
@@ -135,12 +136,10 @@ public class WsdlCreateWizard extends Wizard {
         super.finish(evt);
     }
 
-    private void initModel(Definition defToUse, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
+    private void initModel(Document origWsdl, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
 
-        if (defToUse == null) {
+        if (origWsdl == null) {
             wsdlComposer = new WsdlComposer();
-//            defToUse = WsdlUtils.getWSDLFactory().newDefinition();
-
             wsdlComposer.setQName(new QName("NewService"));
             String tns = "http://tempuri.org/";
             wsdlComposer.setTargetNamespace(tns);
@@ -149,12 +148,14 @@ public class WsdlCreateWizard extends Wizard {
             wsdlComposer.addNamespace("soap", SOAP_NAME_SPACE);
             wsdlComposer.addNamespace(null, DEFAULT_NAME_SPACE);
         } else {
-            wsdlComposer = new WsdlComposer(defToUse);
+            wsdlComposer = new WsdlComposer(origWsdl);
         }
 
-        if (originalWsdls == null || originalWsdls.size() == 0) {
-
-        } else {
+        if (origWsdl != null) {
+            wsdlComposer.setOriginalWsdl(origWsdl);
+        }
+        
+        if (originalWsdls != null && originalWsdls.size() != 0) {
             for (WsdlComposer.WsdlHolder sourceWsdl : originalWsdls) {
                 wsdlComposer.addSourceWsdl(sourceWsdl);
             }
