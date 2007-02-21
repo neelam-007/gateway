@@ -175,6 +175,11 @@ public class ServerXslTransformation
             TransformerFactory transfoctory = TransformerFactory.newInstance();
             transfoctory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             transfoctory.setURIResolver(XmlUtil.getSafeURIResolver());
+            transfoctory.setErrorListener(new ErrorListener(){
+                public void warning(TransformerException exception) throws TransformerException {}
+                public void error(TransformerException exception) throws TransformerException {}
+                public void fatalError(TransformerException exception) throws TransformerException {}
+            });
             StreamSource xsltsource = new StreamSource(new StringReader(thing));
             return transfoctory.newTemplates(xsltsource);
         } catch (TransformerConfigurationException e) {
@@ -435,19 +440,19 @@ public class ServerXslTransformation
             final Document doctotransform = t.asDocument();
             final BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream(4096);
             final StreamResult sr = new StreamResult(os);
+            final Auditor auditor = t.getAuditor();
 
             try {
                 Transformer transformer = softwareStylesheet.newTransformer();
                 transformer.setURIResolver(XmlUtil.getSafeURIResolver());
                 transformer.setErrorListener(new ErrorListener() {
+                    public void warning(TransformerException exception) throws TransformerException {
+                        auditor.logAndAudit(AssertionMessages.XSLT_TRANS_WARN, new String[]{exception.getMessageAndLocation()});
+                    }
                     public void error(TransformerException exception) throws TransformerException {
-                        throw exception;
+                        auditor.logAndAudit(AssertionMessages.XSLT_TRANS_ERR, new String[]{exception.getMessageAndLocation()});
                     }
                     public void fatalError(TransformerException exception) throws TransformerException {
-                        throw exception;
-                    }
-                    public void warning(TransformerException exception) throws TransformerException {
-                        throw exception;
                     }
                 });
                 XmlUtil.softXSLTransform(doctotransform, sr, transformer, t.vars);
