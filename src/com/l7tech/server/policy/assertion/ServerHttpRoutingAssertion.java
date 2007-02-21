@@ -478,7 +478,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
             HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
-            if (httpResponseKnob != null) {
+            if (readOk && httpResponseKnob != null) {
                 httpResponseKnob.setStatus(status);
 
                 HttpForwardingRuleEnforcer.handleResponseHeaders(routedResponse, httpResponseKnob, auditor,
@@ -553,6 +553,11 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             InputStream responseStream = routedResponse.getInputStream();
             String ctype = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_TYPE);
             ContentTypeHeader outerContentType = ctype !=null ? ContentTypeHeader.parseValue(ctype) : null;
+            boolean passthroughSoapFault = false;
+            if (status == 500 && context.getService() != null && context.getService().isSoap() &&
+                outerContentType != null && outerContentType.isXml()) {
+                passthroughSoapFault = true;
+            }
             // Handle missing content type error
             if (status == HttpConstants.STATUS_OK && outerContentType == null) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOCONTENTTYPE, new String[]{Integer.toString(status)});
@@ -560,7 +565,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             } else if (data.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
                 context.getResponse().initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
                 responseOk = false;
-            } else if (status >= 400 && data.isFailOnErrorStatus()) {
+            } else if (status >= 400 && data.isFailOnErrorStatus() && !passthroughSoapFault) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, new String[] {Integer.toString(status)});
                 responseOk = false;
             } else if (outerContentType != null) { // response OK
