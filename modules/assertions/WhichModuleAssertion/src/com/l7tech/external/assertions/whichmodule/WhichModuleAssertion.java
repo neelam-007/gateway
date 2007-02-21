@@ -1,9 +1,10 @@
-package com.l7tech.skunkworks;
+package com.l7tech.external.assertions.whichmodule;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -18,6 +19,7 @@ import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -156,7 +158,15 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         }
 
         public void setData(WhichModuleAssertion assertion) {
-            field.setText(assertion.getAssertionXml());
+            String xml = assertion.getAssertionXml();
+            try {
+                xml = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(xml));
+            } catch (SAXException e) {
+                // ignore
+            } catch (IOException e) {
+                // can't happen
+            }
+            field.setText(xml);
         }
 
         public WhichModuleAssertion getData(WhichModuleAssertion assertion) {

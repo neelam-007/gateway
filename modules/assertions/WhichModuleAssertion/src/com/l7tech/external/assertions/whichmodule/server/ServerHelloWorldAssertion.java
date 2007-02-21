@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.server;
+package com.l7tech.external.assertions.whichmodule.server;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -6,7 +6,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
-import com.l7tech.skunkworks.HelloWorldAssertion;
+import com.l7tech.external.assertions.whichmodule.HelloWorldAssertion;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
