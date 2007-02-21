@@ -4,6 +4,8 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.BuildInfo;
+
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
@@ -60,6 +62,7 @@ public class DBActions {
     private OSSpecificFunctions osFunctions;
 
     private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
+        new DbVersion37Checker(),
         new DbVersion365Checker(),
         new DbVersion36Checker(),
         new DbVersion35Checker(),
@@ -177,6 +180,7 @@ public class DBActions {
                     logger.warning(msg);
                     result.setStatus(DB_CANNOT_UPGRADE);
                     result.setErrorMessage(msg);
+                    break;
                 } else {
                     logger.info("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0]);
 
@@ -466,7 +470,14 @@ public class DBActions {
         
         ssgDbChecker = new CheckSSGDatabase();
         //always sort the dbCheckers in reverse in case someone has added one out of sequence so things still work properly
-        Arrays.sort(dbCheckers, Collections.reverseOrder());    
+        if (!hasCheckForCurrentVersion(dbCheckers)) {
+            DbVersionChecker[] checkers = new DbVersionChecker[dbCheckers.length+1];
+            System.arraycopy(dbCheckers, 0, checkers, 0, dbCheckers.length);
+            checkers[dbCheckers.length] =  new DbVersionBeHappyChecker();
+            dbCheckers = checkers;
+        }
+
+        Arrays.sort(dbCheckers, Collections.reverseOrder());
     }
 
     private void initDriver() throws ClassNotFoundException {
@@ -508,6 +519,23 @@ public class DBActions {
         } finally {
             ResourceUtils.closeQuietly(is);
         }
+    }
+
+    private boolean hasCheckForCurrentVersion(DbVersionChecker[] checkers) {
+        boolean hasCurrent = false;
+        String currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
+        if (StringUtils.isNotEmpty(BuildInfo.getProductVersionSubMinor())) {
+            currentVersion += "." + BuildInfo.getProductVersionSubMinor();
+        }
+
+        for (DbVersionChecker checker : checkers) {
+            if (currentVersion.equals(checker.getVersion())) {
+                hasCurrent = true;
+                break;
+            }
+        }
+
+        return hasCurrent;
     }
 
     private Set<String> getTableColumns(String tableName, DatabaseMetaData metadata) throws SQLException {
