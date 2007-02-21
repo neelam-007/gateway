@@ -11,11 +11,14 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.CreateServiceWsdlAction;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceDocument;
+import com.l7tech.service.ServiceAdmin;
 
 import org.w3c.dom.Document;
 
@@ -410,7 +413,19 @@ public class ServicePropertiesDialog extends JDialog {
         CreateServiceWsdlAction action = new CreateServiceWsdlAction();
         try {
             Document dom = XmlUtil.parse(new StringReader(subject.getWsdlXml()), false);
-            action.setWsdl(Wsdl.newInstance("", dom).getDefinition());
+            ServiceAdmin svcAdmin = Registry.getDefault().getServiceManager();
+            Collection<ServiceDocument> svcDocuments = svcAdmin.findServiceDocumentsByServiceID(String.valueOf(subject.getOid()));
+            Set<WsdlComposer.WsdlHolder> importedWsdls = new HashSet<WsdlComposer.WsdlHolder>();
+            for (ServiceDocument svcDocument : svcDocuments) {
+                if (svcDocument.getType().equals(WsdlCreateWizard.IMPORT_SERVICE_DOCUMENT_TYPE)) {
+                    String contents = svcDocument.getContents();
+                    Wsdl wsdl = Wsdl.newInstance(svcDocument.getUri(), new StringReader(contents));
+                    WsdlComposer.WsdlHolder holder = new WsdlComposer.WsdlHolder(wsdl, svcDocument.getUri());
+                    importedWsdls.add(holder);
+                }
+            }
+
+            action.setWsdls(Wsdl.newInstance("", dom).getDefinition(), importedWsdls);
             action.actionPerformed(null);
         } catch (Exception e) {
             logger.log(Level.WARNING, "cannot display new wsdl ", e);

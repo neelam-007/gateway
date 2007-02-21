@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.util.ExceptionUtils;
@@ -27,6 +27,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.service.ServiceDocument;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -36,18 +37,17 @@ import javax.wsdl.Definition;
 import javax.wsdl.Port;
 import javax.wsdl.Service;
 import javax.wsdl.WSDLException;
-import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.extensions.ExtensionRegistry;
+import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLWriter;
+import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.awt.*;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
@@ -59,6 +59,7 @@ import java.awt.*;
 public class CreateServiceWsdlAction extends SecureAction {
     static final Logger log = Logger.getLogger(CreateServiceWsdlAction.class.getName());
     private Definition defToUse;
+    private Set<WsdlComposer.WsdlHolder> importedWsdls;
 
     public CreateServiceWsdlAction() {
         super(new AttemptedCreate(SERVICE), LIC_AUTH_ASSERTIONS);
@@ -103,7 +104,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                     Frame f = TopComponents.getInstance().getTopParent();
                     Wizard w = null;
                     if (defToUse != null)
-                        w = new WsdlCreateWizard(f, p, defToUse);
+                        w = new WsdlCreateWizard(f, p, defToUse, importedWsdls);
                     else
                         w = new WsdlCreateWizard(f, p);
                     w.addWizardListener(wizardListener);
@@ -136,7 +137,6 @@ public class CreateServiceWsdlAction extends SecureAction {
 
                 service.setDisabled(true);
                 WSDLFactory fac = WsdlUtils.getWSDLFactory();
-//                ExtensionRegistry reg =  composer.getExtensionRegistry();
                 ExtensionRegistry reg =  Wsdl.disableSchemaExtensions(fac.newPopulatedExtensionRegistry());
                 WSDLWriter wsdlWriter = fac.newWSDLWriter();
                 def.setExtensionRegistry(reg);
@@ -161,9 +161,25 @@ public class CreateServiceWsdlAction extends SecureAction {
 
                 service.setPolicyXml(bo.toString());
 
-
                 ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
-                long oid = serviceManager.savePublishedService(service);
+                Set<WsdlComposer.WsdlHolder> sourceWsdls = composer.getSourceWsdls();
+                Collection<ServiceDocument> sourceDocs = new HashSet<ServiceDocument>();
+                for (WsdlComposer.WsdlHolder sourceWsdl : sourceWsdls) {
+                    ServiceDocument sd = new ServiceDocument();
+                    sd.setUri(sourceWsdl.getWsdlLocation());
+                    sd.setType(WsdlCreateWizard.IMPORT_SERVICE_DOCUMENT_TYPE);
+                    sd.setContentType("text/xml");
+                    sd.setServiceId(service.getOid());
+                    StringWriter writer = new StringWriter();
+                    wsdlWriter.writeWSDL(sourceWsdl.wsdl.getDefinition(), writer);
+                    sd.setContents(writer.toString());
+                    sourceDocs.add(sd);
+                }
+                long oid = serviceManager.savePublishedServiceWithDocuments(service, sourceDocs);
+
+
+//                long oid = serviceManager.savePublishedService(service);
+
                 Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                 EntityHeader header = new EntityHeader();
                 header.setType(EntityType.SERVICE);
@@ -245,7 +261,8 @@ public class CreateServiceWsdlAction extends SecureAction {
         throw new IllegalArgumentException("missing SOAP address port definition");
     }
 
-    public void setWsdl(Definition defToUse) {
-        this.defToUse = defToUse;
+    public void setWsdls(Definition definition, Set<WsdlComposer.WsdlHolder> importedWsdls) {
+        this.defToUse = definition;
+        this.importedWsdls = importedWsdls;
     }
 }

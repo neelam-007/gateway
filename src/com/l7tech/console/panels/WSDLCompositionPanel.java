@@ -93,9 +93,19 @@ public class WSDLCompositionPanel extends WizardStepPanel{
 
     public void readSettings(Object settings) throws IllegalArgumentException {
         wsdlComposer = (WsdlComposer) settings;
+        populateSourceWsdlView();
         updateResultingWsdlView();
     }
-    
+
+    private void populateSourceWsdlView() {
+        if (wsdlComposer == null || wsdlComposer.getSourceWsdls().isEmpty())
+            return;
+        
+        sourceWsdlListModel.clear();
+        for (WsdlComposer.WsdlHolder wsdlHolder : wsdlComposer.getSourceWsdls())
+            sourceWsdlListModel.addWsdl(wsdlHolder.wsdl, wsdlHolder.toString());
+    }
+
     private void initialize() {
         setShowDescriptionPanel(false);
         panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
@@ -312,6 +322,11 @@ public class WSDLCompositionPanel extends WizardStepPanel{
                     }
                 }
             }
+        }
+
+        public void clear() {
+            wsdlList.clear();
+            fireContentsChanged(sourceWsdlList, 0, wsdlList.size());            
         }
     }
 

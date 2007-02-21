@@ -42,27 +42,27 @@ public class WsdlCreateWizard extends Wizard {
     private static final String XSD_NAME_SPACE = "http://www.w3.org/2001/XMLSchema";
     private static final String SOAP_NAME_SPACE = "http://schemas.xmlsoap.org/wsdl/soap/";
     private static final String DEFAULT_NAME_SPACE = "http://schemas.xmlsoap.org/wsdl/";
-
+    public static final String IMPORT_SERVICE_DOCUMENT_TYPE ="VIRTUALWSDL-SOURCE";
     //
     private JButton buttonPreview;
     private WsdlComposer wsdlComposer;
 
-    public WsdlCreateWizard(Frame parent, WizardStepPanel panel, Definition defToUse) throws WSDLException {
+    public WsdlCreateWizard(Frame parent, WizardStepPanel panel, Definition defToUse, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
         super(parent, panel);
-        initialise(defToUse);
+        initialise(defToUse, originalWsdls);
     }
 
     public WsdlCreateWizard(Frame parent, WizardStepPanel panel) throws WSDLException {
         super(parent, panel);
-        initialise(null);
+        initialise(null, null);
     }
 
-    private void initialise(Definition def) throws WSDLException {
+    private void initialise(Definition def, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
         setResizable(true);
         setTitle(def == null?"Create WSDL Wizard":"Edit WSDL Wizard");
 
         // initialize the WSDL definition
-        initModel(def);
+        initModel(def, originalWsdls);
         collect();
 
         getButtonHelp().addActionListener(new ActionListener() {
@@ -135,7 +135,7 @@ public class WsdlCreateWizard extends Wizard {
         super.finish(evt);
     }
 
-    private void initModel(Definition defToUse) throws WSDLException {
+    private void initModel(Definition defToUse, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
 
         if (defToUse == null) {
             wsdlComposer = new WsdlComposer();
@@ -150,6 +150,14 @@ public class WsdlCreateWizard extends Wizard {
             wsdlComposer.addNamespace(null, DEFAULT_NAME_SPACE);
         } else {
             wsdlComposer = new WsdlComposer(defToUse);
+        }
+
+        if (originalWsdls == null || originalWsdls.size() == 0) {
+
+        } else {
+            for (WsdlComposer.WsdlHolder sourceWsdl : originalWsdls) {
+                wsdlComposer.addSourceWsdl(sourceWsdl);
+            }
         }
 
         wizardInput = wsdlComposer;
