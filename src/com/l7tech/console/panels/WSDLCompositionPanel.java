@@ -452,8 +452,26 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         }
 
         private void populate() {
-            if (wsdlComposer != null)
-                addBindingOperations(wsdlComposer.getBindingOperations());
+            if (wsdlComposer != null) {
+                Set<BindingOperation> allOps = new HashSet<BindingOperation>();
+//                Collection<BindingOperation> bindingOperations = wsdlComposer.getBindingOperations();
+//                if (bindingOperations != null) {
+//                    allOps.addAll(bindingOperations);
+//                }
+
+                Binding b = wsdlComposer.getBinding();
+                if (b != null) {
+                    List others = b.getBindingOperations();
+                    if (others != null) {
+                        for (Object other : others) {
+                            allOps.add((BindingOperation) other);
+                        }
+                    }
+                }
+                for (BindingOperation anOp : allOps) {
+                    addElement(new BindingOperationHolder(anOp, null));
+                }
+            }
         }
 
         public void addBindingOperations(Collection<BindingOperation> operations) {
@@ -470,8 +488,6 @@ public class WSDLCompositionPanel extends WizardStepPanel{
                 WsdlComposer.WsdlHolder wsdlHolder = operationHolder.sourceWsdlHolder;
                 wsdlComposer.removeBindingOperation(operationHolder.bindingOperation, wsdlHolder);
                 this.removeElement(operationHolder);
-
-
             }
         }
     }
