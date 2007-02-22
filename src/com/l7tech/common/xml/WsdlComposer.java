@@ -164,7 +164,6 @@ public class WsdlComposer {
     private void addWsdlElementsForBindingOperation(WsdlHolder sourceWsdlHolder, BindingOperation bindingOperation) {
         addSourceWsdl(sourceWsdlHolder);
         addTypesFromSource(sourceWsdlHolder);
-        addMessagesFromSource(sourceWsdlHolder, bindingOperation.getOperation());
         addOperation(bindingOperation.getOperation(), sourceWsdlHolder);
     }
 
@@ -196,10 +195,10 @@ public class WsdlComposer {
     }
 
     private void addMessagesFromSource(WsdlHolder sourceWsdlHolder, Operation operation) {
-        Message newInputMsg = copyMessage(operation.getInput().getMessage());
+        Message newInputMsg = operation.getInput().getMessage();
         newInputMsg.setQName(new QName(targetNamespace, newInputMsg.getQName().getLocalPart()));
 
-        Message newOutMessage = copyMessage(operation.getOutput().getMessage());
+        Message newOutMessage = operation.getOutput().getMessage();
         newOutMessage.setQName(new QName(targetNamespace, newOutMessage.getQName().getLocalPart()));
 
         internalAddMessage(newInputMsg,sourceWsdlHolder);
@@ -209,14 +208,13 @@ public class WsdlComposer {
         if (faults != null) {
             for (Object o : faults.values()) {
                 Fault f = (Fault) o;
-                Message faultMsg = copyMessage(f.getMessage());
-                faultMsg.setQName(new QName(targetNamespace, faultMsg.getQName().getLocalPart()));
-                internalAddMessage(faultMsg, sourceWsdlHolder);
+                Message newFaultMsg = f.getMessage();
+                newFaultMsg.setQName(new QName(targetNamespace, newFaultMsg.getQName().getLocalPart()));
+                internalAddMessage(newFaultMsg, sourceWsdlHolder);
             }
         }
     }
 
-    //TODO: make sure this is a full deep copy
      private Message copyMessage(Message inputMsg) {
         Message newMessage = delegateWsdl.createMessage();
         newMessage.setQName(inputMsg.getQName());
@@ -230,7 +228,6 @@ public class WsdlComposer {
         return newMessage;
     }
 
-    //TODO: make sure this is a full deep copy
     private Part copyPart(Part oldPart) {
         Part newPart = delegateWsdl.createPart();
         newPart.setElementName(oldPart.getElementName());
@@ -260,11 +257,13 @@ public class WsdlComposer {
         internalRemoveOperation(op);
     }
 
-    private void internalAddOperation(Operation op, WsdlHolder sourceWsdlHolder) {
-        if (operationsToAdd.containsKey(op.getName()))
+    private void internalAddOperation(Operation sourceOperation, WsdlHolder sourceWsdlHolder) {
+        Operation newOperation = copyOperation(sourceOperation);
+        addMessagesFromSource(sourceWsdlHolder, newOperation);
+        if (operationsToAdd.containsKey(newOperation.getName()))
             return;
 
-        operationsToAdd.put(op.getName(), op);
+        operationsToAdd.put(newOperation.getName(), newOperation);
 
     }
 
@@ -304,32 +303,67 @@ public class WsdlComposer {
         return bindings.values().iterator().next();
     }
 
-//    private Operation copyOperation(Operation sourceOperation) {
-//        Operation newOperation = delegateWsdl.createOperation();
-//        newOperation.setDocumentationElement(sourceOperation.getDocumentationElement());
-//        newOperation.setInput(sourceOperation.getInput());
-//        newOperation.setOutput(sourceOperation.getOutput());
-//        newOperation.setName(sourceOperation.getName());
-//        newOperation.setParameterOrdering(sourceOperation.getParameterOrdering());
-//        newOperation.setStyle(sourceOperation.getStyle());
-//        newOperation.setUndefined(sourceOperation.isUndefined());
-//
-//        Map faults = sourceOperation.getFaults();
-//        if (faults != null) {
-//            for (Object fault : faults.values()) {
-//                newOperation.addFault((Fault) fault);
-//            }
-//        }
-//
-//        List extElem = sourceOperation.getExtensibilityElements();
-//        if (extElem != null) {
-//            for (Object o : extElem) {
-//                newOperation.addExtensibilityElement((ExtensibilityElement) o);
-//            }
-//        }
-//
-//        return newOperation;
-//    }
+    private Operation copyOperation(Operation sourceOperation) {
+        Operation newOperation = delegateWsdl.createOperation();
+        newOperation.setDocumentationElement(sourceOperation.getDocumentationElement());
+
+        newOperation.setInput(copyInput(sourceOperation.getInput()));
+        newOperation.setOutput(copyOutput(sourceOperation.getOutput()));
+        newOperation.setName(sourceOperation.getName());
+        newOperation.setParameterOrdering(sourceOperation.getParameterOrdering());
+        newOperation.setStyle(sourceOperation.getStyle());
+        newOperation.setUndefined(sourceOperation.isUndefined());
+
+        Map faults = sourceOperation.getFaults();
+        if (faults != null) {
+            for (Object fault : faults.values()) {
+                newOperation.addFault(copyFault((Fault) fault));
+            }
+        }
+
+        List extElem = sourceOperation.getExtensibilityElements();
+        if (extElem != null) {
+            for (Object o : extElem) {
+                newOperation.addExtensibilityElement((ExtensibilityElement) o);
+            }
+        }
+
+        return newOperation;
+    }
+
+    private Fault copyFault(Fault sourceFault) {
+        Fault newFault = delegateWsdl.createFault();
+        newFault.setName(sourceFault.getName());
+        newFault.setDocumentationElement(sourceFault.getDocumentationElement());
+        newFault.setMessage(copyMessage(sourceFault.getMessage()));
+        for (Object o : newFault.getExtensionAttributes().keySet()) {
+            newFault.setExtensionAttribute((QName) o, newFault.getExtensionAttributes().get(o));
+        }
+        return newFault;
+
+    }
+
+    private Output copyOutput(Output sourceOutput) {
+        Output newOutput = delegateWsdl.createOutput();
+        newOutput.setName(sourceOutput.getName());
+        newOutput.setDocumentationElement(sourceOutput.getDocumentationElement());
+        newOutput.setMessage(copyMessage(sourceOutput.getMessage()));
+        for (Object o : newOutput.getExtensionAttributes().keySet()) {
+            newOutput.setExtensionAttribute((QName) o, newOutput.getExtensionAttributes().get(o));
+        }
+        return newOutput;
+    }
+
+    private Input copyInput(Input sourceInput) {
+        Input newInput = delegateWsdl.createInput();
+        newInput.setName(sourceInput.getName());
+        newInput.setDocumentationElement(sourceInput.getDocumentationElement());
+        newInput.setMessage(copyMessage(sourceInput.getMessage()));
+        for (Object o : newInput.getExtensionAttributes().keySet()) {
+            newInput.setExtensionAttribute((QName) o, newInput.getExtensionAttributes().get(o));
+        }
+        return newInput;
+    }
 
     public void setQName(QName qName) {
         qname = qName;
