@@ -22,7 +22,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Generic bean editor; provides poor-quality dialog for any assertion bean.
+ * Generic Assertion bean property editor that provides poor-quality dialog for any assertion bean that has
+ * at least one WSP-visible property.
  */
 public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends JDialog implements AssertionPropertiesEditor<AT>{
     protected static final Logger logger = Logger.getLogger(DefaultAssertionPropertiesEditor.class.getName());

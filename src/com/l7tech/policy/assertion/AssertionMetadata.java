@@ -291,6 +291,9 @@ public interface AssertionMetadata {
      *    public FooBarPropertiesDialog(FooBarAssertion bean)
      *    public FooBarPropertiesDialog()             // factory will call setData(bean)
      * </pre>
+     * If it doesn't find one, but the assertion bean includes at least one WSP-visible property, it will create
+     * a factory that uses {@link com.l7tech.console.panels.DefaultAssertionPropertiesEditor}, 
+     * which is a generic bean property editor dialog.
      */
     String PROPERTIES_EDITOR_FACTORY = "propertiesEditorFactory";
 
