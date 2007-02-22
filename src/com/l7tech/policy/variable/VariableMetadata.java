@@ -29,6 +29,9 @@ public class VariableMetadata implements Serializable {
         this(name, prefixed, multivalued, canonicalName, settable, DataType.STRING);
     }
 
+    public VariableMetadata(String name) {
+        this(name, false, false, null, false);
+    }
 
     /**
      * The name of the variable. If {@link #isPrefixed} is true, this name is just a prefix:
