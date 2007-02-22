@@ -3,10 +3,8 @@
  */
 package com.l7tech.external.assertions.comparison.server.evaluate;
 
-import com.l7tech.external.assertions.comparison.StringLengthPredicate;
 import com.l7tech.external.assertions.comparison.MinMaxPredicate;
-
-import java.util.Collection;
+import com.l7tech.external.assertions.comparison.StringLengthPredicate;
 
 /**
  * Evaluator for {@link StringLengthPredicate}s.
@@ -18,26 +16,8 @@ public class StringLengthEvaluator extends SingleValuedEvaluator<MinMaxPredicate
     }
 
     public boolean evaluate(Object leftValue) {
-        if (leftValue instanceof Collection) {
-            Collection coll = (Collection)leftValue;
-            for (Object member : coll) {
-                if (!lengthWithinBounds(member)) return false;
-            }
-            return true;
-        } else if (leftValue.getClass().isArray()) {
-            Object[] array = (Object[])leftValue;
-            for (Object member : array) {
-                if (!lengthWithinBounds(member)) return false;
-            }
-            return true;
-        } else {
-            return lengthWithinBounds(leftValue);
-        }
-    }
-
-    private boolean lengthWithinBounds(Object obj) {
-        String leftValue = obj.toString();
-        int num = leftValue == null ? 0 : leftValue.length();
+        String leftValue1 = leftValue.toString();
+        int num = leftValue1 == null ? 0 : leftValue1.length();
         int min = predicate.getMin();
         int max = predicate.getMax();
         return num >= min && (max < 0 || num <= max);
