@@ -24,7 +24,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
     private static final String KEYSTORE_TYPE_HEADER = "-- Select Keystore Type --\n";
     private static final String NO_KEYSTORE_PROMPT = "1) I already have a keystore configured and don't want to do anything here\n";
     private static final String DO_KEYSTORE_PROMPT = "2) I want to configure the keystore for this SSG\n";
-    private static final String KEYSTORE_TITLE = "SSG Keystore Set Up";
+    private static final String KEYSTORE_TITLE = "Set Up the SSG Keystore";
 
     private KeystoreConfigBean keystoreBean;
 

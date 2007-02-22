@@ -14,7 +14,7 @@ import java.util.*;
 public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
 
     private String manualStepsFileName = "ssg_config_manual_steps.txt";
-    private String title = "SSG Configuration Results";
+    private String title = "Configuration Results";
     private List<String> manualSteps;
     private String logFilename = "ssgconfig0.log";
     private File manualStepsFile;

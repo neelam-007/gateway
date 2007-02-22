@@ -19,7 +19,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
     private static final Logger logger = Logger.getLogger(ConfigWizardConsoleClusteringStep.class.getName());
 
     ClusteringConfigBean clusterBean;
-    private static final String TITLE = "SSG Clustering Set Up";
+    private static final String TITLE = "Set Up SSG Clustering";
 
     public ConfigWizardConsoleClusteringStep(ConfigurationWizard parentWiz) {
         super(parentWiz);

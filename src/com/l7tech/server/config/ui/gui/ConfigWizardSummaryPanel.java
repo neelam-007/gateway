@@ -8,23 +8,19 @@ import java.awt.*;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: megery
  * Date: Aug 15, 2005
- * Time: 5:00:52 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ConfigWizardSummaryPanel extends ConfigWizardStepPanel {
     private JTextArea summaryText;
     private JPanel mainPanel;
 
     private String newline= "\n";
-    private JScrollPane summaryScroller;
     private boolean initialized = false;
 
     public ConfigWizardSummaryPanel(WizardStepPanel next) {
         super(next);
-        stepLabel = "SSG Configuration Summary";
+        stepLabel = "Configuration Summary";
     }
 
     private void init() {

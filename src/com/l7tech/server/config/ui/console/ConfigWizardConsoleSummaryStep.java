@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  */
 public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
     private static final Logger logger = Logger.getLogger(ConfigWizardConsoleSummaryStep.class.getName());
-    private String title = "SSG Configuration Summary";
+    private String title = "Configuration Summary";
 
     public ConfigWizardConsoleSummaryStep(ConfigurationWizard parentWiz) {
         super(parentWiz);

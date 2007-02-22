@@ -47,7 +47,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
 
     public ConfigWizardKeystorePanel(WizardStepPanel next) {
         super(next);
-        stepLabel = "Set Up SSG Keystore";
+        stepLabel = "Set Up the SSG Keystore";
     }
 
     protected void updateModel() {

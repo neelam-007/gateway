@@ -24,11 +24,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 /**
- * Created by IntelliJ IDEA.
  * User: megery
  * Date: Sep 2, 2005
- * Time: 4:37:57 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBActionsListener {
     private static final Logger logger = Logger.getLogger(ConfigWizardNewDBPanel.class.getName());
@@ -76,7 +73,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
 
     public ConfigWizardNewDBPanel(WizardStepPanel next) {
         super(next);
-        stepLabel = "Set Up The SSG Database";
+        stepLabel = "Set Up the SSG Database";
         setShowDescriptionPanel(false);
     }
 

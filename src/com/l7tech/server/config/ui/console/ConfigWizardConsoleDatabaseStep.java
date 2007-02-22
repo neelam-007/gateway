@@ -37,7 +37,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
     private static final String PROMPT_DB_HOSTNAME = "Hostname: ";
 
-    private static final String TITLE = "SSG Database Set Up";
+    private static final String TITLE = "Set Up the SSG Database";
     private DBActions dbActions;
     private boolean createNewDb;
     private static final String REALLY_CONFIRM_OVERWRITE = "Are you sure you want to overwrite the database? This cannot be undone.";

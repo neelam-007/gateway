@@ -12,11 +12,8 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: megery
  * Date: Aug 9, 2005
- * Time: 3:25:18 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
     private JPanel mainPanel;
