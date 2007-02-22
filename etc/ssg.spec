@@ -299,7 +299,7 @@ chmod -Rf 775 /ssg/jdk/jre/lib/security/
 chmod -Rf 775 /ssg/migration
 
 #migrate the structure to the new partitioning scheme using the configuration wizard
-/ssg/configwizard/ssgconfig.sh -partitionMigrate
+/ssg/configwizard/ssgconfig.sh -partitionMigrate &>/dev/null
 
 %preun
 # Modifications to handle upgrades properly
