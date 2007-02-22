@@ -46,7 +46,27 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
         });
         _requestRadioButton.addMouseListener(new MouseAdapter() {
                 public void mouseEntered(MouseEvent e) {
-                    _descriptionText.setText("Scans request message URL or body. Effective only if this assertion is placed before routing assertion.");
+                    _descriptionText.setText("Scan request message URL or body. Effective only if this assertion is placed before routing assertion.");
+                }
+
+                public void mouseExited(MouseEvent e) {
+                    _descriptionText.setText("");
+                }
+            });
+
+        _requestUrlCheckBox.addMouseListener(new MouseAdapter() {
+                public void mouseEntered(MouseEvent e) {
+                    _descriptionText.setText("Scan parameter values in URL query string.");
+                }
+
+                public void mouseExited(MouseEvent e) {
+                    _descriptionText.setText("");
+                }
+            });
+
+        _requestBodyCheckBox.addMouseListener(new MouseAdapter() {
+                public void mouseEntered(MouseEvent e) {
+                    _descriptionText.setText("Scan (1) parameter values if Form POST, or (2) attribute values and character content if XML, or (3) entire MIME body otherwise.");
                 }
 
                 public void mouseExited(MouseEvent e) {
@@ -79,7 +99,7 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
         });
         _responseRadioButton.addMouseListener(new MouseAdapter() {
                 public void mouseEntered(MouseEvent e) {
-                    _descriptionText.setText("Scans response message body. Applies only if this assertion is placed after routing assertion. Use this only if the response is not supposed to contain JavaScript.");
+                    _descriptionText.setText("Scan response message body. Applies only if this assertion is placed after routing assertion. Use this only if the response is not supposed to contain keywords being screened for.");
                 }
 
                 public void mouseExited(MouseEvent e) {
