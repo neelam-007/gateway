@@ -15,6 +15,7 @@ import com.l7tech.console.tree.policy.advice.Advice;
 import com.l7tech.console.tree.policy.advice.DefaultAssertionAdvice;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
@@ -81,6 +82,8 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     public void updateModularAssertions() throws RemoteException {
         for (Assertion prototype : modulePrototypes)
             unregisterAssertion(prototype);
+        if (!TopComponents.getInstance().isApplet())
+            CustomAssertionRMIClassLoaderSpi.resetRemoteClassLoader();
 
         try {
             ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
