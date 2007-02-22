@@ -309,6 +309,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
             reqHeadersAdd.setEnabled(false);
             reqHeadersRemove.setEnabled(false);
             editReqHrButton.setEnabled(false);
+            reqHeadersTable.setEnabled(false);
+            requestHttpRulesTableHandler.setEditable(false);
         } else {
             reqHeadersCustomize.setSelected(true);
             requestHttpRulesTableHandler.updateeditState();
@@ -350,6 +352,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 reqParamsAdd.setEnabled(false);
                 reqParamsRemove.setEnabled(false);
                 editReqPmButton.setEnabled(false);
+                reqParamsTable.setEnabled(false);
+                requestParamsRulesTableHandler.setEditable(false);
             } else {
                 reqParamsCustomize.setSelected(true);
                 requestParamsRulesTableHandler.updateeditState();
@@ -384,6 +388,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
             resHeadersAdd.setEnabled(false);
             resHeadersDelete.setEnabled(false);
             editResHrButton.setEnabled(false);
+            resHeadersTable.setEnabled(false);
+            responseHttpRulesTableHandler.setEditable(false);
         } else {
             resHeadersCustomize.setSelected(true);
             responseHttpRulesTableHandler.updateeditState();
