@@ -4,6 +4,7 @@ import com.l7tech.common.security.prov.luna.LunaCmu;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.server.config.ClusteringType;
 import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.PropertyHelper;
@@ -17,6 +18,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -29,7 +32,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.security.cert.CertificateException;
-import java.util.Properties;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,7 +50,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private static final String CA_CERT_FILE = "ca.cer";
     private static final String SSL_CERT_FILE = "ssl.cer";
 
-    private static final String PROPERTY_COMMENT = "this file was updated by the SSG configuration utility";
+    private static final String PROPERTY_COMMENT = "This file was updated by the SSG configuration utility";
 
     private static final String XML_KSFILE = "keystoreFile";
     private static final String XML_KSPASS = "keystorePass";
@@ -613,7 +616,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         FileOutputStream fos = null;
         try {
-            Properties keystoreProps = PropertyHelper.mergeProperties(
+            PropertiesConfiguration keystoreProps = PropertyHelper.mergeProperties(
                     keystorePropertiesFile,
                     new File(keystorePropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
                     true, true);
@@ -624,7 +627,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             keystoreProps.setProperty(KeyStoreConstants.PROP_SSL_KS_PASS, new String(ksPassword));
 
             fos = new FileOutputStream(keystorePropertiesFile);
-            keystoreProps.store(fos, PROPERTY_COMMENT);
+            keystoreProps.setHeader(PROPERTY_COMMENT + "\n" + new Date());
+            keystoreProps.save(fos, "iso-8859-1");
             logger.info("Updating the keystore.properties file");
             fos.close();
             fos = null;
@@ -633,6 +637,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.severe("error while updating the keystore properties file");
             logger.severe(fnf.getMessage());
             throw fnf;
+        } catch (ConfigurationException ce) {
+            logger.severe("error while updating the keystore properties file");
+            logger.severe(ce.getMessage());
+            throw new CausedIOException(ce);
         } catch (IOException ioex) {
             logger.severe("error while updating the keystore properties file");
             logger.severe(ioex.getMessage());

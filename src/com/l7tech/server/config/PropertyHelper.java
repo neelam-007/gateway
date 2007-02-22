@@ -1,16 +1,20 @@
 package com.l7tech.server.config;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
 
-import java.util.Properties;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.logging.Logger;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.File;
+
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ResourceUtils;
 
 /**
  * User: megery
@@ -37,22 +41,23 @@ public class PropertyHelper {
             throw new IllegalArgumentException("List of proprties to fetch cannot be null)");
         }
 
-        Properties props = new Properties();
+        PropertiesConfiguration props = new PropertiesConfiguration();
+        props.setAutoSave(false);
+        props.setListDelimiter((char)0);
+        
         FileInputStream fis = null;
         Map<String, String> propsReturned = new HashMap<String, String>();
         try {
             fis = new FileInputStream(propFileName);
-            props.load(new FileInputStream(propFileName));
+            props.load(fis);
             for (String propName : propsToFetch) {
-                String propValue = props.getProperty(propName);
+                String propValue = props.getString(propName);
                 propsReturned.put(propName, propValue);
             }
+        } catch (ConfigurationException ce) {
+            throw new CausedIOException("Error reading properties from file '"+propFileName+"'.", ce);
         } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {}
-            }
+            ResourceUtils.closeQuietly(fis);
         }
         return propsReturned;
     }
@@ -78,7 +83,7 @@ public class PropertyHelper {
      * consisting of all properties contained in the two properies files. This will be equivalent to the original if
      * something failed with the new one.
      */
-    public static Properties mergeProperties(File origPropsFile, File newPropsFile, boolean createIfNew, boolean deleteExistingNewFile) throws IOException {
+    public static PropertiesConfiguration mergeProperties(File origPropsFile, File newPropsFile, boolean createIfNew, boolean deleteExistingNewFile) throws IOException {
         if (origPropsFile == null) throw new IllegalArgumentException("The original property file cannot be null");
         if (newPropsFile == null) throw new IllegalArgumentException("The new property file cannot be null");
 
@@ -92,14 +97,12 @@ public class PropertyHelper {
             }
         }
 
-        Properties mergedProps = new Properties();
-        Properties origProps = null;
-
-        FileInputStream newFis = null;
-
-        Properties newProps = new Properties();
+        PropertiesConfiguration newProps = new PropertiesConfiguration();
+        newProps.setAutoSave(false);
+        newProps.setListDelimiter((char)0);
 
         //load the new props
+        FileInputStream newFis = null;
         try {
             newFis = new FileInputStream(newPropsFile);
             newProps.load(newFis);
@@ -111,38 +114,37 @@ public class PropertyHelper {
 
         } catch (FileNotFoundException e) {
             logger.info(newPropsFile.getAbsolutePath() + " does not exist, no need to merge with existing properties");
+        } catch (ConfigurationException ce) {
+            throw new CausedIOException("Error reading properties file '"+newPropsFile+"'.", ce);
         } finally {
-            if (newFis != null) {
-                try {newFis.close();} catch (IOException e) {}
-            }
+            ResourceUtils.closeQuietly(newFis);
         }
+
+        PropertiesConfiguration origConfiguration = new PropertiesConfiguration();
+        origConfiguration.setAutoSave(false);
+        origConfiguration.setListDelimiter((char)0);
 
         //if successful, back a new properties object with these as defaults
-        origProps = new Properties(newProps);
-
         FileInputStream origFis = null;
         try {
-
             origFis = new FileInputStream(origPropsFile);
-
-            //origProps could be null, if it didn't get initialized above with newProps as defaults.
-            //In this case, just return the original ones
-            if (origProps == null) origProps = new Properties();
-            origProps.load(origFis);
-
-            //now get all the keys and make a new properties object;
-            Enumeration allProps = origProps.propertyNames();
-            while(allProps.hasMoreElements()) {
-                String propName = (String) allProps.nextElement();
-                mergedProps.setProperty(propName, origProps.getProperty(propName));
-            }
+            origConfiguration.load(origFis);
+        } catch (ConfigurationException ce) {
+            throw new CausedIOException("Error reading properties file '"+origPropsFile+"'.", ce);
         } finally {
-            if (origFis != null) {
-                try {origFis.close();} catch (IOException e) {}
+            ResourceUtils.closeQuietly(origFis);
+        }
+
+        //now get all the keys and make a new properties object;
+        Iterator allProps = newProps.getKeys();
+        while(allProps.hasNext()) {
+            String propName = (String) allProps.next();
+            if (!origConfiguration.containsKey(propName)) {
+                origConfiguration.setProperty(propName, newProps.getProperty(propName));
             }
         }
 
-        return mergedProps;
+        return origConfiguration;
     }
 
 
@@ -168,7 +170,7 @@ public class PropertyHelper {
      * something failed with the new one.</li>
      * </ul>
      */
-    public static Properties mergeProperties(String originalPropsFileName, String newPropsFileName, boolean createIfNew, boolean deleteExistingNewFile) throws IOException {
+    public static PropertiesConfiguration mergeProperties(String originalPropsFileName, String newPropsFileName, boolean createIfNew, boolean deleteExistingNewFile) throws IOException {
         if (StringUtils.isEmpty(originalPropsFileName))
             throw new IllegalArgumentException("The original property file propName cannot be empty");
 

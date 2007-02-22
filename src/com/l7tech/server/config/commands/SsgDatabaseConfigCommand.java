@@ -6,7 +6,11 @@ import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.ui.gui.ConfigurationWizard;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.CausedIOException;
+
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,8 +18,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
+import java.util.Date;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -114,12 +118,12 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         FileOutputStream fos = null;
 
         try {
-            Properties dbProps = PropertyHelper.mergeProperties(
+            PropertiesConfiguration dbProps = PropertyHelper.mergeProperties(
                     dbConfigFile,
                     new File(dbConfigFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
                     true, true);
 
-            String origUrl = (String) dbProps.get(HIBERNATE_URL_KEY);
+            String origUrl = dbProps.getString(HIBERNATE_URL_KEY);
 
             if (checkIsDefault(origUrl))
                 origUrl = HIBERNATE_DEFAULT_CONNECTION_URL;
@@ -144,11 +148,17 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             setMaxConnections(dbProps);
 
             fos = new FileOutputStream(dbConfigFile);
-            dbProps.store(fos, HIBERNATE_PROPERTY_COMMENTS);
+            logger.info("Saving properties to file '"+dbConfigFile+"'.");
+            dbProps.setHeader(HIBERNATE_PROPERTY_COMMENTS + "\n" + new Date());
+            dbProps.save(fos, "iso-8859-1");
         } catch (FileNotFoundException fnf) {
             logger.severe("error while updating the Database configuration file");
             logger.severe(fnf.getMessage());
             throw fnf;
+        } catch (ConfigurationException e) {
+            logger.severe("error while updating the Database configuration file");
+            logger.severe(e.getMessage());
+            throw new CausedIOException(e);
         } catch (IOException e) {
             logger.severe("error while updating the Database configuration file");
             logger.severe(e.getMessage());
@@ -162,7 +172,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void upgradePackageName(Properties dbProps) {
+    private void upgradePackageName(PropertiesConfiguration dbProps) {
         String currentVersion = ConfigurationWizard.getCurrentVersion();
         float currentVersionFloat = 0.0f;
         try {
@@ -199,9 +209,9 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         return isDefault;
     }
 
-    private void setMaxConnections(Properties dbProps) {
+    private void setMaxConnections(PropertiesConfiguration dbProps) {
         //fix the maximum connections for upgrades if is a default configuration
-        String maxConnections = dbProps.getProperty(HIBERNATE_MAXCONNECTIONS_KEY);
+        String maxConnections = dbProps.getString(HIBERNATE_MAXCONNECTIONS_KEY);
         if (StringUtils.equals(maxConnections, HIBERNATE_MAXCONNECTIONS_DEFVALUE))
             dbProps.setProperty(HIBERNATE_MAXCONNECTIONS_KEY, HIBERNATE_MAXCONNECTIONS_VALUE);
     }

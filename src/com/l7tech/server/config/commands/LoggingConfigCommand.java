@@ -7,8 +7,11 @@ import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.common.util.ResourceUtils;
 
 import java.io.*;
-import java.util.Properties;
+import java.util.Date;
 import java.util.logging.Logger;
+
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -25,7 +28,7 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
     private static final String SSG_LOG_PATTERN = "ssg_%g_%u.log";
     private static final String BACKUP_FILE_NAME = "logging_config_backups";
     private static final String LOG_PATTERN_PROPERTY = "java.util.logging.FileHandler.pattern";
-    private static final String PROPERTY_COMMENT = "this file was updated by the SSG configuration utility";
+    private static final String PROPERTY_COMMENT = "This file was updated by the SSG configuration utility";
     private String partitionName;
     public LoggingConfigCommand(ConfigurationBean bean) {
         super(bean);
@@ -54,7 +57,7 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
         boolean success = true;
         FileInputStream fis = null;
         FileOutputStream fos = null;
-        Properties props = null;
+        PropertiesConfiguration props = null;
         try {
             File loggingPropertiesFile = new File(ssgLogPropsPath);
             props = PropertyHelper.mergeProperties(
@@ -66,10 +69,15 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
             props.setProperty(LOG_PATTERN_PROPERTY, fullLogPattern);
 
             fos = new FileOutputStream(loggingPropertiesFile);
-            props.store(fos, PROPERTY_COMMENT);
+            props.setHeader(PROPERTY_COMMENT + "\n" + new Date());
+            props.save(fos, "iso-8859-1");
             logger.info("Updating the ssglog.properties file");
 
         } catch (FileNotFoundException e) {
+            logger.severe("error while updating the logging configuration file");
+            logger.severe(e.getMessage());
+            success = false;
+        } catch (ConfigurationException e) {
             logger.severe("error while updating the logging configuration file");
             logger.severe(e.getMessage());
             success = false;

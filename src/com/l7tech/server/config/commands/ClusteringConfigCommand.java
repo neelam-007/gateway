@@ -5,10 +5,15 @@ import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.ClusteringType;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.CausedIOException;
+
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
 
 import java.io.*;
 import java.util.Properties;
+import java.util.Date;
 import java.util.logging.Logger;
 
 /**
@@ -86,19 +91,24 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
     private void updateSystemPropertiesFile(String hostname, File systemPropertiesFile) throws IOException {
         OutputStream fos = null;
         try {
-            Properties props = PropertyHelper.mergeProperties(systemPropertiesFile,
+            PropertiesConfiguration props = PropertyHelper.mergeProperties(systemPropertiesFile,
                     new File(systemPropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
                     true, true);
 
             props.setProperty(PROP_RMI_HOSTNAME, hostname);
 
             fos =   new FileOutputStream(systemPropertiesFile);
-            props.store(fos, "Updated by the SSG Configuration Tool");
+            props.setHeader("Updated by the SSG Configuration Tool\n" + new Date());
+            props.save(fos, "iso-8859-1");
             logger.info("Setting " + PROP_RMI_HOSTNAME + "=" + hostname + " in system.properties file");
         } catch (FileNotFoundException e) {
             logger.severe("There was an error while updating the file: " + systemPropertiesFile.getAbsolutePath());
             logger.severe(e.getMessage());
             throw e;
+        } catch (ConfigurationException e) {
+            logger.severe("There was an error while updating the file: " + systemPropertiesFile.getAbsolutePath());
+            logger.severe(e.getMessage());
+            throw new CausedIOException(e);
         } catch (IOException e) {
             logger.severe("There was an error while updating the file: " + systemPropertiesFile.getAbsolutePath());
             logger.severe(e.getMessage());

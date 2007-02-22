@@ -192,7 +192,6 @@
       Configuration Wizard library patternset (also ".")
     -->
     <patternset id="configurationwizard.libs">
-        <include name="**/commons-lang-1.0.1.jar"/>
         <include name="**/forms_rt-l7p1.jar"/>
         <include name="**/mysql-connector-java-5.0.4-bin.jar"/>
         <include name="**/xss4j.jar"/>
@@ -201,20 +200,23 @@
         <include name="**/whirlycache-1.0.1.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
         <include name="**/concurrent-1.3.4.jar"/>
-        <include name="**/commons-collections-2.1.1.jar"/>
+        <include name="**/commons-lang-2.3.jar"/>
+        <include name="**/commons-collections-3.2.jar"/>
+        <include name="**/commons-configuration-1.3.jar"/>
     </patternset>
 
     <!--
       System Configuration Wizard library patternset  (also ".")
     -->
     <patternset id="systemconfigurationwizard.libs">
-        <include name="**/commons-lang-1.0.1.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
     </patternset>
 
     <patternset id="ssgflasher.libs">
         <include name="**/mysql-connector-java-5.0.4-bin.jar"/>
-        <include name="**/commons-lang-1.0.1.jar"/>
+        <include name="**/commons-lang-2.3.jar"/>
+        <include name="**/commons-collections-3.2.jar"/>
+        <include name="**/commons-configuration-1.3.jar"/>
         <include name="**/xercesImpl.jar"/>
         <include name="**/xss4j.jar"/>
     </patternset>
@@ -1734,6 +1736,7 @@
             <fileset dir="${build.classes}">
                 <include name="com/l7tech/server/flasher/**/*"/>
                 <include name="com/l7tech/common/BuildInfo*"/>
+                <include name="com/l7tech/common/util/CausedIOException*"/>
                 <include name="com/l7tech/common/util/FileUtils*"/>
                 <include name="com/l7tech/common/util/ResourceUtils*"/>
                 <include name="com/l7tech/common/util/XmlUtil*"/>
@@ -2289,8 +2292,7 @@
                 <include name="crypto/bc/bcprov*.jar"/>
                 <include name="gateway/cluster/*.jar"/>
                 <include name="gateway/adminws/*.jar"/>
-                <include name="gateway/ftp/*.jar"/>
-
+                <include name="gateway/config/*.jar"/>
 
                 <exclude name="**/CVS/*"/>
                 <exclude name="**/ant.jar"/>
