@@ -490,10 +490,15 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         }
 
         public void removeBindingOperations(List<BindingOperationHolder> operationHolders) {
+            removeBindingOperations(operationHolders, true);
+        }
+
+        private void removeBindingOperations(List<BindingOperationHolder> operationHolders, boolean removeOtherElements) {
             for (BindingOperationHolder operationHolder : operationHolders) {
                 WsdlComposer.WsdlHolder wsdlHolder = operationHolder.sourceWsdlHolder;
-                wsdlComposer.removeBindingOperation(operationHolder.bindingOperation, wsdlHolder);
-                this.removeElement(operationHolder);
+                if (wsdlComposer.removeBindingOperation(operationHolder.bindingOperation, wsdlHolder, removeOtherElements)) {
+                    this.removeElement(operationHolder);
+                }
             }
         }
     }

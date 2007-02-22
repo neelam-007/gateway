@@ -132,7 +132,7 @@ public class WsdlComposer {
         }
     }
 
-    public boolean removeBindingOperation(BindingOperation bopToRemove, WsdlHolder sourceWsdlHolder) {
+    public boolean removeBindingOperation(BindingOperation bopToRemove, WsdlHolder sourceWsdlHolder, boolean removeOtherElements) {
         if (bopToRemove == null)
             return false;
         Set<BindingOperation> ops = bindingOperationsToAdd.get(sourceWsdlHolder);
@@ -140,7 +140,8 @@ public class WsdlComposer {
             return false;
 
         if (ops.remove(bopToRemove)) {
-            removeWsdlElementsForBindingOperation(sourceWsdlHolder, bopToRemove);
+            if (removeOtherElements)
+                removeWsdlElementsForBindingOperation(sourceWsdlHolder, bopToRemove, ops.isEmpty());
             return true;
         } else {
             return false;
@@ -167,27 +168,34 @@ public class WsdlComposer {
         addOperation(bindingOperation.getOperation(), sourceWsdlHolder);
     }
 
-    private void removeWsdlElementsForBindingOperation(WsdlHolder sourceWsdlHolder, BindingOperation bopToRemove) {
-        removeOperation(bopToRemove.getOperation(), sourceWsdlHolder);
-        removeTypesFromSource(sourceWsdlHolder);
-        removeMessagesFromSource(sourceWsdlHolder, bopToRemove.getOperation());
-        removeSourceWsdl(sourceWsdlHolder);
+    private void removeWsdlElementsForBindingOperation(WsdlHolder sourceWsdlHolder, BindingOperation bopToRemove, boolean empty) {
+        Operation removedOp = removeOperation(bopToRemove.getOperation(), sourceWsdlHolder);
+        removeMessagesFromSource(sourceWsdlHolder, removedOp);
+
+        if (empty) {
+            removeTypesFromSource(sourceWsdlHolder);
+            removeSourceWsdl(sourceWsdlHolder);
+        }
     }
 
     private void removeSourceWsdl(WsdlHolder sourceWsdlHolder) {
-        //TODO: remove the source Wsdl from the list of wsdls to process
+        sourceWsdls.remove(sourceWsdlHolder);
     }
 
     private void removeMessagesFromSource(WsdlHolder sourceWsdlHolder, Operation operation) {
-        //TODO: remove the messages for this operation
+        messagesToAdd.remove(operation.getInput().getMessage().getQName());
+        messagesToAdd.remove(operation.getOutput().getMessage().getQName());
+        for (Object o : operation.getFaults().keySet()) {
+            messagesToAdd.remove(o);
+        }
     }
 
     private void removeTypesFromSource(WsdlHolder sourceWsdlHolder) {
-        //TODO: remove the types for this source Wsdl if everything else is also gone
+        typesMap.remove(sourceWsdlHolder);
     }
 
-    private void removeOperation(Operation operation, WsdlHolder sourceWsdlHolder) {
-        operationsToAdd.remove(operation.getName());
+    private Operation removeOperation(Operation operation, WsdlHolder sourceWsdlHolder) {
+        return operationsToAdd.remove(operation.getName());
     }
 
     public void addSourceWsdl(WsdlHolder sourceWsdlHolder) {
