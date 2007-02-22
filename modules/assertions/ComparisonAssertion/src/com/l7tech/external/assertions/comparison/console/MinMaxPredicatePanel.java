@@ -10,6 +10,8 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,10 +31,15 @@ public abstract class MinMaxPredicatePanel<P extends MinMaxPredicate> extends Pr
     private JLabel maxUnitsLabel;
     private final SpinnerNumberModel minModel = new SpinnerNumberModel(0, 0, null, 1);
     private final SpinnerNumberModel maxModel = new SpinnerNumberModel(1, 0, null, 1);
+
     private final ChangeListener spinnerChangeListener = new ChangeListener() {
-        public void stateChanged(ChangeEvent e) {
-            checkSyntax();
-        }
+        public void stateChanged(ChangeEvent e) { checkSyntax(); }
+    };
+
+    private final DocumentListener spinnerDocumentListener = new DocumentListener() {
+        public void insertUpdate(DocumentEvent e) { checkSyntax(); }
+        public void removeUpdate(DocumentEvent e) { checkSyntax(); }
+        public void changedUpdate(DocumentEvent e) { checkSyntax(); }
     };
 
     protected MinMaxPredicatePanel(P predicate, String expr) {
@@ -63,8 +70,11 @@ public abstract class MinMaxPredicatePanel<P extends MinMaxPredicate> extends Pr
             maxSpinner.setValue(max);
         }
 
-        maxModel.addChangeListener(spinnerChangeListener);
+        // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4760088
+        ((JSpinner.DefaultEditor)minSpinner.getEditor()).getTextField().getDocument().addDocumentListener(spinnerDocumentListener);
+        ((JSpinner.DefaultEditor)maxSpinner.getEditor()).getTextField().getDocument().addDocumentListener(spinnerDocumentListener);
         minModel.addChangeListener(spinnerChangeListener);
+        maxModel.addChangeListener(spinnerChangeListener);
 
         unlimitedCheckBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -88,7 +98,14 @@ public abstract class MinMaxPredicatePanel<P extends MinMaxPredicate> extends Pr
 
 
     protected String getSyntaxError(P model) {
-        if (maxModel.getNumber().intValue() >= minModel.getNumber().intValue() || unlimitedCheckBox.isSelected()) return null;
+        if (unlimitedCheckBox.isSelected()) return null;
+
+        String smax = ((JSpinner.DefaultEditor)maxSpinner.getEditor()).getTextField().getText();
+        String smin = ((JSpinner.DefaultEditor)minSpinner.getEditor()).getTextField().getText();
+        int min = smin == null || smin.length() == 0 ? 0 : Integer.valueOf(smin);
+        int max = smax == null || smax.length() == 0 ? 0 : Integer.valueOf(smax);
+        if (max >= min) return null;
+
         return ComparisonAssertion.resources.getString("minMaxPredicatePanel.boundsError");
     }
 

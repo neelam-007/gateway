@@ -64,16 +64,21 @@ public class ServerComparisonAssertion extends AbstractServerAssertion<Compariso
 
         State state = State.make(evaluators, left, vars, auditor);
 
+        Predicate failedPredicate = null;
         for (Predicate predicate : predicates) {
             state.evaluate(predicate);
-            if (!state.getAssertionResult()) break;
+            if (!state.getAssertionResult()) {
+                failedPredicate = predicate;
+                break;
+            }
         }
 
         if (state.assertionResult) {
             auditor.logAndAudit(AssertionMessages.COMPARISON_OK);
             return AssertionStatus.NONE;
         } else {
-            auditor.logAndAudit(AssertionMessages.COMPARISON_NOT);
+            auditor.logAndAudit(AssertionMessages.COMPARISON_NOT,
+                    failedPredicate == null ? "<unknown reason>" : failedPredicate.toString());
             return AssertionStatus.FALSIFIED;
         }
     }

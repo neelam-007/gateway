@@ -73,7 +73,13 @@ public class BinaryPredicate extends Predicate {
         String fmt = res.getString(prefix + ".desc");
         String whichVerb = res.getString(prefix + ".verb");
         String verb = negated ? res.getString(whichVerb + "Not") : res.getString(whichVerb);
-        return MessageFormat.format(fmt, verb, rv);
+        String s = MessageFormat.format(fmt, verb, rv);
+        if (caseSensitive) {
+            String csfmt = ComparisonAssertion.resources.getString("binaryPredicate.caseSensitive");
+            return MessageFormat.format(csfmt, s);
+        } else {
+            return s;
+        }
     }
 
     public String getSimpleName() {
