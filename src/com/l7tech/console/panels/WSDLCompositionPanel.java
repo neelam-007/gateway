@@ -463,11 +463,6 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         private void populate() {
             if (wsdlComposer != null) {
                 Set<BindingOperation> allOps = new HashSet<BindingOperation>();
-//                Collection<BindingOperation> bindingOperations = wsdlComposer.getBindingOperations();
-//                if (bindingOperations != null) {
-//                    allOps.addAll(bindingOperations);
-//                }
-
                 Binding b = wsdlComposer.getBinding();
                 if (b != null) {
                     List others = b.getBindingOperations();
@@ -477,19 +472,21 @@ public class WSDLCompositionPanel extends WizardStepPanel{
                         }
                     }
                 }
-                for (BindingOperation anOp : allOps) {
-                    addElement(new BindingOperationHolder(anOp, null));
+                addBindingOperations(allOps, false);
+            }
+        }
+
+        private void addBindingOperations(Collection<BindingOperation> allOps, boolean addOtherElements) {
+            WsdlComposer.WsdlHolder sourceWsdl = getSelectedSourceWsdl();
+            for (BindingOperation bindingOperation: allOps) {
+                if (wsdlComposer.addBindingOperation(bindingOperation, sourceWsdl, addOtherElements)) {
+                    addElement(new BindingOperationHolder(bindingOperation, sourceWsdl));
                 }
             }
         }
 
         public void addBindingOperations(Collection<BindingOperation> operations) {
-            WsdlComposer.WsdlHolder sourceWsdl = getSelectedSourceWsdl();
-            for (BindingOperation bindingOperation: operations) {
-                if (wsdlComposer.addBindingOperation(bindingOperation, sourceWsdl)) {
-                    this.addElement(new BindingOperationHolder(bindingOperation, sourceWsdl));
-                }
-            }
+            addBindingOperations(operations, true);
         }
 
         public void removeBindingOperations(List<BindingOperationHolder> operationHolders) {
