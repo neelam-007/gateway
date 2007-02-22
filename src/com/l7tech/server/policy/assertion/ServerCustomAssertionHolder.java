@@ -250,9 +250,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 String contentType = pi.getContentType().getFullValue();
                 byte[] content = HexUtils.slurpStream(pi.getInputStream(false));
                 if (contentType == null || contentType.length() < 1 || content == null || content.length < 1) {
-                    logger.warning("empty partinfo (?)");
-                } else {
-
+                    logger.fine("empty partinfo encountered");
                 }
                 contentTypes.add(contentType);
                 bodies.add(content);
