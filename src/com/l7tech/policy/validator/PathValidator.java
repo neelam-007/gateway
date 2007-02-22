@@ -6,6 +6,7 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
@@ -163,6 +164,13 @@ class PathValidator {
             final VariableMetadata[] vars = sv.getVariablesSet();
             for (VariableMetadata var : vars)
                 setSeenVariable(var.getName().toLowerCase());
+        }
+
+        if (a instanceof TrueAssertion) {
+            if (a.getParent() != null && a.getParent() instanceof AllAssertion) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion is not useful when the child of an All assertion", null));
+            }
         }
 
         setSeen(a.getClass());
