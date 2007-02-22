@@ -209,6 +209,7 @@
       System Configuration Wizard library patternset  (also ".")
     -->
     <patternset id="systemconfigurationwizard.libs">
+        <include name="**/commons-lang-2.3.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
     </patternset>
 
