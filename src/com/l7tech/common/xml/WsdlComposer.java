@@ -3,6 +3,7 @@ package com.l7tech.common.xml;
 import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.apache.commons.lang.StringUtils;
 
 import javax.wsdl.*;
 import javax.wsdl.xml.WSDLReader;
@@ -113,7 +114,7 @@ public class WsdlComposer {
         }
     }
 
-    public boolean addBindingOperation(BindingOperation opToAdd, WsdlHolder sourceWsdlHolder) {
+    public boolean addBindingOperation(BindingOperation opToAdd, WsdlHolder sourceWsdlHolder, boolean addOtherElements) {
         if (opToAdd == null)
             return false;
         Set<BindingOperation> opsForThisSourceWsdl = bindingOperationsToAdd.get(sourceWsdlHolder);
@@ -123,7 +124,8 @@ public class WsdlComposer {
         }
 
         if (opsForThisSourceWsdl.add(opToAdd)) {
-            addWsdlElementsForBindingOperation(sourceWsdlHolder, opToAdd);
+            if (addOtherElements)
+                addWsdlElementsForBindingOperation(sourceWsdlHolder, opToAdd);
             return true;
         } else {
             return false;
@@ -499,7 +501,7 @@ public class WsdlComposer {
         }
 
         public String toString() {
-            return wsdl.getServiceName();
+            return wsdl.getServiceName() + (StringUtils.isEmpty(wsdlLocation)?"":"[" + wsdlLocation + "]");
         }
 
         public int hashCode() {
