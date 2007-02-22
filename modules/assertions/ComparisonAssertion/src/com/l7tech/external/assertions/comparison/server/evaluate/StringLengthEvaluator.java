@@ -36,7 +36,10 @@ public class StringLengthEvaluator extends SingleValuedEvaluator<MinMaxPredicate
     }
 
     private boolean lengthWithinBounds(Object obj) {
-        String s = obj.toString();
-        return !(s.length() < predicate.getMin() || s.length() > predicate.getMax());
+        String leftValue = obj.toString();
+        int num = leftValue == null ? 0 : leftValue.length();
+        int min = predicate.getMin();
+        int max = predicate.getMax();
+        return num >= min && (max < 0 || num <= max);
     }
 }
