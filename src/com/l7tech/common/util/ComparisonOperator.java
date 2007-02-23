@@ -183,18 +183,14 @@ public class ComparisonOperator implements Serializable {
         }
 
         public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
-            if (left instanceof String && right instanceof String) {
-                String s1 = (String)left;
-                String s2 = (String)right;
+            String s1 = left.toString();
+            String s2 = right.toString();
 
-                if (ignoreCase) {
-                    s1 = s1.toLowerCase();
-                    s2 = s2.toLowerCase();
-                }
-                return s1.contains(s2);
-            } else {
-                throw new IllegalArgumentException("The CONTAINS operator is only supported with String values");
+            if (ignoreCase) {
+                s1 = s1.toLowerCase();
+                s2 = s2.toLowerCase();
             }
+            return s1.contains(s2);
         }
     }
 }
