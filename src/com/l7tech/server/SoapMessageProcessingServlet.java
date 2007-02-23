@@ -368,10 +368,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
      * there is no such url included.
      */
     private boolean shouldSendBackPolicyUrl(PolicyEnforcementContext context) throws IOException {
-        // Did client claim a policy version?
-        String requestorVersion = context.getRequest().
-                                        getHttpRequestKnob().
-                                            getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
+        String requestorVersion = null;
+        try {
+            // Did client claim a policy version?
+            requestorVersion = context.getRequest().getHttpRequestKnob().
+                    getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
+        } catch (IllegalStateException e) {
+            // Didn't get as far as adding the HTTP knob, so assume not  (Bug #3002)
+        }
 
         // If no version was specified, return policy url only if the policy was violated
         if (requestorVersion == null || requestorVersion.length() < 1) {
