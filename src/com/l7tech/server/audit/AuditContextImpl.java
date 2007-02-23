@@ -173,7 +173,7 @@ public class AuditContextImpl implements AuditContext {
                 }
             }
 
-            currentRecord.setDetails(detailsToSave.isEmpty() ? null : detailsToSave);
+            currentRecord.setDetails(detailsToSave);
             currentRecord.setLevel(highestLevelYetSeen);
             auditRecordManager.save(currentRecord);
         } catch (SaveException e) {

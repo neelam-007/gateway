@@ -263,7 +263,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
     public void cache(PublishedService service) throws InterruptedException, ServerPolicyException {
         rwlock.writeLock().lock();
         try {
-            cacheNoLock(decorate(service));
+            cacheNoLock(service);
             updateCatchAll();
         } finally {
             rwlock.writeLock().unlock();
@@ -274,8 +274,9 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
      * Caller must hold locks protecting {@link #services} and {@link #serverPolicies}
      * @throws ServerPolicyException if a server policy tree can't be created for this service
      */
-    private void cacheNoLock(PublishedService service) throws ServerPolicyException {
+    private void cacheNoLock(PublishedService publishedService) throws ServerPolicyException {
         boolean update = false;
+        PublishedService service = decorate(publishedService);
         Long key = service.getOid();
         if (services.get(key) != null) update = true;
         if (update) {

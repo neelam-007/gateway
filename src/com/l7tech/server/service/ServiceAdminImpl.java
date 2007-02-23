@@ -247,7 +247,8 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         if (service.getOid() > 0) {
             newService = false;
         }
-        
+
+        service.parseWsdlStrategy(new SafeWsdlPublishedService(serviceDocuments));
         oid = savePublishedService(service);
 
         try {

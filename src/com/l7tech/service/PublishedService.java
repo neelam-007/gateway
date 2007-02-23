@@ -168,6 +168,15 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
+     * Get the WsdlStrategy to use when parsing the wsdl for the service.
+     *
+     * @return The strategy in use (null if default)
+     */
+    public WsdlStrategy parseWsdlStrategy() {
+        return wsdlStrategy;
+    }
+
+    /**
      * Gets the SOAP {@link Port} from this service's WSDL.
      *
      * @return the {@link Port} for this service. May be null.

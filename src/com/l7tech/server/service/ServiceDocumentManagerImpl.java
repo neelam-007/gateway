@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.dao.DataAccessException;
 import org.hibernate.Session;
 import org.hibernate.HibernateException;
@@ -21,6 +20,7 @@ import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 
 /**
  * Implementation of Manager for ServiceDocuments
@@ -34,8 +34,8 @@ public class ServiceDocumentManagerImpl extends HibernateEntityManager<ServiceDo
 
     public Collection<ServiceDocument> findByServiceId(final long serviceId) throws FindException {
         try {
-            return (Collection<ServiceDocument>) getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            return (Collection<ServiceDocument>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(ServiceDocument.class);
 
                     if (serviceId == -1) {
@@ -60,8 +60,8 @@ public class ServiceDocumentManagerImpl extends HibernateEntityManager<ServiceDo
 
     public Collection<ServiceDocument> findByServiceIdAndType(final long serviceId, final String type) throws FindException {
         try {
-            return (Collection<ServiceDocument>) getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            return (Collection<ServiceDocument>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(ServiceDocument.class);
 
                     if (serviceId == -1) {

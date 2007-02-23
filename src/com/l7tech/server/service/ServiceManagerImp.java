@@ -68,27 +68,23 @@ public class ServiceManagerImp
         throw new UnsupportedOperationException();
     }
 
-    public long save(final PublishedService service) throws SaveException {
+    public long save(PublishedService service) throws SaveException {
         // 1. record the service
         long oid = super.save(service);
         logger.info("Saved service #" + oid);
         service.setOid(oid);
         // 2. record resolution parameters
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-            public void beforeCommit(boolean readOnly) {
-                try {
-                    resolutionManager.recordResolutionParameters(service);
-                } catch (DuplicateObjectException e) {
-                    String msg = "cannot save service. duplicate resolution parameters";
-                    logger.log(Level.INFO, msg, e);
-                    throw new RuntimeException(msg, e);
-                } catch (UpdateException e) {
-                    String msg = "cannot save service's resolution parameters.";
-                    logger.log(Level.WARNING, msg, e);
-                    throw new RuntimeException(msg, e);
-                }
-            }
-        });
+        try {
+            resolutionManager.recordResolutionParameters(service);
+        } catch (DuplicateObjectException e) {
+            String msg = "cannot save service. duplicate resolution parameters";
+            logger.log(Level.INFO, msg, e);
+            throw e;
+        } catch (UpdateException e) {
+            String msg = "cannot save service's resolution parameters.";
+            logger.log(Level.WARNING, msg, e);
+            throw new SaveException(msg, e);
+        }
 
         // 3. update cache on callback
         final long passedServiceId = service.getOid();
@@ -118,23 +114,15 @@ public class ServiceManagerImp
         return service.getOid();
     }
 
-    public void update(final PublishedService service) throws UpdateException {
+    public void update(PublishedService service) throws UpdateException {
         // try recording resolution parameters
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-            public void beforeCommit(boolean readOnly) {
-                try {
-                    resolutionManager.recordResolutionParameters(service);
-                } catch (DuplicateObjectException e) {
-                    String msg = "cannot update service. duplicate resolution parameters";
-                    logger.log(Level.WARNING, msg, e);
-                    throw new RuntimeException(msg, new UpdateException(msg, e));
-                } catch (UpdateException e) {
-                    String msg = "cannot save service's resolution parameters.";
-                    logger.log(Level.WARNING, msg, e);
-                    throw new RuntimeException(msg, e);
-                }
-            }
-        });
+        try {
+            resolutionManager.recordResolutionParameters(service);
+        } catch (DuplicateObjectException e) {
+            String msg = "cannot update service. duplicate resolution parameters";
+            logger.log(Level.INFO, msg, e);
+            throw new UpdateException(msg, e);
+        }
 
         super.update(service);
 

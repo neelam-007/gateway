@@ -56,16 +56,19 @@ public class SafeWsdlPublishedServiceDecorator implements Decorator<PublishedSer
     private boolean isDecorated(final PublishedService publishedService) {
         boolean decorated = false;
 
-        if (publishedService instanceof Decorated) {
-            Object decoratedObj = (Decorated) publishedService;
+        if (publishedService.parseWsdlStrategy() instanceof SafeWsdlPublishedService) {
+            decorated = true;
+        }
+        else {
+            PublishedService decoratedPS = publishedService;
 
-            while (decoratedObj instanceof Decorated) {
-                if (decoratedObj instanceof SafeWsdlPublishedService) {
+            while (decoratedPS instanceof Decorated) {
+                decoratedPS = (PublishedService) ((Decorated)decoratedPS).undecorate();
+
+                if (publishedService.parseWsdlStrategy() instanceof SafeWsdlPublishedService) {
                     decorated = true;
                     break;
                 }
-                
-                decoratedObj = ((Decorated)decoratedObj).undecorate();
             }
         }
 
