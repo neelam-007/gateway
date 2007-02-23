@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 public class SwaRequestAssertionValidator implements AssertionValidator {
     private static final Logger logger = Logger.getLogger(SwaRequestAssertionValidator.class.getName());
     private final RequestSwAAssertion assertion;
+    private String wsdlError = null;
 
     public SwaRequestAssertionValidator(RequestSwAAssertion ra) {
         if (ra == null) {
@@ -46,20 +47,22 @@ public class SwaRequestAssertionValidator implements AssertionValidator {
         if (!service.isSoap()) {
             return;
         }
+        if (wsdlError != null) {
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, wsdlError, null));
+            return;
+        }
         try {
             Wsdl wsdl = service.parsedWsdl();
             // check whether any binding info operation
-            for (Iterator iterator = assertion.getBindings().values().iterator(); iterator.hasNext();) {
-                BindingInfo bi = (BindingInfo)iterator.next();
+            for (Object o : assertion.getBindings().values()) {
+                BindingInfo bi = (BindingInfo)o;
                 if (hasMimeParts(bi, wsdl)) {
                     return;
                 }
             }
-            result.addWarning(new PolicyValidatorResult.Warning(assertion,
-              path,
-              "This service does not declare any MIME input parameters (\"multipart/related\")\n" +
-              "This assertion only works with soap services with attachments.",
-              null));
+            wsdlError = "This service does not declare any MIME input parameters (\"multipart/related\")\n" +
+                                     "This assertion only works with soap services with attachments.";
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, wsdlError, null));
         } catch (WSDLException e) {
             throw new RuntimeException(e);
         }

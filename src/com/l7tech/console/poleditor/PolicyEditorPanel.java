@@ -7,13 +7,17 @@ import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
+import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.panels.ImportPolicyFromUDDIWizard;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.policy.*;
-import com.l7tech.console.util.*;
+import com.l7tech.console.util.ConsoleLicenseManager;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -36,14 +40,16 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.StringReader;
 import java.io.File;
+import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.rmi.RemoteException;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,6 +62,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
     private static final String MESSAGE_AREA_DIVIDER_KEY = "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
     public static final String SERVICENAME_PROPERTY = "service.name";
+    private static final long TIME_BEFORE_OFFERING_CANCEL_DIALOG = 500L;
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
     private PolicyTree policyTree;
@@ -175,13 +182,47 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     /**
-     * validate the service policy.
+     * validate the service policy and display the result.
      */
     public void validatePolicy() {
-        final PolicyValidatorResult result = PolicyValidator.getDefault().validate(rootAssertion.asAssertion(),
-                                                                                   getPublishedService(),
-                                                                                   Registry.getDefault().getLicenseManager());
-        displayPolicyValidateResult(pruneDuplicates(result));
+        validatePolicy(true);
+    }
+
+    /**
+     * validate the service policy.
+     * @param displayResult if true, will call displayResult before returning.  otherwise, just returns the results
+     * @return result, or null if it was canceled
+     */
+    private PolicyValidatorResult validatePolicy(boolean displayResult) {
+        final Assertion assertion = rootAssertion.asAssertion();
+        final PublishedService service = getPublishedService();
+        final ConsoleLicenseManager licenseManager = Registry.getDefault().getLicenseManager();
+        Callable<PolicyValidatorResult> callable = new Callable<PolicyValidatorResult>() {
+            public PolicyValidatorResult call() throws Exception {
+                return PolicyValidator.getDefault().validate(assertion, service, licenseManager);
+            }
+        };
+
+        return validateAndDisplay(callable, displayResult);
+    }
+
+    private PolicyValidatorResult validateAndDisplay(Callable<PolicyValidatorResult> callable, boolean displayResult) {
+        final JProgressBar bar = new JProgressBar();
+        bar.setIndeterminate(true);
+        final CancelableOperationDialog cancelDlg =
+                new CancelableOperationDialog(topComponents.getTopParent(), "Validating", "        Validating policy...        ", bar);
+
+        final PolicyValidatorResult result;
+        try {
+            result = Utilities.doWithDelayedCancelDialog(callable, cancelDlg, TIME_BEFORE_OFFERING_CANCEL_DIALOG);
+            if (result != null && displayResult)
+                displayPolicyValidateResult(pruneDuplicates(result));
+            return result;
+        } catch (InterruptedException e) {
+            return null;
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -486,12 +527,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         if (validateAction == null) {
             validateAction = new ValidatePolicyAction() {
                 protected void performAction() {
-                    PolicyValidatorResult result
-                      = PolicyValidator.getDefault().validate(rootAssertion.asAssertion(),
-                                                              getPublishedService(),
-                                                              Registry.getDefault().getLicenseManager());
-                    displayPolicyValidateResult(pruneDuplicates(result));
-
+                    validatePolicy();
                 }
             };
         }
@@ -499,33 +535,42 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     /**
-     * @return the policy xml that was validated
+     * @return the policy xml that was validated, or null if validation canceled
      */
     private String fullValidate() {
-        PolicyValidatorResult result = PolicyValidator.getDefault().
-                                            validate(rootAssertion.asAssertion(), getPublishedService(),
-                                                     Registry.getDefault().getLicenseManager());
-        String policyXml = null;
-        try {
-            policyXml = WspWriter.getPolicyXml(rootAssertion.asAssertion());
-            if (getPublishedService() != null) {
-                PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
-                                                    validatePolicy(policyXml, getPublishedService().getOid());
-                if (result2.getErrorCount() > 0) {
-                    for (Iterator i = result2.getErrors().iterator(); i.hasNext();) {
-                        result.addError((com.l7tech.policy.PolicyValidatorResult.Error)i.next());
+        final Assertion assertion = rootAssertion.asAssertion();
+        final String policyXml = WspWriter.getPolicyXml(assertion);
+        final PublishedService service = getPublishedService();
+        final ConsoleLicenseManager licenseManager = Registry.getDefault().getLicenseManager();
+        Callable<PolicyValidatorResult> callable = new Callable<PolicyValidatorResult>() {
+            public PolicyValidatorResult call() throws Exception {
+                PolicyValidatorResult result = PolicyValidator.getDefault().validate(assertion, service, licenseManager);
+                try {
+                    if (getPublishedService() != null) {
+                        PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
+                                validatePolicy(policyXml, getPublishedService().getOid());
+                        if (result2.getErrorCount() > 0) {
+                            for (Object o : result2.getErrors()) {
+                                result.addError((PolicyValidatorResult.Error)o);
+                            }
+                        }
+                        if (result2.getWarningCount() > 0) {
+                            for (Object o : result2.getWarnings()) {
+                                result.addWarning((PolicyValidatorResult.Warning)o);
+                            }
+                        }
                     }
+                } catch (RemoteException e) {
+                    log.log(Level.WARNING, "Problem running server side validation", e);
                 }
-                if (result2.getWarningCount() > 0) {
-                    for (Iterator i = result2.getWarnings().iterator(); i.hasNext();) {
-                        result.addWarning((com.l7tech.policy.PolicyValidatorResult.Warning)i.next());
-                    }
-                }
+                return result;
             }
-        } catch (RemoteException e) {
-            log.log(Level.WARNING, "Problem running server side validation", e);
-        }
-        displayPolicyValidateResult(pruneDuplicates(result));
+        };
+
+        PolicyValidatorResult result = validateAndDisplay(callable, true);
+        if (result == null)
+            return null;
+
         ((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion);
         return policyXml;
     }
@@ -877,8 +922,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                                 try {
                                     validating = true;
                                     String xml = fullValidate();
-                                    this.node = rootAssertion;
-                                    super.performAction(xml);
+                                    if (xml != null) {
+                                        this.node = rootAssertion;
+                                        super.performAction(xml);
+                                    }
                                 } finally {
                                     validating = false;
                                 }

@@ -111,7 +111,7 @@ public class DownloadAuditEventsAction extends SecureAction {
                 public Object construct() {
                     try {
                         final AuditAdmin aa = Registry.getDefault().getAuditAdmin();
-                        OpaqueId contextId = aa.downloadAllAudits(0); // default chunk size
+                        OpaqueId contextId = aa.downloadAllAudits(0); //  default chunk size
                         AuditAdmin.DownloadChunk chunk;
                         final Thread currentThread = Thread.currentThread();
                         while (isAlive() && !currentThread.isInterrupted() && (chunk = aa.downloadNextChunk(contextId)) != null) {

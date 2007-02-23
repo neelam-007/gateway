@@ -19,34 +19,40 @@ import java.util.logging.Logger;
 public class RequestWssConfidentialityValidator implements AssertionValidator {
     private static final Logger logger = Logger.getLogger(RequestWssConfidentialityValidator.class.getName());
     private final RequestWssConfidentiality assertion;
+    private String errString = null;
+    private Throwable errThrowable = null;
 
     public RequestWssConfidentialityValidator(RequestWssConfidentiality ra) {
         assertion = ra;
-    }
-
-    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
         String pattern = null;
         if (assertion.getXpathExpression() != null) {
             pattern = assertion.getXpathExpression().getExpression();
         }
         if (pattern == null) {
-            result.addError(new PolicyValidatorResult.Error(assertion, path, "XPath pattern is missing", null));
-            logger.info("XPath pattern is missing");
+            final String str = "XPath pattern is missing";
+            logger.info(str);
+            errString = str;
+        } else if (pattern.equals("/soapenv:Envelope")) {
+            errString = "The path " + pattern + " is " +
+                        "not valid for XML encryption";
+        } else {
+            try {
+                new DOMXPath(pattern);
+            } catch (Exception e) {
+                final String str = "XPath pattern is not valid";
+                logger.info(str);
+                errString = str;
+                errThrowable = e;
+            }
+        }
+    }
+
+    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
+        if (errString != null) {
+            result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
             return;
         }
 
-        if (pattern.equals("/soapenv:Envelope")) {
-            result.addError(new PolicyValidatorResult.Error(assertion, path, "The path " + pattern + " is " +
-              "not valid for XML encryption", null));
-
-        }
-        try {
-            new DOMXPath(pattern);
-        } catch (Exception e) {
-            result.addError(new PolicyValidatorResult.Error(assertion, path, "XPath pattern is not valid", e));
-            logger.info("XPath pattern is not valid");
-            return;
-        }
         Assertion[] assertionPath = path.getPath();
         for (int i = assertionPath.length - 1; i >= 0; i--) {
             Assertion a = assertionPath[i];

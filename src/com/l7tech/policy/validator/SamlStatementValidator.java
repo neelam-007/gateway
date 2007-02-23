@@ -27,15 +27,22 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public class SamlStatementValidator implements AssertionValidator {
+    /** @noinspection UnusedDeclaration*/
     private static final Logger logger = Logger.getLogger(SamlStatementValidator.class.getName());
     private final RequestWssSaml requestWssSaml;
+    private boolean hasHok;
+    private boolean hasSv;
+    private boolean hasBearer;
 
     public SamlStatementValidator(RequestWssSaml sa) {
         requestWssSaml = sa;
+        List confirmations = Arrays.asList(requestWssSaml.getSubjectConfirmations());
+        hasHok = confirmations.contains(SamlConstants.CONFIRMATION_HOLDER_OF_KEY);
+        hasSv = confirmations.contains(SamlConstants.CONFIRMATION_SENDER_VOUCHES);
+        hasBearer = confirmations.contains(SamlConstants.CONFIRMATION_BEARER);
     }
 
     public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
-        List confirmations = Arrays.asList(requestWssSaml.getSubjectConfirmations());
         SslAssertion[]  sslAssertions = getSslAssertions(path);
 
         if (requestWssSaml.isNoSubjectConfirmation()) {
@@ -45,18 +52,17 @@ public class SamlStatementValidator implements AssertionValidator {
             }
         }
 
-        if (confirmations.contains(SamlConstants.CONFIRMATION_BEARER)) {
+        if (hasBearer) {
             if (sslAssertions.length == 0) {
                 String message = "SSL is recommended with SAML assertions with Bearer Subject Confirmation";
                 result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, path, message, null)));
             }
         }
 
-        if (confirmations.contains(SamlConstants.CONFIRMATION_HOLDER_OF_KEY)) {
+        if (hasHok) {
             if (!requestWssSaml.isRequireHolderOfKeyWithMessageSignature()) {
                 boolean hasSslAsCrendentialSource = false;
-                for (int i = 0; i < sslAssertions.length; i++) {
-                    SslAssertion sslAssertion = sslAssertions[i];
+                for (SslAssertion sslAssertion : sslAssertions) {
                     if (sslAssertion.isCredentialSource()) {
                         hasSslAsCrendentialSource = true;
                         break;
@@ -68,11 +74,10 @@ public class SamlStatementValidator implements AssertionValidator {
                 }
             }
         }
-        if (confirmations.contains(SamlConstants.CONFIRMATION_SENDER_VOUCHES)) {
+        if (hasSv) {
             if (!requestWssSaml.isRequireSenderVouchesWithMessageSignature()) {
                 boolean hasSslAsCrendentialSource = false;
-                for (int i = 0; i < sslAssertions.length; i++) {
-                    SslAssertion sslAssertion = sslAssertions[i];
+                for (SslAssertion sslAssertion : sslAssertions) {
                     if (sslAssertion.isCredentialSource()) {
                         hasSslAsCrendentialSource = true;
                         break;
@@ -94,12 +99,13 @@ public class SamlStatementValidator implements AssertionValidator {
     private SslAssertion[] getSslAssertions(AssertionPath path) {
        Collection sslAssertions = new ArrayList();
         Assertion[] pathArray = path.getPath();
-        for (int i = 0; i < pathArray.length; i++) {
-            Assertion assertion = pathArray[i];
+        for (Assertion assertion : pathArray) {
             if (assertion instanceof SslAssertion) {
+                //noinspection unchecked
                 sslAssertions.add(assertion);
             }
         }
+        //noinspection unchecked
         return (SslAssertion[])sslAssertions.toArray(new SslAssertion[] {});
     }
 }

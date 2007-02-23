@@ -9,8 +9,10 @@ import com.l7tech.service.PublishedService;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 
 /**
@@ -19,9 +21,11 @@ import java.util.Map;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
+ * @noinspection UnusedDeclaration
  */
 class ValidatorFactory {
-    private static Map assertionMap = new HashMap();
+    private static Map<Class<? extends Assertion>, Class<? extends AssertionValidator>> assertionMap =
+            new HashMap<Class<? extends Assertion>, Class<? extends AssertionValidator>>();
 
     // maping assertions to validators
     static {
@@ -39,11 +43,16 @@ class ValidatorFactory {
         // add mapping
     }
 
+    private static Map<Class<? extends Assertion>, Constructor<AssertionValidator>> ctorCache =
+            Collections.synchronizedMap(new WeakHashMap<Class<? extends Assertion>, Constructor<AssertionValidator>>());
+
     /**
      * private constructor, this class cannot be instantiated
      */
     private ValidatorFactory() {
     }
+
+
 
     /**
      * Returns the corresponding <code>AssertionTreeNode</code> instance
@@ -51,14 +60,27 @@ class ValidatorFactory {
      * In case there is no corresponding <code>AssertionTreeNode</code>
      * the <code>UnknownAssertionTreeNode</code> is returned
      *
+     * @param assertion  the assertion that is to be validated.  required
      * @return the AssertionTreeNode for a given assertion
      */
     static AssertionValidator getValidator(Assertion assertion) {
         if (assertion == null) {
             throw new IllegalArgumentException();
         }
+
+        final Class assclass = assertion.getClass();
+
+        Constructor<AssertionValidator> ctor = ctorCache.get(assclass);
+        if (ctor != null) {
+            try {
+                return ctor.newInstance(assertion);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         // assertion lookup, find the  assertion tree node
-        Class classNode = (Class)assertionMap.get(assertion.getClass());
+        Class classNode = assertionMap.get(assertion.getClass());
         if (null == classNode) {
             String classname = (String)assertion.meta().get(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME);
             try {
@@ -95,9 +117,12 @@ class ValidatorFactory {
     private static AssertionValidator makeValidator(Class classNode, Assertion assertion)
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
-        Constructor ctor = ConstructorInvocation.findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
-        if (ctor != null)
-            return (AssertionValidator)ctor.newInstance(new Object[]{assertion});
+        //noinspection unchecked
+        Constructor<AssertionValidator> ctor = ConstructorInvocation.findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
+        if (ctor != null) {
+            ctorCache.put(assertion.getClass(), ctor);
+            return ctor.newInstance(assertion);
+        }
         throw new RuntimeException("Cannot locate expected he constructor in " + classNode);
     }
 
@@ -105,10 +130,7 @@ class ValidatorFactory {
      * special 'nullvalidator'
      */
     static class NullValidator implements AssertionValidator {
-        private Assertion assertion;
-
         public NullValidator(Assertion a) {
-            assertion = a;
         }
 
         public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {}

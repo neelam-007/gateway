@@ -91,7 +91,10 @@ class PathValidator {
         if (assertionLicense == null) throw new NullPointerException();
     }
 
-    public void validate(Assertion a) {
+    public void validate(Assertion a) throws InterruptedException {
+        if (Thread.interrupted())
+            throw new InterruptedException();
+
         ValidatorFactory.getValidator(a).validate(assertionPath, service, result);
 
         // Check licensing

@@ -20,28 +20,32 @@ import java.util.logging.Logger;
 public class ResponseWssIntegrityValidator implements AssertionValidator {
     private static final Logger logger = Logger.getLogger(ResponseWssIntegrityValidator.class.getName());
     private final ResponseWssIntegrity assertion;
+    private String errString;
+    private Throwable errThrowable;
 
     public ResponseWssIntegrityValidator(ResponseWssIntegrity ra) {
         assertion = ra;
+        String pattern = null;
+        if (assertion.getXpathExpression() != null)
+            pattern = assertion.getXpathExpression().getExpression();
+        if (pattern == null) {
+            errString = "XPath pattern is missing";
+            logger.info(errString);
+        } else {
+            try {
+                new DOMXPath(pattern);
+            } catch (Exception e) {
+                errString = "XPath pattern is not valid";
+                logger.info(errString);
+                errThrowable = e;
+            }
+        }
     }
 
     public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
-        String pattern = null;
-        if (assertion.getXpathExpression() != null) {
-            pattern = assertion.getXpathExpression().getExpression();
-        }
-        if (pattern == null) {
-            result.addError(new PolicyValidatorResult.Error(assertion, path, "XPath pattern is missing", null));
-            logger.info("XPath pattern is missing");
-            return;
-        }
-        try {
-            new DOMXPath(pattern);
-        } catch (Exception e) {
-            result.addError(new PolicyValidatorResult.Error(assertion, path, "XPath pattern is not valid", e));
-            logger.info("XPath pattern is not valid");
-            return;
-        }
+        if (errString != null)
+            result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
+
         Assertion[] assertionPath = path.getPath();
         for (int i = assertionPath.length - 1; i >= 0; i--) {
             Assertion a = assertionPath[i];

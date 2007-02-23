@@ -119,6 +119,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
             throw new RemoteException("cannot get existing service: " + serviceId, e);
         } catch (IOException e) {
             throw new RemoteException("cannot parse passed policy xml", e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("validation thread interrupted", e);
         }
     }
 

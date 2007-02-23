@@ -42,7 +42,7 @@ public abstract class PolicyValidator {
     /**
      * Validates the specified assertion tree.
      */
-    public PolicyValidatorResult validate(Assertion assertion, PublishedService service, AssertionLicense assertionLicense) {
+    public PolicyValidatorResult validate(Assertion assertion, PublishedService service, AssertionLicense assertionLicense) throws InterruptedException {
         assertion.treeChanged();
         if (assertion == null) {
             throw new IllegalArgumentException();
@@ -64,6 +64,7 @@ public abstract class PolicyValidator {
      *
      * @param ap the assertion path to validate
      * @param r  the result collect parameter
+     * @throws InterruptedException if the thread is interrupted while validating
      */
-    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense);
+    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) throws InterruptedException;
 }

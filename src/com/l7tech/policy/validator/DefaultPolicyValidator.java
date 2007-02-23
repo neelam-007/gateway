@@ -45,7 +45,7 @@ import org.xml.sax.SAXException;
 public class DefaultPolicyValidator extends PolicyValidator {
     static Logger log = Logger.getLogger(DefaultPolicyValidator.class.getName());
 
-    public PolicyValidatorResult validate(Assertion assertion, PublishedService service, AssertionLicense assertionLicense) {
+    public PolicyValidatorResult validate(Assertion assertion, PublishedService service, AssertionLicense assertionLicense) throws InterruptedException {
         PolicyValidatorResult r = super.validate(assertion, service, assertionLicense);
 
         try {
@@ -70,7 +70,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         return r;
     }
 
-    public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
+    public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) throws InterruptedException {
         Assertion[] ass = ap.getPath();
 
         // paths that have the pattern "OR, Comment" should be ignored completly (bugzilla #2449)
@@ -80,6 +80,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
                     // if the parent OR has something else than comments as children, the this path should be ignored
                     OneOrMoreAssertion parent = (OneOrMoreAssertion)ass[i].getParent();
                     boolean onlyCommentsInOR = true;
+                    if (Thread.interrupted())
+                        throw new InterruptedException();
                     for (Iterator parit = parent.children(); parit.hasNext();) {
                         if (!(parit.next() instanceof CommentAssertion)) {
                             onlyCommentsInOR = false;
@@ -103,6 +105,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
         // deferred validations
         Iterator dIt = pv.getDeferredValidators().iterator();
         while (dIt.hasNext()) {
+            if (Thread.interrupted())
+                throw new InterruptedException();
             DeferredValidate dv = (DeferredValidate)dIt.next();
             dv.validate(pv, ass);
         }

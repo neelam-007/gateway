@@ -13,16 +13,19 @@ import java.io.IOException;
  */
 public class HardcodedResponseAssertionValidator implements AssertionValidator {
     private final HardcodedResponseAssertion ass;
+    private Throwable e;
 
     public HardcodedResponseAssertionValidator(HardcodedResponseAssertion ass) {
         this.ass = ass;
-    }
-
-    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
         try {
             ContentTypeHeader.parseValue(ass.getResponseContentType());
         } catch (IOException e) {
-            result.addError(new PolicyValidatorResult.Error(ass, path, "the content type is invalid. " + e.getMessage(), null));
+            this.e = e;
         }
+    }
+
+    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
+        if (e != null)
+            result.addError(new PolicyValidatorResult.Error(ass, path, "the content type is invalid. " + e.getMessage(), null));
     }
 }

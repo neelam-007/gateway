@@ -14,6 +14,7 @@ import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.logging.Logger;
+import java.util.concurrent.Callable;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -553,6 +554,87 @@ public class Utilities {
         }
     }
 
+    /**
+     * Synchronously run the specified callable in a background thread, putting up a modal Cancel... dialog and returning
+     * control to the user if the thread runs for longer than msBeforeDlg milliseconds.
+     * <p/>
+     * If the user cancels the dialog this will interrupt the background thread.  The callable may throw
+     * InterruptedException to signal that this has occurred.
+     *
+     * @param callable      some work that may safely be done in a new thread.  Required.
+     * @param cancelDlg     a cancel dialog to put up if the work runs too long.  This should be a modal dialog
+     *                      that blocks until it is either disposed or the user dismisses it by pressing cancel.
+     *                      <p/>
+     *                      The dialog should be ready to display -- already packed and positioned.
+     *                      This method will dispose the dialog when the callable completes.
+     *                      <p/>
+     *                      See {@link com.l7tech.console.panels.CancelableOperationDialog} for a suitable JDialog for this purpose.
+     * @param msBeforeDlg  number of milliseconds to wait (blocking the event queue) before
+     *                                            putting up the cancel dialog.  If less than one, defaults to 500ms.
+     * @return the result of the callable.  May be null if the callable may return null.
+     * @throws InterruptedException if the task was canceled by the user
+     * @throws java.lang.reflect.InvocationTargetException if the callable terminated with any exception other than InterruptedException
+     */
+    public static <T> T doWithDelayedCancelDialog(final Callable<T> callable, final JDialog cancelDlg, long msBeforeDlg)
+            throws InterruptedException, InvocationTargetException
+    {
+        if (callable == null || cancelDlg == null) throw new IllegalArgumentException();
+
+        final boolean[] finished = { false };
+        final Object cancelSentinel = new Object();
+        final Object semaphore = new Object();
+
+        SwingWorker worker = new SwingWorker() {
+            public Object construct() {
+                try {
+                    return callable.call();
+                } catch (InterruptedException e) {
+                    return cancelSentinel;
+                } catch (Throwable t) {
+                    return new ThrowableHolder(t);
+                } finally {
+                    synchronized (semaphore) {
+                        finished[0] = true;
+                        semaphore.notifyAll();
+                    }
+                }
+            }
+
+            public void finished() {
+                cancelDlg.dispose();
+            }
+        };
+
+        worker.start();
+        final boolean done;
+        synchronized (semaphore) {
+            try {
+                semaphore.wait(msBeforeDlg);
+            } catch (InterruptedException e) {
+                // Swing event thread interrupted? weird, but whatever
+                Thread.currentThread().interrupt();
+            }
+            done = finished[0];
+        }
+
+        if (!done) {
+            cancelDlg.setVisible(true);
+            worker.interrupt();
+        }
+
+        // At this point Cancel dialog is either canceled, torn down by SwingWorker finishing, or was never displayed
+        Object result = worker.get();
+
+        if (result == cancelSentinel) {
+            throw new InterruptedException("operation canceled by user");
+        } else if (result instanceof ThrowableHolder) {
+            throw new InvocationTargetException(((ThrowableHolder)result).t);
+        }
+
+        //noinspection unchecked
+        return (T)result;
+    }
+
 
     /**
      * Creates pop-up menus for text components.
@@ -1056,5 +1138,10 @@ public class Utilities {
             }
         });
         return result != null && result.booleanValue();
+    }
+
+    private static class ThrowableHolder {
+        private final Throwable t;
+        public ThrowableHolder(Throwable t) { this.t = t; }
     }
 }

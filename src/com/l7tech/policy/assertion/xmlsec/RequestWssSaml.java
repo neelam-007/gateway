@@ -100,8 +100,8 @@ public class RequestWssSaml extends Assertion implements SecurityHeaderAddressab
      * Get the Subject confirmations specified in this assertion
      *
      * @return the array of subject confirmations specified
-     * @see com.l7tech.common.security.saml.SamlConstants.CONFIRMATION_HOLDER_OF_KEY
-     * @see com.l7tech.common.security.saml.SamlConstants.CONFIRMATION_SENDER_VOUCHES
+     * @see com.l7tech.common.security.saml.SamlConstants#CONFIRMATION_HOLDER_OF_KEY
+     * @see com.l7tech.common.security.saml.SamlConstants#CONFIRMATION_SENDER_VOUCHES
      */
     public String[] getSubjectConfirmations() {
         return subjectConfirmations;

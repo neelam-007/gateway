@@ -195,6 +195,10 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         } catch (IOException e) {
             logger.log(Level.WARNING, "cannot parse passed policy xml: " + policyXml, e);
             throw new RemoteException("cannot parse passed policy xml", e);
+        } catch (InterruptedException e) {
+            // Can't happen on server side
+            logger.log(Level.WARNING, "validation thread interrupted", e);
+            throw new RemoteException("validation thread interrupted", e);
         }
     }
 
