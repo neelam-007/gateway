@@ -473,8 +473,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
             else if (data.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_CHALLENGE);
-            } else {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
             }
 
             HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
@@ -499,8 +497,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_RESPONSE);
                 } else if (status != HttpConstants.STATUS_UNAUTHORIZED) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_RESPONSE_NC);
-                } else {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
                 }
             }
 
@@ -569,8 +565,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, new String[] {Integer.toString(status)});
                 responseOk = false;
             } else if (outerContentType != null) { // response OK
-                StashManager stashManager = stashManagerFactory.createStashManager();
-                context.getResponse().initialize(stashManager, outerContentType, responseStream);
+                if (responseStream == null) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_CTYPEWOUTPAYLOAD, new String[]{outerContentType.getFullValue()});
+                } else {
+                    StashManager stashManager = stashManagerFactory.createStashManager();
+                    context.getResponse().initialize(stashManager, outerContentType, responseStream);
+                }
             }
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
