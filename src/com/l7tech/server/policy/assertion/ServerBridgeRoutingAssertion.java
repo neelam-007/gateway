@@ -173,7 +173,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             try {
                 PublishedService service = context.getService();
                 url = getProtectedServiceUrl(service);
-                if(!context.getRequest().isSoap()) return AssertionStatus.FAILED;
+                if(!context.getRequest().isSoap()) {
+                    auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_REQUEST_NOT_SOAP);
+                    return AssertionStatus.FAILED;
+                }
 
                 // DELETE CURRENT SECURITY HEADER IF NECESSARY
                 handleProcessedSecurityHeader(context,
