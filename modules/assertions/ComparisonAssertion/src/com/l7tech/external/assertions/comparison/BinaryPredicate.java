@@ -64,9 +64,9 @@ public class BinaryPredicate extends Predicate {
         while (keys.hasMoreElements()) {
             String key = keys.nextElement();
             if (negated && negKey.equals(key)) {
-                return MessageFormat.format(res.getString(negKey), rightValue);
+                return addCaseLabel(MessageFormat.format(res.getString(negKey), rightValue));
             } else if (!negated && nonNegKey.equals(key)) {
-                return MessageFormat.format(res.getString(nonNegKey), rightValue);
+                return addCaseLabel(MessageFormat.format(res.getString(nonNegKey), rightValue));
             }
         }
 
@@ -74,6 +74,10 @@ public class BinaryPredicate extends Predicate {
         String whichVerb = res.getString(prefix + ".verb");
         String verb = negated ? res.getString(whichVerb + "Not") : res.getString(whichVerb);
         String s = MessageFormat.format(fmt, verb, rv);
+        return addCaseLabel(s);
+    }
+
+    private String addCaseLabel(String s) {
         if (caseSensitive) {
             String csfmt = ComparisonAssertion.resources.getString("binaryPredicate.caseSensitive");
             return MessageFormat.format(csfmt, s);
