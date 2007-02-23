@@ -560,6 +560,8 @@ public class Utilities {
      * <p/>
      * If the user cancels the dialog this will interrupt the background thread.  The callable may throw
      * InterruptedException to signal that this has occurred.
+     * <p/>
+     * This method must be called on the Swing event queue thread.
      *
      * @param callable      some work that may safely be done in a new thread.  Required.
      * @param cancelDlg     a cancel dialog to put up if the work runs too long.  This should be a modal dialog
@@ -568,7 +570,8 @@ public class Utilities {
      *                      The dialog should be ready to display -- already packed and positioned.
      *                      This method will dispose the dialog when the callable completes.
      *                      <p/>
-     *                      See {@link com.l7tech.console.panels.CancelableOperationDialog} for a suitable JDialog for this purpose.
+     *                      See {@link com.l7tech.console.panels.CancelableOperationDialog} for a suitable JDialog for this purpose,
+     *                      if writing SSM code.
      * @param msBeforeDlg  number of milliseconds to wait (blocking the event queue) before
      *                                            putting up the cancel dialog.  If less than one, defaults to 500ms.
      * @return the result of the callable.  May be null if the callable may return null.
