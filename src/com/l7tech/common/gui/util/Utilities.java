@@ -1142,6 +1142,6 @@ public class Utilities {
 
     private static class ThrowableHolder {
         private final Throwable t;
-        public ThrowableHolder(Throwable t) { this.t = t; }
+        private ThrowableHolder(Throwable t) { this.t = t; }
     }
 }
