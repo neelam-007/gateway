@@ -24,6 +24,7 @@ public class HelloWorldAssertion extends RoutingAssertion {
         DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "routing" });
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/whichmodule/console/resources/world16.gif");
 
         return meta;
     }
