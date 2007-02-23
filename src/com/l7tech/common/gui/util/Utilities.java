@@ -611,12 +611,7 @@ public class Utilities {
         worker.start();
         final boolean done;
         synchronized (semaphore) {
-            try {
-                semaphore.wait(msBeforeDlg);
-            } catch (InterruptedException e) {
-                // Swing event thread interrupted? weird, but whatever
-                Thread.currentThread().interrupt();
-            }
+            semaphore.wait(msBeforeDlg);
             done = finished[0];
         }
 
