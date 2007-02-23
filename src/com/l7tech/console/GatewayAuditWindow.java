@@ -282,7 +282,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
             // indexes to enable and disable items.
             //
             if(startConnected) {
-                fileMenu.add(new JMenuItem(new DownloadAuditEventsAction()));
+                fileMenu.add(new JMenuItem(new DownloadAuditEventsAction(this)));
                 fileMenu.add(new JMenuItem(deleteAuditEventsAction));
                 fileMenu.addSeparator();
             }

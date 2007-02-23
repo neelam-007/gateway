@@ -12,6 +12,7 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.OpaqueId;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.SsmApplication;
+import com.l7tech.console.GatewayAuditWindow;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -29,8 +30,11 @@ import java.awt.*;
  * Action that deletes the audit events older than 48 hours, after getting confirmation.
  */
 public class DownloadAuditEventsAction extends SecureAction {
-    public DownloadAuditEventsAction() {
+    private final GatewayAuditWindow auditWindow;
+
+    public DownloadAuditEventsAction(GatewayAuditWindow auditWindow) {
         super(null);
+        this.auditWindow = auditWindow;
     }
 
     public String getName() {
@@ -95,6 +99,9 @@ public class DownloadAuditEventsAction extends SecureAction {
             if (result != 0)
                 return;
         }
+
+        // Shut off the audit window
+        if (auditWindow != null) auditWindow.getLogPane().getLogsRefreshTimer().stop();
 
         // Download the audit events
         final FileOutputStream[] out = new FileOutputStream[]{null};
@@ -199,6 +206,8 @@ public class DownloadAuditEventsAction extends SecureAction {
             log.log(Level.SEVERE, msg, e);
             cleanupPartialFile(out, outFile);
             throw new RuntimeException(msg, e);
+        } finally {
+            if (auditWindow != null) auditWindow.getLogPane().getLogsRefreshTimer().restart();           
         }
     }
 
