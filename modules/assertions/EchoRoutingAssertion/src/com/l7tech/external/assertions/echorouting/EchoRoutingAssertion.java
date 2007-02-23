@@ -26,7 +26,7 @@ public class EchoRoutingAssertion extends RoutingAssertion {
         meta.put(LONG_NAME, "Echo request to response");
 
         meta.put(PALETTE_NODE_NAME, "Echo Routing Assertion");
-        meta.put(PALETTE_NODE_ICON, "com/l7tech/external/assertions/echorouting/console/resources/echo16.gif");
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "routing" });
 
         meta.put(POLICY_NODE_NAME, "Echo request to response");
