@@ -575,7 +575,7 @@ public class Utilities {
      * @param msBeforeDlg  number of milliseconds to wait (blocking the event queue) before
      *                                            putting up the cancel dialog.  If less than one, defaults to 500ms.
      * @return the result of the callable.  May be null if the callable may return null.
-     * @throws InterruptedException if the task was canceled by the user
+     * @throws InterruptedException if the task was canceled by the user, or the Swing thread was interrupted
      * @throws java.lang.reflect.InvocationTargetException if the callable terminated with any exception other than InterruptedException
      */
     public static <T> T doWithDelayedCancelDialog(final Callable<T> callable, final JDialog cancelDlg, long msBeforeDlg)
