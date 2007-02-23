@@ -13,4 +13,6 @@ public class KeyStoreConstants {
     public static final String PROP_SSL_KS_PASS = "sslkspasswd";
     public static final String PROP_CA_KS_PASS = "rootcakspasswd";
     public static final String PROP_KS_TYPE = "keystoretype";
+    public static final String PROP_KS_ALIAS = "sslkeyalias";
+    public static final String PROP_KS_ALIAS_DEFAULTVALUE = "tomcat";
 }

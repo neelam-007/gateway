@@ -55,6 +55,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private static final String XML_KSFILE = "keystoreFile";
     private static final String XML_KSPASS = "keystorePass";
     private static final String XML_KSTYPE = "keystoreType";
+    private static final String XML_KSALIAS  = "keyAlias";
+
     private static final String LUNA_SYSTEM_CMU_PROPERTY = "lunaCmuPath";
 
     private static final String PROPKEY_SECURITY_PROVIDER = "security.provider";
@@ -78,7 +80,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 "sun.security.jgss.SunProvider",
                 "com.sun.security.sasl.Provider"
             };
-
 
     public KeystoreConfigCommand(ConfigurationBean bean) {
         super(bean);
@@ -608,6 +609,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 el.setAttribute(XML_KSFILE, sslKeyStorePath);
                 el.setAttribute(XML_KSPASS, new String(ksPassword));
                 el.setAttribute(XML_KSTYPE, getKsType());
+                el.setAttribute(XML_KSALIAS, KeyStoreConstants.PROP_KS_ALIAS_DEFAULTVALUE);
             }
         }
     }
@@ -625,6 +627,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             keystoreProps.setProperty(KeyStoreConstants.PROP_KEYSTORE_DIR, getOsFunctions().getKeystoreDir());
             keystoreProps.setProperty(KeyStoreConstants.PROP_CA_KS_PASS, new String(ksPassword));
             keystoreProps.setProperty(KeyStoreConstants.PROP_SSL_KS_PASS, new String(ksPassword));
+            keystoreProps.setProperty(KeyStoreConstants.PROP_KS_ALIAS, new String(KeyStoreConstants.PROP_KS_ALIAS_DEFAULTVALUE));
 
             fos = new FileOutputStream(keystorePropertiesFile);
             keystoreProps.setHeader(PROPERTY_COMMENT + "\n" + new Date());
