@@ -2805,7 +2805,8 @@
         <echo>Expanding ${install.src.war}...</echo>
         <unwar src="${install.src.war}" dest="${install.src.tomcat}/webapps/ROOT"/>
 
-        <!-- Copy keystore configuration files -->
+        <!-- Copy modified / new files -->
+        <copy file="${src.root}/etc/tomcat/catalina.sh" tofile="${install.src.tomcat}/bin/catalina.sh"/>
         <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.tomcat}/conf/server.xml"/>
         <copy file="${src.root}/etc/tomcat/truststore.ks" tofile="${install.src.tomcat}/conf/truststore.ks"/>
         <copy file="${src.root}/etc/tomcat/SsgSSLImplementation.properties"
