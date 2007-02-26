@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# Startup script for the Secure Span Gateway Server
+# Startup script for the SecureSpan Gateway Server
 #
 # chkconfig: - 99 01
-# description: Layer7's Secure Span Gateway Daemon \
+# description: Layer 7 SecureSpan Gateway Daemon \
 #	       secures and provides access for SOAP services
 # processname: ssg
 
@@ -27,8 +27,6 @@ if [ $USER != "root" ] ; then
     exit
 fi
 
-# handle 3 different cases:
-# Run as root, run as a regular user, run as same user as ssguser.
 # This script redirects STDOUT and STDERR to /dev/null as well as closing STDIN (<&-) so it can be detached from a
 # terminal
 
@@ -38,19 +36,19 @@ start() {
         start_ssg ${SINGLE_PARTITION}
     else
         RETVAL=1
-        PARTITION_RUNNING=1
+        STOPPED_PARTITIONS=""
         for partition_dir in ${ALL_PARTITIONS}
         do
             status_ssg ${partition_dir} &>/dev/null
-            if [ ${?} -eq 0 ] ; then
-                PARTITION_RUNNING=0 
+            if [ ${?} -eq 1 ] ; then
+                STOPPED_PARTITIONS="${STOPPED_PARTITIONS} ${partition_dir}" 
             fi
         done
 
-        if [ ${PARTITION_RUNNING} -eq 0 ] ; then
-            echo "At least one SSG Partition is already running. Please stop and restart."
+        if [ -z "${STOPPED_PARTITIONS}" ] ; then
+            echo "All partitions are active."
         else
-            for partition_dir in ${ALL_PARTITIONS}
+            for partition_dir in ${STOPPED_PARTITIONS}
             do
                 start_ssg ${partition_dir}
             done
