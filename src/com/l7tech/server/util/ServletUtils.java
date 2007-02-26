@@ -19,21 +19,22 @@ public class ServletUtils {
 
         Object param = req.getAttribute(PARAM_HTTP_X509CERT);
         if (param == null) {
-            logger.warning("No client cert in that request.");
+            logger.info("No client cert in that request.");
             return null;
         } else if (param instanceof Object[]) {
             Object[] maybeCerts = (Object[])param;
             if (maybeCerts[0] instanceof X509Certificate) {
                 return (X509Certificate)maybeCerts[0];
             } else {
-                logger.warning("Non-X.509 Certificate found in client certificate chain: " + maybeCerts[0].getClass().getName());
+                logger.info("Non-X.509 Certificate found in client certificate chain: " + maybeCerts[0].getClass().getName());
                 return null;
             }
         } else if (param instanceof X509Certificate) {
+            logger.fine("Found X.509 certificate in request");
             return (X509Certificate)param;
         }
 
-        logger.warning("Cert param present but type not suppoted " + param.getClass().getName());
+        logger.info("Cert param present but type not suppoted " + param.getClass().getName());
         return null;
     }
 }
