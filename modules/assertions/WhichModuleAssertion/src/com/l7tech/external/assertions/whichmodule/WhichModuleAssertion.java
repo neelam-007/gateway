@@ -36,13 +36,15 @@ import java.util.logging.Logger;
 public class WhichModuleAssertion extends Assertion implements SetsVariables {
     protected static final Logger logger = Logger.getLogger(WhichModuleAssertion.class.getName());
 
-    private String assertionXml;
+    private String assertionXml = "";
 
     public String getAssertionXml() {
         return assertionXml;
     }
 
     public void setAssertionXml(String assertionXml) {
+        if (assertionXml == null)
+            throw new IllegalArgumentException("assertionXml may not be null");
         this.assertionXml = assertionXml;
     }
 
@@ -60,6 +62,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         meta.put(AssertionMetadata.LONG_NAME, "Gets info about the module that offers the specified assertion (identified by its XML representation); fails if it is unrecognized");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/ServerLogs.gif");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, getClass().getName() + "$ServerImpl");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, getClass().getName() + "$PropDialog");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, getClass().getName() + "$Validator");
