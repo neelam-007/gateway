@@ -22,6 +22,7 @@ rm -fr %{buildroot}
 %prep
 rm -fr %{buildroot}
 %setup -qc %{buildroot}
+[ ! -e %{buildroot}/ssg/jdk/jre/.systemPrefs ] || rm -rf %{buildroot}/ssg/jdk/jre/.systemPrefs
 
 %build
 mkdir %{buildroot}/etc/
@@ -118,7 +119,6 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 /ssg/jdk/jre/README
 /ssg/jdk/jre/THIRDPARTYLICENSEREADME.txt
 /ssg/jdk/jre/Welcome.html
-/ssg/jdk/jre/.systemPrefs
 %attr(0755,gateway,gateway) /ssg/jdk/jre/bin
 /ssg/jdk/jre/javaws
 %dir /ssg/jdk/jre/lib
