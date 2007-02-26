@@ -143,6 +143,7 @@ Section "SecureSpan Gateway" SecCopyUI
   CreateDirectory "$INSTDIR\bin"
   CreateDirectory "$INSTDIR\etc\conf"
   CreateDirectory "$INSTDIR\modules\lib"
+  CreateDirectory "$INSTDIR\modules\assertions"
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\tomcat"
@@ -177,6 +178,9 @@ Section "SecureSpan Gateway" SecCopyUI
 
   SetOutPath "$INSTDIR/modules/lib"
   File "${BUILD_DIR}\ssg-uddi-module-systinetv3.jar"
+
+  SetOutPath "$INSTDIR/modules"
+  File /r "${BUILD_DIR}\modules\assertions"
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\configwizard"
