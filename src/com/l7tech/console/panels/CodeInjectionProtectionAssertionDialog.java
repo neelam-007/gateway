@@ -41,6 +41,7 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
             public void itemStateChanged(ItemEvent e) {
                 _requestUrlCheckBox.setEnabled(_requestRadioButton.isSelected());
                 _requestBodyCheckBox.setEnabled(_requestRadioButton.isSelected());
+                enableProtectionRadioButtons();
                 enableOkButton();
             }
         });
@@ -88,12 +89,7 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
 
         _responseRadioButton.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
-                for (Enumeration<AbstractButton> i = _protectionButtons.getElements(); i.hasMoreElements();) {
-                    final JRadioButton button = (JRadioButton) i.nextElement();
-                    final String action = button.getActionCommand();
-                    final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromWspName(action);
-                    button.setEnabled(!_responseRadioButton.isSelected() || protection.isApplicableToResponse());
-                }
+                enableProtectionRadioButtons();
                 enableOkButton();
             }
         });
@@ -124,6 +120,11 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
 
                 public void mouseExited(MouseEvent e) {
                     _descriptionText.setText("");
+                }
+            });
+            radioButton.addItemListener(new ItemListener() {
+                public void itemStateChanged(ItemEvent e) {
+                    enableOkButton();
                 }
             });
             _protectionsPanel.add(radioButton, c);
@@ -183,21 +184,32 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
         dispose();
     }
 
+    private void enableProtectionRadioButtons() {
+        for (Enumeration<AbstractButton> i = _protectionButtons.getElements(); i.hasMoreElements();) {
+            final JRadioButton button = (JRadioButton) i.nextElement();
+            final String action = button.getActionCommand();
+            final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromWspName(action);
+            button.setEnabled(   (_requestRadioButton.isSelected()  && protection.isApplicableToRequest())
+                              || (_responseRadioButton.isSelected() && protection.isApplicableToResponse()));
+        }
+    }
+
     /**
      * Enable/disable the OK button if all settings are OK.
      */
     private void enableOkButton() {
         boolean ok = false;
-        if (_requestRadioButton.isSelected()) {
-            ok = _requestUrlCheckBox.isSelected() || _requestBodyCheckBox.isSelected();
-        } else { // _responseRadioButton.isSelected()
-            for (Enumeration<AbstractButton> i = _protectionButtons.getElements(); i.hasMoreElements();) {
-                final JRadioButton button = (JRadioButton) i.nextElement();
-                if (button.isEnabled() && button.isSelected()) {
-                    ok = true;
-                    break;
-                }
+        // Ensures a valid protection has been choosen.
+        for (Enumeration<AbstractButton> i = _protectionButtons.getElements(); i.hasMoreElements();) {
+            final JRadioButton button = (JRadioButton) i.nextElement();
+            if (button.isEnabled() && button.isSelected()) {
+                ok = true;
+                break;
             }
+        }
+        // If applying to request messages, further ensures either URL or body is selected.
+        if (_requestRadioButton.isSelected()) {
+            ok &= _requestUrlCheckBox.isSelected() || _requestBodyCheckBox.isSelected();
         }
         _okButton.setEnabled(ok);
     }
