@@ -44,9 +44,8 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         validated = node.getValidatorMessages().isEmpty();
         setToolTipText(node.getTooltipText());
 
-        setIcon(expanded ?
-          new ImageIcon(node.getOpenedIcon()) :
-          new ImageIcon(node.getIcon()));
+        Image image =expanded ? node.getOpenedIcon() : node.getIcon();
+        setIcon(image == null ? null : new ImageIcon(image));
 
         if (isRoutingAssertionNode(node))
             setFont(boldFont);

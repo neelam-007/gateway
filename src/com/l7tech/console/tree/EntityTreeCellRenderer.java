@@ -48,10 +48,8 @@ public class EntityTreeCellRenderer
 
         setToolTipText(node.getTooltipText());
 
-        icon = expanded ?
-          new ImageIcon(node.getOpenedIcon()) :
-          new ImageIcon(node.getIcon());
-
+        Image image = expanded ? node.getOpenedIcon() : node.getIcon();
+        icon = image == null ? null : new ImageIcon(image);
         if (icon != null) {
             setIcon(icon);
         }

@@ -30,9 +30,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,7 +43,10 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     protected static final Logger logger = Logger.getLogger(ConsoleAssertionRegistry.class.getName());
 
     /** Prototype instances of assertions loaded from the server. */
-    private Set<Assertion> modulePrototypes = new HashSet<Assertion>();
+    private final Set<Assertion> modulePrototypes = new HashSet<Assertion>();
+
+    /** Base packages of every modular assertion, for recognizing NoClassDefFoundErrors due to module unload. */
+    private final Map<String, String> moduleNameByBasePackage = new ConcurrentHashMap<String, String>();
 
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
@@ -84,6 +86,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             unregisterAssertion(prototype);
         if (!TopComponents.getInstance().isApplet())
             CustomAssertionRMIClassLoaderSpi.resetRemoteClassLoader();
+        moduleNameByBasePackage.clear();
 
         try {
             ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
@@ -120,11 +123,15 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                         if (!Assertion.class.isAssignableFrom(assclass))
                             throw new ClassCastException(assclass.getName());
                         Assertion prototype = (Assertion)assclass.newInstance();
+                        String basePackage = String.valueOf(prototype.meta().get(AssertionMetadata.BASE_PACKAGE));
 
                         logger.info("Registering remote assertion " + prototype.getClass().getName());
                         modulePrototypes.add(prototype);
                         registerAssertion(prototype.getClass());
-
+                        if (basePackage.length() > 0)
+                            moduleNameByBasePackage.put(basePackage, module.moduleFilename);
+                    } catch (NoClassDefFoundError e) {
+                        logger.log(Level.WARNING, "Unable to load remote class " + assertionClassname + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
                     } catch (ClassNotFoundException e) {
                         logger.log(Level.WARNING, "Unable to load remote class " + assertionClassname + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
                     } catch (ClassCastException e) {
@@ -138,6 +145,32 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                 return null;
             }
         });
+    }
+
+    /**
+     * Examines the provided path to see if it looks like it might be referring to a loaded module.
+     * If so, returns the name of the possibly-matching module.
+     *
+     * @param path the path to examine, ie "com/l7tech/external/assertions/echorouting/console/EchoRoutingPropertiesDialog$2"
+     * @return the name of a matching module, ie "ComparisonAssertion-3.7.0.aar", or null.
+     */
+    public String getModuleNameMatchingPackage(String path) {
+        if (path == null || path.length() < 2)
+            return null;
+
+        path = path.replace('/', '.');
+        for (Map.Entry<String, String> entry : moduleNameByBasePackage.entrySet()) {
+            String pack = entry.getKey();
+            if (path.startsWith(pack))
+                return entry.getValue();
+        }
+
+        return null;
+    }
+
+    /** @return true if at least one modular assertion is currently registered. */
+    public boolean isAnyModularAssertionRegistered() {
+        return !modulePrototypes.isEmpty();
     }
 
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {

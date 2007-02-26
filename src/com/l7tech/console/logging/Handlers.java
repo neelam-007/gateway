@@ -25,6 +25,7 @@ class Handlers {
             new RmiErrorHandler(),
             new AdminSessionExpiredErrorHandler(),
             new PermissionDeniedErrorHandler(),
+            new ModularAssertionErrorHandler(),
             new DefaultErrorHandler()
         };
     }
