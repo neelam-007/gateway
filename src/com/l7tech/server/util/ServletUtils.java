@@ -19,7 +19,7 @@ public class ServletUtils {
 
         Object param = req.getAttribute(PARAM_HTTP_X509CERT);
         if (param == null) {
-            logger.info("No client cert in that request.");
+            logger.fine("No client cert in that request.");
             return null;
         } else if (param instanceof Object[]) {
             Object[] maybeCerts = (Object[])param;
