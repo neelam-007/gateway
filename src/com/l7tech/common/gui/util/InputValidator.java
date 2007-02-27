@@ -16,8 +16,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
 
 /**
@@ -29,6 +28,7 @@ public class InputValidator {
     private final String dialogTitle;
     private final Component dialogParent;
     private final List rules = new ArrayList();
+    private final Map<ModelessFeedback, String> feedbacks = new HashMap<ModelessFeedback, String>();
     private AbstractButton buttonToEnable = null;
 
     /**
@@ -44,9 +44,24 @@ public class InputValidator {
         this.dialogTitle = dialogTitle;
     }
 
+    /** Arbitrary validation rule.  If a rule pertains to a particular component, use {@link ComponentValidationRule} instead. */
     public static interface ValidationRule {
         /** @return the validation error message, or null if the rule succeeded. */
         String getValidationError();
+    }
+
+    /** A validation rule that pertains to a particular component. */
+    public static abstract class ComponentValidationRule implements ValidationRule {
+        protected final Component component;
+
+        protected ComponentValidationRule(Component component) {
+            this.component = component;
+            if (component == null) throw new IllegalArgumentException("Component must not be null");
+        }
+
+        public Component getComponent() {
+            return component;
+        }
     }
 
     /** Register a custom validation rule that has already been configured to monitor a componenet for changes. */
@@ -89,7 +104,7 @@ public class InputValidator {
         comp.setDocument(new NumberField(maxlen + 1));
 
         final String mess = "The " + fieldName + " field must be a number between " + min + " and " + max + ".";
-        ValidationRule rule = new ValidationRule() {
+        ValidationRule rule = new ComponentValidationRule(comp) {
             public String getValidationError() {
                 if (!comp.isEnabled())
                     return null;
@@ -133,9 +148,9 @@ public class InputValidator {
     {
         if (comp == null) throw new NullPointerException();
         final String mess = "The " + fieldName + " field must not be empty.";
-        ValidationRule rule = new ValidationRule() {
+        ValidationRule rule = new ComponentValidationRule(comp) {
             public String getValidationError() {
-                if (!comp.isEnabled())
+                if (!getComponent().isEnabled())
                     return null;
 
                 String val = comp.getText();
@@ -261,14 +276,24 @@ public class InputValidator {
 
     /** @return all validation errors, or an empty array if no validation rule is currently failing.  Never null. */
     public String[] getAllValidationErrors() {
-        List errors = new ArrayList();
-        for (Iterator i = rules.iterator(); i.hasNext();) {
-            ValidationRule rule = (ValidationRule)i.next();
-            String err = rule.getValidationError();
-            if (err != null) errors.add(err);
+        feedbacks.clear();
+        try {
+            List errors = new ArrayList();
+            for (Iterator i = rules.iterator(); i.hasNext();) {
+                ValidationRule rule = (ValidationRule)i.next();
+                ModelessFeedback feedback = getFeedback(rule);
+                String err = rule.getValidationError();
+                if (err != null) {
+                    errors.add(err);
+                    if (feedback != null)
+                        feedbacks.put(feedback, err);
+                }
+            }
+            if (buttonToEnable != null) buttonToEnable.setEnabled(errors.isEmpty());
+            return (String[])errors.toArray(new String[0]);
+        } finally {
+            updateAllFeedback();
         }
-        if (buttonToEnable != null) buttonToEnable.setEnabled(errors.isEmpty());
-        return (String[])errors.toArray(new String[0]);
     }
 
     /**
@@ -277,16 +302,28 @@ public class InputValidator {
      * @return the first validation error message encountered, or null if all validation rules succeeded.
      */
     public String validate() {
-        for (Iterator i = rules.iterator(); i.hasNext();) {
-            ValidationRule rule = (ValidationRule)i.next();
-            String err = rule.getValidationError();
-            if (err != null) {
-                if (buttonToEnable != null) buttonToEnable.setEnabled(false);
-                return err;
+        String[] got = getAllValidationErrors();
+        return got == null || got.length < 1 ? null : got[0];
+    }
+
+    private void updateAllFeedback() {
+        for (Map.Entry<ModelessFeedback, String> entry : feedbacks.entrySet())
+            entry.getKey().setModelessFeedback(entry.getValue());
+    }
+
+    private ModelessFeedback getFeedback(ValidationRule rule) {
+        ModelessFeedback feedback = null;
+        if (rule instanceof ComponentValidationRule) {
+            ComponentValidationRule cvr = (ComponentValidationRule)rule;
+            Component comp;
+            comp = cvr.getComponent();
+            if (comp instanceof ModelessFeedback) {
+                feedback = (ModelessFeedback)comp;
+                if (!feedbacks.containsKey(feedback))
+                    feedbacks.put(feedback, null);
             }
         }
-        if (buttonToEnable != null) buttonToEnable.setEnabled(true);
-        return null;
+        return feedback;
     }
 
     /**

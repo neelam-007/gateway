@@ -34,6 +34,7 @@ public class SsgFinderImpl implements SsgFinder {
     protected long lastLoaded = Long.MIN_VALUE; // time that config file was last loaded
     protected SortedSet ssgs = new TreeSet();
     protected HashMap hostCache = new HashMap();
+    protected HashMap endpointCache = new HashMap();
     protected boolean init = false;
 
     private static class SsgFinderHolder {
@@ -69,9 +70,13 @@ public class SsgFinderImpl implements SsgFinder {
      */
     protected synchronized void rebuildHostCache() {
         hostCache.clear();
+        endpointCache.clear();
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
             Ssg ssg = (Ssg) i.next();
             hostCache.put(ssg.getSsgAddress(), ssg);
+            Ssg existingWithThisEndpoint = (Ssg)endpointCache.put(ssg.getLocalEndpoint(), ssg);
+            if (existingWithThisEndpoint != null)
+                log.warning("Duplicate Gateway Account label \"" + ssg.getLocalEndpoint() + "\": " + ssg + " and " + existingWithThisEndpoint);
         }
     }
 
@@ -168,8 +173,12 @@ public class SsgFinderImpl implements SsgFinder {
     public synchronized Ssg getSsgByEndpoint(final String endpoint) throws SsgNotFoundException {
         if (!init)
             initialize();
+        Ssg ssg = (Ssg)endpointCache.get(endpoint);
+        if (ssg != null)
+            return ssg;
+        // on cache miss, do complete search before giving up
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
-            final Ssg ssg = (Ssg)i.next();
+            ssg = (Ssg)i.next();
             if (endpoint.equals(ssg.getLocalEndpoint()))
                 return ssg;
         }

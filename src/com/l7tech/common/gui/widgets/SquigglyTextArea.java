@@ -5,6 +5,8 @@
  */
 package com.l7tech.common.gui.widgets;
 
+import com.l7tech.common.gui.util.ModelessFeedback;
+
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
@@ -12,7 +14,7 @@ import java.awt.*;
 
 /**
  */
-public class SquigglyTextArea extends JTextArea {
+public class SquigglyTextArea extends JTextArea implements ModelessFeedback {
     public SquigglyTextArea() {
     }
 
@@ -115,6 +117,21 @@ public class SquigglyTextArea extends JTextArea {
         } finally {
             g.setColor(gColor);
         }
+    }
+
+    public String getModelessFeedback() {
+        if (getBegin() == NONE || getEnd() == NONE)
+            return null;
+
+        return getToolTipText();
+    }
+
+    public void setModelessFeedback(String feedback) {
+        if (feedback == null || feedback.length() < 1)
+            setNone();
+        else
+            setAll();
+        setToolTipText(feedback);
     }
 
     private static abstract class UnderlineStyle {

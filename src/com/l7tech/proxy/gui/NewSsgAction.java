@@ -66,7 +66,7 @@ class NewSsgAction extends AbstractAction {
         if (newSsgDialog.getSsg() == null)
             return;
 
-        final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(newSsg, bindPort);
+        final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(newSsg, ssgTableModel.getSsgFinder(), bindPort);
         final boolean result = ssgPropertyDialog.runDialog();
         if (result) {
             ssgTableModel.addSsg(newSsg);

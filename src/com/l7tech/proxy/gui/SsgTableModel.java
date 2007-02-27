@@ -1,9 +1,6 @@
 package com.l7tech.proxy.gui;
 
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgEvent;
-import com.l7tech.proxy.datamodel.SsgListener;
-import com.l7tech.proxy.datamodel.SsgManager;
+import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 
 import javax.swing.*;
@@ -50,6 +47,10 @@ class SsgTableModel extends AbstractTableModel implements SsgListener {
             this.comparator = comparator;
             updateModel();
         }
+    }
+
+    public SsgFinder getSsgFinder() {
+        return ssgManager;
     }
 
     /** Comparator for sorting the SSG list for display. */

@@ -12,10 +12,12 @@ import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.IpListPanel;
 import com.l7tech.common.gui.widgets.WrappingLabel;
+import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.gui.FilterDocument;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.Constants;
 
 import javax.swing.*;
@@ -27,6 +29,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyAdapter;
 import java.util.regex.Pattern;
+import java.util.Collection;
 
 /**
  * The Network panel for the SSG Property Dialog.
@@ -67,8 +70,13 @@ class SsgNetworkPanel extends JPanel {
     private String initialEndpoint;
     private String wsdlEndpointSuffix;
 
-    public SsgNetworkPanel(InputValidator validator, boolean enableOutgoingRequestsPanel) {
+    private final Ssg ssg;
+    private final SsgFinder ssgFinder;
+
+    public SsgNetworkPanel(InputValidator validator, Ssg ssg, SsgFinder ssgFinder, boolean enableOutgoingRequestsPanel) {
         this.validator = validator;
+        this.ssg = ssg;
+        this.ssgFinder = ssgFinder;
         this.enableOutgoingRequestsPanel = enableOutgoingRequestsPanel;
         initialize(enableOutgoingRequestsPanel);
     }
@@ -127,7 +135,7 @@ class SsgNetworkPanel extends JPanel {
                 return ENDPOINT_PATTERN.matcher(s).matches();
             }
         }));
-        validator.constrainTextFieldToBeNonEmpty("Custom label", customLabelField, new InputValidator.ValidationRule() {
+        validator.constrainTextFieldToBeNonEmpty("Custom label", customLabelField, new InputValidator.ComponentValidationRule(customLabelField) {
             public String getValidationError() {
                 String text = customLabelField.getText();
                 int len = text.length();
@@ -136,6 +144,19 @@ class SsgNetworkPanel extends JPanel {
                     ret = ENDPOINT_PATTERN.matcher(text).matches()
                           ? null 
                           : "Custom label may contain only letters, numbers, or underscore.";
+
+                if (ret == null) {
+                    // Check for duplicate label
+                    //noinspection unchecked
+                    Collection<Ssg> ssgs = ssgFinder.getSsgList();
+                    for (Ssg thatSsg : ssgs) {
+                        if ((!ssg.equals(thatSsg)) && text.equals(thatSsg.getLocalEndpoint())) {
+                            ret = "Custom label is duplicate of label for Gateway Account \"" + thatSsg + "\"";
+                            break;
+                        }
+                    }
+                }
+
                 return ret;
             }
         });
@@ -309,5 +330,10 @@ class SsgNetworkPanel extends JPanel {
     public void setDefaultLocalEndpoint(String defaultEndpoint) {
         this.defaultEndpoint = defaultEndpoint;
         checkCustom();
+    }
+
+    private void createUIComponents() {
+        // InputValidator will show feedback if a ComponentValidationRule's component implements ModelessFeedback
+        customLabelField = new SquigglyTextField();
     }
 }

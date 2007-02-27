@@ -6,6 +6,8 @@
 
 package com.l7tech.common.gui.widgets;
 
+import com.l7tech.common.gui.util.ModelessFeedback;
+
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
@@ -15,7 +17,7 @@ import java.awt.*;
  * @author alex
  * @version $Revision$
  */
-public class SquigglyTextField extends JTextField {
+public class SquigglyTextField extends JTextField implements ModelessFeedback {
     public SquigglyTextField() {
     }
 
@@ -113,8 +115,11 @@ public class SquigglyTextField extends JTextField {
             Rectangle firstChar = modelToView( begin == ALL ? 0 : begin );
             ya = (int)(firstChar.getY() + firstChar.getHeight());
             xb = (int)firstChar.getX();
-            Rectangle lastChar = modelToView( _end == ALL || _end > len ? len : _end );
-            xe = (int)(lastChar.getX()+lastChar.getWidth());
+
+            if (_end != ALL || len > 0) {
+                Rectangle lastChar = modelToView( _end > len ? len : _end );
+                xe = (int)(lastChar.getX()+lastChar.getWidth());
+            }
         } catch (BadLocationException e) {
         }
 
@@ -156,6 +161,21 @@ public class SquigglyTextField extends JTextField {
             }
         }
     };
+
+    public String getModelessFeedback() {
+        if (getBegin() == NONE || getEnd() == NONE)
+            return null;
+
+        return getToolTipText();
+    }
+
+    public void setModelessFeedback(String feedback) {
+        if (feedback == null || feedback.length() < 1)
+            setNone();
+        else
+            setAll();
+        setToolTipText(feedback);
+    }
 
     private int _begin = NONE;
     private int _end = NONE;

@@ -185,7 +185,7 @@ class SsgListPanel extends JPanel {
                     final Ssg ssg = getSelectedSsg();
                     log.info("Editing ssg " + ssg);
                     if (ssg != null) {
-                        final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(ssg, bindPort);
+                        final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(ssg, ssgTableModel.getSsgFinder(), bindPort);
                         final boolean result = ssgPropertyDialog.runDialog();
                         if (result) {
                             if (ssg.isDefaultSsg())

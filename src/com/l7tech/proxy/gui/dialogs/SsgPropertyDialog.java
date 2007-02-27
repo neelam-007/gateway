@@ -5,6 +5,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
+import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.common.security.kerberos.KerberosClient;
 import com.l7tech.common.security.token.SecurityToken;
@@ -51,6 +52,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     // Model
     private final Ssg ssg; // The real Ssg instance, to which changes may be committed.
+    private final SsgFinder ssgFinder; // Existing SSGs, for global validation (like catching duplicate endpoint labels)
     private final int bindPort; // the local port the client proxy is bound to
 
     //   View for General pane
@@ -72,10 +74,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private SsgPoliciesPanel policiesPane;
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
-    private SsgPropertyDialog(final Ssg ssg, final int bindPort) {
+    private SsgPropertyDialog(final Ssg ssg, final SsgFinder ssgFinder, final int bindPort) {
         super("Gateway Account Properties");
         this.ssg = ssg;
+        this.ssgFinder = ssgFinder;
         this.bindPort = bindPort;
+        if (ssg == null || ssgFinder == null) throw new IllegalArgumentException("ssg and ssgFinder must not be null");
         tabbedPane.add("General", getGeneralPane(ssg));
         tabbedPane.add("Identity", getIdentityPane(ssg));
         tabbedPane.add("Network", getNetworkPane());
@@ -98,12 +102,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     /**
      * Attempt to build an "edit properties" dialog box for the given Ssg.
-     * @param ssg The ssg whose properties we intend to edit
+     * @param ssg The ssg whose properties we intend to edit.  Required
+     * @param ssgFinder Finds the existing SSGs, for global validation.  Required
      * @param bindPort the port the client proxy is listening on on localhost
      * @return The property dialog that will edit said properties.  Call setVisible(true) on it to run it.
      */
-    public static SsgPropertyDialog makeSsgPropertyDialog(final Ssg ssg, int bindPort) {
-        return new SsgPropertyDialog(ssg, bindPort);
+    public static SsgPropertyDialog makeSsgPropertyDialog(final Ssg ssg, SsgFinder ssgFinder, int bindPort) {
+        return new SsgPropertyDialog(ssg, ssgFinder, bindPort);
     }
 
     private BridgePolicyPanel getBridgePolicyPane() {
@@ -509,7 +514,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     private SsgNetworkPanel getNetworkPane() {
         if (networkPane == null)
-            networkPane = new SsgNetworkPanel(validator, !ssg.isGeneric());
+            networkPane = new SsgNetworkPanel(validator, ssg, ssgFinder, !ssg.isGeneric());
         return networkPane;
     }
 
@@ -638,12 +643,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     /** Get the Server URL text field. */
     private JTextField getFieldServerAddress() {
         if (fieldServerAddress == null) {
-            fieldServerAddress = new ContextMenuTextField();
+            fieldServerAddress = new SquigglyTextField();
+            Utilities.attachDefaultContextMenu(fieldServerAddress);
             fieldServerAddress.setPreferredSize(new Dimension(220, 20));
             if (ssg.isGeneric()) {
                 fieldServerAddress.setToolTipText("<HTML>Web service POST URL, for example <br><address>http://service.example.com/soap");
                 validator.constrainTextFieldToBeNonEmpty("Service URL", fieldServerAddress,
-                                                         new InputValidator.ValidationRule() {
+                                                         new InputValidator.ComponentValidationRule(fieldServerAddress) {
                                                              public String getValidationError() {
                                                                  if (!ValidationUtils.isValidUrl(fieldServerAddress.getText()))
                                                                      return "Service URL must be a valid URL.";
@@ -653,7 +659,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             } else {
                 fieldServerAddress.setToolTipText("<HTML>Gateway host name or address, for example<br><address>gateway.example.com");
                 validator.constrainTextFieldToBeNonEmpty("Gateway server address", fieldServerAddress,
-                                                         new InputValidator.ValidationRule() {
+                                                         new InputValidator.ComponentValidationRule(fieldServerAddress) {
                                                              public String getValidationError() {
                                                                  if (!ValidationUtils.isValidDomain(fieldServerAddress.getText()))
                                                                      return "Gateway server address must be a valid host name or IP address.";
@@ -671,7 +677,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             fieldKerberosName = new ContextMenuTextField();
             fieldKerberosName.setPreferredSize(new Dimension(220, 20));
             fieldKerberosName.setToolTipText("<HTML>Optional Gateway service/host name, for example<br><address>http/gateway.example.com");
-            validator.constrainTextField(fieldKerberosName, new InputValidator.ValidationRule() {
+            validator.constrainTextField(fieldKerberosName, new InputValidator.ComponentValidationRule(fieldKerberosName) {
                 public String getValidationError() {
                     if (!ValidationUtils.isValidCharacters(fieldKerberosName.getText(), ValidationUtils.ALPHA_NUMERIC+"/."))
                         return "Optional gateway service field must contain only letters, numbers, slashes, and periods.";

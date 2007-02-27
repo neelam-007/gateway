@@ -30,6 +30,7 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
     public synchronized void clear() {
         ssgs.clear();
         hostCache.clear();
+        endpointCache.clear();
     }
 
     /**

@@ -137,7 +137,7 @@ public class SsgPropertyDialogTest {
         log.info("Firing up an example SsgPropertyDialog");
         Gui.setInstance(Gui.createGui(new Gui.GuiParams(new SsgManagerStub(), 9797)));
         Gui.getInstance().start();
-        SsgPropertyDialog.makeSsgPropertyDialog(ssg, 9797).setVisible(true);
+        SsgPropertyDialog.makeSsgPropertyDialog(ssg, new SsgManagerStub(), 9797).setVisible(true);
         System.exit(0);
     }
 }
