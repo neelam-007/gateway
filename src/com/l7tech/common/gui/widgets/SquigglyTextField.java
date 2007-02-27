@@ -6,19 +6,32 @@
 
 package com.l7tech.common.gui.widgets;
 
-import com.l7tech.common.gui.util.ModelessFeedback;
-
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import java.awt.*;
-import java.awt.event.MouseEvent;
 
 /**
+ * A JTextField that can display modeless error feedback in the form of squiggly lines.
+ *
  * @author alex
  * @version $Revision$
  */
-public class SquigglyTextField extends JTextField implements ModelessFeedback {
+public class SquigglyTextField extends JTextField implements SquigglyField {
+    private final SquigglyFieldSupport support = new SquigglyFieldSupport(new SquigglyFieldSupport.Callbacks() {
+        public void repaint() {
+            SquigglyTextField.this.repaint();
+        }
+
+        public void setToolTipTextRaw(String text) {
+            SquigglyTextField.super.setToolTipText(text);
+        }
+
+        public String getToolTipTextRaw() {
+            return SquigglyTextField.super.getToolTipText();
+        }
+    });
+
     public SquigglyTextField() {
     }
 
@@ -38,56 +51,6 @@ public class SquigglyTextField extends JTextField implements ModelessFeedback {
         super(doc, text, columns);
     }
 
-    public synchronized int getBegin() {
-        return _begin;
-    }
-
-    public synchronized int getEnd() {
-        return _end;
-    }
-
-    public synchronized void setRange( int begin, int end ) {
-        _begin = begin;
-        _end = end;
-        repaint();
-    }
-
-    public synchronized void setAll() {
-        _begin = ALL;
-        _end = ALL;
-        repaint();
-    }
-
-    public synchronized void setNone() {
-        _begin = NONE;
-        _end = NONE;
-        repaint();
-    }
-
-    public synchronized Color getColor() {
-        return _color;
-    }
-
-    public synchronized void setColor(Color color) {
-        _color = color;
-        repaint();
-    }
-
-    public synchronized void setSquiggly() {
-        _style = SQUIGGLY;
-        repaint();
-    }
-
-    public synchronized void setDotted() {
-        _style = DOTTED;
-        repaint();
-    }
-
-    public synchronized void setStraight() {
-        _style = STRAIGHT;
-        repaint();
-    }
-
     public void paintComponent( Graphics g ) {
         super.paintComponent(g);
 
@@ -95,13 +58,13 @@ public class SquigglyTextField extends JTextField implements ModelessFeedback {
         int end;
 
         synchronized( this ) {
-            begin = _begin;
-            end = _end;
+            begin = support.getBegin();
+            end = support.getEnd();
         }
 
-        if ( begin == NONE || end == NONE ) return;
+        if ( begin == NONE || end == NONE) return;
 
-        g.setColor( _color );
+        g.setColor(support.getColor());
 
         int ya = getHeight()-7;
         int xb = 0;
@@ -117,94 +80,70 @@ public class SquigglyTextField extends JTextField implements ModelessFeedback {
             ya = (int)(firstChar.getY() + firstChar.getHeight());
             xb = (int)firstChar.getX();
 
-            if (_end != ALL || len > 0) {
-                Rectangle lastChar = modelToView( _end == ALL || _end > len ? len : _end );
+            if (end != ALL || len > 0) {
+                Rectangle lastChar = modelToView( end == ALL || end > len ? len : end);
                 xe = (int)(lastChar.getX()+lastChar.getWidth());
             }
         } catch (BadLocationException e) {
+            // FALLTHROUGH and use default values
         }
 
-        _style.draw( g, xb, xe, ya );
-    }
-
-    private static abstract class UnderlineStyle {
-        public abstract void draw( Graphics g, int x1, int x2, int y );
-    }
-
-    private static final UnderlineStyle SQUIGGLY = new UnderlineStyle() {
-        public void draw(Graphics g, int x1, int x2, int y) {
-            int oldx = x1;
-            int oldy = y;
-            for ( int x = x1; x < x2; x++ ) {
-                int yy = (int)(0.5 + y + (Math.sin(x/0.8) * 2) );
-                g.drawLine( oldx, oldy, x, yy );
-                oldx = x;
-                oldy = yy;
-            }
-        }
-    };
-
-    private static final UnderlineStyle STRAIGHT = new UnderlineStyle() {
-        public void draw(Graphics g, int x1, int x2, int y) {
-            g.drawLine( x1, y, x2, y );
-        }
-    };
-
-    private static final UnderlineStyle DOTTED = new UnderlineStyle() {
-        public void draw(Graphics g, int x1, int x2, int y) {
-            boolean on = true;
-            for (int i = x1; i < x2; i += 3) {
-                if (on) {
-                    g.drawLine(i, y, i+2, y);
-                    g.drawLine(i, y+1, i+2, y+1);
-                }
-                on = !on;
-            }
-        }
-    };
-
-    public String getModelessFeedback() {
-        if (!isShowingModlessFeedback())
-            return null;
-
-        return modelessFeedback;
-    }
-
-    private boolean isShowingModlessFeedback() {
-        return !(getBegin() == NONE || getEnd() == NONE);
-    }
-
-    public void setModelessFeedback(String feedback) {
-        String prev = modelessFeedback;
-        modelessFeedback = feedback;
-        if (feedback == null || feedback.length() < 1) {
-            setNone();
-            super.setToolTipText(toolTipText);
-        } else {
-            setAll();
-            super.setToolTipText(modelessFeedback);
-        }
+        support.draw( g, xb, xe, ya );
     }
 
     public void setToolTipText(String text) {
-        toolTipText = text;
-        if (isShowingModlessFeedback())
-            super.setToolTipText(modelessFeedback);
-        else
-            super.setToolTipText(text);
+        support.setToolTipText(text);
     }
 
-    public String getToolTipText(MouseEvent event) {
-        return isShowingModlessFeedback() ? modelessFeedback : toolTipText;
+    public String getToolTipText() {
+        return support.getToolTipText();
     }
 
-    private int _begin = NONE;
-    private int _end = NONE;
-    private Color _color = Color.RED;
-    private UnderlineStyle _style = SQUIGGLY;
-    private String modelessFeedback = null;
-    private String toolTipText = null;
+    public String getModelessFeedback() {
+        return support.getModelessFeedback();
+    }
 
-    public static final int NONE = -2;
-    public static final int ALL = -1;
+    public void setModelessFeedback(String feedback) {
+        support.setModelessFeedback(feedback);
+    }
+
+    public int getBegin() {
+        return support.getBegin();
+    }
+
+    public int getEnd() {
+        return support.getEnd();
+    }
+
+    public void setRange(int begin, int end) {
+        support.setRange(begin, end);
+    }
+
+    public void setAll() {
+        support.setAll();
+    }
+
+    public void setNone() {
+        support.setNone();
+    }
+
+    public Color getColor() {
+        return support.getColor();
+    }
+
+    public void setColor(Color color) {
+        support.setColor(color);
+    }
+
+    public void setSquiggly() {
+        support.setSquiggly();
+    }
+
+    public void setDotted() {
+        support.setDotted();
+    }
+
+    public void setStraight() {
+        support.setStraight();
+    }
 }

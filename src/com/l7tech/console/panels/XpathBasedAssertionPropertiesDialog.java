@@ -4,8 +4,8 @@ import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.gui.widgets.SpeedIndicator;
+import com.l7tech.common.gui.widgets.SquigglyField;
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.security.xml.XencAlgorithm;
 import com.l7tech.common.util.SoapUtil;
@@ -963,15 +963,15 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 speedIndicator.setToolTipText("Expression will be hardware accelerated, but is too complex to run in parallel at full speed");
 
                 // Squiggles and detailed parse error messages are disabled for now
-                if (false && xpathField instanceof SquigglyTextField) {
-                    SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
+                if (false && xpathField instanceof SquigglyField) {
+                    SquigglyField squigglyField = (SquigglyField)xpathField;
                     int pos = hardwareFeedBack.errorPosition;
                     if (pos >= 0)
-                        squigglyTextField.setRange(pos - 1, pos + 1);
+                        squigglyField.setRange(pos - 1, pos + 1);
                     else
-                        squigglyTextField.setAll();
-                    squigglyTextField.setStraight();
-                    squigglyTextField.setColor(Color.BLUE);
+                        squigglyField.setAll();
+                    squigglyField.setStraight();
+                    squigglyField.setColor(Color.BLUE);
                 }
             }
         }
@@ -980,9 +980,9 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             if (feedBack == null) feedBack = new XpathFeedBack(-1, null, null, null); // NPE guard
 
             if (feedBack.valid() || feedBack.isEmpty()) {
-                if (xpathField instanceof SquigglyTextField) {
-                    SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
-                    squigglyTextField.setNone();
+                if (xpathField instanceof SquigglyField) {
+                    SquigglyField squigglyField = (SquigglyField)xpathField;
+                    squigglyField.setNone();
                 }
                 xpathField.setToolTipText(null);
                 processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
@@ -1008,11 +1008,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
             xpathField.setToolTipText(tooltip.toString());
 
-            if (xpathField instanceof SquigglyTextField) {
-                SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
-                squigglyTextField.setAll();
-                squigglyTextField.setSquiggly();
-                squigglyTextField.setColor(Color.RED);
+            if (xpathField instanceof SquigglyField) {
+                SquigglyField squigglyField = (SquigglyField)xpathField;
+                squigglyField.setAll();
+                squigglyField.setSquiggly();
+                squigglyField.setColor(Color.RED);
             }
         }
 

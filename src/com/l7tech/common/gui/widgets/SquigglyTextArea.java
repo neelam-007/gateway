@@ -5,16 +5,29 @@
  */
 package com.l7tech.common.gui.widgets;
 
-import com.l7tech.common.gui.util.ModelessFeedback;
-
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import java.awt.*;
 
 /**
+ * A JTextArea that can display modeless error feedback in the form of squiggly lines.
  */
-public class SquigglyTextArea extends JTextArea implements ModelessFeedback {
+public class SquigglyTextArea extends JTextArea implements SquigglyField {
+    private final SquigglyFieldSupport support = new SquigglyFieldSupport(new SquigglyFieldSupport.Callbacks() {
+        public void repaint() {
+            SquigglyTextArea.this.repaint();
+        }
+
+        public void setToolTipTextRaw(String text) {
+            SquigglyTextArea.super.setToolTipText(text);
+        }
+
+        public String getToolTipTextRaw() {
+            return SquigglyTextArea.super.getToolTipText();
+        }
+    });
+
     public SquigglyTextArea() {
     }
 
@@ -31,48 +44,43 @@ public class SquigglyTextArea extends JTextArea implements ModelessFeedback {
     }
 
     public synchronized int getBegin() {
-        return _begin;
+        return support.getBegin();
     }
 
     public synchronized int getEnd() {
-        return _end;
+        return support.getEnd();
     }
 
     public synchronized void setRange(int begin, int end) {
-        _begin = begin;
-        _end = end;
-        repaint();
+        support.setRange(begin, end);
     }
 
     public synchronized void setAll() {
-        _begin = ALL;
-        _end = ALL;
-        repaint();
+        support.setAll();
     }
 
     public synchronized void setNone() {
-        _begin = NONE;
-        _end = NONE;
-        repaint();
+        support.setNone();
     }
 
     public synchronized Color getColor() {
-        return _color;
+        return support.getColor();
     }
 
     public synchronized void setColor(Color color) {
-        _color = color;
-        repaint();
+        support.setColor(color);
     }
 
     public synchronized void setSquiggly() {
-        _style = SQUIGGLY;
-        repaint();
+        support.setSquiggly();
+    }
+
+    public synchronized void setDotted() {
+        support.setDotted();
     }
 
     public synchronized void setStraight() {
-        _style = STRAIGHT;
-        repaint();
+        support.setStraight();
     }
 
     public void paintComponent(Graphics g) {
@@ -82,8 +90,8 @@ public class SquigglyTextArea extends JTextArea implements ModelessFeedback {
         int end;
 
         synchronized (this) {
-            begin = _begin;
-            end = _end;
+            begin = getBegin();
+            end = getEnd();
         }
 
         if (begin == NONE || end == NONE) return;
@@ -94,25 +102,26 @@ public class SquigglyTextArea extends JTextArea implements ModelessFeedback {
         if (begin >= len || len == 0) return;
         Color gColor = g.getColor();
         try {
-            g.setColor(_color);
+            g.setColor(getColor());
 
-            int ya = getHeight() - 7;
-            int xb = 0;
-            int xe = getWidth();
+            int ya;
+            int xb;
+            int xe;
 
             try {
                 int beginLine = getLineOfOffset(begin == ALL ? 0 : begin);
-                int endLine = getLineOfOffset(_end == ALL || _end > len ? len : _end);
+                int endLine = getLineOfOffset(end == ALL || end > len ? len : end);
 
                 for(int i = beginLine; i <= endLine; i++) {
                     Rectangle firstChar = modelToView(begin == ALL ? 0 : begin);
                     ya = (int)(firstChar.getY() + firstChar.getHeight());
                     xb = (int)firstChar.getX();
-                    Rectangle lastChar = modelToView(_end == ALL || _end > len ? len : _end);
+                    Rectangle lastChar = modelToView(end == ALL || end > len ? len : end);
                     xe = (int)(lastChar.getX() + lastChar.getWidth());
-                    _style.draw(g, xb, xe, ya);
+                    support.draw(g, xb, xe, ya);
                 }
             } catch (BadLocationException e) {
+                // FALLTHROUGH and omit drawing it
             }
         } finally {
             g.setColor(gColor);
@@ -120,48 +129,18 @@ public class SquigglyTextArea extends JTextArea implements ModelessFeedback {
     }
 
     public String getModelessFeedback() {
-        if (getBegin() == NONE || getEnd() == NONE)
-            return null;
-
-        return getToolTipText();
+        return support.getModelessFeedback();
     }
 
     public void setModelessFeedback(String feedback) {
-        if (feedback == null || feedback.length() < 1)
-            setNone();
-        else
-            setAll();
-        setToolTipText(feedback);
+        support.setModelessFeedback(feedback);
     }
 
-    private static abstract class UnderlineStyle {
-        public abstract void draw(Graphics g, int x1, int x2, int y);
+    public void setToolTipText(String text) {
+        support.setToolTipText(text);
     }
 
-    private static final UnderlineStyle SQUIGGLY = new UnderlineStyle() {
-        public void draw(Graphics g, int x1, int x2, int y) {
-            int oldx = x1;
-            int oldy = y;
-            for (int x = x1; x < x2; x++) {
-                int yy = (int)(0.5 + y + (Math.sin(x / 0.8) * 2));
-                g.drawLine(oldx, oldy, x, yy);
-                oldx = x;
-                oldy = yy;
-            }
-        }
-    };
-
-    private static final UnderlineStyle STRAIGHT = new UnderlineStyle() {
-        public void draw(Graphics g, int x1, int x2, int y) {
-            g.drawLine(x1, y, x2, y);
-        }
-    };
-
-    private int _begin = NONE;
-    private int _end = NONE;
-    private Color _color = Color.RED;
-    private UnderlineStyle _style = SQUIGGLY;
-
-    public static final int NONE = -2;
-    public static final int ALL = -1;
+    public String getToolTipText() {
+        return support.getToolTipText();
+    }
 }
