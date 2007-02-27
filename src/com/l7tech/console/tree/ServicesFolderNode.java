@@ -8,6 +8,9 @@ import com.l7tech.service.ServiceAdmin;
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 
@@ -23,6 +26,13 @@ public class ServicesFolderNode extends AbstractTreeNode {
 
     private ServiceAdmin serviceManager;
     private String title;
+
+    private final Action[] allActions = new Action[]{
+        new PublishServiceAction(),
+        new CreateServiceWsdlAction(),
+        new PublishNonSoapServiceAction(),
+        new RefreshTreeNodeAction(this)
+    };
 
     /**
      * construct the <CODE>ServicesFolderNode</CODE> instance for
@@ -57,12 +67,13 @@ public class ServicesFolderNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{
-            new PublishServiceAction(),
-            new CreateServiceWsdlAction(),
-            new PublishNonSoapServiceAction(),
-            new RefreshTreeNodeAction(this)
-        };
+        // Filter unlicensed actions
+        List<Action> actions = new ArrayList<Action>();
+        for (Action action : allActions) {
+            if (action.isEnabled())
+                actions.add(action);
+        }
+        return actions.toArray(new Action[0]);
     }
 
     /**

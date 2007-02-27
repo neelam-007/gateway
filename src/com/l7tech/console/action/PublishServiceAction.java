@@ -14,6 +14,7 @@ import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.assertion.Operation;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -34,7 +35,7 @@ public class PublishServiceAction extends SecureAction {
     static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
 
     public PublishServiceAction() {
-        super(new AttemptedCreate(EntityType.SERVICE));
+        super(new AttemptedCreate(EntityType.SERVICE), Operation.class);
     }
 
     /**
