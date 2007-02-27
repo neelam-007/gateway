@@ -12,6 +12,7 @@ import javax.swing.*;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import java.awt.*;
+import java.awt.event.MouseEvent;
 
 /**
  * @author alex
@@ -104,7 +105,7 @@ public class SquigglyTextField extends JTextField implements ModelessFeedback {
 
         int ya = getHeight()-7;
         int xb = 0;
-        int xe = getWidth();
+        int xe = getWidth() - 4;
 
         String text = getText();
         int len = text.length();
@@ -117,7 +118,7 @@ public class SquigglyTextField extends JTextField implements ModelessFeedback {
             xb = (int)firstChar.getX();
 
             if (_end != ALL || len > 0) {
-                Rectangle lastChar = modelToView( _end > len ? len : _end );
+                Rectangle lastChar = modelToView( _end == ALL || _end > len ? len : _end );
                 xe = (int)(lastChar.getX()+lastChar.getWidth());
             }
         } catch (BadLocationException e) {
@@ -163,24 +164,46 @@ public class SquigglyTextField extends JTextField implements ModelessFeedback {
     };
 
     public String getModelessFeedback() {
-        if (getBegin() == NONE || getEnd() == NONE)
+        if (!isShowingModlessFeedback())
             return null;
 
-        return getToolTipText();
+        return modelessFeedback;
+    }
+
+    private boolean isShowingModlessFeedback() {
+        return !(getBegin() == NONE || getEnd() == NONE);
     }
 
     public void setModelessFeedback(String feedback) {
-        if (feedback == null || feedback.length() < 1)
+        String prev = modelessFeedback;
+        modelessFeedback = feedback;
+        if (feedback == null || feedback.length() < 1) {
             setNone();
-        else
+            super.setToolTipText(toolTipText);
+        } else {
             setAll();
-        setToolTipText(feedback);
+            super.setToolTipText(modelessFeedback);
+        }
+    }
+
+    public void setToolTipText(String text) {
+        toolTipText = text;
+        if (isShowingModlessFeedback())
+            super.setToolTipText(modelessFeedback);
+        else
+            super.setToolTipText(text);
+    }
+
+    public String getToolTipText(MouseEvent event) {
+        return isShowingModlessFeedback() ? modelessFeedback : toolTipText;
     }
 
     private int _begin = NONE;
     private int _end = NONE;
     private Color _color = Color.RED;
     private UnderlineStyle _style = SQUIGGLY;
+    private String modelessFeedback = null;
+    private String toolTipText = null;
 
     public static final int NONE = -2;
     public static final int ALL = -1;

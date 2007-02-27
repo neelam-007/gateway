@@ -14,6 +14,8 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusListener;
+import java.awt.event.FocusEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.*;
@@ -24,11 +26,13 @@ import java.util.List;
  * whenever a validation rule fails.  Also provides utility methods for easily creating common validation rules.
  * TODO i18n
  */
-public class InputValidator {
+public class InputValidator implements FocusListener {
     private final String dialogTitle;
     private final Component dialogParent;
     private final List rules = new ArrayList();
     private final Map<ModelessFeedback, String> feedbacks = new HashMap<ModelessFeedback, String>();
+    private final Map<ModelessFeedback, String> hiddenFeedbacks = new HashMap<ModelessFeedback, String>();
+    private final Set<Component> focusListening = new HashSet<Component>();
     private AbstractButton buttonToEnable = null;
 
     /**
@@ -68,6 +72,12 @@ public class InputValidator {
     private void addRule(ValidationRule rule) {
         if (rule == null) throw new NullPointerException();
         rules.add(rule);
+        if (rule instanceof ComponentValidationRule) {
+            ComponentValidationRule compRule = (ComponentValidationRule)rule;
+            Component c = compRule.getComponent();
+            if (c instanceof JTextComponent && c instanceof ModelessFeedback)
+                monitorFocus(c);
+        }
     }
 
     /**
@@ -277,6 +287,7 @@ public class InputValidator {
     /** @return all validation errors, or an empty array if no validation rule is currently failing.  Never null. */
     public String[] getAllValidationErrors() {
         feedbacks.clear();
+        hiddenFeedbacks.clear();
         try {
             List errors = new ArrayList();
             for (Iterator i = rules.iterator(); i.hasNext();) {
@@ -285,8 +296,19 @@ public class InputValidator {
                 String err = rule.getValidationError();
                 if (err != null) {
                     errors.add(err);
-                    if (feedback != null)
+                    if (feedback != null) {
+                        // Special rule for text components: if they have focus and are empty, don't show feedback
+                        if (feedback instanceof JTextComponent) {
+                            JTextComponent tc = (JTextComponent)feedback;
+                            if (tc.isFocusOwner() && tc.getText().length() < 1) {
+                                hiddenFeedbacks.put(feedback, err);
+                                err = null;
+                                monitorFocus(tc);
+                            }
+                        }
+
                         feedbacks.put(feedback, err);
+                    }
                 }
             }
             if (buttonToEnable != null) buttonToEnable.setEnabled(errors.isEmpty());
@@ -294,6 +316,13 @@ public class InputValidator {
         } finally {
             updateAllFeedback();
         }
+    }
+
+    private void monitorFocus(Component tc) {
+        if (focusListening.contains(tc))
+            return;
+        tc.addFocusListener(this);
+        focusListening.add(tc);
     }
 
     /**
@@ -337,5 +366,52 @@ public class InputValidator {
             return false;
         }
         return true;
+    }
+
+    public void focusGained(FocusEvent e) {
+        // If we left an empty text component showing error feedback, hide it when it gains focus
+        Component comp = e.getComponent();
+        if (!(comp instanceof ModelessFeedback))
+            return;
+
+        ModelessFeedback feedback = (ModelessFeedback)comp;
+        String message = feedbacks.get(feedback);
+        if (message == null)
+            return;
+
+        if (!(comp instanceof JTextComponent))
+            return;
+
+        JTextComponent tc = (JTextComponent)comp;
+        if (tc.getText().length() < 1) {
+            feedbacks.remove(feedback);
+            hiddenFeedbacks.put(feedback, message);
+            feedback.setModelessFeedback(null);
+        }
+    }
+
+    public void focusLost(FocusEvent e) {
+        if (hiddenFeedbacks.isEmpty())
+            return;
+
+        // If we left an empty text component hiding error feedback, show it when it loses focus
+        Component comp = e.getComponent();
+        if (!(comp instanceof ModelessFeedback))
+            return;
+
+        ModelessFeedback feedback = (ModelessFeedback)comp;
+        String message = hiddenFeedbacks.get(feedback);
+        if (message == null)
+            return;
+
+        if (!(comp instanceof JTextComponent))
+            return;
+
+        JTextComponent tc = (JTextComponent)comp;
+        if (tc.getText().length() < 1) {
+            hiddenFeedbacks.remove(feedback);
+            feedbacks.put(feedback, message);
+            feedback.setModelessFeedback(message);
+        }
     }
 }
