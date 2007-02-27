@@ -156,6 +156,8 @@
 
         <!-- IntelliJ forms -->
         <javac2 srcdir="src" destdir="${build.classes}"/>
+
+        <echo>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%obfuscate value=${obfuscate}</echo>
     </target>
 
     <target name="obfuscatemoduleassertion" depends="-compile" if="obfuscate">
@@ -166,8 +168,8 @@
         <replace file="${moduleName}.zkm" token="@@OBF_TARGET@@" value="${build.classes}/*"/>
         <echo>obfuscating module assertion using ${moduleName}.zkm</echo>
         <Zelix scriptFileName="${build.classes}/../../${moduleName}.zkm"
-               logFileName="obfuscation/clientobfuscation.log"
-               trimLogFileName="obfuscation/clientobfuscation.log"
+               logFileName="obfuscation/${moduleName}obfuscation.log"
+               trimLogFileName="obfuscation/${moduleName}obfuscation.log"
                isParseOnly="false"
                isVerbose="true"/>
     </target>
