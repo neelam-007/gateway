@@ -156,8 +156,6 @@
 
         <!-- IntelliJ forms -->
         <javac2 srcdir="src" destdir="${build.classes}"/>
-
-        <echo>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%obfuscate value=${obfuscate}</echo>
     </target>
 
     <target name="obfuscatemoduleassertion" depends="-compile" if="obfuscate">
