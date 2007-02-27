@@ -211,6 +211,9 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
 
     public void installNewLicense(String newLicenseXml) throws RemoteException, InvalidLicenseException, UpdateException {
         licenseManager.installNewLicense(newLicenseXml);
+
+        // Make sure we don't return until any module updating has been dealt with
+        assertionRegistry.runNeededScan();
     }
 
     public boolean isMetricsEnabled() throws RemoteException {

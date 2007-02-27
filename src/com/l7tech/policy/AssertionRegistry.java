@@ -17,6 +17,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -34,7 +35,7 @@ import java.util.logging.Logger;
  * The Bridge, Gateway, and Manager each have their own implementation, of which there is usually one instance
  * per process.
  */
-public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, ApplicationContextAware, InitializingBean {
+public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, ApplicationContextAware, InitializingBean, ApplicationListener {
     protected static final Logger logger = Logger.getLogger(AssertionRegistry.class.getName());
 
     // Install the default getters that can't be included in DefaultAssertionMetadata itself due to the compile13 closure
@@ -353,5 +354,8 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
     public void afterPropertiesSet() throws Exception {
         // TODO remove this hack, along with WspReader.getDefault(), as soon as everything gets WspReader through Spring
         WspConstants.setTypeMappingFinder(this);
+    }
+
+    public void onApplicationEvent(ApplicationEvent applicationEvent) {
     }
 }

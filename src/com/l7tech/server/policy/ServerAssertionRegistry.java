@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.MetadataFinder;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.system.LicenseEvent;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,6 +29,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.springframework.context.ApplicationEvent;
 
 /**
  * The Gateway's AssertionRegistry, which extends the default registry with the ability to look for
@@ -63,6 +66,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
     private final Map<String, String[]> newClusterProps = new ConcurrentHashMap<String, String[]>();
     private File lastScannedDir = null;
     private long lastScannedDirModTime = 0;
+    private boolean scanNeeded = true;
 
 
     /**
@@ -155,7 +159,6 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         if (!licenseManager.isFeatureEnabled(GatewayFeatureSets.SERVICE_MODULELOADER))
             return false;
 
-        boolean changesMade = false;
 
         String extsList = serverConfig.getProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS);
         if ("-".equals(extsList)) // scanning disabled
@@ -163,12 +166,22 @@ public class ServerAssertionRegistry extends AssertionRegistry {
 
         File dir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_DIRECTORY, "/ssg/modules/assertions", false).getAbsoluteFile();
         long dirLastModified = dir.lastModified();
-        if (dir.equals(lastScannedDir) && dirLastModified == lastScannedDirModTime && failModTimes.isEmpty()) {
+        if (!scanNeeded && dir.equals(lastScannedDir) && (dirLastModified == lastScannedDirModTime) && failModTimes.isEmpty()) {
             // No files added/removed since last scan, and no failures to retry
             return false;
         }
 
         logger.info("Scanning assertion modules directory " + dir.getAbsolutePath() + "...");
+
+        try {
+            return scanModularAssertionsImpl(dir, dirLastModified, extsList);
+        } finally {
+            scanNeeded = false;
+        }
+    }
+
+    private boolean scanModularAssertionsImpl(File dir, long dirLastModified, String extsList) {
+        boolean changesMade = false;
 
         lastScannedDir = dir;
         lastScannedDirModTime = dirLastModified;
@@ -251,7 +264,23 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             }
         }
 
+        scanNeeded = false;
         return changesMade;
+    }
+
+
+    /**
+     * Runs any needed scan and doesn't return until it has finished.
+     * If a scan is needed, and another thread isn't already running one, this will run the scan in
+     * the current thread.
+     */
+    public void runNeededScan() {
+        synchronized (this) {
+            if (!scanNeeded)
+                return;
+            scanModularAssertions();
+            checkForNewClusterProperties();
+        }
     }
 
 
@@ -560,5 +589,18 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         });
 
         gatewayMetadataDefaultsInstalled.set(true);
+    }
+
+    public void onApplicationEvent(ApplicationEvent applicationEvent) {
+        super.onApplicationEvent(applicationEvent);
+
+        if (applicationEvent instanceof LicenseEvent) {
+            // License has changed.  Ensure that module rescan occurs.
+            synchronized (this) {
+                lastScannedDirModTime = 0;
+                failModTimes.clear(); // retry all failures whenever the license changes
+                scanNeeded = true;
+            }
+        }
     }
 }

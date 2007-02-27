@@ -18,6 +18,7 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.Functions;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
 import org.xml.sax.SAXException;
@@ -247,6 +248,7 @@ public class LicenseDialog extends JDialog {
                                 License license = admin.getCurrentLicense();
                                 showingLicenseOrError = license != null;
                                 licensePanel.setLicense(license);
+                                TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
                                 reg.getLicenseManager().setLicense(license);
                                 installButton.setVisible(false);
                                 pack();
