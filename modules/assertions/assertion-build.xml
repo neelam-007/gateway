@@ -136,7 +136,7 @@
     </target>
 
     <!-- Compile java src -->
-    <target name="-compile">
+    <target name="reallycompile">
         <available property="classes.available" file="${UneasyRooster.dir}/build/classes"/>
         <fail unless="classes.available">UneasyRooster does not seem to have been built yet (missing ${UneasyRooster.dir}/build/classes).</fail>
         <mkdir dir="lib"/>
@@ -158,8 +158,12 @@
         <javac2 srcdir="src" destdir="${build.classes}"/>
     </target>
 
-    <target name="obfuscatemoduleassertion" depends="-compile" if="obfuscate">
-        <!-- obfuscate if required -->
+    <target name="checkobf">
+        <available file="${UneasyRooster.dir}/build/please_obfuscate" property="localobfuscate"/>
+    </target>
+
+    <target name="-compile" depends="checkobf, reallycompile" if="localobfuscate">
+        <!-- obfuscation will only occur if the please_obfuscate file is present -->
         <property name="stringed-cpath" refid="compile.classpath"/>
         <copyfile src="../moduleassertion.zkm" dest="${moduleName}.zkm"/>
         <replace file="${moduleName}.zkm" token="@@CP_VALUE@@" value="${stringed-cpath}"/>
@@ -172,7 +176,7 @@
                isVerbose="true"/>
     </target>
 
-    <target name="-compile-tests" depends="obfuscatemoduleassertion">
+    <target name="-compile-tests" depends="-compile">
         <mkdir dir="${build.classes}-test"/>
         <copy todir="${build.classes}-test">
             <fileset dir="tests">

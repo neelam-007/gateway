@@ -3143,6 +3143,7 @@
     <target name="obfuscate" description="Enable obfuscated build (when packaging)">
         <echo level="info">Enabling obfuscation for build.</echo>
         <property name="obfuscate" value="true"/>
+        <mkdir dir="build"/>
         <touch file="build/please_obfuscate"/>
     </target>
 
