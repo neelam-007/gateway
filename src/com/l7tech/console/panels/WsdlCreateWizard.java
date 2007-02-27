@@ -149,7 +149,6 @@ public class WsdlCreateWizard extends Wizard {
             wsdlComposer.addNamespace(null, DEFAULT_NAME_SPACE);
         } else {
             wsdlComposer = new WsdlComposer(origWsdl);
-            wsdlComposer.setOriginalWsdl(origWsdl);
         }
         
         if (originalWsdls != null && originalWsdls.size() != 0) {

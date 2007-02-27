@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
@@ -33,7 +34,8 @@ import java.io.IOException;
 public class WSDLCompositionPanel extends WizardStepPanel{
 
     private static final Logger logger = Logger.getLogger(WSDLCompositionPanel.class.getName());
-
+    public static final String MAX_SOURCE_WSDLS = "com.l7tech.wsdl.maxsources";
+    public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private JLabel panelHeader;
     private JPanel mainPanel;
     private JButton addWSDL;
@@ -77,6 +79,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     };
     private WsdlComposer wsdlComposer;
     private Icon operationIcon;
+    private int maxSources;
 
     public WSDLCompositionPanel(WizardStepPanel next) {
         super(next);
@@ -84,7 +87,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
         initialize();
-        operationIcon = new ImageIcon(getClass().getClassLoader().getResource("com/l7tech/console/resources/methodPublic.gif"));
+        operationIcon = new ImageIcon(getClass().getClassLoader().getResource(RESOURCE_PATH +  "/methodPublic.gif"));
     }
 
     public String getStepLabel() {
@@ -98,24 +101,17 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     }
 
     private void populateSourceWsdlView() {
-        if ((wsdlComposer == null || wsdlComposer.getSourceWsdls().isEmpty()) && wsdlComposer.getOriginalWsdl() == null)
+        if ((wsdlComposer == null || wsdlComposer.getSourceWsdls().isEmpty()) && wsdlComposer.getOriginalWsdlDoc() == null)
             return;
 
         sourceWsdlListModel.clear();
-        if (wsdlComposer.getOriginalWsdl() != null) {
-            try {
-                Wsdl w = Wsdl.newInstance(wsdlComposer.getOriginalWsdl().getDocumentElement().getBaseURI(), wsdlComposer.getOriginalWsdl());
-                WsdlComposer.WsdlHolder origHolder = new WsdlComposer.WsdlHolder(w, wsdlComposer.getOriginalWsdl().getDocumentURI());
-                sourceWsdlListModel.addWsdl(origHolder.wsdl, origHolder.toString());
-            } catch (WSDLException e) {
-                logger.warning("Could not parse original WSDL: " + e.getMessage());
-            }
-        }
         for (WsdlComposer.WsdlHolder wsdlHolder : wsdlComposer.getSourceWsdls())
-            sourceWsdlListModel.addWsdl(wsdlHolder.wsdl, wsdlHolder.toString());
+                sourceWsdlListModel.addWsdl(wsdlHolder);
+        ensureSourceSelected();
     }
 
     private void initialize() {
+        maxSources = Integer.getInteger(MAX_SOURCE_WSDLS, 50);
         setShowDescriptionPanel(false);
         panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
 
@@ -148,9 +144,11 @@ public class WSDLCompositionPanel extends WizardStepPanel{
             }
         });
 
+        addToResultButton.setIcon(new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/Add16.gif")));
         addToResultButton.addActionListener(manageCompositionActionListener);
         addToResultButton.setToolTipText("Add to Resulting WSDL");
 
+        removeFromResultButton.setIcon(new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/Remove16.gif")));
         removeFromResultButton.addActionListener(manageCompositionActionListener);
         removeFromResultButton.setToolTipText("Remove from Resulting WSDL");
 
@@ -200,18 +198,29 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     }
 
     private void doAddSourceWsdl() {
+        if (sourceWsdlListModel.getSize() >= maxSources) {
+            return;
+        }
         ChooseWsdlDialog dlg = new ChooseWsdlDialog(getOwner(), logger, "Choose WSDL");
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
 
         if (!dlg.wasCancelled()) {
             Wsdl wsdl = dlg.getSelectedWsdl();
-            Document wsdlDoc = dlg.getWsdlDocument();
             String wsdlLocation = dlg.getWsdlLocation();
-            if (wsdlDoc != null) {
-                sourceWsdlListModel.addWsdl(wsdl, wsdlLocation);
+            if (wsdl != null) {
+                sourceWsdlListModel.addWsdl(new WsdlComposer.WsdlHolder(wsdl, wsdlLocation));
                 ensureSourceSelected();
             }
+        }
+        enableAddSourceButton();
+    }
+
+    private void enableAddSourceButton() {
+        if (sourceWsdlListModel.getSize() >= maxSources) {
+            addWSDL.setEnabled(false);
+        } else {
+            addWSDL.setEnabled(true);
         }
     }
 
@@ -320,12 +329,11 @@ public class WSDLCompositionPanel extends WizardStepPanel{
             fireContentsChanged(sourceWsdlList, 0, wsdlList.size());
         }
         
-        public void addWsdl(Wsdl wsdl, String wsdlLocation) {
-            if (wsdl != null) {
-                WsdlComposer.WsdlHolder holder = new WsdlComposer.WsdlHolder(wsdl, wsdlLocation);
-                if (!wsdlList.contains(holder)) {
+        public void addWsdl(WsdlComposer.WsdlHolder wsdlHolder) {
+            if (wsdlHolder != null) {
+                if (!wsdlList.contains(wsdlHolder)) {
                     try {
-                        wsdlList.add(holder);
+                        wsdlList.add(wsdlHolder);
                     } finally {
                         fireContentsChanged(sourceWsdlList, 0, wsdlList.size());
                     }
@@ -462,17 +470,14 @@ public class WSDLCompositionPanel extends WizardStepPanel{
 
         private void populate() {
             if (wsdlComposer != null) {
-                Set<BindingOperation> allOps = new HashSet<BindingOperation>();
-                Binding b = wsdlComposer.getBinding();
-                if (b != null) {
-                    List others = b.getBindingOperations();
-                    if (others != null) {
-                        for (Object other : others) {
-                            allOps.add((BindingOperation) other);
+                Map<WsdlComposer.WsdlHolder, Set<BindingOperation>> boMap = wsdlComposer.getBindingOperatiosnMap();
+                if (boMap != null) {
+                    for (WsdlComposer.WsdlHolder wsdlHolder : boMap.keySet()) {
+                        for (BindingOperation bindingOperation : boMap.get(wsdlHolder)) {
+                            this.addElement(new BindingOperationHolder(bindingOperation, wsdlHolder));
                         }
                     }
                 }
-                addBindingOperations(allOps, false);
             }
         }
 
