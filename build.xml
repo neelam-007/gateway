@@ -727,6 +727,7 @@
       Remove any build artifacts
     -->
     <target name="clean" depends="init,clean.test,clean.modules" description="Delete all build output.">
+        <delete file="${build.dir}/please_obfuscate"/>
         <delete dir="${dist.dir}"/>
         <delete dir="${build.classes}"/>
         <delete dir="${build.test.classes}"/>
@@ -3142,6 +3143,7 @@
     <target name="obfuscate" description="Enable obfuscated build (when packaging)">
         <echo level="info">Enabling obfuscation for build.</echo>
         <property name="obfuscate" value="true"/>
+        <touch file="build/please_obfuscate"/>
     </target>
 
     <!--
