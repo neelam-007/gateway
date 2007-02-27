@@ -15,12 +15,15 @@ import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
 import java.io.IOException;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class SoapActionResolver extends WsdlOperationServiceResolver {
+    private final Logger logger = Logger.getLogger(SoapActionResolver.class.getName());
+
     public int getSpeed() {
         return FAST;
     }
@@ -39,7 +42,10 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
         } catch (IOException e) {
             throw new ServiceResolutionException("Found multiple " + SoapUtil.SOAPACTION + " headers"); // can't happen
         }
-        if (soapAction == null) return null;
+        if (soapAction == null) {
+            logger.fine("soapaction is null");
+            return "";
+        }
         // Strip leading and trailing quotes
         return SoapUtil.stripQuotes(soapAction);
 
@@ -49,6 +55,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
         // since this only applies to http messages, we dont want to narrow down subset if msg is not http
         boolean notHttp = (request.getKnob(HttpRequestKnob.class) == null);
         if (notHttp) {
+            logger.fine("soapaction resolver skipped because the request is not http");
             return serviceSubset;
         } else {
             return super.resolve(request, serviceSubset);
