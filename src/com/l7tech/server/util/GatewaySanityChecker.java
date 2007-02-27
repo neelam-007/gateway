@@ -10,12 +10,13 @@ import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.BootMessages;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.event.system.Started;
-import com.l7tech.server.upgrade.UpgradeTask;
-import com.l7tech.server.upgrade.NonfatalUpgradeException;
 import com.l7tech.server.upgrade.FatalUpgradeException;
+import com.l7tech.server.upgrade.NonfatalUpgradeException;
+import com.l7tech.server.upgrade.UpgradeTask;
+import org.hibernate.TransactionException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -24,7 +25,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.hibernate.TransactionException;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -40,6 +40,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
 
     /** Currently, the whitelist of allowed upgrade task values is very simple -- there's only one! */
     private static final String VALUE_35_36_ADD_ROLES = "com.l7tech.server.upgrade.Upgrade35To36AddRoles";
+    private static final String VALUE_365_37_ADD_SAMPLE_MESSAGE_PERMISSIONS = "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions";
 
     private final ClusterPropertyManager clusterPropertyManager;
     private final PlatformTransactionManager transactionManager; // required for TransactionTemplate
@@ -104,7 +105,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
 
     /** @return true if the specified upgrade task is on the whitelist of allowed upgrade tasks. */
     private boolean isUpgradeTaskRecognized(String value) {
-        return value.equals(VALUE_35_36_ADD_ROLES);
+        return value.equals(VALUE_35_36_ADD_ROLES) || value.equals(VALUE_365_37_ADD_SAMPLE_MESSAGE_PERMISSIONS);
     }
 
     /**

@@ -93,9 +93,6 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
         return oid;
     }
 
-    public void setVisitorClassnames(String visitorClasses) {
-    }
-
     public void initiateServiceCache() {
     }
 

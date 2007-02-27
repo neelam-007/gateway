@@ -6,6 +6,8 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * Holds a sample message for a {@link PublishedService}.
  */
 public class SampleMessage extends NamedEntityImp {
+    public static final String ATTR_SERVICE_OID = "serviceOid";
+
     public SampleMessage(long serviceOid, String name, String operationName, String xml) {
         this.serviceOid = serviceOid;
         this._name = name;

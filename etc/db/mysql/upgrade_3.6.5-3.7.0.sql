@@ -21,3 +21,23 @@ CREATE TABLE service_documents (
   PRIMARY KEY (objectid),
   FOREIGN KEY (service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+
+--
+-- Foreign key from sample_messages to published_service
+--
+
+-- Delete orphaned messages
+DELETE FROM sample_messages
+    WHERE objectid != NULL AND objectid NOT IN (SELECT objectid FROM published_service);
+
+-- Add foreign key constraint
+ALTER TABLE sample_messages
+    ADD FOREIGN KEY (published_service_oid)
+    REFERENCES published_service (objectid)
+    ON DELETE CASCADE;
+
+-- Mark upgrade task
+    insert into cluster_properties
+        (objectid, version, propkey, propvalue)
+        values (-300700, 0, "upgrade.task.300700", "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions");

@@ -492,6 +492,7 @@ CREATE TABLE sample_messages (
   operation_name varchar(128),
   INDEX i_ps_oid (published_service_oid),
   INDEX i_operation_name (operation_name),
+  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
   PRIMARY KEY (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 

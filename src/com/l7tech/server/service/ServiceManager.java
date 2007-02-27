@@ -26,8 +26,6 @@ public interface ServiceManager extends EntityManager<PublishedService, EntityHe
      */
     String resolveWsdlTarget(String url) throws java.rmi.RemoteException;
 
-    void setVisitorClassnames(String visitorClasses);
-
     @Transactional(propagation= Propagation.SUPPORTS)
     void initiateServiceCache();
 
