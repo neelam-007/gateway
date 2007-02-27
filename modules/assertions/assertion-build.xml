@@ -158,7 +158,21 @@
         <javac2 srcdir="src" destdir="${build.classes}"/>
     </target>
 
-    <target name="-compile-tests" depends="-compile">
+    <target name="obfuscatemoduleassertion" depends="-compile" if="obfuscate">
+        <!-- obfuscate if required -->
+        <property name="stringed-cpath" refid="compile.classpath"/>
+        <copyfile src="../moduleassertion.zkm" dest="${moduleName}.zkm"/>
+        <replace file="${moduleName}.zkm" token="@@CP_VALUE@@" value="${stringed-cpath}"/>
+        <replace file="${moduleName}.zkm" token="@@OBF_TARGET@@" value="${build.classes}/*"/>
+        <echo>obfuscating module assertion using ${moduleName}.zkm</echo>
+        <Zelix scriptFileName="${build.classes}/../../${moduleName}.zkm"
+               logFileName="obfuscation/clientobfuscation.log"
+               trimLogFileName="obfuscation/clientobfuscation.log"
+               isParseOnly="false"
+               isVerbose="true"/>
+    </target>
+
+    <target name="-compile-tests" depends="obfuscatemoduleassertion">
         <mkdir dir="${build.classes}-test"/>
         <copy todir="${build.classes}-test">
             <fileset dir="tests">
