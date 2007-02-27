@@ -679,7 +679,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             fieldKerberosName.setToolTipText("<HTML>Optional Gateway service/host name, for example<br><address>http/gateway.example.com");
             validator.constrainTextField(fieldKerberosName, new InputValidator.ComponentValidationRule(fieldKerberosName) {
                 public String getValidationError() {
-                    if (!ValidationUtils.isValidCharacters(fieldKerberosName.getText(), ValidationUtils.ALPHA_NUMERIC+"/."))
+                    if (!ValidationUtils.isValidCharacters(fieldKerberosName.getText(), ValidationUtils.ALPHA_NUMERIC+"/.-_"))
                         return "Optional gateway service field must contain only letters, numbers, slashes, and periods.";
                     return null;
                 }
