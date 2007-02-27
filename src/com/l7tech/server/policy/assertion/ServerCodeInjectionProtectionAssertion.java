@@ -5,11 +5,14 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.message.*;
+import com.l7tech.common.message.HttpServletRequestKnob;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -18,15 +21,13 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NamedNodeMap;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -108,7 +109,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
             for (String urlParamValue : urlParams.get(urlParamName)) {
                 if (scan(urlParamValue, _assertion.getProtection().getPattern(), evidence)) {
                     _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
-                            new String[]{"request URL", urlParamName, evidence.toString()});
+                            "request URL", urlParamName, evidence.toString());
                     return AssertionStatus.FALSIFIED;
                 }
             }
@@ -130,7 +131,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
                 for (String urlParamValue : urlParams.get(urlParamName)) {
                     if (scan(urlParamValue, _assertion.getProtection().getPattern(), evidence)) {
                         _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
-                                new String[]{"request message body", urlParamName, evidence.toString()});
+                                "request message body", urlParamName, evidence.toString());
                         return AssertionStatus.FALSIFIED;
                     }
                 }
@@ -167,7 +168,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
      * @param message       either a request Message or a response Message
      * @param direction     message direction
      * @return an assertion status
-     * @throws IOException
+     * @throws IOException if error in parsing
      */
     private AssertionStatus scanBodyAsMultipartFormData(final Message message, final Direction direction) throws IOException {
         if (_logger.isLoggable(Level.FINER)) {
@@ -204,7 +205,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
                         StringBuilder evidence = new StringBuilder();
                         if (scan(partString, _assertion.getProtection().getPattern(), evidence)) {
                             _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                                    new String[]{where, evidence.toString()});
+                                    where, evidence.toString());
                             return AssertionStatus.FALSIFIED;
                         }
                     } catch (NoSuchPartException e) {
@@ -254,7 +255,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
             final StringBuilder evidence = new StringBuilder();
             if (scan(bodyString, _assertion.getProtection().getPattern(), evidence)) {
                 _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                        new String[]{where, evidence.toString()});
+                        where, evidence.toString());
                 return AssertionStatus.FALSIFIED;
             }
         } catch (NoSuchPartException e) {
@@ -297,8 +298,17 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
             case Node.CDATA_SECTION_NODE:
             case Node.TEXT_NODE:
                 if (scan(node.getNodeValue(), _assertion.getProtection().getPattern(), evidence)) {
+                    String nodePath = node.getNodeName();
+                    if (node.getParentNode() != null) {
+                        nodePath = node.getParentNode().getNodeName() + "/" + node.getNodeName();
+                    } else if (node instanceof Attr) {
+                        final Element element = ((Attr) node).getOwnerElement();
+                        if (element != null) {
+                            nodePath = element.getNodeName() + "@" + node.getNodeName();
+                        }
+                    }
                     _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                            new String[]{where + " in " + node.getParentNode().getNodeName() + "@" + node.getNodeName(), evidence.toString()});
+                            where + " in XML node " + nodePath, evidence.toString());
                     return true;
                 }
                 break;
