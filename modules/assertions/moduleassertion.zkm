@@ -54,4 +54,4 @@ obfuscate   changeLogFileIn=""
 
 // this lets you specify the output directory. it will contain whatever you added with
 // open statement(s) except it will be the obfuscated copy
-saveAll     archiveCompression=all "./build/obfuscation";
+saveAll     archiveCompression=all "@@OBF_OUTPUT@@";

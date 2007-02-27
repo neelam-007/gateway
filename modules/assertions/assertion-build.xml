@@ -168,6 +168,7 @@
         <copyfile src="../moduleassertion.zkm" dest="${moduleName}.zkm"/>
         <replace file="${moduleName}.zkm" token="@@CP_VALUE@@" value="${stringed-cpath}"/>
         <replace file="${moduleName}.zkm" token="@@OBF_TARGET@@" value="${build.classes}/*"/>
+        <replace file="${moduleName}.zkm" token="@@OBF_OUTPUT@@" value="${build.classes}"/>
         <echo>obfuscating module assertion using ${moduleName}.zkm</echo>
         <Zelix scriptFileName="${build.classes}/../../${moduleName}.zkm"
                logFileName="obfuscation/${moduleName}obfuscation.log"
