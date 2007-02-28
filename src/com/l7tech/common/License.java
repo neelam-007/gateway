@@ -232,9 +232,11 @@ public final class License implements Serializable {
      * </pre>
      *
      * @param licenseXml     a String containing the License as XML data.
-     * @param trustedIssuers
+     * @param trustedIssuers license signing certificates that whose signatures will be considered valid.  If null,
+     *                       no license signatures will be considered valid.
      * @param featureSetExpander  a {@link FeatureSetExpander} to explode out the complete set of leaf features given
-     *                            the possibly-more-abstract feature set names explicitly listed in the License.  Must not be null.
+     *                            the possibly-more-abstract feature set names explicitly listed in the License.
+     *                            If null, only the features named explicitly in the license will be considered enabled.
      * @throws SAXException if the licenseXml is not well-formed XML
      * @throws ParseException if one of the fields of the license contains illegally-formatted data
      * @throws TooManyChildElementsException if there is more than one copy of an element that there can be only one of (ie, expires, Signature, etc)
@@ -244,7 +246,11 @@ public final class License implements Serializable {
     public License(String licenseXml, X509Certificate[] trustedIssuers, FeatureSetExpander featureSetExpander)
             throws SAXException, ParseException, TooManyChildElementsException, SignatureException, InvalidLicenseException {
         if (licenseXml == null) throw new NullPointerException("licenseXml must not be null");
-        if (featureSetExpander == null) throw new NullPointerException("featureSetExpander must not be null");
+        if (featureSetExpander == null) featureSetExpander = new FeatureSetExpander() {
+            public Set getAllEnabledFeatures(Set inputSet) {
+                return inputSet;
+            }
+        };
         Document ld = XmlUtil.stringToDocument(licenseXml);
         XmlUtil.stripWhitespace(ld.getDocumentElement());
 
