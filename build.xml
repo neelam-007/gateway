@@ -3006,7 +3006,17 @@
 
     <!-- flasher obfuscation -->
     <target name="obfuscate.flasher" if="obfuscate" unless="ssg.only">
-        <copy tofile="build/etc/flasher.zkm" file="etc/obfuscation/flasher.zkm"/>
+        <!-- dynamically generate the lib list -->
+        <delete file="build/etc/flasher.zkm"/>
+        <copy tofile="build/etc/flasher.zkm" file="etc/obfuscation/genjarobf.zkm"/>
+        <path id="flasher.libs.obf">
+            <fileset dir="build/migration/lib">
+                <include name="*.jar"/>
+            </fileset>
+        </path>
+        <property name="stringed-cpath" refid="flasher.libs.obf"/>
+        <replace file="build/etc/flasher.zkm" token="@@CP@@" value="${stringed-cpath}"/>
+        <replace file="build/etc/flasher.zkm" token="@@JAR@@" value="./build/migration/SSGMigration.jar"/>
         <echo>Obfuscating SSGMigration.jar</echo>
         <Zelix scriptFileName="build/etc/flasher.zkm"
                logFileName="build/obfuscation/flasherobfuscation.log"
@@ -3017,9 +3027,19 @@
         <copy tofile="build/migration/SSGMigration.jar" file="build/obfuscation/SSGMigration.jar" overwrite="true"/>
     </target>
 
-    <!-- flasher obfuscation -->
+    <!-- config wiz obfuscation -->
     <target name="obfuscate.cfgwiz" if="obfuscate" unless="ssg.only">
-        <copy tofile="build/etc/cfgwiz.zkm" file="etc/obfuscation/cfgwiz.zkm"/>
+        <delete file="build/etc/cfgwiz.zkm"/>
+        <copy tofile="build/etc/cfgwiz.zkm" file="etc/obfuscation/genjarobf.zkm"/>
+        <path id="cfgwiz.libs.obf">
+            <fileset dir="build/configwizard/lib">
+                <include name="*.jar"/>
+            </fileset>
+        </path>
+        <property name="stringed2-cpath" refid="cfgwiz.libs.obf"/>
+        <echo>^^^^^^^^^^^^^^^^^^^^^^cfgwiz libs: ${stringed2-cpath}</echo>
+        <replace file="build/etc/cfgwiz.zkm" token="@@CP@@" value="${stringed2-cpath}"/>
+        <replace file="build/etc/cfgwiz.zkm" token="@@JAR@@" value="./build/configwizard/ConfigWizard.jar"/>
         <echo>Obfuscating ConfigWizard.jar</echo>
         <Zelix scriptFileName="build/etc/cfgwiz.zkm"
                logFileName="build/obfuscation/cfgwizobfuscation.log"
@@ -3030,9 +3050,18 @@
         <copy tofile="build/configwizard/ConfigWizard.jar" file="build/obfuscation/ConfigWizard.jar" overwrite="true"/>
     </target>
 
-    <!-- flasher obfuscation -->
+    <!-- sys config wiz obfuscation -->
     <target name="obfuscate.syscfgwiz" if="obfuscate" unless="ssg.only">
-        <copy tofile="build/etc/syscfgwiz.zkm" file="etc/obfuscation/syscfgwiz.zkm"/>
+        <delete file="build/etc/syscfgwiz.zkm"/>
+        <copy tofile="build/etc/syscfgwiz.zkm" file="etc/obfuscation/genjarobf.zkm"/>
+        <path id="syscfgwiz.libs.obf">
+            <fileset dir="build/sysconfigwizard/lib">
+                <include name="*.jar"/>
+            </fileset>
+        </path>
+        <property name="stringed3-cpath" refid="syscfgwiz.libs.obf"/>
+        <replace file="build/etc/syscfgwiz.zkm" token="@@CP@@" value="${stringed3-cpath}"/>
+        <replace file="build/etc/syscfgwiz.zkm" token="@@JAR@@" value="./build/configwizard/ConfigWizard.jar"/>
         <echo>Obfuscating SystemConfigWizard.jar</echo>
         <Zelix scriptFileName="build/etc/syscfgwiz.zkm"
                logFileName="build/obfuscation/syscfgwizobfuscation.log"
