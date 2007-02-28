@@ -70,7 +70,7 @@
         </constraints>
         <properties>
           <text value="Server Certificate:"/>
-          <visible value="true"/>
+          <visible value="false"/>
         </properties>
       </component>
       <hspacer id="cf849">
@@ -91,12 +91,16 @@
         <constraints>
           <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
-        <properties/>
+        <properties>
+          <visible value="false"/>
+        </properties>
         <border type="none"/>
         <children>
           <component id="c80c9" class="javax.swing.JList" binding="serverCertList">
             <constraints/>
-            <properties/>
+            <properties>
+              <visible value="false"/>
+            </properties>
           </component>
         </children>
       </scrollpane>
@@ -106,6 +110,7 @@
         </constraints>
         <properties>
           <text value="Discover Automatically"/>
+          <visible value="false"/>
         </properties>
       </component>
       <component id="febf2" class="javax.swing.JRadioButton" binding="rbServerCertManual">
@@ -114,6 +119,7 @@
         </constraints>
         <properties>
           <text value="Manually Specify Server Certificate:"/>
+          <visible value="false"/>
         </properties>
       </component>
       <hspacer id="ba67">
@@ -137,6 +143,7 @@
             </constraints>
             <properties>
               <text value="New"/>
+              <visible value="false"/>
             </properties>
           </component>
           <vspacer id="13b8b">
