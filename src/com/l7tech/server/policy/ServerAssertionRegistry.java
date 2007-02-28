@@ -224,7 +224,8 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         }
 
         // check for removed failed modules
-        for (String failedName : failModTimes.keySet()) {
+        Set<String> failedNames = failModTimes.keySet();
+        for (String failedName : failedNames) {
             if (!jarnames.contains(failedName)) {
                 logger.info("Forgetting about failed module that has been removed or disabled: " + failedName);
                 failModTimes.remove(failedName);
