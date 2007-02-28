@@ -120,5 +120,6 @@ public class Advices {
                 put(WsiSamlAssertion.class, ary(AddWsiSamlAssertionAdvice.class));
                 put(HtmlFormDataAssertion.class, ary(HtmlFormDataAssertionAdvice.class));
                 put(CodeInjectionProtectionAssertion.class, ary(CodeInjectionProtectionAssertionAdvice.class));
+                put(SimpleXpathAssertion.class, ary(AddXPathAssertionAdvice.class));
             }};
 }
