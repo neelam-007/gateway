@@ -3006,8 +3006,12 @@
 
     <!-- flasher obfuscation -->
     <target name="obfuscate.flasher" if="obfuscate" unless="ssg.only">
-        <!-- dynamically generate the lib list -->
+        <!-- cleanup previous output -->
         <delete file="build/etc/flasher.zkm"/>
+        <delete file="build/obfuscation/flasherobfuscation.log"/>
+        <delete file="build/obfuscation/flasherobfuscation.trim"/>
+
+        <!-- dynamically generate the lib list and target -->
         <copy tofile="build/etc/flasher.zkm" file="etc/obfuscation/genjarobf.zkm"/>
         <path id="flasher.libs.obf">
             <fileset dir="build/migration/lib">
@@ -3017,10 +3021,12 @@
         <property name="stringed-cpath" refid="flasher.libs.obf"/>
         <replace file="build/etc/flasher.zkm" token="@@CP@@" value="${stringed-cpath}"/>
         <replace file="build/etc/flasher.zkm" token="@@JAR@@" value="./build/migration/SSGMigration.jar"/>
+
+        <!-- the actual obfuscation -->
         <echo>Obfuscating SSGMigration.jar</echo>
         <Zelix scriptFileName="build/etc/flasher.zkm"
                logFileName="build/obfuscation/flasherobfuscation.log"
-               trimLogFileName="build/obfuscation/flasherobfuscation.log"
+               trimLogFileName="build/obfuscation/flasherobfuscation.trim"
                isParseOnly="false"
                isVerbose="true"/>
         <echo>Done obfuscating SSGMigration.jar</echo>
@@ -3029,7 +3035,12 @@
 
     <!-- config wiz obfuscation -->
     <target name="obfuscate.cfgwiz" if="obfuscate" unless="ssg.only">
+        <!-- cleanup previous output -->
         <delete file="build/etc/cfgwiz.zkm"/>
+        <delete file="build/obfuscation/cfgwizobfuscation.log"/>
+        <delete file="build/obfuscation/cfgwizobfuscation.trim"/>
+
+        <!-- dynamically generate the lib list and target -->
         <copy tofile="build/etc/cfgwiz.zkm" file="etc/obfuscation/genjarobf.zkm"/>
         <path id="cfgwiz.libs.obf">
             <fileset dir="build/configwizard/lib">
@@ -3039,10 +3050,12 @@
         <property name="stringed2-cpath" refid="cfgwiz.libs.obf"/>
         <replace file="build/etc/cfgwiz.zkm" token="@@CP@@" value="${stringed2-cpath}"/>
         <replace file="build/etc/cfgwiz.zkm" token="@@JAR@@" value="./build/configwizard/ConfigWizard.jar"/>
+
+        <!-- the actual obfuscation -->
         <echo>Obfuscating ConfigWizard.jar</echo>
         <Zelix scriptFileName="build/etc/cfgwiz.zkm"
                logFileName="build/obfuscation/cfgwizobfuscation.log"
-               trimLogFileName="build/obfuscation/cfgwizobfuscation.log"
+               trimLogFileName="build/obfuscation/cfgwizobfuscation.trim"
                isParseOnly="false"
                isVerbose="true"/>
         <echo>Done obfuscating ConfigWizard.jar</echo>
@@ -3051,7 +3064,12 @@
 
     <!-- sys config wiz obfuscation -->
     <target name="obfuscate.syscfgwiz" if="obfuscate" unless="ssg.only">
+        <!-- cleanup previous output -->
         <delete file="build/etc/syscfgwiz.zkm"/>
+        <delete file="build/obfuscation/syscfgwizobfuscation.log"/>
+        <delete file="build/obfuscation/syscfgwizobfuscation.trim"/>
+
+        <!-- dynamically generate the lib list and target -->
         <copy tofile="build/etc/syscfgwiz.zkm" file="etc/obfuscation/genjarobf.zkm"/>
         <path id="syscfgwiz.libs.obf">
             <fileset dir="build/sysconfigwizard/lib">
@@ -3060,16 +3078,19 @@
         </path>
         <property name="stringed3-cpath" refid="syscfgwiz.libs.obf"/>
         <replace file="build/etc/syscfgwiz.zkm" token="@@CP@@" value="${stringed3-cpath}"/>
-        <replace file="build/etc/syscfgwiz.zkm" token="@@JAR@@" value="./build/configwizard/ConfigWizard.jar"/>
+        <replace file="build/etc/syscfgwiz.zkm" token="@@JAR@@" value="./build/sysconfigwizard/SystemConfigWizard.jar"/>
+
+        <!-- the actual obfuscation -->
         <echo>Obfuscating SystemConfigWizard.jar</echo>
         <Zelix scriptFileName="build/etc/syscfgwiz.zkm"
                logFileName="build/obfuscation/syscfgwizobfuscation.log"
-               trimLogFileName="build/obfuscation/syscfgwizobfuscation.log"
+               trimLogFileName="build/obfuscation/syscfgwizobfuscation.trim"
                isParseOnly="false"
                isVerbose="true"/>
         <echo>Done obfuscating SystemConfigWizard.jar</echo>
         <copy tofile="build/sysconfigwizard/SystemConfigWizard.jar" file="build/obfuscation/SystemConfigWizard.jar" overwrite="true"/>
     </target>
+    
     <!--
       SecureSpan XML VPN Client obfuscation target
     -->
