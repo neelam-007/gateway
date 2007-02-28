@@ -79,6 +79,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private URL routedServiceUrl;
     private long routingStartTime;
     private long routingEndTime;
+    private long routingTotalTime;
     private AssertionStatus policyoutcome;
     private static ThreadLocal<PolicyEnforcementContext> instanceHolder = new ThreadLocal<PolicyEnforcementContext>();
 
@@ -361,6 +362,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void routingFinished() {
         this.routingEndTime = System.currentTimeMillis();
+        routingTotalTime += routingEndTime - routingStartTime;
     }
 
     public long getRoutingStartTime() {
@@ -369,6 +371,11 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public long getRoutingEndTime() {
         return routingEndTime;
+    }
+
+    /** @return total duration (in milliseconds) of all routings (e.g., if this policy has multiple routings) */
+    public long getRoutingTotalTime() {
+        return routingTotalTime;
     }
 
     public Operation getOperation()
