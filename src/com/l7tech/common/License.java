@@ -246,11 +246,6 @@ public final class License implements Serializable {
     public License(String licenseXml, X509Certificate[] trustedIssuers, FeatureSetExpander featureSetExpander)
             throws SAXException, ParseException, TooManyChildElementsException, SignatureException, InvalidLicenseException {
         if (licenseXml == null) throw new NullPointerException("licenseXml must not be null");
-        if (featureSetExpander == null) featureSetExpander = new FeatureSetExpander() {
-            public Set getAllEnabledFeatures(Set inputSet) {
-                return inputSet;
-            }
-        };
         Document ld = XmlUtil.stringToDocument(licenseXml);
         XmlUtil.stripWhitespace(ld.getDocumentElement());
 
@@ -282,7 +277,7 @@ public final class License implements Serializable {
 
         Set featureSets = new HashSet();
         collectFeatureSets(ld, "product", "featureset", featureSets);
-        allEnabledFeatures = featureSetExpander.getAllEnabledFeatures(featureSets);
+        allEnabledFeatures = featureSetExpander == null ? featureSets : featureSetExpander.getAllEnabledFeatures(featureSets);
 
         //noinspection unchecked
         this.g = new LicenseGrants(hostname, ip, product, versionMajor, versionMinor,
