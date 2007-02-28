@@ -64,7 +64,6 @@ class UserGroupsPanel extends JPanel {
         super();
         this.ipc = ipc;
         this.canUpdateUser = canUpdateUser;
-
         try {
             this.userPanel = panel;
             layoutComponents();
@@ -382,6 +381,7 @@ class UserGroupsPanel extends JPanel {
                     JDialog dialog = d instanceof Dialog
                         ? new NewGroupForUserDialog((Dialog)d, UserGroupsPanel.this, ipc)
                         : new NewGroupForUserDialog(TopComponents.getInstance().getTopParent(), UserGroupsPanel.this, ipc);
+                    dialog.setTitle("Add User to Groups");
                     dialog.setResizable(false);
                     DialogDisplayer.display(dialog, new Runnable() {
                         public void run() {
