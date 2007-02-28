@@ -3037,7 +3037,6 @@
             </fileset>
         </path>
         <property name="stringed2-cpath" refid="cfgwiz.libs.obf"/>
-        <echo>^^^^^^^^^^^^^^^^^^^^^^cfgwiz libs: ${stringed2-cpath}</echo>
         <replace file="build/etc/cfgwiz.zkm" token="@@CP@@" value="${stringed2-cpath}"/>
         <replace file="build/etc/cfgwiz.zkm" token="@@JAR@@" value="./build/configwizard/ConfigWizard.jar"/>
         <echo>Obfuscating ConfigWizard.jar</echo>
