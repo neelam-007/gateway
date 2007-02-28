@@ -4,6 +4,8 @@
 
 package com.l7tech.server.admin.ws;
 
+import com.l7tech.admin.AdminLogin;
+import com.l7tech.admin.AdminLoginResult;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.message.*;
@@ -17,26 +19,24 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.system.AdminWebServiceEvent;
-import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
-import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.DelegatingServletInputStream;
+import com.l7tech.server.util.SoapFaultManager;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
@@ -76,6 +76,7 @@ public class AdminWebServiceFilter implements Filter {
     private PrivateKey serverPrivateKey;
     private SecurityTokenResolver securityTokenResolver;
     private StashManagerFactory stashManagerFactory;
+    private AdminLogin adminLogin;
 
     private static final Logger log = Logger.getLogger(AdminWebServiceFilter.class.getName());
     private static final String ERR_PREFIX = "Configuration error; could not get ";
@@ -104,24 +105,18 @@ public class AdminWebServiceFilter implements Filter {
         serverCertificate = (X509Certificate)getBean(applicationContext, "sslKeystoreCertificate", "server certificate", X509Certificate.class);
         securityTokenResolver = (SecurityTokenResolver)getBean(applicationContext, "securityTokenResolver", "certificate resolver", SecurityTokenResolver.class);
         stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        adminLogin = (AdminLogin) applicationContext.getBean("adminLogin", AdminLogin.class);
 
-        final AllAssertion policy = new AllAssertion(Arrays.asList(new Assertion[] {
-                // TODO support configurable IP range assertions
-                new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
-                        // HTTP Basic only permitted with SSL
-                        new AllAssertion(Arrays.asList(new Assertion[] {
-                                new SslAssertion(false),
-                                new HttpBasic(),
-                        })),
-                        new SslAssertion(true), // With client cert
-                        new AllAssertion(Arrays.asList(new Assertion[] {
-                                new RequestWssX509Cert(),
-                                new RequestWssIntegrity(),
-                        })),
-                        new SecureConversation(),
-                })),
-                new AuthenticationAssertion(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID)
-        }));
+        final AllAssertion policy = new AllAssertion(Arrays.asList(
+            new OneOrMoreAssertion(Arrays.asList(
+                new AllAssertion(Arrays.asList(
+                    new SslAssertion(false),
+                    new HttpBasic())),
+                new SslAssertion(true), // With client cert
+                new AllAssertion(Arrays.asList(
+                    new RequestWssX509Cert(),
+                    new RequestWssIntegrity())),
+                new SecureConversation()))));
 
         final ServerPolicyFactory policyFactory = (ServerPolicyFactory) applicationContext.getBean("policyFactory");
         if (policyFactory == null) {
@@ -186,12 +181,24 @@ public class AdminWebServiceFilter implements Filter {
 
             trogdor(context, request);
 
+            User authenticatedUser = null;
             final AssertionStatus status = polStatus = adminPolicy.checkRequest(context);
-            User authenticatedUser = context.getAuthenticatedUser();
-            if (authenticatedUser == null) throw new ServletException("Authentication Required");
+            if (status == AssertionStatus.NONE && context.getCredentials() != null) {
+                final LoginCredentials credentials = context.getCredentials();
+
+                AdminLoginResult loginResult =
+                        adminLogin.login(credentials.getLogin(), new String(credentials.getCredentials()));
+
+                authenticatedUser = loginResult.getUser();
+            }
+
+            if (authenticatedUser == null) {
+                httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                // TODO challenge?
+                throw new ServletException("Authentication Required");
+            }
             context.setPolicyResult(status);
             if (status == AssertionStatus.NONE) {
-                // TODO support admin services that requre Gateway Administrators membership
                 // Pass it along to XFire
                 final HttpServletRequestWrapper wrapper = new HttpServletRequestWrapper(httpServletRequest) {
                     public ServletInputStream getInputStream() throws IOException {
