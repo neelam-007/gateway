@@ -169,7 +169,7 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
             if (column == FIELD_NAME_COLUMN.index) {
                 final String fieldName = (String)getValueAt(row, column);
                 if (fieldName.trim().length() == 0) {
-                    return "Field name must not be blank";
+                    return "Field name cannot be blank";
                 }
                 for (int r = 0; r < getRowCount(); ++ r) {
                     if (r != row) {
@@ -186,13 +186,13 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
                     }
                     final HtmlFormDataLocation location = (HtmlFormDataLocation) getValueAt(row, FIELD_LOCATION_COLUMN.index);
                     if (location == HtmlFormDataLocation.URL) {
-                        return "Data type must not be \"" + HtmlFormDataType.FILE + "\" when location is \"" + HtmlFormDataLocation.URL + "\"";
+                        return "Data type cannot be \"" + HtmlFormDataType.FILE + "\" when location is \"" + HtmlFormDataLocation.URL + "\"";
                     }
                 }
             } else if (column == FIELD_MIN_OCCURS_COLUMN.index) {
                 final Integer minValue = (Integer) getValueAt(row, column);
                 if (minValue == null) {
-                    return "Minimum must not be blank";
+                    return "Minimum cannot be blank";
                 }
                 final int minOccurs = minValue.intValue();
                 if (minOccurs < 0) {
@@ -211,7 +211,7 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
             } else if (column == FIELD_MAX_OCCURS_COLUMN.index) {
                 final Integer maxValue = (Integer) getValueAt(row, column);
                 if (maxValue == null) {
-                    return "Maximum must not be blank";
+                    return "Maximum cannot be blank";
                 }
                 final int maxOccurs = maxValue.intValue();
                 if (maxOccurs < 0) {
@@ -232,7 +232,7 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
                 if (location == HtmlFormDataLocation.URL) {
                     final HtmlFormDataType dataType = (HtmlFormDataType) getValueAt(row, FIELD_DATA_TYPE_COLUMN.index);
                     if (dataType == HtmlFormDataType.FILE) {
-                        return "Location must not be \"" + HtmlFormDataLocation.URL + "\" when data type is \"" + HtmlFormDataType.FILE + "\"";
+                        return "Location cannot be \"" + HtmlFormDataLocation.URL + "\" when data type is \"" + HtmlFormDataType.FILE + "\"";
                     }
                 } else if (location == HtmlFormDataLocation.BODY) {
                     if (!_allowPostCheckbox.isSelected()) {
