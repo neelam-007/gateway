@@ -379,7 +379,8 @@ public class AssertionMessages extends Messages {
     public static final M INVERSE_HTTPFORM_TOO_BIG = m(7002, Level.WARNING, "Part #{0} is too large (>= " + 512 * 1024 + " bytes)");
 
     // Echo Routing assertion
-    public static final M CANNOT_ECHO_NON_XML = m(7050, Level.INFO, "Request cannot be echoed because it is not XML (Content-Type {0}).");
+    public static final M _UNUSED_CANNOT_ECHO_NON_XML = m(7050, Level.INFO, "Request cannot be echoed because it is not XML (Content-Type {0}).");
+    public static final M CANNOT_ECHO_NO_CTYPE        = m(7051, Level.INFO, "Requests cannot be echoed because it has no Content-Type");
 
     // ComparisonAssertion (formerly known as EqualityAssertion)
     public static final M COMPARISON_OK             = m(7100, Level.FINE, "Comparison matched");
