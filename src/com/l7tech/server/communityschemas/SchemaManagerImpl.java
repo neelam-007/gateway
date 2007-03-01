@@ -54,6 +54,8 @@ public class SchemaManagerImpl implements SchemaManager {
     private final int hardwareRecompileLatency = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
     private final int hardwareRecompileMinAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
     private final int hardwareRecompileMaxAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 30000);
+    // This isn't "true".equals(...) just in case ServerConfig returns null--we want to default to true.
+    private final boolean softwareFallback = !("false".equals(ServerConfig.getInstance().getProperty(ServerConfig.PARAM_SCHEMA_SOFTWARE_FALLBACK)));
 
     /** This LSInput will be returned to indicate "Resource not resolved, and don't try to get it over the network unless you know what you are doing" */
     public static final LSInput LSINPUT_UNRESOLVED = new LSInputImpl();
@@ -718,7 +720,9 @@ public class SchemaManagerImpl implements SchemaManager {
             String tns = XmlUtil.getSchemaTNS(schemadoc);
             Element mangledElement = XmlUtil.normalizeNamespaces(XmlUtil.stringToDocument(schemadoc).getDocumentElement());
             String mangledDoc = XmlUtil.nodeToString(mangledElement);
-            CompiledSchema newSchema = new CompiledSchema(tns, systemId, schemadoc, mangledDoc, softwareSchema, this, directImports, true);
+            CompiledSchema newSchema =
+                    new CompiledSchema(tns, systemId, schemadoc, mangledDoc, softwareSchema, this,
+                            directImports, true, softwareFallback);
             for (SchemaHandle directImport : directImports.values()) {
                 final CompiledSchema impSchema = directImport.getCompiledSchema();
                 if (impSchema == null) continue;

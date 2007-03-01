@@ -99,6 +99,8 @@ public class ServerConfig implements ClusterPropertyListener {
 
     public static final String PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES = "ephemeralKeyMaxCacheEntries";
 
+    public static final String PARAM_SCHEMA_SOFTWARE_FALLBACK = "schemaSoftwareFallback";
+
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;

@@ -36,9 +36,6 @@ import java.lang.ref.WeakReference;
 
 final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implements TarariSchemaSource {
     private static final Logger logger = Logger.getLogger(CompiledSchema.class.getName());
-    public static final String PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS =
-            "com.l7tech.server.schema.suppressSoftwareRecheckIfHardwareFlagsInvalidXml";
-    public static final boolean SUPPRESS_FALLBACK_IF_TARARI_FAILS = Boolean.getBoolean(PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS);
 
     private static Map<String,Long> systemIdGeneration = new HashMap<String,Long>();
 
@@ -52,6 +49,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     private final Map<String, SchemaHandle> imports; // Full URL -> Handles of schemas that we import directly
     private final Map<String, Reference<CompiledSchema>> exports = new WeakHashMap<String, Reference<CompiledSchema>>();
     private final Schema softwareSchema;
+    private final boolean softwareFallback;
 
     private boolean rejectedByTarari = false; // true if Tarari couldn't compile this schema
     private boolean uniqueTns = false; // true when we notice that we are the only user of this tns
@@ -66,7 +64,8 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
                    Schema softwareSchema,
                    SchemaManagerImpl manager,
                    Map<String, SchemaHandle> imports,
-                   boolean transientSchema)
+                   boolean transientSchema,
+                   boolean fallback)
     {
         if (targetNamespace == null || softwareSchema == null ||
                 schemaDocument == null || namespaceNormalizedSchemaDocument == null ||
@@ -86,6 +85,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         this.manager = manager;
         this.imports = imports;
         this.tnsGen = "{" + nextSystemIdGeneratioun(systemId) + "} " + systemId;
+        this.softwareFallback = fallback;
     }
 
     private synchronized static long nextSystemIdGeneratioun(String systemId) {
@@ -189,7 +189,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
                     return;
 
                 } catch (SAXException e) {
-                    if (SUPPRESS_FALLBACK_IF_TARARI_FAILS) {
+                    if (!softwareFallback) {
                         // Don't recheck with software -- just record the failure and be done
                         throw e;
                     }
@@ -243,7 +243,6 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         }
 
         // Success
-        return;
     }
 
     Map<String, SchemaHandle> getImports() {
