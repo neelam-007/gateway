@@ -175,7 +175,7 @@
         <include name="**/xmlpad-res.jar"/>
         <include name="**/xss4j.jar"/>
         <include name="**/log4j-1.2.14.jar"/>
-        <include name="**/bcprov-jdk15-134.jar"/>
+        <include name="**/bcprov-jdk15-135.jar"/>
         <include name="**/xalan-2.7.0.jar"/>
         <include name="**/serializer-xalan-2.7.0.jar"/>
         <include name="**/saaj.jar"/>
@@ -195,7 +195,7 @@
         <include name="**/forms_rt-l7p1.jar"/>
         <include name="**/mysql-connector-java-5.0.4-bin.jar"/>
         <include name="**/xss4j.jar"/>
-        <include name="**/bcprov-jdk15-134.jar"/>
+        <include name="**/bcprov-jdk15-135.jar"/>
         <include name="**/kunststoff.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
@@ -233,7 +233,7 @@
         <include name="**/saaj.jar"/>
         <include name="**/0500-wsdl4j.jar"/>
         <include name="**/xercesImpl.jar"/>
-        <include name="**/bcprov-jdk15-134.jar"/>
+        <include name="**/bcprov-jdk15-135.jar"/>
         <include name="**/xss4j.jar"/>
         <include name="**/org.mortbay.jetty.jar"/>
         <include name="**/commons-httpclient-3.0.1.jar"/>
@@ -996,7 +996,7 @@
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib">
-                <include name="bcprov-jdk15-134.jar"/>
+                <include name="bcprov-jdk15-135.jar"/>
                 <include name="jgroups.jar"/>
                 <include name="jboss-*.jar"/>
                 <include name="trove.jar"/>
