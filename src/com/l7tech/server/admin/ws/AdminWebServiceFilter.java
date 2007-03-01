@@ -16,6 +16,7 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
@@ -175,30 +176,34 @@ public class AdminWebServiceFilter implements Filter {
         context.setAuditContext(auditContext);
         context.setSoapFaultManager(soapFaultManager);
 
-        AssertionStatus polStatus = null;
+        AssertionStatus status = null;
         try {
             request.initialize(stashManagerFactory.createStashManager(), ctype, servletRequest.getInputStream());
 
             trogdor(context, request);
 
             User authenticatedUser = null;
-            final AssertionStatus status = polStatus = adminPolicy.checkRequest(context);
-            if (status == AssertionStatus.NONE && context.getCredentials() != null) {
-                final LoginCredentials credentials = context.getCredentials();
-
-                AdminLoginResult loginResult =
-                        adminLogin.login(credentials.getLogin(), new String(credentials.getCredentials()));
-
-                authenticatedUser = loginResult.getUser();
-            }
-
-            if (authenticatedUser == null) {
-                httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                // TODO challenge?
-                throw new ServletException("Authentication Required");
-            }
-            context.setPolicyResult(status);
+            // Get credentials from dogfood policy
+            status = adminPolicy.checkRequest(context);
             if (status == AssertionStatus.NONE) {
+                if (context.getCredentials() != null) {
+                    try {
+                        // Try to authenticate using same rules as SSM login
+                        // (i.e. must be assigned to a Role with at least one RBAC permission)
+                        final LoginCredentials credentials = context.getCredentials();
+                        AdminLoginResult loginResult =
+                                adminLogin.login(credentials.getLogin(), new String(credentials.getCredentials()));
+
+                        authenticatedUser = loginResult.getUser();
+                    } catch (Exception e) {
+                        log.log(Level.INFO, "Authentication failed", e);
+                        status = AssertionStatus.UNAUTHORIZED;
+                    }
+                }
+            }
+
+            context.setPolicyResult(status);
+            if (status == AssertionStatus.NONE && authenticatedUser != null) {
                 // Pass it along to XFire
                 final HttpServletRequestWrapper wrapper = new HttpServletRequestWrapper(httpServletRequest) {
                     public ServletInputStream getInputStream() throws IOException {
@@ -228,7 +233,7 @@ public class AdminWebServiceFilter implements Filter {
                 Set<Principal> principals = new HashSet<Principal>();
                 principals.add(authenticatedUser);
                 Subject subject = new Subject(true, principals, Collections.emptySet(), Collections.emptySet());
-                Subject.doAs(subject, new PrivilegedExceptionAction() {
+                Subject.doAs(subject, new PrivilegedExceptionAction<Object>() {
                     public Object run() throws Exception {
                         filterChain.doFilter(wrapper, servletResponse);
                         return null;
@@ -261,19 +266,17 @@ public class AdminWebServiceFilter implements Filter {
             } catch (SAXException e1) {
                 throw new ServletException(e1); // Can't happen really
             } finally {
-                if (out != null) try{ out.close(); }catch(Exception ex){}
+                ResourceUtils.closeQuietly(out);
             }
         } finally {
             try {
                 String message = "Administration Web Service";
-                if(polStatus!=null && polStatus!=AssertionStatus.NONE) message += ": " + polStatus.getMessage();
+                if (status != null && status != AssertionStatus.NONE) message += ": " + status.getMessage();
                 User user = getUser(context);
                 applicationContext.publishEvent(new AdminWebServiceEvent(this, Level.INFO, servletRequest.getRemoteAddr(), message, user.getProviderId(), getName(user), user.getId()));
-            }
-            catch(Exception se) {
+            } catch(Exception se) {
                 log.log(Level.WARNING, "Error dispatching event.", se);
-            }
-            finally {
+            } finally {
                 context.close();
             }
         }
