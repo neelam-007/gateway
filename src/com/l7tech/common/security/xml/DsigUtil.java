@@ -8,12 +8,9 @@ package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import java.security.NoSuchAlgorithmException;
@@ -36,6 +33,10 @@ public class DsigUtil {
     /** @noinspection UNUSED_SYMBOL*/
     private static final Logger logger = Logger.getLogger(DsigUtil.class.getName());
 
+    public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
+    public static final String TRANSFORM_XSLT = "http://www.w3.org/TR/1999/REC-xslt-19991116";
+
+
     /**
      * Digitally sign the specified element, using the specified key and including the specified cert inline
      * in the KeyInfo.
@@ -43,8 +44,7 @@ public class DsigUtil {
      * @param elementToSign         the element to sign
      * @param senderSigningCert     certificate to sign it with.  will be included inline in keyinfo
      * @param senderSigningKey      private key to sign it with.
-     * @param useKeyInfoTumbprint   if true, KeyInfo will use SecurityTokenReference/KeyId with cert thumbprint.
-     *                              if false, KeyInfo will use X509Data containing a b64 copy of the entire cert.
+     * @param keyInfoChildElement   Custom key info child element to use
      * @param keyName               if specified, KeyInfo will use a keyName instead of an STR or a literal cert.
      * @return the new dsig:Signature element, as a standalone element not yet attached into the document.
      * @throws SignatureException   if there is a problem creating the signature
@@ -54,7 +54,7 @@ public class DsigUtil {
     public static Element createEnvelopedSignature(Element elementToSign,
                                                    X509Certificate senderSigningCert,
                                                    PrivateKey senderSigningKey,
-                                                   boolean useKeyInfoTumbprint,
+                                                   Element keyInfoChildElement,
                                                    String keyName)
             throws SignatureException, SignatureStructureException, XSignatureException
     {
@@ -101,16 +101,8 @@ public class DsigUtil {
         KeyInfo keyInfo = new KeyInfo();
         if (keyName != null && keyName.length() > 0) {
             keyInfo.setKeyNames(new String[] { keyName });
-        } else if (useKeyInfoTumbprint) {
-            final Document factory = elementToSign.getOwnerDocument();
-            final String wsseNs = SoapUtil.SECURITY_NAMESPACE;
-            Element str = factory.createElementNS(wsseNs, "wsse:SecurityTokenReference");
-            str.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:wsse", wsseNs);
-            Element keyId = XmlUtil.createAndAppendElementNS(str, "KeyIdentifier", wsseNs, "wsse");
-            keyId.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
-            keyId.setAttribute("ValueType", SoapUtil.VALUETYPE_SKI);
-            XmlUtil.setTextContent(keyId, CertUtils.getSki(senderSigningCert));
-            keyInfo.setUnknownChildren(new Element[] { str });
+        } else if (keyInfoChildElement != null) {
+            keyInfo.setUnknownChildren(new Element[] { keyInfoChildElement });
         } else {
             //keyInfo.setKeyValue(senderSigningCert.getPublicKey());
             KeyInfo.X509Data x5data = new KeyInfo.X509Data();
@@ -171,20 +163,27 @@ public class DsigUtil {
      *                                 TRUSTED, just that it was VALID.</b>
      * @throws SignatureException   if the signature could not be validated.
      */
-    public static X509Certificate checkSimpleEnvelopedSignature(Element sigElement, SecurityTokenResolver securityTokenResolver) throws SignatureException {
+    public static X509Certificate checkSimpleEnvelopedSignature(final Element sigElement, SecurityTokenResolver securityTokenResolver) throws SignatureException {
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
         if (keyInfoElement == null) throw new SignatureException("No KeyInfo found in signature");
 
         final X509Certificate signingCert;
 
         try {
-            KeyInfoElement parsedKeyInfo = KeyInfoElement.parse(keyInfoElement, securityTokenResolver);
-            signingCert = parsedKeyInfo.getCertificate();
-            if (signingCert == null) throw new SignatureException("Unable to resolve signing cert");
-        } catch (SAXException e) {
-            throw new SignatureException(e);
-        } catch (KeyInfoElement.MissingResolverException e) {
-            throw new SignatureException(e);
+            X509Certificate cert = null;
+            KeyInfo keyInfo = new KeyInfo(keyInfoElement);
+            String[] keyNames = keyInfo.getKeyNames();
+            if (keyNames != null && keyNames.length > 0) {
+                cert = securityTokenResolver.lookupByKeyName(keyNames[0]);
+            }
+
+            if (cert == null)
+                throw new SignatureException("Could not find certificate.");
+
+            signingCert = cert;
+        }
+        catch(XSignatureException xse) {
+            throw new SignatureException(xse);
         }
 
         PublicKey signingKey = signingCert.getPublicKey();
@@ -200,15 +199,19 @@ public class DsigUtil {
 
         SignatureContext sigContext = new SignatureContext();
         sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
-        sigContext.setIDResolver(new IDResolver() {
-            public Element resolveID(Document doc, String s) {
-                return SoapUtil.getElementByWsuId(doc, s);
+        sigContext.setIDResolver(new IDResolver(){
+            public Element resolveID(Document document, String id) {
+                if (id.equals(sigElement.getOwnerDocument().getDocumentElement().getAttribute("Id"))) {
+                    return sigElement.getOwnerDocument().getDocumentElement();
+                } else {
+                    return null;
+                }
             }
         });
 
         sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
             public Transform getTransform(String transform) throws NoSuchAlgorithmException {
-                if (SoapUtil.TRANSFORM_XSLT.equals(transform)) {
+                if (TRANSFORM_XSLT.equals(transform)) {
                     throw new NoSuchAlgorithmException(transform);
                 }
                 return super.getTransform(transform);
@@ -256,7 +259,7 @@ public class DsigUtil {
      * @param parent  the element whose Signature children should be eliminated.
      */
     public static void stripSignatures(Element parent) {
-        List sigs = XmlUtil.findChildElementsByName(parent, SoapUtil.DIGSIG_URI, "Signature");
+        List sigs = XmlUtil.findChildElementsByName(parent, DIGSIG_URI, "Signature");
         for (Iterator i = sigs.iterator(); i.hasNext();) {
             Element sigEl = (Element)i.next();
             sigEl.getParentNode().removeChild(sigEl);

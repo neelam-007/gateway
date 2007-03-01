@@ -288,7 +288,7 @@ public final class License implements Serializable {
         licenseeContactEmail = "*".equals(cemail) ? null : cemail;
 
         // Look for valid signature by trusted issuer
-        Element signature = XmlUtil.findOnlyOneChildElementByName(lic, SoapUtil.DIGSIG_URI, "Signature");
+        Element signature = XmlUtil.findOnlyOneChildElementByName(lic, DsigUtil.DIGSIG_URI, "Signature");
         if (signature != null && trustedIssuers != null) {
             // See if it is valid and if we trust it
             X509Certificate gotCert = DsigUtil.checkSimpleEnvelopedSignature(signature, new SimpleSecurityTokenResolver(trustedIssuers));

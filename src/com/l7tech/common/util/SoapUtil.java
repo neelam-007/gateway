@@ -8,6 +8,7 @@ import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.xml.*;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import org.w3c.dom.*;
@@ -61,7 +62,7 @@ public class SoapUtil {
     public static final String SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd";
     //public static final String OLD_SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-wssecurity-secext-1.1.xsd";
     public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
-    public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
+    public static final String DIGSIG_URI = DsigUtil.DIGSIG_URI;
     public static final String WSU_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
     public static final String WSU_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/07/utility";
     public static final String WSU_NAMESPACE3 = "http://schemas.xmlsoap.org/ws/2003/06/utility";
@@ -209,7 +210,7 @@ public class SoapUtil {
     public static final String ALGORITHM_PSHA = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk/p_sha1";
     public static final String ALGORITHM_PSHA2 = "http://schemas.xmlsoap.org/ws/2005/02/sc/dk/p_sha1";
     public static final String TRANSFORM_STR = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#STR-Transform";
-    public static final String TRANSFORM_XSLT = "http://www.w3.org/TR/1999/REC-xslt-19991116";
+    public static final String TRANSFORM_XSLT = DsigUtil.TRANSFORM_XSLT;
 
     // Well-known actors (SOAP 1.1)
     public static final String ACTOR_VALUE_NEXT = "http://schemas.xmlsoap.org/soap/actor/next";

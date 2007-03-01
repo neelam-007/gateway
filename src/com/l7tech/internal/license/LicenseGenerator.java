@@ -185,7 +185,7 @@ public final class LicenseGenerator {
             Element signature = DsigUtil.createEnvelopedSignature(licenseDoc.getDocumentElement(),
                                                                   signerCert,
                                                                   signerKey,
-                                                                  true,
+                                                                  null,
                                                                   signerCert.getSubjectDN().getName());
             licenseDoc.getDocumentElement().appendChild(signature);
             return licenseDoc;

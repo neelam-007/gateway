@@ -16,6 +16,7 @@ import com.l7tech.common.security.xml.processor.WssProcessor;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
@@ -30,7 +31,6 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.MockServletApi;
-import com.l7tech.server.SoapMessageProcessingServlet;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 import junit.extensions.TestSetup;
@@ -54,12 +54,16 @@ import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.PrivateKey;
+import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import com.ibm.xml.dsig.SignatureStructureException;
+import com.ibm.xml.dsig.XSignatureException;
 
 /**
  * Class SamlProcessingTest.
@@ -70,7 +74,6 @@ public class SamlProcessingTest extends TestCase {
     private static final Logger logger = Logger.getLogger(SamlProcessingTest.class.getName());
     private static MockServletApi servletApi;
     private static ServiceDescriptor[] serviceDescriptors;
-    private SoapMessageProcessingServlet messageProcessingServlet;
     private static Keys authorityKeys;
     private static SignerInfo holderOfKeySigner;
 
@@ -336,12 +339,12 @@ public class SamlProcessingTest extends TestCase {
         SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
         RequestWssSaml a = new RequestWssSaml();
         a.setAttributeStatement(samlAttributeStatement);
-        Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
+        Assertion policy = new AllAssertion(Arrays.asList(
             // Saml Attribute statement:
                     a,
             // Route:
             new HttpRoutingAssertion()
-        }));
+        ));
 
         return WspWriter.getPolicyXml(policy);
     }
@@ -350,12 +353,12 @@ public class SamlProcessingTest extends TestCase {
         RequestWssSaml a = new RequestWssSaml();
         SamlAuthorizationStatement samlAuthorizationStatement = new SamlAuthorizationStatement();
         a.setAuthorizationStatement(samlAuthorizationStatement);
-        Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
+        Assertion policy = new AllAssertion(Arrays.asList(
             // Saml Authorization Statement:
                     a,
             // Route:
             new HttpRoutingAssertion()
-        }));
+        ));
 
         return WspWriter.getPolicyXml(policy);
     }
@@ -364,12 +367,12 @@ public class SamlProcessingTest extends TestCase {
         SamlAuthenticationStatement samlAuthenticationStatement = new SamlAuthenticationStatement();
         RequestWssSaml a = new RequestWssSaml();
         a.setAuthenticationStatement(samlAuthenticationStatement);
-        Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
+        Assertion policy = new AllAssertion(Arrays.asList(
             // Saml Authentication Statement:
-                    a,
+                    a
             // Route:
             //new HttpRoutingAssertion()
-        }));
+        ));
 
         return WspWriter.getPolicyXml(policy);
     }
@@ -437,7 +440,7 @@ public class SamlProcessingTest extends TestCase {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         PrivateKey singingKey = TestDocuments.getDotNetServerPrivateKey();
         final Element assEl = assDoc.getDocumentElement();
-        Element sig = DsigUtil.createEnvelopedSignature(assEl, signingCert, singingKey, true, null);
+        Element sig = createEnvelopedSignature(assEl, signingCert, singingKey);
         assEl.appendChild(sig);
 
 
@@ -453,8 +456,8 @@ public class SamlProcessingTest extends TestCase {
         assertTrue(got.validate());
 
         // See if our code can deal with it
-        final String signingCertThumbprint = CertUtils.getThumbprintSHA1(signingCert);
-        final String signingCertSki = CertUtils.getSki(signingCert);
+        CertUtils.getThumbprintSHA1(signingCert);
+        CertUtils.getSki(signingCert);
         SecurityTokenResolver thumbResolver = new SimpleSecurityTokenResolver(signingCert);
         SamlAssertion sa = SamlAssertion.newInstance(assDoc.getDocumentElement(), thumbResolver);
         assertTrue(sa.isSenderVouches());
@@ -536,7 +539,7 @@ public class SamlProcessingTest extends TestCase {
         X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         PrivateKey singingKey = TestDocuments.getDotNetServerPrivateKey();
         final Element assEl = assDoc.getDocumentElement();
-        Element sig = DsigUtil.createEnvelopedSignature(assEl, signingCert, singingKey, true, null);
+        Element sig = createEnvelopedSignature(assEl, signingCert, singingKey);
         assEl.appendChild(sig);
 
 
@@ -551,6 +554,27 @@ public class SamlProcessingTest extends TestCase {
         AssertionDocument got = AssertionDocument.Factory.parse(assString);
         assertTrue(got.validate());
 
+    }
+
+    /**
+     * Digitally sign the specified element, using the specified key and including the specified cert inline
+     * in the KeyInfo.
+     */
+    public static Element createEnvelopedSignature(Element elementToSign,
+                                                   X509Certificate senderSigningCert,
+                                                   PrivateKey senderSigningKey)
+            throws SignatureException, SignatureStructureException, XSignatureException {
+
+        final Document factory = elementToSign.getOwnerDocument();
+        final String wsseNs = SoapUtil.SECURITY_NAMESPACE;
+        Element str = factory.createElementNS(wsseNs, "wsse:SecurityTokenReference");
+        str.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:wsse", wsseNs);
+        Element keyId = XmlUtil.createAndAppendElementNS(str, "KeyIdentifier", wsseNs, "wsse");
+        keyId.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
+        keyId.setAttribute("ValueType", SoapUtil.VALUETYPE_SKI);
+        XmlUtil.setTextContent(keyId, CertUtils.getSki(senderSigningCert));
+
+        return DsigUtil.createEnvelopedSignature(elementToSign, senderSigningCert, senderSigningKey, str, null);
     }
 
     /**
