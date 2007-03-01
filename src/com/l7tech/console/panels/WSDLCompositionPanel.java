@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
@@ -17,14 +17,19 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
-import javax.wsdl.*;
+import javax.wsdl.Binding;
+import javax.wsdl.BindingOperation;
+import javax.wsdl.Definition;
+import javax.wsdl.WSDLException;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.xml.namespace.QName;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * User: megery
@@ -272,11 +277,24 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         for (Object key : keys) {
             Object bindingObj = bindings.get(key);
             javax.wsdl.Binding binding = (javax.wsdl.Binding) bindingObj;
-            java.util.List ops = binding.getBindingOperations();
-            for (Object op : ops) {
-                sourceOperationsListModel.addElement(op);
+            if (isSupportedSoapBinding(binding)) {
+                java.util.List ops = binding.getBindingOperations();
+                for (Object op : ops) {
+                    sourceOperationsListModel.addElement(op);
+                }
             }
         }
+    }
+
+    private boolean isSupportedSoapBinding(Binding binding) {
+        List elements = binding.getExtensibilityElements();
+        for (Object element : elements) {
+            ExtensibilityElement extElem = (ExtensibilityElement) element;
+            QName elementType = extElem.getElementType();
+            if (elementType.getNamespaceURI().equals(Wsdl.WSDL_SOAP_NAMESPACE))
+                return true;
+        }
+        return false;
     }
 
     private void prepareSourceWsdlTree() {
