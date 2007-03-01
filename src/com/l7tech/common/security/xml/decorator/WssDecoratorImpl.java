@@ -1012,16 +1012,17 @@ public class WssDecoratorImpl implements WssDecorator {
         c.lastEncryptedKeySecretKey = secretKey;
         final byte[] encryptedKeyBytes;
         if (SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2.equals(algorithm)) {
-            byte[] params = new byte[16];
-            c.rand.nextBytes(params);
+            byte[] params = new byte[0];
 
             encryptionMethod.setAttribute("Algorithm", SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2);
             encryptedKeyBytes = XencUtil.encryptKeyWithRsaOaepMGF1SHA1(secretKey.getEncoded(),
                                               recipientCertificate.getPublicKey(),
                                               params);
 
-            Element oaepParamsEle = XmlUtil.createAndAppendElementNS(encryptionMethod, "OAEPparams", xencNs, xenc);
-            oaepParamsEle.appendChild(XmlUtil.createTextNode(oaepParamsEle, HexUtils.encodeBase64(params)));
+            if (params.length > 0) {
+                Element oaepParamsEle = XmlUtil.createAndAppendElementNS(encryptionMethod, "OAEPparams", xencNs, xenc);
+                oaepParamsEle.appendChild(XmlUtil.createTextNode(oaepParamsEle, HexUtils.encodeBase64(params)));
+            }
             
             Element digestMethodEle = XmlUtil.createAndAppendElementNS(encryptionMethod, "DigestMethod", SoapUtil.DIGSIG_URI, "ds");
             digestMethodEle.setAttribute("Algorithm", SoapUtil.DIGSIG_URI+"sha1");
