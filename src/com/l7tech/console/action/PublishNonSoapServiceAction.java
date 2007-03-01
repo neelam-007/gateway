@@ -35,7 +35,7 @@ import java.awt.*;
  */
 public class PublishNonSoapServiceAction extends SecureAction {
     public PublishNonSoapServiceAction() {
-        super(new AttemptedCreate(EntityType.SERVICE), SchemaValidation.class);
+        super(new AttemptedCreate(EntityType.SERVICE), UI_PUBLISH_XML_WIZARD);
     }
 
     public String getName() {

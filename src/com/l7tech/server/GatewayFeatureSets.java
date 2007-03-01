@@ -73,6 +73,12 @@ public class GatewayFeatureSets {
     public static final String SERVICE_TRUSTSTORE = "service:TrustStore"; // Ability to configure Trusted Certs
     public static final String SERVICE_MODULELOADER = "service:ModuleLoader"; // Ability to load jars from /ssg/modules/assertions
 
+    public static final String UI_PUBLISH_SERVICE_WIZARD = "ui:PublishServiceWizard";
+    public static final String UI_PUBLISH_XML_WIZARD = "ui:PublishXmlWizard";
+    public static final String UI_WSDL_CREATE_WIZARD = "ui:WsdlCreateWizard";
+    public static final String UI_AUDIT_WINDOW = "ui:AuditWindow";
+    public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
+
     static {
         // Declare all baked-in feature sets
 
@@ -157,6 +163,12 @@ public class GatewayFeatureSets {
             srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"),
             ass(WsspAssertion.class));
 
+        GatewayFeatureSet uiPublishServiceWizard = ui(UI_PUBLISH_SERVICE_WIZARD, "Enable the SSM Publish SOAP Service Wizard");
+        GatewayFeatureSet uiPublishXmlWizard = ui(UI_PUBLISH_XML_WIZARD, "Enable the SSM Publish XML Service Wizard");
+        GatewayFeatureSet uiWsdlCreateWizard = ui(UI_WSDL_CREATE_WIZARD, "Enable the SSM WSDL Create Wizard");
+        GatewayFeatureSet uiAuditWindow = ui(UI_AUDIT_WINDOW, "Enable the SSM Audit Window");
+        GatewayFeatureSet uiRbacRoleEditor = ui(UI_RBAC_ROLE_EDITOR, "Enable the SSM RBAC Role Editor");
+
         //
         // Declare "building block" feature sets
         // (feature sets built out of "twig" feature sets, and which may include other building block feature sets,
@@ -164,12 +176,23 @@ public class GatewayFeatureSets {
         // Naming convention:  set:CamelCaseCategory:LevelName
         //
 
-        // Access control
-/*
-        GatewayFeatureSet accessAccel =
-        fsr("set:AccessControl:Accel", "SecureSpan Accelerator access control",
-            "User and group auth, and basic HTTP, SSL, and XML credential sources.  No WSS message-level security.");
-*/
+        GatewayFeatureSet uiAccel =
+        fsr("set:UI:Accel", "SecureSpan Accelerator UI features",
+            uiPublishXmlWizard,
+            uiAuditWindow);
+
+        GatewayFeatureSet uiDs =
+        fsr("set:UI:Datascreen", "SecureSpan Datascreen UI features",
+            "Adds Publish SOAP Web Service Wizard and Create WSDL Wizard",
+            fs(uiAccel),
+            uiWsdlCreateWizard,
+            uiPublishServiceWizard);
+
+        GatewayFeatureSet uiFw =
+        fsr("set:UI:Firewall", "SecureSpan Firewall UI features",
+            "Adds RBAC role editing",
+            fs(uiDs),
+            uiRbacRoleEditor);
 
         GatewayFeatureSet accessFw =
         fsr("set:AccessControl:Firewall", "SecureSpan Firewall access control",
@@ -390,6 +413,7 @@ public class GatewayFeatureSets {
             fs(validationDs),
             fs(auditAccel),
             fs(policyAccel),
+            fs(uiDs),
             fs(customDs));
 
         fsp("set:Profile:Accel", "SecureSpan Accelerator",
@@ -403,6 +427,7 @@ public class GatewayFeatureSets {
             fs(auditAccel),
             fs(policyAccel),
             fs(threatAccel),
+            fs(uiAccel),
             fs(moduleLoader));
 
         fsp("set:Profile:Firewall", "SecureSpan Firewall",
@@ -417,6 +442,7 @@ public class GatewayFeatureSets {
             fs(auditAccel),
             fs(policyAccel),
             fs(threatFw),
+            fs(uiFw),
             fs(customFw));
 
         PROFILE_ALL =
@@ -436,6 +462,7 @@ public class GatewayFeatureSets {
             fs(customFw),
             fs(ssb),
             fs(modularAssertions),
+            fs(uiFw),
             fs(experimental));
 
         fsp("set:Profile:Federal", "SecureSpan Federal",
@@ -453,10 +480,11 @@ public class GatewayFeatureSets {
             fs(customFw),
             fs(ssb),
             fs(modularAssertions),
+            fs(uiFw),
             fs(experimental));
 
         // For now, if a license names no features explicitly, we will enable all features.
-        // TODO in the future, we should enable only those features that existed in 3.5.
+        // TODO we should enable only those features that existed in 3.5.
         PROFILE_LICENSE_NAMES_NO_FEATURES =
         fsp("set:Profile:Compat:Pre36License", "Profile for old license files that don't name any feature sets",
             "Backward compatibility with license files that lack featureset elements, but would otherwise be perfectly valid. " +
@@ -647,5 +675,11 @@ public class GatewayFeatureSets {
         if (!name.startsWith("service:"))
             throw new IllegalArgumentException("Preferred feature name for service must start with \"service:\": " + name);
         return misc(name, desc, note);
+    }
+
+    private static GatewayFeatureSet ui(String name, String desc) {
+        if (!name.startsWith("ui:"))
+            throw new IllegalArgumentException("Preferred feature name for ui feature must start with \"ui:\": " + name);
+        return getOrMakeFeatureSet(name, desc);
     }
 }

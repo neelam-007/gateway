@@ -28,7 +28,7 @@ public class ViewGatewayAuditsAction extends SecureAction {
      * @see #isAuthorized()
      */
     public ViewGatewayAuditsAction() {
-        super(null);
+        super(null, UI_AUDIT_WINDOW);
         this.auditTime = 0;
     }
 
@@ -36,7 +36,7 @@ public class ViewGatewayAuditsAction extends SecureAction {
      * @see #isAuthorized()
      */
     public ViewGatewayAuditsAction(final long auditTime) {
-        super(null);
+        super(null, UI_AUDIT_WINDOW);
         this.auditTime = auditTime;
     }
 

@@ -18,6 +18,8 @@ import junit.framework.TestSuite;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.logging.Logger;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 /**
  * @author mike
@@ -39,26 +41,26 @@ public class GatewayFeatureSetsTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    /** Ensures that the feature sets tree is internally consistent and assembles itself without error, and emits wiki doc. */
-    public void testEmitWikiDocs() throws Exception {
-        Map<String, GatewayFeatureSet> profiles = GatewayFeatureSets.getProductProfiles();
-        Map<String, GatewayFeatureSet> roots = GatewayFeatureSets.getRootFeatureSets();
-        Map<String, GatewayFeatureSet> all = GatewayFeatureSets.getAllFeatureSets();
+    public void testEmitWikiDocs_ServiceNames() throws Exception {
+        emit(System.out, "Service Names", collectServices(new LinkedHashMap<String, GatewayFeatureSet>()), new HashSet<String>(), false);
+    }
 
-        Set<String> visited = new HashSet<String>();
-        PrintStream out = System.out;
+    public void testEmitWikiDocs_ProductProfiles() throws Exception {
+        emit(System.out, "Product Profiles", GatewayFeatureSets.getProductProfiles(), new HashSet<String>(), true);
+    }
 
-        Map<String, GatewayFeatureSet> services = new LinkedHashMap<String, GatewayFeatureSet>();
+    public void testEmitWikiDocs_BuldingBlocks() throws Exception {
+        emit(System.out, "Building Blocks", GatewayFeatureSets.getRootFeatureSets(), new HashSet<String>(), true);
+    }
+
+    private Map<String, GatewayFeatureSet> collectServices(Map<String, GatewayFeatureSet> services) {
         Set<String> allServNames = new LinkedHashSet<String>(Arrays.asList(ALL_SERVICES));
         for (String servName : allServNames) {
-            GatewayFeatureSet serv = all.get(servName);
+            GatewayFeatureSet serv = GatewayFeatureSets.getAllFeatureSets().get(servName);
             assertNotNull(serv);
             services.put(servName, serv);
         }
-
-        emit(out, "Service Names", services, new HashSet<String>(), false);
-        emit(out, "Product Profiles", profiles, visited, true);
-        emit(out, "Building Blocks", roots, visited, true);
+        return services;
     }
 
     private void emit(PrintStream out, String what, Map<String, GatewayFeatureSet> sets, Set<String> visited, boolean includeLastTwoColumns) {
@@ -129,15 +131,16 @@ public class GatewayFeatureSetsTest extends TestCase {
 
         for (String name : ALL_SERVICES) {
             if (!allSets.containsKey(name))
-                throw new RuntimeException("Servlet is not present in any Feature Set: " + name);
+                throw new RuntimeException("Service is not present in any Feature Set: " + name);
+        }
+
+        for (String name : ALL_UI) {
+            if (!allSets.containsKey(name))
+                throw new RuntimeException("UI feature is not present in any Feature Set: " + name);
         }
     }
 
-    private static final String[] ALL_SERVICES = {
-            "service:MessageProcessor", // Not named after a servlet
-            "service:Admin",            // Not named after a servlet
-            "service:HttpMessageInput", // Not named after a servlet
-            "service:JmsMessageInput",  // Not named after a servlet
+    private static final String[] EXTRA_SERVICES = {
             "service:CSRHandler",       GatewayFeatureSets.getFeatureSetNameForServlet(CSRHandler.class),
             "service:Passwd",           GatewayFeatureSets.getFeatureSetNameForServlet(PasswdServlet.class),
             "service:Policy",           GatewayFeatureSets.getFeatureSetNameForServlet(PolicyServlet.class),
@@ -145,9 +148,30 @@ public class GatewayFeatureSetsTest extends TestCase {
             "service:SnmpQuery",        GatewayFeatureSets.getFeatureSetNameForServlet(SnmpQueryServlet.class),
             "service:WsdlProxy",        GatewayFeatureSets.getFeatureSetNameForServlet(WsdlProxyServlet.class),
             "service:Bridge",           GatewayFeatureSets.getFeatureSetNameForServlet(BridgeServlet.class),
-            "service:TrustStore",       // Not named after a servlet
-            "service:ModuleLoader",     // Not named after a servlet
     };
+    private static final String[] ALL_SERVICES = findStaticStringValuesWithPrefix("SERVICE_", EXTRA_SERVICES);
+    private static final String[] EXTRA_UI = {};
+    private static final String[] ALL_UI = findStaticStringValuesWithPrefix("UI_", EXTRA_UI);
+
+    private static String[] findStaticStringValuesWithPrefix(String prefix, String[] extra) {
+        Set<String> servs = new HashSet<String>(Arrays.asList(extra));
+
+        Field[] fields = GatewayFeatureSets.class.getFields();
+        for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers()) &&
+                field.getName().startsWith(prefix) &&
+                    field.getType().equals(String.class))
+            {
+                try {
+                    servs.add((String)field.get(null));
+                } catch (IllegalAccessException e) {
+                    throw new Error(e);
+                }
+            }
+        }
+
+        return servs.toArray(new String[0]);
+    }
 
     /** Makes sure that all registered services are included in ALL_SERVICES.  Dual of testAllServicesMapped. */
     public void testAllServicesKnown() throws Exception {
@@ -163,6 +187,19 @@ public class GatewayFeatureSetsTest extends TestCase {
         }
     }
 
+    public void testAllUiKnown() throws Exception {
+        GatewayFeatureSet profileAll = GatewayFeatureSets.getBestProductProfile();
+
+        Set<String> allServs = new HashSet<String>(Arrays.asList(ALL_UI));
+        Set<String> names = new HashSet<String>();
+        profileAll.collectAllFeatureNames(names);
+
+        for (String name : names) {
+            if (name.startsWith("ui:") && !allServs.contains(name))
+                throw new RuntimeException("UI feature is registered as a feature but is not present in ALL_UI: " + name);
+        }
+    }
+
     /** Makes sure that all services in ALL_SERVICES are registered.  Dual of testAllServicesKnown. */
     public void testAllServicesMapped() throws Exception {
         GatewayFeatureSet profileAll = GatewayFeatureSets.getBestProductProfile();
@@ -171,6 +208,11 @@ public class GatewayFeatureSetsTest extends TestCase {
         for (String name : ALL_SERVICES) {
             if (!profileAll.contains(name))
                 throw new RuntimeException("Servlet is not enabled by the full-featured Product Profile: " + name);
+        }
+
+        for (String name : ALL_UI) {
+            if (!profileAll.contains(name))
+                throw new RuntimeException("UI feature is not enabled by the full-featured Product Profile: " + name);
         }
 
         for (Assertion assertion : allAssertions) {

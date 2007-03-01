@@ -62,7 +62,7 @@ public class CreateServiceWsdlAction extends SecureAction {
     private Set<WsdlComposer.WsdlHolder> importedWsdls;
 
     public CreateServiceWsdlAction() {
-        super(new AttemptedCreate(SERVICE), LIC_AUTH_ASSERTIONS);
+        super(new AttemptedCreate(SERVICE), UI_WSDL_CREATE_WIZARD);
     }
 
     /**

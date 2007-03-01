@@ -1,14 +1,13 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.security.rbac.RoleManagementDialog;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
-import java.awt.*;
 
 /**
  * User: megery
@@ -17,7 +16,7 @@ import java.awt.*;
  */
 public class ManageRolesAction extends SecureAction {
     public ManageRolesAction() {
-        super(new AttemptedAnyOperation(EntityType.RBAC_ROLE), LIC_AUTH_ASSERTIONS);
+        super(new AttemptedAnyOperation(EntityType.RBAC_ROLE), UI_RBAC_ROLE_EDITOR);
     }
 
     public String getName() {

@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.action.SecureAction;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,8 +72,16 @@ public class ConsoleLicenseManager implements AssertionLicense, LicenseManager {
         {
             // 3.6 Gateway does not require the "service:TrustStore" feature set to be present
             // before allowing access to Trusted Cert management, so allow it as long as SpecificUser is available
-            // TODO move this feature set name somewhere more reasonable
-            compat.add("service:TrustStore");
+            compat.add(SecureAction.TRUSTSTORE_FEATURESET_NAME);
+        }
+
+        if (("3.6".equals(v) || "3.6.5".equals(v) || "3.5".equals(v))) {
+            // Pre-3.7 Gateway does not require any ui:Whatever features to be present before enabling UI-only features
+            compat.add(SecureAction.UI_PUBLISH_SERVICE_WIZARD);
+            compat.add(SecureAction.UI_PUBLISH_XML_WIZARD);
+            compat.add(SecureAction.UI_WSDL_CREATE_WIZARD);
+            compat.add(SecureAction.UI_AUDIT_WINDOW);
+            compat.add(SecureAction.UI_RBAC_ROLE_EDITOR);
         }
     }
 

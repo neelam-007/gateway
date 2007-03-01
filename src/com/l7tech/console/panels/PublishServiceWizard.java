@@ -17,7 +17,9 @@ import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityHeader;
@@ -111,10 +113,12 @@ public class PublishServiceWizard extends Wizard {
 
     public static PublishServiceWizard getInstance(Frame parent) {
         ServicePanel panel1 = new ServicePanel();
-        IdentityProviderWizardPanel panel2 = new IdentityProviderWizardPanel(true);
-        ProtectedServiceWizardPanel panel3 = new ProtectedServiceWizardPanel();
-        panel1.setNextPanel(panel2);
-        panel2.setNextPanel(panel3);
+        if (Registry.getDefault().getLicenseManager().isAuthenticationEnabled()) {
+            IdentityProviderWizardPanel panel2 = new IdentityProviderWizardPanel(true);
+            ProtectedServiceWizardPanel panel3 = new ProtectedServiceWizardPanel();
+            panel1.setNextPanel(panel2);
+            panel2.setNextPanel(panel3);
+        }
         return new PublishServiceWizard(parent, panel1);
     }
 

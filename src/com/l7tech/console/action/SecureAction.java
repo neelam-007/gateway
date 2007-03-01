@@ -29,6 +29,14 @@ import java.util.logging.Logger;
 public abstract class SecureAction extends BaseAction implements LogonListener, LicenseListener, PermissionRefreshListener {
     static final Logger logger = Logger.getLogger(SecureAction.class.getName());
 
+    // Well-known feature set names
+    public static final String TRUSTSTORE_FEATURESET_NAME = "service:TrustStore";
+    public static final String UI_PUBLISH_SERVICE_WIZARD = "ui:PublishServiceWizard";
+    public static final String UI_PUBLISH_XML_WIZARD = "ui:PublishXmlWizard";
+    public static final String UI_WSDL_CREATE_WIZARD = "ui:WsdlCreateWizard";
+    public static final String UI_AUDIT_WINDOW = "ui:AuditWindow";
+    public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
+
     /** Specify that an action requires at least one authentication assertion to be licensed. */
     public static final Collection<Class> LIC_AUTH_ASSERTIONS =
             Arrays.asList(new Class[] { SpecificUser.class, MemberOfGroup.class });

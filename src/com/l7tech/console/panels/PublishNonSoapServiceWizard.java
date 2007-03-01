@@ -5,6 +5,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -34,11 +35,15 @@ import java.util.HashSet;
  */
 public class PublishNonSoapServiceWizard extends Wizard {
     public static PublishNonSoapServiceWizard getInstance(Frame parent) {
-        IdentityProviderWizardPanel panel2 = new IdentityProviderWizardPanel(false);
-        NonSoapServicePanel panel1 = new NonSoapServicePanel(panel2);
+        IdentityProviderWizardPanel panel2 = null;
+        NonSoapServicePanel panel1 = new NonSoapServicePanel(null);
+        if (ConsoleLicenseManager.getInstance().isAuthenticationEnabled()) {
+            panel2 = new IdentityProviderWizardPanel(false);
+            panel1.setNextPanel(panel2);
+        }
         PublishNonSoapServiceWizard output = new PublishNonSoapServiceWizard(parent, panel1);
-        output.panel2 = panel2;
         output.panel1 = panel1;
+        output.panel2 = panel2;
         return output;
     }
 
@@ -59,7 +64,8 @@ public class PublishNonSoapServiceWizard extends Wizard {
         ArrayList allAssertions = new ArrayList();
         try {
             // get the assertions from the all assertion
-            panel2.readSettings(allAssertions);
+            if (panel2 != null)
+                panel2.readSettings(allAssertions);
             AllAssertion policy = new AllAssertion(allAssertions);
             if (panel1.getDownstreamURL() != null)
                 policy.addChild(new HttpRoutingAssertion(panel1.getDownstreamURL()));
@@ -124,7 +130,7 @@ public class PublishNonSoapServiceWizard extends Wizard {
         listenerList.remove(EntityListener.class, listener);
     }
 
-    private IdentityProviderWizardPanel panel2;
+    private IdentityProviderWizardPanel panel2; // may be null if no authentication enabled by current license
     private NonSoapServicePanel panel1;
     private static final Set<String> ANYVERBSET = new HashSet<String>();
     {

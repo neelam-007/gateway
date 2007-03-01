@@ -35,7 +35,7 @@ public class PublishServiceAction extends SecureAction {
     static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
 
     public PublishServiceAction() {
-        super(new AttemptedCreate(EntityType.SERVICE), Operation.class);
+        super(new AttemptedCreate(EntityType.SERVICE), UI_PUBLISH_SERVICE_WIZARD);
     }
 
     /**
