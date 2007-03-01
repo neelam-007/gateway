@@ -42,19 +42,24 @@ public class GatewayFeatureSetsTest extends TestCase {
     }
 
     public void testEmitWikiDocs_ServiceNames() throws Exception {
-        emit(System.out, "Service Names", collectServices(new LinkedHashMap<String, GatewayFeatureSet>()), new HashSet<String>(), false);
+        emit(System.out, "Service Names", collectServices(Arrays.asList(ALL_SERVICES)), new HashSet<String>(), false);
     }
 
-    public void testEmitWikiDocs_ProductProfiles() throws Exception {
-        emit(System.out, "Product Profiles", GatewayFeatureSets.getProductProfiles(), new HashSet<String>(), true);
+    public void testEmitWikiDocs_UiFeatures() throws Exception {
+        emit(System.out, "UI Features", collectServices(Arrays.asList(ALL_UI)), new HashSet<String>(), false);
     }
 
     public void testEmitWikiDocs_BuldingBlocks() throws Exception {
         emit(System.out, "Building Blocks", GatewayFeatureSets.getRootFeatureSets(), new HashSet<String>(), true);
     }
 
-    private Map<String, GatewayFeatureSet> collectServices(Map<String, GatewayFeatureSet> services) {
-        Set<String> allServNames = new LinkedHashSet<String>(Arrays.asList(ALL_SERVICES));
+    public void testEmitWikiDocs_ProductProfiles() throws Exception {
+        emit(System.out, "Product Profiles", GatewayFeatureSets.getProductProfiles(), new HashSet<String>(), true);
+    }
+
+    private Map<String, GatewayFeatureSet> collectServices(List<String> names) {
+        Map<String, GatewayFeatureSet> services = new HashMap<String, GatewayFeatureSet>();
+        Set<String> allServNames = new LinkedHashSet<String>(names);
         for (String servName : allServNames) {
             GatewayFeatureSet serv = GatewayFeatureSets.getAllFeatureSets().get(servName);
             assertNotNull(serv);
