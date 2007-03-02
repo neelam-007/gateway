@@ -50,6 +50,7 @@ public class WsdlComposer {
     private Map<String, Operation> operationsToAdd;
 
     private Map<WsdlHolder, Types> typesMap;
+    private Map<WsdlHolder, Set<Import>> importsMap;
     private Set<WsdlHolder> sourceWsdls;
     private Builder builder;
 
@@ -73,6 +74,7 @@ public class WsdlComposer {
         sourceWsdls = new HashSet<WsdlHolder>();
         otherNamespaces = new HashMap<String, String>();
 
+        importsMap = new HashMap<WsdlHolder, Set<Import>>();
         typesMap = new HashMap<WsdlHolder, Types>();
                 
         //Messages
@@ -102,6 +104,7 @@ public class WsdlComposer {
         addSourceWsdl(originalWsdlHolder);
         
         Definition def = originalWsdl.getDefinition();
+        setQName(def.getQName());
         setTargetNamespace(def.getTargetNamespace());
         for (Object o : def.getNamespaces().keySet()) {
             String key = (String) o;
@@ -120,6 +123,18 @@ public class WsdlComposer {
                 addBindingOperation((BindingOperation) boObj, originalWsdlHolder, true);
             }
             addBinding(b, originalWsdlHolder);
+        }
+
+        for (Object o : def.getPortTypes().values()) {
+            PortType pt = (PortType) o;
+            for (Object opObj : pt.getOperations()) {
+                addOperation((Operation) opObj, originalWsdlHolder);
+            }
+            addPortType(pt, originalWsdlHolder);
+        }
+
+        for (Object o : def.getServices().values()) {
+            addService((Service) o);
         }
     }
 
@@ -177,7 +192,10 @@ public class WsdlComposer {
 
     private void addWsdlElementsForBindingOperation(WsdlHolder sourceWsdlHolder, BindingOperation bindingOperation) {
         addSourceWsdl(sourceWsdlHolder);
+        addImportsFromSource(sourceWsdlHolder);
         addTypesFromSource(sourceWsdlHolder);
+        Operation newOperation = copyOperation(bindingOperation.getOperation());
+        bindingOperation.setOperation(newOperation);
         addOperation(bindingOperation.getOperation(), sourceWsdlHolder);
     }
 
@@ -281,12 +299,11 @@ public class WsdlComposer {
     }
 
     private void internalAddOperation(Operation sourceOperation, WsdlHolder sourceWsdlHolder) {
-        Operation newOperation = copyOperation(sourceOperation);
-        addMessagesFromSource(sourceWsdlHolder, newOperation);
-        if (operationsToAdd.containsKey(newOperation.getName()))
+        addMessagesFromSource(sourceWsdlHolder, sourceOperation);
+        if (operationsToAdd.containsKey(sourceOperation.getName()))
             return;
 
-        operationsToAdd.put(newOperation.getName(), newOperation);
+        operationsToAdd.put(sourceOperation.getName(), sourceOperation);
 
     }
 
@@ -294,6 +311,23 @@ public class WsdlComposer {
         Operation removed = operationsToAdd.remove(op.getName());
     }
 
+
+    private boolean addImportsFromSource(WsdlHolder sourceWsdlHolder) {
+        Set<Import> importsFromSource = importsMap.get(sourceWsdlHolder);
+        if (importsFromSource != null)
+            return false;
+
+        if (importsMap.containsKey(sourceWsdlHolder))
+            return false;
+
+        Set<Import> imports = new HashSet<Import>();
+        for (Object o : sourceWsdlHolder.wsdl.getDefinition().getImports().values()) {
+            Import im = (Import) o;
+            imports.add(im);
+        }
+        importsMap.put(sourceWsdlHolder, imports);
+        return true;
+    }
 
     private boolean addTypesFromSource(WsdlHolder sourceWsdlHolder) {
         Types typesFromSource = typesMap.get(sourceWsdlHolder);
@@ -398,6 +432,25 @@ public class WsdlComposer {
         
     public void setTargetNamespace(String ns) {
         targetNamespace = ns;
+        updateElementsWithNewNamespace();
+        
+    }
+
+    private void updateElementsWithNewNamespace() {
+        if (!operationsToAdd.isEmpty()) {
+            for (Operation operation : operationsToAdd.values()) {
+                Input in = operation.getInput();
+                in.getMessage().setQName(new QName(targetNamespace, in.getMessage().getQName().getLocalPart()));
+
+                Output out = operation.getOutput();
+                out.getMessage().setQName(new QName(targetNamespace, out.getMessage().getQName().getLocalPart()));
+
+                for (Object o : operation.getFaults().values()) {
+                    Fault f = (Fault) o;
+                    f.getMessage().setQName(new QName(targetNamespace, f.getMessage().getQName().getLocalPart()));
+                }
+            }
+        }
     }
 
     public String getTargetNamespace() {
@@ -593,15 +646,29 @@ public class WsdlComposer {
                 reader.setExtensionRegistry(extensionRegistry);
                 workingWsdl = reader.readWSDL(originalWsdlDoc.getDocumentURI(), originalWsdlDoc);
             }
+            buildImports(workingWsdl);
             buildNamespaces(workingWsdl);
             buildTypes(workingWsdl);
+
             buildMessages(workingWsdl);
             buildOperations(workingWsdl);
             buildBindingOperations(workingWsdl);
-            for (Map.Entry<QName,Service> serviceEntry : services.entrySet()) {
+            buildServices(workingWsdl);
+            return workingWsdl;
+        }
+
+        private void buildServices(Definition workingWsdl) {
+            for (Map.Entry<QName, Service> serviceEntry : services.entrySet()) {
                 workingWsdl.addService(serviceEntry.getValue());
             }
-            return workingWsdl;
+        }
+
+        private void buildImports(Definition workingWsdl) {
+            for (Set<Import> imports : importsMap.values()) {
+                for (Import anImport : imports) {
+                    workingWsdl.addImport(anImport);
+                }
+            }
         }
 
         private void buildTypes(Definition workingWsdl) throws IOException, SAXException, WSDLException {
@@ -671,6 +738,9 @@ public class WsdlComposer {
             if (destinationBinding == null)
                 return;
 
+//            if (!destinationBinding.getQName().getNamespaceURI().equals(targetNamespace)) {
+//                destinationBinding.setQName(new QName(targetNamespace, destinationBinding.getQName().getLocalPart()));
+//            }
             workingWsdl.addBinding(destinationBinding);
             
             if (!bindingOperationsToAdd.isEmpty()) {

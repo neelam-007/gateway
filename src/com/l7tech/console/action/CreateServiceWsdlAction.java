@@ -3,7 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedCreate;
-import static com.l7tech.common.security.rbac.EntityType.SERVICE;
+import static com.l7tech.common.security.rbac.EntityType.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlComposer;

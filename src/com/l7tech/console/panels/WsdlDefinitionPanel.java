@@ -107,28 +107,16 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
             throw new IllegalArgumentException("expected " + WsdlComposer.class);
         }
         wsdlComposer = (WsdlComposer) settings;
-//        Definition definition = wsdlComposer.getOutputWsdl();
 
         QName qn = wsdlComposer.getQName();
-//        QName qn = definition.getQName();
 
         nameField.setText(qn == null?"":qn.getLocalPart());
-
-//        if (!namespacesModel.contains(definition.getTargetNamespace()))
-//            targetNameSpaceField.addItem(definition.getTargetNamespace());
 
         String targetNamespace = wsdlComposer.getTargetNamespace();
         if (StringUtils.isEmpty(targetNamespace))
             targetNamespace = "";
 
-//        java.util.List<String> otherNamespaces = wsdlComposer.getTargetNamespaces();
-//        for (String otherNamespace : otherNamespaces) {
-//            if (!namespacesModel.contains(otherNamespace)) {
-                targetNameSpaceField.setText(targetNamespace);
-//            }
-//        }
-
-//        targetNameSpaceField.setSelectedItem(definition.getTargetNamespace());
+        targetNameSpaceField.setText(targetNamespace);
 
         // setup namespaces
         nameSpaceDetailsModel.getDataVector().clear();
@@ -163,13 +151,8 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
             throw new IllegalArgumentException("expected " + WsdlComposer.class);
         }
         wsdlComposer = (WsdlComposer) settings;
-//        Definition def = wsdlComposer.getOutputWsdl();
+
         String ns = targetNameSpaceField.getText();
-//        if (targetNameSpaceField.getSelectedItem() == null) {
-//            ns = (String) targetNameSpaceField.getItemAt(0);
-//        } else {
-//            ns = (String) targetNameSpaceField.getSelectedItem();
-//        }
 
         wsdlComposer.setTargetNamespace(ns);
         wsdlComposer.setQName(new QName(nameField.getText()));

@@ -30,7 +30,6 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     private WsdlOperationsTableModel operationsModel;
     private JButton addOperationButton;
     private JButton removeOperatonButton;
-//    private Definition definition;
     private JComboBox messagesComboBox = new JComboBox();
     private JLabel panelHeader;
     private WsdlComposer wsdlCompser;
@@ -77,12 +76,6 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         "the port type can be considered an interface definition in which each method is " +
         "defined as an operation." +
         "</html>";
-        /*return "<html>" +
-          "The <i>port type</i> element contains a set of abstract operations and the abstract " +
-          "messages involved. " +
-          "For RPC-style Web services a <i>portType</i> can be thought as an interface definition " +
-          "in which each method can be defined as an operation." +
-          "</html>";*/
     }
 
     /**
@@ -108,6 +101,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         }
         validate(wsdlCompser);
         PortType portType = getOrCreatePortType(wsdlCompser);
+        portTypeNameField.setText(wsdlCompser.getPortType().getQName().getLocalPart());
 
         operationsModel = new WsdlOperationsTableModel(wsdlCompser, portType);
         operationsTable.setModel(operationsModel);
@@ -202,9 +196,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
       };
 
 
-    private
-    DefaultTableCellRenderer operationsTableCellRenderer
-      = new DefaultTableCellRenderer() {
+    private DefaultTableCellRenderer operationsTableCellRenderer = new DefaultTableCellRenderer() {
           /**
            * Returns the default table cell renderer.
            * 
@@ -217,12 +209,13 @@ public class WsdlPortTypePanel extends WizardStepPanel {
            * @param column     the column of the cell to render
            * @return the default table cell renderer
            */
-          public Component
-            getTableCellRendererComponent(JTable table,
-                                          Object value,
-                                          boolean isSelected,
-                                          boolean hasFocus,
-                                          int row, int column) {
+          public Component getTableCellRendererComponent(
+                                JTable table,
+                                Object value,
+                                boolean isSelected,
+                                boolean hasFocus,
+                                int row, int column) {
+
               super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
               if (value instanceof Input) {
@@ -256,16 +249,10 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         if (portType != null)
             return portType;
 
-
-//        Map portTypes = composer.getPortTypes();
-//        if (portTypes.isEmpty()) {
-            portType = composer.createPortType();
-            portType.setQName(new QName(composer.getTargetNamespace(), portTypeNameField.getText()));
-            portType.setUndefined(false);
-            composer.addPortType(portType, null);
-//        } else {
-//            portType = (PortType)portTypes.values().iterator().next();
-//        }
+        portType = composer.createPortType();
+        portType.setQName(new QName(composer.getTargetNamespace(), portTypeNameField.getText()));
+        portType.setUndefined(false);
+        composer.addPortType(portType, null);
         return portType;
     }
 
