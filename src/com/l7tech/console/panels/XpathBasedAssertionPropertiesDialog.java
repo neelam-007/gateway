@@ -205,7 +205,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 } else {
                     soapMessages = sg.generateResponses(serviceWsdl);
                 }
-                initializeBlankMessage(soapMessages[0]);
+                if (soapMessages.length > 0)
+                    initializeBlankMessage(soapMessages[0]);
                 for (Message soapRequest : soapMessages) {
                     requiredNamespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
                 }
