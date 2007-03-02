@@ -44,6 +44,7 @@ public class AllAssertions {
         new HttpBasic(),
         new HttpDigest(),
         new WssBasic(),
+        new EncryptedUsernameTokenAssertion(),
         new AllAssertion(),
         new ExactlyOneAssertion(),
         new OneOrMoreAssertion(),
@@ -61,6 +62,8 @@ public class AllAssertions {
         new RequestWssReplayProtection(),
         new RequestWssKerberos(),
         new CookieCredentialSourceAssertion(),
+        new RequestWssSaml(),
+        new RequestWssSaml2(),
     };
 
     /**

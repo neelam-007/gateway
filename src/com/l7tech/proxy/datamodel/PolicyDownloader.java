@@ -160,7 +160,7 @@ public class PolicyDownloader {
                 if (ssg.isFederatedGateway() && !useX509) {
                     msg += "; federated policy download therefore fails.";
                     log.info(msg);
-                    throw new ConfigurationException(msg);
+                    throw new ConfigurationException(msg, e);
                 } else
                     log.info(msg);
 
