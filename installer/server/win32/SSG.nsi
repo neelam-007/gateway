@@ -180,7 +180,7 @@ Section "SecureSpan Gateway" SecCopyUI
   File "${BUILD_DIR}\ssg-uddi-module-systinetv3.jar"
 
   SetOutPath "$INSTDIR/modules"
-  File /r "${BUILD_DIR}\modules\assertions"
+  File /r "${BUILD_DIR}\install\ssg\modules\assertions"
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\configwizard"
