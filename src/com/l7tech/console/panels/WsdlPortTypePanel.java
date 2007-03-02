@@ -12,8 +12,8 @@ import javax.xml.namespace.QName;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
@@ -99,9 +99,10 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
-        validate(wsdlCompser);
+
         PortType portType = getOrCreatePortType(wsdlCompser);
-        portTypeNameField.setText(wsdlCompser.getPortType().getQName().getLocalPart());
+        portTypeNameField.setText(portType.getQName().getLocalPart());
+        validate(wsdlCompser);
 
         operationsModel = new WsdlOperationsTableModel(wsdlCompser, portType);
         operationsTable.setModel(operationsModel);
@@ -282,17 +283,17 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     }
 
     private void updatePortType(PortType p, WsdlComposer composer) {
-        composer.removePortType(p);
-        PortType newPortType = composer.createPortType();
-        newPortType.setQName(new QName(composer.getTargetNamespace(), portTypeNameField.getText()));
-        newPortType.setUndefined(false);
+//        composer.removePortType(p);
+//        PortType newPortType = composer.createPortType();
+        p.setQName(new QName(composer.getTargetNamespace(), portTypeNameField.getText()));
+        p.setUndefined(false);
 
-        List originalOperations = p.getOperations();
-        for (Object o : originalOperations) {
-            Operation op = (Operation)o;
-            newPortType.addOperation(op);
-        }
-        composer.addPortType(newPortType, null);
+//        List originalOperations = p.getOperations();
+//        for (Object o : originalOperations) {
+//            Operation op = (Operation)o;
+//            p.addOperation(op);
+//        }
+//        composer.addPortType(newPortType, null);
     }
 
     private void validateOperations(WsdlComposer composer) {
