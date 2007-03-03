@@ -90,7 +90,7 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
                     context.setRequestPolicyViolated();
                     // here, we must override the soapfault detail in order to send the fault required by the spec
                     String specialFault = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:wsc=\"WHATEVER IT IS\">\n" +
+                            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                             "  <soapenv:Body>\n" +
                             "    <soapenv:Fault xmlns:wsc=\"http://schemas.xmlsoap.org/ws/2005/02/sc\">\n" +
                             "      <faultcode>wsc:BadContextToken</faultcode>\n" +
