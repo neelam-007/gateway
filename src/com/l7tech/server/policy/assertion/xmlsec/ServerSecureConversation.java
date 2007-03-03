@@ -7,6 +7,7 @@ import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.User;
@@ -89,19 +90,9 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
                     auditor.logAndAudit(AssertionMessages.SC_TOKEN_INVALID);
                     context.setRequestPolicyViolated();
                     // here, we must override the soapfault detail in order to send the fault required by the spec
-                    String specialFault = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-                            "  <soapenv:Body>\n" +
-                            "    <soapenv:Fault xmlns:wsc=\"http://schemas.xmlsoap.org/ws/2005/02/sc\">\n" +
-                            "      <faultcode>wsc:BadContextToken</faultcode>\n" +
-                            "      <faultactor>@@actor@@</faultactor>\n" +
-                            "    </soapenv:Fault>\n" +
-                            "  </soapenv:Body>\n" +
-                            "</soapenv:Envelope>";
-                    specialFault = specialFault.replace("@@actor@@", getIncomingURL(context));
                     SoapFaultLevel cfault = new SoapFaultLevel();
                     cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
-                    cfault.setFaultTemplate(specialFault);
+                    cfault.setFaultTemplate(SoapFaultUtils.badContextTokenFault(getIncomingURL(context)));
                     context.setFaultlevel(cfault);
                     return AssertionStatus.AUTH_FAILED;
                 }

@@ -42,6 +42,20 @@ public class SoapFaultUtils {
         return tmp.getDocumentElement();
     }
 
+    public static String badContextTokenFault(String actor) {
+        String output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                            "  <soapenv:Body>\n" +
+                            "    <soapenv:Fault xmlns:wsc=\"http://schemas.xmlsoap.org/ws/2005/02/sc\">\n" +
+                            "      <faultcode>wsc:BadContextToken</faultcode>\n" +
+                            "      <faultactor>@@actor@@</faultactor>\n" +
+                            "    </soapenv:Fault>\n" +
+                            "  </soapenv:Body>\n" +
+                            "</soapenv:Envelope>";
+        output = output.replace("@@actor@@", actor);
+        return output;
+    }
+
     public static Document generateSoapFaultDocument(String faultCode,
                                              String faultString,
                                              Element faultDetails,
