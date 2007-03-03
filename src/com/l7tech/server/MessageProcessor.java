@@ -23,6 +23,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -139,6 +140,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         return reallyProcessMessage(context);
     }
 
+    private String getIncomingURL(PolicyEnforcementContext context) {
+        HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+        if (hrk == null) {
+            logger.warning("cannot generate incoming URL");
+            return "";
+        }
+        return hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
+    }
+
     private AssertionStatus reallyProcessMessage(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
         context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
@@ -206,6 +216,21 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 } catch (BadSecurityContextException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                     context.setAuditLevel(Level.SEVERE);
+                    String specialFault = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:wsc=\"WHATEVER IT IS\">\n" +
+                            "  <soapenv:Body>\n" +
+                            "    <soapenv:Fault xmlns:wsc=\"http://schemas.xmlsoap.org/ws/2005/02/sc\">\n" +
+                            "      <faultcode>wsc:BadContextToken</faultcode>\n" +
+                            "      <faultactor>@@actor@@</faultactor>\n" +
+                            "    </soapenv:Fault>\n" +
+                            "  </soapenv:Body>\n" +
+                            "</soapenv:Envelope>";
+                    specialFault = specialFault.replace("@@actor@@", getIncomingURL(context));
+                    SoapFaultLevel cfault = new SoapFaultLevel();
+                    cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+                    cfault.setFaultTemplate(specialFault);
+                    context.setFaultlevel(cfault);
+
                     status = AssertionStatus.FAILED;
                     return AssertionStatus.FAILED;
                 }

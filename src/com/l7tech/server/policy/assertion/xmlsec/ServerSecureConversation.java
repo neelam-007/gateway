@@ -7,6 +7,8 @@ import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.User;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -43,6 +45,15 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
         auditor = new Auditor(this, springContext, logger);
     }
 
+    private String getIncomingURL(PolicyEnforcementContext context) {
+        HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+        if (hrk == null) {
+            logger.warning("cannot generate incoming URL");
+            return "";
+        }
+        return hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
+    }
+
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         ProcessorResult wssResults;
 
@@ -77,6 +88,21 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
                 if (session == null) {
                     auditor.logAndAudit(AssertionMessages.SC_TOKEN_INVALID);
                     context.setRequestPolicyViolated();
+                    // here, we must override the soapfault detail in order to send the fault required by the spec
+                    String specialFault = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:wsc=\"WHATEVER IT IS\">\n" +
+                            "  <soapenv:Body>\n" +
+                            "    <soapenv:Fault xmlns:wsc=\"http://schemas.xmlsoap.org/ws/2005/02/sc\">\n" +
+                            "      <faultcode>wsc:BadContextToken</faultcode>\n" +
+                            "      <faultactor>@@actor@@</faultactor>\n" +
+                            "    </soapenv:Fault>\n" +
+                            "  </soapenv:Body>\n" +
+                            "</soapenv:Envelope>";
+                    specialFault = specialFault.replace("@@actor@@", getIncomingURL(context));
+                    SoapFaultLevel cfault = new SoapFaultLevel();
+                    cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+                    cfault.setFaultTemplate(specialFault);
+                    context.setFaultlevel(cfault);
                     return AssertionStatus.AUTH_FAILED;
                 }
                 User authenticatedUser = session.getUsedBy();
