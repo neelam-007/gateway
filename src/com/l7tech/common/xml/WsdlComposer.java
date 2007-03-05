@@ -128,7 +128,7 @@ public class WsdlComposer {
         for (Object o : def.getPortTypes().values()) {
             PortType pt = (PortType) o;
             for (Object opObj : pt.getOperations()) {
-                addOperation((Operation) opObj, originalWsdlHolder);
+                addOperation((Operation) opObj);
             }
             addPortType(pt, originalWsdlHolder);
         }
@@ -196,12 +196,12 @@ public class WsdlComposer {
         addTypesFromSource(sourceWsdlHolder);
         Operation newOperation = copyOperation(bindingOperation.getOperation());
         bindingOperation.setOperation(newOperation);
-        addOperation(bindingOperation.getOperation(), sourceWsdlHolder);
+        addOperation(bindingOperation.getOperation());
     }
 
     private void removeWsdlElementsForBindingOperation(WsdlHolder sourceWsdlHolder, BindingOperation bopToRemove, boolean empty) {
-        Operation removedOp = removeOperation(bopToRemove.getOperation(), sourceWsdlHolder);
-        removeMessagesFromSource(sourceWsdlHolder, removedOp);
+        Operation removedOp = removeOperation(bopToRemove.getOperation());
+        removeMessagesFromSource(removedOp);
 
         if (empty) {
             removeTypesFromSource(sourceWsdlHolder);
@@ -213,7 +213,7 @@ public class WsdlComposer {
         sourceWsdls.remove(sourceWsdlHolder);
     }
 
-    private void removeMessagesFromSource(WsdlHolder sourceWsdlHolder, Operation operation) {
+    private void removeMessagesFromSource(Operation operation) {
         if (operation == null)
             return;
         messagesToAdd.remove(operation.getInput().getMessage().getQName());
@@ -227,7 +227,7 @@ public class WsdlComposer {
         typesMap.remove(sourceWsdlHolder);
     }
 
-    private Operation removeOperation(Operation operation, WsdlHolder sourceWsdlHolder) {
+    private Operation removeOperation(Operation operation) {
         return operationsToAdd.remove(operation.getName());
     }
 
@@ -235,15 +235,15 @@ public class WsdlComposer {
         sourceWsdls.add(sourceWsdlHolder);
     }
 
-    private void addMessagesFromSource(WsdlHolder sourceWsdlHolder, Operation operation) {
+    private void addMessagesFromSource(Operation operation) {
         Message newInputMsg = operation.getInput().getMessage();
         newInputMsg.setQName(new QName(targetNamespace, newInputMsg.getQName().getLocalPart()));
 
         Message newOutMessage = operation.getOutput().getMessage();
         newOutMessage.setQName(new QName(targetNamespace, newOutMessage.getQName().getLocalPart()));
 
-        internalAddMessage(newInputMsg,sourceWsdlHolder);
-        internalAddMessage(newOutMessage, sourceWsdlHolder);
+        internalAddMessage(newInputMsg);
+        internalAddMessage(newOutMessage);
      
         Map faults = operation.getFaults();
         if (faults != null) {
@@ -251,7 +251,7 @@ public class WsdlComposer {
                 Fault f = (Fault) o;
                 Message newFaultMsg = f.getMessage();
                 newFaultMsg.setQName(new QName(targetNamespace, newFaultMsg.getQName().getLocalPart()));
-                internalAddMessage(newFaultMsg, sourceWsdlHolder);
+                internalAddMessage(newFaultMsg);
             }
         }
     }
@@ -282,7 +282,7 @@ public class WsdlComposer {
         return newPart;
     }
 
-    private void internalAddMessage(Message message, WsdlHolder sourceWsdl) {
+    private void internalAddMessage(Message message) {
         if (messagesToAdd.containsKey(message.getQName())) {
             return;
         }
@@ -290,16 +290,16 @@ public class WsdlComposer {
         messagesToAdd.put(message.getQName(), message);
     }
 
-    private void addOperation(Operation op, WsdlHolder sourceWsdlHolder) {
-        internalAddOperation(op, sourceWsdlHolder);
+    private void addOperation(Operation op) {
+        internalAddOperation(op);
     }
 
-    private void removeOperation(Operation op) {
-        internalRemoveOperation(op);
-    }
+//    private void removeOperation(Operation op) {
+//        internalRemoveOperation(op);
+//    }
 
-    private void internalAddOperation(Operation sourceOperation, WsdlHolder sourceWsdlHolder) {
-        addMessagesFromSource(sourceWsdlHolder, sourceOperation);
+    private void internalAddOperation(Operation sourceOperation) {
+        addMessagesFromSource(sourceOperation);
         if (operationsToAdd.containsKey(sourceOperation.getName()))
             return;
 
@@ -307,9 +307,9 @@ public class WsdlComposer {
 
     }
 
-    private void internalRemoveOperation(Operation op) {
-        Operation removed = operationsToAdd.remove(op.getName());
-    }
+//    private void internalRemoveOperation(Operation op) {
+//        Operation removed = operationsToAdd.remove(op.getName());
+//    }
 
 
     private boolean addImportsFromSource(WsdlHolder sourceWsdlHolder) {
@@ -340,10 +340,6 @@ public class WsdlComposer {
         Types sourceTypes = sourceWsdlHolder.wsdl.getTypes();
         typesMap.put(sourceWsdlHolder, sourceTypes);
         return true;
-    }
-
-    private Types createTypes() {
-        return delegateWsdl.createTypes();
     }
 
     private PortType getDefaultPortType() {
@@ -506,7 +502,7 @@ public class WsdlComposer {
     }
 
     public void addMessage(Message message) {
-        internalAddMessage(message,  null);
+        internalAddMessage(message);
     }
 
     public Part createPart() {
@@ -534,10 +530,10 @@ public class WsdlComposer {
     }
 
     public void addBinding(Binding binding, WsdlHolder holder) {
-        internalAddBindings(binding, holder);
+        internalAddBindings(binding);
     }
 
-    private void internalAddBindings(Binding binding, WsdlHolder holder) {
+    private void internalAddBindings(Binding binding) {
         if (bindings.containsKey(binding.getQName()))
             return;
 
@@ -550,7 +546,7 @@ public class WsdlComposer {
     }
 
     private void internalRemoveBinding(Binding binding) {
-        Binding removed = bindings.remove(binding.getQName());
+        bindings.remove(binding.getQName());
     }
 
     public BindingInput createBindingInput() {
@@ -570,10 +566,10 @@ public class WsdlComposer {
     }
 
     public void addPortType(PortType portType, WsdlHolder holder) {
-        internalAddPortType(portType, holder);
+        internalAddPortType(portType);
     }
 
-    private void internalAddPortType(PortType portType, WsdlHolder holder) {
+    private void internalAddPortType(PortType portType) {
         if (portTypes.containsKey(portType.getQName()))
             return;
 
@@ -586,7 +582,7 @@ public class WsdlComposer {
     }
 
     private void internalRemovePortType(PortType p) {
-        PortType removed = portTypes.remove(p.getQName());
+        portTypes.remove(p.getQName());
     }
 
     public Set<WsdlHolder> getSourceWsdls() {
@@ -630,9 +626,10 @@ public class WsdlComposer {
     private class Builder {
 
         private int nsPrefixCounter = 0;
-        private String getNextTnsPrefix() {
-            return "sourcetns" + nsPrefixCounter++;
-        }       
+
+        private String getNextNsPrefix() {
+            return "sourcens" + nsPrefixCounter++;
+        }
 
         public Definition buildWsdl() throws IOException, SAXException, WSDLException {
             nsPrefixCounter = 0;
@@ -738,9 +735,6 @@ public class WsdlComposer {
             if (destinationBinding == null)
                 return;
 
-//            if (!destinationBinding.getQName().getNamespaceURI().equals(targetNamespace)) {
-//                destinationBinding.setQName(new QName(targetNamespace, destinationBinding.getQName().getLocalPart()));
-//            }
             workingWsdl.addBinding(destinationBinding);
             
             if (!bindingOperationsToAdd.isEmpty()) {
@@ -761,10 +755,13 @@ public class WsdlComposer {
             }
 
             for (WsdlHolder source: sourceWsdls) {
-                workingWsdl.addNamespace(getNextTnsPrefix(), source.wsdl.getDefinition().getTargetNamespace());
+                workingWsdl.addNamespace(getNextNsPrefix(), source.wsdl.getDefinition().getTargetNamespace());
                 Definition sourceDef = source.wsdl.getDefinition();
                 for (Object o : sourceDef.getNamespaces().keySet()) {
                     String key = (String) o;
+                    if (workingWsdl.getNamespace(key) != null) {
+                        key = getNextNsPrefix();
+                    }
                     workingWsdl.addNamespace(key, sourceDef.getNamespace(key));
                 }
             }
