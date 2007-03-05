@@ -259,6 +259,8 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             String msg = "cannot iterate through message's parts";
             logger.log(Level.WARNING, msg, e);
             throw new RuntimeException(msg, e);
+        } catch (IllegalStateException e) {
+            logger.log(Level.FINE, "cannot get mime knob", e);
         }
         Object[][] messageParts = new Object[contentTypes.size()][2];
         int i = 0;
