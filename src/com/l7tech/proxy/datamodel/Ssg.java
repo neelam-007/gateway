@@ -21,8 +21,8 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.PasswordAuthentication;
+import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -79,6 +79,8 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private String serverUrl = null; // Special URL for generic (non-SSG) services
     private String failoverStrategyName = FailoverStrategyFactory.ORDERED.getName();
     private boolean genericService = false; // true if the server is not actually an SSG
+    private int httpConnectTimeout = -1;
+    private int httpReadTimeout = -1;
 
     private transient Set listeners = Collections.synchronizedSet(new HashSet()); // Set of weak references to listeners
     private transient SsgRuntime runtime = new SsgRuntime(this);
@@ -819,6 +821,26 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     /** @return true if this service is not actually an SSG, but is just a generic URL to be posted to. */
     public boolean isGeneric() {
         return this.genericService;
+    }
+
+    /** @return the HTTP connect timeout in milliseconds, or -1 if we are using the default. */
+    public int getHttpConnectTimeout() {
+        return httpConnectTimeout;
+    }
+
+    /** @param httpConnectTimeout HTTP connect timeout in milliseconds, or -1 to use the default. */
+    public void setHttpConnectTimeout(int httpConnectTimeout) {
+        this.httpConnectTimeout = httpConnectTimeout;
+    }
+
+    /** @return HTTP socket timeout in milliseconds, or -1 if we are using the default. */
+    public int getHttpReadTimeout() {
+        return httpReadTimeout;
+    }
+
+    /** @param httpReadTimeout HTTP socket timeout in milliseconds, or -1 to use the default. */
+    public void setHttpReadTimeout(int httpReadTimeout) {
+        this.httpReadTimeout = httpReadTimeout;
     }
 
     /** @return true if the specified HTTP header should be copied through. */

@@ -49,9 +49,11 @@ public class CommonsHttpClient implements GenericHttpClient {
     public static final String PROP_MAX_CONN_PER_HOST = CommonsHttpClient.class.getName() + ".maxConnectionsPerHost";
     public static final String PROP_MAX_TOTAL_CONN = CommonsHttpClient.class.getName() + ".maxTotalConnections";
     public static final String PROP_STALE_CHECKS = CommonsHttpClient.class.getName() + ".staleCheckCount";
+    public static final String PROP_DEFAULT_CONNECT_TIMEOUT = CommonsHttpClient.class.getName() + ".defaultConnectTimeout";
+    public static final String PROP_DEFAULT_READ_TIMEOUT = CommonsHttpClient.class.getName() + ".defaultReadTimeout";
 
-    public static final int DEFAULT_CONNECT_TIMEOUT = 30000;
-    public static final int DEFAULT_READ_TIMEOUT = 60000;
+    public static final int DEFAULT_CONNECT_TIMEOUT = Integer.getInteger(PROP_DEFAULT_CONNECT_TIMEOUT, 30000).intValue();
+    public static final int DEFAULT_READ_TIMEOUT = Integer.getInteger(PROP_DEFAULT_READ_TIMEOUT, 60000).intValue();
 
     private static HttpParams httpParams;
     private static final Map protoBySockFac = Collections.synchronizedMap(new WeakHashMap());

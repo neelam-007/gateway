@@ -659,7 +659,7 @@ public class SsgRuntime {
         synchronized (ssg) {
             if (simpleHttpClient == null) {
                 // Base it on commons
-                GenericHttpClient client = new CommonsHttpClient(getHttpConnectionManager());
+                GenericHttpClient client = new CommonsHttpClient(getHttpConnectionManager(), ssg.getHttpConnectTimeout(), ssg.getHttpReadTimeout());
 
                 // Make it use the right SSL
                 client = new SslPeerHttpClient(client,
