@@ -156,7 +156,6 @@ public class CreateServiceWsdlAction extends SecureAction {
 
                 service.setName(ws.getServiceName());
                 final String serviceAddress = getServiceAddress(def);
-//                service.setWsdlUrl(serviceAddress);
                 RoutingAssertion ra;
                 if (serviceAddress != null) {
                     ra = new HttpRoutingAssertion(serviceAddress);
@@ -172,7 +171,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                 service.setPolicyXml(bo.toString());
 
                 Set<WsdlComposer.WsdlHolder> sourceWsdls = composer.getSourceWsdls();
-                Collection<ServiceDocument> sourceDocs = new HashSet<ServiceDocument>();
+                Collection<ServiceDocument> sourceDocs = new ArrayList<ServiceDocument>();
                 for (WsdlComposer.WsdlHolder sourceWsdl : sourceWsdls) {
                     ServiceDocument sd = new ServiceDocument();
                     sd.setUri(sourceWsdl.getWsdlLocation());
