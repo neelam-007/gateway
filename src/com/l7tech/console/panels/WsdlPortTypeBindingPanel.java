@@ -1,8 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.table.WsdlBindingOperationsTableModel;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlComposer;
+import com.l7tech.console.table.WsdlBindingOperationsTableModel;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.wsdl.*;
@@ -18,7 +19,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -99,17 +99,12 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
-        PortType portType = getPortType();
-//        portTypeName.setText(portType.getQName().getLocalPart());
-
-        String s = portTypeBindingNameField.getText();
-        if (s == null || "".equals(s)) {
-            portTypeBindingNameField.setText(portType.getQName().getLocalPart() + "Binding");
-        }
-
         Binding binding = null;
         try {
             binding = getEditedBinding();
+            if (!StringUtils.isEmpty(binding.getQName().getLocalPart())) {
+                portTypeBindingNameField.setText(binding.getQName().getLocalPart());
+            }
         } catch (WSDLException e) {
             throw new RuntimeException(e);
         }
@@ -135,7 +130,8 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
         try {
-            getEditedBinding();
+            Binding b = getEditedBinding();
+            b.setQName(new QName(wsdlComposer.getTargetNamespace(), portTypeBindingNameField.getText()));
         } catch (WSDLException e) {
             throw new RuntimeException(e);
         }
@@ -149,53 +145,49 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      */
     private Binding getEditedBinding() throws WSDLException {
         PortType portType = getPortType();
-        Map bindings = wsdlComposer.getBindings();
-        Binding binding;
-        if (bindings.isEmpty()) {
+        Binding binding = wsdlComposer.getBinding();
+        if (binding == null) {
             binding = wsdlComposer.createBinding();
-            binding.setQName(new QName(wsdlComposer.getTargetNamespace(),
-              portTypeBindingNameField.getText()));
+            wsdlComposer.addBinding(binding);
             binding.setPortType(portType);
             binding.setUndefined(false);
-            collectSoapBinding(binding);
-            wsdlComposer.addBinding(binding, null);
-        } else {
-            binding = (Binding)bindings.values().iterator().next();
-            wsdlComposer.removeBinding(binding);
-            return getEditedBinding();
+            binding.setQName(new QName(wsdlComposer.getTargetNamespace(), portTypeBindingNameField.getText()));            
         }
-        binding.getBindingOperations().clear();
-        for (Object o : portType.getOperations()) {
-            Operation op = (Operation)o;
-            BindingOperation bop = wsdlComposer.createBindingOperation();
-            bop.setName(op.getName());
-            bop.setOperation(op);
+        collectSoapBinding(binding);
 
-            // binding input
-            BindingInput bi = wsdlComposer.createBindingInput();
-            bi.setName(op.getInput().getName());
-            bi.addExtensibilityElement(getSoapBody());
-            bop.setBindingInput(bi);
+        if (binding.getBindingOperations().isEmpty()) {
+            for (Object o : portType.getOperations()) {
+                Operation op = (Operation)o;
+                BindingOperation bop = wsdlComposer.createBindingOperation();
+                bop.setName(op.getName());
+                bop.setOperation(op);
 
-            // binding output
-            BindingOutput bout = wsdlComposer.createBindingOutput();
-            bout.setName(op.getOutput().getName());
-            bout.addExtensibilityElement(getSoapBody());
-            bop.setBindingOutput(bout);
-            binding.addBindingOperation(bop);
-            // soap action
-            String action =
-              portType.getQName().getLocalPart() + "#" + bop.getName();
-            ExtensibilityElement ee = null;
-            ExtensionRegistry extensionRegistry = wsdlComposer.getExtensionRegistry();
-            ee = extensionRegistry.createExtension(BindingOperation.class, new QName(Wsdl.WSDL_SOAP_NAMESPACE, "operation"));
-            if (ee instanceof SOAPOperation) {
-                SOAPOperation sop = (SOAPOperation)ee;
-                sop.setSoapActionURI(action);
-            } else {
-                throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
+                // binding input
+                BindingInput bi = wsdlComposer.createBindingInput();
+                bi.setName(op.getInput().getName());
+                bi.addExtensibilityElement(getSoapBody());
+                bop.setBindingInput(bi);
+
+                // binding output
+                BindingOutput bout = wsdlComposer.createBindingOutput();
+                bout.setName(op.getOutput().getName());
+                bout.addExtensibilityElement(getSoapBody());
+                bop.setBindingOutput(bout);
+                binding.addBindingOperation(bop);
+                // soap action
+                String action =
+                  portType.getQName().getLocalPart() + "#" + bop.getName();
+                ExtensibilityElement ee = null;
+                ExtensionRegistry extensionRegistry = wsdlComposer.getExtensionRegistry();
+                ee = extensionRegistry.createExtension(BindingOperation.class, new QName(Wsdl.WSDL_SOAP_NAMESPACE, "operation"));
+                if (ee instanceof SOAPOperation) {
+                    SOAPOperation sop = (SOAPOperation)ee;
+                    sop.setSoapActionURI(action);
+                } else {
+                    throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
+                }
+                bop.addExtensibilityElement(ee);
             }
-            bop.addExtensibilityElement(ee);
         }
 
         return binding;
@@ -259,11 +251,11 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      * @throws IllegalStateException if there is no port type in the definition
      */
     private PortType getPortType() throws IllegalStateException {
-        Map portTypes = wsdlComposer.getPortTypes();
-        if (portTypes.isEmpty()) {
+        PortType pt = wsdlComposer.getPortType();
+        if (pt == null) {
             throw new IllegalStateException("Should have at least one port type");
         }
-        return (PortType)portTypes.values().iterator().next();
+        return pt;
     }
 
 

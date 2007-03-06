@@ -122,7 +122,7 @@ public class WsdlComposer {
             for (Object boObj : b.getBindingOperations()) {
                 addBindingOperation((BindingOperation) boObj, originalWsdlHolder, true);
             }
-            addBinding(b, originalWsdlHolder);
+            addBinding(b);
         }
 
         for (Object o : def.getPortTypes().values()) {
@@ -529,7 +529,7 @@ public class WsdlComposer {
         return delegateWsdl.createBinding();
     }
 
-    public void addBinding(Binding binding, WsdlHolder holder) {
+    public void addBinding(Binding binding) {
         internalAddBindings(binding);
     }
 
