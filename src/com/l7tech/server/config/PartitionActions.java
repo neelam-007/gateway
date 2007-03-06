@@ -4,6 +4,8 @@ import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
+import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
@@ -528,6 +530,7 @@ public class PartitionActions {
         }
 
         if (wasDeleted) {
+            doRemoveAssociatedDatabasePrompts(partitionToRemove, listener);
             File deleteMe = new File(osFunctions.getPartitionBase() + partitionToRemove.getPartitionId());
             if (deleteMe.exists()) {
                 wasDeleted = FileUtils.deleteDir(deleteMe);
@@ -539,6 +542,26 @@ public class PartitionActions {
         }
 
         return wasDeleted;
+    }
+
+    private static void doRemoveAssociatedDatabasePrompts(PartitionInformation partitionToRemove, PartitionActionListener listener) {
+        if (listener != null) {
+            try {
+                OSSpecificFunctions osf = partitionToRemove.getOSSpecificFunctions();
+
+                SsgDatabaseConfigBean dbBean = new SsgDatabaseConfigBean(osf.getDatabaseConfig());
+                DBActions dba = new DBActions(osf);
+                boolean removeDb = listener.getConfirmation(
+                        "This wizard can remove the database used by this partition.\n" +
+                        "This will remove all data in the database and cannot be undone.\n\n" +
+                        "Are you sure you want to delete the database named \"" + dbBean.getDbName() + "\" ?");
+
+                if (removeDb)
+                        dba.dropDatabase(dbBean.getDbName(), dbBean.getDbHostname(), dbBean.getDbUsername(), dbBean.getDbPassword(), true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private static int executeCommand(String[] cmdArray, File parentDir) throws IOException, InterruptedException {

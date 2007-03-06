@@ -508,21 +508,32 @@ public class DBActions {
             logger.warning("dropping database \"" + dbName + "\"");
     }
 
-    private void dropDatabase(String dbName, String hostname, String username, String password, boolean isInfo) {
+    public void dropDatabase(String dbName, String hostname, String username, String password, boolean isInfo) {
         Connection conn = null;
         Statement stmt = null;
         try {
-            conn = getConnection(hostname, ADMIN_DB_NAME, username, password);
-            stmt = conn.createStatement();
-            dropDatabase(stmt, dbName, isInfo);
-        } catch (SQLException e) {
-            logger.severe("Failure while dropping the database: " + e.getMessage());
-        } finally {
-            if (stmt != null)
-                try { stmt.close(); } catch (SQLException e) {}
+            conn = getConnection(hostname, dbName, username, password);
+        } catch (SQLException connectException) {
+            try {
+                conn = getConnection(hostname, ADMIN_DB_NAME, username, password);
+            } catch (SQLException e) {
+                logger.severe("Failure while dropping the database. Could not connect to either \"" + dbName + "\" or \"" + ADMIN_DB_NAME + "\" as user \"" + username + "\". Please drop the database manually.");
+            }
+        }
 
-            if (conn != null)
-                try { conn.close(); } catch (SQLException e) {}
+        if (conn != null) {
+            try {
+                stmt = conn.createStatement();
+                dropDatabase(stmt, dbName, isInfo);
+            } catch (SQLException e) {
+                logger.severe("Failure while dropping the database: " + e.getMessage());
+            } finally {
+                if (stmt != null)
+                    try { stmt.close(); } catch (SQLException e) {}
+
+                if (conn != null)
+                    try { conn.close(); } catch (SQLException e) {}
+            }
         }
     }
 

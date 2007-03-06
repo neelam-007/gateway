@@ -1,6 +1,12 @@
 package com.l7tech.server.config.beans;
 
+import com.l7tech.server.config.PropertyHelper;
+import org.apache.commons.lang.StringUtils;
+
+import java.io.IOException;
+import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,6 +35,35 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
         super(NAME, DESCRIPTION);
         ELEMENT_KEY = this.getClass().getName();
         init();
+    }
+
+    public SsgDatabaseConfigBean(String configFile) throws IOException {
+        this();
+        if (StringUtils.isNotEmpty(configFile)) {
+            initFromConfigFile(configFile);
+        }
+    }
+
+    private void initFromConfigFile(String configFile) throws IOException {
+        Map<String, String> defaults = PropertyHelper.getProperties(configFile, new String[] {
+                PROP_DB_URL,
+                PROP_DB_USERNAME,
+                PROP_DB_PASSWORD
+        });
+
+        dbUsername = defaults.get(PROP_DB_USERNAME);
+        dbPassword = defaults.get(PROP_DB_PASSWORD);
+         String existingDBUrl = (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_URL);
+
+        if (StringUtils.isNotEmpty(existingDBUrl)) {
+            Matcher matcher = SsgDatabaseConfigBean.dbUrlPattern.matcher(existingDBUrl);
+            if (matcher.matches()) {
+                dbHostname = matcher.group(1);
+                dbName = matcher.group(2);
+            }
+        } else {
+            throw new IOException("no database url was found while reading the configfile [" + configFile + "].");
+        }
     }
 
     private void init() {
