@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soap:Header>
+        <wsse:Security soap:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:UsernameToken wsu:Id="UsernameToken-24823738"
+                xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+                <wsse:Username xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">uidtest</wsse:Username>
+                <wsse:Password
+                    Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">test</wsse:Password>
+            </wsse:UsernameToken>
+        </wsse:Security>
+
+    </soap:Header>
+    <soap:Body>
+        <ns2:WriteInvoiceRequest xmlns:ns2="http://services.visana.ch/lp/v1">
+            <ns2:Invoice>
+                <id>74293</id>
+                <boId>74293</boId>
+                <validRecord>true</validRecord>
+
+                <checkResult>
+                    <msgCode>91051</msgCode>
+                    <msgType>MsgUserHint</msgType>
+                    <processStateId>6</processStateId>
+                    <severity>1</severity>
+                    <timeCreated>2007-02-14T07:20:34.456+01:00</timeCreated>
+
+                    <messageParameter>
+                        <parameter>msg</parameter>
+                        <text>SYR-51 Summe der LstPos ungleich Rechnungstotal</text>
+                    </messageParameter>
+                </checkResult>
+                <checkResult>
+                    <msgCode>91060</msgCode>
+
+                    <msgType>MsgUserHint</msgType>
+                    <processStateId>5</processStateId>
+                    <severity>1</severity>
+                    <timeCreated>2007-02-14T07:20:34.456+01:00</timeCreated>
+                    <messageParameter>
+                        <parameter>msg</parameter>
+
+                        <text>SYR-60 Pruefziffer bei Post-ESR ungueltig</text>
+                    </messageParameter>
+                </checkResult>
+                <checkResult>
+                    <msgCode>91057</msgCode>
+                    <msgType>MsgUserHint</msgType>
+                    <processStateId>5</processStateId>
+
+                    <severity>1</severity>
+                    <timeCreated>2007-02-14T07:20:34.456+01:00</timeCreated>
+                    <messageParameter>
+                        <parameter>msg</parameter>
+                        <text>SYR-57 Falsche ESR-ReferenzNr</text>
+                    </messageParameter>
+                </checkResult>
+
+                <docGuid>00</docGuid>
+                <mandator>7601003000023</mandator>
+                <patientNumber>1.012.177.75</patientNumber>
+                <xmlVersion>XML400</xmlVersion>
+                <processStep>
+                    <id>74294</id>
+
+                    <processContainerId>37147</processContainerId>
+                    <objectId>74293</objectId>
+                    <prevProcessStepId>74293</prevProcessStepId>
+                    <locked>true</locked>
+                    <patientNumber>1.012.177.75</patientNumber>
+                    <technicalState>P</technicalState>
+
+                    <timeCreated>2006-09-13T00:00:00.000+02:00</timeCreated>
+                    <ns2:ProcessState>
+                        <id>6</id>
+                        <boName>Invoice</boName>
+                        <task>EDIT_BIZ_INVOICE</task>
+                        <processVariant>PROC_VAR_TP</processVariant>
+
+                        <instruction>New_WorkItem</instruction>
+                        <right>edit_biz_invoice__tp</right>
+                    </ns2:ProcessState>
+                </processStep>
+                <amount>239.35</amount>
+                <amountDue>239.35</amountDue>
+                <amountPrepaid>0</amountPrepaid>
+
+                <assignmentRole>hospital</assignmentRole>
+                <billerEanParty>7601002114943</billerEanParty>
+                <billerZsr>J725501</billerZsr>
+                <currency>CHF</currency>
+                <dateBegin>2006-09-13T00:00:00.000+02:00</dateBegin>
+                <dateEnd>2006-09-15T00:00:00.000+02:00</dateEnd>
+
+                <entranceDate>2006-09-29T00:00:00.000+02:00</entranceDate>
+                <esrCodingLine>&lt;050001000023935&gt; 100116339100000+ 12126&gt;</esrCodingLine>
+                <esrParticipantNumber>000012126</esrParticipantNumber>
+                <esrReferenceNumber>100116339100000</esrReferenceNumber>
+                <esrType>15</esrType>
+
+                <hospitalMode>cantonal</hospitalMode>
+                <hospitalSectionMajor>M300</hospitalSectionMajor>
+                <hospitalType>emergency</hospitalType>
+                <insuranceEanParty>7601003000023</insuranceEanParty>
+                <intermediateEanParty>7609999033209</intermediateEanParty>
+                <invoiceDate>2006-09-27T00:00:00.000+02:00</invoiceDate>
+
+                <invoiceId>1163391/1</invoiceId>
+                <invoiceModification>false</invoiceModification>
+                <invoiceTimestamp>2006-09-27T00:00:00.000+02:00</invoiceTimestamp>
+                <law>KVG</law>
+                <patientBirthdate>1968-02-05T00:00:00.000+01:00</patientBirthdate>
+                <patientCity>Winterthur</patientCity>
+
+                <patientFamilyname>Hoxha</patientFamilyname>
+                <patientGender>female</patientGender>
+                <patientGivenname>Elvira</patientGivenname>
+                <patientId>4.000.945.0</patientId>
+                <patientZip>8400</patientZip>
+                <paymentDate>2006-10-22T00:00:00.000+02:00</paymentDate>
+
+                <paymentType>TIERS_PAYANT</paymentType>
+                <portxLpDataxchangeFlag>false</portxLpDataxchangeFlag>
+                <providerDomicileCanton>ZH</providerDomicileCanton>
+                <providerEanParty>7601002114943</providerEanParty>
+                <providerMaingroup>10</providerMaingroup>
+                <providerZsr>J725501</providerZsr>
+
+                <purpose>invoice</purpose>
+                <reason>disease</reason>
+                <recipientEanParty>7601003000023</recipientEanParty>
+                <referrerZsr>H480701</referrerZsr>
+                <role>production</role>
+                <senderEanParty>7601002114943</senderEanParty>
+
+                <treatment>ambulatory</treatment>
+                <treatmentCanton>ZH</treatmentCanton>
+                <service>
+                    <id>286730</id>
+                    <boId>286730</boId>
+                    <validRecord>true</validRecord>
+
+                    <checkResult>
+                        <msgCode>08115</msgCode>
+                        <msgType>MsgUserHint</msgType>
+                        <processStateId>5</processStateId>
+                        <severity>1</severity>
+                        <timeCreated>2007-02-14T07:20:34.425+01:00</timeCreated>
+
+                    </checkResult>
+                    <amount>16.52</amount>
+                    <amountMt>8.9</amountMt>
+                    <amountTt>7.62</amountTt>
+                    <billingRole>both</billingRole>
+                    <bodyLocation>none</bodyLocation>
+
+                    <code>00.0010</code>
+                    <dateBegin>2006-09-13T00:00:00.000+02:00</dateBegin>
+                    <eanProvider>7601000723215</eanProvider>
+                    <eanResponsible>7601000723215</eanResponsible>
+                    <externalFactor>1</externalFactor>
+                    <externalFactorTt>1</externalFactorTt>
+
+                    <medicalRole>employee</medicalRole>
+                    <number>2</number>
+                    <obligation>true</obligation>
+                    <quantity>1</quantity>
+                    <recordId>3</recordId>
+                    <regulation/>
+
+                    <scaleFactorMt>1</scaleFactorMt>
+                    <scaleFactorTt>1</scaleFactorTt>
+                    <sectionMajor>M300</sectionMajor>
+                    <service>Konsultation, erste 5 Min. (Grundko</service>
+                    <sysCostCategory>A112</sysCostCategory>
+                    <tariffType>001</tariffType>
+
+                    <treatment>ambulatory</treatment>
+                    <unit>9.57</unit>
+                    <unitFactor>0.93</unitFactor>
+                    <unitFactorTt>0.93</unitFactorTt>
+                    <unitTt>8.19</unitTt>
+                </service>
+
+                <service>
+                    <id>286735</id>
+                    <boId>286735</boId>
+                    <validRecord>true</validRecord>
+                    <amount>11.26</amount>
+                    <amountMt>0</amountMt>
+
+                    <amountTt>11.26</amountTt>
+                    <billingRole>both</billingRole>
+                    <bodyLocation>none</bodyLocation>
+                    <code>30.4040</code>
+                    <dateBegin>2006-09-13T00:00:00.000+02:00</dateBegin>
+                    <eanProvider>7601000723215</eanProvider>
+
+                    <eanResponsible>7601000723215</eanResponsible>
+                    <externalFactor>1</externalFactor>
+                    <externalFactorTt>1</externalFactorTt>
+                    <medicalRole>employee</medicalRole>
+                    <number>2</number>
+                    <obligation>true</obligation>
+
+                    <quantity>1</quantity>
+                    <recordId>8</recordId>
+                    <refCode>30.2540</refCode>
+                    <regulation/>
+                    <scaleFactorMt>1</scaleFactorMt>
+                    <scaleFactorTt>1</scaleFactorTt>
+
+                    <sectionMajor>M300</sectionMajor>
+                    <service>Technische Grundleistung, gynäkolog</service>
+                    <sysCostCategory>A100</sysCostCategory>
+                    <tariffType>001</tariffType>
+                    <treatment>ambulatory</treatment>
+                    <unit>0</unit>
+
+                    <unitFactor>0.93</unitFactor>
+                    <unitFactorTt>0.93</unitFactorTt>
+                    <unitTt>12.11</unitTt>
+                </service>
+                <service>
+                    <id>286729</id>
+                    <boId>286729</boId>
+
+                    <validRecord>true</validRecord>
+                    <checkResult>
+                        <msgCode>08115</msgCode>
+                        <msgType>MsgUserHint</msgType>
+                        <processStateId>5</processStateId>
+                        <severity>1</severity>
+
+                        <timeCreated>2007-02-14T07:20:34.425+01:00</timeCreated>
+                    </checkResult>
+                    <amount>28.84</amount>
+                    <amountMt>0</amountMt>
+                    <amountTt>28.84</amountTt>
+                    <billingRole>both</billingRole>
+
+                    <bodyLocation>none</bodyLocation>
+                    <code>36.0020</code>
+                    <dateBegin>2006-09-13T00:00:00.000+02:00</dateBegin>
+                    <eanProvider>7601002114943</eanProvider>
+                    <eanResponsible>7601000169440</eanResponsible>
+                    <externalFactor>1</externalFactor>
+
+                    <externalFactorTt>1</externalFactorTt>
+                    <medicalRole>employee</medicalRole>
+                    <number>1</number>
+                    <obligation>true</obligation>
+                    <quantity>1</quantity>
+                    <recordId>2</recordId>
+
+                    <regulation/>
+                    <scaleFactorMt>1</scaleFactorMt>
+                    <scaleFactorTt>1</scaleFactorTt>
+                    <sectionMajor>M300</sectionMajor>
+                    <service>Nichtärztliche Betreuung, Notfallau</service>
+                    <sysCostCategory>A100</sysCostCategory>
+
+                    <tariffType>001</tariffType>
+                    <treatment>ambulatory</treatment>
+                    <unit>0</unit>
+                    <unitFactor>0.93</unitFactor>
+                    <unitFactorTt>0.93</unitFactorTt>
+                    <unitTt>31.01</unitTt>
+
+                </service>
+                <service>
+                    <id>286734</id>
+                    <boId>286734</boId>
+                    <validRecord>true</validRecord>
+                    <checkResult>
+                        <msgCode>08115</msgCode>
+
+                        <msgType>MsgUserHint</msgType>
+                        <processStateId>5</processStateId>
+                        <severity>1</severity>
+                        <timeCreated>2007-02-14T07:20:34.425+01:00</timeCreated>
+                    </checkResult>
+                    <amount>100.85</amount>
+
+                    <amountMt>55.81</amountMt>
+                    <amountTt>45.04</amountTt>
+                    <billingRole>both</billingRole>
+                    <bodyLocation>none</bodyLocation>
+                    <code>30.2540</code>
+                    <dateBegin>2006-09-13T00:00:00.000+02:00</dateBegin>
+
+                    <eanProvider>7601000723215</eanProvider>
+                    <eanResponsible>7601000169440</eanResponsible>
+                    <externalFactor>1</externalFactor>
+                    <externalFactorTt>1</externalFactorTt>
+                    <medicalRole>employee</medicalRole>
+                    <number>2</number>
+
+                    <obligation>true</obligation>
+                    <quantity>1</quantity>
+                    <recordId>7</recordId>
+                    <regulation/>
+                    <scaleFactorMt>1</scaleFactorMt>
+                    <scaleFactorTt>1</scaleFactorTt>
+
+                    <sectionMajor>M300</sectionMajor>
+                    <service>Ultraschalluntersuchung bei Schwang</service>
+                    <sysCostCategory>A107</sysCostCategory>
+                    <tariffType>001</tariffType>
+                    <treatment>ambulatory</treatment>
+                    <unit>60.01</unit>
+
+                    <unitFactor>0.93</unitFactor>
+                    <unitFactorTt>0.93</unitFactorTt>
+                    <unitTt>48.43</unitTt>
+                </service>
+                <service>
+                    <id>286733</id>
+                    <boId>286733</boId>
+
+                    <validRecord>true</validRecord>
+                    <checkResult>
+                        <msgCode>08115</msgCode>
+                        <msgType>MsgUserHint</msgType>
+                        <processStateId>5</processStateId>
+                        <severity>1</severity>
+
+                        <timeCreated>2007-02-14T07:20:34.425+01:00</timeCreated>
+                    </checkResult>
+                    <amount>33.03</amount>
+                    <amountMt>17.8</amountMt>
+                    <amountTt>15.23</amountTt>
+                    <billingRole>both</billingRole>
+
+                    <bodyLocation>none</bodyLocation>
+                    <code>00.0140</code>
+                    <dateBegin>2006-09-13T00:00:00.000+02:00</dateBegin>
+                    <eanProvider>7601000723215</eanProvider>
+                    <eanResponsible>7601000723215</eanResponsible>
+                    <externalFactor>1</externalFactor>
+
+                    <externalFactorTt>1</externalFactorTt>
+                    <medicalRole>employee</medicalRole>
+                    <number>2</number>
+                    <obligation>true</obligation>
+                    <quantity>2</quantity>
+                    <recordId>6</recordId>
+
+                    <regulation/>
+                    <scaleFactorMt>1</scaleFactorMt>
+                    <scaleFactorTt>1</scaleFactorTt>
+                    <sectionMajor>M300</sectionMajor>
+                    <service>Ärztliche Leistung in Abwesenheit d</service>
+                    <sysCostCategory>A100</sysCostCategory>
+
+                    <tariffType>001</tariffType>
+                    <treatment>ambulatory</treatment>
+                    <unit>9.57</unit>
+                    <unitFactor>0.93</unitFactor>
+                    <unitFactorTt>0.93</unitFactorTt>
+                    <unitTt>8.19</unitTt>
+
+                </service>
+                <service>
+                    <id>286728</id>
+                    <boId>286728</boId>
+                    <validRecord>true</validRecord>
+                    <checkResult>
+                        <msgCode>08115</msgCode>
+
+                        <msgType>MsgUserHint</msgType>
+                        <processStateId>5</processStateId>
+                        <severity>1</severity>
+                        <timeCreated>2007-02-14T07:20:34.425+01:00</timeCreated>
+                    </checkResult>
+                    <amount>7.56</amount>
+
+                    <amountMt>7.56</amountMt>
+                    <amountTt>0</amountTt>
+                    <billingRole>both</billingRole>
+                    <bodyLocation>none</bodyLocation>
+                    <code>36.0010</code>
+                    <dateBegin>2006-09-13T00:00:00.000+02:00</dateBegin>
+
+                    <eanProvider>7601002114943</eanProvider>
+                    <eanResponsible>7601000169440</eanResponsible>
+                    <externalFactor>1</externalFactor>
+                    <externalFactorTt>1</externalFactorTt>
+                    <medicalRole>employee</medicalRole>
+                    <number>1</number>
+
+                    <obligation>true</obligation>
+                    <quantity>1</quantity>
+                    <recordId>1</recordId>
+                    <regulation/>
+                    <scaleFactorMt>1</scaleFactorMt>
+                    <scaleFactorTt>1</scaleFactorTt>
+
+                    <sectionMajor>M300</sectionMajor>
+                    <service>Ärztliche Leistung im Rahmen einer</service>
+                    <sysCostCategory>A100</sysCostCategory>
+                    <tariffType>001</tariffType>
+                    <treatment>ambulatory</treatment>
+                    <unit>8.13</unit>
+
+                    <unitFactor>0.93</unitFactor>
+                    <unitFactorTt>0.93</unitFactorTt>
+                    <unitTt>0</unitTt>
+                </service>
+                <service>
+                    <id>286732</id>
+                    <boId>286732</boId>
+
+                    <validRecord>true</validRecord>
+                    <checkResult>
+                        <msgCode>08115</msgCode>
+                        <msgType>MsgUserHint</msgType>
+                        <processStateId>5</processStateId>
+                        <severity>1</severity>
+
+                        <timeCreated>2007-02-14T07:20:34.425+01:00</timeCreated>
+                    </checkResult>
+                    <amount>33.03</amount>
+                    <amountMt>17.8</amountMt>
+                    <amountTt>15.23</amountTt>
+                    <billingRole>both</billingRole>
+
+                    <bodyLocation>none</bodyLocation>
+                    <code>00.0050</code>
+                    <dateBegin>2006-09-13T00:00:00.000+02:00</dateBegin>
+                    <eanProvider>7601000723215</eanProvider>
+                    <eanResponsible>7601000723215</eanResponsible>
+                    <externalFactor>1</externalFactor>
+
+                    <externalFactorTt>1</externalFactorTt>
+                    <medicalRole>employee</medicalRole>
+                    <number>2</number>
+                    <obligation>true</obligation>
+                    <quantity>2</quantity>
+                    <recordId>5</recordId>
+
+                    <regulation/>
+                    <scaleFactorMt>1</scaleFactorMt>
+                    <scaleFactorTt>1</scaleFactorTt>
+                    <sectionMajor>M300</sectionMajor>
+                    <service>Vorbesprechung diagnostischer/thera</service>
+                    <sysCostCategory>A100</sysCostCategory>
+
+                    <tariffType>001</tariffType>
+                    <treatment>ambulatory</treatment>
+                    <unit>9.57</unit>
+                    <unitFactor>0.93</unitFactor>
+                    <unitFactorTt>0.93</unitFactorTt>
+                    <unitTt>8.19</unitTt>
+
+                </service>
+                <service>
+                    <id>286731</id>
+                    <boId>286731</boId>
+                    <validRecord>true</validRecord>
+                    <amount>8.26</amount>
+                    <amountMt>4.45</amountMt>
+
+                    <amountTt>3.81</amountTt>
+                    <billingRole>both</billingRole>
+                    <bodyLocation>none</bodyLocation>
+                    <code>00.0030</code>
+                    <dateBegin>2006-09-13T00:00:00.000+02:00</dateBegin>
+                    <eanProvider>7601000723215</eanProvider>
+
+                    <eanResponsible>7601000723215</eanResponsible>
+                    <externalFactor>1</externalFactor>
+                    <externalFactorTt>1</externalFactorTt>
+                    <medicalRole>employee</medicalRole>
+                    <number>2</number>
+                    <obligation>true</obligation>
+
+                    <quantity>1</quantity>
+                    <recordId>4</recordId>
+                    <refCode>00.0010</refCode>
+                    <regulation/>
+                    <scaleFactorMt>1</scaleFactorMt>
+                    <scaleFactorTt>1</scaleFactorTt>
+
+                    <sectionMajor>M300</sectionMajor>
+                    <service>+ Konsultation, letzte 5 Min. (Kons</service>
+                    <sysCostCategory>A112</sysCostCategory>
+                    <tariffType>001</tariffType>
+                    <treatment>ambulatory</treatment>
+                    <unit>4.78</unit>
+
+                    <unitFactor>0.93</unitFactor>
+                    <unitFactorTt>0.93</unitFactorTt>
+                    <unitTt>4.1</unitTt>
+                </service>
+                <diagnosis>
+                    <id>22400</id>
+                    <boId>22400</boId>
+
+                    <validRecord>true</validRecord>
+                    <code>Z6</code>
+                    <type>ICD10</type>
+                </diagnosis>
+            </ns2:Invoice>
+        </ns2:WriteInvoiceRequest>
+    </soap:Body>
+
+</soap:Envelope>
