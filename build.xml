@@ -2583,7 +2583,7 @@
         </move>
     </target>
 
-    <target name="ssg-install-full-init" depends="clean">
+    <target name="ssg-install-full-init">
         <property name="ssg.install.enabled" value="true"/>
         <property name="ssg.install.official" value="true"/>
     </target>
