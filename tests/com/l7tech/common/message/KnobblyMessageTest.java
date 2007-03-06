@@ -257,6 +257,31 @@ public class KnobblyMessageTest extends TestCase {
         assertNotNull(msg.getMimeKnob());
     }
 
+    public void testBug3559TarariIsSoap() throws Exception {
+        Message msg = new Message();
+        GlobalTarariContextImpl context = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
+
+        msg.initialize(new ByteArrayStashManager(),
+                              ContentTypeHeader.XML_DEFAULT,
+                              TestDocuments.getInputStream(TestDocuments.DIR + "bug3559.xml"));
+
+        if (context != null) {
+            logger.info("Initializing XML Hardware Acceleration");
+            context.compileAllXpaths();
+
+            if (msg.isSoap()) {
+                // Bug is fixed--should we fail the testcase?
+                logger.info("Bug 3559 does not appear to be present");
+            } else {
+                // Bug observed--should we fail the testcase?
+                logger.info("Bug 3559 reproduced!");
+            }
+        } else {
+            // Ensure that message is thought to be SOAP by the software layer, since Tarari isn't here
+            assertTrue(msg.isSoap());
+        }
+    }
+
     /**
      * Test <code>KnobblyMessageTest</code> main.
      */
