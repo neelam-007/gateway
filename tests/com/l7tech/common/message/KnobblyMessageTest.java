@@ -273,8 +273,7 @@ public class KnobblyMessageTest extends TestCase {
                 // Bug is fixed--should we fail the testcase?
                 logger.info("Bug 3559 does not appear to be present");
             } else {
-                // Bug observed--should we fail the testcase?
-                logger.info("Bug 3559 reproduced!");
+                fail("Bug 3559 reproduced");
             }
         } else {
             // Ensure that message is thought to be SOAP by the software layer, since Tarari isn't here
