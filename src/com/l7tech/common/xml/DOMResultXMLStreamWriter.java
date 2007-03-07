@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Stack;
-import java.util.Collections;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLStreamException;
@@ -51,16 +50,6 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
         prefixStack.push(new HashMap());
         namespaceStack = new Stack();
         namespaceStack.push(new HashMap());
-    }
-
-    public DOMResultXMLStreamWriter(DOMResult result, Map subs) {
-        this(result);
-        setNamespaceSubstitutionMap(subs);
-    }
-
-    public void setNamespaceSubstitutionMap(Map nsSubs) {
-        if (nsSubs != null)
-            namespaceSubstitutions = nsSubs;
     }
 
     public void close() throws XMLStreamException {
@@ -173,7 +162,6 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
 
     public void writeAttribute(String namespaceURI, String localName, String value) throws XMLStreamException {
         ensureNotClosed();
-        namespaceURI = substituteNamespace(namespaceURI);
         if (currentNode == rootNode) throw new XMLStreamException("Cannot close element (no current element)");
         if (localName.indexOf(':') >= 0) throw new XMLStreamException("Invalid localName '"+localName+"'.");
 
@@ -188,7 +176,6 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
 
     public void writeAttribute(String prefix, String namespaceURI, String localName, String value) throws XMLStreamException {
         ensureNotClosed();
-        namespaceURI = substituteNamespace(namespaceURI);
         if (currentNode == rootNode) throw new XMLStreamException("Cannot close element (no current element)");
         if (localName.indexOf(':') >= 0) throw new XMLStreamException("Invalid localName '"+localName+"'.");
 
@@ -247,7 +234,6 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
 
     public void writeEmptyElement(String namespaceURI, String localName) throws XMLStreamException {
         ensureNotClosed();
-        namespaceURI = substituteNamespace(namespaceURI);
 
         if (localName.indexOf(':') >= 0) throw new XMLStreamException("Invalid localName '"+localName+"'.");
         String prefix = getPrefix(namespaceURI);
@@ -271,7 +257,6 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
 
     public void writeEmptyElement(String prefix, String localName, String namespaceURI) throws XMLStreamException {
         ensureNotClosed();
-        namespaceURI = substituteNamespace(namespaceURI);
         Element newElement = factory.createElementNS(namespaceURI, prefix + ":" + localName);
 
         if (!namespaceURI.equals(getNamespaceContext().getNamespaceURI(prefix))) {
@@ -299,7 +284,6 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
 
     public void writeNamespace(String prefix, String namespaceURI) throws XMLStreamException {
         ensureNotClosed();
-        namespaceURI = substituteNamespace(namespaceURI);
         if (currentNode.getNodeType() != Node.ELEMENT_NODE) {
             throw new XMLStreamException("Cannot add namespace (no current element)");
         }
@@ -351,7 +335,6 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
 
     public void writeStartElement(String namespaceURI, String localName) throws XMLStreamException {
         ensureNotClosed();
-        namespaceURI = substituteNamespace(namespaceURI);
         pushPrefixes();
         if (localName.indexOf(':') >= 0) throw new XMLStreamException("Invalid localName '"+localName+"'.");
         String prefix = getPrefix(namespaceURI);
@@ -376,7 +359,6 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
 
     public void writeStartElement(String prefix, String localName, String namespaceURI) throws XMLStreamException {
         ensureNotClosed();
-        namespaceURI = substituteNamespace(namespaceURI);
         pushPrefixes();
         Element newElement = factory.createElementNS(namespaceURI, prefix + ":" + localName);
 
@@ -395,19 +377,8 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
     private final Stack prefixStack;
     private final Stack namespaceStack;
 
-    private Map namespaceSubstitutions = Collections.EMPTY_MAP;
     private Node currentNode;
     private boolean closed;
-
-    private String substituteNamespace(String namespaceUri) {
-        String replacementUri = namespaceUri;
-
-        if (namespaceSubstitutions.containsKey(namespaceUri)) {
-            replacementUri = (String) namespaceSubstitutions.get(namespaceUri);
-        }
-
-        return replacementUri;
-    }
 
     private void ensureNotClosed() throws XMLStreamException {
         if (closed) {
