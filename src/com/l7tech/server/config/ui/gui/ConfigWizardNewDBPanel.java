@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.DefaultLicenseChecker;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
 import com.l7tech.server.config.db.DBActions;
@@ -91,6 +92,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
 
         try {
             dbActions = new DBActions(osFunctions);
+            dbActions.setLicenseChecker(new DefaultLicenseChecker());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(MYSQL_CLASS_NOT_FOUND_MSG);
         }

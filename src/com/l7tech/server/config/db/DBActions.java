@@ -2,16 +2,14 @@ package com.l7tech.server.config.db;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.InvalidLicenseException;
-import com.l7tech.common.License;
-import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.server.config.LicenseChecker;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
-import java.security.cert.X509Certificate;
 import java.sql.*;
 import java.text.MessageFormat;
 import java.util.*;
@@ -78,24 +76,7 @@ public class DBActions {
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
     private static final String PROP_HIBERNATE_DRIVER_CLASS = "hibernate.connection.driver_class";
     private static final Object DEFAULT_DB_DRIVER_PROP = "DB_DRIVER";
-    private static final String licensePem = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIC6DCCAdACBEM41hwwDQYJKoZIhvcNAQEEBQAwOTEdMBsGA1UEChMUTGF5ZXIg\n" +
-            "NyBUZWNobm9sb2dpZXMxGDAWBgNVBAMTD0xpY2Vuc2UgT2ZmaWNlcjAeFw0wNTA5\n" +
-            "MjcwNTE4MjBaFw0yNTA5MjYwNTE4MjBaMDkxHTAbBgNVBAoTFExheWVyIDcgVGVj\n" +
-            "aG5vbG9naWVzMRgwFgYDVQQDEw9MaWNlbnNlIE9mZmljZXIwggEhMA0GCSqGSIb3\n" +
-            "DQEBAQUAA4IBDgAwggEJAoIBAH6Zu7CyJnp/UqHlZ3WNEy4OKXzms7movyd4Bpqb\n" +
-            "6DRRzOq/qZfMMnoKCZ5tEpAODw9DPPJHoE3bXV67dDWTnDNwCU67r1fHBFqTqJaB\n" +
-            "WgU1Gzgy+Ve7N6BaoeAXVJgEXR5b9MVFabfG1FYsqEbvKwUvOVqow1XGLoPWqAKP\n" +
-            "3fdBDUPOJgGUnrzY1pBvBSLlQoKzGR+fHVrMn1zQRS9MFalwzIgrgvEUxeTA72DF\n" +
-            "G3ZJJ47ek+OmYP7q5Nzz1rCSBilv7CTW8TCZMKLJSBHfB0pPDaIMLdPdZqOes3ng\n" +
-            "9jXuWpVCHI/lljxjBBWNTne/fUmN8gayTKTztA4UbO/heJECAwEAATANBgkqhkiG\n" +
-            "9w0BAQQFAAOCAQEAEUDRup8nlBrK6z2114ReO2gt+k+ZwtqbSIGBMM6kCKvnUV7f\n" +
-            "Bmi9XnvglM/ekmKBNIqMXuCjbOcRqgU5eiuKpvctHRzUKTHT9CKUQfR7ow2+Kkq8\n" +
-            "0vD7JCcsbIqDyWD7tsf/RGNLNZIcOGuBFDrJx1+lNo8R/FlXnestXGVIRCLyH+Y2\n" +
-            "w8GvvmUdKMymq0Adpr14v4B6/+xikxWJoUVTwnBLCNWoAqizCjla9lm4wOtKqsS1\n" +
-            "8TyDvB+rL9Gz+K5SRUxpWt0ADRWUJRdmF29H8GcDUcaAK7Ka6BjyrOhE9t6emB7e\n" +
-            "cX/Yl+RgwYa4F314O0xBGP6baqtVy/5BObtucA==\n" +
-            "-----END CERTIFICATE-----";
+    private LicenseChecker licChecker;
 
     //
     // CONSTRUCTOR
@@ -326,7 +307,7 @@ public class DBActions {
 
     public boolean doExistingDb(String dbName, String hostname, String username, String password, String privUsername, String privPassword, String currentVersion, DBActionsListener ui) {
         String errorMsg;
-        boolean isOk = false;
+        boolean isOk;
 
         logger.info("Attempting to connect to an existing database (" + hostname + "/" + dbName + ")" + "using username/password \"" + username + "/" + password + "\"");
 
@@ -336,35 +317,8 @@ public class DBActions {
         if (status.getStatus() == DBActions.DB_SUCCESS) {
             logger.info(CONNECTION_SUCCESSFUL_MSG);
 
-            logger.info("Now Checking SSG License validity");
-            License lic = getLicense(dbInfo);
-            String licenseMsg = null;
-            try {
-                if (lic == null) {
-                    licenseMsg = "No license found. The gateway will not be fully featured without a license.";
-                } else {
-                    try {
-                        lic.checkValidity();
-                        if (!lic.isProductEnabled(BuildInfo.getProductName(), BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor())) {
-                            licenseMsg = "Your current license is not valid for this product (" + BuildInfo.getProductName() + " version " + currentVersion + ").";
-                        }
-                    } catch (InvalidLicenseException e) {
-                        licenseMsg = "The License is not valid. The gateway will not be fully featured without a valid license.";
-                    }
-                }
-            } finally {
-                if (licenseMsg != null) {
-                    logger.warning(licenseMsg);
-                    if (ui != null) {
-                        if (!ui.getGenericUserConfirmation(licenseMsg + "\nDo you wish to continue?")) {
-                            ui.showErrorMessage(licenseMsg);
-                            return false;
-                        }
-                    }
-                } else {
-                    logger.info("License is valid and will work with this version (" + currentVersion + ").");
-                }
-            }
+            if (licChecker != null && !checkLicense(ui, currentVersion, dbInfo))
+                return false;
 
             logger.info("Now Checking database version.");
             String dbVersion = checkDbVersion(hostname, dbName, username, password);
@@ -460,35 +414,32 @@ public class DBActions {
         return isOk;
     }
 
-    private License getLicense(DBInformation dbInfo) {
+    private boolean checkLicense(DBActionsListener ui, String currentVersion, DBActions.DBInformation dbInfo) {
+        logger.info("Now Checking SSG License validity");
         Connection conn = null;
-        Statement stmt = null;
-        License lic = null;
         try {
-            conn = getConnection(dbInfo.getHostname(), dbInfo.getDbName(), dbInfo.getUsername(), dbInfo.getPassword());
-            stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("Select propvalue from cluster_properties where propkey='license'");
-            if (rs != null) {
-                if (rs.next()) {
-                    String licString = rs.getString(1);
-                    lic = new License(
-                            licString,
-                            new X509Certificate[] {
-                                    CertUtils.decodeCert(licensePem.getBytes())
-                            },
-                            null);
+            conn = getConnection(dbInfo);
+        } catch (SQLException e) {
+            logger.info("Cannot check license. Could not get a connection to the database");
+            return false;
+        }
+        try {
+            licChecker.checkLicense(conn, currentVersion, BuildInfo.getProductName(), BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor());
+            logger.info("License is valid and will work with this version (" + currentVersion + ").");
+        } catch (InvalidLicenseException e) {
+            logger.warning(e.getMessage());
+            if (ui != null) {
+                if (!ui.getGenericUserConfirmation(e.getMessage() + "\nDo you wish to continue?")) {
+                    ui.showErrorMessage(e.getMessage());
+                    return false;
                 }
             }
-        } catch (Exception e) {
-            logger.severe("An error occurred while getting the license from the database: " + e.getMessage());
-        } finally {
-            if (stmt != null)
-                try { stmt.close(); } catch (SQLException e) {}
-
-            if (conn != null)
-                try { conn.close(); } catch (SQLException e) {}
         }
-        return lic;
+        return true;
+    }
+
+    private Connection getConnection(DBInformation dbInfo) throws SQLException {
+        return getConnection(dbInfo.getHostname(), dbInfo.getDbName(), dbInfo.getUsername(),dbInfo.getPassword());
     }
 
 //
@@ -932,6 +883,10 @@ public class DBActions {
             if (stmt != null) try {stmt.close(); } catch (SQLException ex) {}
         }
 
+    }
+
+    public void setLicenseChecker(LicenseChecker licenseChecker) {
+        licChecker = licenseChecker;
     }
 
     public class WrongDbVersionException extends Exception {

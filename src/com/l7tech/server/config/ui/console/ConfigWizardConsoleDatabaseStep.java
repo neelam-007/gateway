@@ -2,6 +2,7 @@ package com.l7tech.server.config.ui.console;
 
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.DefaultLicenseChecker;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
 import com.l7tech.server.config.db.DBActions;
@@ -76,6 +77,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         OSSpecificFunctions osf = getParentWizard().getOsFunctions();
         try {
             dbActions = new DBActions(osf);
+            dbActions.setLicenseChecker(new DefaultLicenseChecker());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(DBActions.MYSQL_CLASS_NOT_FOUND_MSG);
         }
