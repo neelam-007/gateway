@@ -30,6 +30,9 @@ public class ServerResponseWssTimestamp extends ServerResponseWssSignature {
             wssReq.setSignTimestamp();
             signElements = 1;
         }
+        else {
+            wssReq.setIncludeTimestamp(true);            
+        }
         wssReq.setTimestampTimeoutMillis(assertion.getExpiryMilliseconds());
         return signElements;
     }
