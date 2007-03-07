@@ -66,7 +66,6 @@ public class ServicePropertiesDialog extends JDialog {
     private JRadioButton noURIRadio;
     private JRadioButton customURIRadio;
     private JTextField uriField;
-    private JLabel routingURL;
     private JCheckBox getCheck;
     private JCheckBox putCheck;
     private JCheckBox postCheck;
@@ -79,6 +78,7 @@ public class ServicePropertiesDialog extends JDialog {
     private JRadioButton enableRadio;
     private JRadioButton diableRadio;
     private JButton editWSDLButton;
+    private JEditorPane routingURL;
     private String ssgURL;
 
     public ServicePropertiesDialog(Frame owner, PublishedService svc) {
@@ -406,7 +406,8 @@ public class ServicePropertiesDialog extends JDialog {
 
         String tmp = urlvalue.replace(STD_PORT, STD_PORT_DISPLAYED);
         tmp = tmp.replace("http://", "http(s)://");
-        routingURL.setText("<html><p><a href=\"" + urlvalue + "\">" + tmp + "</a></p></html>");
+        routingURL.setText("<html><a href=\"" + urlvalue + "\">" + tmp + "</a></html>");
+        routingURL.setCaretPosition(0);
     }
 
     private void editWsdl() {
