@@ -439,10 +439,10 @@ class PathValidator {
                 }
             }
         } else if (a instanceof ResponseWssSecurityToken) {
-            // bugzilla 2753
-            if (!haveSeen(WssBasic.class)) {
+            // bugzilla 2753, 2421
+            if (((ResponseWssSecurityToken)a).isIncludePassword() && !seenUsernamePasswordCredentials()) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceded by a WSS UsernameToken Basic assertion.", null));
+                  "This assertion should be preceded by an assertion that collects a password.", null));
             }
         }
 
@@ -749,7 +749,7 @@ class PathValidator {
     }
 
     private boolean seenUsernamePasswordCredentials() {
-        return haveSeenInstanceOf(ASSERTION_HTTPCREDENTIALS)
+        return haveSeenInstanceOf(ASSERTION_HTTPBASIC)
             || haveSeen(ASSERTION_XPATHCREDENTIALS)
             || haveSeen(ASSERTION_WSSUSERNAMETOKENBASIC);
     }
