@@ -19,12 +19,10 @@ import java.util.Map;
 public class WsdlServicePanel extends WizardStepPanel {
 
     private JPanel mainPanel;
-    private JPanel namePanel;
     private JLabel bindingLabel;
     private JTextField nameField;
     private JTextField portNameField;
     private JTextField portAddressField;
-//    private Definition definition;
     private WsdlComposer wsdlComposer;
     private JLabel panelHeader;
 
@@ -58,7 +56,6 @@ public class WsdlServicePanel extends WizardStepPanel {
         WsdlComposer wsdlComposer = null;
         if (settings instanceof WsdlComposer) {
             wsdlComposer = (WsdlComposer) settings;
-//            definition = ((WsdlComposer)settings).getOutputWsdl();
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
@@ -166,18 +163,4 @@ public class WsdlServicePanel extends WizardStepPanel {
         }
         port.addExtensibilityElement(ee);
     }
-
-//    /**
-//     * @param def the service definition
-//     * @return the currently edited binding
-//     */
-//    private Binding getBinding(Definition def) {
-//        Map bindings = def.getBindings();
-//        if (bindings.isEmpty()) {
-//            throw new IllegalStateException("Should have at least one binding");
-//        }
-//        return (Binding)bindings.values().iterator().next();
-//    }
-
-
 }
