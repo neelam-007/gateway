@@ -16,7 +16,15 @@ fi
 cd `dirname $0`
 
 # include startup options 
-extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dfile.encoding=UTF-8"
+extra="
+-server 
+-Dcom.l7tech.proxy.listener.maxthreads=300
+-Dsun.net.inetaddr.ttl=10 
+-Dnetworkaddress.cache.ttl=10 
+-Dfile.encoding=UTF-8
+-Duser.language=en 
+-Duser.country=US
+"
 
 run="-jar Manager.jar";
 
