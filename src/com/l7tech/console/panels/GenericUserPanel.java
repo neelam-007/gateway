@@ -51,7 +51,8 @@ import java.util.logging.Logger;
 public class GenericUserPanel extends UserPanel {
     static Logger log = Logger.getLogger(GenericUserPanel.class.getName());
 
-    private JLabel nameLabel;
+    private JTextArea nameLabel;
+    private JScrollPane nameScrollPane;
 
     private JLabel firstNameLabel;
     private JTextField firstNameTextField;
@@ -196,16 +197,12 @@ public class GenericUserPanel extends UserPanel {
         // Set layout
         if (user != null)
             this.setName(user.getName());
-        this.setLayout(new GridBagLayout());
+        this.setLayout(new BorderLayout());
         this.setMaximumSize(new Dimension(380, 450));
         this.setPreferredSize(new Dimension(380, 450));
 
         // Add the main panel
-        add(getMainPanel(),
-          new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.BOTH,
-            new Insets(8, 8, 8, 8), 0, 0));
+        add(getMainPanel(), BorderLayout.CENTER);
     }
 
     /**
@@ -217,21 +214,14 @@ public class GenericUserPanel extends UserPanel {
 
         // Create panel
         mainPanel = new JPanel();
-        mainPanel.setLayout(new GridBagLayout());
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
 
         // Add GroupTabbedPane
-        mainPanel.add(getTabbedPane(),
-          new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.BOTH,
-            new Insets(0, 0, 0, 0), 0, 0));
+        mainPanel.add(getTabbedPane(), BorderLayout.CENTER);
 
         // Add buttonPanel
-        mainPanel.add(getButtonPanel(),
-          new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.BOTH,
-            new Insets(0, 0, 0, 0), 0, 0));
+        mainPanel.add(getButtonPanel(), BorderLayout.SOUTH);
 
         // Return panel
         return mainPanel;
@@ -267,17 +257,14 @@ public class GenericUserPanel extends UserPanel {
         detailsPanel = new JPanel();
         detailsPanel.setLayout(new GridBagLayout());
 
-        detailsPanel.add(new JLabel(new ImageIcon(ImageCache.getInstance().getIcon(USER_ICON_RESOURCE))),
-          new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-            GridBagConstraints.WEST,
-            GridBagConstraints.NONE,
-            new Insets(5, 10, 0, 0), 0, 0));
+        Box headerPanel = Box.createHorizontalBox();
 
-        detailsPanel.add(getNameLabel(),
-          new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-            GridBagConstraints.WEST,
-            GridBagConstraints.NONE,
-            new Insets(10, 15, 0, 0), 0, 0));
+        JLabel imageLabel = new JLabel(new ImageIcon(ImageCache.getInstance().getIcon(USER_ICON_RESOURCE)));
+        imageLabel.setBorder(BorderFactory.createEmptyBorder(16,8,8,8));
+        headerPanel.add(imageLabel);
+        
+        headerPanel.add(getNameScrollPane());
+        headerPanel.add(Box.createHorizontalStrut(10));
 
         detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
           new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
@@ -338,21 +325,21 @@ public class GenericUserPanel extends UserPanel {
             detailsPanel.add(getExpirationPanel(),
               new GridBagConstraints(0, 13, 2, 1, 1.0, 0.0,
                 GridBagConstraints.WEST,
-                GridBagConstraints.NONE,
+                GridBagConstraints.HORIZONTAL,
                 new Insets(0, 10, 0, 10), 0, 0));
         }
 
-        Component strut = Box.createGlue();
-
-        detailsPanel.add(strut,
+        detailsPanel.add(Box.createVerticalGlue(),
           new GridBagConstraints(0, 14, 2, 1, 1.0, 1.0,
             GridBagConstraints.CENTER,
-            GridBagConstraints.BOTH,
+            GridBagConstraints.VERTICAL,
             new Insets(10, 0, 0, 0), 0, 0));
 
-        Utilities.equalizeLabelSizes(new JLabel[]{
-                getLastNameLabel(),
-              });
+        JPanel outerDetailsPanel = new JPanel();
+        outerDetailsPanel.setLayout(new BorderLayout());
+        outerDetailsPanel.add(headerPanel, BorderLayout.NORTH);
+        outerDetailsPanel.add(detailsPanel, BorderLayout.CENTER);
+        detailsPanel = outerDetailsPanel;
 
         // Return panel
         return detailsPanel;
@@ -360,18 +347,37 @@ public class GenericUserPanel extends UserPanel {
 
 
     /**
-     * Returns lastNameLabel
+     * Returns name
      */
-    private JLabel getNameLabel() {
+    private JTextArea getNameLabel() {
         // If label not already created
         if (nameLabel != null) return nameLabel;
         // Create label
-        nameLabel = new JLabel();
+        nameLabel = new JTextArea(1,0);
+        nameLabel.setBorder(BorderFactory.createEmptyBorder());
+        nameLabel.setOpaque(false);
+        nameLabel.setEditable(false);
 
         // Return label
         return nameLabel;
     }
 
+    /**
+     * Returns name scroll pane
+     */
+    private JScrollPane getNameScrollPane() {
+        // If scroll pane not already created
+        if (nameScrollPane != null) return nameScrollPane;
+
+        // create
+        nameScrollPane = new JScrollPane(getNameLabel(),
+                                         JScrollPane.VERTICAL_SCROLLBAR_NEVER,
+                                         JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        
+        nameScrollPane.setBorder(BorderFactory.createEmptyBorder(16,0,0,0));
+
+        return nameScrollPane;
+    }
 
     /**
      * Returns firstNameLabel
@@ -395,9 +401,6 @@ public class GenericUserPanel extends UserPanel {
         if (firstNameTextField == null) {
             // Create text field
             firstNameTextField = new JTextField();
-            firstNameTextField.setMinimumSize(new Dimension(200, 20));
-            firstNameTextField.setPreferredSize(new Dimension(200, 20));
-            firstNameTextField.setEditable(true);
             firstNameTextField.setDocument(new MaxLengthDocument(32));
             // Register listeners
             firstNameTextField.getDocument().addDocumentListener(documentListener);
@@ -433,9 +436,6 @@ public class GenericUserPanel extends UserPanel {
         if (lastNameTextField == null) {
             // Create text field
             lastNameTextField = new JTextField();
-            lastNameTextField.setMinimumSize(new Dimension(200, 20));
-            lastNameTextField.setPreferredSize(new Dimension(200, 20));
-            lastNameTextField.setEditable(true);
             lastNameTextField.setDocument(new MaxLengthDocument(32));
             // Register listeners
             lastNameTextField.getDocument().addDocumentListener(documentListener);
@@ -471,9 +471,6 @@ public class GenericUserPanel extends UserPanel {
         if (emailTextField == null) {
             // Create text field
             emailTextField = new JTextField();
-            emailTextField.setMinimumSize(new Dimension(200, 20));
-            emailTextField.setPreferredSize(new Dimension(200, 20));
-            emailTextField.setEditable(true);
             emailTextField.setDocument(new MaxLengthDocument(128));
             // Register listeners
             emailTextField.getDocument().addDocumentListener(documentListener);
@@ -556,9 +553,12 @@ public class GenericUserPanel extends UserPanel {
         expirationPanel = new JPanel();
         if (IdentityProviderType.INTERNAL.equals(config.type())) {
             InternalUser iu = (InternalUser)user;
-            expirationPanel.setLayout(new GridBagLayout());
-            GridBagConstraints c = new GridBagConstraints();
-            c.anchor = GridBagConstraints.WEST;
+            expirationPanel.setLayout(new BoxLayout(expirationPanel, BoxLayout.Y_AXIS));
+            Box topPanel = Box.createHorizontalBox();
+            Box botPanel = Box.createHorizontalBox();
+            expirationPanel.add(topPanel);
+            expirationPanel.add(botPanel);
+
             final JLabel expiresLabel = new JLabel("Expires on:");
             accountNeverExpiresCheckbox = new JCheckBox("Account Never Expires");
             accountNeverExpiresCheckbox.addChangeListener(new ChangeListener() {
@@ -568,16 +568,17 @@ public class GenericUserPanel extends UserPanel {
                     expiresLabel.setEnabled(enable);
                 }
             });
-            expirationPanel.add(accountNeverExpiresCheckbox, c);
-            JPanel expireOndatePanel = new JPanel();
-            expireOndatePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-            expireOndatePanel.add(expiresLabel);
+
+            topPanel.add(accountNeverExpiresCheckbox);
+            botPanel.add(expiresLabel);
+            botPanel.add(Box.createHorizontalStrut(8));
             expireDateField = new DateField(new DateFormatter(DateFormat.getDateInstance(DateFormat.MEDIUM)));
             expireDateField.setRenderer(new DefaultDayRenderer());
             expireDateField.setHeaderRenderer(new DefaultHeaderRenderer());
-            expireOndatePanel.add(expireDateField);
-            c.gridx++;
-            expirationPanel.add(expireOndatePanel, c);
+            JPanel datePanel = new JPanel();
+            datePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+            datePanel.add(expireDateField);
+            botPanel.add(datePanel);
             final boolean neverExpires = iu.getExpiration() == -1;
             if (!neverExpires) {
                 expireDateField.setValue(new Date(iu.getExpiration()));
@@ -595,6 +596,9 @@ public class GenericUserPanel extends UserPanel {
                     setModified(true);
                 }
             });
+
+            topPanel.add(Box.createHorizontalGlue());
+            botPanel.add(Box.createHorizontalGlue());
         }
         return expirationPanel;
     }
@@ -655,7 +659,8 @@ public class GenericUserPanel extends UserPanel {
      */
     private void setData(User user) {
         // Set tabbed panels (add/remove extranet tab)
-        nameLabel.setText(user.getName());
+        getNameLabel().setText(user.getName());
+        getNameLabel().setCaretPosition(0);
         getFirstNameTextField().setText(user.getFirstName());
         getLastNameTextField().setText(user.getLastName());
         getEmailTextField().setText(user.getEmail());
@@ -807,11 +812,12 @@ public class GenericUserPanel extends UserPanel {
 
         GenericUserPanel panel = new GenericUserPanel();
         EntityHeader eh = new EntityHeader();
+        eh.setOid(0);
         eh.setName("Test user");
         eh.setType(EntityType.USER);
-        panel.edit(eh);
+        IdentityHeader ih = new IdentityHeader(-2, eh);
+        panel.edit(ih, new IdentityProviderConfig(IdentityProviderType.INTERNAL));
 
-        panel.setPreferredSize(new Dimension(600, 300));
         JFrame frame = new JFrame("Group panel Test");
         frame.setContentPane(panel);
         frame.pack();
