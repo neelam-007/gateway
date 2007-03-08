@@ -1,17 +1,18 @@
 package com.l7tech.common.xml;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.console.util.WsdlUtils;
+import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.apache.commons.lang.StringUtils;
 
 import javax.wsdl.*;
-import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.ExtensionDeserializer;
 import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.extensions.ExtensionSerializer;
 import javax.wsdl.factory.WSDLFactory;
+import javax.wsdl.xml.WSDLReader;
 import javax.xml.namespace.QName;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -66,7 +67,7 @@ public class WsdlComposer {
 
     private void initialise(Document wsdl) throws WSDLException {
         originalWsdlDoc = wsdl;
-        wsdlFactory = WSDLFactory.newInstance();
+        wsdlFactory = WsdlUtils.getWSDLFactory();
         delegateWsdl = wsdlFactory.newDefinition();
         extensionRegistry = wsdlFactory.newPopulatedExtensionRegistry();
         extensionRegistry = Wsdl.disableSchemaExtensions(extensionRegistry);
@@ -119,10 +120,13 @@ public class WsdlComposer {
 
         for (Object o : def.getBindings().values()) {
             Binding b = (Binding) o;
-            for (Object boObj : b.getBindingOperations()) {
-                addBindingOperation((BindingOperation) boObj, originalWsdlHolder, true);
+            if (isSupportedSoapBinding(b)) {
+                for (Object boObj : b.getBindingOperations()) {
+                    addBindingOperation((BindingOperation) boObj, originalWsdlHolder, true);
+                }
+                addBinding(b);
             }
-            addBinding(b);
+
         }
 
         for (Object o : def.getPortTypes().values()) {
@@ -136,6 +140,17 @@ public class WsdlComposer {
         for (Object o : def.getServices().values()) {
             addService((Service) o);
         }
+    }
+
+    public boolean isSupportedSoapBinding(Binding binding) {
+        List elements = binding.getExtensibilityElements();
+        for (Object element : elements) {
+            ExtensibilityElement extElem = (ExtensibilityElement) element;
+            QName elementType = extElem.getElementType();
+            if (elementType.getNamespaceURI().equals(Wsdl.WSDL_SOAP_NAMESPACE))
+                return true;
+        }
+        return false;
     }
 
     public boolean addBindingOperation(BindingOperation opToAdd, WsdlHolder sourceWsdlHolder, boolean addOtherElements) {
@@ -159,6 +174,7 @@ public class WsdlComposer {
     public boolean removeBindingOperation(BindingOperation bopToRemove, WsdlHolder sourceWsdlHolder, boolean removeOtherElements) {
         if (bopToRemove == null)
             return false;
+
         Set<BindingOperation> ops = bindingOperationsToAdd.get(sourceWsdlHolder);
         if (ops == null)
             return false;
@@ -205,7 +221,7 @@ public class WsdlComposer {
 
         if (empty) {
             removeTypesFromSource(sourceWsdlHolder);
-            removeSourceWsdl(sourceWsdlHolder);
+//            removeSourceWsdl(sourceWsdlHolder);
         }
     }
 
