@@ -150,11 +150,13 @@ public class CreateServiceWsdlAction extends SecureAction {
                 wsdlWriter.writeWSDL(def, sw);
                 Wsdl ws = new Wsdl(def);
                 service.setWsdlXml(sw.toString());
-                //if this is an "edit" then we are only interested in the WSDL and don't need to save the service.
-                if (existingService != null)
-                    return;                
-
                 service.setName(ws.getServiceName());
+
+                //if this is an "edit" then we are only interested in the WSDL and don't need to save the service.
+                if (existingService != null) {
+                    return;
+                }
+
                 final String serviceAddress = getServiceAddress(def);
                 RoutingAssertion ra;
                 if (serviceAddress != null) {

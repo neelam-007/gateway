@@ -19,7 +19,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -27,7 +26,6 @@ import java.util.logging.Logger;
  * Time: 10:28:18 AM
  */
 public class WsdlComposer {
-    private static final Logger logger = Logger.getLogger(WsdlComposer.class.getName());
 
     private Document originalWsdlDoc;
     private WsdlHolder originalWsdlHolder;
@@ -175,13 +173,13 @@ public class WsdlComposer {
         if (bopToRemove == null)
             return false;
 
-        Set<BindingOperation> ops = bindingOperationsToAdd.get(sourceWsdlHolder);
-        if (ops == null)
+        Set<BindingOperation> bops = bindingOperationsToAdd.get(sourceWsdlHolder);
+        if (bops == null)
             return false;
 
-        if (ops.remove(bopToRemove)) {
+        if (bops.remove(bopToRemove)) {
             if (removeOtherElements)
-                removeWsdlElementsForBindingOperation(sourceWsdlHolder, bopToRemove, ops.isEmpty());
+                removeWsdlElementsForBindingOperation(sourceWsdlHolder, bopToRemove, bops.isEmpty());
             return true;
         } else {
             return false;
@@ -221,21 +219,35 @@ public class WsdlComposer {
 
         if (empty) {
             removeTypesFromSource(sourceWsdlHolder);
-//            removeSourceWsdl(sourceWsdlHolder);
+            removeImportsFromSource(sourceWsdlHolder);
         }
     }
 
-    private void removeSourceWsdl(WsdlHolder sourceWsdlHolder) {
-        sourceWsdls.remove(sourceWsdlHolder);
+    private void removeImportsFromSource(WsdlHolder sourceWsdlHolder) {
+        importsMap.remove(sourceWsdlHolder);
     }
 
     private void removeMessagesFromSource(Operation operation) {
         if (operation == null)
             return;
-        messagesToAdd.remove(operation.getInput().getMessage().getQName());
-        messagesToAdd.remove(operation.getOutput().getMessage().getQName());
-        for (Object o : operation.getFaults().keySet()) {
-            messagesToAdd.remove(o);
+        Input input = operation.getInput();
+        if (input != null) {
+            Message m = input.getMessage();
+            if (m != null)
+                messagesToAdd.remove(m.getQName());
+        }
+
+        Output output = operation.getOutput();
+        if (output != null) {
+            Message m = output.getMessage();
+            if (m != null)
+                messagesToAdd.remove(m.getQName());
+        }
+
+        for (Object o : operation.getFaults().values()) {
+            Fault f = (Fault) o;
+            Message m = f.getMessage();
+            messagesToAdd.remove(m.getQName());
         }
     }
 
@@ -244,6 +256,7 @@ public class WsdlComposer {
     }
 
     private Operation removeOperation(Operation operation) {
+        getPortType().getOperations().remove(operation);
         return operationsToAdd.remove(operation.getName());
     }
 
@@ -310,10 +323,6 @@ public class WsdlComposer {
         internalAddOperation(op);
     }
 
-//    private void removeOperation(Operation op) {
-//        internalRemoveOperation(op);
-//    }
-
     private void internalAddOperation(Operation sourceOperation) {
         addMessagesFromSource(sourceOperation);
         if (operationsToAdd.containsKey(sourceOperation.getName()))
@@ -322,11 +331,6 @@ public class WsdlComposer {
         operationsToAdd.put(sourceOperation.getName(), sourceOperation);
 
     }
-
-//    private void internalRemoveOperation(Operation op) {
-//        Operation removed = operationsToAdd.remove(op.getName());
-//    }
-
 
     private boolean addImportsFromSource(WsdlHolder sourceWsdlHolder) {
         Set<Import> importsFromSource = importsMap.get(sourceWsdlHolder);
@@ -720,6 +724,7 @@ public class WsdlComposer {
         }
 
         private void buildMessages(Definition workingWsdl) {
+            workingWsdl.getMessages().clear();
             if (!messagesToAdd.isEmpty()) {
                 for (Map.Entry<QName, Message> entry : messagesToAdd.entrySet()) {
                     workingWsdl.addMessage(entry.getValue());
