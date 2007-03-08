@@ -12,6 +12,7 @@ import com.l7tech.common.xml.xpath.CompilableXpath;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.FastXpath;
 import com.tarari.xml.XmlConfigException;
+import com.tarari.xml.xslt11.XsltSecurityManager;
 import com.tarari.xml.rax.fastxpath.XPathCompiler;
 import com.tarari.xml.rax.fastxpath.XPathCompilerException;
 import com.tarari.xml.rax.schema.SchemaLoader;
@@ -42,8 +43,18 @@ import java.util.logging.Logger;
  *
  */
 public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchemaHandler {
-    private final Logger logger = Logger.getLogger(GlobalTarariContextImpl.class.getName());
+    private static final Logger logger = Logger.getLogger(GlobalTarariContextImpl.class.getName());
+    private static final XsltSecurityManager xsltSecurityManager = new SecureXsltSecurityManager();
     static final ReadWriteLock tarariLock = new ReentrantReadWriteLock(false);
+
+    static {
+        try {
+            XsltSecurityManager.setGlobalInstance(xsltSecurityManager);
+        }
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error installing XSLT security manager.", e);        
+        }
+    }
 
     private Xpaths currentXpaths = buildDefaultXpaths();
     private long compilerGeneration = 1;
