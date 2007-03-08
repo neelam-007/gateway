@@ -8,15 +8,14 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.service.MetricsSummaryBin;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.rmi.RemoteException;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Collections;
-
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
+import java.util.Map;
 
 /*
  * Test stub for ClusterStatusAdmin interface
@@ -157,15 +156,15 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         throw new UnsupportedOperationException();
     }
 
-    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final Long serviceOid, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 
-    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final Long serviceOid, final Integer resolution, final long duration) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 
-    public MetricsSummaryBin summarizeLatest(final String nodeId, final Long serviceOid, final int resolution, final int duration) throws RemoteException, FindException {
+    public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 

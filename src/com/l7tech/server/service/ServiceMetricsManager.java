@@ -1,35 +1,44 @@
 package com.l7tech.server.service;
 
 import EDU.oswego.cs.dl.util.concurrent.BoundedPriorityQueue;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.util.JaasUtils;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.service.MetricsBin;
-import com.l7tech.service.MetricsSummaryBin;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
-import com.l7tech.server.ServerConfig;
-import org.hibernate.*;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.service.MetricsBin;
+import com.l7tech.service.MetricsSummaryBin;
+import com.l7tech.service.PublishedService;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataAccessException;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**
  * Manages the processing and accumulation of service metrics for one SSG node.
@@ -57,6 +66,10 @@ public class ServiceMetricsManager extends HibernateDaoSupport
 
     public void setServiceManager(ServiceManager serviceManager) {
         _serviceManager = serviceManager;
+    }
+
+    public void setRoleManager(RoleManager roleManager) {
+        _roleManager = roleManager;
     }
 
     public void destroy() throws Exception {
@@ -104,7 +117,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * combining bins with the same period start.
      *
      * @param nodeId            cluster node ID; null = all
-     * @param serviceOid        published service OID; null = all
+     * @param serviceOids       published service OIDs; null = all services permitted for this user
      * @param resolution        bin resolution ({@link MetricsBin#RES_FINE},
      *                          {@link MetricsBin#RES_HOURLY} or
      *                          {@link MetricsBin#RES_DAILY}); null = all
@@ -116,11 +129,17 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      */
     @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
     public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId,
-                                                           final Long serviceOid,
+                                                           final long[] serviceOids,
                                                            final Integer resolution,
                                                            final Long minPeriodStart,
                                                            final Long maxPeriodStart)
             throws FindException {
+        // Enforces RBAC permissions.
+        final Set<Long> filteredOids = filterPermittedPublishedServices(serviceOids);
+        if (filteredOids != null && filteredOids.isEmpty()) {
+            return Collections.emptyList();     // No bins can possibly be found.
+        }
+
         Collection<MetricsBin> bins = null;
         try {
             // noinspection unchecked
@@ -131,8 +150,12 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                     if (nodeId != null)
                         crit.add(Restrictions.eq("clusterNodeId", nodeId));
 
-                    if (serviceOid != null)
-                        crit.add(Restrictions.eq("serviceOid", serviceOid));
+                    if (filteredOids != null) {
+                        if (filteredOids.size() == 1)
+                            crit.add(Restrictions.eq("serviceOid", filteredOids.iterator().next()));
+                        else
+                            crit.add(Restrictions.in("serviceOid", filteredOids));
+                    }
 
                     if (resolution != null)
                         crit.add(Restrictions.eq("resolution", resolution));
@@ -167,15 +190,15 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         } catch (DataAccessException e) {
             throw new FindException("Cannot find MetricsBins in database. " +
                                     "(nodeId=" + nodeId +
-                                    ", serviceOid=" + serviceOid +
+                                    ", serviceOid=" + filteredOids +
                                     ", resolution=" + resolution +
                                     ", minPeriodStart=" + new Date(minPeriodStart) +
                                     ", maxPeriodStart=" + new Date(maxPeriodStart) + ")",
                                     e);
         }
 
-        if (_logger.isLoggable(Level.FINEST)) {
-            _logger.finest("Found " + bins.size() + " metrics bins to summarize by period.");
+        if (_logger.isLoggable(Level.FINER)) {
+            _logger.finer("Found " + bins.size() + " metrics bins to summarize by period.");
         }
 
         return MetricsSummaryBin.createSummaryMetricsBinsByPeriodStart(bins);
@@ -185,20 +208,26 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * Searches for the latest metrics bins for the given criteria and
      * summarizes by combining them into one summary bin.
      *
-     * @param clusterNodeId cluster node ID
-     * @param serviceOid    published service OID
+     * @param clusterNodeId cluster node ID; null = all
+     * @param serviceOids   published service OIDs; null = all services permitted for this user
      * @param resolution    bin resolution
      * @param duration      time duration (from latest nominal period boundary
      *                      time on gateway) to search backward for bins whose
      *                      nominal periods fall within
-     * @return a summary bin
+     * @return a summary bin; <code>null</code> if no metrics bins are found
      * @throws FindException if failure to query database
      */
     public MetricsSummaryBin summarizeLatest(final String clusterNodeId,
-                                             final Long serviceOid,
+                                             final long[] serviceOids,
                                              final int resolution,
                                              final int duration)
             throws FindException {
+        // Enforces RBAC permissions.
+        final Set<Long> filteredOids = filterPermittedPublishedServices(serviceOids);
+        if (filteredOids != null && filteredOids.isEmpty()) {
+            return null;    // No bins can possibly be found.
+        }
+
         // Computes the summary period by counting back from the latest nominal
         // period boundary time. This is to ensure that we will find a full
         // number of bins filling the given duration (e.g., a 24-hour duration
@@ -215,8 +244,11 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                     if (clusterNodeId != null) {
                         criteria.add(Restrictions.eq("clusterNodeId", clusterNodeId));
                     }
-                    if (serviceOid != null) {
-                        criteria.add(Restrictions.eq("serviceOid", serviceOid));
+                    if (filteredOids != null) {
+                        if (filteredOids.size() == 1)
+                            criteria.add(Restrictions.eq("serviceOid", filteredOids.iterator().next()));
+                        else
+                            criteria.add(Restrictions.in("serviceOid", filteredOids));
                     }
                     criteria.add(Restrictions.eq("resolution", new Integer(resolution)));
                     criteria.add(Restrictions.ge("periodStart", new Long(summaryPeriodStart)));
@@ -227,15 +259,15 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         } catch (DataAccessException e) {
             throw new FindException("Cannot find MetricsBins in database. " +
                                     "(clusterNodeId=" + clusterNodeId +
-                                    ", serviceOid=" + serviceOid +
+                                    ", serviceOid=" + filteredOids +
                                     ", resolution=" + resolution +
                                     ", duration=" + duration + ")",
                                     e);
         }
 
 
-        if (_logger.isLoggable(Level.FINEST)) {
-            _logger.finest("Found " + bins.size() + " metrics bins to summarize.");
+        if (_logger.isLoggable(Level.FINER)) {
+            _logger.finer("Found " + bins.size() + " metrics bins to summarize.");
         }
 
         if (bins == null || bins.size() == 0)
@@ -344,6 +376,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     private PlatformTransactionManager _transactionManager;
 
     private ServiceManager _serviceManager;
+
+    private RoleManager _roleManager;
 
     /** Turns on service metrics collection. */
     private void enable() {
@@ -615,8 +649,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                     final MetricsBin head = (MetricsBin)_flusherQueue.take();
                         // This will wait indefinitely until there is an item in the queue.
 
-                    if (_logger.isLoggable(Level.FINER))
-                        _logger.finer("Saving " + head.toString());
+                    if (_logger.isLoggable(Level.FINEST))
+                        _logger.finest("Saving " + head.toString());
 
                     new TransactionTemplate(_transactionManager).execute(new TransactionCallbackWithoutResult() {
                         protected void doInTransactionWithoutResult(TransactionStatus status) {
@@ -705,5 +739,53 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                 _logger.log(Level.WARNING, "Couldn't delete MetricsBins", e);
             }
         }
+    }
+
+    /**
+     * Filters down the list of published service OID according to the user's RBAC permissions.
+     *
+     * @param serviceOids   <code>null</code> means all service permitted for user
+     * @return list of services permitted; can be empty; <code>null</code> if all
+     *         available services are permitted
+     * @throws FindException
+     */
+    private Set<Long> filterPermittedPublishedServices(final long[] serviceOids) throws FindException {
+        Set<Long> filteredOids = null;
+        if (serviceOids != null) {
+            filteredOids = new HashSet<Long>();
+            for (long serviceOid : serviceOids) {
+                filteredOids.add(serviceOid);
+            }
+        }
+
+        final User user = JaasUtils.getCurrentUser();
+        if (_roleManager.isPermittedForAllEntities(user, EntityType.SERVICE, OperationType.READ)) {
+            // No filtering needed.
+        } else {
+            Set<Long> permittedOids = new HashSet<Long>();
+            for (PublishedService service : _serviceManager.findAll()) {
+                if (_roleManager.isPermittedForEntity(user, service, OperationType.READ, null)) {
+                    permittedOids.add(service.getOid());
+                }
+            }
+
+            if (filteredOids == null) {
+                filteredOids = permittedOids;
+            } else {
+                for (Iterator<Long> i = filteredOids.iterator(); i.hasNext(); ) {
+                    if (!permittedOids.contains(i.next())) {
+                        i.remove();
+                    }
+                }
+            }
+
+            if (_logger.isLoggable(Level.FINER)) {
+                _logger.finer("Filtered published services from " +
+                        (serviceOids == null ? "*" : serviceOids.length) +
+                        " to " + filteredOids.size());
+            }
+        }
+
+        return filteredOids;
     }
 }

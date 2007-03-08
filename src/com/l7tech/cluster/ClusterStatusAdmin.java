@@ -187,8 +187,11 @@ public interface ClusterStatusAdmin {
      * Searches for metrics bins with the given criteria and summarizes by
      * combining bins with the same period start.
      *
+     * <em>NOTE:</em> Because summary bins are aggregated from multiple published
+     * services, RBAC is enforced inside the implementation instead of using attributes.
+     *
      * @param nodeId            cluster node ID; null = all
-     * @param serviceOid        published service OID; null = all
+     * @param serviceOids       published service OIDs; null = all services permitted for this user
      * @param resolution        bin resolution; null = all
      * @param minPeriodStart    minimum bin period start time; null = as far back as available
      * @param maxPeriodStart    maximum bin period statt time; null = up to the latest available
@@ -198,9 +201,8 @@ public interface ClusterStatusAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
     Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId,
-                                                    final Long serviceOid,
+                                                    final long[] serviceOids,
                                                     final Integer resolution,
                                                     final Long minPeriodStart,
                                                     final Long maxPeriodStart)
@@ -210,8 +212,11 @@ public interface ClusterStatusAdmin {
      * Searches for metrics bins with the given criteria and summarizes by
      * combining bins with the same period start.
      *
+     * <em>NOTE:</em> Because summary bins are aggregated from multiple published
+     * services, RBAC is enforced inside the implementation instead of using attributes.
+     *
      * @param nodeId            cluster node ID; null = all
-     * @param serviceOid        published service OID; null = all
+     * @param serviceOids       published service OIDs; null = all services permitted for this user
      * @param resolution        bin resolution; null = all
      * @param duration          time duration (from current clock time on
      *                          gateway) to search backward for bins whose
@@ -222,9 +227,8 @@ public interface ClusterStatusAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
     Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId,
-                                                          final Long serviceOid,
+                                                          final long[] serviceOids,
                                                           final Integer resolution,
                                                           final long duration)
             throws RemoteException, FindException;
@@ -233,24 +237,22 @@ public interface ClusterStatusAdmin {
      * Searches for the latest metrics bins for the given criteria and
      * summarizes by combining them into one summary bin.
      *
-     * <em>NOTE:</em> This is tagged {@link MethodStereotype#FIND_ENTITIES} so
-     * that the interceptor will require OperationType.READ permission against
-     * all ServiceMetrics records.
+     * <em>NOTE:</em> Because summary bins are aggregated from multiple published
+     * services, RBAC is enforced inside the implementation instead of using attributes.
      *
-     * @param nodeId        cluster node ID
-     * @param serviceOid    published service OID
+     * @param clusterNodeId cluster node ID; null = all
+     * @param serviceOids   published service OIDs; null = all services permitted for this user
      * @param resolution    bin resolution
      * @param duration      time duration (from latest nominal period boundary
      *                      time on gateway) to search backward for bins whose
      *                      nominal periods fall within
-     * @return a summary bin; null if no metrics bins are found
+     * @return a summary bin; <code>null</code> if no metrics bins are found
      * @throws FindException if there was a server-side problem accessing the requested information
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
-    MetricsSummaryBin summarizeLatest(final String nodeId,
-                                      final Long serviceOid,
+    MetricsSummaryBin summarizeLatest(final String clusterNodeId,
+                                      final long[] serviceOids,
                                       final int resolution,
                                       final int duration)
             throws RemoteException, FindException;

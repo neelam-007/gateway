@@ -805,6 +805,7 @@
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="transactionManager" ref="transactionManager"/>
         <property name="serviceManager" ref ="serviceManager"/>
+        <property name="roleManager" ref="roleManager"/>
     </bean>
 
     <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">

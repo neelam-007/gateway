@@ -13,23 +13,21 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.GatewayLicenseManager;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.AssertionModule;
+import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.service.MetricsSummaryBin;
-import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.assertion.Assertion;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
-import java.io.IOException;
-
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
 
 /**
  * Server side implementation of the ClusterStatusAdmin interface.
@@ -224,20 +222,20 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return serviceMetricsManager.getFineInterval();
     }
 
-    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final Long serviceOid, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart) throws RemoteException, FindException {
         checkLicense();
-        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOid, resolution, minPeriodStart, maxPeriodStart);
+        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, maxPeriodStart);
     }
 
-    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final Long serviceOid, final Integer resolution, final long duration) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration) throws RemoteException, FindException {
         checkLicense();
         final long minPeriodStart = System.currentTimeMillis() - duration;
-        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOid, resolution, minPeriodStart, null);
+        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, null);
     }
 
-    public MetricsSummaryBin summarizeLatest(final String nodeId, final Long serviceOid, final int resolution, final int duration) throws RemoteException, FindException {
+    public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration) throws RemoteException, FindException {
         checkLicense();
-        return serviceMetricsManager.summarizeLatest(nodeId, serviceOid, resolution, duration);
+        return serviceMetricsManager.summarizeLatest(nodeId, serviceOids, resolution, duration);
     }
 
     @Transactional(propagation = Propagation.SUPPORTS)

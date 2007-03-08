@@ -133,7 +133,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         }
     };
 
-    private final Timer _refreshTimer = new Timer(1500, _refreshListener);
+    private final Timer _refreshTimer = new Timer(2500, _refreshListener);
 
     private long _latestDownloadedPeriodStart = -1;
 
@@ -382,24 +382,28 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
                 nodeId = node.getNodeIdentifier();
             }
 
-            Long serviceOid = null;
+            long[] serviceOids = null;
             final EntityHeader service = (EntityHeader) _publishedServiceComboModel.getSelectedItem();
             if (service != ALL_SERVICES) {
-                serviceOid = service.getOid();
+                serviceOids = new long[]{service.getOid()};
             }
 
             final Integer resolution = _currentResolution.getResolution();
 
+            // -----------------------------------------------------------------
+            // Updates the chart.
+            // -----------------------------------------------------------------
+
             Collection<MetricsSummaryBin> newBins = null;
             if (_latestDownloadedPeriodStart == -1) {
                 newBins = clusterStatusAdmin.summarizeLatestByPeriod(nodeId,
-                                                                     serviceOid,
+                                                                     serviceOids,
                                                                      resolution,
                                                                      _currentResolution.getChartTimeRange() +
                                                                      _currentResolution.getBinInterval());
             } else {
                 newBins = clusterStatusAdmin.summarizeByPeriod(nodeId,
-                                                               serviceOid,
+                                                               serviceOids,
                                                                resolution,
                                                                _latestDownloadedPeriodStart + 1,
                                                                null);
@@ -410,7 +414,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
                 for (MetricsSummaryBin bin : newBins) {
                     if (_latestDownloadedPeriodStart < bin.getPeriodStart()) {
                         _latestDownloadedPeriodStart = bin.getPeriodStart();
-                        latestBin = bin;
+                        latestBin = bin;    // For fine resolution, use this in "Latest" tab.
                     }
                 }
 
@@ -423,16 +427,20 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
                 _metricsChartPanel.addData(newBins);
             }
 
+            // -----------------------------------------------------------------
+            // Updates the "Latest" tab panel.
+            // -----------------------------------------------------------------
+
             // Gets a summary of the latest resolution period.
             if (_currentResolution == _fineResolution) {
                 // The latest fine resolution summary bin was already downloaded,
                 // either during this call or the previous call.
             } else if (_currentResolution == _hourlyResolution) {
                 // Gets a summary collated from an hour's worth of fine metrics bins.
-                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOid, MetricsBin.RES_FINE, 60 * 60 * 1000);
+                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_FINE, 60 * 60 * 1000);
             } else if (_currentResolution == _dailyResolution) {
                 // Gets a summary collated from a day's worth of hourly metrics bins.
-                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOid, MetricsBin.RES_HOURLY, 24 * 60 * 60 * 1000);
+                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_HOURLY, 24 * 60 * 60 * 1000);
             }
 
             if (latestBin != null) {
@@ -452,6 +460,10 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
                 latestNumSuccessText.setText(Integer.toString(latestBin.getNumSuccess()));
                 latestNumTotalText.setText(Integer.toString(latestBin.getNumTotal()));
             }
+
+            // -----------------------------------------------------------------
+            // Updates the status label.
+            // -----------------------------------------------------------------
 
             if (clusterStatusAdmin.isMetricsEnabled()) {
                 statusLabel.setText(STATUS_UPDATED_FORMAT.format(new Object[] { new Date() }));

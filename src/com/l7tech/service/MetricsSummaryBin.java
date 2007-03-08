@@ -61,11 +61,11 @@ public class MetricsSummaryBin extends MetricsBin {
     }
 
     /**
-     * Constructs a summary bin by combining multiple metrics bins.
+     * Constructs a summary bin by combining multiple metrics bins. If the given
+     * bins have the same cluster node, then the summary bin will be set to that
+     * cluster node, otherwise set to -1; ditto for service OID and resolution.
      *
-     * @param bins  bins to combine into this summary bin; they can be from
-     *              more than one cluster node, published service, resolution
-     *              and/or period
+     * @param bins  metrics bins to be combined into this summary bin
      * @throws IllegalArgumentException if zero metrics bins are supplied
      */
     public MetricsSummaryBin(final Collection<MetricsBin> bins) {
