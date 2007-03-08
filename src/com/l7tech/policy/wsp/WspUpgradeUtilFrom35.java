@@ -27,7 +27,7 @@ class WspUpgradeUtilFrom35 {
                                     Object deserializedObject,
                                     String propertyName,
                                     TypedReference value,
-                                    Exception problemEncountered)
+                                    Throwable problemEncountered)
                 throws InvalidPolicyStreamException {
             if (deserializedObject instanceof XslTransformation) {
                 XslTransformation xslt = (XslTransformation) deserializedObject;

@@ -240,7 +240,7 @@ public class WspUpgradeUtilFrom21 {
                                     Object deserializedObject,
                                     String propertyName,
                                     TypedReference value,
-                                    Exception problemEncountered)
+                                    Throwable problemEncountered)
                 throws InvalidPolicyStreamException
         {
             if (deserializedObject instanceof XpathBasedAssertion) {
