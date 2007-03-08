@@ -84,7 +84,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * 
      * @param root the assertion root
      */
-    public static PolicyTreeModel identityModel(Assertion root) {
+    public static PolicyTreeModel identityModel(Assertion root) throws InterruptedException {
         Set paths = IdentityPath.getPaths(root);
         return new PolicyTreeModel(new IdentityViewRootNode(paths, root));
     }

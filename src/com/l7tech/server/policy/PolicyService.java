@@ -182,7 +182,12 @@ public class PolicyService extends ApplicationObjectSupport {
         }
 
         // in case where the request is anonyymous but request was not authenticated, we return null
-        boolean isanonymous = atLeastOnePathIsAnonymous(targetPolicy);
+        boolean isanonymous = false;
+        try {
+            isanonymous = atLeastOnePathIsAnonymous(targetPolicy);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e); // can't happen here
+        }
         if (preAuthenticatedUser == null && !isanonymous) return null;
 
         // filter the policy for the requestor's identity and return the resulting policy
@@ -269,10 +274,14 @@ public class PolicyService extends ApplicationObjectSupport {
 
         // if the policy allows anonymous, skip the meta policy
         boolean canSkipMetaPolicyStep = false;
-        if (atLeastOnePathIsAnonymous(targetPolicy)) {
-            canSkipMetaPolicyStep = true;
-        } else {
-            logger.fine("The policy does not allow anonymous.");
+        try {
+            if (atLeastOnePathIsAnonymous(targetPolicy)) {
+                canSkipMetaPolicyStep = true;
+            } else {
+                logger.fine("The policy does not allow anonymous.");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e); // can't happen here
         }
 
         // Run the policy-policy
@@ -480,7 +489,7 @@ public class PolicyService extends ApplicationObjectSupport {
         }
     }
 
-    private boolean atLeastOnePathIsAnonymous(Assertion rootAssertion) {
+    private boolean atLeastOnePathIsAnonymous(Assertion rootAssertion) throws InterruptedException {
         PolicyPathResult paths = PolicyPathBuilder.getDefault().generate(rootAssertion);
         for (Iterator iterator = paths.paths().iterator(); iterator.hasNext();) {
             AssertionPath assertionPath = (AssertionPath)iterator.next();

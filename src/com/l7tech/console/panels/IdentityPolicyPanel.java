@@ -171,8 +171,12 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
         });
-        principalAssertionPaths = IdentityPath.forIdentity(identity, rootAssertion);
-        otherPaths = IdentityPath.getPaths(rootAssertion);
+        try {
+            principalAssertionPaths = IdentityPath.forIdentity(identity, rootAssertion);
+            otherPaths = IdentityPath.getPaths(rootAssertion);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e); // can't happen here
+        }
         Collection<IdentityPath> remove = new ArrayList<IdentityPath>();
         for (IdentityPath ip : otherPaths) {
             if (ip.getPrincipal().equals(principalAssertionPaths.getPrincipal())) {

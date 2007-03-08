@@ -42,5 +42,5 @@ public abstract class PolicyPathBuilder {
      * path for.
      * @return the result of the build
      */
-    abstract public PolicyPathResult generate(Assertion assertion);
+    abstract public PolicyPathResult generate(Assertion assertion) throws InterruptedException;
 }

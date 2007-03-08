@@ -44,7 +44,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      *                  path for.
      * @return the result of the build
      */
-    public PolicyPathResult generate(Assertion assertion) {
+    public PolicyPathResult generate(Assertion assertion) throws InterruptedException {
         Set paths = generatePaths(assertion);
         int pathOrder = 0;
         for (Iterator iterator = paths.iterator(); iterator.hasNext(); pathOrder++) {
@@ -53,6 +53,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             if (log.isLoggable(Level.FINEST)) {
                 log.finest(pathToString(path));
             }
+            if (Thread.interrupted()) throw new InterruptedException();
         }
         return new DefaultPolicyPathResult(paths);
     }
@@ -62,7 +63,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      *
      * @param assertion the root assertion
      */
-    private Set generatePaths(Assertion assertion) {
+    private Set generatePaths(Assertion assertion) throws InterruptedException {
         Set assertionPaths = new LinkedHashSet();
         Iterator preorder = assertion.preorderIterator();
         final AssertionPath initPath = new AssertionPath(new Assertion[]{(Assertion)preorder.next()});
@@ -70,6 +71,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         pathStack.push(initPath);
 
         for (; preorder.hasNext();) {
+            if (Thread.interrupted()) throw new InterruptedException();
             Assertion anext = (Assertion)preorder.next();
             if (parentCreatesNewPaths(anext)) {
                 AssertionPath cp = (AssertionPath)pathStack.peek();
@@ -84,6 +86,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                         AssertionPath a = assertionPath.addAssertion(anext);
                         add.add(a);
                     }
+                    if (Thread.interrupted()) throw new InterruptedException();
                 }
                 AssertionPath stackPath = cp.addAssertion(anext);
                 add.add(stackPath);
@@ -113,6 +116,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                         add.add(a);
                         remove.add(assertionPath);
                     }
+                    if (Thread.interrupted()) throw new InterruptedException();
                 }
                 AssertionPath[] paths = (AssertionPath[])add.toArray(new AssertionPath[]{});
                 if (paths.length > 0) {

@@ -9,10 +9,7 @@ import com.l7tech.service.PublishedService;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 
 
 /**
@@ -24,8 +21,11 @@ import java.util.WeakHashMap;
  * @noinspection UnusedDeclaration
  */
 class ValidatorFactory {
-    private static Map<Class<? extends Assertion>, Class<? extends AssertionValidator>> assertionMap =
+    private static final Map<Class<? extends Assertion>, Class<? extends AssertionValidator>> assertionMap =
             new HashMap<Class<? extends Assertion>, Class<? extends AssertionValidator>>();
+
+    private static final Map<Class<? extends Assertion>, Object> useNullValidator =
+            Collections.synchronizedMap(new WeakHashMap<Class<? extends Assertion>, Object>());
 
     // maping assertions to validators
     static {
@@ -68,7 +68,7 @@ class ValidatorFactory {
             throw new IllegalArgumentException();
         }
 
-        final Class assclass = assertion.getClass();
+        final Class<? extends Assertion> assclass = assertion.getClass();
 
         Constructor<AssertionValidator> ctor = ctorCache.get(assclass);
         if (ctor != null) {
@@ -80,16 +80,19 @@ class ValidatorFactory {
         }
 
         // assertion lookup, find the  assertion tree node
-        Class classNode = assertionMap.get(assertion.getClass());
+        Class classNode = assertionMap.get(assclass);
         if (null == classNode) {
+            if (useNullValidator.containsKey(assclass))
+                return new NullValidator(assertion);
             String classname = (String)assertion.meta().get(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME);
             try {
-                classNode = assertion.getClass().getClassLoader().loadClass(classname);
+                classNode = assclass.getClassLoader().loadClass(classname);
             } catch (ClassNotFoundException e) {
-                // fallthrough and leave it null
+                // Fallthrough and treat as null validator
             }
         }
         if (null == classNode) {
+            useNullValidator.put(assclass, Boolean.TRUE);
             return new NullValidator(assertion);
         }
         try {

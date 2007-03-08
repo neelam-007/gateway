@@ -77,7 +77,7 @@ public class IdentityPath {
      * @param root the assertion root
      * @return the set of identity paths that exist in thi policy tree
      */
-    public static Set<IdentityPath> getPaths(Assertion root) {
+    public static Set<IdentityPath> getPaths(Assertion root) throws InterruptedException {
         return getPaths(root, DEFAULT_COMPARATOR);
     }
 
@@ -92,7 +92,7 @@ public class IdentityPath {
      *             set.
      * @return the set of identity paths that exist in thi policy tree
      */
-    public static Set<IdentityPath> getPaths(Assertion root, Comparator<IdentityPath> c) {
+    public static Set<IdentityPath> getPaths(Assertion root, Comparator<IdentityPath> c) throws InterruptedException {
         Set<Identity> identities = getIdentities(root);
         Set<IdentityPath> paths = new TreeSet<IdentityPath>(c);
         for (Identity identity : identities) {
@@ -121,7 +121,7 @@ public class IdentityPath {
      *         for the given principal
      * @see IdentityPath
      */
-    public static IdentityPath forIdentity(Identity identity, Assertion root) {
+    public static IdentityPath forIdentity(Identity identity, Assertion root) throws InterruptedException {
         if (!(identity instanceof User || identity instanceof Group)) {
             throw new IllegalArgumentException("unknown type");
         }
@@ -140,6 +140,7 @@ public class IdentityPath {
                         continue outer;
                     }
                 }
+                if (Thread.interrupted()) throw new InterruptedException();
             }
         }
         return ipath;
@@ -155,7 +156,7 @@ public class IdentityPath {
      * @param root the assertion root
      * @return the collection of aanonymous assertion paths
      */
-    private static IdentityPath anonymousPaths(Assertion root) {
+    private static IdentityPath anonymousPaths(Assertion root) throws InterruptedException {
         UserBean anon = new UserBean();
         anon.setLogin(ANONYMOUS);
         anon.setName(anon.getLogin());
@@ -171,6 +172,7 @@ public class IdentityPath {
                         isCustomAccessControl(assertion)) {
                     continue outer;
                 }
+                if (Thread.interrupted()) throw new InterruptedException();
             }
             ipath.identityPaths.add(assertionPath);
         }
@@ -188,7 +190,7 @@ public class IdentityPath {
      * @param root the assertion root
      * @return the collection of aanonymous assertion paths
      */
-    private static IdentityPath customAccessControlPaths(Assertion root) {
+    private static IdentityPath customAccessControlPaths(Assertion root) throws InterruptedException {
         UserBean anon = new UserBean();
         StringBuffer sb = new StringBuffer(CUSTOM_ACCESS_CONTROL);
 
@@ -217,6 +219,7 @@ public class IdentityPath {
             if (found) {
                 ipath.identityPaths.add(assertionPath);
             }
+            if (Thread.interrupted()) throw new InterruptedException();
         }
         anon.setLogin(sb.toString());
         anon.setName(anon.getLogin());
