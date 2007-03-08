@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.FilterDocument;
+import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
@@ -28,6 +29,7 @@ import java.awt.event.*;
 import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.regex.Pattern;
 import java.util.logging.Level;
 
 /**
@@ -46,7 +48,7 @@ public class NewInternalUserDialog extends JDialog {
     private JButton createButton = null;
 
     /** ID text field */
-    private JTextField idTextField = null;
+    private SquigglyTextField idTextField = null;
     private JPasswordField passwordField = null;
     private JPasswordField passwordConfirmField = null;
     private JCheckBox additionalPropertiesCheckBox = null;
@@ -279,7 +281,8 @@ public class NewInternalUserDialog extends JDialog {
     private JTextField getUserIdTextField() {
         if (idTextField != null) return idTextField;
 
-        idTextField = new JTextField();
+        idTextField = new SquigglyTextField();
+        idTextField.setColor(Color.ORANGE);
         idTextField.setPreferredSize(new Dimension(200, 20));
         idTextField.setMinimumSize(new Dimension(200, 20));
         idTextField.setToolTipText(resources.getString("idTextField.tooltip"));
@@ -470,6 +473,14 @@ public class NewInternalUserDialog extends JDialog {
                 passwordConfirmField.setText(null);
                 return;
             }
+            if (!validateIdTextField()) {
+                int result = JOptionPane.showConfirmDialog(this,
+                                              resources.getString("idTextField.warning.dialog.badCertChars"),
+                                              resources.getString("idTextField.warning.title"),
+                                              JOptionPane.OK_CANCEL_OPTION);
+                if (result != JOptionPane.OK_OPTION)
+                    return;
+            }
             insertUser();
         }
     }
@@ -590,8 +601,10 @@ public class NewInternalUserDialog extends JDialog {
         if (field.getProperty("name").equals("userId")) {
             if (field.getLength() > 0) {
                 UserIdFieldFilled = true;
+                validateIdTextField();
             } else {
                 UserIdFieldFilled = false;
+                idTextField.setModelessFeedback(null);
             }
         } else if (field.getProperty("name").equals("password")) {
             if (field.getLength() > 0) {
@@ -616,6 +629,19 @@ public class NewInternalUserDialog extends JDialog {
         } else {
             // disbale the button
             createButton.setEnabled(false);
+        }
+    }
+
+    private static final Pattern CERT_NAME_CHECKER = Pattern.compile("[^\\p{L}\\p{N} ]");
+
+    private boolean validateIdTextField() {
+        String t = idTextField.getText();
+        if (CERT_NAME_CHECKER.matcher(t).find()) {
+            idTextField.setModelessFeedback(resources.getString("idTextField.warning.tooltip.badCertChars"));
+            return false;
+        } else {
+            idTextField.setModelessFeedback(null);
+            return true;
         }
     }
 
