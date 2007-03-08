@@ -10,15 +10,13 @@ import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssTimestamp;
 import com.l7tech.common.security.xml.processor.WssTimestampDate;
-import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import org.springframework.context.ApplicationContext;
@@ -35,7 +33,7 @@ import java.util.logging.Logger;
  * This assertion asserts that this message had a signed timestamp, and that no message with this timestamp signed
  * by one of the same signing tokens has been seen recently.
  */
-public class ServerRequestWssReplayProtection extends AbstractServerAssertion implements ServerAssertion {
+public class ServerRequestWssReplayProtection extends AbstractServerAssertion<RequestWssReplayProtection> {
     private static final long EXPIRY_GRACE_TIME_MILLIS = 1000L * 60 * 1; // allow messages expired up to 1 minute ago
     private static final long MAXIMUM_MESSAGE_AGE_MILLIS = 1000L * 60 * 60 * 24 * 30; // hard cap of 30 days old
     private static final long CACHE_ID_EXTRA_TIME_MILLIS = 1000L * 60 * 5; // cache IDs for at least 5 min extra
@@ -45,32 +43,31 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
     private final Auditor auditor;
 
     public ServerRequestWssReplayProtection(RequestWssReplayProtection subject, ApplicationContext ctx) {
-        //noinspection unchecked
         super(subject);
         this.applicationContext = ctx;
         this.auditor = new Auditor(this, applicationContext, logger);
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException
-    {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
         ProcessorResult wssResults;
 
         try {
             if (!context.getRequest().isSoap()) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NON_SOAP);
-                return AssertionStatus.BAD_REQUEST;
+                return AssertionStatus.NOT_APPLICABLE;
             }
             wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
             if (wssResults == null) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY);
                 context.setRequestPolicyViolated();
                 context.setAuthenticationMissing();
-                return AssertionStatus.FALSIFIED;
+                return AssertionStatus.NOT_APPLICABLE;
             }
-
         } catch (SAXException e) {
-            throw new CausedIOException(e);
+            // In practice, this can only happen if a mutating assertion (e.g. XSLT or Regex) has changed this message
+            // from SOAP to non-SOAP--if it was originally SOAP, Trogdor will have already run, and the message will
+            // have been parsed before we get here.
+            throw (IOException)new IOException(ExceptionUtils.getMessage(e)).initCause(e);
         }
 
         // Validate timestamp first
@@ -98,20 +95,21 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
         if (timestamp.getExpires() != null) {
             expires = timestamp.getExpires().asDate().getTime();
         } else {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_EXPIRES_ELEMENT, new String[] {String.valueOf(DEFAULT_EXPIRY_TIME)});
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_EXPIRES_ELEMENT, String.valueOf(DEFAULT_EXPIRY_TIME));
             expires = created + DEFAULT_EXPIRY_TIME;
         }
 
-        if (expires <= (now - EXPIRY_GRACE_TIME_MILLIS))
-            // TODO we need a better exception for this than IOException
-            throw new IOException("Request timestamp contained stale Expires date; rejecting entire request");
+        if (expires <= (now - EXPIRY_GRACE_TIME_MILLIS)) {
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_STALE_TIMESTAMP);
+            return AssertionStatus.BAD_REQUEST;
+        }
 
         if (created > now)
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CLOCK_SKEW, new String[] {String.valueOf(created)});
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CLOCK_SKEW, String.valueOf(created));
 
         if (created <= (now - MAXIMUM_MESSAGE_AGE_MILLIS)) {
-            // TODO we need a better exception for this than IOException
-            throw new IOException("Request timestamp contained Created older than the maximum message age hard cap");
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CREATED_TOO_OLD);
+            return AssertionStatus.BAD_REQUEST;
         }
 
         XmlSecurityToken[] signingTokens = wssResults.getSigningTokens(timestamp.asElement());
@@ -132,7 +130,8 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
                     byte[] digest = md.digest();
                     messageIdStr = HexUtils.hexDump(digest);
                 } catch (CertificateEncodingException e) {
-                    throw new IOException("Unable to generate replay-protection ID; a SKI cannot be derived from signing cert '" + signingCert.getSubjectDN().getName() + "'");
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_SKI, signingCert.getSubjectDN().getName());
+                    return AssertionStatus.BAD_REQUEST;
                 } catch (NoSuchAlgorithmException e) {
                     throw new RuntimeException(e); // can't happen, misconfigured VM
                 }
@@ -161,19 +160,19 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
                 sb.append("EncryptedKeySHA1=");
                 sb.append(encryptedKeySha1);
                 messageIdStr = sb.toString();
-            } else
-                throw new IOException("Unable to generate replay-protection ID for timestamp -- " +
-                                      "it was signed, but with the unsupported token type " + signingToken.getClass().getName());
+            } else {
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_UNSUPPORTED_TOKEN_TYPE, signingToken.getClass().getName());
+                return AssertionStatus.BAD_REQUEST;
+            }
 
             MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
             try {
                 DistributedMessageIdManager dmm = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
                 dmm.assertMessageIdIsUnique(messageId);
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, new String[]{messageIdStr});
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, messageIdStr);
             } catch (MessageIdManager.DuplicateMessageIdException e) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, new String[]{messageIdStr});
-                throw new PolicyAssertionException(assertion,
-                                                   "Duplicated message ID detected; ID=" + messageIdStr);
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, messageIdStr);
+                return AssertionStatus.BAD_REQUEST;
             }
         }
 
