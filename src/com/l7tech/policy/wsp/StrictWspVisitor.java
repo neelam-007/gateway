@@ -23,7 +23,7 @@ class StrictWspVisitor implements WspVisitor {
                                 Object deserializedObject,
                                 String parameterName,
                                 TypedReference parameterValue,
-                                Exception problemEncountered)
+                                Throwable problemEncountered)
             throws InvalidPolicyStreamException
     {
         throw new InvalidPolicyStreamException("Unknown property " + parameterName + " of " + deserializedObject.getClass(), problemEncountered);

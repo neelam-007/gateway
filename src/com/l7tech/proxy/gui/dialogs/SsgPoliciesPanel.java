@@ -509,6 +509,7 @@ class SsgPoliciesPanel extends JPanel {
                             os.close();
                             os = null;
                         } catch (NullPointerException nfe) {
+                            log.log(Level.WARNING, "NullPointerException", nfe);
                         } catch (IOException e) {
                             log.log(Level.WARNING, "Error exporting policy", e);
                             JOptionPane.showMessageDialog(getRootPane(),

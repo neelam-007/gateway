@@ -31,7 +31,7 @@ public class PermissiveWspVisitor implements WspVisitor {
                                 Object deserializedObject,
                                 String parameterName,
                                 TypedReference parameterValue,
-                                Exception problemEncountered)
+                                Throwable problemEncountered)
             throws InvalidPolicyStreamException
     {
         if (problemEncountered instanceof SecurityException) {
