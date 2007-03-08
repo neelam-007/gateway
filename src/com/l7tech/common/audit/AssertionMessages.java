@@ -168,6 +168,10 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED           = m(4910, Level.FINEST, "Message ID {0} has not been seen before unique; assertion does not fail");
     public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_ENC_KEY  = m(4911, Level.FINER, "Timestamp was signed with an EncryptedKey");
     public static final M REQUEST_WSS_REPLAY_REPLAY                         = m(4912, Level.WARNING, "Message ID {0} is a replay");
+    public static final M REQUEST_WSS_REPLAY_STALE_TIMESTAMP                = m(4913, Level.WARNING, "Request timestamp contained stale Expires date");
+    public static final M REQUEST_WSS_REPLAY_CREATED_TOO_OLD                = m(4914, Level.WARNING, "Request timestamp contained Created older than the maximum message age hard cap");
+    public static final M REQUEST_WSS_REPLAY_NO_SKI                         = m(4915, Level.WARNING, "Unable to generate replay-protection ID; a SKI cannot be derived from signing cert ''{0}''");
+    public static final M REQUEST_WSS_REPLAY_UNSUPPORTED_TOKEN_TYPE         = m(4916, Level.WARNING, "Unable to generate replay-protection ID for timestamp -- it was signed, but with the unsupported token type {0}");
 
     // ServerCustomAssertionHolder
     public static final M CA_CREDENTIAL_INFO                                = m(5000, Level.FINE, "Service:{0}, custom assertion: {1}, principal:{2}");
