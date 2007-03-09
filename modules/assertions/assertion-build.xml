@@ -159,7 +159,8 @@
     </target>
 
     <target name="checkobf">
-        <available file="${UneasyRooster.dir}/build/please_obfuscate" property="localobfuscate"/>
+        <!-- mlyons: disabled obfuscation of aar files for now in case it's causing Bug #3588 -->
+        <!-- <available file="${UneasyRooster.dir}/build/please_obfuscate" property="localobfuscate"/> -->
     </target>
 
     <target name="-compile" depends="checkobf, reallycompile" if="localobfuscate">
