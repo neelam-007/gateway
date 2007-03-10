@@ -67,8 +67,8 @@ public class ProcessorResultUtil {
         // the element is not there so there is nothing to check
         if (selectedNodes.isEmpty()) {
             logger.fine("No elements matching " + xpath + " are present in the undecorated message; " +
-                        "assertion therefore succeeds.");
-            return new SearchResult(NO_ERROR, false);
+                        "assertion therefore fails.");
+            return new SearchResult(FALSIFIED, false);
         }
 
         // to assert this, i must make sure that all of these nodes are part of the nodes

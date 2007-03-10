@@ -125,7 +125,10 @@ public class WssRoundTripTest extends TestCase {
             Map ns = new HashMap();
             ns.put("wsse", SoapUtil.SECURITY_NAMESPACE);
             ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, doc1, "//wsse:UsernameToken", ns, false, r.getElementsThatWereSigned(), "signed");
-            assertEquals(foo.getResultCode(), ProcessorResultUtil.NO_ERROR);
+            if (securityTokenResolver == null)
+                assertEquals(foo.getResultCode(), ProcessorResultUtil.FALSIFIED);
+            else
+                assertEquals(foo.getResultCode(), ProcessorResultUtil.NO_ERROR);
         }
 
         if (securityTokenResolver == null) {
