@@ -42,7 +42,6 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
 
     private void initialize() {
 
-//        targetNameSpaceField.setModel(new DefaultComboBoxModel(namespacesModel));
         panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
         nameSpaceDetailsModel =
           new DefaultTableModel(new String[]{"Prefix", "Namespace"},
@@ -78,8 +77,6 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
                           String s = (String) o;
                           int pos = s.lastIndexOf('/');
                           s = s.substring(0, pos + 1);
-//                          int selectedIndex = targetNameSpaceField.getSelectedIndex();
-//                          namespacesModel.add(selectedIndex, s += name + ".wsdl");
                           s += name + ".wsdl";
                       }
                   } catch (BadLocationException ex) {
@@ -123,7 +120,8 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
         for (Iterator nsIter=wsdlComposer.getNamespaces().entrySet().iterator(); nsIter.hasNext(); ) {
             Map.Entry entry = (Map.Entry) nsIter.next();
 
-            if ("tns".equals(entry.getKey())) continue;
+            if ("tns".equals(entry.getKey()))
+                continue;
 
             if ("".equals(entry.getKey()) || entry.getKey()==null) {
                 defaultNameSpaceField.setText((String)entry.getValue());

@@ -11,6 +11,7 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.ExtensionDeserializer;
 import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.extensions.ExtensionSerializer;
+import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
 import javax.xml.namespace.QName;
@@ -75,7 +76,7 @@ public class WsdlComposer {
 
         importsMap = new HashMap<WsdlHolder, Set<Import>>();
         typesMap = new HashMap<WsdlHolder, Types>();
-                
+
         //Messages
         messagesToAdd = new HashMap<QName, Message>();
 
@@ -101,7 +102,7 @@ public class WsdlComposer {
         Wsdl originalWsdl = Wsdl.newInstance(originalWsdlDoc.getDocumentElement().getBaseURI(), originalWsdlDoc);
         originalWsdlHolder = new WsdlHolder(originalWsdl, "Original Wsdl");
         addSourceWsdl(originalWsdlHolder);
-        
+
         Definition def = originalWsdl.getDefinition();
         setQName(def.getQName());
         setTargetNamespace(def.getTargetNamespace());
@@ -273,7 +274,7 @@ public class WsdlComposer {
 
         internalAddMessage(newInputMsg);
         internalAddMessage(newOutMessage);
-     
+
         Map faults = operation.getFaults();
         if (faults != null) {
             for (Object o : faults.values()) {
@@ -445,11 +446,11 @@ public class WsdlComposer {
     public QName getQName() {
         return qname;
     }
-        
+
     public void setTargetNamespace(String ns) {
         targetNamespace = ns;
         updateElementsWithNewNamespace();
-        
+
     }
 
     private void updateElementsWithNewNamespace() {
@@ -485,10 +486,26 @@ public class WsdlComposer {
         return getDefaultBinding();
     }
 
+    public String getBindingStyle(Binding b) {
+        if (b == null)
+            return null;
+
+        List ees = b.getExtensibilityElements();
+        for (Object o : ees) {
+            ExtensibilityElement ee = (ExtensibilityElement) o;
+            if (StringUtils.equals(ee.getElementType().getNamespaceURI(), Wsdl.WSDL_SOAP_NAMESPACE) &&
+                StringUtils.equalsIgnoreCase(ee.getElementType().getLocalPart(), "binding")) {
+                SOAPBinding sb = (SOAPBinding) ee;
+                return sb.getStyle();
+            }
+        }
+        return null;
+    }
+
     public PortType getPortType() {
         return getDefaultPortType();
     }
-    
+
     public Map getServices() {
         return services;
     }
@@ -516,7 +533,7 @@ public class WsdlComposer {
     public Message createMessage() {
         return delegateWsdl.createMessage();
     }
-    
+
     public Map<QName, Message> getMessages() {
         return messagesToAdd;
     }
@@ -528,7 +545,7 @@ public class WsdlComposer {
     public Part createPart() {
         return delegateWsdl.createPart();
     }
-    
+
     public Operation createOperation() {
         return delegateWsdl.createOperation();
     }
@@ -617,6 +634,27 @@ public class WsdlComposer {
         originalWsdlDoc = origWsdl;
     }
 
+    public Service getService() {
+        Collection services = getServices().values();
+        if (services != null && !services.isEmpty())
+            return (Service) services.iterator().next();
+        return null;
+    }
+
+    public Port getSupportedSoapPort(Service svc) {
+        if (svc == null)
+            return null;
+
+        Collection ports = svc.getPorts().values();
+        for (Object o : ports) {
+            Port port = (Port) o;
+            if (isSupportedSoapBinding(port.getBinding())) {
+                return port;
+            }
+        }
+        return null;
+    }
+
     public static class WsdlHolder {
         public Wsdl wsdl;
         private String wsdlLocation;
@@ -656,13 +694,13 @@ public class WsdlComposer {
             Definition workingWsdl = null;
             if (originalWsdlDoc == null) {
                 workingWsdl = wsdlFactory.newDefinition();
-                workingWsdl.setQName(qname);
             }
             else {
                 WSDLReader reader = wsdlFactory.newWSDLReader();
                 reader.setExtensionRegistry(extensionRegistry);
                 workingWsdl = reader.readWSDL(originalWsdlDoc.getDocumentURI(), originalWsdlDoc);
             }
+            workingWsdl.setQName(qname);
             buildImports(workingWsdl);
             buildNamespaces(workingWsdl);
             buildTypes(workingWsdl);
@@ -673,6 +711,7 @@ public class WsdlComposer {
             buildServices(workingWsdl);
             return workingWsdl;
         }
+
 
         private void buildServices(Definition workingWsdl) {
             for (Map.Entry<QName, Service> serviceEntry : services.entrySet()) {
@@ -720,7 +759,7 @@ public class WsdlComposer {
                 ExtensibilityElement newElem = deserializer.unmarshall(sourceExtElement.getClass(), sourceExtElement.getElementType(), doc.getDocumentElement(), workingWsdl, extensionRegistry);
 
                 workingTypes.addExtensibilityElement(newElem);
-            }            
+            }
         }
 
         private void buildMessages(Definition workingWsdl) {
@@ -757,7 +796,7 @@ public class WsdlComposer {
                 return;
 
             workingWsdl.addBinding(destinationBinding);
-            
+
             if (!bindingOperationsToAdd.isEmpty()) {
                 destinationBinding.getBindingOperations().clear();
                 for (Set<BindingOperation> bops: bindingOperationsToAdd.values()) {

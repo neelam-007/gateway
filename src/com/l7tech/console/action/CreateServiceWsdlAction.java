@@ -130,18 +130,18 @@ public class CreateServiceWsdlAction extends SecureAction {
          */
         public void wizardFinished(WizardEvent we) {
             PublishedService service = null;
-            if (existingService == null)
+            boolean isEdit = false;
+            if (existingService == null) {
                 service = new PublishedService();
-            else
+            } else {
                 service = existingService;
-
+                isEdit = true;
+            }
             try {
                 Wizard w = (Wizard)we.getSource();
                 WsdlComposer composer = (WsdlComposer) w.getWizardInput();
                 Definition def = composer.buildOutputWsdl();
 
-
-                service.setDisabled(true);
                 WSDLFactory fac = WsdlUtils.getWSDLFactory();
                 ExtensionRegistry reg =  Wsdl.disableSchemaExtensions(fac.newPopulatedExtensionRegistry());
                 WSDLWriter wsdlWriter = fac.newWSDLWriter();
@@ -153,10 +153,11 @@ public class CreateServiceWsdlAction extends SecureAction {
                 service.setName(ws.getServiceName());
 
                 //if this is an "edit" then we are only interested in the WSDL and don't need to save the service.
-                if (existingService != null) {
+                if (isEdit) {
                     return;
                 }
 
+                service.setDisabled(true);
                 final String serviceAddress = getServiceAddress(def);
                 RoutingAssertion ra;
                 if (serviceAddress != null) {

@@ -2,16 +2,19 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlComposer;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
-import javax.wsdl.*;
+import javax.wsdl.Port;
+import javax.wsdl.Service;
+import javax.wsdl.WSDLException;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.xml.namespace.QName;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -59,17 +62,41 @@ public class WsdlServicePanel extends WizardStepPanel {
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
+
+        Service svc = wsdlComposer.getService();
         String s = nameField.getText();
         if (s == null || "".equals(s)) {
-            nameField.setText(wsdlComposer.getQName().getLocalPart() + "Service");
+            String name = "Service";
+            if (svc != null)
+                if (StringUtils.isNotEmpty(svc.getQName().getLocalPart()))
+                    name = svc.getQName().getLocalPart();
+
+            nameField.setText(name);
         }
+
+        Port port = wsdlComposer.getSupportedSoapPort(svc);
         s = portAddressField.getText();
         if (s == null || "".equals(s)) {
-            portAddressField.setText("http://localhost:8080/ws/" + nameField.getText());
+            String address = "http://localhost:8080/ws/" + nameField.getText();
+            if (port != null) {
+                List ees = port.getExtensibilityElements();
+                for (Object obj : ees) {
+                    ExtensibilityElement ee = (ExtensibilityElement) obj;
+                    if (StringUtils.equals(ee.getElementType().getNamespaceURI(), Wsdl.WSDL_SOAP_NAMESPACE)  && StringUtils.equals(ee.getElementType().getLocalPart(), "address")) {
+                        SOAPAddress sa = (SOAPAddress) ee;
+                        address = sa.getLocationURI();
+                        break;
+                    }
+                }
+            }
+            portAddressField.setText(address);
         }
         s = portNameField.getText();
         if (s == null || "".equals(s)) {
-            portNameField.setText(wsdlComposer.getQName().getLocalPart() + "Port");
+            if (port != null && StringUtils.isNotEmpty(port.getName()))
+                portNameField.setText(port.getName());
+            else
+                portNameField.setText(wsdlComposer.getQName().getLocalPart() + "Port");
         }
         bindingLabel.setText(wsdlComposer.getBinding().getQName().getLocalPart());       
     }
@@ -93,10 +120,10 @@ public class WsdlServicePanel extends WizardStepPanel {
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
-        Map services = wsdlComposer.getServices();
-        if (services != null)
-            services.clear();
-        
+//        Map services = wsdlComposer.getServices();
+//        if (services != null)
+//            services.clear();
+//
         try {
             getService();
         } catch (WSDLException e) {
@@ -112,28 +139,25 @@ public class WsdlServicePanel extends WizardStepPanel {
     }
 
     private Service getService() throws WSDLException {
-        Map services = wsdlComposer.getServices();
-        Service sv;
-        if (services == null || services.isEmpty()) {
+        Service sv = wsdlComposer.getService();
+        if (sv == null)
             sv = wsdlComposer.createService();
-            wsdlComposer.addService(sv);
-        } else {
-            sv = (Service)services.values().iterator().next();
-        }
+
+        wsdlComposer.getServices().clear();
+
         sv.setQName(new QName(nameField.getText()));
         getPort(wsdlComposer, sv);
+        wsdlComposer.addService(sv);
         return sv;
     }
 
     private Port getPort(WsdlComposer wsdlComposer, Service service) throws WSDLException {
-        Map ports = service.getPorts();
-        Port port;
-        if (ports.isEmpty()) {
+        Port port = wsdlComposer.getSupportedSoapPort(service);
+        if (port == null){
             port = wsdlComposer.createPort();
             service.addPort(port);
-        } else {
-            port = (Port)ports.values().iterator().next();
         }
+
         port.setName(portNameField.getText());
         port.setBinding(wsdlComposer.getBinding());
         collectSoapAddress(wsdlComposer, port);

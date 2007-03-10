@@ -9,15 +9,15 @@ import javax.swing.*;
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.ExtensionRegistry;
-import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.extensions.soap.SOAPBody;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.xml.namespace.QName;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
@@ -52,12 +52,12 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
 
         add(mainPanel, BorderLayout.CENTER);
         ComboBoxModel model =
-          new DefaultComboBoxModel(new String[]{"RPC", "Document"});
+          new DefaultComboBoxModel(new String[]{"rpc", "document"});
         portTypeBindingStyle.setModel(model);
         portTypeBindingStyle.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    collectSoapBinding(getEditedBinding());
+                    getEditedBinding();
                 } catch (WSDLException e1) {
                     throw new RuntimeException(e1);
                 }
@@ -108,6 +108,11 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         } catch (WSDLException e) {
             throw new RuntimeException(e);
         }
+
+
+        String style = wsdlComposer.getBindingStyle(binding);
+        portTypeBindingStyle.setSelectedItem(StringUtils.isEmpty(style)?"RPC":style.toLowerCase());
+
         WsdlBindingOperationsTableModel model =
           new WsdlBindingOperationsTableModel(wsdlComposer, binding);
 
@@ -132,6 +137,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         try {
             Binding b = getEditedBinding();
             b.setQName(new QName(wsdlComposer.getTargetNamespace(), portTypeBindingNameField.getText()));
+            collectSoapBinding(b);
         } catch (WSDLException e) {
             throw new RuntimeException(e);
         }
@@ -153,7 +159,6 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
             binding.setUndefined(false);
             binding.setQName(new QName(wsdlComposer.getTargetNamespace(), portTypeBindingNameField.getText()));            
         }
-        collectSoapBinding(binding);
 
         if (binding.getBindingOperations().isEmpty()) {
             for (Object o : portType.getOperations()) {
