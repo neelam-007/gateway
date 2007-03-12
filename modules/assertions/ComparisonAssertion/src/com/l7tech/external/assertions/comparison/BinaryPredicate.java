@@ -16,7 +16,7 @@ import java.util.Enumeration;
 public class BinaryPredicate extends Predicate {
     private String rightValue;
     private ComparisonOperator operator = ComparisonOperator.EQ;
-    private boolean caseSensitive;
+    private boolean caseSensitive = true;
 
     public BinaryPredicate() {
     }
