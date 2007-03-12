@@ -259,7 +259,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 changesMade = true;
                 registerModule(file);
 
-            } catch (ModuleException e) {
+            } catch (Throwable e) {
                 logger.log(Level.SEVERE, "Unable to load modular assertion jarfile (ignoring it until it changes) " + filename + ": " + ExceptionUtils.getMessage(e), e);
                 failModTimes.put(filename, lastModified);
             }
