@@ -6,5 +6,6 @@ package com.l7tech.server.config;
  * Time: 9:41:00 AM
  */
 public interface PartitionActionListener {
-    boolean getConfirmation(String message) throws Exception;
+    boolean getPartitionActionsConfirmation(String message) throws Exception;
+    void showPartitionActionErrorMessage(String message) throws Exception;
 }

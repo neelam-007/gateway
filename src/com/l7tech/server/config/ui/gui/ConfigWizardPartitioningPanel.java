@@ -488,9 +488,13 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
         return (PartitionInformation) partitionListModel.getElementAt(partitionList.getSelectedIndex());
     }
 
-    public boolean getConfirmation(String message) {
+    public boolean getPartitionActionsConfirmation(String message) {
         int res = JOptionPane.showConfirmDialog(this, message, "Confirmation Needed", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         return (res == JOptionPane.YES_OPTION);
+    }
+
+    public void showPartitionActionErrorMessage(String message) throws Exception {
+        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     //Models for the lists on this form

@@ -162,7 +162,7 @@ public class PartitionActions {
                             "Is it OK to stop and rename the partition now?";
                 }
 
-                confirmationGoAhead = listener.getConfirmation(message);
+                confirmationGoAhead = listener.getPartitionActionsConfirmation(message);
             }
 
             if (confirmationGoAhead) {
@@ -427,6 +427,13 @@ public class PartitionActions {
             prepareWindowsServiceConfig(newPartition);
     }
 
+    private static String getServiceNameForPartition(PartitionInformation pinfo) {
+        if (pinfo == null) {
+            throw new IllegalArgumentException("Partition Information cannot be null");
+        }
+        return pinfo.getPartitionId().replaceAll("_", "") + "SSG";
+    }
+
     private static void writeWindowsServiceConfigFile(PartitionInformation pinfo) throws IOException {
         File configFile = new File(pinfo.getOSSpecificFunctions().getPartitionBase() + pinfo.getPartitionId(),"partition_config.cmd");
         PrintStream os = null;
@@ -435,7 +442,7 @@ public class PartitionActions {
             //write out a config file that will set some variables needed by the service installer.
             os = new PrintStream(new FileOutputStream(configFile));
             os.println("set " + PARTITION_NAME_KEY + "=" + pinfo.getPartitionId());
-            os.println("set " + SERVICE_NAME_KEY + "=" + pinfo.getPartitionId().replaceAll("_", "") + "SSG");
+            os.println("set " + SERVICE_NAME_KEY + "=" + getServiceNameForPartition(pinfo));
             os.println("set " + SERVICE_DISPLAY_NAME_KEY + "=" + "SecureSpan Gateway - " + pinfo.getPartitionId() + " Partition");
             os.println("set " + SERVICE_LOGPREFIX_KEY + "=" + pinfo.getPartitionId() + "_ssg_service.log");
             os.println("set " + SERVICE_LOG_KEY + "=" + "%TOMCAT_HOME%\\logs\\catalina.out." + pinfo.getPartitionId());
@@ -471,7 +478,7 @@ public class PartitionActions {
                     message = "Removing the \"" + partitionToRemove.getPartitionId() + "\" partition will stop the service and remove all the associated configuration.\n\n" +
                             "This cannot be undone.\n" +
                             "Do you wish to proceed?";
-                    okToProceed = listener.getConfirmation(message);
+                    okToProceed = listener.getPartitionActionsConfirmation(message);
                 } else {
                     okToProceed = true;
                 }
@@ -490,7 +497,7 @@ public class PartitionActions {
                 if (listener != null) {
                     message = "Please ensure that the \"" + partitionToRemove.getPartitionId() + "\" partition is stopped before proceeding.\n\n" +
                             "Is the partition stopped?";
-                    okToProceed = listener.getConfirmation(message);
+                    okToProceed = listener.getPartitionActionsConfirmation(message);
                 } else {
                     okToProceed = true;
                 }
@@ -551,7 +558,7 @@ public class PartitionActions {
 
                 SsgDatabaseConfigBean dbBean = new SsgDatabaseConfigBean(osf.getDatabaseConfig());
                 DBActions dba = new DBActions(osf);
-                boolean removeDb = listener.getConfirmation(
+                boolean removeDb = listener.getPartitionActionsConfirmation(
                         "This wizard can remove the database used by this partition.\n" +
                         "This will remove all data in the database and cannot be undone.\n\n" +
                         "Are you sure you want to delete the database named \"" + dbBean.getDbName() + "\" ?");
@@ -611,6 +618,30 @@ public class PartitionActions {
         }
     }
 
+    public static boolean startService(PartitionInformation partitionToStart, PartitionActionListener listener) {
+        String serviceName = getServiceNameForPartition(partitionToStart);
+        int retCode = 0;
+        String[] cmdArray = new String[] {
+                "net",
+                "start",
+                serviceName,
+        };
+        try {
+            retCode = executeCommand(cmdArray, new File(partitionToStart.getOSSpecificFunctions().getPartitionBase(), partitionToStart.getPartitionId()));
+        } catch (IOException e) {
+            if (listener != null)
+                try {
+                    listener.showPartitionActionErrorMessage("The \"" + serviceName + "\" service could not be started. " + e.getMessage());
+                } catch (Exception e1) {}
+        } catch (InterruptedException e) {
+            if (listener != null)
+                try {
+                    listener.showPartitionActionErrorMessage("The \"" + serviceName + "\" service could not be started. " + e.getMessage());
+                } catch (Exception e1) {}
+        }
+        return retCode == 0;
+    }
+
     public static void uninstallService(PartitionInformation partitionToRemove, OSSpecificFunctions osSpecificFunctions) throws IOException, InterruptedException {
         if (!osSpecificFunctions.isWindows())
             return;
@@ -635,7 +666,6 @@ public class PartitionActions {
                 p = Runtime.getRuntime().exec(cmdArray, null, parentDir);
                 InputStream is = new BufferedInputStream(p.getInputStream());
                 byte[] buff = HexUtils.slurpStreamLocalBuffer(is);
-//                System.out.println(new String(buff));
                 p.waitFor();
             } finally {
                 if (p != null)

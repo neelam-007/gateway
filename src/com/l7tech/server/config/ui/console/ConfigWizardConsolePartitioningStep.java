@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * Date: Nov 25, 2006
  * Time: 11:07:41 PM
  */
-public class  ConfigWizardConsolePartitioningStep extends BaseConsoleStep implements PartitionActionListener {
+public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep implements PartitionActionListener {
     private static final Logger logger = Logger.getLogger(ConfigWizardConsolePartitioningStep.class.getName());
 
     private static final String TITLE = "Configure Partitions";
@@ -376,8 +376,15 @@ public class  ConfigWizardConsolePartitioningStep extends BaseConsoleStep implem
         return TITLE;
     }
 
-    public boolean getConfirmation(String message) throws IOException, WizardNavigationException {
+    public boolean getPartitionActionsConfirmation(String message) throws IOException, WizardNavigationException {
         return getConfirmationFromUser(message);
 
+    }
+
+    public void showPartitionActionErrorMessage(String message) throws IOException, WizardNavigationException {
+        List<String> messages = new ArrayList<String>();
+        messages.add(message);
+        messages.add("Press Enter to continue");
+        String dontCare = getData(messages,"");
     }
 }

@@ -1,18 +1,24 @@
 package com.l7tech.server.config.ui.console;
 
 import com.l7tech.server.config.ListHandler;
+import com.l7tech.server.config.PartitionActions;
+import com.l7tech.server.config.PartitionActionListener;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 
 import java.io.*;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * User: megery
  * Date: Feb 20, 2006
  * Time: 10:00:57 AM
  */
-public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
-
+public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements PartitionActionListener {
+    private static final Logger logger = Logger.getLogger(ConfigWizardConsoleResultsStep.class.getName());
+        
     private String manualStepsFileName = "ssg_config_manual_steps.txt";
     private String title = "Configuration Results";
     private List<String> manualSteps;
@@ -57,6 +63,21 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
             }
         }
 
+        if (osFunctions.isWindows() && !getParentWizard().isHadFailures()) {
+            try {
+                boolean shouldStart = false;
+                shouldStart = getConfirmationFromUser(getEolChar() + "Would you like to start the partition that was just configured?");
+                if (shouldStart) {
+                    PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
+                    if (!PartitionActions.startService(pi, this)) {
+                        printText(getEolChar() + "Couldn't start the service. Please start the service manually");
+                    }
+                }
+            } catch (IOException e) {
+                logger.severe(e.getMessage());
+                printText(getEolChar() + "Couldn't start the service [" + e.getMessage() + "]" + getEolChar());
+            }
+        }
         printText(getEolChar() + "Configuration complete. The wizard will now exit." + getEolChar());
     }
 
@@ -137,5 +158,13 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
 
     public boolean isShowQuitMessage() {
         return false;
+    }
+
+    public boolean getPartitionActionsConfirmation(String message) throws Exception {
+        return getConfirmationFromUser(message);
+    }
+
+    public void showPartitionActionErrorMessage(String message) throws Exception {
+        printText(getEolChar() + "**** " + message + " ****" + getEolChar());
     }
 }

@@ -2,6 +2,10 @@ package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.ListHandler;
+import com.l7tech.server.config.PartitionActions;
+import com.l7tech.server.config.PartitionActionListener;
+import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -23,7 +27,7 @@ import java.util.regex.Pattern;
  * Time: 2:56:52 PM
  * To change this template use File | Settings | File Templates.
  */
-public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
+public class ConfigWizardResultsPanel extends ConfigWizardStepPanel implements PartitionActionListener {
     private JPanel mainPanel;
 
     private JButton saveButton;
@@ -34,6 +38,7 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private JButton saveManualSteps;
     private JPanel manualStepsPanel;
     private JLabel manualStepsMessage;
+    private JButton startGatewayButton;
 
     private StringBuilder stepsBuffer;
     private String eol;
@@ -72,6 +77,13 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
                 doSaveManualSteps();
             }
         });
+
+        startGatewayButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                doStartGateway();
+            }
+        });
+
         logsView.setBackground(mainPanel.getBackground());
         messageText.setBackground(mainPanel.getBackground());
         messageText.setFont(messageText.getFont().deriveFont(Font.BOLD));
@@ -80,6 +92,12 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+    }
+
+    private void doStartGateway() {
+        PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
+        if (pi != null)
+            PartitionActions.startService(pi, this);
     }
 
     private void doSaveManualSteps() {
@@ -234,11 +252,15 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private void showControls() {
         logsPanel.setVisible(true);
         saveButton.setVisible(true);
+        startGatewayButton.setVisible(osFunctions.isWindows() && !getParentWizard().isHadFailures());
         getParentWizard().getFinishButton().setEnabled(true);
     }
 
     private void hideControls() {
         manualStepsPanel.setVisible(false);
+
+        startGatewayButton.setVisible(false);
+
         logsPanel.setVisible(false);
         saveButton.setVisible(false);
     }
@@ -283,5 +305,14 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         JOptionPane.showMessageDialog(frame,s2);
         System.exit(0);
 
+    }
+
+    public boolean getPartitionActionsConfirmation(String message) throws Exception {
+        int res = JOptionPane.showConfirmDialog(this, message, "Confirmation Needed", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        return (res == JOptionPane.YES_OPTION);
+    }
+
+    public void showPartitionActionErrorMessage(String message) throws Exception {
+        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 }
