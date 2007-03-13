@@ -115,8 +115,8 @@ public class BeanTypeMapping extends ComplexTypeMapping {
             visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
         } catch (InvocationTargetException e) {
             visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
-//        } catch (NoClassDefFoundError e) {
-//            visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
+        } catch (NoClassDefFoundError e) {
+            visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
         }
     }
 
