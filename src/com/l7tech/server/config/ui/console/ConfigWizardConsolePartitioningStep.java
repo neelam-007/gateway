@@ -376,15 +376,43 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
         return TITLE;
     }
 
-    public boolean getPartitionActionsConfirmation(String message) throws IOException, WizardNavigationException {
-        return getConfirmationFromUser(message);
+    public boolean getPartitionActionsConfirmation(String message) {
+        boolean ok = false;
+        try {
+            ok = getConfirmationFromUser(message);
+        } catch (IOException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");
+        } catch (WizardNavigationException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");                                                                              
+        }
 
+        return ok;
     }
 
-    public void showPartitionActionErrorMessage(String message) throws IOException, WizardNavigationException {
+    public void showPartitionActionErrorMessage(String message) {
+        List<String> messages = new ArrayList<String>();
+        messages.add("**** " + message + " ****");
+        messages.add("Press Enter to continue");
+        try {
+            getData(messages,"");
+        } catch (IOException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");            
+        } catch (WizardNavigationException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");
+        }
+    }
+
+
+    public void showPartitionActionMessage(String message) {
         List<String> messages = new ArrayList<String>();
         messages.add(message);
         messages.add("Press Enter to continue");
-        String dontCare = getData(messages,"");
+        try {
+            getData(messages,"");
+        } catch (IOException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");
+        } catch (WizardNavigationException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");
+        }
     }
 }

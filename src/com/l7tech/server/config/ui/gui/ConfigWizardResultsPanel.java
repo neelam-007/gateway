@@ -96,8 +96,10 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel implements P
 
     private void doStartGateway() {
         PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
-        if (pi != null)
+        if (pi != null) {
             PartitionActions.startService(pi, this);
+            startGatewayButton.setEnabled(false);
+        }
     }
 
     private void doSaveManualSteps() {
@@ -307,12 +309,16 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel implements P
 
     }
 
-    public boolean getPartitionActionsConfirmation(String message) throws Exception {
+    public boolean getPartitionActionsConfirmation(String message) {
         int res = JOptionPane.showConfirmDialog(this, message, "Confirmation Needed", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         return (res == JOptionPane.YES_OPTION);
     }
 
-    public void showPartitionActionErrorMessage(String message) throws Exception {
+    public void showPartitionActionErrorMessage(String message) {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public void showPartitionActionMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Message", JOptionPane.INFORMATION_MESSAGE);        
     }
 }

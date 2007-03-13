@@ -493,8 +493,12 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
         return (res == JOptionPane.YES_OPTION);
     }
 
-    public void showPartitionActionErrorMessage(String message) throws Exception {
+    public void showPartitionActionErrorMessage(String message) {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public void showPartitionActionMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Message", JOptionPane.INFORMATION_MESSAGE);                
     }
 
     //Models for the lists on this form

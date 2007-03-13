@@ -431,6 +431,9 @@ public class PartitionActions {
         if (pinfo == null) {
             throw new IllegalArgumentException("Partition Information cannot be null");
         }
+        if (StringUtils.equals(pinfo.getPartitionId(), PartitionInformation.DEFAULT_PARTITION_NAME))
+            return "SSG";
+        
         return pinfo.getPartitionId().replaceAll("_", "") + "SSG";
     }
 
@@ -576,9 +579,13 @@ public class PartitionActions {
         if (cmdArray != null && cmdArray.length != 0) {
             Process p = null;
             try {
-                p = Runtime.getRuntime().exec(cmdArray, null, parentDir);
+                if (parentDir == null)
+                    p = Runtime.getRuntime().exec(cmdArray);
+                else
+                    p = Runtime.getRuntime().exec(cmdArray, null, parentDir);
+
                 InputStream is = new BufferedInputStream(p.getInputStream());
-                byte[] buff = HexUtils.slurpStreamLocalBuffer(is);
+                HexUtils.slurpStreamLocalBuffer(is);
                 retCode = p.waitFor();
             } finally {
                 if (p != null)
@@ -622,12 +629,21 @@ public class PartitionActions {
         String serviceName = getServiceNameForPartition(partitionToStart);
         int retCode = 0;
         String[] cmdArray = new String[] {
-                "net",
+                "sc",
                 "start",
                 serviceName,
         };
         try {
-            retCode = executeCommand(cmdArray, new File(partitionToStart.getOSSpecificFunctions().getPartitionBase(), partitionToStart.getPartitionId()));
+            retCode = executeCommand(cmdArray, null);
+            if (listener != null) {
+                if (retCode != 0) {
+                    try {
+                        listener.showPartitionActionErrorMessage("The \"" + serviceName + "\" service could not be started.");
+                    } catch (Exception e) {}
+                } else {
+                    listener.showPartitionActionMessage("The \"" + serviceName + "\" service was successfully started.");
+                }
+            }
         } catch (IOException e) {
             if (listener != null)
                 try {

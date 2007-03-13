@@ -160,11 +160,41 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
         return false;
     }
 
-    public boolean getPartitionActionsConfirmation(String message) throws Exception {
-        return getConfirmationFromUser(message);
+    public boolean getPartitionActionsConfirmation(String message) {
+        boolean ok = false;
+        try {
+            getConfirmationFromUser(message);
+        } catch (IOException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");
+        } catch (WizardNavigationException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");
+        }
+        return ok;
     }
 
-    public void showPartitionActionErrorMessage(String message) throws Exception {
-        printText(getEolChar() + "**** " + message + " ****" + getEolChar());
+    public void showPartitionActionErrorMessage(String message) {
+        List<String> messages = new ArrayList<String>();
+        messages.add("**** " + message + " ****");
+        messages.add("Press Enter to continue");
+        try {
+            getData(messages,"");
+        } catch (IOException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");
+        } catch (WizardNavigationException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");
+        }
+    }
+
+    public void showPartitionActionMessage(String message) {
+        List<String> messages = new ArrayList<String>();
+        messages.add(message);
+        messages.add("Press Enter to continue");
+        try {
+            getData(messages,"");
+        } catch (IOException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");
+        } catch (WizardNavigationException e) {
+            logger.severe("Error while getting input. [" + e.getMessage() + "]");
+        }
     }
 }
