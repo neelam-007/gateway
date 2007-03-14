@@ -23,6 +23,7 @@ public abstract class OSSpecificFunctions {
     protected String hostsFile;
     protected String clusterHostFile;
     protected String databaseConfig;
+    protected String c3p0Config;
     protected String keyStorePropertiesFile;
     protected String tomcatServerConfig;
     protected String keystoreDir;
@@ -87,6 +88,7 @@ public abstract class OSSpecificFunctions {
     public void makeFilenames() {
         clusterHostFile = "cluster_hostname";
         databaseConfig = "hibernate.properties";
+        c3p0Config = "c3p0.properties";
         ssgLogProperties = "ssglog.properties";
         keyStorePropertiesFile = "keystore.properties";
         keystoreDir = "keys/";
@@ -103,7 +105,7 @@ public abstract class OSSpecificFunctions {
         String hostname = null;
         File f = new File(getClusterHostNamePath());
         if (f.exists()) {
-            BufferedReader reader = null;
+            BufferedReader reader;
             try {
                 reader = new BufferedReader(new FileReader(f));
                 if (reader.ready()) {
@@ -161,6 +163,10 @@ public abstract class OSSpecificFunctions {
 
     public String getDatabaseConfig() {
         return getConfigurationBase() + databaseConfig;
+    }
+
+    public String getC3P0Config() {
+        return getConfigurationBase() + c3p0Config;
     }
 
     public String getClusterHostFile() {
@@ -242,11 +248,4 @@ public abstract class OSSpecificFunctions {
     public abstract String getNetworkConfigurationDirectory();
 
     public abstract String getUpgradedFileExtension();
-
-    public static class MissingPropertyException extends RuntimeException
-    {
-        private MissingPropertyException(String message) {
-            super(message);
-        }
-    }
 }

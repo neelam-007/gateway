@@ -25,11 +25,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by IntelliJ IDEA.
  * User: megery
  * Date: Sep 2, 2005
- * Time: 4:44:50 PM
- * To change this template use File | Settings | File Templates.
  */
 public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
@@ -39,6 +36,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
     private static final String HIBERNATE_USERNAME_KEY = "hibernate.connection.username";
     private static final String HIBERNATE_PASSWORD_KEY = "hibernate.connection.password";
     private static final String HIBERNATE_PROPERTY_COMMENTS = "This hibernate configuration file was created by the SSG configuration tool. It will be replaced if the tool is re-run";
+//    private static final String C3P0_PROPERTY_COMMENTS = "This configuration file was created by the SSG configuration tool. It will be replaced if the tool is re-run";
     private static final String HIBERNATE_MAXCONNECTIONS_KEY = "hibernate.c3p0.max_size";
     private static final String HIBERNATE_MAXCONNECTIONS_VALUE = "510";
     private static final String HIBERNATE_MAXCONNECTIONS_DEFVALUE = "100";
@@ -63,17 +61,28 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
     private Pattern urlPattern = Pattern.compile("^" + HIBERNATE_MYSQL_URL_START + "(.*)(/)(.*)\\?.*$");
 
-    private static Map<String, String> paramDefaults;
+    private static Map<String, String> connectionUrlParamDefaults;
     static {
-        paramDefaults = new TreeMap<String, String>();
-        paramDefaults.put(new String("failOverReadOnly"), new String("false"));
-        paramDefaults.put(new String("autoReconnect"), new String("false"));
-        paramDefaults.put(new String("socketTimeout"), new String("120000"));
-        paramDefaults.put(new String("useNewIO"), new String("true"));
-        paramDefaults.put(new String("characterEncoding"), new String("UTF8"));
-        paramDefaults.put(new String("characterSetResults"), new String("UTF8"));
-        paramDefaults.put(new String("secondsBeforeRetryMaster"), new String("10"));
+        connectionUrlParamDefaults = new TreeMap<String, String>();
+        connectionUrlParamDefaults.put("failOverReadOnly", "false");
+        connectionUrlParamDefaults.put("autoReconnect", "false");
+        connectionUrlParamDefaults.put("socketTimeout", "120000");
+        connectionUrlParamDefaults.put("connectTimeout", "2000");
+        connectionUrlParamDefaults.put("useNewIO", "true");
+        connectionUrlParamDefaults.put("characterEncoding", "UTF8");
+        connectionUrlParamDefaults.put("characterSetResults", "UTF8");
+        connectionUrlParamDefaults.put("secondsBeforeRetryMaster", "20");
+        connectionUrlParamDefaults.put("queriesBeforeRetryMaster", "2000");
     }
+
+//    private static Map<String, String> c3poDefaults;
+//    static {
+//        c3poDefaults = new TreeMap<String, String>();
+//        c3poDefaults.put("c3p0.numHelperThreads", "20");
+//        c3poDefaults.put("c3p0.acquireRetryAttempts", "150");
+//        c3poDefaults.put("c3p0.acquireRetryDelay", "2000");
+//        c3poDefaults.put("c3p0.maxConnectionAge", "120");
+//    }
 
     public SsgDatabaseConfigCommand(ConfigurationBean bean) {
         super(bean);
@@ -83,15 +92,16 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
     private void init() {}
 
     public boolean execute() {
-        boolean success = false;
+        boolean success;
 
         File dbConfigFile = new File(getOsFunctions().getDatabaseConfig()); //hibernate config file
+        File c3p0File = new File(getOsFunctions().getC3P0Config()); //hibernate config file
 
         if (dbConfigFile.exists()) {
             File[] files = new File[]
             {
-
-                dbConfigFile
+                dbConfigFile,
+                c3p0File
             };
 
             backupFiles(files, BACKUP_FILE_NAME);
@@ -99,6 +109,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
         try {
             updateDbConfigFile(dbConfigFile);
+//            updateC3POProperties(c3p0File);
             success = true;
         } catch (IOException e) {
             success = false;
@@ -106,6 +117,53 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
         return success;
     }
+
+//TODO: find out if this needs to be done, or if it's handled in the upgradfe already since it's in the WAR
+/*
+    private void updateC3POProperties(File c3po) throws IOException {
+
+        FileOutputStream fos = null;
+        try {
+            PropertiesConfiguration props = PropertyHelper.mergeProperties(
+                    c3po,
+                    new File(c3po.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
+                    true, true);
+
+            boolean wasChanged = false;
+            for (Map.Entry<String, String> defaultEntry : c3poDefaults.entrySet()) {
+                if (StringUtils.equals(props.getString(defaultEntry.getKey()), defaultEntry.getValue())) {
+                    wasChanged = true;
+                    props.setProperty(defaultEntry.getKey(), defaultEntry.getValue());
+                }
+            }
+
+            if (wasChanged) {
+                fos = new FileOutputStream(c3po);
+                logger.info("Saving properties to file '"+c3po+"'.");
+                props.setHeader(C3P0_PROPERTY_COMMENTS + "\n" + new Date());
+                props.save(fos, "iso-8859-1");
+            }
+        } catch (FileNotFoundException fnf) {
+            logger.severe("error while updating the " + c3po.getName() + " configuration file");
+            logger.severe(fnf.getMessage());
+            throw fnf;
+        } catch (ConfigurationException e) {
+            logger.severe("error while updating the " + c3po.getName() + " configuration file");
+            logger.severe(e.getMessage());
+            throw new CausedIOException(e);
+        } catch (IOException e) {
+            logger.severe("error while updating the " + c3po.getName() + " configuration file");
+            logger.severe(e.getMessage());
+            throw e;
+        } catch (NumberFormatException e) {
+            logger.severe("error while updating the " + c3po.getName() + " configuration file");
+            throw e;
+        }
+        finally {
+            ResourceUtils.closeQuietly(fos);
+        }
+    }
+*/
 
     private void updateDbConfigFile(File dbConfigFile) throws IOException {
 
@@ -142,7 +200,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
             dbProps.setProperty(HIBERNATE_URL_KEY, newUrlString);
             dbProps.setProperty(HIBERNATE_USERNAME_KEY, dbUsername);
-            dbProps.setProperty(HIBERNATE_PASSWORD_KEY, new String(dbPassword));
+            dbProps.setProperty(HIBERNATE_PASSWORD_KEY, dbPassword);
 
             upgradePackageName(dbProps);
             setMaxConnections(dbProps);
@@ -174,7 +232,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
     private void upgradePackageName(PropertiesConfiguration dbProps) {
         String currentVersion = ConfigurationWizard.getCurrentVersion();
-        float currentVersionFloat = 0.0f;
+        float currentVersionFloat;
         try {
             currentVersionFloat = Float.parseFloat(currentVersion);
         } catch (NumberFormatException ex) {
@@ -220,13 +278,13 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
         //form the baseline parameters that should always be present;
         Map<String, String> baseline = new LinkedHashMap<String, String>();
-        for (String s : paramDefaults.keySet()) {
-            baseline.put(new String(s), new String(paramDefaults.get(s)));
+        for (String s : connectionUrlParamDefaults.keySet()) {
+            baseline.put(s, connectionUrlParamDefaults.get(s));
         }
 
         //now check if the existing params have anything that should be updated and update the baseline to reflect
         // the existing config
-        String[] existingParams = null;
+        String[] existingParams;
         if (StringUtils.isNotEmpty(paramPart)) {
             existingParams = paramPart.split("&");
             if (existingParams != null && existingParams.length != 0) {
@@ -251,6 +309,5 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         }
 
         return sb.toString();
-
     }
 }

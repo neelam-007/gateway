@@ -260,16 +260,12 @@ public class ConfigurationWizard extends Wizard {
         Image icon = ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png");
         ImageIcon imageIcon = new ImageIcon(icon);
         mainFrame.setIconImage(imageIcon.getImage());
-        try {
-            ConfigurationWizard wizard = ConfigurationWizard.getInstance(mainFrame);
-            wizard.setSize(780, 560);
-            Utilities.centerOnScreen(wizard);
-            wizard.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-            wizard.setVisible(true);
-        }
-        catch(OSSpecificFunctions.MissingPropertyException mpe) {
-            System.out.println(mpe.getMessage());
-        }
+
+        ConfigurationWizard wizard = ConfigurationWizard.getInstance(mainFrame);
+        wizard.setSize(780, 560);
+        Utilities.centerOnScreen(wizard);
+        wizard.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        wizard.setVisible(true);
     }
 
     private static void initLogging() {
