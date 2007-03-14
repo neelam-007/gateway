@@ -187,14 +187,14 @@ class Saml2SubjectAndConditionValidate {
                 else {
                     if (now.before(notBefore)) {
                         logger.finer("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
-                        validationResults.add(newError("Condition 'Not Before' check failed Now/ Not Before: {0}/{1}",
-                                                        null, new Object[]{now.getTime().toString(), notBefore.getTime().toString()}, null));
+                        validationResults.add(newError("SAML ticket does not become valid until: {0}",
+                                                        null, new Object[]{notBefore.getTime().toString()}, null));
                     }
 
                     if (now.equals(notOnOrAfter) || now.after(notOnOrAfter)) {
                         logger.finer("Condition 'Not On Or After' check failed, now :" + now.toString() + " Not Before:" + notOnOrAfter.toString());
-                        validationResults.add(newError("Condition 'Not On Or After' check failed Now/Not On Or After: {0}/{1}",
-                                                        null, new Object[]{now.getTime().toString(), notOnOrAfter.getTime().toString()}, null));
+                        validationResults.add(newError("SAML ticket has expired as of: {0}",
+                                                        null, new Object[]{notOnOrAfter.getTime().toString()}, null));
                     }
                 }
             }
