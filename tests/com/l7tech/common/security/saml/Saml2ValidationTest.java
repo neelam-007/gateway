@@ -73,8 +73,8 @@ public class Saml2ValidationTest extends TestCase {
         sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results);
 
         // check for error message
-        String expectedErrorStart = "SAML Constraint Error: Condition Not On Or After check failed Now/Not On Or After: ";
-        String expectedErrorEnd = "/Tue Jun 27 13:20:00 PDT 2006";
+        String expectedErrorStart = "SAML Constraint Error: SAML ticket has expired as of:";
+        String expectedErrorEnd = "";
         boolean foundError = false;
         for (Iterator iterator = results.iterator(); iterator.hasNext();) {
             String errorStr = iterator.next().toString();
