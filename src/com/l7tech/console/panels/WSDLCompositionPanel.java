@@ -326,7 +326,12 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         }
 
         public Object getElementAt(int index) {
-            return wsdlList.get(index);
+            if (index >= 0 && index < wsdlList.size())
+                return wsdlList.get(index);
+            else if (!wsdlList.isEmpty())
+                return wsdlList.get(0);
+
+            return null;
         }
 
         public void update() {
