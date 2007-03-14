@@ -19,6 +19,7 @@ public final class SecureXsltSecurityManager extends ServletXsltSecurityManager 
      * @throws SecurityException always
      */
     public final void checkReplace(XsltSecurityManager manager) throws SecurityException {
-        throw new SecurityException("SecureXsltSecurityManager cannot be replaced.");
+        if (manager != this)
+            throw new SecurityException("SecureXsltSecurityManager cannot be replaced.");
     }
 }
