@@ -15,6 +15,7 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.MessageFormat;
 
 /**
  * @author alex
@@ -59,6 +60,9 @@ public abstract class MinMaxPredicatePanel<P extends MinMaxPredicate> extends Pr
         minSpinner.setModel(minModel);
         maxSpinner.setModel(maxModel);
 
+        minSpinner.setEditor(new JSpinner.NumberEditor(minSpinner, "#"));
+        maxSpinner.setEditor(new JSpinner.NumberEditor(maxSpinner, "#"));
+
         minSpinner.setValue(predicate.getMin());
         final int max = predicate.getMax();
         if (max < 0) {
@@ -70,7 +74,7 @@ public abstract class MinMaxPredicatePanel<P extends MinMaxPredicate> extends Pr
             maxSpinner.setValue(max);
         }
 
-        // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4760088
+        // TODO http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4760088
         ((JSpinner.DefaultEditor)minSpinner.getEditor()).getTextField().getDocument().addDocumentListener(spinnerDocumentListener);
         ((JSpinner.DefaultEditor)maxSpinner.getEditor()).getTextField().getDocument().addDocumentListener(spinnerDocumentListener);
         minModel.addChangeListener(spinnerChangeListener);
@@ -102,8 +106,26 @@ public abstract class MinMaxPredicatePanel<P extends MinMaxPredicate> extends Pr
 
         String smax = ((JSpinner.DefaultEditor)maxSpinner.getEditor()).getTextField().getText();
         String smin = ((JSpinner.DefaultEditor)minSpinner.getEditor()).getTextField().getText();
-        int min = smin == null || smin.length() == 0 ? 0 : Integer.valueOf(smin);
-        int max = smax == null || smax.length() == 0 ? 0 : Integer.valueOf(smax);
+        int min;
+        {
+            try {
+                min = smin == null || smin.length() == 0 ? 0 : Integer.valueOf(smin);
+            } catch (NumberFormatException e) {
+                String msg = ComparisonAssertion.resources.getString("minMaxPredicatePanel.formatError");
+                return MessageFormat.format(msg, smin);
+            }
+        }
+
+        int max;
+        {
+            try {
+                max = smax == null || smax.length() == 0 ? 0 : Integer.valueOf(smax);
+            } catch (NumberFormatException e) {
+                String msg = ComparisonAssertion.resources.getString("minMaxPredicatePanel.formatError");
+                return MessageFormat.format(msg, smax);
+            }
+        }
+
         if (max >= min) return null;
 
         return ComparisonAssertion.resources.getString("minMaxPredicatePanel.boundsError");
