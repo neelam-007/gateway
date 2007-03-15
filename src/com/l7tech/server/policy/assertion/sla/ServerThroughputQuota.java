@@ -111,7 +111,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
             forgetIncrementInThisContext(context); // to prevent double decrement and enable re-increment
         } else {
             logger.info("assertion was asked to decrement a counter but the " +
-                        "counter was not previously recorded as incremented in this countext.");
+                        "counter was not previously recorded as incremented in this context.");
             // one could argue that this should result in error
         }
         return AssertionStatus.NONE;
