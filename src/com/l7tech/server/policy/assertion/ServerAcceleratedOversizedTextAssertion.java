@@ -139,7 +139,7 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
                     int longestOther = Math.max(chunkState.getLongestOther(), chunkState.getLongestElem());
 
                     if ((ota.isLimitAttrChars() && Math.max(longestAttrValue, longestOther/2) > ota.getMaxAttrChars()) ||
-                        (ota.isLimitTextChars() && Math.max(longestText, longestOther/2) > ota.getMaxTextChars()))
+                        (ota.isLimitTextChars() && longestText > ota.getMaxTextChars()))
                     {
                         auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_OVERSIZED_TEXT);
                         return AssertionStatus.BAD_REQUEST;
