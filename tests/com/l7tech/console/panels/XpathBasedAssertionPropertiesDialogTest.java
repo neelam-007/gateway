@@ -62,7 +62,7 @@ public class XpathBasedAssertionPropertiesDialogTest {
         };
 
         XpathBasedAssertionTreeNode treeNode = new RequestXpathPolicyTreeNode(ass);
-        XpathBasedAssertionPropertiesDialog d = new XpathBasedAssertionPropertiesDialog(null, true, sn, treeNode, okListener);
+        XpathBasedAssertionPropertiesDialog d = new XpathBasedAssertionPropertiesDialog(null, true, treeNode, okListener, true);
 
         d.setModal(true);
         d.pack();

@@ -130,6 +130,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     };
     private BindingOperation currentOperation;
     private JButton editSampleButton;
+    private final boolean showHardwareAccelStatus;
 
     private static final String NON_SOAP_NAME = "<Non-SOAP service>";
     private static final WsdlTreeNode NON_SOAP_NODE = new WsdlTreeNode(NON_SOAP_NAME, new WsdlTreeNode.Options()) {
@@ -146,35 +147,23 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
     };
 
-    /**
-     * @param owner this panel owner
-     * @param modal is this modal dialog or not
-     * @param sn    the ServiceNode
-     * @param n     the xml security node
-     */
-    public XpathBasedAssertionPropertiesDialog(JFrame owner, boolean modal, ServiceNode sn, XpathBasedAssertionTreeNode n, ActionListener okListener) {
-        super(owner, modal);
-        if (n == null) {
-            throw new IllegalArgumentException();
-        }
-        construct(sn, n, okListener);
-    }
-
 
     /**
      * @param owner this panel owner
      * @param modal is this modal dialog or not
      * @param n     the xml security node
      */
-    public XpathBasedAssertionPropertiesDialog(Frame owner, boolean modal, XpathBasedAssertionTreeNode n, ActionListener okListener) {
+    public XpathBasedAssertionPropertiesDialog(Frame owner, boolean modal, XpathBasedAssertionTreeNode n, ActionListener okListener, boolean showHardwareAccelStatus) {
         super(owner, modal);
         if (n == null) {
             throw new IllegalArgumentException();
         }
-        construct(null, n, okListener);
+        this.showHardwareAccelStatus = showHardwareAccelStatus;
+        construct(n, okListener);
     }
 
-    private void construct(ServiceNode sn, XpathBasedAssertionTreeNode n, ActionListener okListener) {
+
+    private void construct(XpathBasedAssertionTreeNode n, ActionListener okListener) {
         node = n;
         okActionListener = okListener;
 
@@ -186,10 +175,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
         isEncryption = assertion instanceof RequestWssConfidentiality ||
                 assertion instanceof ResponseWssConfidentiality;
-        if (sn != null)
-            serviceNode = sn;
-        else
-            serviceNode = AssertionTreeNode.getServiceNode(node);
+        serviceNode = AssertionTreeNode.getServiceNode(node);
         if (serviceNode == null) {
             throw new IllegalStateException("Unable to determine the service node for " + assertion);
         }
@@ -939,6 +925,12 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }*/
 
         private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack, JTextField xpathField) {
+            if (!showHardwareAccelStatus) {
+                hardwareAccelStatusLabel.setVisible(false);
+                speedIndicator.setVisible(false);
+                return;
+            }
+
             if (!haveTarari) {
                 hardwareAccelStatusLabel.setText("");
                 hardwareAccelStatusLabel.setToolTipText(null);

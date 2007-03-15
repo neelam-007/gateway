@@ -1,18 +1,20 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.console.MainWindow;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.policy.assertion.ResponseXpathAssertion;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.*;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,7 +77,8 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
         final Frame mw = TopComponents.getInstance().getTopParent();
         try {
             if (n.getService() != null) {
-                XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener);
+                boolean showAccelStatus = shouldShowHardwareAccelStatus(n);
+                XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener, showAccelStatus);
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog);
@@ -85,6 +88,11 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "cannot get associated service", e);
         }
+    }
+
+    private boolean shouldShowHardwareAccelStatus(XpathBasedAssertionTreeNode n) {
+        Assertion ass = n.asAssertion();
+        return ass instanceof RequestXpathAssertion || ass instanceof ResponseXpathAssertion;
     }
 
 
