@@ -5,6 +5,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.HyperlinkLabel;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -15,6 +16,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.logging.Level;
 
@@ -28,6 +30,7 @@ import java.util.logging.Level;
  * @version 1.0
  */
 public class ExceptionDialog extends JDialog implements ActionListener {
+    private static final boolean SHOW_STACK_TRACES = Boolean.getBoolean("com.l7tech.common.showStackTraces");
     private static final String OPEN_HTML = "<html>";
     private static final String CLOSE_HTML = "</html>";
 
@@ -220,6 +223,8 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         textArea.setText(stackTrace(throwable));
         textArea.setEditable(false);
         textArea.setCaretPosition(0);
+        Utilities.attachDefaultContextMenu(textArea);
+        scrollPane.scrollRectToVisible(new Rectangle(0, 0, 1, 1));
 
 
         try {
@@ -364,7 +369,14 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         printWriter.flush();
         value = stringWriter.toString();
 
-        return value;
+        if (SHOW_STACK_TRACES)
+            return value;
+
+        try {
+            return "Debug information:\n\n" + HexUtils.encodeBase64(value.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            return value; // can't happen
+        }
     }
 
 
