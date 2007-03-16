@@ -68,7 +68,6 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         connectionUrlParamDefaults.put("autoReconnect", "false");
         connectionUrlParamDefaults.put("socketTimeout", "120000");
         connectionUrlParamDefaults.put("connectTimeout", "2000");
-        connectionUrlParamDefaults.put("useNewIO", "true");
         connectionUrlParamDefaults.put("characterEncoding", "UTF8");
         connectionUrlParamDefaults.put("characterSetResults", "UTF8");
         connectionUrlParamDefaults.put("secondsBeforeRetryMaster", "20");
