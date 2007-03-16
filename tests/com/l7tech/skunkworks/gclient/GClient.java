@@ -23,7 +23,10 @@ import javax.wsdl.Port;
 import javax.wsdl.Service;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.UnknownExtensibilityElement;
 import javax.xml.soap.SOAPException;
+import javax.xml.namespace.QName;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
@@ -50,6 +53,7 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.ArrayList;
 import java.security.cert.X509Certificate;
 import java.security.PrivateKey;
 import java.security.Principal;
@@ -67,7 +71,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        final JFrame frame = new JFrame("GClient v0.4");
+        final JFrame frame = new JFrame("GClient v0.5");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -123,6 +127,8 @@ public class GClient {
     private JSpinner threadSpinner;
     private JSpinner requestSpinner;
     private JTextField cookiesTextField;
+    private JCheckBox soap11Checkbox;
+    private JCheckBox soap12Checkbox;
 
 
     //
@@ -326,19 +332,29 @@ public class GClient {
 
                 java.util.List elements = port.getExtensibilityElements();
                 for (Iterator ite = elements.iterator(); ite.hasNext();) {
-                    Object o = ite.next();
-                    if (o instanceof SOAPAddress) {
-                        SOAPAddress sa = (SOAPAddress)o;
+                    ExtensibilityElement ee = (ExtensibilityElement) ite.next();
+                    if (ee instanceof SOAPAddress) {
+                        SOAPAddress sa = (SOAPAddress)ee;
                         urlTextField.setText(sa.getLocationURI());
+                    }
+                    else if (ee.getElementType().equals(new QName("http://schemas.xmlsoap.org/wsdl/soap12/","address"))
+                            && ee instanceof UnknownExtensibilityElement) {
+                        UnknownExtensibilityElement uee = (UnknownExtensibilityElement) ee;
+                        urlTextField.setText(uee.getElement().getAttribute("location"));
                     }
                 }
 
                 elements = operation.getExtensibilityElements();
                 for (Iterator ite = elements.iterator(); ite.hasNext();) {
-                    Object o = ite.next();
-                    if (o instanceof SOAPOperation) {
-                        SOAPOperation sop = (SOAPOperation)o;
+                    ExtensibilityElement ee = (ExtensibilityElement) ite.next();
+                    if (ee instanceof SOAPOperation) {
+                        SOAPOperation sop = (SOAPOperation)ee;
                         soapActionTextField.setText(sop.getSoapActionURI());
+                    }
+                    else if (ee.getElementType().equals(new QName("http://schemas.xmlsoap.org/wsdl/soap12/","operation"))
+                            && ee instanceof UnknownExtensibilityElement) {
+                        UnknownExtensibilityElement uee = (UnknownExtensibilityElement) ee;
+                        soapActionTextField.setText(uee.getElement().getAttribute("soapAction"));
                     }
                 }
 
@@ -348,6 +364,9 @@ public class GClient {
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         message.getSOAPMessage().writeTo(bos);
                         String messageText = bos.toString();
+                        if (soap12Checkbox.isSelected()) {
+                            messageText = messageText.replaceAll("http://schemas.xmlsoap.org/soap/envelope/", "http://www.w3.org/2003/05/soap-envelope");    
+                        }
                         Document messageDoc = XmlUtil.stringToDocument(messageText);
                         requestTextArea.setText(XmlUtil.nodeToFormattedString(messageDoc));
                     }
@@ -694,24 +713,29 @@ public class GClient {
             }
             String contentType = (String) contentTypeComboBox.getSelectedItem();
             if(contentType.length() > 0) {
+                if (soap12Checkbox.isSelected()) {
+                    contentType += "; action=" + soapAction;
+                }
                 if(contentType.indexOf("charset") < 0 && contentType.indexOf("fastinfoset") < 0) {
                     contentType += "; charset=\"UTF-8\"";
                 }
                 params.setContentType(ContentTypeHeader.parseValue(contentType));
             }
-            if (cookies != null && cookies.length() > 0) {
-                params.setExtraHeaders(new HttpHeader[]{
-                        new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction),
-                        new GenericHttpHeader("Cookie", cookies),
-                });
-            } else {
-                params.setExtraHeaders(new HttpHeader[]{
-                        new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction),
-                });
+            Collection<GenericHttpHeader> headers = new ArrayList();
+            if (cookies != null && cookies.trim().length() > 0) {
+                headers.add(new GenericHttpHeader("Cookie", cookies));
             }
+            if (soap11Checkbox.isSelected()) {
+                headers.add(new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction));
+            }
+            if (!headers.isEmpty())
+                params.setExtraHeaders(headers.toArray(new GenericHttpHeader[0]));
+
             if(params.getTargetUrl().getProtocol().equals("https")) {
                 params.setSslSocketFactory(getSSLSocketFactory());
             }
+
+            params.setContentLength(new Long(requestBytes.length));
 
             request = client.createRequest(GenericHttpClient.POST, params);
             if (request instanceof RerunnableHttpRequest) {
@@ -724,7 +748,6 @@ public class GClient {
             } else {
                 request.setInputStream(new ByteArrayInputStream(requestBytes));
             }
-            params.setContentLength(new Long(requestBytes.length));
             response = request.getResponse();
             statusLabel.setText(Integer.toString(response.getStatus()));
             final Long clen = response.getContentLength();
