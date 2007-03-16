@@ -1,25 +1,23 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.ui.gui.ConfigurationWizard;
-import com.l7tech.common.BuildInfo;
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.CausedIOException;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.Date;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -214,37 +212,14 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
     }
 
     private String replaceParams(String paramPart) {
-
-        //form the baseline parameters that should always be present;
-        Map<String, String> baseline = new LinkedHashMap<String, String>();
-        for (String s : connectionUrlParamDefaults.keySet()) {
-            baseline.put(s, connectionUrlParamDefaults.get(s));
-        }
-
-        //now check if the existing params have anything that should be updated and update the baseline to reflect
-        // the existing config
-        String[] existingParams;
-        if (StringUtils.isNotEmpty(paramPart)) {
-            existingParams = paramPart.split("&");
-            if (existingParams != null && existingParams.length != 0) {
-                for (String ep : existingParams) {
-                    String[] pair = ep.split("=");
-                    if (pair != null && pair.length == 2) {
-                        String key = pair[0];
-                        String value = pair[1];
-                        baseline.put(key, value);
-                    }
-                }
-            }
-        }
-
         boolean isFirst = true;
         StringBuilder sb = new StringBuilder();
-        for (String key : baseline.keySet()) {
-            if (isFirst) isFirst = false;
-            else sb.append("&");
-
-            sb.append(key).append("=").append(baseline.get(key));
+        for (String key : connectionUrlParamDefaults.keySet()) {
+            if (isFirst)
+                isFirst = false;
+            else
+                sb.append("&");
+            sb.append(key).append("=").append(connectionUrlParamDefaults.get(key));
         }
 
         return sb.toString();
