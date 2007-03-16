@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.security.AccessControlException;
+import java.lang.reflect.InvocationTargetException;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -387,6 +388,7 @@ public class WsdlLocationPanel extends JPanel {
         }
 
         // WSDLLocator may point to a WSIL document
+        final boolean[] reprocess =  new boolean[1];
         final WSDLLocator wsdlLocator = locator;
         final CancelableOperationDialog dlg =
                 CancelableOperationDialog.newCancelableOperationDialog(this, "Resolving target", "Please wait, resolving target...");
@@ -395,39 +397,57 @@ public class WsdlLocationPanel extends JPanel {
             public Object construct() {
                 try {
                     new URI(wsdlLocator.getBaseURI()); // ensure valid url
-                    Document resolvedDoc = XmlUtil.parse(wsdlLocator.getBaseInputSource(), true);
+                    final Document resolvedDoc = XmlUtil.parse(wsdlLocator.getBaseInputSource(), true);
 
                     // is this a WSIL?
                     Element root = resolvedDoc.getDocumentElement();
                     if (root.getLocalName().equals("inspection") &&
                         root.getNamespaceURI().equals("http://schemas.xmlsoap.org/ws/2001/10/inspection/")) {
 
-                        // hide cancel dialog
-                        dlg.setVisible(false);
+                        try {
+                            SwingUtilities.invokeAndWait(new Runnable(){
+                                public void run() {
+                                    // hide cancel dialog
+                                    dlg.setVisible(false);
 
-                        // parse wsil and choose the wsdl url
-                        WSILSelectorPanel chooser = ownerd!=null ?
-                                new WSILSelectorPanel(ownerd, resolvedDoc) :
-                                new WSILSelectorPanel(ownerf, resolvedDoc);
-                        chooser.pack();
-                        Utilities.centerOnScreen(chooser);
-                        chooser.setVisible(true); // TODO change to use DialogDisplayer
-                        if (!chooser.wasCancelled() && chooser.selectedWSDLURL() != null) {
-                            String chooserUrlStr = chooser.selectedWSDLURL();
-                            // If previous url contained userinfo stuff but the wsil target does
-                            // not, modify new url so the userinfo is added
-                            //
-                            if (wsdlUrl.startsWith("http")) {
-                                URL currentUrl = new URL(wsdlUrl);
-                                URL newUrl = new URL(chooserUrlStr);
-                                if (newUrl.getUserInfo() == null && currentUrl.getUserInfo() != null) {
-                                    StringBuffer combinedurl = new StringBuffer(newUrl.toString());
-                                    combinedurl.insert(newUrl.getProtocol().length()+3, currentUrl.getUserInfo() + "@");
-                                    chooserUrlStr = new URL(combinedurl.toString()).toString();
+                                    // parse wsil and choose the wsdl url
+                                    WSILSelectorPanel chooser = ownerd!=null ?
+                                            new WSILSelectorPanel(ownerd, resolvedDoc) :
+                                            new WSILSelectorPanel(ownerf, resolvedDoc);
+
+                                    chooser.pack();
+                                    Utilities.centerOnScreen(chooser);
+                                    chooser.setVisible(true); // TODO change to use DialogDisplayer
+                                    if (!chooser.wasCancelled() && chooser.selectedWSDLURL() != null) {
+                                        String chooserUrlStr = chooser.selectedWSDLURL();
+                                        // If previous url contained userinfo stuff but the wsil target does
+                                        // not, modify new url so the userinfo is added
+                                        //
+                                        if (wsdlUrl.startsWith("http")) {
+                                            try {
+                                                URL currentUrl = new URL(wsdlUrl);
+                                                URL newUrl = new URL(chooserUrlStr);
+                                                if (newUrl.getUserInfo() == null && currentUrl.getUserInfo() != null) {
+                                                    StringBuffer combinedurl = new StringBuffer(newUrl.toString());
+                                                    combinedurl.insert(newUrl.getProtocol().length()+3, currentUrl.getUserInfo() + "@");
+                                                    chooserUrlStr = new URL(combinedurl.toString()).toString();
+                                                }
+                                            }
+                                            catch(MalformedURLException murle) {
+                                                throw new RuntimeException(murle);
+                                            }
+                                        }
+                                        wsdlUrlTextField.setText(chooserUrlStr);
+                                        reprocess[0] = true;
+                                    }
                                 }
-                            }
-                            wsdlUrlTextField.setText(chooserUrlStr);
-                            return processWsdlLocation();
+                            });
+                        }
+                        catch(InterruptedException ie) {
+                            return null;                                                            
+                        }
+                        catch(InvocationTargetException ite) {
+                            throw new CausedIOException(ite.getCause());
                         }
                     } else {
                         String baseUri = wsdlUrl;
@@ -560,7 +580,9 @@ public class WsdlLocationPanel extends JPanel {
 
         worker.start();
         dlg.setVisible(true);
-        if (dlg.wasCancelled()) {
+        if (reprocess[0]) {
+            return processWsdlLocation();
+        } else if (dlg.wasCancelled()) {
             worker.interrupt(); // cancel
             return null;
         }
