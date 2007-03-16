@@ -36,7 +36,6 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
     private static final String HIBERNATE_USERNAME_KEY = "hibernate.connection.username";
     private static final String HIBERNATE_PASSWORD_KEY = "hibernate.connection.password";
     private static final String HIBERNATE_PROPERTY_COMMENTS = "This hibernate configuration file was created by the SSG configuration tool. It will be replaced if the tool is re-run";
-//    private static final String C3P0_PROPERTY_COMMENTS = "This configuration file was created by the SSG configuration tool. It will be replaced if the tool is re-run";
     private static final String HIBERNATE_MAXCONNECTIONS_KEY = "hibernate.c3p0.max_size";
     private static final String HIBERNATE_MAXCONNECTIONS_VALUE = "510";
     private static final String HIBERNATE_MAXCONNECTIONS_DEFVALUE = "100";
