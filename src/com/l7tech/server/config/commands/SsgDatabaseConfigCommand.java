@@ -75,15 +75,6 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         connectionUrlParamDefaults.put("queriesBeforeRetryMaster", "2000");
     }
 
-//    private static Map<String, String> c3poDefaults;
-//    static {
-//        c3poDefaults = new TreeMap<String, String>();
-//        c3poDefaults.put("c3p0.numHelperThreads", "20");
-//        c3poDefaults.put("c3p0.acquireRetryAttempts", "150");
-//        c3poDefaults.put("c3p0.acquireRetryDelay", "2000");
-//        c3poDefaults.put("c3p0.maxConnectionAge", "120");
-//    }
-
     public SsgDatabaseConfigCommand(ConfigurationBean bean) {
         super(bean);
         init();
@@ -95,13 +86,11 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         boolean success;
 
         File dbConfigFile = new File(getOsFunctions().getDatabaseConfig()); //hibernate config file
-        File c3p0File = new File(getOsFunctions().getC3P0Config()); //hibernate config file
 
         if (dbConfigFile.exists()) {
             File[] files = new File[]
             {
                 dbConfigFile,
-                c3p0File
             };
 
             backupFiles(files, BACKUP_FILE_NAME);
@@ -109,7 +98,6 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
         try {
             updateDbConfigFile(dbConfigFile);
-//            updateC3POProperties(c3p0File);
             success = true;
         } catch (IOException e) {
             success = false;
@@ -117,53 +105,6 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
         return success;
     }
-
-//TODO: find out if this needs to be done, or if it's handled in the upgradfe already since it's in the WAR
-/*
-    private void updateC3POProperties(File c3po) throws IOException {
-
-        FileOutputStream fos = null;
-        try {
-            PropertiesConfiguration props = PropertyHelper.mergeProperties(
-                    c3po,
-                    new File(c3po.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
-                    true, true);
-
-            boolean wasChanged = false;
-            for (Map.Entry<String, String> defaultEntry : c3poDefaults.entrySet()) {
-                if (StringUtils.equals(props.getString(defaultEntry.getKey()), defaultEntry.getValue())) {
-                    wasChanged = true;
-                    props.setProperty(defaultEntry.getKey(), defaultEntry.getValue());
-                }
-            }
-
-            if (wasChanged) {
-                fos = new FileOutputStream(c3po);
-                logger.info("Saving properties to file '"+c3po+"'.");
-                props.setHeader(C3P0_PROPERTY_COMMENTS + "\n" + new Date());
-                props.save(fos, "iso-8859-1");
-            }
-        } catch (FileNotFoundException fnf) {
-            logger.severe("error while updating the " + c3po.getName() + " configuration file");
-            logger.severe(fnf.getMessage());
-            throw fnf;
-        } catch (ConfigurationException e) {
-            logger.severe("error while updating the " + c3po.getName() + " configuration file");
-            logger.severe(e.getMessage());
-            throw new CausedIOException(e);
-        } catch (IOException e) {
-            logger.severe("error while updating the " + c3po.getName() + " configuration file");
-            logger.severe(e.getMessage());
-            throw e;
-        } catch (NumberFormatException e) {
-            logger.severe("error while updating the " + c3po.getName() + " configuration file");
-            throw e;
-        }
-        finally {
-            ResourceUtils.closeQuietly(fos);
-        }
-    }
-*/
 
     private void updateDbConfigFile(File dbConfigFile) throws IOException {
 

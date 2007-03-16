@@ -23,7 +23,6 @@ public abstract class OSSpecificFunctions {
     protected String hostsFile;
     protected String clusterHostFile;
     protected String databaseConfig;
-    protected String c3p0Config;
     protected String keyStorePropertiesFile;
     protected String tomcatServerConfig;
     protected String keystoreDir;
@@ -88,7 +87,6 @@ public abstract class OSSpecificFunctions {
     public void makeFilenames() {
         clusterHostFile = "cluster_hostname";
         databaseConfig = "hibernate.properties";
-        c3p0Config = "c3p0.properties";
         ssgLogProperties = "ssglog.properties";
         keyStorePropertiesFile = "keystore.properties";
         keystoreDir = "keys/";
@@ -163,10 +161,6 @@ public abstract class OSSpecificFunctions {
 
     public String getDatabaseConfig() {
         return getConfigurationBase() + databaseConfig;
-    }
-
-    public String getC3P0Config() {
-        return getConfigurationBase() + c3p0Config;
     }
 
     public String getClusterHostFile() {
