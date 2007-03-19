@@ -1,17 +1,16 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.console.xmlviewer.Viewer;
 import org.dom4j.DocumentException;
-import org.xml.sax.SAXParseException;
-import org.xml.sax.SAXException;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -98,9 +97,10 @@ public class WsdlCreateWizard extends Wizard {
 
                     // 
                     try {
-                        WSDLFactory fac = WsdlUtils.getWSDLFactory();
-                        ExtensionRegistry reg =  Wsdl.disableSchemaExtensions(fac.newPopulatedExtensionRegistry());
+                        WSDLFactory fac = wsdlComposer.getWsdlFactory();
+                        ExtensionRegistry reg =  wsdlComposer.getExtensionRegistry();
                         WSDLWriter wsdlWriter = fac.newWSDLWriter();
+
 
                         StringWriter writer = new StringWriter();
                         Definition definition = wsdlComposer.buildOutputWsdl();
@@ -108,8 +108,7 @@ public class WsdlCreateWizard extends Wizard {
                         wsdlWriter.writeWSDL(definition, writer);
 
                         Frame mw = TopComponents.getInstance().getTopParent();
-                        DialogDisplayer.display(
-                                new RawWsdlDialog(mw, writer.toString(), "Preview"));
+                        DialogDisplayer.display(new RawWsdlDialog(mw, writer.toString(), "Preview"));
                     } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
                         TopComponents.getInstance().showNoPrivilegesErrorMessage();    
                     } catch (WSDLException e1) {

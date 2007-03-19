@@ -67,10 +67,9 @@ public class WsdlComposer {
     private void initialise(Document wsdl) throws WSDLException {
         originalWsdlDoc = wsdl;
         wsdlFactory = WsdlUtils.getWSDLFactory();
-        delegateWsdl = wsdlFactory.newDefinition();
-        extensionRegistry = wsdlFactory.newPopulatedExtensionRegistry();
-        extensionRegistry = Wsdl.disableSchemaExtensions(extensionRegistry);
+        extensionRegistry = Wsdl.disableSchemaExtensions(wsdlFactory.newPopulatedExtensionRegistry());
 
+        delegateWsdl = wsdlFactory.newDefinition();
         sourceWsdls = new HashSet<WsdlHolder>();
         otherNamespaces = new HashMap<String, String>();
 
@@ -522,6 +521,10 @@ public class WsdlComposer {
         return delegateWsdl.createPort();
     }
 
+    public WSDLFactory getWsdlFactory() {
+        return wsdlFactory;
+    }
+
     public ExtensionRegistry getExtensionRegistry() {
         return extensionRegistry;
     }
@@ -748,7 +751,6 @@ public class WsdlComposer {
             for (Object obj : sourceTypes.getExtensibilityElements()) {
                 ExtensibilityElement sourceExtElement = (ExtensibilityElement) obj;
                 ExtensionSerializer serializer = extensionRegistry.querySerializer(sourceExtElement.getClass(), sourceExtElement.getElementType());
-
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 serializer.marshall(sourceExtElement.getClass(), sourceExtElement.getElementType(), sourceExtElement, new PrintWriter(baos, true), workingWsdl, extensionRegistry);
 
