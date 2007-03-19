@@ -173,7 +173,7 @@ public class CreateServiceWsdlAction extends SecureAction {
 
                 service.setPolicyXml(bo.toString());
 
-                Set<WsdlComposer.WsdlHolder> sourceWsdls = composer.getSourceWsdls();
+                Set<WsdlComposer.WsdlHolder> sourceWsdls = composer.getSourceWsdls(false);
                 Collection<ServiceDocument> sourceDocs = new ArrayList<ServiceDocument>();
                 for (WsdlComposer.WsdlHolder sourceWsdl : sourceWsdls) {
                     ServiceDocument sd = new ServiceDocument();

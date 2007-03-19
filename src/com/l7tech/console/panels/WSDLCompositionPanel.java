@@ -103,12 +103,12 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     }
 
     private void populateSourceWsdlView() {
-        if ((wsdlComposer == null || wsdlComposer.getSourceWsdls().isEmpty()) && wsdlComposer.getOriginalWsdlDoc() == null)
+        if ((wsdlComposer == null || wsdlComposer.getSourceWsdls(false).isEmpty()) && wsdlComposer.getOriginalWsdlDoc() == null)
             return;
 
         sourceWsdlListModel.clear();
-        for (WsdlComposer.WsdlHolder wsdlHolder : wsdlComposer.getSourceWsdls())
-                sourceWsdlListModel.addWsdl(wsdlHolder);
+        for (WsdlComposer.WsdlHolder wsdlHolder : wsdlComposer.getSourceWsdls(true))
+            sourceWsdlListModel.addWsdl(wsdlHolder);
         ensureSourceSelected();
     }
 
@@ -211,7 +211,9 @@ public class WSDLCompositionPanel extends WizardStepPanel{
             Wsdl wsdl = dlg.getSelectedWsdl();
             String wsdlLocation = dlg.getWsdlLocation();
             if (wsdl != null) {
-                sourceWsdlListModel.addWsdl(new WsdlComposer.WsdlHolder(wsdl, wsdlLocation));
+                WsdlComposer.WsdlHolder holder = new WsdlComposer.WsdlHolder(wsdl, wsdlLocation);
+                sourceWsdlListModel.addWsdl(holder);
+                wsdlComposer.addSourceWsdl(holder);
                 ensureSourceSelected();
             }
         }

@@ -161,12 +161,23 @@ public class WsdlComposer {
         }
 
         if (opsForThisSourceWsdl.add(opToAdd)) {
+            addSourceWsdl(sourceWsdlHolder);
             if (addOtherElements)
                 addWsdlElementsForBindingOperation(sourceWsdlHolder, opToAdd);
             return true;
         } else {
             return false;
         }
+    }
+
+    public boolean sourceWasUsed(WsdlHolder holderToCheck) {
+        boolean wasUsed = false;
+        if (sourceWsdls.contains(holderToCheck)) {
+            Set<BindingOperation> bos = bindingOperationsToAdd.get(holderToCheck);
+            if (bos != null && !bos.isEmpty())
+                wasUsed = true;
+        }
+        return wasUsed;
     }
 
     public boolean removeBindingOperation(BindingOperation bopToRemove, WsdlHolder sourceWsdlHolder, boolean removeOtherElements) {
@@ -625,8 +636,19 @@ public class WsdlComposer {
         portTypes.remove(p.getQName());
     }
 
-    public Set<WsdlHolder> getSourceWsdls() {
-        return sourceWsdls;
+    public Set<WsdlHolder> getSourceWsdls(boolean fetchUnusedSources) {
+        Set<WsdlHolder> usedSources;
+        if (fetchUnusedSources)
+            usedSources = sourceWsdls;
+        else {
+            usedSources = new HashSet<WsdlHolder>();
+            for (WsdlHolder source : sourceWsdls) {
+                if (sourceWasUsed(source)) {
+                    usedSources.add(source);
+                }
+            }
+        }
+        return usedSources;
     }
 
     public Document getOriginalWsdlDoc() {
