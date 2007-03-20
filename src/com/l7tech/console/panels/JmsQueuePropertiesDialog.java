@@ -1,13 +1,10 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies, Inc.
  */
 
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.widgets.OptionalCredentialsPanel;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
@@ -22,31 +19,39 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.rmi.RemoteException;
 
 /**
  * Dialog for configuring a JMS Queue (ie, a [JmsConnection, JmsEndpoint] pair).
+ *
+ * @author mike
+ * @author rmak
  */
 public class JmsQueuePropertiesDialog extends JDialog {
-    private JTextField nameTextField;
-    private JComboBox driverComboBox;
-    private JTextField jndiUrlTextField; // Naming provider URL
-    private JTextField qcfNameTextField; // Queue connection factory name
-    private JTextField icfNameTextField; // Initial context factory name
-    private OptionalCredentialsPanel optionalCredentialsPanel;
-
-    private JPanel buttonPanel;
+    private JPanel contentPane;
+    private JRadioButton outboundRadioButton;
+    private JRadioButton inboundRadioButton;
+    private JComboBox providerComboBox;
+    private JTextField jndiUrlTextField;
+    private JTextField icfTextField;
+    private JCheckBox hasJndiCredentialsCheckBox;
+    private JTextField jndiUsernameTextField;
+    private JPasswordField jndiPasswordField;
+    private JTextField qcfTextField;
+    private JTextField queueNameTextField;
+    private JCheckBox hasQueueCredentialsCheckBox;
+    private JTextField queueUsernameTextField;
+    private JPasswordField queuePasswordField;
+    private JPanel extraPropertiesPanel;
     private JButton testButton;
-    private JButton addButton;
+    private JButton saveButton;
     private JButton cancelButton;
-
-    private ButtonGroup directionButtonGroup;
-    private JRadioButton inboundButton;
-    private JRadioButton outboundButton;
 
     private JmsConnection connection = null;
     private JmsEndpoint endpoint = null;
-    private boolean wasClosedByOkButton = false;
+    private boolean isCanceled;
     private boolean outboundOnly = false;
     private FormAuthorizationPreparer securityFormAuthorizationPreparer;
 
@@ -124,7 +129,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
      * @return false iff. the dialog completed successfully via the "Save" button; otherwise true.
      */
     public boolean isCanceled() {
-        return !wasClosedByOkButton;
+        return isCanceled;
     }
 
     /**
@@ -149,296 +154,127 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     private void init() {
         setTitle(connection == null ? "Add JMS Queue" : "JMS Queue Properties");
-        Container c = getContentPane();
-        c.setLayout(new GridBagLayout());
-        JPanel p = new JPanel(new GridBagLayout());
-        c.add(p, new GridBagConstraints());
-        p.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        setContentPane(contentPane);
+        setModal(true);
 
-        int y = 0;
+        inboundRadioButton.setEnabled(!isOutboundOnly());
+        outboundRadioButton.setEnabled(!isOutboundOnly());
 
-        p.add(new JLabel("Queue Name:"),
-          new GridBagConstraints(0, y, 1, 1, 0, 0,
-            GridBagConstraints.EAST,
-            GridBagConstraints.NONE,
-            new Insets(0, 0, 5, 3), 0, 0));
+        initProviderComboBox();
 
-        p.add(getNameTextField(),
-          new GridBagConstraints(1, y++, 1, 1, 0, 0,
-            GridBagConstraints.WEST,
-            GridBagConstraints.HORIZONTAL,
-            new Insets(0, 0, 5, 0), 0, 0));
+        hasJndiCredentialsCheckBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                enableOrDisableJndiCredentials();
+            }
+        });
+        Utilities.enableGrayOnDisabled(jndiUsernameTextField);
+        Utilities.enableGrayOnDisabled(jndiPasswordField);
 
-        p.add(new JLabel("Driver:"),
-          new GridBagConstraints(0, y, 1, 1, 0, 0,
-            GridBagConstraints.EAST,
-            GridBagConstraints.NONE,
-            new Insets(0, 0, 5, 3), 0, 0));
+        hasQueueCredentialsCheckBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                enableOrDisableQueueCredentials();
+            }
+        });
+        Utilities.enableGrayOnDisabled(queueUsernameTextField);
+        Utilities.enableGrayOnDisabled(queuePasswordField);
 
-        p.add(getDriverComboBox(),
-          new GridBagConstraints(1, y++, 1, 1, 0, 0,
-            GridBagConstraints.WEST,
-            GridBagConstraints.NONE,
-            new Insets(0, 0, 5, 0), 0, 0));
+        jndiUrlTextField.getDocument().addDocumentListener(formPreener);
+        icfTextField.getDocument().addDocumentListener(formPreener);
+        qcfTextField.getDocument().addDocumentListener(formPreener);
+        queueNameTextField.getDocument().addDocumentListener(formPreener);
 
-        p.add(new JLabel("Naming Provider URL:"),
-          new GridBagConstraints(0, y, 1, 1, 0, 0,
-            GridBagConstraints.EAST,
-            GridBagConstraints.NONE,
-            new Insets(0, 0, 5, 3), 0, 0));
+        testButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onTest();
+            }
+        });
 
-        p.add(getJndiUrlTextField(),
-          new GridBagConstraints(1, y++, 1, 1, 0, 0,
-            GridBagConstraints.WEST,
-            GridBagConstraints.HORIZONTAL,
-            new Insets(0, 0, 5, 0), 0, 0));
+        saveButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onSave();
+            }
+        });
 
-        p.add(new JLabel("Queue Connection Factory URL:"),
-          new GridBagConstraints(0, y, 1, 1, 0, 0,
-            GridBagConstraints.EAST,
-            GridBagConstraints.NONE,
-            new Insets(0, 0, 5, 0), 0, 0));
-
-        p.add(getQcfNameTextField(),
-          new GridBagConstraints(1, y++, 1, 1, 0, 0,
-            GridBagConstraints.WEST,
-            GridBagConstraints.HORIZONTAL,
-            new Insets(0, 0, 5, 0), 0, 0));
-
-        p.add(new JLabel("Initial Context Factory Class:"),
-          new GridBagConstraints(0, y, 1, 1, 0, 0,
-            GridBagConstraints.EAST,
-            GridBagConstraints.NONE,
-            new Insets(0, 0, 5, 0), 0, 0));
-
-        p.add(getIcfNameTextField(),
-          new GridBagConstraints(1, y++, 1, 1, 0, 0,
-            GridBagConstraints.WEST,
-            GridBagConstraints.HORIZONTAL,
-            new Insets(0, 0, 5, 0), 0, 0));
-
-        p.add(new JLabel("Direction:"),
-          new GridBagConstraints(0, y, 1, 1, 0, 0,
-            GridBagConstraints.EAST,
-            GridBagConstraints.NONE,
-            new Insets(6, 0, 5, 0), 0, 0));
-
-        p.add(getOutboundButton(),
-          new GridBagConstraints(1, y++, 1, 1, 0, 0,
-            GridBagConstraints.WEST,
-            GridBagConstraints.HORIZONTAL,
-            new Insets(6, 0, 0, 0), 0, 0));
-
-        p.add(getInboundButton(),
-          new GridBagConstraints(1, y++, 1, 1, 0, 0,
-            GridBagConstraints.WEST,
-            GridBagConstraints.HORIZONTAL,
-            new Insets(0, 0, 6, 0), 0, 0));
-
-        p.add(getOptionalCredentialsPanel(),
-          new GridBagConstraints(1, y++, 1, 1, 0, 0,
-            GridBagConstraints.WEST,
-            GridBagConstraints.HORIZONTAL,
-            new Insets(0, 0, 5, 0), 0, 0));
-
-        p.add(getButtonPanel(),
-          new GridBagConstraints(0, y++, 2, 1, 10.0, 0,
-            GridBagConstraints.EAST,
-            GridBagConstraints.HORIZONTAL,
-            new Insets(0, 0, 0, 0), 0, 0));
+        cancelButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onCancel();
+            }
+        });
 
         pack();
         initializeView();
         enableOrDisableComponents();
         applyFormSecurity();
         Utilities.setEscKeyStrokeDisposes(this);
-
     }
 
-
-    private JPanel getButtonPanel() {
-        if (buttonPanel == null) {
-            buttonPanel = new JPanel();
-            buttonPanel.setLayout(new GridBagLayout());
-            buttonPanel.add(Box.createGlue(),
-              new GridBagConstraints(0, 0, 1, 1, 10.0, 10.0,
-                GridBagConstraints.EAST,
-                GridBagConstraints.HORIZONTAL,
-                new Insets(0, 0, 0, 0), 0, 0));
-            buttonPanel.add(getTestButton(),
-              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                GridBagConstraints.EAST,
-                GridBagConstraints.NONE,
-                new Insets(0, 0, 0, 5), 0, 0));
-            buttonPanel.add(getSaveButton(),
-              new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                GridBagConstraints.EAST,
-                GridBagConstraints.NONE,
-                new Insets(0, 0, 0, 5), 0, 0));
-            buttonPanel.add(getCancelButton(),
-              new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
-                GridBagConstraints.EAST,
-                GridBagConstraints.NONE,
-                new Insets(0, 0, 0, 5), 0, 0));
-            Utilities.equalizeButtonSizes(new JButton[]{getTestButton(), getSaveButton(), getCancelButton()});
+    private void initProviderComboBox() {
+        JmsProvider[] providers = null;
+        try {
+            providers = Registry.getDefault().getJmsManager().getProviderList();
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to obtain list of installed JMS provider types from Gateway", e);
         }
-        return buttonPanel;
-    }
 
-    private JButton getTestButton() {
-        if (testButton == null) {
-            testButton = new JButton("Test Settings");
-            testButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        JmsConnection newConnection = makeJmsConnectionFromView();
-                        if (newConnection == null)
-                            return;
+        ProviderComboBoxItem[] items = new ProviderComboBoxItem[providers.length + 1];
 
-                        JmsEndpoint newEndpoint = makeJmsEndpointFromView();
-                        if (newEndpoint == null)
-                            return;
-
-                        Registry.getDefault().getJmsManager().testEndpoint(newConnection, newEndpoint);
-                        JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
-                          "The Gateway has verified the existence of this JMS Queue.",
-                          "JMS Connection Successful",
-                          JOptionPane.INFORMATION_MESSAGE);
-                    } catch (RemoteException e1) {
-                        throw new RuntimeException("Unable to test this JMS Queue", e1);
-                    } catch (Exception e1) {
-                        JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
-                          "The Gateway was unable to find this JMS Queue:\n" +
-                          e1.getMessage(),
-                          "JMS Connection Settings",
-                          JOptionPane.ERROR_MESSAGE);
-                    }
+        // If we already have a connection, and it was using non-default provider settings,
+        // preserve it's old settings in a "Custom" provider
+        boolean usingCustom = false;
+        if (connection != null) {
+            usingCustom = true;
+            for (int i = 0; i < providers.length; ++i) {
+                JmsProvider provider = providers[i];
+                if (providerMatchesConnection(provider, connection)) {
+                    usingCustom = false;
+                    break;
                 }
-            });
-        }
-        return testButton;
-    }
-
-    private JButton getCancelButton() {
-        if (cancelButton == null) {
-            cancelButton = new JButton("Cancel");
-            cancelButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    JmsQueuePropertiesDialog.this.dispose();
-                }
-            });
-        }
-        return cancelButton;
-    }
-
-    private JButton getSaveButton() {
-        if (addButton == null) {
-            addButton = new JButton("Save");
-            addButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    JmsConnection newConnection = makeJmsConnectionFromView();
-                    if (newConnection == null)
-                        return;
-
-                    JmsEndpoint newEndpoint = makeJmsEndpointFromView();
-                    if (newEndpoint == null)
-                        return;
-
-                    try {
-                        long oid = Registry.getDefault().getJmsManager().saveConnection(newConnection);
-                        newConnection.setOid(oid);
-                        newEndpoint.setConnectionOid(newConnection.getOid());
-                        oid = Registry.getDefault().getJmsManager().saveEndpoint(newEndpoint);
-                        newEndpoint.setOid(oid);
-
-                        connection = Registry.getDefault().getJmsManager().findConnectionByPrimaryKey(newConnection.getOid());
-                        endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(newEndpoint.getOid());
-                    } catch (Exception e1) {
-                        throw new RuntimeException("Unable to save changes to this JMS Queue", e1);
-                    }
-
-                    // Return from dialog
-                    wasClosedByOkButton = true;
-                    JmsQueuePropertiesDialog.this.dispose();
-                }
-            });
-        }
-        return addButton;
-    }
-
-    private JTextField getNameTextField() {
-        if (nameTextField == null) {
-            nameTextField = new JTextField();
-            nameTextField.getDocument().addDocumentListener(formPreener);
-        }
-        return nameTextField;
-    }
-
-    private JComboBox getDriverComboBox() {
-        if (driverComboBox == null) {
-            try {
-                JmsProvider[] providers = Registry.getDefault().getJmsManager().getProviderList();
-                ProviderComboBoxItem[] items = new ProviderComboBoxItem[providers.length + 1];
-
-                // If we already have a connection, and it was using non-default provider settings,
-                // preserve it's old settings in a "Custom" provider
-                boolean usingCustom = false;
-                if (connection != null) {
-                    usingCustom = true;
-                    for (int i = 0; i < providers.length; ++i) {
-                        JmsProvider provider = providers[i];
-                        if (providerMatchesConnection(provider, connection)) {
-                            usingCustom = false;
-                            break;
-                        }
-                    }
-                }
-
-                JmsProvider customProvider = new JmsProvider();
-                customProvider.setName("(Custom)");
-                if (usingCustom) {
-                    customProvider.setDefaultDestinationFactoryUrl(connection.getDestinationFactoryUrl());
-                    customProvider.setDefaultQueueFactoryUrl(connection.getQueueFactoryUrl());
-                    customProvider.setDefaultTopicFactoryUrl(connection.getTopicFactoryUrl());
-                    customProvider.setInitialContextFactoryClassname(connection.getInitialContextFactoryClassname());
-                } else {
-                    customProvider.setDefaultDestinationFactoryUrl("");
-                    customProvider.setDefaultQueueFactoryUrl("");
-                    customProvider.setDefaultTopicFactoryUrl("");
-                    customProvider.setInitialContextFactoryClassname("");
-                }
-                items[0] = new ProviderComboBoxItem(customProvider);
-
-                for (int i = 0; i < providers.length; i++)
-                    items[i + 1] = new ProviderComboBoxItem(providers[i]);
-
-                driverComboBox = new JComboBox(items);
-                driverComboBox.setSelectedIndex(0);
-                driverComboBox.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        final ProviderComboBoxItem providerItem = (ProviderComboBoxItem)getDriverComboBox().getSelectedItem();
-                        if (providerItem == null)
-                            return;
-                        JmsProvider provider = providerItem.getProvider();
-
-                        // Queue connection factory name, defaulting to destination factory name
-                        String qcfName = provider.getDefaultQueueFactoryUrl();
-                        if (qcfName == null || qcfName.length() < 1)
-                            qcfName = provider.getDefaultDestinationFactoryUrl();
-                        if (qcfName != null)
-                            getQcfNameTextField().setText(qcfName);
-
-                        String icfName = provider.getInitialContextFactoryClassname();
-                        if (icfName != null)
-                            getIcfNameTextField().setText(icfName);
-                    }
-                });
-
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to obtain list of installed JMS providers from Gateway", e);
             }
         }
-        return driverComboBox;
+
+        JmsProvider customProvider = new JmsProvider();
+        customProvider.setName("(Custom)");
+        if (usingCustom) {
+            customProvider.setDefaultDestinationFactoryUrl(connection.getDestinationFactoryUrl());
+            customProvider.setDefaultQueueFactoryUrl(connection.getQueueFactoryUrl());
+            customProvider.setDefaultTopicFactoryUrl(connection.getTopicFactoryUrl());
+            customProvider.setInitialContextFactoryClassname(connection.getInitialContextFactoryClassname());
+        } else {
+            customProvider.setDefaultDestinationFactoryUrl("");
+            customProvider.setDefaultQueueFactoryUrl("");
+            customProvider.setDefaultTopicFactoryUrl("");
+            customProvider.setInitialContextFactoryClassname("");
+        }
+        items[0] = new ProviderComboBoxItem(customProvider);
+
+        for (int i = 0; i < providers.length; i++)
+            items[i + 1] = new ProviderComboBoxItem(providers[i]);
+
+        providerComboBox.setModel(new DefaultComboBoxModel(items));
+        providerComboBox.setSelectedIndex(0);
+        providerComboBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onProviderChanged();
+            }
+        });
+    }
+
+    private void onProviderChanged() {
+        final ProviderComboBoxItem providerItem = (ProviderComboBoxItem)providerComboBox.getSelectedItem();
+        if (providerItem == null)
+            return;
+        JmsProvider provider = providerItem.getProvider();
+
+        // Queue connection factory name, defaulting to destination factory name
+        String qcfName = provider.getDefaultQueueFactoryUrl();
+        if (qcfName == null || qcfName.length() < 1)
+            qcfName = provider.getDefaultDestinationFactoryUrl();
+        if (qcfName != null)
+            qcfTextField.setText(qcfName);
+
+        String icfName = provider.getInitialContextFactoryClassname();
+        if (icfName != null)
+            icfTextField.setText(icfName);
     }
 
     // Return true if the specified JmsProvider provides the exact same DefaultQueueFactoryUrl and
@@ -464,37 +300,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
     }
 
-    private JTextField getJndiUrlTextField() {
-        if (jndiUrlTextField == null) {
-            jndiUrlTextField = new JTextField();
-            jndiUrlTextField.getDocument().addDocumentListener(formPreener);
-        }
-        return jndiUrlTextField;
-    }
-
-    private JTextField getQcfNameTextField() {
-        if (qcfNameTextField == null) {
-            qcfNameTextField = new JTextField();
-            qcfNameTextField.getDocument().addDocumentListener(formPreener);
-        }
-        return qcfNameTextField;
-    }
-
-    private JTextField getIcfNameTextField() {
-        if (icfNameTextField == null) {
-            icfNameTextField = new JTextField();
-            icfNameTextField.getDocument().addDocumentListener(formPreener);
-        }
-        return icfNameTextField;
-    }
-
-    private OptionalCredentialsPanel getOptionalCredentialsPanel() {
-        if (optionalCredentialsPanel == null) {
-            optionalCredentialsPanel = new OptionalCredentialsPanel();
-        }
-        return optionalCredentialsPanel;
-    }
-
     /**
      * Extract information from the view and create a new JmsConnection object.  The new object will not have a
      * valid OID and will not yet have been saved to the database.
@@ -518,29 +323,29 @@ public class JmsQueuePropertiesDialog extends JDialog {
             conn = new JmsConnection();
             conn.copyFrom(connection);
         } else {
-            final ProviderComboBoxItem providerItem = ((ProviderComboBoxItem)getDriverComboBox().getSelectedItem());
+            final ProviderComboBoxItem providerItem = ((ProviderComboBoxItem)providerComboBox.getSelectedItem());
             if (providerItem == null) {
                 conn = new JmsConnection();
             } else {
                 JmsProvider provider = providerItem.getProvider();
-                conn = provider.createConnection(getNameTextField().getText(),
-                  getJndiUrlTextField().getText());
+                conn = provider.createConnection(queueNameTextField.getText(),
+                  jndiUrlTextField.getText());
             }
             if (conn.getName()==null || conn.getName().trim().length()==0)
                 conn.setName("Custom");
         }
 
-        if (getOptionalCredentialsPanel().isUsernameAndPasswordRequired()) {
-            conn.setUsername(getOptionalCredentialsPanel().getUsername());
-            conn.setPassword(new String(getOptionalCredentialsPanel().getPassword()));
+        if (hasQueueCredentialsCheckBox.isSelected()) {
+            conn.setUsername(queueUsernameTextField.getText());
+            conn.setPassword(new String(queuePasswordField.getPassword()));
         } else {
             conn.setUsername(null);
             conn.setPassword(null);
         }
 
-        conn.setJndiUrl(getJndiUrlTextField().getText());
-        conn.setInitialContextFactoryClassname(getIcfNameTextField().getText());
-        conn.setQueueFactoryUrl(getQcfNameTextField().getText());
+        conn.setJndiUrl(jndiUrlTextField.getText());
+        conn.setInitialContextFactoryClassname(icfTextField.getText());
+        conn.setQueueFactoryUrl(qcfTextField.getText());
         return conn;
     }
 
@@ -565,14 +370,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
         JmsEndpoint ep = new JmsEndpoint();
         if (endpoint != null)
             ep.copyFrom(endpoint);
-        String name = getNameTextField().getText();
+        String name = queueNameTextField.getText();
         ep.setName(name);
         ep.setDestinationName(name);
-        ep.setMessageSource(getInboundButton().isSelected());
+        ep.setMessageSource(inboundRadioButton.isSelected());
 
-        if (getOptionalCredentialsPanel().isUsernameAndPasswordRequired()) {
-            ep.setUsername(getOptionalCredentialsPanel().getUsername());
-            ep.setPassword(new String(getOptionalCredentialsPanel().getPassword()));
+        if (hasQueueCredentialsCheckBox.isSelected()) {
+            ep.setUsername(queueUsernameTextField.getText());
+            ep.setPassword(new String(queuePasswordField.getPassword()));
         } else {
             ep.setUsername(null);
             ep.setPassword(null);
@@ -590,16 +395,16 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private void selectDriverForConnection(JmsConnection connection) {
-        int numDrivers = getDriverComboBox().getModel().getSize();
+        int numDrivers = providerComboBox.getModel().getSize();
         for (int i = 0; i < numDrivers; ++i) {
-            ProviderComboBoxItem item = (ProviderComboBoxItem)getDriverComboBox().getModel().getElementAt(i);
+            ProviderComboBoxItem item = (ProviderComboBoxItem)providerComboBox.getModel().getElementAt(i);
             JmsProvider provider = item.getProvider();
             if (providerMatchesConnection(provider, connection)) {
-                getDriverComboBox().setSelectedItem(item);
+                providerComboBox.setSelectedItem(item);
                 return;
             }
         }
-        getDriverComboBox().setSelectedIndex(0);        
+        providerComboBox.setSelectedIndex(0);
     }
 
     /**
@@ -609,49 +414,69 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (connection != null) {
             // configure gui from connection
             selectDriverForConnection(connection);
-            getQcfNameTextField().setText(connection.getQueueFactoryUrl());
-            getJndiUrlTextField().setText(connection.getJndiUrl());
-            getIcfNameTextField().setText(connection.getInitialContextFactoryClassname());
-            boolean useCredentials = connection.getUsername() != null && connection.getUsername().length() > 0;
-            getOptionalCredentialsPanel().
-              setUsernameAndPasswordRequired(useCredentials, connection.getUsername(), connection.getPassword());
+            qcfTextField.setText(connection.getQueueFactoryUrl());
+            jndiUrlTextField.setText(connection.getJndiUrl());
+            icfTextField.setText(connection.getInitialContextFactoryClassname());
 
+            // TODO initial JNDI credentials controls
+            enableOrDisableJndiCredentials();
+
+            boolean hasQueueCredentials = connection.getUsername() != null && connection.getUsername().length() > 0;
+            hasQueueCredentialsCheckBox.setSelected(hasQueueCredentials);
+            enableOrDisableQueueCredentials();
+            queueUsernameTextField.setText(connection.getUsername());
+            queuePasswordField.setText(connection.getPassword());
         } else {
             // No connection is set
-            getDriverComboBox().setSelectedIndex(0);
-            getQcfNameTextField().setText("");
-            getIcfNameTextField().setText("");
-            getJndiUrlTextField().setText("");
-            getOptionalCredentialsPanel().setUsernameAndPasswordRequired(false, null, null);
+            providerComboBox.setSelectedIndex(0);
+            qcfTextField.setText("");
+            icfTextField.setText("");
+            jndiUrlTextField.setText("");
+
+            // TODO initial JNDI credentials controls
+            enableOrDisableJndiCredentials();
+
+            hasQueueCredentialsCheckBox.setSelected(false);
+            enableOrDisableQueueCredentials();
+            queueUsernameTextField.setText(null);
+            queuePasswordField.setText(null);
         }
 
         if (endpoint != null) {
             // Configure gui from endpoint
-            getNameTextField().setText(endpoint.getDestinationName());
-            getInboundButton().setSelected(endpoint.isMessageSource());
+            queueNameTextField.setText(endpoint.getDestinationName());
+            inboundRadioButton.setSelected(endpoint.isMessageSource());
         } else {
             // No endpoint is set
-            getNameTextField().setText("");
-            getInboundButton().setSelected(false);
+            queueNameTextField.setText("");
+            inboundRadioButton.setSelected(false);
         }
-        getOutboundButton().setSelected(!getInboundButton().isSelected());
-
-
+        outboundRadioButton.setSelected(!inboundRadioButton.isSelected());
     }
 
     /**
      * Returns true iff. the form has enough information to construct a JmsConnection.
      */
     private boolean validateForm() {
-        if (getNameTextField().getText().length() < 1)
+        if (queueNameTextField.getText().length() < 1)
             return false;
-        if (getJndiUrlTextField().getText().length() < 1)
+        if (jndiUrlTextField.getText().length() < 1)
             return false;
-        if (getQcfNameTextField().getText().length() < 1)
+        if (qcfTextField.getText().length() < 1)
             return false;
-        if (getIcfNameTextField().getText().length() < 1)
+        if (icfTextField.getText().length() < 1)
             return false;
         return true;
+    }
+
+    private void enableOrDisableJndiCredentials() {
+        jndiUsernameTextField.setEnabled(hasJndiCredentialsCheckBox.isSelected());
+        jndiPasswordField.setEnabled(hasJndiCredentialsCheckBox.isSelected());
+    }
+
+    private void enableOrDisableQueueCredentials() {
+        queueUsernameTextField.setEnabled(hasQueueCredentialsCheckBox.isSelected());
+        queuePasswordField.setEnabled(hasQueueCredentialsCheckBox.isSelected());
     }
 
     /**
@@ -659,50 +484,83 @@ public class JmsQueuePropertiesDialog extends JDialog {
      */
     private void enableOrDisableComponents() {
         final boolean valid = validateForm();
-        addButton.setEnabled(valid);
+        saveButton.setEnabled(valid);
         testButton.setEnabled(valid);
     }
 
     private void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
         securityFormAuthorizationPreparer.prepare(new Component[]{
-            addButton,
-            getInboundButton(),
-            getOutboundButton(),
-            getDriverComboBox(),
-            getQcfNameTextField(),
-            getIcfNameTextField(),
-            getJndiUrlTextField(),
-            getNameTextField()
-
+                outboundRadioButton,
+                inboundRadioButton,
+                providerComboBox,
+                jndiUrlTextField,
+                icfTextField,
+                hasJndiCredentialsCheckBox,
+                jndiUsernameTextField,
+                jndiPasswordField,
+                qcfTextField,
+                queueNameTextField,
+                hasQueueCredentialsCheckBox,
+                queueUsernameTextField,
+                queuePasswordField,
         });
-        securityFormAuthorizationPreparer.prepare(optionalCredentialsPanel.getComponents());
     }
 
-    private ButtonGroup getDirectionButtonGroup() {
-        if (directionButtonGroup == null) {
-            directionButtonGroup = new ButtonGroup();
+    private void onTest() {
+        try {
+            final JmsConnection newConnection = makeJmsConnectionFromView();
+            if (newConnection == null)
+                return;
+
+            final JmsEndpoint newEndpoint = makeJmsEndpointFromView();
+            if (newEndpoint == null)
+                return;
+
+            Registry.getDefault().getJmsManager().testEndpoint(newConnection, newEndpoint);
+            JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
+              "The Gateway has verified the existence of this JMS Queue.",
+              "JMS Connection Successful",
+              JOptionPane.INFORMATION_MESSAGE);
+        } catch (RemoteException e1) {
+            throw new RuntimeException("Unable to test this JMS Queue", e1);
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
+              "The Gateway was unable to find this JMS Queue:\n" +
+              e1.getMessage(),
+              "JMS Connection Settings",
+              JOptionPane.ERROR_MESSAGE);
         }
-        return directionButtonGroup;
     }
 
-    private JRadioButton getInboundButton() {
-        if (inboundButton == null) {
-            inboundButton = new JRadioButton("Inbound - SecureSpan Gateway will drain messages from Queue");
-            inboundButton.setEnabled(!isOutboundOnly());
-            getDirectionButtonGroup().add(inboundButton);
+    private void onSave() {
+        JmsConnection newConnection = makeJmsConnectionFromView();
+        if (newConnection == null)
+            return;
+
+        JmsEndpoint newEndpoint = makeJmsEndpointFromView();
+        if (newEndpoint == null)
+            return;
+
+        try {
+            long oid = Registry.getDefault().getJmsManager().saveConnection(newConnection);
+            newConnection.setOid(oid);
+            newEndpoint.setConnectionOid(newConnection.getOid());
+            oid = Registry.getDefault().getJmsManager().saveEndpoint(newEndpoint);
+            newEndpoint.setOid(oid);
+
+            connection = Registry.getDefault().getJmsManager().findConnectionByPrimaryKey(newConnection.getOid());
+            endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(newEndpoint.getOid());
+        } catch (Exception e1) {
+            throw new RuntimeException("Unable to save changes to this JMS Queue", e1);
         }
-        return inboundButton;
+
+        isCanceled = false;
+        dispose();
     }
 
-    private JRadioButton getOutboundButton() {
-        if (outboundButton == null) {
-            outboundButton = new JRadioButton("Outbound - SecureSpan Gateway can route message to Queue");
-            outboundButton.setEnabled(!isOutboundOnly());
-            getDirectionButtonGroup().add(outboundButton);
-        }
-
-        return outboundButton;
+    private void onCancel() {
+        isCanceled = true;
+        dispose();
     }
-
 }
