@@ -11,6 +11,11 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.io.Serializable;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A reference to a preconfigured connection to a JMS provider.
@@ -21,6 +26,9 @@ import java.io.Serializable;
  * @version $Revision$
  */
 public class JmsConnection extends NamedEntityImp implements Serializable {
+    private static final Logger logger = Logger.getLogger(JmsConnection.class.getName());
+    private static final String ENCODING = "UTF-8";
+
     private String _initialContextFactoryClassname;
     private String _jndiUrl;
     private String _queueFactoryUrl;
@@ -28,6 +36,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     private String _destinationFactoryUrl;
     private String _username;
     private String _password;
+    private String _properties;
 
     public void copyFrom( JmsConnection other ) {
         setOid( other.getOid() );
@@ -40,6 +49,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         setDestinationFactoryUrl( other.getDestinationFactoryUrl() );
         setUsername( other.getUsername() );
         setPassword( other.getPassword() );
+        setProperties( other.getProperties() );
     }
 
     public String toString() {
@@ -106,4 +116,40 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         _destinationFactoryUrl = destinationFactoryUrl;
     }
 
+    public Properties properties() {
+        Properties properties = new Properties();
+        try {
+            String propertiesStr = getProperties();
+            if (propertiesStr != null && propertiesStr.trim().length()>0) {
+                properties.loadFromXML(new ByteArrayInputStream(propertiesStr.getBytes(ENCODING)));
+            }
+        }
+        catch(Exception e) {
+            logger.log(Level.WARNING, "Error loading properties", e);
+        }
+        return properties;
+    }
+
+    public void properties(Properties properties) {
+        if (properties == null) {
+            setProperties("");
+        } else {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                properties.storeToXML(baos, null, ENCODING);
+                setProperties(baos.toString(ENCODING));
+            }
+            catch (Exception e) {
+                logger.log(Level.WARNING, "Error saving properties", e);
+            }
+        }
+    }
+
+    public String getProperties() {
+        return _properties;
+    }
+
+    public void setProperties(String properties) {
+        _properties = properties;
+    }
 }
