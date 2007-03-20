@@ -22,7 +22,6 @@ import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosClient;
 import com.l7tech.common.security.kerberos.KerberosException;
-import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.AssertionMessages;
 
@@ -94,7 +93,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
         String scheme = wwwAuthorize.substring( 0, spos );
         String base64 = wwwAuthorize.substring( spos + 1 );
         if ( !scheme().equals(scheme) ) {
-            logger.fine( "WWW-Authorize scheme not Basic; ignoring");
+            logger.fine( "WWW-Authorize scheme not Negotiate; ignoring");
             return null;
         }
 
