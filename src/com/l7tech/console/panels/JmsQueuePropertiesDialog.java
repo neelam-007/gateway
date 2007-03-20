@@ -17,11 +17,9 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.*;
 import java.rmi.RemoteException;
+import java.util.Properties;
 
 /**
  * Dialog for configuring a JMS Queue (ie, a [JmsConnection, JmsEndpoint] pair).
@@ -44,7 +42,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JCheckBox hasQueueCredentialsCheckBox;
     private JTextField queueUsernameTextField;
     private JPasswordField queuePasswordField;
-    private JPanel extraPropertiesPanel;
+    private JPanel extraPropertiesOuterPanel;
+    private JmsExtraPropertiesPanel extraPropertiesPanel;
     private JButton testButton;
     private JButton saveButton;
     private JButton cancelButton;
@@ -182,6 +181,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         icfTextField.getDocument().addDocumentListener(formPreener);
         qcfTextField.getDocument().addDocumentListener(formPreener);
         queueNameTextField.getDocument().addDocumentListener(formPreener);
+        // TODO listen to changes inside extraPropertiesOuterPanel
 
         testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -275,14 +275,30 @@ public class JmsQueuePropertiesDialog extends JDialog {
         String icfName = provider.getInitialContextFactoryClassname();
         if (icfName != null)
             icfTextField.setText(icfName);
+
+        setExtraPropertiesPanel(provider, connection == null ? null : connection.properties() );
     }
 
-    // Return true if the specified JmsProvider provides the exact same DefaultQueueFactoryUrl and
-    // InitialContextFactoryClassname as the specified connection.  Neither parameter may be null.
+    private void setExtraPropertiesPanel(JmsProvider provider, Properties extraProperties) {
+        final String icfClassname = provider.getInitialContextFactoryClassname();
+        if ("com.tibco.tibjms.naming.TibjmsInitialContextFactory".equals(icfClassname)) {
+            extraPropertiesPanel = new TibcoEmsExtraPropertiesPanel(extraProperties);
+            extraPropertiesOuterPanel.add(extraPropertiesPanel);
+        } else {
+            extraPropertiesPanel = null;
+            extraPropertiesOuterPanel.removeAll();
+        }
+        pack();
+    }
+
+    /**
+     * @param provider      must not be <code>null</code>
+     * @param connection    must not be <code>null</code>
+     * @return <code>true</code> if the initial context factory class name in
+     *         <code>provider</code> and <code>connection</code> matches exactly
+     */
     private boolean providerMatchesConnection(JmsProvider provider, JmsConnection connection) {
-        return provider.getDefaultQueueFactoryUrl() != null &&
-          provider.getDefaultQueueFactoryUrl().equals(connection.getQueueFactoryUrl()) &&
-          provider.getInitialContextFactoryClassname() != null &&
+        return provider.getInitialContextFactoryClassname() != null &&
           provider.getInitialContextFactoryClassname().equals(connection.getInitialContextFactoryClassname());
     }
 
@@ -346,6 +362,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
         conn.setJndiUrl(jndiUrlTextField.getText());
         conn.setInitialContextFactoryClassname(icfTextField.getText());
         conn.setQueueFactoryUrl(qcfTextField.getText());
+        if (extraPropertiesPanel != null) {
+            conn.properties(extraPropertiesPanel.getProperties());
+        }
         return conn;
     }
 
@@ -394,9 +413,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
         return ep;
     }
 
-    private void selectDriverForConnection(JmsConnection connection) {
-        int numDrivers = providerComboBox.getModel().getSize();
-        for (int i = 0; i < numDrivers; ++i) {
+    private void selectProviderForConnection(JmsConnection connection) {
+        int numProviders = providerComboBox.getModel().getSize();
+        for (int i = 0; i < numProviders; ++i) {
             ProviderComboBoxItem item = (ProviderComboBoxItem)providerComboBox.getModel().getElementAt(i);
             JmsProvider provider = item.getProvider();
             if (providerMatchesConnection(provider, connection)) {
@@ -413,12 +432,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private void initializeView() {
         if (connection != null) {
             // configure gui from connection
-            selectDriverForConnection(connection);
+            selectProviderForConnection(connection);
             qcfTextField.setText(connection.getQueueFactoryUrl());
             jndiUrlTextField.setText(connection.getJndiUrl());
             icfTextField.setText(connection.getInitialContextFactoryClassname());
 
-            // TODO initial JNDI credentials controls
+            // TODO initialize JNDI credentials controls
             enableOrDisableJndiCredentials();
 
             boolean hasQueueCredentials = connection.getUsername() != null && connection.getUsername().length() > 0;
@@ -433,7 +452,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             icfTextField.setText("");
             jndiUrlTextField.setText("");
 
-            // TODO initial JNDI credentials controls
+            // TODO initialize JNDI credentials controls
             enableOrDisableJndiCredentials();
 
             hasQueueCredentialsCheckBox.setSelected(false);
@@ -466,6 +485,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return false;
         if (icfTextField.getText().length() < 1)
             return false;
+        // TODO validate components inside extraPropertiesPanel
         return true;
     }
 
