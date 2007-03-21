@@ -183,7 +183,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         });
 
         try {
-            _clusterNodes = getClusterStatusAdmin().getClusterStatus();
+            _clusterNodes = findAllClusterNodes();
             ClusterNodeInfo[] comboItems = new ClusterNodeInfo[_clusterNodes.length + 1];
             System.arraycopy(_clusterNodes, 0, comboItems, 1, _clusterNodes.length);
             comboItems[0] = ALL_NODES;
@@ -242,7 +242,17 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
         final EntityHeader[] result = getServiceAdmin().findAllPublishedServices();
         updateServiceNames(result);
-        Arrays.sort(result);
+        Arrays.sort(result, new Comparator<EntityHeader>() {
+            public int compare(EntityHeader eh1, EntityHeader eh2) {
+                String name1 = eh1.getName();
+                String name2 = eh2.getName();
+
+                if (name1 == null) name1 = "";
+                if (name2 == null) name2 = "";
+
+                return name1.toLowerCase().compareTo(name2.toLowerCase());
+            }
+        });
         return result;
     }
 
@@ -543,7 +553,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     }
 
     private <T> void updateComboModel(T[] oldItems, T[] newItems, DefaultComboBoxModel comboModel) {
-        Set<T> news = new HashSet<T>(Arrays.asList(newItems));
+        Set<T> news = new LinkedHashSet<T>(Arrays.asList(newItems));
         Set<T> olds = new HashSet<T>(Arrays.asList(oldItems));
         Set<T> olds2 = new HashSet<T>(Arrays.asList(oldItems));
 

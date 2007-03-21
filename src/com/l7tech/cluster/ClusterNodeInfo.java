@@ -15,7 +15,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * $Id$
  * 
  */
-public class ClusterNodeInfo extends NamedEntityImp {
+public class ClusterNodeInfo extends NamedEntityImp implements Comparable<ClusterNodeInfo> {
 
     /**
      * Identifier for the node.
@@ -210,6 +210,28 @@ public class ClusterNodeInfo extends NamedEntityImp {
         result = 29 * result + (address != null ? address.hashCode() : 0);
         result = 29 * result + (_name != null ? _name.hashCode() : 0);
         result = 29 * result + (multicastAddress != null ? multicastAddress.hashCode() : 0);
+        return result;
+    }
+
+    public int compareTo(ClusterNodeInfo cni) {
+        int result = 0;
+
+        String name1 = getName();
+        String name2 = cni.getName();
+
+        if (name1 == null && name2 == null) {
+            result = 0;
+        }
+        else if (name1 == null) {
+            result = -1;
+        }
+        else if (name2 == null) {
+            result = 1;
+        }
+        else {
+            result = name1.toLowerCase().compareTo(name2.toLowerCase());
+        }
+
         return result;
     }
 
