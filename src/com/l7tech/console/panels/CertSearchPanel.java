@@ -28,6 +28,7 @@ import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * @author fpang
@@ -44,10 +45,12 @@ public class CertSearchPanel extends JDialog {
     private JComboBox issuerSearchComboBox;
     private JTextField subjectNameTextField;
     private JTextField issuerNameTextField;
+    private final boolean keyRequired;
     private boolean cancelled;
 
     private JPanel mainPanel;
     private JScrollPane certScrollPane;
+    private JLabel descriptionLabel;
     private TrustedCertsTable trustedCertTable = null;
     private EventListenerList listenerList = new EventListenerList();
 
@@ -65,7 +68,17 @@ public class CertSearchPanel extends JDialog {
      * @param owner The parent component.
      */
     public CertSearchPanel(JDialog owner) {
-        super(owner, resources.getString("cert.search.dialog.title"), true);
+        this(owner, false);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param owner The parent component.
+     */
+    public CertSearchPanel(JDialog owner, boolean keyRequired) {
+        super(owner, resources.getString(getPrefix(keyRequired) + "cert.search.dialog.title"), true);
+        this.keyRequired = keyRequired; 
         initialize();
         pack();
         Utilities.centerOnScreen(this);
@@ -79,6 +92,8 @@ public class CertSearchPanel extends JDialog {
         stopButton.setEnabled(false);
         viewButton.setEnabled(false);
         selectButton.setEnabled(false);
+
+        descriptionLabel.setText(resources.getString(getPrefix(keyRequired) + "cert.search.dialog.description") + ":");
 
         subjectSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS }));
         issuerSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS }));
@@ -235,7 +250,9 @@ public class CertSearchPanel extends JDialog {
 
                 java.util.List<TrustedCert> certList;
                 try {
-                    certList = getTrustedCertAdmin().findAllCerts();
+                    certList = keyRequired ?
+                            findPrivateKeyCerts() :
+                            findTrustedCerts();
 
                     // clear the table
                     trustedCertTable.getTableSorter().setData(new ArrayList<TrustedCert>());
@@ -263,6 +280,31 @@ public class CertSearchPanel extends JDialog {
                 searchButton.setEnabled(true);
             }
         });
+    }
+
+    private java.util.List<TrustedCert> findTrustedCerts() throws RemoteException, FindException {
+        return getTrustedCertAdmin().findAllCerts();
+    }
+
+    /**
+     * Load the certs from the SSG
+     */
+    private java.util.List<TrustedCert> findPrivateKeyCerts() throws RemoteException, FindException {
+        java.util.List<TrustedCert> certList = new ArrayList();
+        try {
+            TrustedCert sslCertHolder = new TrustedCert();
+            sslCertHolder.setCertificate(getTrustedCertAdmin().getSSGSslCert());
+            sslCertHolder.setName(CertUtils.getCn(sslCertHolder.getCertificate()));
+            sslCertHolder.setSubjectDn(sslCertHolder.getCertificate().getSubjectDN().toString());
+            certList.add(sslCertHolder);
+        }
+        catch(IOException ioe) {
+            throw new FindException("Error accessing Private Key information.", ioe);
+        }
+        catch(CertificateException ce) {
+            throw new FindException("Error accessing Private Key information.", ce);
+        }
+        return certList;
     }
 
     /**
@@ -322,4 +364,14 @@ public class CertSearchPanel extends JDialog {
         return Registry.getDefault().getTrustedCertManager();
     }
 
+    /**
+     *
+     */
+    private static String getPrefix(boolean key) {
+        return key ?  "keyed" : "";
+    }
+
+    private void createUIComponents() {
+        // TODO: place custom component creation code here
+    }
 }
