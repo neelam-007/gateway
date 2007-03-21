@@ -8,7 +8,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Properties;
+
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.event.CertEvent;
+import com.l7tech.console.event.CertListenerAdapter;
 
 /**
  * A sub-panel for extra properties of TIBCO EMS; to be inserted into
@@ -18,9 +25,13 @@ import java.util.Properties;
  * @since SecureSpan 3.7
  */
 public class TibcoEmsExtraPropertiesPanel extends JmsExtraPropertiesPanel {
-    // TODO replace with constant from Steve's mapper class
-    private static final String TRUE_VALUE = "com.l7tech.server.jms.prop.boolean.true";
-    private static final String FALSE_VALUE = "com.l7tech.server.jms.prop.boolean.false";
+    private static final String VALUE_SSL = "ssl";
+    private static final String VALUE_TRUE = "com.l7tech.server.jms.prop.boolean.true";
+    private static final String VALUE_FALSE = "com.l7tech.server.jms.prop.boolean.false";
+    private static final String VALUE_TRUSTED_CERTS = "com.l7tech.server.jms.prop.trustedcert.listx509";
+    private static final String VALUE_KEYSTORE = "com.l7tech.server.jms.prop.keystore";
+    private static final String VALUE_KEYSTORE_PASSWORD = "com.l7tech.server.jms.prop.keystore.password";
+    private static final String CERT_PROP = "com.l7tech.server.jms.prop.certificate.subject";
 
     /** Same as com.tibco.tibjms.naming.TibjmsContext.SECURITY_PROTOCOL.
         Value is "ssl" if using SSL in TIBCO JNDI lookups. */
@@ -87,7 +98,21 @@ public class TibcoEmsExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             }
         });
 
-        // TODO wire up selectClientCertButton and clientCertTextField
+       selectClientCertButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                CertSearchPanel sp = new CertSearchPanel(
+                        (JDialog)SwingUtilities.getAncestorOfClass(JDialog.class, TibcoEmsExtraPropertiesPanel.this), 
+                        true);
+                sp.addCertListener(new CertListenerAdapter() {
+                    public void certSelected(CertEvent e) {
+                        clientCertTextField.setText(e.getCert().getSubjectDn());
+                    }
+                });
+                sp.pack();
+                Utilities.centerOnParentWindow(sp);
+                DialogDisplayer.display(sp);
+            }
+        });
 
         setProperties(properties);
     }
@@ -100,7 +125,7 @@ public class TibcoEmsExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             verifyServerCertCheckBox.setSelected(strToBool(properties.getProperty(SSL_ENABLE_VERIFY_HOST)));
             verifyServerHostNameCheckBox.setSelected(strToBool(properties.getProperty(SSL_ENABLE_VERIFY_HOST_NAME)));
             useCertForClientAuthCheckBox.setSelected(properties.getProperty(SSL_IDENTITY) != null);
-            // TODO set clientCertTextField to something
+            clientCertTextField.setText(properties.getProperty(CERT_PROP, ""));
         }
 
         enableOrDisableComponents();
@@ -111,29 +136,29 @@ public class TibcoEmsExtraPropertiesPanel extends JmsExtraPropertiesPanel {
         final Properties properties = new Properties();
 
         if (useSslCheckBox.isSelected()) {
-            properties.setProperty(SECURITY_PROTOCOL, "ssl");
+            properties.setProperty(SECURITY_PROTOCOL, VALUE_SSL);
         }
 
         properties.setProperty(SSL_AUTH_ONLY, boolToStr(useSslForClientAuthOnlyCheckBox.isSelected()));
 
         if (verifyServerCertCheckBox.isSelected()) {
-            properties.setProperty(SSL_ENABLE_VERIFY_HOST, TRUE_VALUE);
-            properties.setProperty(SSL_TRUSTED_CERTIFICATES, "com.l7tech.server.jms.prop.trustedcert.listx509");
+            properties.setProperty(SSL_ENABLE_VERIFY_HOST, VALUE_TRUE);
+            properties.setProperty(SSL_TRUSTED_CERTIFICATES, VALUE_TRUSTED_CERTS);
         } else {
-            properties.setProperty(SSL_ENABLE_VERIFY_HOST, FALSE_VALUE);
+            properties.setProperty(SSL_ENABLE_VERIFY_HOST, VALUE_FALSE);
             properties.remove(SSL_TRUSTED_CERTIFICATES);
         }
 
         properties.setProperty(SSL_ENABLE_VERIFY_HOST_NAME, boolToStr(verifyServerHostNameCheckBox.isSelected()));
 
         if (useCertForClientAuthCheckBox.isSelected()) {
-            properties.setProperty(SSL_IDENTITY, "com.l7tech.server.jms.prop.keystore");
-            properties.setProperty(SSL_PASSWORD, "com.l7tech.server.jms.prop.keystore.password");
-            // TODO put clientCertTextField.getText() somewhere
+            properties.setProperty(SSL_IDENTITY, VALUE_KEYSTORE);
+            properties.setProperty(SSL_PASSWORD, VALUE_KEYSTORE_PASSWORD);
+            properties.setProperty(CERT_PROP, clientCertTextField.getText());
         } else {
             properties.remove(SSL_IDENTITY);
             properties.remove(SSL_PASSWORD);
-            properties.remove("com.l7tech.server.jms.prop.keystore.alias");
+            properties.remove(CERT_PROP);
         }
 
         return properties;
@@ -148,10 +173,10 @@ public class TibcoEmsExtraPropertiesPanel extends JmsExtraPropertiesPanel {
     }
 
     private static boolean strToBool(final String s) {
-        return TRUE_VALUE.equals(s);
+        return VALUE_TRUE.equals(s);
     }
 
     private static String boolToStr(final boolean b) {
-        return b ? TRUE_VALUE : FALSE_VALUE;
+        return b ? VALUE_TRUE : VALUE_FALSE;
     }
 }
