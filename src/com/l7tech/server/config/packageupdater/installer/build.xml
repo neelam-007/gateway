@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ant build file for all modules. -->
+<project name="modules" default="package.sign">
+    <target name="package.sign" depends="package">
+        <echo message="Would sign the jar here"/>
+    </target>
+
+    <target name="checkPrepare">
+        <condition property="installer.prepared">
+            <and>
+                <available file="bin"/>
+                <available file="data"/>
+            </and>
+        </condition>
+    </target>
+
+    <target name="package" depends="checkPrepare">
+        <fail unless="installer.prepared">The update project needs to be prepared first. Please run prepare task</fail>
+        <echo message="would package the jar here"/>
+    </target>
+
+    <target name="prepare" depends="checkPrepare" unless="installer.prepared">
+        <echo message="Creating the update project structure."/>
+        <echo file="readme.txt">
+            Place excutables that perform the installation tasks in bin/stages/stageX where X indicates the order in which stages are to be performed
+        </echo>
+        <echo file="description.txt">
+            Enter a description of the update here
+        </echo>
+        <mkdir dir="bin/stages/stage0" />
+        <mkdir dir="data"/>
+        <echo message="*** Preparation complete. PLEASE READ THE README.TXT FILE ***"/>
+    </target>
+
+    <target name="clean">
+        <delete dir="bin"/>
+        <delete dir="data"/>
+    </target>
+
+</project>
