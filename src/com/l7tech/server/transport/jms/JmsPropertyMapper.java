@@ -1,27 +1,22 @@
 package com.l7tech.server.transport.jms;
 
-import java.util.Map;
-import java.util.Random;
-import java.util.List;
-import java.util.Collection;
-import java.util.Vector;
-import java.util.Set;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.identity.cert.TrustedCertManager;
+import com.l7tech.server.KeystoreUtils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.cert.Certificate;
-import java.io.IOException;
-import java.io.ByteArrayOutputStream;
-
-import com.l7tech.server.KeystoreUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.identity.cert.TrustedCertManager;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Maps JMS initial context property values.
@@ -41,7 +36,7 @@ public class JmsPropertyMapper {
     public static final String VALUE_KEYSTORE = PREFIX + ".keystore";
     public static final String VALUE_KEYSTORE_BYTES = PREFIX + ".keystore.bytes";
     public static final String VALUE_KEYSTORE_PASSWORD = PREFIX + ".keystore.password";
-    public static final String VALUE_TRUSTED_LIST = PREFIX + "trustedcert.listx509"; // actually a Vector
+    public static final String VALUE_TRUSTED_LIST = PREFIX + ".trustedcert.listx509"; // actually a Vector
     public static final String VALUE_BOOLEAN_TRUE = PREFIX + ".boolean.true";
     public static final String VALUE_BOOLEAN_FALSE = PREFIX + ".boolean.false";
 

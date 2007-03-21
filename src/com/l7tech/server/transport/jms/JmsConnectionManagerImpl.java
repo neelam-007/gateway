@@ -32,7 +32,7 @@ public class JmsConnectionManagerImpl
 
     public JmsConnectionManagerImpl() {
         // TODO make this real, eh?!!
-        JmsProvider tibcoEmsProvider = new JmsProvider("Tibco EMS", "com.tibco.tibjms.naming.TibjmsInitialContextFactory", "QueueConnectionFactory");
+        JmsProvider tibcoEmsProvider = new JmsProvider("TIBCO EMS", "com.tibco.tibjms.naming.TibjmsInitialContextFactory", "QueueConnectionFactory");
         JmsProvider mqSeriesOverLdapProvider = new JmsProvider("WebSphere MQ over LDAP", "com.sun.jndi.ldap.LdapCtxFactory", "QueueConnectionFactory");
         List<JmsProvider> list = new ArrayList<JmsProvider>();
         list.add(tibcoEmsProvider);

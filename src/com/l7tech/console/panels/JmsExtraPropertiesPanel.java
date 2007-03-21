@@ -8,7 +8,7 @@ import javax.swing.*;
 import java.util.Properties;
 
 /**
- * A sub-panel for extra properties of a specific JMS provider type; to be
+ * A sub-panel for configuring additional settings of a specific JMS provider type; to be
  * inserted into {@link JmsQueuePropertiesDialog} when that JMS provider type
  * is selected.
  *

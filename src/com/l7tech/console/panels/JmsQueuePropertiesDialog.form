@@ -151,7 +151,7 @@
               <text value="Initial Context Factory Class:"/>
             </properties>
           </component>
-          <component id="c9065" class="javax.swing.JCheckBox" binding="hasJndiCredentialsCheckBox">
+          <component id="c9065" class="javax.swing.JCheckBox" binding="useJndiCredentialsCheckBox">
             <constraints>
               <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false">
                 <preferred-size width="138" height="22"/>
@@ -288,7 +288,7 @@
               </grid>
             </constraints>
           </vspacer>
-          <component id="fc73a" class="javax.swing.JCheckBox" binding="hasQueueCredentialsCheckBox">
+          <component id="fc73a" class="javax.swing.JCheckBox" binding="useQueueCredentialsCheckBox">
             <constraints>
               <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false">
                 <preferred-size width="138" height="22"/>

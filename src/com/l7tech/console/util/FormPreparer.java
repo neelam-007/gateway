@@ -47,6 +47,13 @@ public class FormPreparer {
         traverse(dialog.getComponents());
     }
 
+    public void prepare(JPanel panel) {
+        if (panel == null) {
+            throw new IllegalArgumentException();
+        }
+        traverse(panel.getComponents());
+    }
+
     public void prepare(Component[] components) {
         for (int i = 0; i < components.length; i++) {
             Component component = components[i];
