@@ -39,6 +39,7 @@ import java.security.*;
  */
 public class LicenseDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(LicenseDialog.class.getName());
+    private static final String CLICKWRAP_PATH = "com/l7tech/console/resources/clickwrap.txt";
 
     final LicensePanel licensePanel;
     private JPanel rootPanel;
@@ -190,6 +191,17 @@ public class LicenseDialog extends JDialog {
                                         options,
                                         cancel);
                                 if (confResult != 0)
+                                    return;
+                            } else {
+                                // Show click wrap license
+                                InputStream agreementStream = getClass().getClassLoader().getResourceAsStream(CLICKWRAP_PATH);
+                                String agreementText = agreementStream != null ?
+                                        new String(HexUtils.slurpStream(agreementStream)) : "Missing " + CLICKWRAP_PATH;
+                                ClickwrapDialog clickWrap = new ClickwrapDialog(LicenseDialog.this, agreementText);
+                                clickWrap.pack();
+                                Utilities.centerOnScreen(clickWrap);
+                                clickWrap.setVisible(true);
+                                if (!clickWrap.isConfirmed())
                                     return;
                             }
 
