@@ -221,7 +221,7 @@ public class Wizard extends JDialog {
         descScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
         JEditorPane da = getStepDescriptionTextPane();
-        da.setBackground(descScrollPane.getBackground());
+        descScrollPane.setPreferredSize(new Dimension(640, 100));
         descScrollPane.setViewportView(da);
         descScrollPane.setBorder(new CompoundBorder(new EmptyBorder(new java.awt.Insets(10, 0, 0, 0)), new LineBorder(Color.GRAY)));
         descriptionPanel = new JPanel();
@@ -516,6 +516,7 @@ public class Wizard extends JDialog {
         stepDescriptionTextPane = new JTextPane();
         stepDescriptionTextPane.setEditorKit(new HTMLEditorKit());
         stepDescriptionTextPane.setEditable(false);
+        stepDescriptionTextPane.setOpaque(false);
         addWizardListener(new WizardAdapter() {
             /**
              * Invoked when the wizard page has been changed.
