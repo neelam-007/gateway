@@ -29,6 +29,7 @@
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="jmsConnectionManager"/>
         <constructor-arg ref="jmsEndpointManager"/>
+        <constructor-arg ref="jmsPropertyMapper"/>
         <constructor-arg ref="managedBackgroundTimer"/>
     </bean>
 
@@ -335,7 +336,7 @@
             <ref bean="transactionManager"/>
         </property>
     </bean>
-    <!-- jms connection manager -->
+    <!-- jms endpoint manager -->
     <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
@@ -343,6 +344,11 @@
         <property name="transactionManager">
             <ref bean="transactionManager"/>
         </property>
+    </bean>
+    <!-- jms property mapper -->
+    <bean id="jmsPropertyMapper" class="com.l7tech.server.transport.jms.JmsPropertyMapper">
+        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="trustedCertManager"/>
     </bean>
 
     <!-- server side policy validator -->

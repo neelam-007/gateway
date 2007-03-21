@@ -50,6 +50,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         this.data = data;
         auditor = new Auditor(this, ctx, logger);
         stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        jmsPropertyMapper = (JmsPropertyMapper) applicationContext.getBean("jmsPropertyMapper", JmsPropertyMapper.class);
         SignerInfo signerInfo = null;
         try {
             KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
@@ -390,7 +391,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             if ( endpoint == null ) throw new FindException( "JmsEndpoint could not be located! It may have been deleted" );
             PasswordAuthentication pwauth = endpoint.getPasswordAuthentication();
 
-            bag = JmsUtil.connect( conn, pwauth );
+            bag = JmsUtil.connect( conn, pwauth, jmsPropertyMapper );
             bag.getConnection().start();
         }
         return bag;
@@ -399,6 +400,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private final JmsRoutingAssertion data;
     private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
+    private final JmsPropertyMapper jmsPropertyMapper;
     private final SignerInfo senderVouchesSignerInfo;
 
     private JmsConnection routedRequestConnection;

@@ -269,5 +269,12 @@
     <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">
         <constructor-arg ref="assertionRegistry"/>
     </bean>
-    
+
+    <bean id="jmsPropertyMapper" class="com.l7tech.server.transport.jms.JmsPropertyMapper">
+        <constructor-arg ref="keystore"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.identity.cert.TestTrustedCertManager"/>
+        </constructor-arg>
+    </bean>
+
 </beans>

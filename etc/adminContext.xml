@@ -265,15 +265,10 @@
 
     <!-- jms admin servant -->
     <bean id="jmsAdmin_UNSECURED" class="com.l7tech.server.transport.jms.JmsAdminImpl">
-        <constructor-arg>
-            <ref bean="licenseManager"/>
-        </constructor-arg>
-        <property name="jmsConnectionManager">
-            <ref bean="jmsConnectionManager"/>
-        </property>
-        <property name="jmsEndpointManager">
-            <ref bean="jmsEndpointManager"/>
-        </property>
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="jmsConnectionManager"/>
+        <constructor-arg ref="jmsEndpointManager"/>
+        <constructor-arg ref="jmsPropertyMapper"/>
     </bean>
 
     <!-- trusted cert admin servant -->

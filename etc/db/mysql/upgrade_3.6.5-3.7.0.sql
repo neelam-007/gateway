@@ -41,3 +41,9 @@ ALTER TABLE sample_messages
     insert into cluster_properties
         (objectid, version, propkey, propvalue)
         values (-300700, 0, "upgrade.task.300700", "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions");
+
+
+--
+-- JMS updates
+--
+ALTER TABLE jms_connection ADD column properties mediumtext default '';

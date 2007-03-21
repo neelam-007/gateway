@@ -30,6 +30,7 @@ public class JmsBootProcess extends LifecycleBean {
     private final ServerConfig serverConfig;
     private final JmsConnectionManager connectionManager;
     private final JmsEndpointManager endpointManager;
+    private final JmsPropertyMapper jmsPropertyMapper;
 
     private Object receiverLock = new Object();
     private Set<JmsReceiver> activeReceivers = new HashSet<JmsReceiver>();
@@ -45,6 +46,7 @@ public class JmsBootProcess extends LifecycleBean {
                           LicenseManager licenseManager,
                           JmsConnectionManager connectionManager,
                           JmsEndpointManager endpointManager,
+                          JmsPropertyMapper jmsPropertyMapper,
                           Timer timer)
     {
         super("JMS Boot Process", logger, GatewayFeatureSets.SERVICE_JMS_MESSAGE_INPUT, licenseManager);
@@ -55,6 +57,7 @@ public class JmsBootProcess extends LifecycleBean {
         this.serverConfig = serverConfig;
         this.connectionManager = connectionManager;
         this.endpointManager = endpointManager;
+        this.jmsPropertyMapper = jmsPropertyMapper;
         this.backgroundTimer = timer;
     }
 
@@ -125,7 +128,7 @@ public class JmsBootProcess extends LifecycleBean {
 
                     for (JmsEndpoint endpoint : endpoints) {
                         if (!endpoint.isMessageSource()) continue;
-                        JmsReceiver receiver = new JmsReceiver(connection, endpoint, endpoint.getReplyType());
+                        JmsReceiver receiver = new JmsReceiver(connection, endpoint, endpoint.getReplyType(), jmsPropertyMapper);
 
                         try {
                             receiver.setApplicationContext(getApplicationContext());
@@ -263,7 +266,7 @@ public class JmsBootProcess extends LifecycleBean {
             JmsReceiver receiver = null;
             try {
                 JmsConnection connection = connectionManager.findByPrimaryKey( updatedEndpoint.getConnectionOid() );
-                receiver = new JmsReceiver(connection, updatedEndpoint, updatedEndpoint.getReplyType());
+                receiver = new JmsReceiver(connection, updatedEndpoint, updatedEndpoint.getReplyType(), jmsPropertyMapper);
                 receiver.setApplicationContext(getApplicationContext());
                 receiver.setServerConfig(serverConfig);
                 receiver.start();

@@ -167,6 +167,7 @@
         <property name="topicFactoryUrl" column="topic_factory_url" type="string"/>
         <property name="username" column="username" type="string"/>
         <property name="password" column="password" type="string"/>
+        <property name="properties" column="properties" type="string"/>
 
         <!--
         <set name="endpoints" cascade="all" inverse="true">

@@ -29,12 +29,19 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class JmsAdminImpl implements JmsAdmin {
-    private JmsConnectionManager jmsConnectionManager;
-    private JmsEndpointManager jmsEndpointManager;
-    private LicenseManager licenseManager;
+    private final LicenseManager licenseManager;
+    private final JmsConnectionManager jmsConnectionManager;
+    private final JmsEndpointManager jmsEndpointManager;
+    private final JmsPropertyMapper jmsPropertyMapper;
 
-    public JmsAdminImpl(LicenseManager licenseManager) {
+    public JmsAdminImpl(LicenseManager licenseManager,
+                        JmsConnectionManager jmsConnectionManager,
+                        JmsEndpointManager jmsEndpointManager,
+                        JmsPropertyMapper jmsPropertyMapper) {
         this.licenseManager = licenseManager;
+        this.jmsConnectionManager = jmsConnectionManager;
+        this.jmsEndpointManager = jmsEndpointManager;
+        this.jmsPropertyMapper = jmsPropertyMapper;
     }
 
     private void checkLicense() throws RemoteException {
@@ -187,7 +194,7 @@ public class JmsAdminImpl implements JmsAdmin {
 
         try {
             _logger.finer("Connecting to connection " + conn);
-            bag = JmsUtil.connect(conn, endpoint.getPasswordAuthentication());
+            bag = JmsUtil.connect(conn, endpoint.getPasswordAuthentication(), jmsPropertyMapper);
 
             Context jndiContext = bag.getJndiContext();
             jmsConnection = bag.getConnection();
@@ -264,14 +271,6 @@ public class JmsAdminImpl implements JmsAdmin {
     public void deleteConnection(long connectionOid) throws RemoteException, FindException, DeleteException {
         checkLicense();
         jmsConnectionManager.delete(connectionOid);
-    }
-
-    public void setJmsConnectionManager(JmsConnectionManager jmsConnectionManager) {
-        this.jmsConnectionManager = jmsConnectionManager;
-    }
-
-    public void setJmsEndpointManager(JmsEndpointManager jmsEndpointManager) {
-        this.jmsEndpointManager = jmsEndpointManager;
     }
 
     protected void initDao() throws Exception {

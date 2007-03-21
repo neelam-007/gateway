@@ -36,12 +36,13 @@ public class JmsUtil {
      * @param connection a {@link JmsConnection} that encapsulates the information required
      * to connect to a JMS provider.
      * @param auth overrides the username and password from the connection if present.  May be null.
+     * @param mapper property mapper for initial context properties. May be null.
      * @return a {@link JmsBag} containing the resulting {@link ConnectionFactory}, {@link Connection} and {@link Session}.
      * @throws JMSException
      * @throws NamingException
      * @throws JmsConfigException if no connection factory URL could be found for this connection
      */
-    public static JmsBag connect( JmsConnection connection, PasswordAuthentication auth )
+    public static JmsBag connect( JmsConnection connection, PasswordAuthentication auth, JmsPropertyMapper mapper )
             throws JmsConfigException, JMSException, NamingException {
         logger.fine( "Connecting to " + connection.toString() );
         String icf = connection.getInitialContextFactoryClassname();
@@ -71,6 +72,9 @@ public class JmsUtil {
         Properties props = new Properties();
         props.put( Context.PROVIDER_URL, url );
         props.put( Context.INITIAL_CONTEXT_FACTORY, icf );
+        props.putAll( connection.properties() );
+        if (mapper != null)
+            mapper.substitutePropertyValues(props);
         Context jndiContext = null;
 
         try {
@@ -143,10 +147,10 @@ public class JmsUtil {
     }
 
     /**
-     * Equivalent to {@link JmsUtil#connect(JmsConnection, null)}
+     * Equivalent to {@link JmsUtil#connect(JmsConnection, null, null)}
      */
     public static JmsBag connect( JmsConnection connection ) throws JMSException, NamingException, JmsConfigException {
-        return connect( connection, null );
+        return connect( connection, null, null );
     }
 
     private static final Logger logger = Logger.getLogger(JmsUtil.class.getName());

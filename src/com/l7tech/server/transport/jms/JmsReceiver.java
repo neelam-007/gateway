@@ -47,6 +47,7 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
     private final JmsReplyType _replyType;
     private final JmsConnection _connection;
     private final JmsEndpoint _inboundRequestEndpoint;
+    private final JmsPropertyMapper _jmsPropertyMapper;
 
     // JMS stuff
 
@@ -62,11 +63,12 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
      * @param inbound   The {@link com.l7tech.common.transport.jms.JmsEndpoint} from which to receive requests
      * @param replyType A {@link com.l7tech.common.transport.jms.JmsReplyType} value indicating this receiver's
      */
-    public JmsReceiver(JmsConnection connection, JmsEndpoint inbound, JmsReplyType replyType) {
+    public JmsReceiver(JmsConnection connection, JmsEndpoint inbound, JmsReplyType replyType, JmsPropertyMapper jmsPropertyMapper) {
         _connection = connection;
         _inboundRequestEndpoint = inbound;
         if (replyType == null) replyType = JmsReplyType.AUTOMATIC;
         _replyType = replyType;
+        _jmsPropertyMapper = jmsPropertyMapper;
     }
 
     /**
@@ -78,8 +80,8 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
      *
      * @param inbound The {@link com.l7tech.common.transport.jms.JmsEndpoint} from which to receive requests
      */
-    public JmsReceiver(JmsConnection connection, JmsEndpoint inbound) {
-        this( connection, inbound, inbound.getReplyType());
+    public JmsReceiver(JmsConnection connection, JmsEndpoint inbound, JmsPropertyMapper jmsPropertyMapper) {
+        this( connection, inbound, inbound.getReplyType(), jmsPropertyMapper);
     }
 
     public String toString() {
@@ -239,7 +241,7 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
             synchronized(sync) {
                 if ( _bag == null ) {
                     _logger.finest( "Getting new JmsBag" );
-                    _bag = JmsUtil.connect( _connection, _inboundRequestEndpoint.getPasswordAuthentication() );
+                    _bag = JmsUtil.connect( _connection, _inboundRequestEndpoint.getPasswordAuthentication(), _jmsPropertyMapper );
                 }
                 return _bag;
             }
