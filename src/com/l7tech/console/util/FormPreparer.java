@@ -59,7 +59,7 @@ public class FormPreparer {
             Component component = components[i];
             visit(component);
             if (component instanceof Container) {
-                processContainer((Container)component);
+                traverse(((Container)component).getComponents());
             }
         }
     }
