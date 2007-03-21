@@ -19,7 +19,6 @@ import java.util.logging.Logger;
  */
 public class CertUsagePanel extends WizardStepPanel {
     private JPanel mainPanel;
-    private JPanel certUsagePane;
     private JCheckBox signingServerCertCheckBox;
     private JCheckBox signingSAMLTokenCheckBox;
     private JCheckBox signingClientCertCheckBox;
