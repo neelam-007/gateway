@@ -4,21 +4,23 @@
 
 package com.l7tech.console.panels;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.Properties;
-
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListenerAdapter;
 
+import javax.swing.*;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.util.Properties;
+
 /**
- * A sub-panel for extra properties of TIBCO EMS; to be inserted into
+ * A sub-panel for configuring additional settings of TIBCO EMS; to be inserted into
  * {@link JmsQueuePropertiesDialog} when TIBCO EMS is selected.
  *
  * @author rmak
@@ -95,10 +97,11 @@ public class TibcoEmsExtraPropertiesPanel extends JmsExtraPropertiesPanel {
         useCertForClientAuthCheckBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 enableOrDisableComponents();
+                fireStateChanged();     // This may affect validity of settings.
             }
         });
 
-       selectClientCertButton.addActionListener(new ActionListener() {
+        selectClientCertButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 CertSearchPanel sp = new CertSearchPanel(
                         (JDialog)SwingUtilities.getAncestorOfClass(JDialog.class, TibcoEmsExtraPropertiesPanel.this), 
@@ -114,13 +117,19 @@ public class TibcoEmsExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             }
         });
 
+        clientCertTextField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { fireStateChanged(); }
+            public void removeUpdate(DocumentEvent e) { fireStateChanged(); }
+            public void changedUpdate(DocumentEvent e) { fireStateChanged(); }
+        });
+
         setProperties(properties);
     }
 
     @Override
     public void setProperties(final Properties properties) {
         if (properties != null) {
-            useSslCheckBox.setSelected("ssl".equals(properties.getProperty(SECURITY_PROTOCOL)));
+            useSslCheckBox.setSelected(VALUE_SSL.equals(properties.getProperty(SECURITY_PROTOCOL)));
             useSslForClientAuthOnlyCheckBox.setSelected(strToBool(properties.getProperty(SSL_AUTH_ONLY)));
             verifyServerCertCheckBox.setSelected(strToBool(properties.getProperty(SSL_ENABLE_VERIFY_HOST)));
             verifyServerHostNameCheckBox.setSelected(strToBool(properties.getProperty(SSL_ENABLE_VERIFY_HOST_NAME)));
@@ -146,7 +155,6 @@ public class TibcoEmsExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             properties.setProperty(SSL_TRUSTED_CERTIFICATES, VALUE_TRUSTED_CERTS);
         } else {
             properties.setProperty(SSL_ENABLE_VERIFY_HOST, VALUE_FALSE);
-            properties.remove(SSL_TRUSTED_CERTIFICATES);
         }
 
         properties.setProperty(SSL_ENABLE_VERIFY_HOST_NAME, boolToStr(verifyServerHostNameCheckBox.isSelected()));
@@ -155,10 +163,6 @@ public class TibcoEmsExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             properties.setProperty(SSL_IDENTITY, VALUE_KEYSTORE);
             properties.setProperty(SSL_PASSWORD, VALUE_KEYSTORE_PASSWORD);
             properties.setProperty(CERT_PROP, clientCertTextField.getText());
-        } else {
-            properties.remove(SSL_IDENTITY);
-            properties.remove(SSL_PASSWORD);
-            properties.remove(CERT_PROP);
         }
 
         return properties;
@@ -170,6 +174,17 @@ public class TibcoEmsExtraPropertiesPanel extends JmsExtraPropertiesPanel {
         verifyServerHostNameCheckBox.setEnabled(verifyServerCertCheckBox.isEnabled() && verifyServerCertCheckBox.isSelected());
         useCertForClientAuthCheckBox.setEnabled(useSslCheckBox.isSelected());
         selectClientCertButton.setEnabled(useCertForClientAuthCheckBox.isEnabled() && useCertForClientAuthCheckBox.isSelected());
+    }
+
+    @Override
+    public boolean validatePanel() {
+        boolean ok = true;
+        if (useCertForClientAuthCheckBox.isEnabled()) {
+            if (clientCertTextField.getText().length() == 0) {
+                ok = false;
+            }
+        }
+        return ok;
     }
 
     private static boolean strToBool(final String s) {

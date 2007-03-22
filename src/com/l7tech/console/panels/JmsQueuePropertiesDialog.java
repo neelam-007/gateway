@@ -16,6 +16,8 @@ import com.l7tech.console.util.Registry;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import javax.naming.Context;
 import java.awt.*;
 import java.awt.event.*;
@@ -182,7 +184,22 @@ public class JmsQueuePropertiesDialog extends JDialog {
         icfTextField.getDocument().addDocumentListener(formPreener);
         qcfTextField.getDocument().addDocumentListener(formPreener);
         queueNameTextField.getDocument().addDocumentListener(formPreener);
-        // TODO listen to changes inside extraPropertiesOuterPanel
+
+        extraPropertiesOuterPanel.addContainerListener(new ContainerListener() {
+            public void componentAdded(ContainerEvent e) {
+                if (extraPropertiesPanel != null) {
+                    extraPropertiesPanel.addChangeListener(new ChangeListener() {
+                        public void stateChanged(ChangeEvent e) {
+                            enableOrDisableComponents();
+                        }
+                    });
+                }
+                enableOrDisableComponents();
+            }
+            public void componentRemoved(ContainerEvent e) {
+                enableOrDisableComponents();
+            }
+        });
 
         testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -448,18 +465,15 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
             String jndiUsername = connection.properties().getProperty(Context.SECURITY_PRINCIPAL);
             String jndiPassword = connection.properties().getProperty(Context.SECURITY_CREDENTIALS);
+            useJndiCredentialsCheckBox.setSelected(jndiUsername != null || jndiPassword != null);
             jndiUsernameTextField.setText(jndiUsername);
             jndiPasswordField.setText(jndiPassword);
-            useJndiCredentialsCheckBox.setSelected(
-                       (jndiUsername != null && jndiUsername.length() > 0)
-                    || (jndiPassword != null && jndiPassword.length() > 0));
             enableOrDisableJndiCredentials();
 
-            boolean hasQueueCredentials = connection.getUsername() != null && connection.getUsername().length() > 0;
-            useQueueCredentialsCheckBox.setSelected(hasQueueCredentials);
-            enableOrDisableQueueCredentials();
+            useQueueCredentialsCheckBox.setSelected(connection.getUsername() != null || connection.getUsername() != null);
             queueUsernameTextField.setText(connection.getUsername());
             queuePasswordField.setText(connection.getPassword());
+            enableOrDisableQueueCredentials();
         } else {
             // No connection is set
             providerComboBox.setSelectedIndex(0);
@@ -467,14 +481,15 @@ public class JmsQueuePropertiesDialog extends JDialog {
             icfTextField.setText("");
             jndiUrlTextField.setText("");
 
+            useJndiCredentialsCheckBox.setSelected(false);
             jndiUsernameTextField.setText("");
             jndiPasswordField.setText("");
             enableOrDisableJndiCredentials();
 
             useQueueCredentialsCheckBox.setSelected(false);
-            enableOrDisableQueueCredentials();
             queueUsernameTextField.setText(null);
             queuePasswordField.setText(null);
+            enableOrDisableQueueCredentials();
         }
 
         if (endpoint != null) {
@@ -501,7 +516,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return false;
         if (icfTextField.getText().length() < 1)
             return false;
-        // TODO validate components inside extraPropertiesPanel
+        if (extraPropertiesPanel != null && !extraPropertiesPanel.validatePanel())
+            return false;
         return true;
     }
 
