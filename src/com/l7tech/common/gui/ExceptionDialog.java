@@ -64,6 +64,12 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private boolean allowShutdown = true;
     private boolean neverDisplay = false;
 
+    /** Interface the outermost wrapped exception can implement to change what detailed error message is displayed. */
+    public interface ExceptionDialogDisplayMessageSource {
+        /** @return a message to use instead of unnesting the exception to root. */
+        String getDisplayMessage();
+    }
+
     /** Create a neverDisplay exception dialog that never displays anything. */
     private ExceptionDialog(Frame parent) {
         super(parent, false);
@@ -274,10 +280,22 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private JLabel getExceptionMessageLabel(Throwable t)
       throws MalformedURLException {
         HyperlinkLabel label = null;
-        if (t == null || (t.getMessage() == null || "".equals(t.getMessage())))
+        if (t == null)
             return new JLabel();
-        Throwable cause = ExceptionUtils.unnestToRoot(t);
-        label = new HyperlinkLabel(restrictLength(cause.getMessage(), 400), null, "file://", SwingConstants.CENTER);
+
+        final String displayMessage;
+        if (t instanceof ExceptionDialogDisplayMessageSource) {
+            ExceptionDialogDisplayMessageSource ms = (ExceptionDialogDisplayMessageSource)t;
+            displayMessage = ms.getDisplayMessage();
+        } else {
+            Throwable cause = ExceptionUtils.unnestToRoot(t);
+            displayMessage = cause.getMessage();
+        }
+
+        if (displayMessage == null)
+            return new JLabel();
+
+        label = new HyperlinkLabel(restrictLength(displayMessage, 400), null, "file://", SwingConstants.CENTER);
         label.addHyperlinkListener(new HyperlinkListener() {
             /**
              * Called when a hypertext link is updated.

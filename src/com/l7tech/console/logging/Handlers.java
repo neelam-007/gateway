@@ -26,6 +26,7 @@ class Handlers {
             new AdminSessionExpiredErrorHandler(),
             new PermissionDeniedErrorHandler(),
             new ModularAssertionErrorHandler(),
+            new DatabaseConnectionErrorHandler(),
             new DefaultErrorHandler()
         };
     }

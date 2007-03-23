@@ -1,8 +1,10 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.console.action.*;
+import com.l7tech.console.action.DeleteServiceAction;
+import com.l7tech.console.action.EditServicePolicyAction;
+import com.l7tech.console.action.EditServiceProperties;
+import com.l7tech.console.action.PublishPolicyToSystinetRegistry;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
@@ -12,8 +14,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.io.StringReader;
 import java.rmi.RemoteException;
@@ -32,7 +34,6 @@ import java.util.logging.Logger;
 public class ServiceNode extends EntityHeaderNode {
     static final Logger log = Logger.getLogger(ServiceNode.class.getName());
     private PublishedService svc;
-    private String serviceName = null;
 
     /**
      * construct the <CODE>ServiceNode</CODE> instance for
@@ -52,27 +53,40 @@ public class ServiceNode extends EntityHeaderNode {
     }
 
     public PublishedService getPublishedService() throws FindException, RemoteException {
+        return svc != null ? svc : (svc = refreshPublishedService());
+    }
+
+    /**
+     * Refresh info from server, including checking for deleted service.
+     * If the service has been deleted, this will prune it from the services tree before returning.
+     *
+     * @throws com.l7tech.objectmodel.FindException  if unable to find service, possibly because it was deleted
+     * @throws java.rmi.RemoteException  on remote communication error
+     * @return the published service.  Never null.
+     */
+    public PublishedService refreshPublishedService() throws RemoteException, FindException {
+        EntityHeader eh = getEntityHeader();
+        svc = Registry.getDefault().getServiceManager().findServiceByID(eh.getStrId());
+        // throw something if null, the service may have been deleted
         if (svc == null) {
-            EntityHeader eh = getEntityHeader();
-            svc = Registry.getDefault().getServiceManager().findServiceByID(eh.getStrId());
-            // throw something if null, the service may have been deleted
-            if (svc == null) {
-                TopComponents creg = TopComponents.getInstance();
-                JTree tree = (JTree)creg.getComponent(ServicesTree.NAME);
-                if (tree !=null) {
-                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    Enumeration kids = this.getParent().children();
-                    while (kids.hasMoreElements()) {
-                        TreeNode node = (TreeNode) kids.nextElement();
-                        if (node == this) {
-                    model.removeNodeFromParent(this);
-                            break;
-                }
+            TopComponents creg = TopComponents.getInstance();
+            JTree tree = (JTree)creg.getComponent(ServicesTree.NAME);
+            if (tree !=null) {
+                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                Enumeration kids = this.getParent().children();
+                while (kids.hasMoreElements()) {
+                    TreeNode node = (TreeNode) kids.nextElement();
+                    if (node == this) {
+                        model.removeNodeFromParent(this);
+                        break;
                     }
                 }
-                throw new FindException("The service '"+eh.getName()+"' does not exist any more.");
             }
+            throw new FindException("The service '"+eh.getName()+"' does not exist any more.");
         }
+        EntityHeader newEh = new EntityHeader(svc.getId(), eh.getType(), svc.getName(), svc.getName());
+        setUserObject(newEh);
+        firePropertyChange(this, "UserObject", eh, newEh);
         return svc;
     }
 
@@ -81,7 +95,6 @@ public class ServiceNode extends EntityHeaderNode {
      */
     public void clearServiceHolder() {
         svc = null;
-        serviceName = null;
     }
 
     /**
@@ -181,19 +194,7 @@ public class ServiceNode extends EntityHeaderNode {
     }
 
     private String getServiceName() {
-        try {
-            if (serviceName == null) {
-                PublishedService ps = getPublishedService();
-                if (ps != null) {
-                    serviceName = getPublishedService().getName();
-                } else {
-                    return "deleted?";
-                }
-            }
-            return serviceName;
-        } catch (Exception e) {
-            throw ExceptionUtils.wrap(e);
-        }
+        return getEntityHeader().getName();
     }
 
     /**

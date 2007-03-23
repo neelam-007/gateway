@@ -150,9 +150,6 @@ public class SecureHttpClient extends HttpClient {
                 SSLTrustFailureHandler sslTrustFailureHandler = currentTrustFailureHandler;
 
                 if (sslTrustFailureHandler == null) {  // not specified
-                    if (wrapme.getAcceptedIssuers().length == 0) {
-                        throw new CertificateException("No trusted issuers.");
-                    }
                     wrapme.checkServerTrusted(chain, authType);
                 } else {
                     try {
