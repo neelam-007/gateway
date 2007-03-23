@@ -98,7 +98,39 @@ public class JmsUtil {
                 throw new JmsConfigException(msg);
             }
 
-            connFactory = (ConnectionFactory)o;
+            if (!(o instanceof ConnectionFactory)) {
+                String msg = "The ConnectionFactory lookup returned an unsupported object type '"
+                             + o.getClass().getName() + "'.";
+                logger.warning( msg );
+                throw new JmsConfigException(msg);
+            }
+
+            connFactory = (ConnectionFactory) o;
+
+            String customizerClassname = (String) jndiContext.getEnvironment().get(JmsPropertyMapper.PROP_CUSTOMIZER);
+            if (customizerClassname != null) {
+                try {
+                    Class customizerClass = Class.forName(customizerClassname);
+                    Object instance = customizerClass.newInstance();
+                    if (instance instanceof ConnectionFactoryCustomizer) {
+                        ConnectionFactoryCustomizer customizer = (ConnectionFactoryCustomizer) instance;
+                        customizer.configureConnectionFactory(connFactory, jndiContext);
+                    }
+                    else {
+                        throw new JmsConfigException("Could not configure connection factory, customizer does not implement the correct interface.");
+                    }
+                }
+                catch (ClassNotFoundException cnfe) {
+                    throw new JmsConfigException("Could not configure connection factory.", cnfe);
+                }
+                catch (InstantiationException ie) {
+                    throw new JmsConfigException("Could not configure connection factory.", ie);
+                }
+                catch (IllegalAccessException iae) {
+                    throw new JmsConfigException("Could not configure connection factory.", iae);
+                }
+            }
+
             if ( username != null && password != null ) {
                 if ( connFactory instanceof QueueConnectionFactory ) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection(username, password);

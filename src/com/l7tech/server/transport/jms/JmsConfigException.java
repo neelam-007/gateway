@@ -14,4 +14,8 @@ public class JmsConfigException extends Exception {
     public JmsConfigException( String message ) {
         super( message );
     }
+
+    public JmsConfigException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

@@ -41,6 +41,7 @@ public class JmsPropertyMapper {
     public static final String VALUE_BOOLEAN_FALSE = PREFIX + ".boolean.false";
 
     public static final String PROP_KEYSTORE_ALIAS = PREFIX + ".keystore.alias";
+    public static final String PROP_CUSTOMIZER = PREFIX + ".customizer.class";
 
     /**
      * Create a new JmsPropertyMapper.
