@@ -5,11 +5,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.Serializable;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KerberosKey;
 
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.HexUtils;
@@ -160,6 +166,59 @@ public class Keytab implements Serializable {
     }
 
     /**
+     * Create a keytab for the given principal and credentials.
+     *
+     * <p>This will create a Keytab with the kvno 1 and with
+     * RC4 and DES keys.</p>
+     *
+     * @param keytabFile The Keytab file.
+     * @param principal The principal name (http/server.domain.com@DOMAIN.COM)
+     * @param password The users credentials
+     * @param desOnly True for DES only key
+     */
+    public Keytab(File keytabFile, String principal, String password, boolean desOnly) throws KerberosException {
+        if (keytabFile == null) throw new IllegalArgumentException("keytabFile must not be null");
+        keyData = new ArrayList();
+
+        networkOrder = true;        
+        versionMajor = 5;
+        versionMinor = 2;
+
+        keyName = parseName(principal);
+        keyRealm = keyName[0];
+
+        long timestamp = System.currentTimeMillis();
+        if (!desOnly) {
+            KeyData keyDataItem = new KeyData();
+            keyDataItem.timestamp = timestamp;
+            keyDataItem.type = 23;
+            keyDataItem.version = 1;
+            keyData.add(keyDataItem);
+        }
+
+        KeyData keyDataItem = new KeyData();
+        keyDataItem.timestamp = timestamp;
+        keyDataItem.type = 3;
+        keyDataItem.version = 1;
+        keyData.add(keyDataItem);
+
+        FileOutputStream out = null;
+        try {
+            if (keytabFile.exists())
+                throw new KerberosException("File exists '"+keytabFile.getAbsolutePath()+"'.");
+
+            out = new FileOutputStream(keytabFile);
+            init(this, principal, password, desOnly, out);
+        }
+        catch(Exception e) {
+            throw new KerberosException("Error writing keytab.", e);
+        }
+        finally {
+            ResourceUtils.closeQuietly(out);
+        }
+    }
+
+    /**
      * Get the major version number for the Keytab file.
      *
      * @return 5 which is the only major version supported.
@@ -261,12 +320,18 @@ public class Keytab implements Serializable {
      * @throws Exception usually...
      */
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            System.out.println("Usage:\n\tKeytab <keytab-file>\n");
+        if (args.length != 1 && args.length != 3) {
+            System.out.println("Usage:\n\tKeytab <keytab-file> [<principal> <password>]\n");
             return;
         }
 
-        Keytab keytab = new Keytab(new File(args[0]));
+        Keytab keytab;
+        if (args.length == 1) {
+            keytab = new Keytab(new File(args[0]));
+        } else {
+            keytab = new Keytab(new File(args[0]), args[1], args[2], false);
+        }
+
         System.out.println("Keytab:- ");
         System.out.println("Major Version: " + keytab.getVersionMajor());
         System.out.println("Minor Version: " + keytab.getVersionMinor());
@@ -289,6 +354,75 @@ public class Keytab implements Serializable {
     private String keyRealm;
     private String[] keyName;
     private final List keyData;
+
+    /**
+     * 
+     */
+    private void init(Keytab keytab, String username, String password, boolean desOnly, OutputStream out) throws IOException {
+        KerberosPrincipal principal = new KerberosPrincipal(username, KerberosPrincipal.KRB_NT_PRINCIPAL);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        // keytab version number
+        baos.write(5);
+        baos.write(2);
+
+        for (int i=0; i<2; i++) {
+            if (desOnly) i++;
+            String algorithm = i==0 ? "ArcFourHmac" : "DES";
+            int type =  i==0 ? 23 : 3;
+
+            ByteArrayOutputStream entry = new ByteArrayOutputStream();
+
+            // name
+            entry.write(0);
+            entry.write(2); // since 2 means 3
+            String[] name = keytab.getKeyName();
+            for (String part : name) {
+                byte[] partBytes = part.getBytes("UTF-8");
+                int length = partBytes.length;
+                entry.write((length>>8)&0xFF);
+                entry.write((length>>0)&0xFF);
+                entry.write(partBytes);
+            }
+
+            // type 1 (principal)
+            entry.write(0);
+            entry.write(0);
+            entry.write(0);
+            entry.write(1);
+
+            // timestamp
+            int time = (int)(keytab.getKeyTimestamp() / 1000L);
+            entry.write((time>>>24)&0xFF);
+            entry.write((time>>>16)&0xFF);
+            entry.write((time>>> 8)&0xFF);
+            entry.write((time>>> 0)&0xFF);
+
+            // vno
+            entry.write(1);
+
+            // key type
+            entry.write(0);
+            entry.write(type);
+
+            // key data
+            KerberosKey key = new KerberosKey(principal, password.toCharArray(), algorithm);
+            byte[] keyBytes = key.getEncoded();
+            entry.write((keyBytes.length>>8)&0xFF);
+            entry.write((keyBytes.length>>0)&0xFF);
+            entry.write(keyBytes);
+
+            byte[] entryData = entry.toByteArray();
+            baos.write(0);
+            baos.write(0);
+            baos.write((entryData.length>>8)&0xFF);
+            baos.write((entryData.length>>0)&0xFF);
+            baos.write(entryData);
+        }
+
+        out.write(baos.toByteArray());
+    }
 
     /**
      *
@@ -404,6 +538,27 @@ public class Keytab implements Serializable {
         }
 
         checkEntry();
+    }
+
+    private String[] parseName(String fullName) throws KerberosException {
+        String[] name;
+        String[] parts = fullName.split("[/@]");
+
+        if (parts.length == 3) {
+            name = new String[]{parts[2].toUpperCase(), parts[0], parts[1]};       
+        }
+        else if (parts.length == 2) {
+            name = new String[]{parts[1], "http", parts[0]};
+        }
+        else if (parts.length == 1) {
+            String realm = parts[0].substring(parts[0].indexOf('.')+1).toUpperCase();
+            name = new String[]{realm, "http", parts[0]};
+        }
+        else {
+            throw new KerberosException("Unsupported name format, number of parts is " + parts.length + ".");
+        }
+
+        return name;
     }
 
     /**
