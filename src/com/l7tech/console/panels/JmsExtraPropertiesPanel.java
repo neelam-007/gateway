@@ -10,14 +10,24 @@ import javax.swing.event.ChangeEvent;
 import java.util.Properties;
 
 /**
- * A sub-panel for configuring additional settings of a specific JMS provider type; to be
- * inserted into {@link JmsQueuePropertiesDialog} when that JMS provider type
- * is selected.
+ * A sub-panel for configuring additional settings of a specific JMS provider
+ * type; to be inserted into {@link JmsQueuePropertiesDialog} when that JMS
+ * provider type is selected.
  *
  * @author rmak
  * @since SecureSpan 3.7
  */
 public abstract class JmsExtraPropertiesPanel extends JPanel {
+
+    // Property keys copied from {@link JmsPropertyMapper}.
+    protected static final String VALUE_TRUE = "com.l7tech.server.jms.prop.boolean.true";
+    protected static final String VALUE_FALSE = "com.l7tech.server.jms.prop.boolean.false";
+    protected static final String VALUE_TRUSTED_CERTS = "com.l7tech.server.jms.prop.trustedcert.listx509";
+    protected static final String VALUE_KEYSTORE = "com.l7tech.server.jms.prop.keystore";
+    protected static final String VALUE_KEYSTORE_BYTES = "com.l7tech.server.jms.prop.keystore.bytes";
+    protected static final String VALUE_KEYSTORE_PASSWORD = "com.l7tech.server.jms.prop.keystore.password";
+    protected static final String CERT_PROP = "com.l7tech.server.jms.prop.certificate.subject";
+    protected static final String PROP_CUSTOMIZER = "com.l7tech.server.jms.prop.customizer.class";
 
     protected transient ChangeEvent changeEvent;
 
@@ -27,7 +37,7 @@ public abstract class JmsExtraPropertiesPanel extends JPanel {
     public abstract void setProperties(final Properties properties);
 
     /**
-     * Creates properties from the current view. 
+     * Gets properties out of the current view. 
      */
     public abstract Properties getProperties();
 

@@ -40,13 +40,15 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JCheckBox useJndiCredentialsCheckBox;
     private JTextField jndiUsernameTextField;
     private JPasswordField jndiPasswordField;
+    private JPanel jndiExtraPropertiesOuterPanel;   // For provider-specific settings.
+    private JmsExtraPropertiesPanel jndiExtraPropertiesPanel;
     private JTextField qcfTextField;
     private JTextField queueNameTextField;
     private JCheckBox useQueueCredentialsCheckBox;
     private JTextField queueUsernameTextField;
     private JPasswordField queuePasswordField;
-    private JPanel extraPropertiesOuterPanel;   // For provider-specific settings.
-    private JmsExtraPropertiesPanel extraPropertiesPanel;
+    private JPanel queueExtraPropertiesOuterPanel;   // For provider-specific settings.
+    private JmsExtraPropertiesPanel queueExtraPropertiesPanel;
     private JButton testButton;
     private JButton saveButton;
     private JButton cancelButton;
@@ -185,10 +187,26 @@ public class JmsQueuePropertiesDialog extends JDialog {
         qcfTextField.getDocument().addDocumentListener(formPreener);
         queueNameTextField.getDocument().addDocumentListener(formPreener);
 
-        extraPropertiesOuterPanel.addContainerListener(new ContainerListener() {
+        jndiExtraPropertiesOuterPanel.addContainerListener(new ContainerListener() {
             public void componentAdded(ContainerEvent e) {
-                if (extraPropertiesPanel != null) {
-                    extraPropertiesPanel.addChangeListener(new ChangeListener() {
+                if (jndiExtraPropertiesPanel != null) {
+                    jndiExtraPropertiesPanel.addChangeListener(new ChangeListener() {
+                        public void stateChanged(ChangeEvent e) {
+                            enableOrDisableComponents();
+                        }
+                    });
+                }
+                enableOrDisableComponents();
+            }
+            public void componentRemoved(ContainerEvent e) {
+                enableOrDisableComponents();
+            }
+        });
+
+        queueExtraPropertiesOuterPanel.addContainerListener(new ContainerListener() {
+            public void componentAdded(ContainerEvent e) {
+                if (queueExtraPropertiesPanel != null) {
+                    queueExtraPropertiesPanel.addChangeListener(new ChangeListener() {
                         public void stateChanged(ChangeEvent e) {
                             enableOrDisableComponents();
                         }
@@ -294,17 +312,27 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (icfName != null)
             icfTextField.setText(icfName);
 
-        setExtraPropertiesPanel(provider, connection == null ? null : connection.properties() );
+        setExtraPropertiesPanels(provider, connection == null ? null : connection.properties() );
     }
 
-    private void setExtraPropertiesPanel(JmsProvider provider, Properties extraProperties) {
+    /**
+     * Inserts subpanels for extra settings according to the provider type selected.
+     *
+     * @param provider              the provider type selected
+     * @param extraProperties       data structure used by the subpanels to transmit settings
+     */
+    private void setExtraPropertiesPanels(JmsProvider provider, Properties extraProperties) {
         final String icfClassname = provider.getInitialContextFactoryClassname();
         if ("com.tibco.tibjms.naming.TibjmsInitialContextFactory".equals(icfClassname)) {
-            extraPropertiesPanel = new TibcoEmsExtraPropertiesPanel(extraProperties);
-            extraPropertiesOuterPanel.add(extraPropertiesPanel);
+            jndiExtraPropertiesPanel = new TibcoEmsJndiExtraPropertiesPanel(extraProperties);
+            jndiExtraPropertiesOuterPanel.add(jndiExtraPropertiesPanel);
+            queueExtraPropertiesPanel = new TibcoEmsQueueExtraPropertiesPanel(extraProperties);
+            queueExtraPropertiesOuterPanel.add(queueExtraPropertiesPanel);
         } else {
-            extraPropertiesPanel = null;
-            extraPropertiesOuterPanel.removeAll();
+            jndiExtraPropertiesPanel = null;
+            jndiExtraPropertiesOuterPanel.removeAll();
+            queueExtraPropertiesPanel = null;
+            queueExtraPropertiesOuterPanel.removeAll();
         }
         pack();
     }
@@ -386,8 +414,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
         conn.setJndiUrl(jndiUrlTextField.getText());
         conn.setInitialContextFactoryClassname(icfTextField.getText());
         conn.setQueueFactoryUrl(qcfTextField.getText());
-        if (extraPropertiesPanel != null) {
-            properties.putAll(extraPropertiesPanel.getProperties());
+        if (jndiExtraPropertiesPanel != null) {
+            properties.putAll(jndiExtraPropertiesPanel.getProperties());
+        }
+        if (queueExtraPropertiesPanel != null) {
+            properties.putAll(queueExtraPropertiesPanel.getProperties());
         }
         conn.properties(properties);
 
@@ -516,7 +547,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return false;
         if (icfTextField.getText().length() < 1)
             return false;
-        if (extraPropertiesPanel != null && !extraPropertiesPanel.validatePanel())
+        if (jndiExtraPropertiesPanel != null && !jndiExtraPropertiesPanel.validatePanel())
+            return false;
+        if (queueExtraPropertiesPanel != null && !queueExtraPropertiesPanel.validatePanel())
             return false;
         return true;
     }
@@ -557,7 +590,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 queueUsernameTextField,
                 queuePasswordField,
         });
-        securityFormAuthorizationPreparer.prepare(extraPropertiesOuterPanel);
+        securityFormAuthorizationPreparer.prepare(jndiExtraPropertiesOuterPanel);
+        securityFormAuthorizationPreparer.prepare(queueExtraPropertiesOuterPanel);
     }
 
     private void onTest() {
