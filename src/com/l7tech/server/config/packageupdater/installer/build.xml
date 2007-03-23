@@ -2,18 +2,19 @@
 <!-- Ant build file for all modules. -->
 <project name="updateinstaller" default="package.sign">
 
-    <property name="src.root" value="."/>
-    <property name="build.dir" value="${src.root}/build"/>
-    <property name="checksum.dir" value="${src.root}/build/checksum"/>
-    <property name="bin.dir" value="${src.root}/bin"/>
-    <property name="data.dir" value="${src.root}/data"/>
-    <property name="bin.stage.dir" value="${src.root}/bin/stages/stage0"/>
-    <property name="bin.check.dir" value="${src.root}/bin/stages/check"/>
-    <property name="readme.file" value="${src.root}/README.TXT"/>
-    <property name="description.file" value="${src.root}/description.txt"/>
-    <property name="updatefilelist.file" value="${src.root}/updatefilelist"/>
-    <property name="jar.name" value="${src.root}/UpdateInstaller.jar"/>
-    <property name="manifest.name" value="${src.root}/UpdateInstaller.mf"/>
+    <property name="build.dir" value="build"/>
+    <property name="checksum.dir" value="${build.dir}/checksums"/>
+    <property name="bin.dir" value="bin"/>
+    <property name="data.dir" value="data"/>
+    <property name="stages.dir" value="${bin.dir}/stages"/>
+    <property name="stage0.dir" value="${stages.dir}/stage0"/>
+    <property name="check.dir" value="${stages.dir}/check"/>
+    <property name="readme.file" value="README.TXT"/>
+    <property name="description.file" value="description.txt"/>
+    <property name="updatefiles.list" value="${checksum.dir}/updatefiles.txt"/>
+    <property name="jar.name" value="UpdateInstaller.jar"/>
+    <property name="manifest.name" value="UpdateInstaller.mf"/>
+    <property name="updatepackage.zip" value="SSGUpdatePackage.zip"/>
 
     <target name="package.sign" depends="package">
         <echo message="Signing the Package Installer Jar"/>
@@ -24,7 +25,6 @@
             <and>
                 <available file="${bin.dir}"/>
                 <available file="${data.dir}"/>
-                <available file="${build.dir}"/>
             </and>
         </condition>
     </target>
@@ -32,19 +32,35 @@
     <target name="package" depends="checkPrepare">
         <fail unless="installer.prepared">The update project needs to be prepared first. Please run prepare task</fail>
         <echo message="building the source and jar"/>
-        <javac srcdir="${src.root}" destdir="${build.dir}" />
-        
-        <!--<checksum file="${updatefilelist.file}"/>-->
+
+        <mkdir dir="${build.dir}"/>
+        <javac srcdir="." destdir="${build.dir}" />
+
+        <mkdir dir="${checksum.dir}"/>
+        <checksum todir="${checksum.dir}">
+            <fileset dir="${bin.dir}" includes="**/*"/>
+            <fileset dir="${data.dir}" includes="**/*"/>
+        </checksum>
+
         <jar basedir="${build.dir}" destfile="${jar.name}" manifest="${manifest.name}"/>
+
+        <zip destfile="${updatepackage.zip}">
+            <fileset dir=".">
+                <include name="${bin.dir}/**/*"/>
+                <include name="${data.dir}/**/*"/>
+                <include name="${jar.name}"/>
+                <include name="${description.file}"/>
+                <include name="${readme.file}"/>
+            </fileset>
+        </zip>
+
     </target>
 
     <target name="prepare" depends="checkPrepare" unless="installer.prepared">
         <echo message="Creating the update project structure."/>
-        <mkdir dir="${bin.check.dir}" />
-        <mkdir dir="${bin.stage.dir}" />
+        <mkdir dir="${check.dir}" />
+        <mkdir dir="${stage0.dir}" />
         <mkdir dir="${data.dir}"/>
-        <mkdir dir="${build.dir}"/>
-        <mkdir dir="${checksum.dir}"/>
         <echo file="${readme.file}" message="Place excutables that perform the installation tasks in bin/stages/stageX where X indicates the order in which stages are to be performed"/>
         <echo file="${description.file}" message="Enter a description of the update here"/>
         <echo message="*** Preparation complete. PLEASE READ THE README.TXT FILE ***"/>
@@ -52,6 +68,7 @@
 
     <target name="clean">
         <delete dir="${build.dir}"/>
+        <delete file="${updatefiles.list}"/>
     </target>
 
 </project>

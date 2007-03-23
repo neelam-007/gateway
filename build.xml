@@ -207,6 +207,10 @@
         <include name="**/xalan-2.7.0.jar"/>
     </patternset>
 
+    <patternset id="updatewizard.libs">
+        <include name="**/commons-lang-2.3.jar"/>
+    </patternset>
+
     <!--
       System Configuration Wizard library patternset  (also ".")
     -->
@@ -850,7 +854,7 @@
             depends="package.readversion, package.gateway.all, package.manager, package.client, package.installclients, package.installgateway.work"/>
 
 
-    <target name="package.gateway.all" depends="package.configwiz.all, package.ssgflasher, obfuscate.flasher, obfuscate.cfgwiz, obfuscate.syscfgwiz, package.gateway, package.api, obfuscate.gateway, package.bcluna-jce, package.modules"/>
+    <target name="package.gateway.all" depends="package.configwiz.all, package.ssgflasher, package.updatewiz, obfuscate.flasher, obfuscate.cfgwiz, obfuscate.syscfgwiz, package.gateway, package.api, obfuscate.gateway, package.bcluna-jce, package.modules"/>
 
     <!--
       Build the windows installers without any dependencies.
@@ -1831,6 +1835,39 @@
             <fileset dir="${build.classes}">
                 <include name="com/l7tech/server/config/resources/**/*"/>
             </fileset>
+        </jar>
+    </target>
+
+    <target name="package.updatewiz" unless="ssg.only" depends="compile">
+        <mkdir dir="${build.dir}/updatewizard"/>
+        <mkdir dir="${build.dir}/updatewizard/lib"/>
+
+        <copy todir="${build.dir}/updatewizard/lib">
+            <fileset dir="${build.lib}">
+                <patternset refid="updatewizard.libs"/>
+            </fileset>
+        </copy>
+
+        <copy todir="${build.dir}/updatewizard">
+            <fileset dir="${src.root}/etc">
+                <include name="ssgupdatewizard.sh"/>
+                <include name="configlogging.properties"/>
+            </fileset>
+        </copy>
+
+        <replace file="${build.dir}/updatewizard/configlogging.properties" token="LOGFILE_NAME" value="updatewizard%g.log"/>
+
+        <generate-manifest propertyPrefix="updatewizard" filename="UpdateWizard.mf" pathPrefix=". ">
+            <section>
+                <attribute name="Main-Class" value="com.l7tech.server.config.packageupdater.PackageUpdateWizardLauncher"/>
+            </section>
+        </generate-manifest>
+        <classfileset id="package.updatewiz.classfileset" dir="${build.classes}">
+            <!-- Entry points -->
+            <root classname="com.l7tech.server.config.packageupdater.PackageUpdateWizardLauncher" />
+        </classfileset>
+        <jar jarfile="${build.dir}/updatewizard/UpdateWizard.jar" manifest="${build.etc}/UpdateWizard.mf">
+            <fileset refid="package.updatewiz.classfileset"/>
         </jar>
     </target>
 

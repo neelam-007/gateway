@@ -11,7 +11,8 @@ JAVA_HOME=${SSG_ROOT}/jdk
 
 launch_wizard(){
 	#get root creds for updates
-	sudo "${JAVA_HOME}/bin/java -jar UpdateInstaller.jar $*"
+	echo "Package updates to the SSG require the root password."
+	su -c "${JAVA_HOME}/bin/java -jar UpdateWizard.jar $*"
 }
 
 launch_wizard

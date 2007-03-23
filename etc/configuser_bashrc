@@ -3,7 +3,7 @@ set -e
 
 SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
 CONFWIZARD="/ssg/configwizard/ssgconfig.sh -console"
-UPDATEWIZARD="/ssg/updatewizard/ssgupdate.sh"
+UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh"
 
 checkForUpdater() {
     if [ -d "/ssg/updatewizard" ] ; then
