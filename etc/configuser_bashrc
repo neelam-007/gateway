@@ -3,7 +3,17 @@ set -e
 
 SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
 CONFWIZARD="/ssg/configwizard/ssgconfig.sh -console"
+UPDATEWIZARD="/ssg/updatewizard/ssgupdate.sh"
 
+checkForUpdater() {
+    if [ -d "/ssg/updatewizard" ] ; then
+        UPDATER_PRESENT="true"
+    else
+        UPDATER_PRESENT=""
+    fi
+}
+
+checkForUpdater
 isValid="n"
 while [ "$isValid" != "y" ]
 do
@@ -16,6 +26,9 @@ do
         echo "2) Configure the SecureSpan Gateway application on this appliance"
         echo "3) Logout (no reboot)"
         echo "4) Reboot the SSG appliance (apply the new configuration)"
+        if [ "${UPDATER_PRESENT}" = "true" ] ; then
+            echo "5) Upgrade the SecureSpan Appliance"
+        fi
         echo -n "Please make a selection: "
         read choice
 
@@ -32,6 +45,18 @@ do
                     clear;;
                 3)  exit;;
                 4)  sudo /sbin/reboot;;
+                5)  if [ -n ${UPDATER_PRESENT} ] ; then
+                        clear;
+                        (${UPDATEWIZARD})
+                        echo "Press enter to continue";
+                        read;
+                    else
+                        echo "This option requires the SecureSpan Update Utility to be installed."
+                        echo "Please select another option"
+                        echo "Press enter to continue";
+                        read;
+                    fi
+                    clear;;
                 *)  isValid="n";
                     echo "That is not a valid selection";
                     echo "Press enter to continue";
