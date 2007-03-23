@@ -9,7 +9,7 @@
 # Optionally redirect the standard ports up to our ports
 #[0:0] -A PREROUTING -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 8080 
 #[0:0] -A PREROUTING -p tcp -m tcp --dport 443 -j REDIRECT --to-ports 8443 
-[0:0] -A PREROUTING -p tcp -m tcp --dport 3307 -j REDIRECT --to-ports 3306
+[0:0] -A PREROUTING -i eth0 -p tcp -m tcp --dport 3307 -j REDIRECT --to-ports 3306
 
 COMMIT
 
