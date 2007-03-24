@@ -158,7 +158,6 @@
               </grid>
             </constraints>
             <properties>
-              <margin top="2" left="0" bottom="2" right="3"/>
               <text value="Supply Credentials:"/>
             </properties>
           </component>
@@ -303,7 +302,6 @@
               </grid>
             </constraints>
             <properties>
-              <margin top="2" left="0" bottom="2" right="3"/>
               <text value="Supply Credentials:"/>
             </properties>
           </component>
