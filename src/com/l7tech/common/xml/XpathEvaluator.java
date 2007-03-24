@@ -115,6 +115,10 @@ public class XpathEvaluator {
      * @param element    the <code>SOAPElement</code>
      */
     private static void addNamespaces(Map namespaces, SOAPElement element) {
+        String ePrefix = element.getElementName().getPrefix();
+        String eNamespace = element.getElementName().getURI();
+        if (ePrefix != null && ePrefix.length()>0)
+            namespaces.put(ePrefix, eNamespace);
         Iterator iterator = element.getNamespacePrefixes();
         while (iterator.hasNext()) {
             String prefix = (String)iterator.next();
