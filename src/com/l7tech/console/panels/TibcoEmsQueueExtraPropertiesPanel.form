@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="0">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="20" y="20" width="481" height="181"/>
+      <xy x="20" y="20" width="611" height="181"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -29,7 +29,7 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Use SSL for client authentication only"/>
+              <text value="Use SSL for authentication only"/>
               <toolTipText value="The SSL connection is used only to perform authentication. Once authentication is complete, the client switches to a regular TCP connection to communicate with the server."/>
             </properties>
           </component>
@@ -38,7 +38,7 @@
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Verify server certificate (using trusted certificate store)"/>
+              <text value="Verify servers certificate (using trusted certificate store)"/>
             </properties>
           </component>
           <component id="9fec7" class="javax.swing.JCheckBox" binding="useCertForClientAuthCheckBox">
@@ -91,7 +91,7 @@
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="Verify common name in server certificate matches connected host name"/>
+                  <text value="Verify that common name in servers certificate matches connected host name"/>
                 </properties>
               </component>
             </children>
