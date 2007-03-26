@@ -118,16 +118,16 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 break;
             }
         }
-        if (!pv.seenRouting) { // no routing report that
+        if (!pv.seenResponse) { // no routing report that
             r.addWarning(new PolicyValidatorResult.
               Warning(lastAssertion, ap, "No route assertion.", null));
         }
-        if (!pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE) && pv.seenRouting) {
+        if (!pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE) && pv.seenResponse) {
             r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, ap,
               "No credential assertion is present in the policy. The" +
               " service may be exposed to public access", null));
         }
-        if (pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE) && !pv.seenAccessControl && pv.seenRouting) {
+        if (pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE) && !pv.seenAccessControl && pv.seenResponse) {
             r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, ap, "Credentials are collected but not authenticated." +
               " This service may be exposed to public access.", null));
         }

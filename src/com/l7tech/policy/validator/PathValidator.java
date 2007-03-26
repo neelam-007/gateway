@@ -81,6 +81,7 @@ class PathValidator {
     private final AssertionLicense assertionLicense;
 
     boolean seenAccessControl = false;
+    boolean seenResponse = false;
     boolean seenRouting = false;
 
     PathValidator(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
@@ -345,12 +346,12 @@ class PathValidator {
             // check that the assertion is on the right side of the routing
             XslTransformation ass = (XslTransformation)a;
 
-            if (ass.getDirection() == XslTransformation.APPLY_TO_REQUEST && seenRouting) {
+            if (ass.getDirection() == XslTransformation.APPLY_TO_REQUEST && seenResponse) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "XSL transformation on the request occurs after request is routed.", null));
-            } else if (ass.getDirection() == XslTransformation.APPLY_TO_RESPONSE && !seenRouting) {
+                  "XSL transformation on the request occurs after a response is available.", null));
+            } else if (ass.getDirection() == XslTransformation.APPLY_TO_RESPONSE && !seenResponse) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                  "XSL transformation on the response must be positioned after routing.", null));
+                  "XSL transformation on the response must not be positioned before a response is available.", null));
             }
         } else if (a instanceof RequestSwAAssertion) {
             if (seenRouting) {
@@ -402,10 +403,10 @@ class PathValidator {
                   "This assertion should occur before the request is routed.", null));
             }
         } else if (a instanceof ResponseXpathAssertion) {
-            if (!seenRouting) {
+            if (!seenResponse) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion will not work because there is no response yet. " +
-                  "Move this assertion after the routing assertion.", null));
+                  "Move this assertion after a routing assertion.", null));
             }
         } else if (a instanceof RequestWssReplayProtection) {
             if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a) &&
@@ -460,13 +461,15 @@ class PathValidator {
     }
 
     private void processRouting(RoutingAssertion a) {
-        seenRouting = true;
+        seenResponse = true;
         if (a instanceof HttpRoutingAssertion) {
+            seenRouting = true;
             processHttpRouting((HttpRoutingAssertion)a);
             if (a instanceof BridgeRoutingAssertion) {
                 processBridgeRouting((BridgeRoutingAssertion)a);
             }
         } else if (a instanceof JmsRoutingAssertion) {
+            seenRouting = true;
             processJmsRouting((JmsRoutingAssertion)a);
         } else if (a != null) {
             // Some routing assertion that either doesn't need any further validation, or that
