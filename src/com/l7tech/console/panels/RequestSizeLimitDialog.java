@@ -25,7 +25,7 @@ public class RequestSizeLimitDialog extends JDialog {
     private JButton okButton;
     private RequestSizeLimit sizeAssertion;
     private JTextField sizeLimit;
-    private JCheckBox applyToWholeMessage;
+    private JCheckBox exemptAttachmentCheck;
 
     private boolean modified;
     private boolean confirmed = false;
@@ -65,7 +65,7 @@ public class RequestSizeLimitDialog extends JDialog {
             size = 1;
         }
         sizeLimit.setText(String.valueOf(size));
-        applyToWholeMessage.setSelected(sizeAssertion.isEntireMessage());
+        exemptAttachmentCheck.setSelected(!sizeAssertion.isEntireMessage());
     }
 
     public boolean isModified() {
@@ -82,7 +82,7 @@ public class RequestSizeLimitDialog extends JDialog {
             limit = 1;
         }
         sizeAssertion.setLimit(limit*1024);
-        sizeAssertion.setEntireMessage(applyToWholeMessage.isSelected());
+        sizeAssertion.setEntireMessage(!exemptAttachmentCheck.isSelected());
         modified = true;
         confirmed = true;
         dispose();

@@ -27,12 +27,18 @@ public class RequestSizeLimit extends Assertion {
         this.limit = limit;
     }
 
-    /** @return true iff. this limit applies to the entire message.  Otherwise it applies only to the XML part. */
+    /**
+     * @return true if this limit applies to the entire message including attachments.
+     * Otherwise it applies only to the XML part.
+     */
     public boolean isEntireMessage() {
         return entireMessage;
     }
 
-    /** @param entireMessage true iff. this limit should apply to the entire message.  Otherwise it applies only to the XML part. */
+    /**
+     * @param entireMessage true if this limit should apply to the entire message (including attachments.
+     * Otherwise it applies only to the XML part.
+     */
     public void setEntireMessage(boolean entireMessage) {
         this.entireMessage = entireMessage;
     }
