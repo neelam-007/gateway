@@ -708,6 +708,7 @@ public class WsdlComposer {
                 if (ee instanceof SOAPAddress) {
                     SOAPAddress sa = (SOAPAddress)ee;
                     sa.setLocationURI(DEFAULT_PORT_ADDRESS);
+                    port.addExtensibilityElement(ee);
                 }
             }
             catch(WSDLException e) {
