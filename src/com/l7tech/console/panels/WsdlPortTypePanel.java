@@ -100,7 +100,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
 
-        PortType portType = getOrCreatePortType(wsdlCompser);
+        PortType portType = wsdlCompser.getOrCreatePortType();
         portTypeNameField.setText(portType.getQName().getLocalPart());
         validate(wsdlCompser);
 
@@ -221,17 +221,17 @@ public class WsdlPortTypePanel extends WizardStepPanel {
 
               if (value instanceof Input) {
                   Input in = (Input)value;
-                  renderMessage(table, in.getMessage(), isSelected);
+                  renderMessage(in.getMessage());
               } else if (value instanceof Output) {
                   Output out = (Output)value;
-                  renderMessage(table, out.getMessage(), isSelected);
+                  renderMessage(out.getMessage());
               } else {
                   setText(value == null ? "" : value.toString());
               }
               return this;
           }
 
-          private void renderMessage(JTable table, Message msg, boolean isSelected) {
+          private void renderMessage(Message msg) {
               String text = msg == null ?
                       "" :
                       WsdlCreateWizard.prefixedName(msg.getQName(), wsdlCompser);
@@ -239,23 +239,6 @@ public class WsdlPortTypePanel extends WizardStepPanel {
               setText(text);
           }
       };
-
-    /**
-     * Retrieve the port type. Create the new port type if necessary
-     * 
-     * @return the port type
-     */
-    private PortType getOrCreatePortType(WsdlComposer composer) {
-        PortType portType = composer.getPortType();
-        if (portType != null)
-            return portType;
-
-        portType = composer.createPortType();
-        portType.setQName(new QName(composer.getTargetNamespace(), portTypeNameField.getText()));
-        portType.setUndefined(false);
-        composer.addPortType(portType, null);
-        return portType;
-    }
 
     /**
      * Validate (and sync if needed) the existing port type with the
@@ -266,7 +249,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * @param composer the wsdl definition
      */
     private void validate(WsdlComposer composer) {
-        PortType portType = getOrCreatePortType(composer);
+        PortType portType = composer.getOrCreatePortType();
 
         if (needPortTypeUpdate(composer, portType)) {
             logger.fine("target namespace changed, updating port type....");
@@ -297,7 +280,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     }
 
     private void validateOperations(WsdlComposer composer) {
-        PortType portType = getOrCreatePortType(composer);
+        PortType portType = composer.getOrCreatePortType();
 
         java.util.List operations = portType.getOperations();
         for (Object o : operations) {

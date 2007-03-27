@@ -120,10 +120,7 @@ public class WsdlServicePanel extends WizardStepPanel {
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
-//        Map services = wsdlComposer.getServices();
-//        if (services != null)
-//            services.clear();
-//
+
         try {
             getService();
         } catch (WSDLException e) {
@@ -143,11 +140,9 @@ public class WsdlServicePanel extends WizardStepPanel {
         if (sv == null)
             sv = wsdlComposer.createService();
 
-        wsdlComposer.getServices().clear();
-
         sv.setQName(new QName(nameField.getText()));
         getPort(wsdlComposer, sv);
-        wsdlComposer.addService(sv);
+        wsdlComposer.setService(sv);
         return sv;
     }
 

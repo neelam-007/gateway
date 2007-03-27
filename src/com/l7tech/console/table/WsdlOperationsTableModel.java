@@ -179,7 +179,8 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
         for (Iterator iterator = operations.iterator(); iterator.hasNext();) {
             Operation operation = (Operation)iterator.next();
             if (name.equals(operation.getName())) {
-                operations.remove(operation);
+                iterator.remove();
+                composer.removeBindingOperationByOperation(operation);
                 this.fireTableStructureChanged();
                 break;
             }
@@ -193,6 +194,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
     public Operation removeOperation(int index) {
         Operation op = getOperationAt(index);
         portType.getOperations().remove(op);
+        composer.removeBindingOperationByOperation(op);
         this.fireTableStructureChanged();
         return op;
     }

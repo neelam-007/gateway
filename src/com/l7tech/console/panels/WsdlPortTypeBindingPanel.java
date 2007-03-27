@@ -19,6 +19,7 @@ import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -109,7 +110,6 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
             throw new RuntimeException(e);
         }
 
-
         String style = wsdlComposer.getBindingStyle(binding);
         portTypeBindingStyle.setSelectedItem(StringUtils.isEmpty(style)?"RPC":style.toLowerCase());
 
@@ -150,19 +150,13 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      * @return the binding
      */
     private Binding getEditedBinding() throws WSDLException {
-        PortType portType = getPortType();
-        Binding binding = wsdlComposer.getBinding();
-        if (binding == null) {
-            binding = wsdlComposer.createBinding();
-            wsdlComposer.addBinding(binding);
-            binding.setPortType(portType);
-            binding.setUndefined(false);
-            binding.setQName(new QName(wsdlComposer.getTargetNamespace(), portTypeBindingNameField.getText()));            
-        }
+        PortType portType = wsdlComposer.getOrCreatePortType();
+        Binding binding = wsdlComposer.getOrCreateBinding();
 
-        if (binding.getBindingOperations().isEmpty()) {
-            for (Object o : portType.getOperations()) {
-                Operation op = (Operation)o;
+        for (Object o : portType.getOperations()) {
+            Operation op = (Operation) o;
+
+            if(!isInBinding(binding.getBindingOperations(), op)) {
                 BindingOperation bop = wsdlComposer.createBindingOperation();
                 bop.setName(op.getName());
                 bop.setOperation(op);
@@ -178,24 +172,41 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
                 bout.setName(op.getOutput().getName());
                 bout.addExtensibilityElement(getSoapBody());
                 bop.setBindingOutput(bout);
-                binding.addBindingOperation(bop);
+
                 // soap action
-                String action =
-                  portType.getQName().getLocalPart() + "#" + bop.getName();
+                String action = portType.getQName().getLocalPart() + "#" + bop.getName();
                 ExtensibilityElement ee = null;
                 ExtensionRegistry extensionRegistry = wsdlComposer.getExtensionRegistry();
                 ee = extensionRegistry.createExtension(BindingOperation.class, new QName(Wsdl.WSDL_SOAP_NAMESPACE, "operation"));
                 if (ee instanceof SOAPOperation) {
-                    SOAPOperation sop = (SOAPOperation)ee;
+                    SOAPOperation sop = (SOAPOperation) ee;
                     sop.setSoapActionURI(action);
                 } else {
                     throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
                 }
                 bop.addExtensibilityElement(ee);
+
+                binding.addBindingOperation(bop);                
             }
         }
 
         return binding;
+    }
+
+    /**
+     * Check if a binding operation exists for the given operation
+     */
+    private boolean isInBinding(Collection<BindingOperation> bindingOperations, Operation operation) {
+        boolean exists = false;
+        for (BindingOperation bindingOperation : bindingOperations) {
+            if (bindingOperation.getOperation() != null) {
+                Operation toCheck = bindingOperation.getOperation();
+                if (toCheck.getName().equals(operation.getName())) {
+                    exists = true;
+                }
+            }
+        }
+        return exists;
     }
 
     /**
@@ -247,21 +258,4 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
             throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
         }
     }
-
-    /**
-     * Retrieve the port type. This method expects the port type, already collected
-     * and throws <code>IllegalStateException</code> if port type not present.
-     *
-     * @return the port type
-     * @throws IllegalStateException if there is no port type in the definition
-     */
-    private PortType getPortType() throws IllegalStateException {
-        PortType pt = wsdlComposer.getPortType();
-        if (pt == null) {
-            throw new IllegalStateException("Should have at least one port type");
-        }
-        return pt;
-    }
-
-
 }

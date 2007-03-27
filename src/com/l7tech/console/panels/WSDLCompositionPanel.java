@@ -100,6 +100,8 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         wsdlComposer = (WsdlComposer) settings;
         populateSourceWsdlView();
         updateResultingWsdlView();
+        if (resultOperationsListModel != null)
+            resultOperationsListModel.revalidate();
     }
 
     private void populateSourceWsdlView() {
@@ -492,30 +494,48 @@ public class WSDLCompositionPanel extends WizardStepPanel{
             }
         }
 
-        private void addBindingOperations(Collection<BindingOperation> allOps, boolean addOtherElements) {
+        private void addBindingOperations(Collection<BindingOperation> allOps) {
             WsdlComposer.WsdlHolder sourceWsdl = getSelectedSourceWsdl();
             for (BindingOperation bindingOperation: allOps) {
-                if (wsdlComposer.addBindingOperation(bindingOperation, sourceWsdl, addOtherElements)) {
+                if (wsdlComposer.addBindingOperation(bindingOperation, sourceWsdl)) {
                     addElement(new BindingOperationHolder(bindingOperation, sourceWsdl));
                 }
             }
         }
 
-        public void addBindingOperations(Collection<BindingOperation> operations) {
-            addBindingOperations(operations, true);
-        }
-
-        public void removeBindingOperations(List<BindingOperationHolder> operationHolders) {
-            removeBindingOperations(operationHolders, true);
-        }
-
-        private void removeBindingOperations(List<BindingOperationHolder> operationHolders, boolean removeOtherElements) {
+        private void removeBindingOperations(List<BindingOperationHolder> operationHolders) {
             for (BindingOperationHolder operationHolder : operationHolders) {
                 WsdlComposer.WsdlHolder wsdlHolder = operationHolder.sourceWsdlHolder;
-                if (wsdlComposer.removeBindingOperation(operationHolder.bindingOperation, wsdlHolder, removeOtherElements)) {
+                if (wsdlComposer.removeBindingOperation(operationHolder.bindingOperation, wsdlHolder)) {
                     this.removeElement(operationHolder);
                 }
             }
+        }
+
+        private void revalidate() {
+            Collection<BindingOperation> bops = wsdlComposer.getBindingOperations();
+            Collection<BindingOperationHolder> toRemove = new ArrayList();
+            for (int i=0; i<getSize(); i++) {
+                BindingOperationHolder boh = (BindingOperationHolder) getElementAt(i);
+                if (!hasOperation(bops, boh.bindingOperation)) {
+                    toRemove.add(boh);
+                }
+            }
+            for (BindingOperationHolder boh : toRemove) {
+                this.removeElement(boh);                
+            }
+        }
+
+        private boolean hasOperation(Collection<BindingOperation> operations, BindingOperation operation) {
+            boolean found = false;
+
+            for (BindingOperation bindingOperation : operations) {
+                if (operation.getName().equals(bindingOperation.getName())) {
+                    found = true;
+                }
+            }
+
+            return found;
         }
     }
 }

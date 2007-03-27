@@ -134,34 +134,6 @@ public class WsdlBindingOperationsTableModel extends AbstractTableModel {
         this.fireTableStructureChanged();
     }
 
-
-    /**
-     * remove the message by name
-     * @param name the message name local part
-     */
-    public void removeOperation(String name) {
-        List operations = binding.getBindingOperations();
-        for (Iterator iterator = operations.iterator(); iterator.hasNext();) {
-            Operation operation = (Operation)iterator.next();
-            if (name.equals(operation.getName())) {
-                operations.remove(operation);
-                this.fireTableStructureChanged();
-                break;
-            }
-        }
-    }
-
-    /**
-     * remove the message by <code>index</code>
-     * @param index the message index
-     */
-    public BindingOperation removeOperation(int index) {
-        BindingOperation op = getOperationAt(index);
-        binding.getBindingOperations().remove(op);
-        this.fireTableStructureChanged();
-        return op;
-    }
-
     /**
      *  Returns false.  This is the default implementation for all cells.
      *

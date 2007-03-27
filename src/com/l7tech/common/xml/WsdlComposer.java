@@ -28,6 +28,9 @@ import java.util.*;
  */
 public class WsdlComposer {
 
+    private static final String DEFAULT_PORT_TYPE_NAME = "NewPortType";
+    private static final String DEFAULT_BINDING_NAME = "NewPortTypeBinding";
+
     private Document originalWsdlDoc;
     private WsdlHolder originalWsdlHolder;
     private Definition delegateWsdl;
@@ -41,9 +44,9 @@ public class WsdlComposer {
 
     private Map<QName, Message> messagesToAdd;
 
-    private Map<QName, PortType> portTypes;
-
-    private Map<QName, Binding> bindings;
+    private PortType portType;
+    private Binding binding;
+    private Service service;
 
     private Map<WsdlHolder, Set<BindingOperation>> bindingOperationsToAdd;
 
@@ -54,7 +57,6 @@ public class WsdlComposer {
     private Set<WsdlHolder> sourceWsdls;
     private Builder builder;
 
-    private Map<QName, Service> services;
 
     public WsdlComposer() throws WSDLException {
         initialise(null);
@@ -80,14 +82,10 @@ public class WsdlComposer {
         messagesToAdd = new HashMap<QName, Message>();
 
         //PortTypes && Operations
-        portTypes = new HashMap<QName, PortType>();
         operationsToAdd = new HashMap<String, Operation>();
 
         //Bindings && BindingOperations
-        bindings = new HashMap<QName, Binding>();
         bindingOperationsToAdd = new HashMap<WsdlHolder, Set<BindingOperation>>();
-
-        services = new HashMap<QName, Service>();
 
         builder = new Builder();
 
@@ -116,27 +114,21 @@ public class WsdlComposer {
             addMessage(m);
         }
 
-        for (Object o : def.getBindings().values()) {
-            Binding b = (Binding) o;
-            if (isSupportedSoapBinding(b)) {
-                for (Object boObj : b.getBindingOperations()) {
-                    addBindingOperation((BindingOperation) boObj, originalWsdlHolder, true);
+        // Use first service with supported binding
+        for (Service service : (Collection<Service>) def.getServices().values()) {
+            for (Port port : (Collection<Port>) service.getPorts().values()) {
+                Binding b = port.getBinding();
+
+                if (isSupportedSoapBinding(b)) {
+                    setService(service);
+                    setBinding(b);
+                    setPortType(b.getPortType());
+                    for (Object boObj : b.getBindingOperations()) {
+                        addBindingOperation((BindingOperation) boObj, originalWsdlHolder);
+                    }
+                    break;
                 }
-                addBinding(b);
             }
-
-        }
-
-        for (Object o : def.getPortTypes().values()) {
-            PortType pt = (PortType) o;
-            for (Object opObj : pt.getOperations()) {
-                addOperation((Operation) opObj);
-            }
-            addPortType(pt, originalWsdlHolder);
-        }
-
-        for (Object o : def.getServices().values()) {
-            addService((Service) o);
         }
     }
 
@@ -151,7 +143,7 @@ public class WsdlComposer {
         return false;
     }
 
-    public boolean addBindingOperation(BindingOperation opToAdd, WsdlHolder sourceWsdlHolder, boolean addOtherElements) {
+    public boolean addBindingOperation(BindingOperation opToAdd, WsdlHolder sourceWsdlHolder) {
         if (opToAdd == null)
             return false;
         Set<BindingOperation> opsForThisSourceWsdl = bindingOperationsToAdd.get(sourceWsdlHolder);
@@ -162,8 +154,7 @@ public class WsdlComposer {
 
         if (opsForThisSourceWsdl.add(opToAdd)) {
             addSourceWsdl(sourceWsdlHolder);
-            if (addOtherElements)
-                addWsdlElementsForBindingOperation(sourceWsdlHolder, opToAdd);
+            addWsdlElementsForBindingOperation(sourceWsdlHolder, opToAdd);
             return true;
         } else {
             return false;
@@ -180,7 +171,23 @@ public class WsdlComposer {
         return wasUsed;
     }
 
-    public boolean removeBindingOperation(BindingOperation bopToRemove, WsdlHolder sourceWsdlHolder, boolean removeOtherElements) {
+    public boolean removeBindingOperationByOperation(Operation operation) {
+        boolean removed = false;
+        for (Map.Entry<WsdlComposer.WsdlHolder, Set<BindingOperation>> entry : bindingOperationsToAdd.entrySet()) {
+            boolean empty = entry.getValue().size() <= 1;
+            for (Iterator<BindingOperation> bopIter = entry.getValue().iterator(); bopIter.hasNext(); ) {
+                BindingOperation bop = bopIter.next();
+                if (bop.getOperation().getName().equals(operation.getName())) {
+                    bopIter.remove();
+                    removeWsdlElementsForBindingOperation(entry.getKey(), bop, empty);
+                    removed = true;
+                }
+            }
+        }
+        return removed;
+    }
+
+    public boolean removeBindingOperation(BindingOperation bopToRemove, WsdlHolder sourceWsdlHolder) {
         if (bopToRemove == null)
             return false;
 
@@ -189,8 +196,7 @@ public class WsdlComposer {
             return false;
 
         if (bops.remove(bopToRemove)) {
-            if (removeOtherElements)
-                removeWsdlElementsForBindingOperation(sourceWsdlHolder, bopToRemove, bops.isEmpty());
+            removeWsdlElementsForBindingOperation(sourceWsdlHolder, bopToRemove, bops.isEmpty());
             return true;
         } else {
             return false;
@@ -221,10 +227,11 @@ public class WsdlComposer {
         addTypesFromSource(sourceWsdlHolder);
         Operation newOperation = copyOperation(bindingOperation.getOperation());
         bindingOperation.setOperation(newOperation);
-        addOperation(bindingOperation.getOperation());
+        addBindingOperation(bindingOperation);
     }
 
     private void removeWsdlElementsForBindingOperation(WsdlHolder sourceWsdlHolder, BindingOperation bopToRemove, boolean empty) {
+        removeBindingOperation(bopToRemove);
         Operation removedOp = removeOperation(bopToRemove.getOperation());
         removeMessagesFromSource(removedOp);
 
@@ -266,8 +273,12 @@ public class WsdlComposer {
         typesMap.remove(sourceWsdlHolder);
     }
 
+    private void removeBindingOperation(BindingOperation operation) {
+        getOrCreateBinding().getBindingOperations().remove(operation);
+    }
+
     private Operation removeOperation(Operation operation) {
-        getPortType().getOperations().remove(operation);
+        getOrCreatePortType().getOperations().remove(operation);
         return operationsToAdd.remove(operation.getName());
     }
 
@@ -330,17 +341,49 @@ public class WsdlComposer {
         messagesToAdd.put(message.getQName(), message);
     }
 
-    private void addOperation(Operation op) {
-        internalAddOperation(op);
+    private void addBindingOperation(BindingOperation bop) {
+        Binding binding = getOrCreateBinding();
+        if (!hasBindingOperation(binding.getBindingOperations(), bop)) {
+            binding.addBindingOperation(bop);
+        }
+
+        addOperation(bop.getOperation());
     }
 
-    private void internalAddOperation(Operation sourceOperation) {
+    private void addOperation(Operation sourceOperation) {
         addMessagesFromSource(sourceOperation);
         if (operationsToAdd.containsKey(sourceOperation.getName()))
             return;
 
         operationsToAdd.put(sourceOperation.getName(), sourceOperation);
+        PortType pt = getOrCreatePortType();
+        if (!hasOperation(pt.getOperations(), sourceOperation)) {
+            pt.addOperation(sourceOperation);
+        }
+    }
 
+    private boolean hasBindingOperation(List<BindingOperation> operations, BindingOperation operation) {
+        boolean found = false;
+
+        for (BindingOperation currentOperation : operations) {
+            if (currentOperation.getName().equals(operation.getName())) {
+                found = true;
+            }
+        }
+
+        return found;
+    }
+
+    private boolean hasOperation(List<Operation> operations, Operation operation) {
+        boolean found = false;
+
+        for (Operation currentOperation : operations) {
+            if (currentOperation.getName().equals(operation.getName())) {
+                found = true;
+            }
+        }
+
+        return found;
     }
 
     private boolean addImportsFromSource(WsdlHolder sourceWsdlHolder) {
@@ -374,17 +417,7 @@ public class WsdlComposer {
     }
 
     private PortType getDefaultPortType() {
-        if (portTypes.isEmpty())
-            return null;
-
-        return portTypes.values().iterator().next();
-    }
-
-    private Binding getDefaultBinding() {
-        if (bindings.isEmpty())
-            return null;
-
-        return bindings.values().iterator().next();
+        return portType;
     }
 
     private Operation copyOperation(Operation sourceOperation) {
@@ -493,7 +526,11 @@ public class WsdlComposer {
     }
 
     public Binding getBinding() {
-        return getDefaultBinding();
+        return binding;
+    }
+
+    public void setBinding(Binding binding) {
+        this.binding = binding;
     }
 
     public String getBindingStyle(Binding b) {
@@ -516,16 +553,40 @@ public class WsdlComposer {
         return getDefaultPortType();
     }
 
-    public Map getServices() {
-        return services;
-    }
-
     public Service createService() {
         return delegateWsdl.createService();
     }
 
-    public void addService(Service sv) {
-        services.put(sv.getQName(), sv);
+    /**
+     * Retrieve the port type. Create the new port type if necessary
+     *
+     * @return the port type
+     */
+    public PortType getOrCreatePortType() {
+        PortType portType = getPortType();
+
+        if (portType == null) {
+            portType = createPortType();
+            portType.setQName(new QName(getTargetNamespace(), DEFAULT_PORT_TYPE_NAME));
+            portType.setUndefined(false);
+            setPortType(portType);
+        }
+
+        return portType;
+    }
+
+    public Binding getOrCreateBinding() {
+        Binding binding = getBinding();
+
+        if (binding == null) {
+            binding = createBinding();
+            binding.setPortType(getOrCreatePortType());
+            binding.setUndefined(false);
+            binding.setQName(new QName(getTargetNamespace(), DEFAULT_BINDING_NAME)); 
+            setBinding(binding);
+        }
+
+        return binding;
     }
 
     public Port createPort() {
@@ -572,32 +633,8 @@ public class WsdlComposer {
         return delegateWsdl.createOutput();
     }
 
-    public Map getBindings() {
-        return bindings;
-    }
-
     public Binding createBinding() {
         return delegateWsdl.createBinding();
-    }
-
-    public void addBinding(Binding binding) {
-        internalAddBindings(binding);
-    }
-
-    private void internalAddBindings(Binding binding) {
-        if (bindings.containsKey(binding.getQName()))
-            return;
-
-        bindings.put(binding.getQName(), binding);
-
-    }
-
-    public void removeBinding(Binding binding) {
-        internalRemoveBinding(binding);
-    }
-
-    private void internalRemoveBinding(Binding binding) {
-        bindings.remove(binding.getQName());
     }
 
     public BindingInput createBindingInput() {
@@ -608,32 +645,12 @@ public class WsdlComposer {
         return delegateWsdl.createBindingOutput();
     }
 
-    public Map getPortTypes() {
-        return portTypes;
-    }
-
     public PortType createPortType() {
         return delegateWsdl.createPortType();
     }
 
-    public void addPortType(PortType portType, WsdlHolder holder) {
-        internalAddPortType(portType);
-    }
-
-    private void internalAddPortType(PortType portType) {
-        if (portTypes.containsKey(portType.getQName()))
-            return;
-
-        portTypes.put(portType.getQName(), portType);
-
-    }
-
-    public void removePortType(PortType p) {
-        internalRemovePortType(p);
-    }
-
-    private void internalRemovePortType(PortType p) {
-        portTypes.remove(p.getQName());
+    public void setPortType(PortType portType) {
+        this.portType = portType;
     }
 
     public Set<WsdlHolder> getSourceWsdls(boolean fetchUnusedSources) {
@@ -660,10 +677,11 @@ public class WsdlComposer {
     }
 
     public Service getService() {
-        Collection services = getServices().values();
-        if (services != null && !services.isEmpty())
-            return (Service) services.iterator().next();
-        return null;
+        return service;
+    }
+
+    public void setService(Service service) {
+        this.service = service;
     }
 
     public Port getSupportedSoapPort(Service svc) {
@@ -731,17 +749,21 @@ public class WsdlComposer {
             buildTypes(workingWsdl);
 
             buildMessages(workingWsdl);
-            buildOperations(workingWsdl);
-            buildBindingOperations(workingWsdl);
+
+            PortType portType = getPortType();
+            List<Operation> operations = portType == null ?
+                    Collections.EMPTY_LIST :
+                    (List<Operation>) portType.getOperations();
+            PortType workingPortType = buildOperations(workingWsdl, operations);
+            buildBindingOperations(workingWsdl, workingPortType);
             buildServices(workingWsdl);
             return workingWsdl;
         }
 
 
         private void buildServices(Definition workingWsdl) {
-            for (Map.Entry<QName, Service> serviceEntry : services.entrySet()) {
-                workingWsdl.addService(serviceEntry.getValue());
-            }
+            if (service != null)
+                workingWsdl.addService(service);
         }
 
         private void buildImports(Definition workingWsdl) {
@@ -795,41 +817,68 @@ public class WsdlComposer {
             }
         }
 
-        private void buildOperations(Definition workingWsdl) {
+        private PortType buildOperations(Definition workingWsdl, Collection<Operation> workingOps) {
             workingWsdl.getPortTypes().clear();
 
             PortType destinationPt = getPortType();
             if (destinationPt == null)
-                return;
-            workingWsdl.addPortType(destinationPt);
-            if (!operationsToAdd.isEmpty()) {
-                destinationPt.getOperations().clear();
+                return null;
 
-                for (Operation operation : operationsToAdd.values()) {
-                    destinationPt.addOperation(operation);
-                }
-                workingWsdl.addPortType(destinationPt);
+            PortType workingPortType = workingWsdl.createPortType();
+            workingPortType.setQName(destinationPt.getQName());
+            workingPortType.setUndefined(false);
+
+            Map<String,Operation> opMap = new TreeMap();
+            for (Operation operation : workingOps) {
+                opMap.put(operation.getName(), operation);
             }
+
+            for (Operation operation : operationsToAdd.values()) {
+                opMap.put(operation.getName(), operation);
+            }
+
+            for (Operation operation : opMap.values()) {
+                workingPortType.addOperation(operation);
+            }
+
+            workingWsdl.addPortType(workingPortType);
+
+            return workingPortType;
         }
 
-        private void buildBindingOperations(Definition workingWsdl) {
+        private void buildBindingOperations(Definition workingWsdl, PortType workingPortType) {
             workingWsdl.getBindings().clear();
 
             Binding destinationBinding = getBinding();
-            if (destinationBinding == null)
+            if (destinationBinding == null || workingPortType==null)
                 return;
 
-            workingWsdl.addBinding(destinationBinding);
+            Binding workingBinding = workingWsdl.createBinding();
+            workingBinding.setPortType(workingPortType);
+            workingBinding.setQName(destinationBinding.getQName());
+            workingBinding.setUndefined(false);
 
-            if (!bindingOperationsToAdd.isEmpty()) {
-                destinationBinding.getBindingOperations().clear();
-                for (Set<BindingOperation> bops: bindingOperationsToAdd.values()) {
-                    for (BindingOperation currentBindingOp : bops) {
-                        destinationBinding.addBindingOperation(currentBindingOp);
-                    }
-                }
-                workingWsdl.addBinding(destinationBinding);
+            for(ExtensibilityElement ee : (List<ExtensibilityElement>) destinationBinding.getExtensibilityElements()) {
+                workingBinding.addExtensibilityElement(ee);
             }
+
+            Map<String,BindingOperation> opMap = new TreeMap();
+
+            for (BindingOperation bindingOperation : (List<BindingOperation>) destinationBinding.getBindingOperations()) {
+                opMap.put(bindingOperation.getName(), bindingOperation);                
+            }
+
+            for (Set<BindingOperation> bops: bindingOperationsToAdd.values()) {
+                for (BindingOperation currentBindingOp : bops) {
+                    opMap.put(currentBindingOp.getName(), currentBindingOp);
+                }
+            }
+
+            for (BindingOperation bindingOperation : opMap.values()) {
+                workingBinding.addBindingOperation(bindingOperation);
+            }
+
+            workingWsdl.addBinding(workingBinding);
         }
 
         private void buildNamespaces(Definition workingWsdl) {
