@@ -125,7 +125,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
     public void storeSettings(Object settings) throws IllegalArgumentException {
         PublishPolicyToUDDIWizard.Data data = (PublishPolicyToUDDIWizard.Data)settings;
         data.setPolicyName(policyNameField.getText());
-        data.setPolicyDescription(policyURLField.getText());
+        data.setPolicyDescription(policyDescField.getText());
         data.setCapturedPolicyURL(policyURLField.getText());
     }
 
@@ -146,7 +146,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
             tmodel.setCategoryBag(cbag);
             tmodel.setName(new Name(policyNameField.getText()));
             DescriptionArrayList dal = new DescriptionArrayList();
-            dal.add(new Description(policyURLField.getText()));
+            dal.add(new Description(policyDescField.getText()));
             OverviewDocArrayList odal = new OverviewDocArrayList();
             OverviewDoc odoc = new OverviewDoc();
             odoc.setOverviewURL(new OverviewURL(policyURLField.getText()));
