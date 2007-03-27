@@ -649,7 +649,10 @@ class PathValidator {
                a instanceof ResponseWssConfidentiality || a instanceof ResponseWssIntegrity ||
                a instanceof RequestWssSaml || a instanceof SwAAssertion ||
                a instanceof RequestWssTimestamp || a instanceof ResponseWssTimestamp ||
-               a instanceof RequestWssKerberos || a instanceof WsiBspAssertion;
+               a instanceof RequestWssKerberos || a instanceof WsiBspAssertion ||
+               a instanceof ResponseWssSecurityToken ||
+               a instanceof WsFederationPassiveTokenExchange || a instanceof WsspAssertion ||
+               a instanceof WsiSamlAssertion || a instanceof WsTrustCredentialExchange;
     }
 
     private boolean hasPreconditionAssertion(Assertion a) {
