@@ -113,6 +113,10 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         String style = wsdlComposer.getBindingStyle(binding);
         portTypeBindingStyle.setSelectedItem(StringUtils.isEmpty(style)?"RPC":style.toLowerCase());
 
+        String transport = wsdlComposer.getBindingTransportURI(binding);
+        if (transport!=null)
+            portTypeBindingTransportField.setText(transport);
+
         WsdlBindingOperationsTableModel model =
           new WsdlBindingOperationsTableModel(wsdlComposer, binding);
 
@@ -234,28 +238,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
     }
 
     private void collectSoapBinding(Binding binding) throws WSDLException {
-        ExtensionRegistry extensionRegistry =
-          wsdlComposer.getExtensionRegistry();
-
-        java.util.List extElements = binding.getExtensibilityElements();
-        java.util.List remove = new ArrayList();
-        for (Iterator iterator = extElements.iterator(); iterator.hasNext();) {
-            ExtensibilityElement ee = (ExtensibilityElement)iterator.next();
-            if (ee instanceof SOAPBinding) {
-                remove.add(ee);
-            }
-        }
-        extElements.removeAll(remove);
-
-        ExtensibilityElement ee = null;
-        ee = extensionRegistry.createExtension(Binding.class, new QName(Wsdl.WSDL_SOAP_NAMESPACE, "binding"));
-        if (ee instanceof SOAPBinding) {
-            SOAPBinding sb = (SOAPBinding)ee;
-            sb.setTransportURI(portTypeBindingTransportField.getText());
-            sb.setStyle(portTypeBindingStyle.getSelectedItem().toString());
-            binding.addExtensibilityElement(sb);
-        } else {
-            throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
-        }
+        wsdlComposer.setBindingStyle(binding, portTypeBindingStyle.getSelectedItem().toString());
+        wsdlComposer.setBindingTransportURI(binding, portTypeBindingTransportField.getText());
     }
 }

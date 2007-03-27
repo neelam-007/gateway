@@ -63,41 +63,29 @@ public class WsdlServicePanel extends WizardStepPanel {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
 
-        Service svc = wsdlComposer.getService();
-        String s = nameField.getText();
-        if (s == null || "".equals(s)) {
-            String name = "Service";
-            if (svc != null)
-                if (StringUtils.isNotEmpty(svc.getQName().getLocalPart()))
-                    name = svc.getQName().getLocalPart();
-
-            nameField.setText(name);
-        }
+        Service svc = wsdlComposer.getOrCreateService();
+        nameField.setText(svc.getQName().getLocalPart());
 
         Port port = wsdlComposer.getSupportedSoapPort(svc);
-        s = portAddressField.getText();
-        if (s == null || "".equals(s)) {
-            String address = "http://localhost:8080/ws/" + nameField.getText();
-            if (port != null) {
-                List ees = port.getExtensibilityElements();
-                for (Object obj : ees) {
-                    ExtensibilityElement ee = (ExtensibilityElement) obj;
-                    if (StringUtils.equals(ee.getElementType().getNamespaceURI(), Wsdl.WSDL_SOAP_NAMESPACE)  && StringUtils.equals(ee.getElementType().getLocalPart(), "address")) {
-                        SOAPAddress sa = (SOAPAddress) ee;
-                        address = sa.getLocationURI();
-                        break;
-                    }
+        String address = "";
+        if (port != null) {
+            List ees = port.getExtensibilityElements();
+            for (Object obj : ees) {
+                ExtensibilityElement ee = (ExtensibilityElement) obj;
+                if (StringUtils.equals(ee.getElementType().getNamespaceURI(), Wsdl.WSDL_SOAP_NAMESPACE)  && StringUtils.equals(ee.getElementType().getLocalPart(), "address")) {
+                    SOAPAddress sa = (SOAPAddress) ee;
+                    address = sa.getLocationURI();
+                    break;
                 }
             }
-            portAddressField.setText(address);
         }
-        s = portNameField.getText();
-        if (s == null || "".equals(s)) {
-            if (port != null && StringUtils.isNotEmpty(port.getName()))
-                portNameField.setText(port.getName());
-            else
-                portNameField.setText(wsdlComposer.getQName().getLocalPart() + "Port");
-        }
+        portAddressField.setText(address);
+
+        if (port != null && StringUtils.isNotEmpty(port.getName()))
+            portNameField.setText(port.getName());
+        else
+            portNameField.setText(svc.getQName().getLocalPart() + "Port");
+
         bindingLabel.setText(wsdlComposer.getBinding().getQName().getLocalPart());       
     }
 
@@ -122,7 +110,11 @@ public class WsdlServicePanel extends WizardStepPanel {
         }
 
         try {
-            getService();
+            Service service = wsdlComposer.getOrCreateService();
+            service.setQName(new QName(wsdlComposer.getTargetNamespace(), nameField.getText()));
+            Port port = wsdlComposer.getSupportedSoapPort(service);
+            port.setName(portNameField.getText());
+            collectSoapAddress(wsdlComposer, port);
         } catch (WSDLException e) {
             //todo: error manager
         }
@@ -135,33 +127,8 @@ public class WsdlServicePanel extends WizardStepPanel {
         return "Service";
     }
 
-    private Service getService() throws WSDLException {
-        Service sv = wsdlComposer.getService();
-        if (sv == null)
-            sv = wsdlComposer.createService();
-
-        sv.setQName(new QName(nameField.getText()));
-        getPort(wsdlComposer, sv);
-        wsdlComposer.setService(sv);
-        return sv;
-    }
-
-    private Port getPort(WsdlComposer wsdlComposer, Service service) throws WSDLException {
-        Port port = wsdlComposer.getSupportedSoapPort(service);
-        if (port == null){
-            port = wsdlComposer.createPort();
-            service.addPort(port);
-        }
-
-        port.setName(portNameField.getText());
-        port.setBinding(wsdlComposer.getBinding());
-        collectSoapAddress(wsdlComposer, port);
-        return port;
-    }
-
     private void collectSoapAddress(WsdlComposer wsdlComposer, Port port) throws WSDLException {
         ExtensionRegistry extensionRegistry = wsdlComposer.getExtensionRegistry();
-        ExtensibilityElement ee;
 
         java.util.List<SOAPAddress> remove = new ArrayList<SOAPAddress>();
         java.util.List extensibilityElements = port.getExtensibilityElements();
@@ -172,7 +139,7 @@ public class WsdlServicePanel extends WizardStepPanel {
         }
         extensibilityElements.removeAll(remove);
 
-        ee = extensionRegistry.createExtension(Port.class,
+        ExtensibilityElement ee = extensionRegistry.createExtension(Port.class,
           new QName(Wsdl.WSDL_SOAP_NAMESPACE, "address"));
         if (ee instanceof SOAPAddress) {
             SOAPAddress sa = (SOAPAddress)ee;

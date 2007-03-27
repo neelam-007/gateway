@@ -12,6 +12,7 @@ import javax.wsdl.extensions.ExtensionDeserializer;
 import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.extensions.ExtensionSerializer;
 import javax.wsdl.extensions.soap.SOAPBinding;
+import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
 import javax.xml.namespace.QName;
@@ -30,6 +31,10 @@ public class WsdlComposer {
 
     private static final String DEFAULT_PORT_TYPE_NAME = "NewPortType";
     private static final String DEFAULT_BINDING_NAME = "NewPortTypeBinding";
+    private static final String DEFAULT_PORT_ADDRESS = "http://localhost:8080/ws/Service";
+    private static final String DEFAULT_SERVICE_NAME = "Service";
+    private static final String DEFAULT_BINDING_STYLE = "rpc"; // default style for the wizard
+    private static final String DEFAULT_BINDING_TRANSPORT_URI = "http://schemas.xmlsoap.org/soap/http";
 
     private Document originalWsdlDoc;
     private WsdlHolder originalWsdlHolder;
@@ -101,7 +106,6 @@ public class WsdlComposer {
         addSourceWsdl(originalWsdlHolder);
 
         Definition def = originalWsdl.getDefinition();
-        setQName(def.getQName());
         setTargetNamespace(def.getTargetNamespace());
         for (Object o : def.getNamespaces().keySet()) {
             String key = (String) o;
@@ -115,18 +119,36 @@ public class WsdlComposer {
         }
 
         // Use first service with supported binding
+        out:
         for (Service service : (Collection<Service>) def.getServices().values()) {
             for (Port port : (Collection<Port>) service.getPorts().values()) {
                 Binding b = port.getBinding();
 
                 if (isSupportedSoapBinding(b)) {
-                    setService(service);
-                    setBinding(b);
-                    setPortType(b.getPortType());
+                    Service composedService = getOrCreateService();
+                    composedService.getPorts().clear();
+                    composedService.addPort(port);
+
                     for (Object boObj : b.getBindingOperations()) {
                         addBindingOperation((BindingOperation) boObj, originalWsdlHolder);
                     }
-                    break;
+
+                    // copy style
+                    String style = getBindingStyle(b);
+                    if (style == null) style = "document"; // document is the WSDL default
+                    setBindingStyle(getOrCreateBinding(), style);
+
+                    // copy names
+                    if (def.getQName() != null) setQName(new QName(def.getQName().getLocalPart()));
+                    composedService.setQName(new QName(service.getQName().getLocalPart()));
+
+                    PortType portType = getOrCreatePortType();
+                    portType.setQName(new QName(b.getPortType().getQName().getLocalPart()));
+
+                    Binding binding = getOrCreateBinding();
+                    binding.setQName(new QName(b.getQName().getLocalPart()));
+
+                    break out;
                 }
             }
         }
@@ -537,16 +559,86 @@ public class WsdlComposer {
         if (b == null)
             return null;
 
-        List ees = b.getExtensibilityElements();
-        for (Object o : ees) {
-            ExtensibilityElement ee = (ExtensibilityElement) o;
-            if (StringUtils.equals(ee.getElementType().getNamespaceURI(), Wsdl.WSDL_SOAP_NAMESPACE) &&
-                StringUtils.equalsIgnoreCase(ee.getElementType().getLocalPart(), "binding")) {
+        List<ExtensibilityElement> ees = (List<ExtensibilityElement>) b.getExtensibilityElements();
+        for (ExtensibilityElement ee : ees) {
+            if (ee instanceof SOAPBinding) {
                 SOAPBinding sb = (SOAPBinding) ee;
                 return sb.getStyle();
             }
         }
+        
         return null;
+    }
+
+    public void setBindingStyle(Binding b, String style) {
+        if (b != null) {
+            boolean updated = false;
+            List<ExtensibilityElement> ees = (List<ExtensibilityElement>) b.getExtensibilityElements();
+            for (ExtensibilityElement ee : ees) {
+                if (ee instanceof SOAPBinding) {
+                    SOAPBinding sb = (SOAPBinding) ee;
+                    sb.setStyle(style);
+                    updated = true;
+                }
+            }
+
+            if (!updated) {
+                try {
+                    SOAPBinding sb = (SOAPBinding) getExtensionRegistry().createExtension(
+                            Binding.class,
+                            new QName(Wsdl.WSDL_SOAP_NAMESPACE, "binding"));
+                    sb.setTransportURI(DEFAULT_BINDING_TRANSPORT_URI);
+                    sb.setStyle(style);
+                    b.addExtensibilityElement(sb);
+                }
+                catch(WSDLException we) {
+                    throw new RuntimeException(we);
+                }
+            }
+        }
+    }
+
+    public String getBindingTransportURI(Binding b) {
+        if (b == null)
+            return null;
+
+        List<ExtensibilityElement> ees = (List<ExtensibilityElement>) b.getExtensibilityElements();
+        for (ExtensibilityElement ee : ees) {
+            if (ee instanceof SOAPBinding) {
+                SOAPBinding sb = (SOAPBinding) ee;
+                return sb.getTransportURI();
+            }
+        }
+
+        return null;
+    }
+
+    public void setBindingTransportURI(Binding b, String transportURI) {
+        if (b != null) {
+            boolean updated = false;
+            List<ExtensibilityElement> ees = (List<ExtensibilityElement>) b.getExtensibilityElements();
+            for (ExtensibilityElement ee : ees) {
+                if (ee instanceof SOAPBinding) {
+                    SOAPBinding sb = (SOAPBinding) ee;
+                    sb.setTransportURI(transportURI);
+                    updated = true;
+                }
+            }
+
+            if (!updated) {
+                try {
+                    SOAPBinding sb = (SOAPBinding) getExtensionRegistry().createExtension(
+                            Binding.class,
+                            new QName(Wsdl.WSDL_SOAP_NAMESPACE, "binding"));
+                    sb.setTransportURI(transportURI);
+                    sb.setStyle(DEFAULT_BINDING_STYLE);
+                    b.addExtensibilityElement(sb);
+                }
+                catch(WSDLException we) {
+                    throw new RuntimeException(we);
+                }
+            }
+        }
     }
 
     public PortType getPortType() {
@@ -587,6 +679,45 @@ public class WsdlComposer {
         }
 
         return binding;
+    }
+
+    public Service getOrCreateService() {
+        Service service = getService();
+        if (service == null) {
+            service = createService();
+
+            service.setQName(new QName(DEFAULT_SERVICE_NAME));
+            getPort(service);
+            setService(service);
+        }
+
+        return service;
+    }
+
+    private Port getPort(Service service) {
+        Port port = getSupportedSoapPort(service);
+
+        if (port == null){
+            port = createPort();
+            service.addPort(port);
+            port.setName(service.getQName().getLocalPart() + "Port");
+            try {
+                ExtensibilityElement ee = extensionRegistry.createExtension(
+                        Port.class,
+                        new QName(Wsdl.WSDL_SOAP_NAMESPACE, "address"));
+                if (ee instanceof SOAPAddress) {
+                    SOAPAddress sa = (SOAPAddress)ee;
+                    sa.setLocationURI(DEFAULT_PORT_ADDRESS);
+                }
+            }
+            catch(WSDLException e) {
+                // no address
+            }
+
+            port.setBinding(getOrCreateBinding());
+        }
+
+        return port;
     }
 
     public Port createPort() {
@@ -743,7 +874,7 @@ public class WsdlComposer {
                 reader.setExtensionRegistry(extensionRegistry);
                 workingWsdl = reader.readWSDL(originalWsdlDoc.getDocumentURI(), originalWsdlDoc);
             }
-            workingWsdl.setQName(qname);
+            buildDefinition(workingWsdl);
             buildImports(workingWsdl);
             buildNamespaces(workingWsdl);
             buildTypes(workingWsdl);
@@ -760,8 +891,14 @@ public class WsdlComposer {
             return workingWsdl;
         }
 
+        private void buildDefinition(Definition workingWsdl) {
+            QName name = getQName();
+            if (name != null && name.getLocalPart()!=null && name.getLocalPart().trim().length()>0)
+                workingWsdl.setQName(new QName(name.getLocalPart().trim()));
+        }
 
         private void buildServices(Definition workingWsdl) {
+            workingWsdl.getServices().clear();
             if (service != null)
                 workingWsdl.addService(service);
         }
