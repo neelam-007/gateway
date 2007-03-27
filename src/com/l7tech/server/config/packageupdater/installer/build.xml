@@ -14,7 +14,7 @@
     <property name="updatefiles.list" value="${checksum.dir}/updatefiles.txt"/>
     <property name="jar.name" value="UpdateInstaller.jar"/>
     <property name="manifest.name" value="UpdateInstaller.mf"/>
-    <property name="updatepackage.zip" value="SSGUpdatePackage.zip"/>
+    <property name="updatepackage.name" value="SSGUpdatePackage"/>
 
     <target name="package.sign" depends="package">
         <echo message="Signing the Package Installer Jar"/>
@@ -31,6 +31,9 @@
 
     <target name="package" depends="checkPrepare">
         <fail unless="installer.prepared">The update project needs to be prepared first. Please run prepare task</fail>
+        <fail unless="installer.version.string"
+              message="Set the version information property (-Dinstaller.version.string=xxx) property before running!"/>
+
         <echo message="building the source and jar"/>
 
         <mkdir dir="${build.dir}"/>
@@ -44,7 +47,7 @@
 
         <jar basedir="${build.dir}" destfile="${jar.name}" manifest="${manifest.name}"/>
 
-        <zip destfile="${updatepackage.zip}">
+        <zip destfile="${updatepackage.name}-${installer.version.string}.sup">
             <fileset dir=".">
                 <include name="${bin.dir}/**/*"/>
                 <include name="${data.dir}/**/*"/>
