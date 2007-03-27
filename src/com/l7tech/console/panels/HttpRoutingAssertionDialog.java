@@ -103,6 +103,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JRadioButton neverFailRadio;
 
     private final SecureAction okButtonAction;
+    private boolean confirmed = false;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.HttpRoutingAssertionDialog");
 
@@ -485,6 +486,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
             assertion.setFollowRedirects(followRedirectCheck.isSelected());
             assertion.setFailOnErrorStatus(failOnErrorRadio.isSelected());
 
+            confirmed = true;
             fireEventAssertionChanged(assertion);
 
             this.dispose();
@@ -597,5 +599,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 }
             }
         }
+    }
+
+    public boolean isConfirmed() {
+        return confirmed;
     }
 }
