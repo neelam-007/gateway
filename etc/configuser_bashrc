@@ -2,7 +2,7 @@ set -u
 set -e
 
 SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
-CONFWIZARD="/ssg/configwizard/ssgconfig.sh -console"
+CONFWIZARD="/ssg/configwizard/ssgconfig.sh"
 UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh"
 
 checkForUpdater() {
