@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Ant build file for all modules. -->
-<project name="updateinstaller" default="package.sign">
-
+<project name="updateinstaller" default="makeupdatepackage">
     <property name="build.dir" value="build"/>
     <property name="checksum.dir" value="${build.dir}/checksums"/>
     <property name="bin.dir" value="bin"/>
@@ -11,13 +10,23 @@
     <property name="check.dir" value="${stages.dir}/check"/>
     <property name="readme.file" value="README.TXT"/>
     <property name="description.file" value="description.txt"/>
-    <property name="updatefiles.list" value="${checksum.dir}/updatefiles.txt"/>
-    <property name="jar.name" value="UpdateInstaller.jar"/>
+    <property name="updatefiles.list" value="updatefiles.txt"/>
+    <property name="jar.unsigned.name" value="Unsigned-UpdateInstaller.jar"/>
+    <property name="jar.signed.name" value="UpdateInstaller.jar"/>
     <property name="manifest.name" value="UpdateInstaller.mf"/>
     <property name="updatepackage.name" value="SSGUpdatePackage"/>
 
-    <target name="package.sign" depends="package">
+    <target name="package.sign" depends="makeJar">
+        <fail unless="keystore.location"
+              message="The jar cannot be signed without a keystore. Specify the keystore using the keystore.location property!"/>
+
         <echo message="Signing the Package Installer Jar"/>
+        <signjar keystore="${keystore.location}"
+                 alias="signer"
+                 storepass="password"
+                 jar="${jar.unsigned.name}"
+                 signedjar="${jar.signed.name}"
+        />
     </target>
 
     <target name="checkPrepare">
@@ -29,10 +38,13 @@
         </condition>
     </target>
 
-    <target name="package" depends="checkPrepare">
-        <fail unless="installer.prepared">The update project needs to be prepared first. Please run prepare task</fail>
-        <fail unless="installer.version.string"
-              message="Set the version information property (-Dinstaller.version.string=xxx) property before running!"/>
+    <target name="makeJar" depends="checkPrepare">
+
+        <fail unless="installer.prepared"
+                      message="The update project needs to be prepared first. Please run prepare task"/>
+
+        <fail unless="updateinstaller.version"
+              message="Set the version information property (-Dupdateinstaller.version=xxx) property before running!"/>
 
         <echo message="building the source and jar"/>
 
@@ -45,13 +57,15 @@
             <fileset dir="${data.dir}" includes="**/*"/>
         </checksum>
 
-        <jar basedir="${build.dir}" destfile="${jar.name}" manifest="${manifest.name}"/>
+        <jar basedir="${build.dir}" destfile="${jar.unsigned.name}" manifest="${manifest.name}"/>
+    </target>
 
-        <zip destfile="${updatepackage.name}-${installer.version.string}.sup">
+    <target name="makeupdatepackage" depends="package.sign">
+        <zip destfile="${updatepackage.name}-${updateinstaller.version}.sup">
             <fileset dir=".">
                 <include name="${bin.dir}/**/*"/>
                 <include name="${data.dir}/**/*"/>
-                <include name="${jar.name}"/>
+                <include name="${jar.signed.name}"/>
                 <include name="${description.file}"/>
                 <include name="${readme.file}"/>
             </fileset>

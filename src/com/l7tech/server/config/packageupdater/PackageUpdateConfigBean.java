@@ -35,7 +35,8 @@ public class PackageUpdateConfigBean extends BaseConfigurationBean {
 
     public static class UpdatePackageInfo {
         private String description;
-        private String pathLocation;
+        private String originalLocation;
+        private String expandedLocation;
 
 
         public UpdatePackageInfo() {
@@ -49,12 +50,20 @@ public class PackageUpdateConfigBean extends BaseConfigurationBean {
             this.description = description;
         }
 
-        public String getPathLocation() {
-            return pathLocation;
+        public String getOriginalLocation() {
+            return originalLocation;
         }
 
-        public void setPathLocation(String pathLocation) {
-            this.pathLocation = pathLocation;
+        public void setOriginalLocation(String originalLocation) {
+            this.originalLocation = originalLocation;
+        }
+
+        public String getExpandedLocation() {
+            return expandedLocation;
+        }
+
+        public void setExpandedLocation(String expandedLocation) {
+            this.expandedLocation = expandedLocation;
         }
     }
 }

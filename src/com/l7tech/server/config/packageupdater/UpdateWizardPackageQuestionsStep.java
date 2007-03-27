@@ -2,6 +2,7 @@ package com.l7tech.server.config.packageupdater;
 
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.ui.console.BaseConsoleStep;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
@@ -12,6 +13,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.jar.JarFile;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -30,17 +32,19 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
     PackageUpdateConfigBean configBean;
 
     List<PackageUpdateConfigBean.UpdatePackageInfo> updatePackages;
-    private String updateLocation;
 
+    //CONSTRUCTOR
     public UpdateWizardPackageQuestionsStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
         configBean = new PackageUpdateConfigBean("Package Update Information","");
     }
 
+    //check if it's ok to proceed to next step
     public boolean validateStep() {
         return isOnePackageSelected();
     }
 
+    //if 0 packages selected, or if there's more than one package available, we bail.
     private boolean isOnePackageSelected() {
         switch (getUpdatePackages().size()) {
             case 0:
@@ -67,9 +71,28 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
         }
     }
 
-    private boolean checkValidSinglePackage(PackageUpdateConfigBean.UpdatePackageInfo updatePackage) {
+    private boolean checkValidSinglePackage(PackageUpdateConfigBean.UpdatePackageInfo updatePackage) throws UpdateWizardException {
         boolean isValid = false;
+        //checkSignature on the jar
+        checkJarSignature(updatePackage);
+        checkChecksums(updatePackage);
+        isValid = true;
         return isValid;
+    }
+
+    private void checkJarSignature(PackageUpdateConfigBean.UpdatePackageInfo updatePackage) throws UpdateWizardException {
+        try {
+            logger.info("Checking jar signature");
+            JarFile jarFile = new JarFile(new File(updatePackage.getExpandedLocation(), PackageUpdateConfigBean.INSTALLER_JAR_FILENAME));
+        } catch (IOException e) {
+            String message = MessageFormat.format("Error while loading the update installer from {0}. ({1})", updatePackage.getExpandedLocation(), e.getMessage());
+            logger.warning(message);
+            throw new UpdateWizardException(message);
+        }
+    }
+
+    private void checkChecksums(PackageUpdateConfigBean.UpdatePackageInfo updatePackage) throws UpdateWizardException {
+//        throw new UpdateWizardException("The update package has been changed since being created by Layer 7 Technologies. This is not a valid SecureSpan Update package.");
     }
 
     private void checkUpdateFile(File updatePath) throws UpdateWizardException {
@@ -157,11 +180,12 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
             fileToCheck = new File(zipOutputDir, PackageUpdateConfigBean.DESCRIPTION_FILENAME);
             if (!fileToCheck.exists()) {
                 logger.warning(MessageFormat.format("Could not find a {0} in the update package {1}. This is not a valid SecureSpan update package.", PackageUpdateConfigBean.DESCRIPTION_FILENAME, updateFile.getAbsolutePath()));
-                return null;
             }
             String description = getDescription(fileToCheck);
 
             info = new PackageUpdateConfigBean.UpdatePackageInfo();
+            info.setOriginalLocation(updateFile.getAbsolutePath());
+            info.setExpandedLocation(zipOutputDir.getAbsolutePath());
             info.setDescription(description);
         } catch (FileNotFoundException e) {
             logger.warning(MessageFormat.format("Could not read update package from file \"{0}\". ({1})", updateFile.getAbsolutePath(), e.getMessage()));
@@ -176,15 +200,12 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
     }
 
     private String getDescription(File descriptionFile) throws UpdateWizardException {
-        StringBuilder sb = new StringBuilder();
         BufferedInputStream bis = null;
+        String description = null;
         try {
             bis = new BufferedInputStream(new FileInputStream(descriptionFile));
-            int len = 0;
-            byte[] buf = new byte[512];
-            while ((len = bis.read(buf)) != -1) {
-                sb.append(buf);
-            }
+            byte[] buf = HexUtils.slurpStream(bis);
+            description = new String(buf);
         } catch (FileNotFoundException e) {
             String message = "No description file found. This is not a valid SecureSpan Update package.";
             logger.warning(message);
@@ -196,7 +217,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
         } finally{
             ResourceUtils.closeQuietly(bis);
         }
-        return sb.toString();
+        return description;
     }
 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
@@ -209,9 +230,9 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
     }
 
     private void doSpecifyPackageQuestions() throws IOException, WizardNavigationException {
-        updateLocation = getData(
-                new String[] {
-                    "Enter the path to the update package you wish to install:"
+        String updateLocation = getData(
+                new String[]{
+                        "Enter the path to the update package you wish to install:"
                 },
                 "",
                 (Pattern) null,
@@ -219,7 +240,6 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
 
         try {
             checkUpdateLocation(updateLocation);
-            boolean isValid = false;
             if (getUpdatePackages().isEmpty()) {
                 printText("No upgrade package was found at this location. Please specify the package you wish to install." + getEolChar());
                 logger.warning("No upgrade packages found.");
@@ -229,18 +249,29 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
                 logger.warning("Multiple upgrade packages found.");
                 doSpecifyPackageQuestions();
             } else {
-                if (!checkValidSinglePackage(getUpdatePackages().iterator().next())) {
-                    doSpecifyPackageQuestions();    
-                }
-            }
+                PackageUpdateConfigBean.UpdatePackageInfo goodOne = getUpdatePackages().iterator().next();
+                if (!checkValidSinglePackage(goodOne)) {
+                    doSpecifyPackageQuestions();
+                } else {
+                    String description = goodOne.getDescription();
+                    if (StringUtils.isEmpty(description))
+                        description = "";
 
-            if (!getConfirmationFromUser("The following update package will be installed. Is this correct?")) {
-                doSpecifyPackageQuestions();
+                    String confirmMessage = "The following update package will be installed." + getEolChar() +
+                                            "\t" + goodOne.getOriginalLocation() + getEolChar() +
+                                            "\t" + description + getEolChar() +
+                                            "Is this correct?";
+
+                    if (!getConfirmationFromUser(confirmMessage)) {
+                        doSpecifyPackageQuestions();
+                    }
+                }
             }
 
         } catch (UpdateWizardException e) {
             printText("*** " + e.getMessage() + " ***" + getEolChar());
             getUpdatePackages().clear();
+            doSpecifyPackageQuestions();  
         }
     }
 
