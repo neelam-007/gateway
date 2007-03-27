@@ -23,6 +23,9 @@ public class PackageUpdateConfigBean extends BaseConfigurationBean {
     }
 
     protected void populateExplanations() {
+        explanations.add("Install the following update package:");
+        explanations.add(insertTab + "Package: " + packageInfo.getOriginalLocation());
+        explanations.add(insertTab + "Description: " + packageInfo.getDescription());
     }
 
     public void setPackageInformation(UpdatePackageInfo updatePackageInfo) {
@@ -43,7 +46,7 @@ public class PackageUpdateConfigBean extends BaseConfigurationBean {
         }
 
         public String getDescription() {
-            return description;
+            return description == null?"":description;
         }
 
         public void setDescription(String description) {

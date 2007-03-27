@@ -3,9 +3,11 @@ package com.l7tech.server.config.packageupdater.installer;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.FilenameFilter;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.MessageFormat;
-import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: megery
@@ -13,11 +15,10 @@ import java.util.Arrays;
  * Time: 3:16:28 PM
  */
 public class UpdatePackageInstaller {
-    private File stagesDir;
-    private File[] checkFiles;
-
+    private static final String BIN_DIRECTORY = "bin";
+    Set<File> checkFiles;
     public UpdatePackageInstaller() {
-        stagesDir = new File("bin\\stages");
+        checkFiles = new TreeSet<File>();
     }
 
     public static void main(String[] args) {
@@ -38,16 +39,16 @@ public class UpdatePackageInstaller {
     }
 
     private void executeBinScripts() throws InstallerException {
-        File[] stages = stagesDir.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return !name.equalsIgnoreCase("check");
-            }
-        });
-
-        Arrays.sort(stages);
-        for (File stage : stages) {
-            executeScriptsInDirectory(stage);
-        }
+//        File[] stages = stagesDir.listFiles(new FilenameFilter() {
+//            public boolean accept(File dir, String name) {
+//                return !name.equalsIgnoreCase("check");
+//            }
+//        });
+//
+//        Arrays.sort(stages);
+//        for (File stage : stages) {
+//            executeScriptsInDirectory(stage);
+//        }
     }
 
     private void executeScriptsInDirectory(File stage) throws InstallerException {
@@ -58,9 +59,9 @@ public class UpdatePackageInstaller {
     }
 
     private void executeCheckScripts() throws InstallerException {
-        for (File checkFile : checkFiles) {
-            executeSingleScript(checkFile);
-        }
+//        for (File checkFile : checkFiles) {
+//            executeSingleScript(checkFile);
+//        }
     }
 
     private void executeSingleScript(File scriptFile) throws InstallerException {
@@ -92,13 +93,30 @@ public class UpdatePackageInstaller {
     }
 
     private void ensureCheckScripts() throws InstallerException {
-        File checkDir = new File(stagesDir, "check");
-        if (!checkDir.exists())
-            throw new InstallerException("Cannot proceed without a pre-update check. Please rebuild the update package");
+        URL binDirUrl = getClass().getClassLoader().getResource(BIN_DIRECTORY);
+        if (binDirUrl == null)
+            throw new InstallerException("No bin directory found. Cannot proceed with the update");
 
-        checkFiles = checkDir.listFiles();
-        if (checkFiles == null || checkFiles.length == 0)
-            throw new InstallerException("Cannot proceed without a pre-update check. Please rebuild the update package");       
+        if ("file".equals(binDirUrl.getProtocol())) {
+            try {
+                File stagesDir = new File(new File(binDirUrl.toURI()), "stages");
+                if (!stagesDir.exists())
+                    throw new InstallerException("No stages directory found. Cannot proceed with the update");
+
+                File checkDir = new File(stagesDir, "check");
+                if (!checkDir.exists())
+                    throw new InstallerException("No check directory found. Cannot proceed with the update");
+
+                File[] checkFilesList = checkDir.listFiles();
+                if (checkFilesList != null) {
+                    for (File checkFileName : checkFilesList) {
+                        checkFiles.add(checkFileName);
+                    }
+                }
+            } catch(URISyntaxException use) {
+                throw new InstallerException("Error while listing the files in the check directory. Cannot proceed with the update");
+            }
+        }
     }
 
     public class InstallerException extends Exception {

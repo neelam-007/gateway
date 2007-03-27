@@ -1,8 +1,8 @@
 package com.l7tech.server.config.packageupdater;
 
 import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.ui.console.BaseConsoleStep;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
@@ -37,6 +37,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
     public UpdateWizardPackageQuestionsStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
         configBean = new PackageUpdateConfigBean("Package Update Information","");
+        configCommand = new PackageUpdateConfigCommand(configBean);
     }
 
     //check if it's ok to proceed to next step
@@ -209,11 +210,9 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
         } catch (FileNotFoundException e) {
             String message = "No description file found. This is not a valid SecureSpan Update package.";
             logger.warning(message);
-            throw new UpdateWizardException(message);
         } catch (IOException e) {
             String message = MessageFormat.format("Error while reading description file. Cannot proceed ({0}).", e.getMessage());
             logger.warning(message);
-            throw new UpdateWizardException(message);
         } finally{
             ResourceUtils.closeQuietly(bis);
         }
@@ -258,12 +257,17 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
                         description = "";
 
                     String confirmMessage = "The following update package will be installed." + getEolChar() +
-                                            "\t" + goodOne.getOriginalLocation() + getEolChar() +
-                                            "\t" + description + getEolChar() +
+                                            "\t" + "Package: " + goodOne.getOriginalLocation() + getEolChar() +
+                                            "\t" + "Description: " + description + getEolChar() +
                                             "Is this correct?";
 
                     if (!getConfirmationFromUser(confirmMessage)) {
                         doSpecifyPackageQuestions();
+                    } else {
+                        if (!getUpdatePackages().isEmpty()) {
+                            configBean.setPackageInformation(getUpdatePackages().iterator().next());
+                        }
+                        storeInput();
                     }
                 }
             }
@@ -277,11 +281,5 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
 
     public String getTitle() {
         return TITLE;
-    }
-
-    protected void storeInput() {
-        if (!getUpdatePackages().isEmpty()) {
-            configBean.setPackageInformation(getUpdatePackages().iterator().next());
-        }
     }
 }

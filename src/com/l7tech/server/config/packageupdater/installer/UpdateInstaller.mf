@@ -5,3 +5,4 @@ Implementation-Title: Layer 7 SecureSpan Update Installer
 Implementation-Version: 3.7
 Implementation-Vendor: Layer 7 Technologies Inc.
 Main-Class: com.l7tech.server.config.packageupdater.installer.UpdatePackageInstaller
+Class-Path: . bin/*.* data/*.*
