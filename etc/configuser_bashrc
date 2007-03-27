@@ -6,7 +6,7 @@ CONFWIZARD="/ssg/configwizard/ssgconfig.sh"
 UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh"
 
 checkForUpdater() {
-    if [ -d "/ssg/updatewizard" ] ; then
+    if [ -e "/ssg/updatewizard/ssgupdatewizard.sh" ] ; then
         UPDATER_PRESENT="true"
     else
         UPDATER_PRESENT=""
