@@ -107,7 +107,7 @@ public class Wsdl {
      * Stores top-level policies found in this WSDL.
      */
     private PolicyRegistry policyRegistry = null;
-    private List topLevelPolicies = null;
+    private List<Policy> topLevelPolicies = null;
 
     /**
      * bitmask that accepts all bindings
@@ -301,7 +301,7 @@ public class Wsdl {
              */
             public InputSource getImportInputSource(String parentLocation, String importLocation) {
                 InputSource is = null;
-                URI resolvedUri = null;
+                URI resolvedUri;
                 try {
                     lastResolvedUri = importLocation; // ensure set even if not valid
 
@@ -333,6 +333,9 @@ public class Wsdl {
             public String getLatestImportURI() {
                 return lastResolvedUri;
             }
+
+            public void close() {
+            }
         };
     }
 
@@ -347,15 +350,15 @@ public class Wsdl {
      *         is not found
      */
     public String getServiceURI() {
-        for (Iterator it = getServices().iterator(); it.hasNext();) {
-            Service svc = (Service)it.next();
-            for (Iterator ports = svc.getPorts().values().iterator(); ports.hasNext();) {
-                Port p = (Port)ports.next();
-                List elements = p.getExtensibilityElements();
-                for (Iterator ite = elements.iterator(); ite.hasNext();) {
-                    Object o = ite.next();
-                    if (o instanceof SOAPAddress) {
-                        SOAPAddress sa = (SOAPAddress)o;
+        for (Service svc : getServices()) {
+            //noinspection unchecked
+            Map<QName, Port> ports = svc.getPorts();
+            for (Port p : ports.values()) {
+                //noinspection unchecked
+                List<ExtensibilityElement> elements = p.getExtensibilityElements();
+                for (ExtensibilityElement element : elements) {
+                    if (element instanceof SOAPAddress) {
+                        SOAPAddress sa = (SOAPAddress) element;
                         return sa.getLocationURI();
                     }
                 }
@@ -376,24 +379,22 @@ public class Wsdl {
      *         is not found
      */
     public String getServiceName() {
-        for (Iterator it = getServices().iterator(); it.hasNext();) {
-            Service svc = (Service)it.next();
-            return svc.getQName().getLocalPart();
-        }
-        return null;
+        Service svc = getServices().iterator().next();
+        return svc == null ? null : svc.getQName().getLocalPart();
     }
 
     /**
      * @return the collection of WSDL <code>Binding</code>
      *         instances described in this definition.
      */
-    public Collection getBindings() {
-        final Collection allBindings = new ArrayList();
+    public Collection<Binding> getBindings() {
+        final Collection<Binding> allBindings = new ArrayList<Binding>();
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
                 if (def == null) return;
 
-                Map bindings = def.getBindings();
+                //noinspection unchecked
+                Map<QName, Binding> bindings = def.getBindings();
                 if (bindings != null && bindings.values() != null) {
                     allBindings.addAll(bindings.values());
                 }
@@ -403,15 +404,14 @@ public class Wsdl {
         if (showBindings == ALL_BINDINGS) {
             return allBindings;
         }
-        Collection filtered = new ArrayList();
-        for (Iterator iterator = allBindings.iterator(); iterator.hasNext();) {
-            Binding binding = (Binding)iterator.next();
+        Collection<Binding> filtered = new ArrayList<Binding>();
+        for (Binding binding : allBindings) {
             ExtensibilityElement bp = getBindingProtocol(binding);
             if (bp instanceof HTTPBinding &&
-              (showBindings & HTTP_BINDINGS) == HTTP_BINDINGS) {
+                    (showBindings & HTTP_BINDINGS) == HTTP_BINDINGS) {
                 filtered.add(binding);
             } else if (bp instanceof SOAPBinding &&
-              (showBindings & SOAP_BINDINGS) == SOAP_BINDINGS) {
+                    (showBindings & SOAP_BINDINGS) == SOAP_BINDINGS) {
                 filtered.add(binding);
             }
         }
@@ -426,17 +426,15 @@ public class Wsdl {
     public boolean hasMultipartOperations() {
         boolean multipart = false;
 
-        Collection bindings = getBindings();
+        Collection<Binding> bindings = getBindings();
 
         // for each binding in WSDL
-        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
-            Binding binding = (Binding) iterator.next();
-
-            Collection operations = binding.getBindingOperations();
+        for (Binding binding : bindings) {
+            //noinspection unchecked
+            Collection<BindingOperation> operations = binding.getBindingOperations();
 
             // for each operation in WSDL
-            for (Iterator iterator1 = operations.iterator(); iterator1.hasNext();) {
-                BindingOperation bo = (BindingOperation) iterator1.next();
+            for (BindingOperation bo : operations) {
                 MIMEMultipartRelated mimeMultipart = getMimeMultipartRelatedInput(bo);
                 if (mimeMultipart != null) {
                     multipart = true;
@@ -570,9 +568,8 @@ public class Wsdl {
         policyRegistry = new PolicyRegistry();
 
         // Pre-register all top-level policies
-        List policies = getPolicies();
-        for (Iterator i = policies.iterator(); i.hasNext();) {
-            Policy policy = (Policy)i.next();
+        List<Policy> policies = getPolicies();
+        for (Policy policy : policies) {
             policyRegistry.register(policy.getPolicyURI(), policy);
         }
 
@@ -598,13 +595,13 @@ public class Wsdl {
      *         May be empty, but never null.
      *
      */
-    public List getPolicies() {
+    public List<Policy> getPolicies() {
         if (topLevelPolicies != null) return topLevelPolicies;
-        List ret = new ArrayList();
-        List exts = getDefinition().getExtensibilityElements();
-        for (Iterator i = exts.iterator(); i.hasNext();) {
-            ExtensibilityElement ee = (ExtensibilityElement)i.next();
-            UnknownExtensibilityElement uee = getPolicyUue(ee);
+        List<Policy> ret = new ArrayList<Policy>();
+        //noinspection unchecked
+        List<ExtensibilityElement> eels = getDefinition().getExtensibilityElements();
+        for (ExtensibilityElement eel : eels) {
+            UnknownExtensibilityElement uee = getPolicyUue(eel);
             if (uee != null) {
                 Policy p = readPolicySafely(uee.getElement());
                 if (p != null) ret.add(p);
@@ -616,6 +613,7 @@ public class Wsdl {
     /**
      * @return the computed effective policy for this input message, merged with per-operation and per-binding policies (if any), or null if no policy is in effect.
      */
+    @SuppressWarnings({"unchecked"})
     public Assertion getEffectiveInputPolicy(Binding binding, BindingOperation operation)
             throws BadPolicyReferenceException
     {
@@ -628,6 +626,7 @@ public class Wsdl {
         return ep;
     }
 
+    @SuppressWarnings({"unchecked"})
     public Assertion getEffectiveOutputPolicy(Binding binding, BindingOperation operation)
             throws BadPolicyReferenceException
     {
@@ -640,9 +639,9 @@ public class Wsdl {
         return ep;
     }
 
-    private Assertion mergePolicies(Assertion currentPolicy, List extensibilityElements) throws BadPolicyReferenceException {
-        for (Iterator i = extensibilityElements.iterator(); i.hasNext();) {
-            Policy p = toPolicy((ExtensibilityElement)i.next());
+    private Assertion mergePolicies(Assertion currentPolicy, List<ExtensibilityElement> extensibilityElements) throws BadPolicyReferenceException {
+        for (ExtensibilityElement eel : extensibilityElements) {
+            Policy p = toPolicy(eel);
             if (p == null) continue;
             currentPolicy = currentPolicy == null ? p : currentPolicy.merge(p, getPolicyRegistry());
         }
@@ -674,9 +673,7 @@ public class Wsdl {
      * @return the binding where the binding operation is defined or <b>null</b>
      */
     public Binding getBinding(BindingOperation bo) {
-        Iterator bindings = getBindings().iterator();
-        while (bindings.hasNext()) {
-            Binding binding = (Binding)bindings.next();
+        for (Binding binding : getBindings()) {
             if (binding.getBindingOperations().contains(bo)) {
                 return binding;
             }
@@ -692,9 +689,7 @@ public class Wsdl {
         if (localName == null) {
             throw new IllegalArgumentException();
         }
-        Iterator bindings = getBindings().iterator();
-        while (bindings.hasNext()) {
-            Binding binding = (Binding)bindings.next();
+        for (Binding binding : getBindings()) {
             if (localName.equals(binding.getQName().getLocalPart())) {
                 return binding;
             }
@@ -709,7 +704,7 @@ public class Wsdl {
      *         imported definitions.
      */
     public Collection getMessages() {
-        final Collection allMessages = new ArrayList();
+        final Collection<Message> allMessages = new ArrayList<Message>();
 
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
@@ -717,6 +712,7 @@ public class Wsdl {
 
                 Map messages = def.getMessages();
                 if (messages != null && messages.values() != null) {
+                    //noinspection unchecked
                     allMessages.addAll(def.getMessages().values());
                 }
             }
@@ -730,7 +726,7 @@ public class Wsdl {
      *         definitions.
      */
     public Collection getPortTypes() {
-        final Collection allPortTypes = new ArrayList();
+        final Collection<PortType> allPortTypes = new ArrayList<PortType>();
 
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
@@ -738,6 +734,7 @@ public class Wsdl {
 
                 Map portTypes = def.getPortTypes();
                 if (portTypes != null && portTypes.values() != null) {
+                    //noinspection unchecked
                     allPortTypes.addAll(def.getPortTypes().values());
                 }
             }
@@ -751,8 +748,8 @@ public class Wsdl {
      *         instances described in this definition and
      *         imported definitions.
      */
-    public Collection getServices() {
-        final Collection allServices = new ArrayList();
+    public Collection<Service> getServices() {
+        final Collection<Service> allServices = new ArrayList<Service>();
 
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
@@ -760,6 +757,7 @@ public class Wsdl {
 
                 Map services = def.getServices();
                 if (services != null && services.values() != null) {
+                    //noinspection unchecked
                     allServices.addAll(def.getServices().values());
                 }
             }
@@ -860,11 +858,11 @@ public class Wsdl {
      * @return the operation style "rpc" | "document", if undefined "rpc" is returned
      */
     public String getBindingStyle(BindingOperation bo) {
-        List elements = bo.getExtensibilityElements();
-        for (Iterator iterator = elements.iterator(); iterator.hasNext();) {
-            Object o = (Object)iterator.next();
-            if (o instanceof SOAPOperation) {
-                SOAPOperation so = (SOAPOperation)o;
+        //noinspection unchecked
+        List<ExtensibilityElement> elements = bo.getExtensibilityElements();
+        for (ExtensibilityElement element : elements) {
+            if (element instanceof SOAPOperation) {
+                SOAPOperation so = (SOAPOperation) element;
                 String style = so.getStyle();
                 if (style == null || "".equals(style)) {
                     break;
@@ -872,9 +870,7 @@ public class Wsdl {
                 return style;
             }
         }
-        Iterator bindings = getBindings().iterator();
-        while (bindings.hasNext()) {
-            Binding binding = (Binding)bindings.next();
+        for (Binding binding : getBindings()) {
             if (binding.getBindingOperations().contains(bo)) {
                 return getBindingStyle(binding);
             }
@@ -913,13 +909,13 @@ public class Wsdl {
      * @return the proticol binding or null if unspecified
      */
     public ExtensibilityElement getBindingProtocol(Binding b) {
-        List elements = b.getExtensibilityElements();
-        for (Iterator iterator = elements.iterator(); iterator.hasNext();) {
-            Object o = (Object)iterator.next();
-            if (o instanceof SOAPBinding) {
-                return (SOAPBinding)o;
-            } else if (o instanceof HTTPBinding) {
-                return (HTTPBinding)o;
+        //noinspection unchecked
+        List<ExtensibilityElement> elements = b.getExtensibilityElements();
+        for (ExtensibilityElement eel : elements) {
+            if (eel instanceof SOAPBinding) {
+                return eel;
+            } else if (eel instanceof HTTPBinding) {
+                return eel;
             }
         }
         return null;
@@ -942,17 +938,17 @@ public class Wsdl {
         if (!(ee instanceof SOAPBinding)) {
             throw new IllegalArgumentException("Must be SOAP binding. +( " + binding.getQName().getLocalPart() + " )");
         }
-        Set soapUseSet = new HashSet();
-        List bindingOperations = binding.getBindingOperations();
-        for (Iterator iterator = bindingOperations.iterator(); iterator.hasNext();) {
-            BindingOperation bindingOperation = (BindingOperation)iterator.next();
+        Set<String> soapUseSet = new HashSet<String>();
+        //noinspection unchecked
+        List<BindingOperation> bindingOperations = binding.getBindingOperations();
+        for (BindingOperation bindingOperation : bindingOperations) {
             soapUseSet.add(getSoapUse(bindingOperation));
         }
         if (soapUseSet.size() > 1) {
             throw new WSDLException(WSDLException.INVALID_WSDL, "Mixed/unsupported uses in '" + binding.getQName().getLocalPart() + "' found in this WSDL.");
         }
 
-        return soapUseSet.iterator().next().toString();
+        return soapUseSet.iterator().next();
     }
 
     /**
@@ -979,28 +975,28 @@ public class Wsdl {
             return USE_LITERAL;
         }
 
-        List extensibilityElements = bindingInput.getExtensibilityElements();
-        for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
-            Object o = iterator.next();
-            if (o instanceof SOAPBody) {
-                SOAPBody soapBody = (SOAPBody)o;
+        //noinspection unchecked
+        List<ExtensibilityElement> extensibilityElements = bindingInput.getExtensibilityElements();
+        for (ExtensibilityElement eel : extensibilityElements) {
+            if (eel instanceof SOAPBody) {
+                SOAPBody soapBody = (SOAPBody) eel;
                 if (soapBody.getUse() != null) {
                     use = soapBody.getUse();
                     break;
                 }
             }
         }
-        Set useSet = new HashSet();
+        Set<String> useSet = new HashSet<String>();
         useSet.add(use);
         // output
         use = USE_LITERAL;
         BindingOutput bindingOutput = bindingOperation.getBindingOutput();
         if (bindingOutput != null) { // with some wsdls, this could be null (see bugzilla #2309)
+            //noinspection unchecked
             extensibilityElements = bindingOutput.getExtensibilityElements();
-            for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
-                Object o = iterator.next();
-                if (o instanceof SOAPBody) {
-                    SOAPBody soapBody = (SOAPBody)o;
+            for (ExtensibilityElement eel : extensibilityElements) {
+                if (eel instanceof SOAPBody) {
+                    SOAPBody soapBody = (SOAPBody) eel;
                     if (soapBody.getUse() != null) {
                         use = soapBody.getUse();
                         break;
@@ -1013,7 +1009,7 @@ public class Wsdl {
             throw new WSDLException(WSDLException.INVALID_WSDL, "Mixed/unsupported uses for '" + bindingOperation.getName() + "' found in this WSDL.");
         }
 
-        return useSet.iterator().next().toString();
+        return useSet.iterator().next();
     }
 
     /**
@@ -1024,7 +1020,7 @@ public class Wsdl {
     public Port getSoapPort() {
         Iterator services = getServices().iterator();
         Service wsdlService = null;
-        Port pork = null;
+        Port pork;
         Port soapPort = null;
 
         while (services.hasNext()) {
@@ -1045,11 +1041,10 @@ public class Wsdl {
                 if (soapPort == null) {
                     pork = (Port)ports.get(portKey);
 
-                    List elements = pork.getExtensibilityElements();
-                    ExtensibilityElement eel;
+                    //noinspection unchecked
+                    List<ExtensibilityElement> elements = pork.getExtensibilityElements();
                     // Find the first Port that contains a SOAPAddress eel
-                    for (int i = 0; i < elements.size(); i++) {
-                        eel = (ExtensibilityElement)elements.get(i);
+                    for (ExtensibilityElement eel : elements) {
                         if (eel instanceof SOAPAddress) {
                             soapPort = pork;
                             numPorts++;
@@ -1064,29 +1059,28 @@ public class Wsdl {
     }
 
     public Map getNamespaces() {
-        List soapUris = SoapUtil.ENVELOPE_URIS;
-        Map namespaceMap = definition.getNamespaces();
+        List<String> soapUris = SoapUtil.ENVELOPE_URIS;
+        //noinspection unchecked
+        Map<String, String> namespaceMap = definition.getNamespaces();
         String tnsUri = definition.getTargetNamespace();
         int ns = 1;
         final String TEMP = "l7tempprefix";
 
         // Get it into URL order
-        SortedMap uris = new TreeMap();
-        for (Iterator i = namespaceMap.keySet().iterator(); i.hasNext();) {
-            String prefix = (String)i.next();
-            String uri = (String)namespaceMap.get(prefix);
+        SortedMap<String, String> uris = new TreeMap<String, String>();
+        for (String prefix : namespaceMap.keySet()) {
+            String uri = namespaceMap.get(prefix);
             if (prefix == null || prefix.length() == 0) prefix = TEMP + ns++;
             uris.put(uri, prefix);
         }
 
         // Now assign prefixes
-        LinkedHashMap result = new LinkedHashMap();
+        LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
 
         boolean soapenv = false;
-        for (Iterator i = uris.keySet().iterator(); i.hasNext();) {
-            String uri = (String)i.next();
+        for (String uri : uris.keySet()) {
             String prefix = definition.getPrefix(uri);
-            if (prefix == null) prefix = (String)namespaceMap.get(uri);
+            if (prefix == null) prefix = namespaceMap.get(uri);
 
             if (soapUris.contains(uri)) {
                 result.put(prefix, uri);
@@ -1103,15 +1097,14 @@ public class Wsdl {
                 result.put(TEMP + ns++, SOAPConstants.URI_NS_SOAP_ENVELOPE);
         }
 
-        Collection operations = getBindingOperations();
-        for (Iterator i = operations.iterator(); i.hasNext();) {
-            BindingOperation operation = (BindingOperation)i.next();
+        Collection<BindingOperation> operations = getBindingOperations();
+        for (BindingOperation operation : operations) {
             BindingInput input = operation.getBindingInput();
-            Iterator eels = input.getExtensibilityElements().iterator();
-            while (eels.hasNext()) {
-                ExtensibilityElement ee = (ExtensibilityElement)eels.next();
-                if (ee instanceof SOAPBody) {
-                    SOAPBody body = (SOAPBody)ee;
+            //noinspection unchecked
+            Collection<ExtensibilityElement> eels = input.getExtensibilityElements();
+            for (ExtensibilityElement eel : eels) {
+                if (eel instanceof SOAPBody) {
+                    SOAPBody body = (SOAPBody) eel;
                     String uri = body.getNamespaceURI();
                     if (uri != null && !result.containsValue(uri)) {
                         result.put(TEMP + ns++, uri);
@@ -1121,10 +1114,9 @@ public class Wsdl {
         }
 
         ns = 1;
-        LinkedHashMap result2 = new LinkedHashMap();
-        for (Iterator i = result.keySet().iterator(); i.hasNext();) {
-            String prefix = (String)i.next();
-            String uri = (String)result.get(prefix);
+        LinkedHashMap<String, String> result2 = new LinkedHashMap<String, String>();
+        for (String prefix : result.keySet()) {
+            String uri = result.get(prefix);
             if (prefix == null || prefix.length() == 0 || prefix.startsWith(TEMP)) prefix = NS + ns++;
             result2.put(prefix, uri);
         }
@@ -1168,29 +1160,32 @@ public class Wsdl {
         return definition.getTargetNamespace();
     }
 
-    public Collection getBindingOperations() {
+    public Collection<BindingOperation> getBindingOperations() {
         Iterator bindings = getBindings().iterator();
         Binding binding;
-        List operations = new ArrayList();
+        List<BindingOperation> operations = new ArrayList<BindingOperation>();
         while (bindings.hasNext()) {
             binding = (Binding)bindings.next();
+            //noinspection unchecked
             operations.addAll(binding.getBindingOperations());
         }
         return operations;
     }
 
-    public Collection getInputParameters(BindingOperation bindingOperation) {
+    public Collection<ExtensibilityElement> getInputParameters(BindingOperation bindingOperation) {
         if (bindingOperation != null) {
+            //noinspection unchecked
             return bindingOperation.getBindingInput().getExtensibilityElements();
         } else {
             throw new IllegalArgumentException("The argument bindingOperation is NULL");
         }
     }
 
-    public Collection getOutputParameters(BindingOperation bindingOperation) {
+    public Collection<ExtensibilityElement> getOutputParameters(BindingOperation bindingOperation) {
         if (bindingOperation == null) {
             throw new IllegalArgumentException("The argument bindingOperation is NULL");
         }
+        //noinspection unchecked
         return bindingOperation.getBindingOutput().getExtensibilityElements();
     }
 
@@ -1202,13 +1197,12 @@ public class Wsdl {
      * @param bo the binding operation
      */
     public MIMEMultipartRelated getMimeMultipartRelatedInput(BindingOperation bo) {
-        Collection elements = getInputParameters(bo);
+        Collection<ExtensibilityElement> elements = getInputParameters(bo);
 
         // for each input parameter of the binding operation
-        for (Iterator itr = elements.iterator(); itr.hasNext();) {
-            Object o = (Object)itr.next();
-            if (o instanceof MIMEMultipartRelated) {
-                return (MIMEMultipartRelated)o;
+        for (ExtensibilityElement element : elements) {
+            if (element instanceof MIMEMultipartRelated) {
+                return (MIMEMultipartRelated) element;
             }
         }
         return null;
@@ -1221,14 +1215,12 @@ public class Wsdl {
      * @param bo the binding operation
      */
     public MIMEMultipartRelated getMimeMultipartRelateOutput(BindingOperation bo) {
-        Collection elements = getOutputParameters(bo);
+        Collection<ExtensibilityElement> elements = getOutputParameters(bo);
 
         // for each input parameter of the binding operation
-        for (Iterator itr = elements.iterator(); itr.hasNext();) {
-
-            Object o = (Object)itr.next();
-            if (o instanceof MIMEMultipartRelated) {
-                return (MIMEMultipartRelated)o;
+        for (ExtensibilityElement element : elements) {
+            if (element instanceof MIMEMultipartRelated) {
+                return (MIMEMultipartRelated) element;
             }
         }
         return null;
@@ -1265,14 +1257,13 @@ public class Wsdl {
     public String getUriFromPort(Port wsdlPort) throws MalformedURLException {
         if (wsdlPort == null)
             throw new IllegalArgumentException("No WSDL port was provided");
-        List elements = wsdlPort.getExtensibilityElements();
+        //noinspection unchecked
+        List<ExtensibilityElement> elements = wsdlPort.getExtensibilityElements();
         String uri = null;
-        ExtensibilityElement eel;
         int num = 0;
-        for (int i = 0; i < elements.size(); i++) {
-            eel = (ExtensibilityElement)elements.get(i);
+        for (ExtensibilityElement eel : elements) {
             if (eel instanceof SOAPAddress) {
-                SOAPAddress sadd = (SOAPAddress)eel;
+                SOAPAddress sadd = (SOAPAddress) eel;
                 num++;
                 uri = sadd.getLocationURI();
             }
@@ -1295,13 +1286,12 @@ public class Wsdl {
             throw new IllegalArgumentException("No WSDL port was provided");
         if (url == null)
             throw new IllegalArgumentException("No new WSDL Port URL was provided");
-        List elements = wsdlPort.getExtensibilityElements();
-        ExtensibilityElement eel;
+        //noinspection unchecked
+        List<ExtensibilityElement> elements = wsdlPort.getExtensibilityElements();
         int num = 0;
-        for (int i = 0; i < elements.size(); i++) {
-            eel = (ExtensibilityElement)elements.get(i);
+        for (ExtensibilityElement eel : elements) {
             if (eel instanceof SOAPAddress) {
-                SOAPAddress sadd = (SOAPAddress)eel;
+                SOAPAddress sadd = (SOAPAddress) eel;
                 num++;
                 sadd.setLocationURI(url.toString());
             }
@@ -1314,12 +1304,11 @@ public class Wsdl {
     public String getPortUrl(Port wsdlPort) {
         if (wsdlPort == null)
             throw new IllegalArgumentException("No WSDL port was provided");
-        List elements = wsdlPort.getExtensibilityElements();
-        ExtensibilityElement eel;
-        for (int i = 0; i < elements.size(); i++) {
-            eel = (ExtensibilityElement)elements.get(i);
+        //noinspection unchecked
+        List<ExtensibilityElement> elements = wsdlPort.getExtensibilityElements();
+        for (ExtensibilityElement eel : elements) {
             if (eel instanceof SOAPAddress) {
-                SOAPAddress sadd = (SOAPAddress)eel;
+                SOAPAddress sadd = (SOAPAddress) eel;
                 if (sadd.getLocationURI() != null) {
                     return sadd.getLocationURI();
                 }
@@ -1336,11 +1325,10 @@ public class Wsdl {
      */
     private void collectElements(ElementCollector collector, Definition def) {
         collector.collect(def);
-        final Map imports = def.getImports();
-        for (Iterator iterator = imports.values().iterator(); iterator.hasNext();) {
-            List importList = (List)iterator.next();
-            for (int i = 0; i < importList.size(); i++) {
-                Import importDef = (Import)importList.get(i);
+        //noinspection unchecked
+        final Map<String, List<Import>> imports = def.getImports();
+        for (List<Import> importList : imports.values()) {
+            for (Import importDef : importList) {
                 if (importDef.getDefinition() != null) {
                     collectElements(collector, importDef.getDefinition());
                 }
@@ -1367,16 +1355,16 @@ public class Wsdl {
       throws IOException, SAXException {
         Element schemaElement = null;
         Import imp = null;
-        if (def.getImports().size() > 0) {
-            Iterator itr = def.getImports().keySet().iterator();
-            while (itr.hasNext()) {
-                Object importDef = itr.next();
-                List importList = (List)def.getImports().get(importDef);
-                for (int k = 0; k < importList.size(); k++) {
-                    imp = (Import)importList.get(k);
+        //noinspection unchecked
+        Map<String, List<Import>> imports = def.getImports();
+        if (imports.size() > 0) {
+            for (String uri : imports.keySet()) {
+                List<Import> importList = imports.get(uri);
+                for (Import anImport : importList) {
+                    imp = anImport;
                     // check if the schema is inside the file
                     String url = imp.getLocationURI();
-                    String resolvedXml = null;
+                    String resolvedXml;
                     resolvedXml = getter.get(url);
 
                     if (resolvedXml != null) {
@@ -1386,7 +1374,7 @@ public class Wsdl {
 
                             if (nodeList != null && nodeList.item(0) != null) {
                                 // should only have one
-                                return (Element)nodeList.item(0);
+                                return (Element) nodeList.item(0);
                             }
                         }
                     }

@@ -53,6 +53,7 @@ import org.xml.sax.SAXException;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.X509TrustManager;
 import javax.wsdl.WSDLException;
+import javax.xml.namespace.QName;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -198,9 +199,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                     // TODO support non-SOAP messaging with SSB api
                     String soapAction = "\"\"";
-                    String[] uris = context.getRequest().getSoapKnob().getPayloadNamespaceUris();
+                    QName[] names = context.getRequest().getSoapKnob().getPayloadNames();
                     // TODO decide what to do if there are multiple payload namespace URIs
-                    String nsUri = uris == null || uris.length < 1 ? null : uris[0];
+                    String nsUri = names == null || names.length < 1 ? null : names[0].getNamespaceURI();
 
                     // TODO support SOAP-with-attachments with SSB api
                     if (context.getRequest().getMimeKnob().isMultipart())

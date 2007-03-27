@@ -26,6 +26,7 @@ import org.xml.sax.SAXParseException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.Validator;
+import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
@@ -310,15 +311,15 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
      * Ensure that all payload namespaces of this SOAP message match the tarariNamespaceUri.
      */
     private void checkPayloadNamespaceUris(TarariKnob tk) throws SAXException {
-        String payloadUris[] = tk.getSoapInfo().getPayloadNsUris();
+        QName payloadNames[] = tk.getSoapInfo().getPayloadNames();
 
-        if (payloadUris == null || payloadUris.length < 1)
+        if (payloadNames == null || payloadNames.length < 1)
             throw new SAXException("Validation failed: message did not include a recognized payload namespace URI");
 
         // They must all match up
-        for (String payloadUri : payloadUris) {
-            if (!targetNamespace.equals(payloadUri))
-                throw new SAXException("Validation failed: message contained an unexpected payload namespace URI: " + payloadUri);
+        for (QName payloadName : payloadNames) {
+            if (!targetNamespace.equals(payloadName.getNamespaceURI()))
+                throw new SAXException("Validation failed: message contained an unexpected payload namespace URI: " + payloadName);
         }
     }
 

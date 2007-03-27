@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -24,7 +25,7 @@ import java.util.regex.Pattern;
  *
  * @author emil
  */
-public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
+public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<String> {
     private final Pattern[] regexPatterns;
 
     /**
@@ -52,8 +53,8 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
         regexPatterns = compiled.isEmpty() ? null : compiled.toArray(new Pattern[0]);
     }
 
-    protected Object[] doGetTargetValues(PublishedService service) {
-        return new String[]{Long.toString(service.getOid())};
+    protected List<String> doGetTargetValues(PublishedService service) {
+        return Arrays.asList(Long.toString(service.getOid()));
     }
 
     /**
@@ -62,7 +63,7 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
      * @return the service OID if found, <b>null</b> otherwise
      * @throws ServiceResolutionException on service resolution error (multiple
      */
-    protected Object getRequestValue(Message request) throws ServiceResolutionException {
+    protected String getRequestValue(Message request) throws ServiceResolutionException {
         if (regexPatterns == null) { // compile failed
             return null;
         }
@@ -78,7 +79,7 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
         if (originalUrl == null) {
             logger.finest("The header '" + SecureSpanConstants.HttpHeaders.ORIGINAL_URL + "' is not present");
         } else {
-            final Object match = findMatch(originalUrl);
+            final String match = findMatch(originalUrl);
             if (match != null) {
                 logger.finest("Matched against the header '" + SecureSpanConstants.HttpHeaders.ORIGINAL_URL + "' URL: " + originalUrl);
                 return match;
@@ -87,7 +88,7 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
         }
 
         String requestURI = httpReqKnob.getRequestUri();
-        final Object match = findMatch(requestURI);
+        final String match = findMatch(requestURI);
         if (match != null) {
             logger.finest("Matched against the Request URI: " + requestURI);
             return match;
@@ -97,7 +98,7 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
         return null;
     }
 
-    private Object findMatch(String originalUrl) {
+    private String findMatch(String originalUrl) {
         for (Pattern regexPattern : regexPatterns) {
             Matcher matcher = regexPattern.matcher(originalUrl);
             if (matcher.find() && matcher.groupCount() == 1) {
@@ -111,12 +112,12 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
         return FAST;
     }
 
-    public Set getDistinctParameters(PublishedService candidateService) {
+    public Set<String> getDistinctParameters(PublishedService candidateService) {
         throw new UnsupportedOperationException();
     }
 
     public Set<PublishedService> resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
-        Object value = getRequestValue(request);
+        String value = getRequestValue(request);
         // special case: if the request does not follow pattern, then all services passed
         // match, the next resolver will narrow it down
         if (value == null) {

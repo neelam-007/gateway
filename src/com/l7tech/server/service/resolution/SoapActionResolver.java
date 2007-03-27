@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class SoapActionResolver extends WsdlOperationServiceResolver {
+public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
     private final Logger logger = Logger.getLogger(SoapActionResolver.class.getName());
 
     public int getSpeed() {
@@ -32,7 +32,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
         return SoapUtil.findSoapAction(operation);
     }
 
-    protected Object getRequestValue( Message request ) throws ServiceResolutionException {
+    protected String getRequestValue( Message request ) throws ServiceResolutionException {
         HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null)
             return null;

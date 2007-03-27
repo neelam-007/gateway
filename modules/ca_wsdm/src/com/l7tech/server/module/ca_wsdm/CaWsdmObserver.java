@@ -23,6 +23,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.wsdl.Operation;
+import javax.xml.namespace.QName;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -201,14 +202,14 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
             final String operationName = context.getOperation().getName();
 
             // Determine operation namespace.
-            String[] namespaces = request.getSoapKnob().getPayloadNamespaceUris();
-            if (namespaces == null || namespaces.length == 0) {
+            QName[] names = request.getSoapKnob().getPayloadNames();
+            if (names == null || names.length == 0) {
                 _logger.warning("No namespace found in request.");
                 return;
-            } else if (namespaces.length > 1) {
-                _logger.warning("Using the first of multiple namespace URIs in request: " + Arrays.toString(namespaces));
+            } else if (names.length > 1) {
+                _logger.warning("Using the first of multiple namespace URIs in request: " + Arrays.toString(names));
             }
-            final String operationNameSpace = namespaces[0];
+            final String operationNameSpace = names[0].getNamespaceURI();
 
             final String requestorLocation = request.getTcpKnob().getRemoteHost();
             final String serviceUrl = preRoutingEvent.getUrl().toString();

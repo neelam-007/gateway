@@ -19,6 +19,7 @@ import com.tarari.xml.rax.fastxpath.FNodeSet;
 import com.tarari.xml.rax.fastxpath.XPathProcessor;
 import com.tarari.xml.rax.fastxpath.XPathResult;
 
+import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -32,7 +33,7 @@ import java.util.logging.Logger;
 public class TarariMessageContextImpl implements TarariMessageContext {
     private static final Logger logger = Logger.getLogger(TarariMessageContextImpl.class.getName());
     private static final RaxCursorFactory raxCursorFactory = new RaxCursorFactory();
-    private static final String[] EMPTY_STRING = new String[0];
+    private static final QName[] EMPTY_QNAMES = new QName[0];
 
     private final RaxDocument raxDocument;
     private XPathResult xpathResult = null;
@@ -71,7 +72,7 @@ public class TarariMessageContextImpl implements TarariMessageContext {
     }
 
     public SoapInfo getSoapInfo() throws SoftwareFallbackException {
-        List payloadNamespaces = new ArrayList();
+        List<QName> payloadNames = new ArrayList<QName>();
         boolean hasSecurityHeaders = false;
         XPathResult xpathResult = getXpathResult();
         GlobalTarariContextImpl globalContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
@@ -89,9 +90,11 @@ public class TarariMessageContextImpl implements TarariMessageContext {
                 for (int i = 0; i < numPayloads; ++i) {
                     FNode first = payloadNodes.getNode(0);
                     if (first.getType() == FNode.ELEMENT_NODE) {
-                        String ns = first.getNamespace(first.getPrefix());
+                        String pf = first.getPrefix();
+                        String ns = first.getNamespace(pf);
+                        String ln = first.getLocalName();
                         if (ns == null) ns = ""; // treat no namespace as same as namespace URI of empty string
-                        payloadNamespaces.add(ns);
+                        payloadNames.add(new QName(ns, ln, pf));
                     }
                 }
             }
@@ -115,9 +118,9 @@ public class TarariMessageContextImpl implements TarariMessageContext {
                     }
                 }
             }
-            return new SoapInfo(true, (String[])payloadNamespaces.toArray(EMPTY_STRING), hasSecurityHeaders);
+            return new SoapInfo(true, payloadNames.toArray(EMPTY_QNAMES), hasSecurityHeaders);
         } else {
-            return new SoapInfo(false, EMPTY_STRING, false);
+            return new SoapInfo(false, EMPTY_QNAMES, false);
         }
     }
 

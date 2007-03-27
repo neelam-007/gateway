@@ -180,10 +180,10 @@ public class XmlUtilTest extends TestCase {
 
     public void testGetPayloadNamespaceUri() throws Exception {
         Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);
-        assertNull(SoapUtil.getPayloadNamespaceUris(d));
+        assertNull(SoapUtil.getPayloadNames(d));
 
         d = TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_REQUEST);
-        assertEquals("http://warehouse.acme.com/ws", SoapUtil.getPayloadNamespaceUris(d)[0]);
+        assertEquals("http://warehouse.acme.com/ws", SoapUtil.getPayloadNames(d)[0].getNamespaceURI());
     }
 
     public void testFindActivePrefixForNamespace() throws Exception {

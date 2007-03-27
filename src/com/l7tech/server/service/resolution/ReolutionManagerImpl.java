@@ -156,22 +156,21 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
     }
 
     private Collection getDistinct(PublishedService service) throws ServiceResolutionException {
-        ArrayList listOfParameters = new ArrayList();
+        ArrayList<ResolutionParameters> listOfParameters = new ArrayList<ResolutionParameters>();
 
         SoapActionResolver soapresolver = new SoapActionResolver();
         UrnResolver urnresolver = new UrnResolver();
         HttpUriResolver uriresolver = new HttpUriResolver();
 
         String httpuri = uriresolver.doGetTargetValue(service);
-        Set soapactions = soapresolver.getDistinctParameters(service);
-        for (Iterator i = soapactions.iterator(); i.hasNext();) {
-            Set urns = urnresolver.getDistinctParameters(service);
-            String soapaction = (String)i.next();
-            for (Iterator j = urns.iterator(); j.hasNext();) {
+        Set<String> soapactions = soapresolver.getDistinctParameters(service);
+        for (String soapaction : soapactions) {
+            Set<String> urns = urnresolver.getDistinctParameters(service);
+            for (String urn : urns) {
                 ResolutionParameters parameters = new ResolutionParameters();
                 parameters.setServiceid(service.getOid());
                 parameters.setSoapaction(soapaction);
-                parameters.setUrn((String)j.next());
+                parameters.setUrn(urn);
                 parameters.setUri(httpuri);
                 if (!listOfParameters.contains(parameters)) {
                     listOfParameters.add(parameters);

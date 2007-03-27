@@ -211,9 +211,7 @@
     </bean>
     <!-- server side service manager -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache" depends-on="assertionRegistry">
-        <constructor-arg>
-            <ref bean="policyFactory"/>
-        </constructor-arg>
+        <constructor-arg ref="policyFactory"/>
         <constructor-arg>
             <list>
                 <bean class="com.l7tech.server.service.SafeWsdlPublishedServiceDecorator">
@@ -228,6 +226,7 @@
                 <constructor-arg value="Service cache refresh"/>
             </bean>
         </constructor-arg>
+        <constructor-arg ref="serverConfig"/>
     </bean>
     <!-- server side HTTP routing client trust manager -->
     <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">

@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
  *
  * @author franco
  */
-public class HttpUriResolver extends ServiceResolver {
+public class HttpUriResolver extends ServiceResolver<String> {
     public int getSpeed() {
         return FAST;
     }
@@ -91,7 +91,7 @@ public class HttpUriResolver extends ServiceResolver {
                 if (matchingRegexKeys.size() <= 0) {
                     // todo, this could be exploted as an attack. we should either not try to do this or
                     // we should have a worker thread making sure this does not grow too big
-                    knownToFail.add((String)requestValue);
+                    knownToFail.add(requestValue);
                     logger.fine("no matching possible with uri " + requestValue);
                     return EMPTYSERVICESET;
                 } else if (matchingRegexKeys.size() == 1) {
@@ -166,7 +166,7 @@ public class HttpUriResolver extends ServiceResolver {
         return getTargetValue(candidateService).equals(getTargetValue(matchService));
     }
 
-    public Set getDistinctParameters(PublishedService candidateService) {
+    public Set<String> getDistinctParameters(PublishedService candidateService) {
         throw new UnsupportedOperationException();
     }
 

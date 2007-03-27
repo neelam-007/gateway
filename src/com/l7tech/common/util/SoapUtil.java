@@ -37,7 +37,8 @@ import java.util.logging.Logger;
  */
 public class SoapUtil {
     public static final Logger log = Logger.getLogger(SoapUtil.class.getName());
-    public static final List ENVELOPE_URIS = new ArrayList();
+    public static final List<String> ENVELOPE_URIS = new ArrayList<String>();
+    private static final QName[] EMPTY_QNAME_ARRAY = new QName[0];
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     static {
@@ -104,7 +105,7 @@ public class SoapUtil {
     public static final String L7_SERVICEID_ELEMENT = "ServiceId";
     public static final String L7_POLICYVERSION_ELEMENT = "PolicyVersion";
 
-    public static final List SECURITY_URIS = new ArrayList();
+    public static final List<String> SECURITY_URIS = new ArrayList<String>();
 
     static {
         SECURITY_URIS.add(SECURITY_NAMESPACE);
@@ -117,7 +118,7 @@ public class SoapUtil {
     public static final String[] SECURITY_URIS_ARRAY = (String[])SECURITY_URIS.toArray(EMPTY_STRING_ARRAY);
 
     public static final String WSU_PREFIX = "wsu";
-    public static final List WSU_URIS = new ArrayList();
+    public static final List<String> WSU_URIS = new ArrayList<String>();
 
     static {
         WSU_URIS.add(WSU_NAMESPACE);
@@ -303,8 +304,7 @@ public class SoapUtil {
                 SyspropUtil.setProperty("javax.xml.soap.MessageFactory",
                                    "com.sun.xml.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl");
             }
-            MessageFactory output = MessageFactory.newInstance();
-            return output;
+            return MessageFactory.newInstance();
         } catch (SOAPException e) {
             throw new RuntimeException(e); // can't happen
         }
@@ -313,8 +313,7 @@ public class SoapUtil {
 
     public static SOAPMessage makeMessage() {
         try {
-            SOAPMessage smsg = getMessageFactory().createMessage();
-            return smsg;
+            return getMessageFactory().createMessage();
         } catch (SOAPException e) {
             throw new RuntimeException(e); // can't happen
         }
@@ -327,7 +326,7 @@ public class SoapUtil {
      * @param request the Document to examine.  May not be null.
      * @return the SOAP payload namespace URIs if it's a SOAP Envelope and has one, or null if not found, or the document isn't valid SOAP.  Never empty.
      */
-    public static String[] getPayloadNamespaceUris(Document request) {
+    public static QName[] getPayloadNames(Document request) {
         Element env = request.getDocumentElement();
         if (!ENVELOPE_EL_NAME.equals(env.getLocalName())) {
             log.finer("Request document element not " + ENVELOPE_EL_NAME + "; assuming non-SOAP request");
@@ -353,22 +352,23 @@ public class SoapUtil {
         }
 
         NodeList children = body.getChildNodes();
-        ArrayList payloadNamespaces = new ArrayList();
+        ArrayList<QName> payloadNames = new ArrayList<QName>();
         for (int i = 0; i < children.getLength(); i++) {
             Node n = children.item(i);
             if (n.getNodeType() == Node.ELEMENT_NODE) {
-                String ns = ((Element)n).getNamespaceURI();
-                if (ns != null && !payloadNamespaces.contains(ns)) {
-                    payloadNamespaces.add(ns);
-                }
+                String ns = n.getNamespaceURI();
+                String ln = n.getLocalName();
+                String pf = n.getPrefix();
+                QName q = pf == null ? new QName(ns, ln) : new QName(ns, ln, pf);
+                payloadNames.add(q);
             }
         }
-        if (payloadNamespaces.isEmpty()) {
+        if (payloadNames.isEmpty()) {
             log.warning("There is no payload namespace");
             return null;
         }
         
-        return (String[])payloadNamespaces.toArray(EMPTY_STRING_ARRAY);
+        return payloadNames.toArray(EMPTY_QNAME_ARRAY);
     }
 
     /**
@@ -422,11 +422,9 @@ public class SoapUtil {
      */
     public static Element getOrMakeSecurityElement(Document soapMsg) {
         Element header = getOrMakeHeader(soapMsg);
-        List securityElements = XmlUtil.findChildElementsByName(header, SECURITY_URIS_ARRAY, SECURITY_EL_NAME);
-        for (Iterator i = securityElements.iterator(); i.hasNext();) {
-            Element securityEl = (Element)i.next();
-            if (isDefaultSecurityHeader(securityEl))
-                return securityEl;
+        List<Element> securityElements = XmlUtil.findChildElementsByName(header, SECURITY_URIS_ARRAY, SECURITY_EL_NAME);
+        for (Element securityEl : securityElements) {
+            if (isDefaultSecurityHeader(securityEl)) return securityEl;
         }
         return makeSecurityElement(soapMsg);
     }
@@ -491,8 +489,7 @@ public class SoapUtil {
         // todo - find out if soap-specific attrs can ever appear without a prefix.  if not, remove following line
         element.removeAttribute(attrName);
 
-        for (Iterator i = ENVELOPE_URIS.iterator(); i.hasNext();) {
-            String ns = (String)i.next();
+        for (String ns : ENVELOPE_URIS) {
             element.removeAttributeNS(ns, attrName);
         }
 
@@ -532,12 +529,12 @@ public class SoapUtil {
      * @return a Map of wsu:Id String to Element.  May be empty, but never null.
      */
     public static Map getElementByWsuIdMap(Document doc) throws InvalidDocumentFormatException {
-        Map map = new HashMap();
+        Map<String, Element> map = new HashMap<String, Element>();
         NodeList elements = doc.getElementsByTagName("*");
         for (int i = 0; i < elements.getLength(); i++) {
             Element element = (Element)elements.item(i);
             String id = getElementWsuId(element);
-            Element existing = (Element)map.put(id, element);
+            Element existing = map.put(id, element);
             if (existing != null && id != null)
                 throw new InvalidDocumentFormatException("Duplicate wsu:Id:" + id);
         }
@@ -554,7 +551,7 @@ public class SoapUtil {
      * @return the leement or null if no such element exists
      */
     public static Element getElementByWsuId(Document doc, String elementId) {
-        String url = null;
+        String url;
         if (elementId.charAt(0) == '#') {
             url = elementId.substring(1);
         } else
@@ -608,8 +605,7 @@ public class SoapUtil {
         String actor = element.getAttribute(ACTOR_ATTR_NAME);
         if (actor != null && actor.length() > 0)
             return ACTOR_VALUE_NEXT.equals(actor);
-        for (Iterator i = ENVELOPE_URIS.iterator(); i.hasNext();) {
-            String ns = (String)i.next();
+        for (String ns : ENVELOPE_URIS) {
             actor = element.getAttributeNS(ns, ACTOR_ATTR_NAME);
             if (actor != null && actor.length() > 0)
                 return ACTOR_VALUE_NEXT.equals(actor);
@@ -619,8 +615,7 @@ public class SoapUtil {
         String role = element.getAttribute(ROLE_ATTR_NAME);
         if (role != null && role.length() > 0)
             return ROLE_VALUE_NEXT.equals(role);
-        for (Iterator i = ENVELOPE_URIS.iterator(); i.hasNext();) {
-            String ns = (String)i.next();
+        for (String ns : ENVELOPE_URIS) {
             role = element.getAttributeNS(ns, ROLE_ATTR_NAME);
             if (role != null && role.length() > 0)
                 return ROLE_VALUE_NEXT.equals(role);
@@ -635,10 +630,9 @@ public class SoapUtil {
      * @throws InvalidDocumentFormatException if there is more than one soap:Header or the message isn't SOAP
      */
     public static Element getSecurityElement(Document soapMsg) throws InvalidDocumentFormatException {
-        List allofthem = getSecurityElements(soapMsg);
+        List<Element> allofthem = getSecurityElements(soapMsg);
         if (allofthem == null || allofthem.size() < 1) return null;
-        for (Iterator i = allofthem.iterator(); i.hasNext();) {
-            Element element = (Element)i.next();
+        for (Element element : allofthem) {
             if (isDefaultSecurityHeader(element))
                 return element;
         }
@@ -647,8 +641,7 @@ public class SoapUtil {
 
     public static void nukeActorAttribute(Element el) {
         el.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
-        for (Iterator i = ENVELOPE_URIS.iterator(); i.hasNext();) {
-            String ns = (String)i.next();
+        for (String ns : ENVELOPE_URIS) {
             el.removeAttributeNS(ns, SoapUtil.ACTOR_ATTR_NAME);
         }
     }
@@ -656,8 +649,7 @@ public class SoapUtil {
     public static String getActorValue(Element element) {
         String localactor = element.getAttribute(SoapUtil.ACTOR_ATTR_NAME);
         if (localactor == null || localactor.length() < 1) {
-            for (Iterator i = ENVELOPE_URIS.iterator(); i.hasNext();) {
-                String ns = (String)i.next();
+            for (String ns : ENVELOPE_URIS) {
                 localactor = element.getAttributeNS(ns, SoapUtil.ACTOR_ATTR_NAME);
                 if (localactor != null && localactor.length() > 0) {
                     return localactor;
@@ -670,11 +662,10 @@ public class SoapUtil {
 
     public static Element getSecurityElement(Document soapMsg, String actor) throws InvalidDocumentFormatException {
         if (actor == null) return getSecurityElement(soapMsg);
-        List allofthem = getSecurityElements(soapMsg);
+        List<Element> allofthem = getSecurityElements(soapMsg);
         if (allofthem == null || allofthem.size() < 1) return null;
 
-        for (Iterator i = allofthem.iterator(); i.hasNext();) {
-            Element element = (Element)i.next();
+        for (Element element : allofthem) {
             String localactor = SoapUtil.getActorValue(element);
             if (localactor != null && localactor.equals(actor)) {
                 return element;
@@ -690,9 +681,9 @@ public class SoapUtil {
      * @return never null
      * @throws InvalidDocumentFormatException if there is more than one soap:Header or the message isn't SOAP
      */
-    public static List getSecurityElements(Document soapMsg) throws InvalidDocumentFormatException {
+    public static List<Element> getSecurityElements(Document soapMsg) throws InvalidDocumentFormatException {
         Element header = getHeaderElement(soapMsg);
-        if (header == null) return Collections.EMPTY_LIST;
+        if (header == null) return Collections.emptyList();
         return XmlUtil.findChildElementsByName(header, SECURITY_URIS_ARRAY, SECURITY_EL_NAME);
     }
 
@@ -1049,9 +1040,7 @@ public class SoapUtil {
         byte[] randbytes = new byte[16];
         rand.nextBytes(randbytes);
 
-        String id = basename + "-" + basenumber + "-" + HexUtils.hexDump(randbytes);
-
-        return id;
+        return basename + "-" + basenumber + "-" + HexUtils.hexDump(randbytes);
     }
 
     /**
@@ -1314,11 +1303,10 @@ public class SoapUtil {
      * @param candidates a list of candidate javax.wsdl.BindingOperation
      * @return a list of matching javax.wsdl.BindingOperation
      */
-    private static List matchOperationsWithSoapaction(String soapaction, Collection candidates) {
-        ArrayList output = new ArrayList();
+    private static List<BindingOperation> matchOperationsWithSoapaction(String soapaction, Collection<BindingOperation> candidates) {
+        ArrayList<BindingOperation> output = new ArrayList<BindingOperation>();
         if (soapaction == null) soapaction = "";
-        for (Iterator i = candidates.iterator(); i.hasNext();) {
-            BindingOperation bindingOperation = (BindingOperation)i.next();
+        for (BindingOperation bindingOperation : candidates) {
             String candidateSoapAction = stripQuotes(findSoapAction(bindingOperation));
             if (candidateSoapAction == null) candidateSoapAction = "";
             if (candidateSoapAction.equals(soapaction)) {
@@ -1328,32 +1316,33 @@ public class SoapUtil {
         return output;
     }
 
-    private static List matchOperationsWithSoapBody(Element payload, Collection candidates, Wsdl wsdl) {
-        ArrayList output = new ArrayList();
-        mainloop: for (Iterator i = candidates.iterator(); i.hasNext();) {
+    private static List<BindingOperation> matchOperationsWithSoapBody(Element payload, Collection<BindingOperation> candidates, Wsdl wsdl) {
+        if (payload == null) throw new NullPointerException();
+        ArrayList<BindingOperation> output = new ArrayList<BindingOperation>();
+        mainloop:
+        for (BindingOperation bindingOperation : candidates) {
             // Look for RPC (element name = operation name)
-            BindingOperation bindingOperation = (BindingOperation)i.next();
 
             if ("rpc".equals(wsdl.getBindingStyle(bindingOperation))) {
                 BindingInput binput = bindingOperation.getBindingInput();
                 String ns = null;
-                List bindingInputEels = binput.getExtensibilityElements();
+                //noinspection unchecked
+                List<ExtensibilityElement> bindingInputEels = binput.getExtensibilityElements();
                 if (bindingInputEels != null) {
-                    for (Iterator j = bindingInputEels.iterator(); j.hasNext();) {
-                        ExtensibilityElement eel = (ExtensibilityElement)j.next();
+                    for (ExtensibilityElement eel : bindingInputEels) {
                         if (eel instanceof javax.wsdl.extensions.soap.SOAPBody) {
-                            javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)eel;
+                            javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody) eel;
                             ns = body.getNamespaceURI();
                         } else if (eel instanceof MIMEMultipartRelated) {
-                            MIMEMultipartRelated mime = (MIMEMultipartRelated)eel;
+                            MIMEMultipartRelated mime = (MIMEMultipartRelated) eel;
                             List parts = mime.getMIMEParts();
                             if (parts.size() >= 1) {
-                                MIMEPart firstPart = (MIMEPart)parts.get(0);
-                                List mimeEels = firstPart.getExtensibilityElements();
-                                for (Iterator k = mimeEels.iterator(); k.hasNext();) {
-                                    ExtensibilityElement mimeEel = (ExtensibilityElement)k.next();
-                                    if (mimeEel instanceof javax.wsdl.extensions.soap.SOAPBody ) {
-                                        javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)mimeEel;
+                                MIMEPart firstPart = (MIMEPart) parts.get(0);
+                                //noinspection unchecked
+                                List<ExtensibilityElement> mimeEels = firstPart.getExtensibilityElements();
+                                for (ExtensibilityElement mimeEel : mimeEels) {
+                                    if (mimeEel instanceof javax.wsdl.extensions.soap.SOAPBody) {
+                                        javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody) mimeEel;
                                         ns = body.getNamespaceURI();
                                     }
                                 }
@@ -1371,11 +1360,11 @@ public class SoapUtil {
 
             // Try to match the abstract Operation's input message
             Input input = bindingOperation.getOperation().getInput();
-            javax.wsdl.Message inputMessage = null;
+            javax.wsdl.Message inputMessage;
             if (input != null) {
                 inputMessage = input.getMessage();
                 QName expectedElementQname = inputMessage.getQName();
-                if (payload != null && expectedElementQname != null) {
+                if (expectedElementQname != null) {
                     if (bothNullOrEqual(payload.getNamespaceURI(), expectedElementQname.getNamespaceURI())) {
                         if (bothNullOrEqual(payload.getLocalName(), expectedElementQname.getLocalPart())) {
                             if (!output.contains(bindingOperation)) output.add(bindingOperation);
@@ -1385,15 +1374,14 @@ public class SoapUtil {
                 }
 
                 // Try to match message parts
-                Map parts = inputMessage.getParts();
-                for (Iterator j = parts.keySet().iterator(); j.hasNext();) {
-                    String partName = (String)j.next();
-                    Part part = (Part)inputMessage.getParts().get(partName);
+                //noinspection unchecked
+                Map<String, Part> parts = inputMessage.getParts();
+                for (String partName : parts.keySet()) {
+                    Part part = (Part) inputMessage.getParts().get(partName);
                     QName elementName = part.getElementName();
-                    if (elementName != null && payload != null &&
+                    if (elementName != null &&
                             bothNullOrEqual(elementName.getLocalPart(), payload.getLocalName()) &&
-                            bothNullOrEqual(elementName.getNamespaceURI(), payload.getNamespaceURI()) )
-                    {
+                            bothNullOrEqual(elementName.getNamespaceURI(), payload.getNamespaceURI())) {
                         if (!output.contains(bindingOperation)) output.add(bindingOperation);
                         continue mainloop;
                     }
@@ -1404,14 +1392,14 @@ public class SoapUtil {
     }
 
     private static Operation getOperationFromBinding(Binding soapbinding, OperationSearchContext context)
-            throws IOException, SAXException, InvalidDocumentFormatException,
-                   MessageNotSoapException {
-        List bindingOperations = soapbinding.getBindingOperations();
+            throws IOException, SAXException, InvalidDocumentFormatException {
+        //noinspection unchecked
+        List<BindingOperation> bindingOperations = soapbinding.getBindingOperations();
 
         // only try to match soapaction for http requests (not for jms)
         if (context.hasHttpRequestKnob()) {
             String requestSoapAction = context.getSoapaction();
-            List beforenarrowed = bindingOperations;
+            List<BindingOperation> beforenarrowed = bindingOperations;
             bindingOperations = matchOperationsWithSoapaction(requestSoapAction, bindingOperations);
             if (bindingOperations == null || bindingOperations.size() < 1) {
                 log.info("request's soapaction " + requestSoapAction + " did not match any operation in the wsdl." +
@@ -1419,7 +1407,7 @@ public class SoapUtil {
                 bindingOperations = beforenarrowed;
             } else if (bindingOperations.size() == 1) {
                 log.fine("operation identified using soapaction. bypassing further analysis");
-                BindingOperation operation = (BindingOperation)bindingOperations.get(0);
+                BindingOperation operation = bindingOperations.get(0);
                 return operation.getOperation();
             }
         }
@@ -1431,13 +1419,12 @@ public class SoapUtil {
             return null;
         } else if (bindingOperations.size() == 1) {
             log.fine("operation identified using payload");
-            BindingOperation operation = (BindingOperation)bindingOperations.get(0);
+            BindingOperation operation = bindingOperations.get(0);
             return operation.getOperation();
         } else {
             StringBuffer tmp = new StringBuffer();
-            for (Iterator iterator = bindingOperations.iterator(); iterator.hasNext();) {
-                BindingOperation bindingOperation = (BindingOperation) iterator.next();
-                tmp.append(bindingOperation.getOperation().getName() + ", ");
+            for (BindingOperation bindingOperation : bindingOperations) {
+                tmp.append(bindingOperation.getOperation().getName()).append(", ");
             }
             log.info("this request payload yields more than one match during operation search: " + tmp.toString());
             return null;
@@ -1484,32 +1471,32 @@ public class SoapUtil {
     }
 
     public static Collection getOperationNames(final Wsdl wsdl) {
-        ArrayList output = new ArrayList();
+        ArrayList<String> output = new ArrayList<String>();
 
-        Map bindings = wsdl.getDefinition().getBindings();
+        //noinspection unchecked
+        Map<QName, Binding> bindings = wsdl.getDefinition().getBindings();
         if (bindings.isEmpty()) {
             log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
             return output;
         }
         boolean foundSoapBinding = false;
-        for (Iterator h = bindings.keySet().iterator(); h.hasNext();) {
-            QName bindingName = (QName)h.next();
-            Binding binding = (Binding)bindings.get(bindingName);
+        for (QName bindingName : bindings.keySet()) {
+            Binding binding = bindings.get(bindingName);
             SOAPBinding soapBinding = null;
-            List bindingEels = binding.getExtensibilityElements();
-            for (Iterator bindit = bindingEels.iterator(); bindit.hasNext();) {
-                ExtensibilityElement element = (ExtensibilityElement)bindit.next();
+            //noinspection unchecked
+            List<ExtensibilityElement> bindingEels = binding.getExtensibilityElements();
+            for (ExtensibilityElement element : bindingEels) {
                 if (element instanceof SOAPBinding) {
                     foundSoapBinding = true;
-                    soapBinding = (SOAPBinding)element;
+                    soapBinding = (SOAPBinding) element;
                 }
             }
 
             if (soapBinding == null)
                 continue; // This isn't a SOAP binding; we don't care
-            List bindingOperations = binding.getBindingOperations();
-            for (Iterator iterator = bindingOperations.iterator(); iterator.hasNext();) {
-                BindingOperation bindingOperation = (BindingOperation) iterator.next();
+            //noinspection unchecked
+            List<BindingOperation> bindingOperations = binding.getBindingOperations();
+            for (BindingOperation bindingOperation : bindingOperations) {
                 String tmp = bindingOperation.getOperation().getName();
                 if (!output.contains(tmp)) output.add(tmp);
             }
@@ -1522,9 +1509,7 @@ public class SoapUtil {
     }
 
     public static Operation getOperation(final Wsdl wsdl, final Message request)
-            throws IOException, SAXException, InvalidDocumentFormatException,
-                   MessageNotSoapException
-    {
+            throws IOException, SAXException, InvalidDocumentFormatException {
         final XmlKnob requestXml = (XmlKnob)request.getKnob(XmlKnob.class);
         if (requestXml == null) {
             log.info("Can't get operation for non-XML message");
@@ -1547,9 +1532,9 @@ public class SoapUtil {
                 if (hasHttpRequestKnob == null) {
                     HttpRequestKnob requestHttp = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
                     if (requestHttp == null) {
-                        hasHttpRequestKnob = new Boolean(false);
+                        hasHttpRequestKnob = Boolean.FALSE;
                     } else {
-                        hasHttpRequestKnob = new Boolean(true);
+                        hasHttpRequestKnob = Boolean.TRUE;
                         saction = stripQuotes(requestHttp.getHeaderSingleValue(SOAPACTION));
                     }
                 }
@@ -1565,24 +1550,23 @@ public class SoapUtil {
             String saction = null;
         };
 
-
-        Map bindings = wsdl.getDefinition().getBindings();
+        //noinspection unchecked
+        Map<QName, Binding> bindings = wsdl.getDefinition().getBindings();
         if (bindings.isEmpty()) {
             log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
             return null;
         }
 
         boolean foundSoapBinding = false;
-        for (Iterator h = bindings.keySet().iterator(); h.hasNext();) {
-            QName bindingName = (QName)h.next();
-            Binding binding = (Binding)bindings.get(bindingName);
+        for (QName bindingName : bindings.keySet()) {
+            Binding binding = bindings.get(bindingName);
             SOAPBinding soapBinding = null;
-            List bindingEels = binding.getExtensibilityElements();
-            for (Iterator bindit = bindingEels.iterator(); bindit.hasNext();) {
-                ExtensibilityElement element = (ExtensibilityElement)bindit.next();
+            //noinspection unchecked
+            List<ExtensibilityElement> bindingEels = binding.getExtensibilityElements();
+            for (ExtensibilityElement element : bindingEels) {
                 if (element instanceof SOAPBinding) {
                     foundSoapBinding = true;
-                    soapBinding = (SOAPBinding)element;
+                    soapBinding = (SOAPBinding) element;
                 }
             }
 

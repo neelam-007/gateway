@@ -17,6 +17,7 @@ import com.l7tech.common.xml.tarari.TarariMessageContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -88,12 +89,12 @@ class SoapFacet extends MessageFacet {
      */
     private static SoapInfo getSoapInfoDom(Document document) throws SAXException {
         boolean hasSecurityNode = false;
-        final String[] payloadNs;
+        final QName[] payloadNs;
         if (SoapUtil.isSoapMessage(document)) {
             try {
                 List els = SoapUtil.getSecurityElements(document);
                 if (els != null && !els.isEmpty()) hasSecurityNode = true;
-                payloadNs = SoapUtil.getPayloadNamespaceUris(document);
+                payloadNs = SoapUtil.getPayloadNames(document);
                 return new SoapInfo(true, payloadNs, hasSecurityNode);
             } catch (InvalidDocumentFormatException e) {
                 throw new SAXException(e);
@@ -107,12 +108,12 @@ class SoapFacet extends MessageFacet {
         if (c == SoapKnob.class) {
             return new SoapKnob() {
 
-                public String[] getPayloadNamespaceUris() throws IOException, SAXException {
+                public QName[] getPayloadNames() throws IOException, SAXException {
                     if (soapInfo != null) {
-                        return soapInfo.getPayloadNsUris();
+                        return soapInfo.getPayloadNames();
                     } else {
                         // No tarari, or DOM was changed.  Just use DOM-based lookup
-                        return SoapUtil.getPayloadNamespaceUris(getMessage().getXmlKnob().getDocumentReadOnly());
+                        return SoapUtil.getPayloadNames(getMessage().getXmlKnob().getDocumentReadOnly());
                     }
                 }
 

@@ -23,6 +23,7 @@ import com.l7tech.server.service.resolution.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.ServiceReloadEvent;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.beans.factory.DisposableBean;
@@ -56,24 +57,38 @@ import java.util.logging.Logger;
 public class ServiceCache extends ApplicationObjectSupport implements InitializingBean, DisposableBean, ApplicationListener {
 
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
+
     private ServerPolicyFactory policyFactory;
     private Auditor auditor;
-    private Collection<Decorator<PublishedService>> decorators;
     private boolean hasCatchAllService = false;
+
+    private final Collection<Decorator<PublishedService>> decorators;
+    private final boolean strictSoapResolution;
     //public static final long INTEGRITY_CHECK_FREQUENCY = 10;
 
     /**
      * Constructor for bean usage via subclassing.
      */
-    public ServiceCache(ServerPolicyFactory policyFactory, Collection<Decorator<PublishedService>> decorators, Timer timer) {
+    public ServiceCache(ServerPolicyFactory policyFactory,
+                        Collection<Decorator<PublishedService>> decorators,
+                        Timer timer,
+                        ServerConfig config)
+    {
         if (policyFactory == null) {
             throw new IllegalArgumentException("Policy Factory is required");
         }
         if (timer == null) timer = new Timer("Service cache refresh", true);
 
         this.policyFactory = policyFactory;
-        this.decorators = decorators == null ? Collections.EMPTY_LIST : decorators;
+        if (decorators == null) 
+            this.decorators = Collections.emptyList();
+        else
+            this.decorators = decorators;
         this.checker = timer;
+
+        strictSoapResolution = Boolean.valueOf(config.getPropertyCached(ServerConfig.PARAM_STRICT_SOAP_RESOLUTION));
+        ServiceResolver soapResolver = strictSoapResolution ? new SoapOperationResolver() : new UrnResolver();
+        resolvers = new ServiceResolver[] {new OriginalUrlServiceOidResolver(), new HttpUriResolver(), new SoapActionResolver(), soapResolver};
     }
 
     public synchronized void initiateIntegrityCheckProcess() {
@@ -213,9 +228,10 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
                 logger.finest("resolution failed because no services in the cache");
                 return null;
             }
+
             for (ServiceResolver resolver : resolvers) {
                 Set<PublishedService> resolvedServices;
-                boolean passthrough = false;
+                boolean passthrough = strictSoapResolution;
                 try {
                     resolvedServices = resolver.resolve(req, serviceSet);
                 } catch (NoServiceOIDResolutionPassthroughException e) {
@@ -230,7 +246,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
 
                 // if remaining services are 0 or 1, we are done
                 if (newResolvedServicesSize == 1 && !passthrough) {
-                    logger.finest("service resolved by " + resolver.getClass().getName());
+                    logger.finest("service resolved early by " + resolver.getClass().getName());
                     return resolvedServices.iterator().next();
                 } else if (newResolvedServicesSize == 0) {
                     logger.info("resolver " + resolver.getClass().getName() + " eliminated all possible services");
@@ -243,6 +259,9 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
 
             if (serviceSet.isEmpty()) {
                 logger.fine("resolvers find no match for request");
+            } else if (serviceSet.size() == 1) {
+                logger.finest("service resolved");
+                return serviceSet.iterator().next();
             } else {
                 logger.warning("cache integrity error or resolver bug. this request resolves to" +
                   "more than one service. this should be corrected at next cache integrity" +
@@ -634,7 +653,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
     private final Set<Long> servicesThatAreUnlicensed = new HashSet<Long>();
 
     // the resolvers
-    private final ServiceResolver[] resolvers = {new OriginalUrlServiceOidResolver(), new HttpUriResolver(), new SoapActionResolver(), new UrnResolver()};
+    private final ServiceResolver[] resolvers;
 
     // read-write lock for thread safety
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);

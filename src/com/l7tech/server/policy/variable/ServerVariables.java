@@ -16,6 +16,7 @@ import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import javax.wsdl.Operation;
+import javax.xml.namespace.QName;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -477,8 +478,8 @@ public class ServerVariables {
             }
 
             try {
-                String[] uris = soapKnob.getPayloadNamespaceUris();
-                return uris == null || uris.length < 1 ? null : uris[0];
+                QName[] uris = soapKnob.getPayloadNames();
+                return uris == null || uris.length < 1 ? null : uris[0].getNamespaceURI();
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Couldn't get SOAP namespace", e);
                 return null;

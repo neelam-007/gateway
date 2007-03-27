@@ -10,6 +10,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
 import org.xml.sax.SAXException;
 
+import javax.xml.namespace.QName;
 import java.io.IOException;
 
 /**
@@ -29,7 +30,7 @@ public interface SoapKnob extends MessageKnob {
      * @throws SAXException if the first part's content type is not text/xml.
      * @throws IOException if there is a problem reading XML from the first part's InputStream
      */
-    String[] getPayloadNamespaceUris() throws IOException, SAXException;
+    QName[] getPayloadNames() throws IOException, SAXException;
 
     /**
      * Check if this SOAP message is actually a SOAP fault.  If this returns true, fault details will be

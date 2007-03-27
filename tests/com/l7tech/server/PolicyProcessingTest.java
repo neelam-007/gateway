@@ -1,62 +1,51 @@
 package com.l7tech.server;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.List;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Map;
-import java.io.OutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
-
-import javax.servlet.http.HttpServletResponse;
-
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.extensions.TestSetup;
-import org.springframework.context.ApplicationContext;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
-
+import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.http.MockGenericHttpClient;
-import com.l7tech.common.http.GenericHttpHeaders;
-import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditRecord;
-import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.common.http.*;
+import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.message.HttpRequestKnob;
-import com.l7tech.common.message.HttpServletRequestKnob;
-import com.l7tech.common.message.HttpServletResponseKnob;
-import com.l7tech.common.message.MimeKnob;
-import com.l7tech.common.message.JmsKnob;
+import com.l7tech.common.mime.StashManager;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.tomcat.ResponseKillerValve;
-import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.identity.StubDataStore;
+import com.l7tech.identity.UserBean;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.server.audit.AuditContextStubInt;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
+import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.service.PublishedService;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.cluster.ClusterPropertyManager;
-import com.l7tech.identity.UserBean;
-import com.l7tech.identity.StubDataStore;
+import junit.extensions.TestSetup;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.springframework.context.ApplicationContext;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockServletContext;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Functional tests for message processing.
@@ -108,6 +97,7 @@ public class PolicyProcessingTest extends TestCase {
      */
     public PolicyProcessingTest(String name) {
         super(name);
+        System.setProperty("com.l7tech.server.serviceResolution.strictSoap", "false");
     }
 
     protected void setUp() throws Exception {
@@ -171,6 +161,7 @@ public class PolicyProcessingTest extends TestCase {
             ps.setName(serviceInfo[0].substring(1));
             ps.setRoutingUri(serviceInfo[0]);
             ps.setPolicyXml(new String(loadResource(serviceInfo[1])));
+            ps.setSoap(true);
 
             if (serviceInfo.length > 2) {
                 ps.setWsdlXml(new String(loadResource(serviceInfo[2])));

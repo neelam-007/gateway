@@ -50,15 +50,14 @@
 
     <!-- server side service manager -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
-        <constructor-arg>
-            <ref bean="policyFactory"/>
-        </constructor-arg>
+        <constructor-arg ref="policyFactory"/>
         <constructor-arg>
             <list/>
         </constructor-arg>
         <constructor-arg>
             <null/>
         </constructor-arg>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <!-- server side service manager -->

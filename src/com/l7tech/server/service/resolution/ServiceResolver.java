@@ -15,7 +15,7 @@ import java.util.*;
  * @author alex
  * @version $Revision$
  */
-public abstract class ServiceResolver implements Comparable {
+public abstract class ServiceResolver<T> implements Comparable {
     public static final int FAST = 0;
     public static final int SLOW = 100;
 
@@ -101,5 +101,5 @@ public abstract class ServiceResolver implements Comparable {
      * @param candidateService object from which to extract parameters from
      * @return a Set containing distinct strings
      */
-    public abstract Set getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException ;
+    public abstract Set<T> getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException ;
 }

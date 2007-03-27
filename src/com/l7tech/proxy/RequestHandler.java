@@ -34,6 +34,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Port;
+import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -78,21 +79,23 @@ public class RequestHandler extends AbstractHttpHandler {
     // TODO what if the document includes multiple payload elements?  should probably fail if there's more than one nsuri used at once
     private PolicyAttachmentKey gatherPolicyAttachmentKey(final HttpRequest request, Document requestEnvelope, URL originalUrl) {
         String sa = request.getField("SOAPAction");
-        String[] namespaceUris = SoapUtil.getPayloadNamespaceUris(requestEnvelope);
-        String nsUri = namespaceUris == null || namespaceUris.length < 1 ? null :namespaceUris[0];
+        QName[] names = SoapUtil.getPayloadNames(requestEnvelope);
+        String nsUri = names == null || names.length < 1 ? null :names[0].getNamespaceURI();
         return new PolicyAttachmentKey(nsUri, sa, originalUrl.getFile());
     }
 
     private HttpHeaders gatherHeaders(final HttpRequest request) {
-        List got = new ArrayList();
-        Iterator names = new EnumerationIterator(request.getFieldNames());
+        List<GenericHttpHeader> got = new ArrayList<GenericHttpHeader>();
+        //noinspection unchecked
+        Iterator<String> names = new EnumerationIterator<String>(request.getFieldNames());
         while (names.hasNext()) {
-            String name = (String)names.next();
-            Iterator values = new EnumerationIterator(request.getFieldValues(name));
+            String name = names.next();
+            //noinspection unchecked
+            Iterator<String> values = new EnumerationIterator<String>(request.getFieldValues(name));
             StringBuffer sb = new StringBuffer();
             boolean isFirst = true;
             while (values.hasNext()) {
-                String value = (String)values.next();
+                String value = values.next();
                 if (!isFirst)
                     sb.append("; ");
                 sb.append(value);
@@ -100,7 +103,7 @@ public class RequestHandler extends AbstractHttpHandler {
             }
             got.add(new GenericHttpHeader(name, sb.toString()));
         }
-        HttpHeader[] headers = (HttpHeader[])got.toArray(new HttpHeader[0]);
+        HttpHeader[] headers = got.toArray(new HttpHeader[0]);
 
         return new GenericHttpHeaders(headers);
     }
@@ -160,7 +163,7 @@ public class RequestHandler extends AbstractHttpHandler {
     }
 
     private void doHandle(final HttpRequest httpRequest, final HttpResponse httpResponse)
-      throws HttpException, IOException
+      throws IOException
     {
         log.info("Incoming request: " + httpRequest.getURI().getPath());
 
@@ -282,7 +285,6 @@ public class RequestHandler extends AbstractHttpHandler {
                 os.write(chunk, 0, got);
             request.setHandled(true);
             response.commit();
-            return;
         } catch (IOException e) {
             final String msg = "Unable to read WSIL style sheet: " + e.getMessage();
             log.log(Level.SEVERE, msg, e);
@@ -331,8 +333,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 HttpHeadersKnob headerKnob = (HttpHeadersKnob)response.getKnob(HttpHeadersKnob.class);
                 if (headerKnob != null) {
                     HttpHeader[] headers = headerKnob.getHeaders().toArray();
-                    for (int i = 0; i < headers.length; i++) {
-                        HttpHeader header = headers[i];
+                    for (HttpHeader header : headers) {
                         String name = header.getName();
                         if (ssg != null && !ssg.shouldCopyHeader(name))
                             continue;
@@ -364,8 +365,7 @@ public class RequestHandler extends AbstractHttpHandler {
      */
     private void handleNonPostMethod(HttpRequest request, HttpResponse response) throws IOException {
         if (request.getMethod().compareToIgnoreCase("GET") != 0) {
-            final HttpException t = new HttpException(405); // "Method not allowed"
-            throw t;
+            throw new HttpException(405);
         }
 
         handleGetRequest(request, response);
@@ -387,16 +387,15 @@ public class RequestHandler extends AbstractHttpHandler {
         PrintStream o = new PrintStream(response.getOutputStream());
         o.println("<html><head><title>SecureSpan "+ Constants.APP_NAME+"</title></head>" +
           "<body><h2>SecureSpan "+ Constants.APP_NAME+"</h2>");
-        List ssgs = ssgFinder.getSsgList();
+        List<Ssg> ssgs = ssgFinder.getSsgList();
         if (ssgs.isEmpty()) {
             o.println("<p>There are currently no Gateways registered with SecureSpan "+ Constants.APP_NAME+".");
         } else {
             o.println("<p>SecureSpan "+ Constants.APP_NAME+" is ready to proxy services provided by the following Gateways:</p><ul>");
             int port = clientProxy.getBindPort();
-            for (Iterator i = ssgs.iterator(); i.hasNext();) {
-                Ssg ssg = (Ssg)i.next();
+            for (Ssg ssg : ssgs) {
                 String wsilUrl = "http://" + request.getHost() + ":" + port + "/" +
-                  ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX;
+                        ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX;
                 o.println("<li><a href=\"" + wsilUrl + "\">" + ssg.getSsgAddress() + " (" + ssg.getUsername() + ")</a></li>");
             }
             o.println("</ul>");
@@ -445,7 +444,6 @@ public class RequestHandler extends AbstractHttpHandler {
             messageProcessor.processMessage(context);
             interceptor.onReceiveReply(context);
             log.fine("Returning result");
-            return;
         } catch (HttpChallengeRequiredException e) {
             log.fine("Returning challenge");
             throw e;
@@ -559,7 +557,6 @@ public class RequestHandler extends AbstractHttpHandler {
             XmlUtil.nodeToFormattedOutputStream(wsil, response.getOutputStream());
             response.getOutputStream().close();
             response.commit();
-            return;
         } catch (WsdlProxy.ServiceNotFoundException e) {
             log.log(Level.WARNING, "WSIL proxy request failed: ", e);
             throw new HttpException(404, e.getMessage());
@@ -583,7 +580,7 @@ public class RequestHandler extends AbstractHttpHandler {
             Port soapPort = wsdl.getSoapPort();
             if (soapPort != null) {
                 String existinglocation = wsdl.getPortUrl(soapPort);
-                URL newUrl = null;
+                URL newUrl;
                 if (existinglocation != null && existinglocation.lastIndexOf("/ssg/soap") == -1) {
                     newUrl = new URL(existinglocation);
                     newUrl = new URL("http", request.getHost(), port,
@@ -598,7 +595,6 @@ public class RequestHandler extends AbstractHttpHandler {
             response.addField(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
             wsdl.toOutputStream(response.getOutputStream());
             response.commit();
-            return;
         } catch (WsdlProxy.ServiceNotFoundException e) {
             log.log(Level.WARNING, "WSDL proxy request failed", e);
             throw new HttpException(404, e.getMessage());

@@ -11,27 +11,29 @@ import org.xml.sax.SAXException;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
+import javax.xml.namespace.QName;
 import java.io.IOException;
 
 /**
  * @author alex
  */
-public class UrnResolver extends WsdlOperationServiceResolver {
+public class UrnResolver extends WsdlOperationServiceResolver<String> {
 
     protected String getTargetValue(Definition def, BindingOperation operation) {
         return SoapUtil.findTargetNamespace(def, operation);
     }
 
-    protected Object getRequestValue(Message request) throws ServiceResolutionException {
+    protected String getRequestValue(Message request) throws ServiceResolutionException {
         try {
             if (request.isSoap()) {
-                String[] uris = request.getSoapKnob().getPayloadNamespaceUris();
-                if (uris == null || uris.length < 1)
+                QName[] names = request.getSoapKnob().getPayloadNames();
+                if (names == null || names.length < 1)
                     return null;
 
                 // TODO there might be a way to properly handle a request with multiple payload URIs
                 String sawUri = null;
-                for (String uri : uris) {
+                for (QName q : names) {
+                    String uri = q.getNamespaceURI();
                     if (sawUri == null)
                         sawUri = uri;
                     else if (!sawUri.equals(uri))

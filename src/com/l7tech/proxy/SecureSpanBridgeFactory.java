@@ -25,6 +25,7 @@ import com.l7tech.proxy.ssl.SslPeer;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
@@ -67,7 +68,7 @@ public class SecureSpanBridgeFactory {
         }
     }
 
-    private static Map credentialManagerMap = Collections.synchronizedMap(new HashMap());
+    private static Map<SslPeer, CredentialManager> credentialManagerMap = Collections.synchronizedMap(new HashMap<SslPeer, CredentialManager>());
     static {
         Managers.setCredentialManager(new CredentialManagerImpl() {
             public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException 
@@ -75,7 +76,7 @@ public class SecureSpanBridgeFactory {
                 // TODO if this is a third-party token service, can't look up the SSG
                 if (sslPeer == null)
                     throw new OperationCanceledException("Unable to determine trustworthiness of non-Gateway peer certificate");
-                CredentialManager cm = (CredentialManager)credentialManagerMap.get(sslPeer);
+                CredentialManager cm = credentialManagerMap.get(sslPeer);
                 if (cm != null)
                     cm.notifySslCertificateUntrusted(sslPeer, "the Gateway " + sslPeer, untrustedCertificate);
                 else
@@ -95,9 +96,8 @@ public class SecureSpanBridgeFactory {
         final Ssg ssg = new Ssg(options.getId(), options.getGatewayHostname());
         final PasswordAuthentication pw;
         if (options.getUsername() != null) {
-            final char[] pass = options.getPassword() == null ? new char[0] : (char[]) options.getPassword().clone();
-            pw = new PasswordAuthentication(options.getUsername(),
-                                                                                     pass);
+            final char[] pass = options.getPassword() == null ? new char[0] : options.getPassword().clone();
+            pw = new PasswordAuthentication(options.getUsername(), pass);
             ssg.setUsername(pw.getUserName());
             ssg.getRuntime().setCachedPassword(pw.getPassword());
         } else
@@ -173,11 +173,11 @@ public class SecureSpanBridgeFactory {
             ssg.getRuntime().setPolicyManager(getStaticPolicyManager(policyXml));
         }
 
-        private static Map policyManagerCache = Collections.synchronizedMap(new WeakHashMap());
+        private static Map<String, PolicyManager> policyManagerCache = Collections.synchronizedMap(new WeakHashMap<String, PolicyManager>());
         private PolicyManager getStaticPolicyManager(String policyXml) throws SAXException {
             if (policyXml == null) throw new NullPointerException();
             try {
-                PolicyManager staticPolicyManager = (PolicyManager)policyManagerCache.get(policyXml);
+                PolicyManager staticPolicyManager = policyManagerCache.get(policyXml);
                 if (staticPolicyManager != null)
                     return staticPolicyManager;
                 Assertion rootAssertion = WspReader.getDefault().parsePermissively(policyXml);
@@ -193,8 +193,8 @@ public class SecureSpanBridgeFactory {
         public SecureSpanBridge.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
             final URL origUrl = new URL("http://bridge-api-uri.layer7tech.com" + localUri);
             // TODO if request uses multiple different payload URIs at the same time, we should probably just fail 
-            String[] nsUris = SoapUtil.getPayloadNamespaceUris(message);
-            String nsUri = nsUris == null || nsUris.length < 1 ? null : nsUris[0];
+            QName[] names = SoapUtil.getPayloadNames(message);
+            String nsUri = names == null || names.length < 1 ? null : names[0].getNamespaceURI();
             PolicyAttachmentKey pak = new PolicyAttachmentKey(nsUri, soapAction, origUrl.getFile());
             Message request = new Message();
             request.initialize(message);

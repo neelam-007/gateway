@@ -123,7 +123,7 @@ public class KnobblyMessageTest extends TestCase {
         msg.getMimeKnob().getFirstPart().setBodyBytes(got);
 
         // now SOAP should succeed
-        assertEquals(MimeBodyTest.MESS_PAYLOAD_NS, msg.getSoapKnob().getPayloadNamespaceUris()[0]);
+        assertEquals(MimeBodyTest.MESS_PAYLOAD_NS, msg.getSoapKnob().getPayloadNames()[0].getNamespaceURI());
     }
 
     public void testGetXmlKnob() throws Exception {
@@ -247,37 +247,40 @@ public class KnobblyMessageTest extends TestCase {
                               TestDocuments.getInputStream(TestDocuments.PLACEORDER_CLEARTEXT));
         SoapKnob soapKnob = msg.getSoapKnob();
         if (msg.isSoap()) {
-            String uri = soapKnob.getPayloadNamespaceUris()[0];
+            String uri = soapKnob.getPayloadNames()[0].getNamespaceURI();
             boolean sec = soapKnob.isSecurityHeaderPresent();
             logger.info("SOAP payload namespace URI = " + uri);
             logger.info("Security header " + (sec ? "" : "not ") + "found");
         }
-        logger.info(soapKnob.getPayloadNamespaceUris()[0]);
+        logger.info(soapKnob.getPayloadNames()[0].getNamespaceURI());
         assertNotNull(msg.getXmlKnob());
         assertNotNull(msg.getMimeKnob());
     }
 
     public void testBug3559TarariIsSoap() throws Exception {
         Message msg = new Message();
-        GlobalTarariContextImpl context = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
 
         msg.initialize(new ByteArrayStashManager(),
                               ContentTypeHeader.XML_DEFAULT,
                               TestDocuments.getInputStream(TestDocuments.DIR + "bug3559.xml"));
 
-        if (context != null) {
-            logger.info("Initializing XML Hardware Acceleration");
-            context.compileAllXpaths();
+        // Ensure that message is thought to be SOAP by the software layer, since Tarari isn't here yet
+        assertTrue(msg.isSoap());
 
-            if (msg.isSoap()) {
-                // Bug is fixed--should we fail the testcase?
-                logger.info("Bug 3559 does not appear to be present");
-            } else {
-                fail("Bug 3559 reproduced");
-            }
+        GlobalTarariContextImpl context = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
+        if (context == null) {
+            logger.info("Can't verify bug 3559; no Tarari card available");
+            return;
+        }
+
+        logger.info("Initializing XML Hardware Acceleration");
+        context.compileAllXpaths();
+
+        if (msg.isSoap()) {
+            // Bug is fixed--should we fail the testcase?
+            logger.info("Bug 3559 does not appear to be present");
         } else {
-            // Ensure that message is thought to be SOAP by the software layer, since Tarari isn't here
-            assertTrue(msg.isSoap());
+            fail("Bug 3559 reproduced");
         }
     }
 

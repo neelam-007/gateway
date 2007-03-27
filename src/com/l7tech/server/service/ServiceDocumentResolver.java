@@ -1,20 +1,19 @@
 package com.l7tech.server.service;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.net.URI;
-import java.net.URISyntaxException;
-import javax.wsdl.xml.WSDLLocator;
-
-import org.xml.sax.InputSource;
+import com.l7tech.service.ServiceDocument;
 import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.l7tech.service.ServiceDocument;
+import javax.wsdl.xml.WSDLLocator;
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Resolver for a services documents.
@@ -115,6 +114,12 @@ public class ServiceDocumentResolver implements EntityResolver, WSDLLocator {
      */
     public String getLatestImportURI() {
         return lastUri;
+    }
+
+    /**
+     * WSDLLocator
+     */
+    public void close() {
     }
 
     //- PRIVATE

@@ -16,7 +16,7 @@ public interface SsgFinder {
      * @return A List of the canonical Ssg objects.
      *         The List is read-only but the Ssg objects in it are the real deal.
      */
-    List getSsgList();
+    List<Ssg> getSsgList();
 
     /**
      * Find the Ssg with the specified local endpoint.  If multiple Ssgs have the same endpoint

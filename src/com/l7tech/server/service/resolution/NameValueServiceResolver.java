@@ -18,19 +18,19 @@ import java.util.concurrent.locks.Lock;
  * @author alex
  * @version $Revision$
  */
-public abstract class NameValueServiceResolver extends ServiceResolver {
+public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
 
     public void serviceCreated( PublishedService service ) throws ServiceResolutionException {
-        Object[] targetValues = getTargetValues( service );
-        Object value;
+        List<T> targetValues = getTargetValues( service );
+        T value;
         Map<Long, PublishedService> serviceMap;
         Long oid = service.getOid();
 
         _rwlock.writeLock().lock();
         try {
-            _serviceOidToValuesArrayMap.put( oid, targetValues );
+            serviceOidToValueListMap.put( oid, targetValues );
 
-            for (Object targetValue : targetValues) {
+            for (T targetValue : targetValues) {
                 value = targetValue;
                 serviceMap = getServiceMap(value);
                 serviceMap.put(oid, service);
@@ -45,7 +45,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
 
         _rwlock.writeLock().lock();
         try {
-            _serviceOidToValuesArrayMap.remove( oid );
+            serviceOidToValueListMap.remove( oid );
 
             for (Map serviceMap : _valueToServiceMapMap.values()) {
                 serviceMap.remove(oid);
@@ -67,7 +67,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         }
     }
 
-    protected Object[] getTargetValues( PublishedService service ) throws ServiceResolutionException {
+    protected List<T> getTargetValues( PublishedService service ) throws ServiceResolutionException {
         if ( service.getOid() == PublishedService.DEFAULT_OID ) {
             // Don't ever cache values for a service with a to-be-determined OID
             return doGetTargetValues( service );
@@ -76,14 +76,14 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
             Lock read = _rwlock.readLock();
             read.lock();
             try {
-                Object[] values = _serviceOidToValuesArrayMap.get( oid );
+                List<T> values = serviceOidToValueListMap.get( oid );
                 if ( values == null ) {
                     values = doGetTargetValues( service );
                     read.unlock();
                     read = null;
                     _rwlock.writeLock().lock();
                     try {
-                        _serviceOidToValuesArrayMap.put( oid, values );
+                        serviceOidToValueListMap.put( oid, values );
                     } finally {
                         _rwlock.writeLock().unlock();
                     }
@@ -98,9 +98,9 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         }
     }
 
-    protected abstract Object[] doGetTargetValues( PublishedService service ) throws ServiceResolutionException;
+    protected abstract List<T> doGetTargetValues( PublishedService service ) throws ServiceResolutionException;
 
-    protected abstract Object getRequestValue( Message request ) throws ServiceResolutionException;
+    protected abstract T getRequestValue( Message request ) throws ServiceResolutionException;
 
     protected boolean matches( PublishedService candidateService, PublishedService matchService ) throws ServiceResolutionException {
         // Get the match values for this service
@@ -114,7 +114,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return false;
     }
 
-    protected Map<Long, PublishedService> getServiceMap( Object value ) {
+    protected Map<Long, PublishedService> getServiceMap(T value) {
         Lock read = _rwlock.readLock();
         read.lock();
         try {
@@ -140,11 +140,11 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
     }
 
     public Set<PublishedService> resolve( Message request, Set<PublishedService> serviceSubset ) throws ServiceResolutionException {
-        Object value = getRequestValue(request);
+        T value = getRequestValue(request);
         return resolve(value, serviceSubset);
     }
 
-    Set<PublishedService> resolve(Object value, Set serviceSubset) throws ServiceResolutionException {
+    Set<PublishedService> resolve(T value, Set serviceSubset) throws ServiceResolutionException {
         /*if (value instanceof String) {
             String s = (String)value;
             if (s.length() > getMaxLength()) {
@@ -152,12 +152,12 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
                 value = s;
             }
         }*/
-        Map<Long, PublishedService> serviceMap = getServiceMap( value );
+        Map<Long, PublishedService> serviceMap = getServiceMap(value);
 
         if ( serviceMap == null || serviceMap.isEmpty() ) return Collections.emptySet();
 
         Set<PublishedService> resultSet = null;
-        Object[] targetValues;
+        List<T> targetValues;
 
         for (Long oid : serviceMap.keySet()) {
             PublishedService service = serviceMap.get(oid);
@@ -177,7 +177,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return resultSet;
     }
 
-    protected final Map<Object, Map<Long, PublishedService>> _valueToServiceMapMap = new HashMap<Object, Map<Long, PublishedService>>();
-    protected final Map<Long, Object[]> _serviceOidToValuesArrayMap = new HashMap<Long, Object[]>();
+    protected final Map<T, Map<Long, PublishedService>> _valueToServiceMapMap = new HashMap<T, Map<Long, PublishedService>>();
+    protected final Map<Long, List<T>> serviceOidToValueListMap = new HashMap<Long, List<T>>();
     protected final ReadWriteLock _rwlock = new ReentrantReadWriteLock(false);
 }
