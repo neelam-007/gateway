@@ -246,6 +246,8 @@ public class HttpRoutingAssertion
         super.copyFrom(source);
         this.setCustomIpAddresses(source.getCustomIpAddresses());
         this.setFailoverStrategyName(source.getFailoverStrategyName());
+        this.setFailOnErrorStatus(source.isFailOnErrorStatus());
+        this.setFollowRedirects(source.isFollowRedirects());
         this.setLogin(source.getLogin());
         this.setMaxConnections(source.getMaxConnections());
         this.setPassword(source.getPassword());
@@ -257,6 +259,8 @@ public class HttpRoutingAssertion
         this.setNtlmHost(source.getNtlmHost());
         this.setConnectionTimeout(source.getConnectionTimeout());
         this.setTimeout(source.getTimeout());
+        this.setRequestHeaderRules(source.getRequestHeaderRules());
+        this.setRequestParamRules(source.getRequestParamRules());
         this.setResponseHeaderRules(source.getResponseHeaderRules());
     }
 

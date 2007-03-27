@@ -143,6 +143,7 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
         this.setCurrentSecurityHeaderHandling(source.getCurrentSecurityHeaderHandling());
         this.setGroupMembershipStatement(source.isGroupMembershipStatement());
         this.setSamlAssertionExpiry(source.getSamlAssertionExpiry());
+        this.setSamlAssertionVersion(source.getSamlAssertionVersion());
         this.setXmlSecurityActorToPromote(source.getXmlSecurityActorToPromote());
     }
 }

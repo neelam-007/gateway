@@ -32,7 +32,7 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion {
     public void copyFrom(BridgeRoutingAssertion source) {
         super.copyFrom(source);
         this.setPolicyXml(source.getPolicyXml());
-
+        this.setServerCertificateOid(source.getServerCertificateOid());
     }
 
     /**
