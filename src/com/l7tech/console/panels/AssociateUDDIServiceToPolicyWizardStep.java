@@ -126,7 +126,7 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             }
             for (Iterator iterator = serviceInfoArrayList.iterator(); iterator.hasNext();) {
                 ServiceInfo serviceInfo = (ServiceInfo) iterator.next();
-                String businessKey = serviceInfo.getBusinessKey();
+                //String businessKey = serviceInfo.getBusinessKey();
                 //if (businessKey != null && !businessKey.startsWith("uddi:systinet")) {
                     String name = serviceInfo.getNameArrayList().get(0).getValue();
                     name = name.toLowerCase();
@@ -146,6 +146,7 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
         ServiceDetail serviceDetail;
         try {
             Get_serviceDetail getServiceDetail = new Get_serviceDetail();
+            getServiceDetail.setAuthInfo(data.getAuthInfo());
             getServiceDetail.setServiceKeyArrayList(new StringArrayList(serviceKey));
             UDDI_Inquiry_PortType inquiry = UDDIInquiryStub.getInstance(data.getUddiurl() + "inquiry");
             serviceDetail = inquiry.get_serviceDetail(getServiceDetail);
