@@ -68,8 +68,8 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
                     if (elements == null || elements.size() < 1) {
                         log.info("ClientRequestWssIntegrity: No elements matched xpath expression \"" +
                                  xpathExpression.getExpression() + "\".  " +
-                                 "Will not sign any additional elements.");
-                        return AssertionStatus.NONE;
+                                 "Assertion therefore fails.");
+                        return AssertionStatus.NOT_APPLICABLE;
                     }
 
                     // get the client cert and private key

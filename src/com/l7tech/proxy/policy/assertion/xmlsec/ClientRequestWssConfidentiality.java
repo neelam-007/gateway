@@ -73,8 +73,8 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
                     if (elements == null || elements.size() < 1) {
                         log.info("ClientRequestWssConfidentiality: No elements matched xpath expression \"" +
                                  xpathExpression.getExpression() + "\".  " +
-                                 "Will not sign any additional elements.");
-                        return AssertionStatus.NONE;
+                                 "Assertion therefore fails.");
+                        return AssertionStatus.NOT_APPLICABLE;
                     }
                     DecorationRequirements wssReqs;
                     if (requestWssConfidentiality.getRecipientContext().localRecipient()) {
