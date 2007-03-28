@@ -6,6 +6,7 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.StaleCheckingHttpConnectionManager;
@@ -21,10 +22,7 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.util.CausedIllegalStateException;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.WspReader;
@@ -61,6 +59,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.net.SocketTimeoutException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -288,9 +287,13 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 thrown = mfe;
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, mfe);
             } catch (IOException ioe) {
-                // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
                 thrown = ioe;
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ioe);
+                if (ExceptionUtils.causedBy(ioe, SocketTimeoutException.class)) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_SOCKET_TIMEOUT);
+                } else {
+                    // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ioe);
+                }
             } catch (SAXException e) {
                 thrown = e;
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);

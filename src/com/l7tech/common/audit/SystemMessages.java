@@ -24,5 +24,7 @@ public class SystemMessages extends Messages {
 
     public static final M SERVICE_WSDL_ERROR            = m(2016, Level.WARNING, "Service ''{0}'' WSDL error ''{1}''");
 
+    public static final M SOCKET_TIMEOUT                = m(2017, Level.WARNING, "A remote network connection timed out.");
+
     // MAX -                                               m(2999
 }

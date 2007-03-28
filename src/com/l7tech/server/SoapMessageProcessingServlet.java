@@ -10,6 +10,9 @@ import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.audit.AuditContext;
+import com.l7tech.common.audit.AuditDetail;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.*;
@@ -45,6 +48,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.SocketTimeoutException;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,6 +66,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco?serviceoid=";
 
+    private final Logger logger = Logger.getLogger(getClass().getName());
+
     private WebApplicationContext applicationContext;
     private MessageProcessor messageProcessor;
     private AuditContext auditContext;
@@ -70,6 +76,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private LicenseManager licenseManager;
     private StashManagerFactory stashManagerFactory;
     private ServiceCache serviceCache;
+    private Auditor auditor;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -84,6 +91,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
         stashManagerFactory = (StashManagerFactory)applicationContext.getBean("stashManagerFactory");
         serviceCache = (ServiceCache)applicationContext.getBean("serviceCache");
+        auditor = new Auditor(this, applicationContext, logger);
     }
 
     /**
@@ -242,6 +250,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 } else if (e instanceof IOException &&
                            e.getClass().getName().equals("org.apache.catalina.connector.ClientAbortException")){
                     logger.warning("Client closed connection.");
+                } else if (ExceptionUtils.causedBy(e, SocketTimeoutException.class)) {
+                    auditor.logAndAudit(SystemMessages.SOCKET_TIMEOUT);
+                    sendExceptionFault(context, e, hrequest, hresponse);
                 } else {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                     //? if (e instanceof Error) throw (Error)e;
@@ -403,8 +414,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             if (sos != null) sos.close();
         }
     }
-
-    private final Logger logger = Logger.getLogger(getClass().getName());
 
     private static interface InputStreamHolder {
         InputStream getInputStream() throws IOException;

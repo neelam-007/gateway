@@ -52,6 +52,7 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_RESPONSE_BADSTATUS      = m(4038, Level.INFO, "Downstream service returned status ({0}). This is considered a failure case.");
     public static final M HTTPROUTE_CTYPEWOUTPAYLOAD        = m(4039, Level.INFO, "Downstream service returned an empty response but still included a content-type of ({0}).");
     public static final M BRIDGEROUTE_REQUEST_NOT_SOAP      = m(4040, Level.WARNING, "Bridge routing failed because request is not SOAP.  Bridge Routing Assertion does not currently support non-SOAP requests.");
+    public static final M HTTPROUTE_SOCKET_TIMEOUT          = m(4041, Level.WARNING, "Remote network connection timed out.");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED = m(4100, Level.INFO, "Authentication Required");
