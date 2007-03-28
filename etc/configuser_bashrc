@@ -38,13 +38,18 @@ do
                     echo "Press enter to continue";
                     read;
                     clear;;
-                2) 	clear;
+                2)  clear;
                     (${CONFWIZARD});
                     echo "Press enter to continue";
                     read;
                     clear;;
                 3)  exit;;
-                4)  sudo /sbin/reboot;;
+                4)  echo -n "Are you sure you want to reboot the SecureSpan Gateway? [y/n]: "
+                    read okToReboot
+                    if [ "$okToReboot" == "y" ] || [ "$okToReboot" == "yes" ] ; then
+                        sudo /sbin/reboot
+                    fi
+                    clear;;
                 5)  if [ -n ${UPDATER_PRESENT} ] ; then
                         clear;
                         (${UPDATEWIZARD})
