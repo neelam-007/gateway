@@ -8,7 +8,6 @@ import com.l7tech.console.util.TopComponents;
 import org.springframework.remoting.RemoteAccessException;
 
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.rmi.*;
 import java.security.AccessControlException;
 import java.util.logging.Level;
@@ -26,7 +25,7 @@ public class RmiErrorHandler implements ErrorHandler {
 
     /**
      * handle the error event
-     * 
+     *
      * @param e the error event
      */
     public void handle(ErrorEvent e) {
@@ -36,7 +35,6 @@ public class RmiErrorHandler implements ErrorHandler {
 
         final Frame topParent = TopComponents.getInstance().getTopParent();
         if (throwable instanceof SocketException ||
-            throwable instanceof SocketTimeoutException ||
             rex instanceof ConnectException ||
             rex instanceof ConnectIOException ||
             rex instanceof NoSuchObjectException ||
@@ -50,7 +48,6 @@ public class RmiErrorHandler implements ErrorHandler {
 
         if (throwable instanceof RemoteException ||
             throwable instanceof SocketException ||
-            throwable instanceof SocketTimeoutException ||
             throwable instanceof AccessControlException ||
             (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet())) {
 
@@ -66,7 +63,7 @@ public class RmiErrorHandler implements ErrorHandler {
                 t = null;
             }
             else if ((rex instanceof ConnectException) ||
-                     (raex != null && (throwable instanceof SocketException || throwable instanceof SocketTimeoutException)) ||
+                     (raex != null && throwable instanceof java.net.SocketException) ||
                     (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet())) {
                 message = "SecureSpan Gateway unavailable (Network issue or server stopped).";
                 level = Level.WARNING;
