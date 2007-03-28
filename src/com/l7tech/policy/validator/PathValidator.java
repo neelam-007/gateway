@@ -660,7 +660,7 @@ class PathValidator {
                a instanceof RequestWssSaml || a instanceof SwAAssertion ||
                a instanceof RequestWssTimestamp || a instanceof ResponseWssTimestamp ||
                a instanceof RequestWssKerberos || a instanceof WsiBspAssertion ||
-               a instanceof ResponseWssSecurityToken ||
+               a instanceof ResponseWssSecurityToken || a instanceof WsFederationPassiveTokenRequest || 
                a instanceof WsFederationPassiveTokenExchange || a instanceof WsspAssertion ||
                a instanceof WsiSamlAssertion || a instanceof WsTrustCredentialExchange;
     }
