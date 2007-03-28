@@ -1,17 +1,19 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.service.PublishedService;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -20,27 +22,35 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
+ * <p>
  * Resolves services based on the HTTP URI from which the incoming message came in through. Different services
  * can be assigned a resolution URI. By default, a service is not assigned a resolution URI. For resolution purposes
  * this special case is assigned the value of "". Requests coming in the ssg at a URI starting with
  * SecureSpanConstants.SSG_RESERVEDURI_PREFIX are considered as URIs of "".
- *
+ * </p><p>
  * Each service has one and only one resolution URI but the same resolution URI can be assigned to multiple services.
- *
+ * </p><p>
  * The wildcard '*' is allowed when assigning resolution URIs to services, these wildcards are considered at
  * resolution time.
- *
+ * </p><p>
  * Say two services published at /service1* and /service1/foo*, if a message comes in at /service1/foo/bar then
  * both resolution uris match. To resolve these conflicts, we adopt the mechanism described at
  * http://www.roguewave.com/support/docs/leif/leif/html/servletug/7-3.html#732:
  *
- * 1. we prefer an exact path match over a wildcard path match
- * 2. we finally prefer path matches over filetype matches
- * 3. we then prefer to match the longest pattern
+ * <ol>
+ * <li>we prefer an exact path match over a wildcard path match</li>
+ * <li>we finally prefer path matches over filetype matches</li>
+ * <li>we then prefer to match the longest pattern</li>
+ * </ol>
+ * </p>
  *
  * @author franco
  */
 public class HttpUriResolver extends ServiceResolver<String> {
+    public HttpUriResolver(ApplicationContext spring) {
+        super(spring);
+    }
+
     public int getSpeed() {
         return FAST;
     }
@@ -57,14 +67,14 @@ public class HttpUriResolver extends ServiceResolver<String> {
                 String requestValue = getRequestValue(request);
                 // first look at repetitive failures
                 if (knownToFail.contains(requestValue)) { // why is this suspicious?
-                    logger.fine("cached failure @" + requestValue);
+                    auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_CACHEDFAIL, requestValue);
                     return EMPTYSERVICESET;
                 }
 
                 // second, try to get an exact match
                 List<Long> res = uriToServiceMap.get(new URIResolutionParam(requestValue));
                 if (res != null && res.size() > 0) {
-                    logger.fine("we found a perfect non wildcard match for " + requestValue);
+                    auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_PERFECT, requestValue);
                     Set<PublishedService> output = narrowList(serviceSubset, res);
                     if (output.size() > 0) return output; // otherwise, we continue and try to find match using wildcard ones
                 }
@@ -92,15 +102,15 @@ public class HttpUriResolver extends ServiceResolver<String> {
                     // todo, this could be exploted as an attack. we should either not try to do this or
                     // we should have a worker thread making sure this does not grow too big
                     knownToFail.add(requestValue);
-                    logger.fine("no matching possible with uri " + requestValue);
+                    auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_NONE, requestValue);
                     return EMPTYSERVICESET;
                 } else if (matchingRegexKeys.size() == 1) {
-                    logger.fine("one wildcard match with uri " + requestValue);
+                    auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_ONE, requestValue);
                     res = uriToServiceMap.get(matchingRegexKeys.get(0));
                     return narrowList(serviceSubset, res);
                 } else {
                     // choose best match
-                    logger.fine("multiple wildcard matches. let's pick the best one with uri " + requestValue);
+                    auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_MULTI, requestValue);
                     URIResolutionParam best = whichOneIsBest(matchingRegexKeys,
                                                             encounteredPathPattern,
                                                             encounteredExtensionPattern);
@@ -242,17 +252,17 @@ public class HttpUriResolver extends ServiceResolver<String> {
         if (originalUrl == null) {
             String uri = httpReqKnob.getRequestUri();
             if (uri == null || uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
-            logger.finest("returning uri " + uri);
+            auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_REAL_URI, uri);
             return uri;
         } else {
             try {
                 URL url = new URL(originalUrl);
                 String uri = url.getFile();
                 if (uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX) || uri.equals("/")) uri = "";
-                logger.finest("returning uri " + uri);
+                auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_URI_FROM_HEADER, uri);
                 return uri;
             } catch (MalformedURLException e) {
-                String err = "Invalid L7-Original-URL value: '" + originalUrl + "'";
+                String err = MessageFormat.format("Invalid L7-Original-URL value: ''{0}''", originalUrl);
                 logger.log( Level.WARNING, err, e );
                 throw new ServiceResolutionException( err );
             }

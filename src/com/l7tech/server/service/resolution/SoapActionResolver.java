@@ -6,23 +6,26 @@
 
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.service.PublishedService;
+import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
 import java.io.IOException;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
-    private final Logger logger = Logger.getLogger(SoapActionResolver.class.getName());
+    public SoapActionResolver(ApplicationContext spring) {
+        super(spring);
+    }
 
     public int getSpeed() {
         return FAST;
@@ -32,7 +35,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
         return SoapUtil.findSoapAction(operation);
     }
 
-    protected String getRequestValue( Message request ) throws ServiceResolutionException {
+    protected String getRequestValue(Message request) throws ServiceResolutionException {
         HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null)
             return null;
@@ -43,7 +46,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
             throw new ServiceResolutionException("Found multiple " + SoapUtil.SOAPACTION + " headers"); // can't happen
         }
         if (soapAction == null) {
-            logger.fine("soapaction is null");
+            auditor.logAndAudit(MessageProcessingMessages.SR_SOAPACTION_NONE);
             return "";
         }
         // Strip leading and trailing quotes
@@ -55,7 +58,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
         // since this only applies to http messages, we dont want to narrow down subset if msg is not http
         boolean notHttp = (request.getKnob(HttpRequestKnob.class) == null);
         if (notHttp) {
-            logger.fine("soapaction resolver skipped because the request is not http");
+            auditor.logAndAudit(MessageProcessingMessages.SR_SOAPACTION_NOT_HTTP);
             return serviceSubset;
         } else {
             return super.resolve(request, serviceSubset);

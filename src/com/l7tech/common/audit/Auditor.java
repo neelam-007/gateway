@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.common.audit;
 
 import com.l7tech.common.util.JdkLoggerConfigurator;
@@ -7,11 +10,6 @@ import org.springframework.context.ApplicationContext;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-/**
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
- * <p> @author fpang </p>
- * $Id$
- */
 public class Auditor {
     private final ApplicationContext context;
     private final Object source;

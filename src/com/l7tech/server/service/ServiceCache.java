@@ -1,13 +1,14 @@
 package com.l7tech.server.service;
 
-import com.l7tech.common.message.Message;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.Background;
-import com.l7tech.common.util.Decorator;
-import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.audit.SystemMessages;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.util.Background;
+import com.l7tech.common.util.Decorator;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
@@ -16,27 +17,29 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.server.policy.*;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.service.resolution.*;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.ServiceReloadEvent;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.*;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,17 +57,39 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Nov 26, 2003<br/>
  */
-public class ServiceCache extends ApplicationObjectSupport implements InitializingBean, DisposableBean, ApplicationListener {
+public class ServiceCache
+        extends ApplicationObjectSupport
+        implements InitializingBean, DisposableBean, ApplicationListener
+{
+    private static final Logger logger = Logger.getLogger(ServiceCache.class.getName());
 
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
+
+    // the cache data itself
+    private final Map<Long, PublishedService> services = new HashMap<Long, PublishedService>();
+    private final Map<Long, ServerPolicyHandle> serverPolicies = new HashMap<Long, ServerPolicyHandle>();
+    private final Map<Long, ServiceStatistics> serviceStatistics = new HashMap<Long, ServiceStatistics>();
+    private final Map<Long, Integer> servicesThatAreThrowing = new HashMap<Long, Integer>();
+    private final Set<Long> servicesThatAreUnlicensed = new HashSet<Long>();
+    private final Collection<Decorator<PublishedService>> decorators;
+
+    // TODO replace with Jgroups notifications
+    private final Timer checker; // Don't use Background since this is high priority
+    // read-write lock for thread safety
+    private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
+
+    /** Not final due to Spring requirement -- see {@link #initApplicationContext} */
+    private ServiceResolver[] resolvers; 
+
+    private final boolean strictSoapResolution;
+
+    //private final PeriodicExecutor checker = new PeriodicExecutor( this );
+    private boolean running = false;
 
     private ServerPolicyFactory policyFactory;
     private Auditor auditor;
     private boolean hasCatchAllService = false;
 
-    private final Collection<Decorator<PublishedService>> decorators;
-    private final boolean strictSoapResolution;
-    //public static final long INTEGRITY_CHECK_FREQUENCY = 10;
 
     /**
      * Constructor for bean usage via subclassing.
@@ -87,8 +112,13 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
         this.checker = timer;
 
         strictSoapResolution = Boolean.valueOf(config.getPropertyCached(ServerConfig.PARAM_STRICT_SOAP_RESOLUTION));
-        ServiceResolver soapResolver = strictSoapResolution ? new SoapOperationResolver() : new UrnResolver();
-        resolvers = new ServiceResolver[] {new OriginalUrlServiceOidResolver(), new HttpUriResolver(), new SoapActionResolver(), soapResolver};
+    }
+
+    @Override
+    protected void initApplicationContext() throws BeansException {
+        ApplicationContext spring = getApplicationContext();
+        ServiceResolver soapResolver = strictSoapResolution ? new SoapOperationResolver(spring) : new UrnResolver(spring);
+        resolvers = new ServiceResolver[] {new OriginalUrlServiceOidResolver(spring), new HttpUriResolver(spring), new SoapActionResolver(spring), soapResolver};
     }
 
     public synchronized void initiateIntegrityCheckProcess() {
@@ -117,7 +147,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
             }
         } else if (applicationEvent instanceof AssertionModuleUnregistrationEvent) {
             try {
-                logger.info("Recompiling all published services due to module unload");
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_MODULE_UNLOAD);
                 resetAll();
             } finally {
                 getApplicationContext().publishEvent(new ServiceReloadEvent(this));
@@ -133,7 +163,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
             int numUnlicensed = unlicensed.size();
             if (numUnlicensed < 1) return;
             if (logger.isLoggable(Level.INFO))
-                logger.info("License changed/module loaded -- resetting " + numUnlicensed + " affected services");
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESETTING_SERVICES, Integer.toString(numUnlicensed));
             for (Long oid : unlicensed) {
                 PublishedService service = services.get(oid);
                 if (service == null) continue; // no longer relevant
@@ -142,7 +172,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
                 try {
                     cacheNoLock(service);
                 } catch (ServerPolicyException e) {
-                    logger.log(Level.WARNING, "Unable to reenable service after license changed/module loaded: " + service.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_DISABLING_SERVICE, new String[] { service.getName(), ExceptionUtils.getMessage(e) }, e);
                 }
             }
         } finally {
@@ -159,7 +189,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
                 try {
                     cacheNoLock(service);
                 } catch (ServerPolicyException e) {
-                    logger.log(Level.WARNING, "Unable to reenable service after module change: " + service.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_DISABLING_SERVICE, new String[] { service.getName(), ExceptionUtils.getMessage(e) }, e);
                 }
             }
         } finally {
@@ -225,7 +255,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
             serviceSet.addAll(services.values());
 
             if (serviceSet.isEmpty()) {
-                logger.finest("resolution failed because no services in the cache");
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_SERVICES);
                 return null;
             }
 
@@ -246,10 +276,10 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
 
                 // if remaining services are 0 or 1, we are done
                 if (newResolvedServicesSize == 1 && !passthrough) {
-                    logger.finest("service resolved early by " + resolver.getClass().getName());
+                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED_EARLY, resolver.getClass().getSimpleName());
                     return resolvedServices.iterator().next();
                 } else if (newResolvedServicesSize == 0) {
-                    logger.info("resolver " + resolver.getClass().getName() + " eliminated all possible services");
+                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getClass().getSimpleName());
                     return null;
                 }
 
@@ -258,14 +288,13 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
             }
 
             if (serviceSet.isEmpty()) {
-                logger.fine("resolvers find no match for request");
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_MATCH);
             } else if (serviceSet.size() == 1) {
-                logger.finest("service resolved");
-                return serviceSet.iterator().next();
+                PublishedService service = serviceSet.iterator().next();
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED, service.getName(), service.getId());
+                return service;
             } else {
-                logger.warning("cache integrity error or resolver bug. this request resolves to" +
-                  "more than one service. this should be corrected at next cache integrity" +
-                  "check");
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_ERROR);
             }
         } finally {
             rwlock.readLock().unlock();
@@ -352,14 +381,13 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
             if (serverRootAssertion != null) {
                 serverPolicies.put(key, new ServerPolicy(serverRootAssertion).ref());
             } else {
-                logger.log(Level.SEVERE, "Service '" + service.getName() + "' (#" + service.getOid() + ") will be disabled; it has an unsupported policy format.");
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_BAD_POLICY_FORMAT, service.getName(), service.getId());
                 service.setDisabled(true);
             }
         } catch (IOException e) {
             // Note, this exception does not passthrough on purpose. Please see bugzilla 958 if you have any issue
             // with this.
-            logger.log(Level.SEVERE, "The service whose OID is " + service.getOid() + " cannot be read properly " +
-              "and will be discarded from the service cache.", e);
+            auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_BAD_POLICY, service.getName(), service.getId());
             service.setDisabled(true);
         }
     }
@@ -645,23 +673,4 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
         return decorated;
     }
 
-    // the cache data itself
-    private final Map<Long, PublishedService> services = new HashMap<Long, PublishedService>();
-    private final Map<Long, ServerPolicyHandle> serverPolicies = new HashMap<Long, ServerPolicyHandle>();
-    private final Map<Long, ServiceStatistics> serviceStatistics = new HashMap<Long, ServiceStatistics>();
-    private final Map<Long, Integer> servicesThatAreThrowing = new HashMap<Long, Integer>();
-    private final Set<Long> servicesThatAreUnlicensed = new HashSet<Long>();
-
-    // the resolvers
-    private final ServiceResolver[] resolvers;
-
-    // read-write lock for thread safety
-    private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
-
-    private final Logger logger = Logger.getLogger(getClass().getName());
-
-    //private final PeriodicExecutor checker = new PeriodicExecutor( this );
-    // TODO replace with Jgroups notifications
-    private final Timer checker; // Don't use Background since this is high priority
-    private boolean running = false;
 }

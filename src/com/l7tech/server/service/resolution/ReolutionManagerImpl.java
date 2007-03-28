@@ -11,6 +11,9 @@ import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.beans.BeansException;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Query;
@@ -33,15 +36,25 @@ import java.sql.SQLException;
  * Date: Nov 25, 2003<br/>
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class ReolutionManagerImpl extends HibernateDaoSupport implements ResolutionManager {
+public class ReolutionManagerImpl extends HibernateDaoSupport implements ResolutionManager, ApplicationContextAware {
     private static final String HQL_FIND_BY_SERVICE_OID =
             "FROM sr IN CLASS " + ResolutionParameters.class.getName() +
                     " WHERE sr.serviceid = ?";
 
     private static final String HQL_FIND_ALL = "FROM sr IN CLASS " + ResolutionParameters.class.getName();
 
+    private SoapActionResolver soapresolver;
+    private UrnResolver urnresolver;
+    private HttpUriResolver uriresolver;
+
     public ReolutionManagerImpl(Collection<Decorator<PublishedService>> decorators) {
         this.decorators = decorators;
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        soapresolver = new SoapActionResolver(applicationContext);
+        urnresolver = new UrnResolver(applicationContext);
+        uriresolver = new HttpUriResolver(applicationContext);
     }
 
     /**
@@ -158,10 +171,6 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
     private Collection getDistinct(PublishedService service) throws ServiceResolutionException {
         ArrayList<ResolutionParameters> listOfParameters = new ArrayList<ResolutionParameters>();
 
-        SoapActionResolver soapresolver = new SoapActionResolver();
-        UrnResolver urnresolver = new UrnResolver();
-        HttpUriResolver uriresolver = new HttpUriResolver();
-
         String httpuri = uriresolver.doGetTargetValue(service);
         Set<String> soapactions = soapresolver.getDistinctParameters(service);
         for (String soapaction : soapactions) {
@@ -250,5 +259,5 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
     }    
 
     protected final Logger logger = Logger.getLogger(getClass().getName());
-    private final Collection<Decorator<PublishedService>> decorators;        
+    private final Collection<Decorator<PublishedService>> decorators;
 }

@@ -34,7 +34,7 @@ public class AssertionStatus {
     public static final AssertionStatus UNAUTHORIZED      = make( statuses, CLIENT + 2, Level.INFO, "Unauthorized", true );
     public static final AssertionStatus SERVICE_DISABLED  = make( statuses, CLIENT + 3, Level.INFO, "Service Disabled" );
     /** Couldn't resolve a service for this request */
-    public static final AssertionStatus SERVICE_NOT_FOUND = make( statuses, CLIENT + 4, Level.INFO, "Service Not Found" );
+    public static final AssertionStatus SERVICE_NOT_FOUND = make( statuses, CLIENT + 4, Level.INFO, "Service Not Found.  The request may have been sent to an invalid URL, or intended for an unsupported operation." );
 
     /** Assertion not yet implemented. */
     public static final AssertionStatus NOT_YET_IMPLEMENTED = make( statuses, MISC + 0, Level.INFO, "Not yet implemented!" );

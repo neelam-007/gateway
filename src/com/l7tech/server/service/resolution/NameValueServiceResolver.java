@@ -8,20 +8,24 @@ package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.service.PublishedService;
+import org.springframework.context.ApplicationContext;
 
 import java.util.*;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
+    public NameValueServiceResolver(ApplicationContext spring) {
+        super(spring);
+    }
 
-    public void serviceCreated( PublishedService service ) throws ServiceResolutionException {
-        List<T> targetValues = getTargetValues( service );
+    public void serviceCreated(PublishedService service) throws ServiceResolutionException {
+        List<T> targetValues = getTargetValues(service);
         T value;
         Map<Long, PublishedService> serviceMap;
         Long oid = service.getOid();
@@ -40,7 +44,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         }
     }
 
-    public void serviceDeleted( PublishedService service ) {
+    public void serviceDeleted(PublishedService service) {
         Long oid = service.getOid();
 
         _rwlock.writeLock().lock();
@@ -55,22 +59,20 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         }
     }
 
-    public void serviceUpdated( PublishedService service ) throws ServiceResolutionException {
+    public void serviceUpdated(PublishedService service) throws ServiceResolutionException {
         _rwlock.writeLock().lock();
         try {
-
-            serviceDeleted( service );
-            serviceCreated( service );
-
+            serviceDeleted( service);
+            serviceCreated( service);
         } finally {
             _rwlock.writeLock().unlock();
         }
     }
 
-    protected List<T> getTargetValues( PublishedService service ) throws ServiceResolutionException {
+    protected List<T> getTargetValues(PublishedService service) throws ServiceResolutionException {
         if ( service.getOid() == PublishedService.DEFAULT_OID ) {
             // Don't ever cache values for a service with a to-be-determined OID
-            return doGetTargetValues( service );
+            return doGetTargetValues(service);
         } else {
             Long oid = service.getOid();
             Lock read = _rwlock.readLock();
@@ -78,7 +80,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
             try {
                 List<T> values = serviceOidToValueListMap.get( oid );
                 if ( values == null ) {
-                    values = doGetTargetValues( service );
+                    values = doGetTargetValues( service);
                     read.unlock();
                     read = null;
                     _rwlock.writeLock().lock();
@@ -98,14 +100,14 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         }
     }
 
-    protected abstract List<T> doGetTargetValues( PublishedService service ) throws ServiceResolutionException;
+    protected abstract List<T> doGetTargetValues(PublishedService service) throws ServiceResolutionException;
 
-    protected abstract T getRequestValue( Message request ) throws ServiceResolutionException;
+    protected abstract T getRequestValue(Message request) throws ServiceResolutionException;
 
-    protected boolean matches( PublishedService candidateService, PublishedService matchService ) throws ServiceResolutionException {
+    protected boolean matches(PublishedService candidateService, PublishedService matchService) throws ServiceResolutionException {
         // Get the match values for this service
-        Set<Object> candidateValues = new HashSet<Object>( Arrays.asList( getTargetValues( candidateService ) ) );
-        Set<Object> matchValues = new HashSet<Object>( Arrays.asList( getTargetValues( matchService ) ) );
+        Set<Object> candidateValues = new HashSet<Object>( Arrays.asList( getTargetValues( candidateService) ) );
+        Set<Object> matchValues = new HashSet<Object>( Arrays.asList( getTargetValues( matchService) ) );
 
         for (Object value : candidateValues) {
             if (matchValues.contains(value)) return true;
@@ -139,7 +141,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         }
     }
 
-    public Set<PublishedService> resolve( Message request, Set<PublishedService> serviceSubset ) throws ServiceResolutionException {
+    public Set<PublishedService> resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
         T value = getRequestValue(request);
         return resolve(value, serviceSubset);
     }

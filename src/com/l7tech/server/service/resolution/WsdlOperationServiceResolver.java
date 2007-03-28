@@ -6,6 +6,7 @@ package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.service.PublishedService;
+import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
@@ -16,7 +17,11 @@ import java.util.*;
  * @author alex
  */
 public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceResolver<T> {
-    protected List<T> doGetTargetValues( PublishedService service ) throws ServiceResolutionException {
+    protected WsdlOperationServiceResolver(ApplicationContext spring) {
+        super(spring);
+    }
+
+    protected List<T> doGetTargetValues(PublishedService service) throws ServiceResolutionException {
         // non soap services do not have those parameters
         if (!service.isSoap()) {
             return Collections.emptyList();

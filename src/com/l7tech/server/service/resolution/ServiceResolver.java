@@ -1,23 +1,32 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.service.PublishedService;
+import org.springframework.context.ApplicationContext;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Logger;
 
 /**
- * @author alex
- * @version $Revision$
+ * @param <T> the type of value employed by this resolver
  */
 public abstract class ServiceResolver<T> implements Comparable {
+    protected final Logger logger = Logger.getLogger(getClass().getName()); // Not static so we get the real classname
+    protected final Auditor auditor;
+
     public static final int FAST = 0;
     public static final int SLOW = 100;
+
+    public ServiceResolver(ApplicationContext spring) {
+        auditor = new Auditor(this, spring, logger);
+    }
 
     /**
      * Notify resolver of a new service.
@@ -42,18 +51,18 @@ public abstract class ServiceResolver<T> implements Comparable {
      */
     public abstract void serviceDeleted(PublishedService service);
 
-    public abstract Set<PublishedService> resolve( Message request, Set<PublishedService> serviceSubset ) throws ServiceResolutionException;
+    public abstract Set<PublishedService> resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException;
 
     /**
-     * Returns a Map<Long,PublishedService> of any services this ServiceResolver knows about that match the specified PublishedService.
+     * Returns a Map of any services this ServiceResolver knows about that match the specified PublishedService.
      * @param candidateService the service to compare against the services this ServiceResolver's already knows about.
-     * @param subset the Map<Long,PublishedService> to search for matches.
-     * @return a Map<Long,PublishedService> of matching services, which could be empty but not null.
+     * @param subset the Map to search for matches.
+     * @return a Map of matching services, which may be empty but not null.
      * @throws ServiceResolutionException May be thrown if resolution cannot be performed one of the given services
      */
     public Map<Long, PublishedService> matchingServices(
             PublishedService candidateService,
-            Map<Long, PublishedService> subset )  throws ServiceResolutionException
+            Map<Long, PublishedService> subset)  throws ServiceResolutionException
     {
         if ( subset == null || subset.isEmpty() ) return Collections.emptyMap();
 
@@ -79,7 +88,7 @@ public abstract class ServiceResolver<T> implements Comparable {
     }
 
     public abstract int getSpeed();
-    abstract boolean matches( PublishedService candidateService, PublishedService matchService ) throws ServiceResolutionException;
+    abstract boolean matches(PublishedService candidateService, PublishedService matchService) throws ServiceResolutionException;
 
     /**
      * Could throw a ClassCastException.
@@ -99,7 +108,7 @@ public abstract class ServiceResolver<T> implements Comparable {
     /**
      * a set of distinct parameters for this service
      * @param candidateService object from which to extract parameters from
-     * @return a Set containing distinct strings
+     * @return a Set containing distinct values
      */
     public abstract Set<T> getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException ;
 }

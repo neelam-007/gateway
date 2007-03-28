@@ -3,11 +3,13 @@
  */
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.service.PublishedService;
 import org.xml.sax.SAXException;
+import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
@@ -18,10 +20,10 @@ import javax.wsdl.extensions.soap.SOAPBody;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.namespace.QName;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * Attempts to resolve services using the QNames of the payload elements.
@@ -31,23 +33,27 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
     private static final Logger logger = Logger.getLogger(SoapOperationResolver.class.getName());
     private static final List<List<QName>> EMPTY = Collections.emptyList();
 
+    public SoapOperationResolver(ApplicationContext spring) {
+        super(spring);
+    }
+
     protected List<List<QName>> doGetTargetValues(PublishedService service) throws ServiceResolutionException {
         try {
             List<List<QName>> operationQnameLists = new ArrayList<List<QName>>();
             if (!service.isSoap()) {
-                logger.fine("Service is not SOAP");
+                auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NOT_SOAP);
                 return EMPTY;
             }
             Wsdl wsdl = service.parsedWsdl();
             if (wsdl == null) {
-                logger.info("Service is SOAP but has no WSDL");
+                auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NO_WSDL);
                 return EMPTY;
             }
             
             //noinspection unchecked
             Map<QName, Binding> bindings = wsdl.getDefinition().getBindings();
             if (bindings == null || bindings.isEmpty()) {
-                logger.info("WSDL has no bindings");
+                auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_NO_BINDINGS);
                 return EMPTY;
             }
 
@@ -119,7 +125,7 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
 
                     if (operationStyle == null) operationStyle = bindingStyle;
                     if (operationStyle == null) {
-                        logger.warning("Couldn't get style for BindingOperation " + bop.getName());
+                        auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_NO_STYLE, bop.getName());
                         continue nextBindingOperation;
                     }
                     if ("rpc".equalsIgnoreCase(operationStyle.trim())) {
@@ -134,21 +140,23 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
                             QName tq = part.getTypeName();
                             QName eq = part.getElementName();
                             if (tq != null && eq != null) {
-                                logger.warning(MessageFormat.format("Part {0} has both an element and a type", part.getName()));
+                                auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_PART_TYPE, part.getName());
                                 continue nextBindingOperation;
                             } else if (tq != null) {
                                 operationQNames.add(new QName(null, part.getName()));
-                                logger.warning("Input message " + inputMessage.getQName() + " in document-style operation has a type, not an element");
+                                auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_PART_TYPE, inputMessage.getQName().getLocalPart());
                             } else if (eq != null) {
                                 operationQNames.add(eq);
                             }
                         }
                     } else {
-                        logger.warning("Unsupported style '" + operationStyle + "' for " + bop.getName());
+                        auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_BAD_STYLE, operationStyle, bop.getName());
                         continue nextBindingOperation;
                     }
 
-                    if (operationQNames.isEmpty()) logger.warning("Unable to find QNames for BindingOperation " + bop.getName());
+                    if (operationQNames.isEmpty()) {
+                        auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NO_QNAMES_FOR_OP, bop.getName());
+                    }
 
                     operationQnameLists.add(operationQNames);
                 }
@@ -156,13 +164,13 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
             }
 
             if (operationQnameLists.isEmpty()) {
-                logger.log(Level.WARNING, "Unable to find any payload element QNames for service {0} (#{1})", new Object[] { service.getName(), service.getOid() });
+                auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NO_QNAMES_AT_ALL, service.getName(), Long.toString(service.getOid()));
                 return EMPTY;
             }
 
             return operationQnameLists;
         } catch (WSDLException e) {
-            logger.log(Level.WARNING, "Unable to parse WSDL for " + service.getName() + " service (#" + service.getOid() +")", e);
+            logger.log(Level.WARNING, MessageFormat.format("Unable to parse WSDL for {0} service (#{1})", service.getName(), service.getOid()), e);
             return EMPTY;
         }
     }
@@ -170,7 +178,11 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
     protected List<QName> getRequestValue(Message request) throws ServiceResolutionException {
         SoapKnob sk = (SoapKnob) request.getKnob(SoapKnob.class);
         try {
-            return Arrays.asList(sk.getPayloadNames());
+            QName[] names = sk.getPayloadNames();
+            for (QName name : names) {
+                auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_FOUND_QNAME, name.toString());
+            }
+            return Arrays.asList(names);
         } catch (IOException e) {
             throw new ServiceResolutionException("Unable to parse payload element QNames", e);
         } catch (SAXException e) {

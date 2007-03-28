@@ -4,18 +4,19 @@
  */
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.service.PublishedService;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.Arrays;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,7 +38,8 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<Stri
         "\\?(?<=[?&])serviceoid=(\\d+)(?:(\\&|$))",
     };
 
-    public OriginalUrlServiceOidResolver() {
+    public OriginalUrlServiceOidResolver(ApplicationContext spring) {
+        super(spring);
         List<Pattern> compiled = new ArrayList<Pattern>();
 
         try {
@@ -77,24 +79,23 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<Stri
         }
 
         if (originalUrl == null) {
-            logger.finest("The header '" + SecureSpanConstants.HttpHeaders.ORIGINAL_URL + "' is not present");
+            auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_NOHEADER, SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
         } else {
             final String match = findMatch(originalUrl);
             if (match != null) {
-                logger.finest("Matched against the header '" + SecureSpanConstants.HttpHeaders.ORIGINAL_URL + "' URL: " + originalUrl);
+                auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_HEADER_MATCH, SecureSpanConstants.HttpHeaders.ORIGINAL_URL, originalUrl); 
                 return match;
             }
-            logger.finest("Not Matched against the header " + SecureSpanConstants.HttpHeaders.ORIGINAL_URL + "' URL: " + originalUrl);
+            auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_HEADER_NOMATCH, SecureSpanConstants.HttpHeaders.ORIGINAL_URL, originalUrl);
         }
 
         String requestURI = httpReqKnob.getRequestUri();
         final String match = findMatch(requestURI);
         if (match != null) {
-            logger.finest("Matched against the Request URI: " + requestURI);
+            auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_URI_MATCH, requestURI);
             return match;
         }
-        logger.finest("Not Matched against the request URI: " +requestURI);
-
+        auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_URI_NOMATCH, requestURI);
         return null;
     }
 
@@ -131,6 +132,4 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<Stri
             return super.resolve(value, serviceSubset);
         }
     }
-
-    protected static final Logger logger = Logger.getLogger(OriginalUrlServiceOidResolver.class.getName());
 }

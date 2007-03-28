@@ -2,35 +2,34 @@ package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
-import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.WsspAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.WsspAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.wssp.WsspWriter;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.IdentityRule;
-import com.l7tech.server.policy.filter.FilterManager;
+import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.server.service.resolution.SoapActionResolver;
 import com.l7tech.server.service.resolution.UrnResolver;
-import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -74,8 +73,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private ServerConfig serverConfig;
     private FilterManager wsspFilterManager;
     private FilterManager clientPolicyFilterManager;
-    private SoapActionResolver sactionResolver = new SoapActionResolver();
-    private UrnResolver nsResolver = new UrnResolver();
+    private SoapActionResolver sactionResolver;
+    private UrnResolver nsResolver;
     private int httpPort;
     private int httpsPort;
 
@@ -89,6 +88,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         serverConfig = (ServerConfig)appcontext.getBean("serverConfig", ServerConfig.class);
         clientPolicyFilterManager = (FilterManager)appcontext.getBean("policyFilterManager", FilterManager.class);
         wsspFilterManager = (FilterManager)appcontext.getBean("wsspolicyFilterManager", FilterManager.class);
+
+        sactionResolver = new SoapActionResolver(appcontext);
+        nsResolver = new UrnResolver(appcontext);
 
         httpPort = serverConfig.getIntProperty(ServerConfig.PARAM_HTTPPORT, 8080);
         httpsPort = serverConfig.getIntProperty(ServerConfig.PARAM_HTTPSPORT, 8443);

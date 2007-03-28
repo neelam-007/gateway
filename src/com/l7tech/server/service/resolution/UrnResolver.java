@@ -8,6 +8,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import org.xml.sax.SAXException;
+import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
@@ -18,6 +19,9 @@ import java.io.IOException;
  * @author alex
  */
 public class UrnResolver extends WsdlOperationServiceResolver<String> {
+    public UrnResolver(ApplicationContext spring) {
+        super(spring);
+    }
 
     protected String getTargetValue(Definition def, BindingOperation operation) {
         return SoapUtil.findTargetNamespace(def, operation);
