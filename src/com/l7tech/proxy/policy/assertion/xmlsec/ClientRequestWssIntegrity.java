@@ -9,7 +9,6 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.jaxen.JaxenException;
 import org.xml.sax.SAXException;
 
@@ -53,52 +52,42 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException, BadCredentialsException,
                    GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException,
-                   PolicyRetryableException, ClientCertificateException
-    {
-        // add a pending decoration that will be applied only if the rest of this policy branch succeeds
-        context.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PolicyApplicationContext context)
-                    throws PolicyAssertionException, SAXException, IOException
-            {
-                final XpathExpression xpathExpression = requestWssIntegrity.getXpathExpression();
-                final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocumentReadOnly(),
-                                                                        xpathExpression.getNamespaces());
-                try {
-                    List elements = eval.selectElements(xpathExpression.getExpression());
-                    if (elements == null || elements.size() < 1) {
-                        log.info("ClientRequestWssIntegrity: No elements matched xpath expression \"" +
-                                 xpathExpression.getExpression() + "\".  " +
-                                 "Assertion therefore fails.");
-                        return AssertionStatus.NOT_APPLICABLE;
-                    }
-
-                    // get the client cert and private key
-                    // We must have credentials to get the private key
-                    DecorationRequirements wssReqs;
-                    if (requestWssIntegrity.getRecipientContext().localRecipient()) {
-                        wssReqs = context.getDefaultWssRequirements();
-                    } else {
-                        wssReqs = context.getAlternateWssRequirements(requestWssIntegrity.getRecipientContext());
-                    }
-                    wssReqs.getElementsToSign().addAll(elements);
-                    return AssertionStatus.NONE;
-                } catch (JaxenException e) {
-                    throw new PolicyAssertionException(requestWssIntegrity, "ClientRequestWssIntegrity: " +
-                                                       "Unable to execute xpath expression \"" +
-                                                       xpathExpression.getExpression() + "\"", e);
-                } catch (IOException e) {
-                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
-                    log.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(requestWssIntegrity, msg, e);
-                } catch (CertificateException e) {
-                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
-                    log.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(requestWssIntegrity, msg, e);
-                }
+                   PolicyRetryableException, ClientCertificateException, PolicyAssertionException, SAXException {
+        final XpathExpression xpathExpression = requestWssIntegrity.getXpathExpression();
+        final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocumentReadOnly(),
+                                                                xpathExpression.getNamespaces());
+        try {
+            List elements = eval.selectElements(xpathExpression.getExpression());
+            if (elements == null || elements.size() < 1) {
+                log.info("ClientRequestWssIntegrity: No elements matched xpath expression \"" +
+                         xpathExpression.getExpression() + "\".  " +
+                         "Assertion therefore fails.");
+                return AssertionStatus.NOT_APPLICABLE;
             }
-        });
 
-        return AssertionStatus.NONE;
+            // get the client cert and private key
+            // We must have credentials to get the private key
+            DecorationRequirements wssReqs;
+            if (requestWssIntegrity.getRecipientContext().localRecipient()) {
+                wssReqs = context.getDefaultWssRequirements();
+            } else {
+                wssReqs = context.getAlternateWssRequirements(requestWssIntegrity.getRecipientContext());
+            }
+            wssReqs.getElementsToSign().addAll(elements);
+            return AssertionStatus.NONE;
+        } catch (JaxenException e) {
+            throw new PolicyAssertionException(requestWssIntegrity, "ClientRequestWssIntegrity: " +
+                                                                    "Unable to execute xpath expression \"" +
+                                                                    xpathExpression.getExpression() + "\"", e);
+        } catch (IOException e) {
+            String msg = "Cannot initialize the recipient's  DecorationRequirements";
+            log.log(Level.WARNING, msg, e);
+            throw new PolicyAssertionException(requestWssIntegrity, msg, e);
+        } catch (CertificateException e) {
+            String msg = "Cannot initialize the recipient's  DecorationRequirements";
+            log.log(Level.WARNING, msg, e);
+            throw new PolicyAssertionException(requestWssIntegrity, msg, e);
+        }
     }
 
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) {

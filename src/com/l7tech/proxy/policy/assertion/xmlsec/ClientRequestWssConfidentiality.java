@@ -10,7 +10,6 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.jaxen.JaxenException;
 import org.xml.sax.SAXException;
 
@@ -55,57 +54,47 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException, BadCredentialsException,
                    GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException,
-                   PolicyRetryableException, ClientCertificateException
-    {
+                   PolicyRetryableException, ClientCertificateException, PolicyAssertionException, SAXException {
         final Ssg ssg = context.getSsg();
         final X509Certificate serverCert = ssg.getServerCertificateAlways();
 
-        // add a pending decoration that will be applied only if the rest of this policy branch succeeds
-        context.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PolicyApplicationContext context)
-                    throws PolicyAssertionException, SAXException, IOException
-            {
-                final XpathExpression xpathExpression = requestWssConfidentiality.getXpathExpression();
-                try {
-                    final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocumentReadOnly(),
-                                                                            xpathExpression.getNamespaces());
-                    List elements = eval.selectElements(xpathExpression.getExpression());
-                    if (elements == null || elements.size() < 1) {
-                        log.info("ClientRequestWssConfidentiality: No elements matched xpath expression \"" +
-                                 xpathExpression.getExpression() + "\".  " +
-                                 "Assertion therefore fails.");
-                        return AssertionStatus.NOT_APPLICABLE;
-                    }
-                    DecorationRequirements wssReqs;
-                    if (requestWssConfidentiality.getRecipientContext().localRecipient()) {
-                        wssReqs = context.getDefaultWssRequirements();
-                        if (serverCert != null) {
-                            wssReqs.setRecipientCertificate(serverCert);
-                        }
-                    } else {
-                        wssReqs = context.getAlternateWssRequirements(requestWssConfidentiality.getRecipientContext());
-                    }
-                    wssReqs.getElementsToEncrypt().addAll(elements);
-                    if (requestWssConfidentiality.getXEncAlgorithm() !=null) {
-                        wssReqs.setEncryptionAlgorithm(requestWssConfidentiality.getXEncAlgorithm());
-                        if (requestWssConfidentiality.getKeyEncryptionAlgorithm() != null) {
-                            wssReqs.setKeyEncryptionAlgorithm(requestWssConfidentiality.getKeyEncryptionAlgorithm());
-                        }
-                    }
-                    return AssertionStatus.NONE;
-                } catch (JaxenException e) {
-                    throw new PolicyAssertionException(requestWssConfidentiality, "ClientRequestWssConfidentiality: " +
-                                                       "Unable to execute xpath expression \"" +
-                                                       xpathExpression.getExpression() + "\"", e);
-                } catch (CertificateException e) {
-                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
-                    log.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(requestWssConfidentiality, msg, e);
+        final XpathExpression xpathExpression = requestWssConfidentiality.getXpathExpression();
+        try {
+            final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocumentReadOnly(),
+                                                                    xpathExpression.getNamespaces());
+            List elements = eval.selectElements(xpathExpression.getExpression());
+            if (elements == null || elements.size() < 1) {
+                log.info("ClientRequestWssConfidentiality: No elements matched xpath expression \"" +
+                         xpathExpression.getExpression() + "\".  " +
+                         "Assertion therefore fails.");
+                return AssertionStatus.NOT_APPLICABLE;
+            }
+            DecorationRequirements wssReqs;
+            if (requestWssConfidentiality.getRecipientContext().localRecipient()) {
+                wssReqs = context.getDefaultWssRequirements();
+                if (serverCert != null) {
+                    wssReqs.setRecipientCertificate(serverCert);
+                }
+            } else {
+                wssReqs = context.getAlternateWssRequirements(requestWssConfidentiality.getRecipientContext());
+            }
+            wssReqs.getElementsToEncrypt().addAll(elements);
+            if (requestWssConfidentiality.getXEncAlgorithm() !=null) {
+                wssReqs.setEncryptionAlgorithm(requestWssConfidentiality.getXEncAlgorithm());
+                if (requestWssConfidentiality.getKeyEncryptionAlgorithm() != null) {
+                    wssReqs.setKeyEncryptionAlgorithm(requestWssConfidentiality.getKeyEncryptionAlgorithm());
                 }
             }
-        });
-
-        return AssertionStatus.NONE;
+            return AssertionStatus.NONE;
+        } catch (JaxenException e) {
+            throw new PolicyAssertionException(requestWssConfidentiality, "ClientRequestWssConfidentiality: " +
+                                                                          "Unable to execute xpath expression \"" +
+                                                                          xpathExpression.getExpression() + "\"", e);
+        } catch (CertificateException e) {
+            String msg = "Cannot initialize the recipient's  DecorationRequirements";
+            log.log(Level.WARNING, msg, e);
+            throw new PolicyAssertionException(requestWssConfidentiality, msg, e);
+        }
     }
 
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) {

@@ -53,10 +53,7 @@ abstract class ServerResponseWssSignature extends AbstractServerAssertion implem
         }
     }
 
-    /**
-     * despite the name of this method, i'm actually working on the response document here
-     * @param context
-     */
+    // despite the name of this method, i'm actually working on the response document here
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException
     {
@@ -73,105 +70,104 @@ abstract class ServerResponseWssSignature extends AbstractServerAssertion implem
 
         final XmlSecurityRecipientContext recipient = wssConfig.getRecipientContext();
 
-        context.addDeferredAssertion(this, new AbstractServerAssertion((Assertion)wssConfig) {
-            public AssertionStatus checkRequest(PolicyEnforcementContext context)
-                    throws IOException, PolicyAssertionException
-            {
-                try {
-                    if (!context.getResponse().isSoap()) {
-                        auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NOT_SOAP);
-                        return AssertionStatus.NOT_APPLICABLE;
-                    }
-                } catch (SAXException e) {
-                    throw new CausedIOException(e);
-                }
+        try {
+            if (!context.getResponse().isSoap()) {
+                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NOT_SOAP);
+                return AssertionStatus.NOT_APPLICABLE;
+            }
+        } catch (SAXException e) {
+            throw new CausedIOException(e);
+        }
 
 
-                // GET THE DOCUMENT
-                Document soapmsg;
-                final XmlKnob resXml;
-                final SecurityKnob resSec;
-                try {
-                    resXml = context.getResponse().getXmlKnob();
-                    resSec = context.getResponse().getSecurityKnob();
-                    soapmsg = resXml.getDocumentReadOnly();
-                } catch (SAXException e) {
-                    String msg = "cannot get an xml document from the response to sign";
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
-                    return AssertionStatus.SERVER_ERROR;
-                }
+        // GET THE DOCUMENT
+        Document soapmsg;
+        final XmlKnob resXml;
+        final SecurityKnob resSec;
+        try {
+            resXml = context.getResponse().getXmlKnob();
+            resSec = context.getResponse().getSecurityKnob();
+            soapmsg = resXml.getDocumentReadOnly();
+        } catch (SAXException e) {
+            String msg = "cannot get an xml document from the response to sign";
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
+            return AssertionStatus.SERVER_ERROR;
+        }
 
 
-                DecorationRequirements wssReq = resSec.getAlternateDecorationRequirements(recipient);
+        DecorationRequirements wssReq = resSec.getAlternateDecorationRequirements(recipient);
 
-                int howMany = addDecorationRequirements(context, soapmsg, wssReq);
-                if (howMany < 0) {
-                    return AssertionStatus.FAILED;
-                } else if (howMany == 0) {
-                    auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NOT_SIGNED);
-                    return AssertionStatus.NONE;
-                }
+        int howMany = addDecorationRequirements(context, soapmsg, wssReq);
+        if (howMany < 0) {
+            return AssertionStatus.FAILED;
+        } else if (howMany == 0) {
+            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NOT_SIGNED);
+            return AssertionStatus.NONE;
+        }
 
-                // TODO need some way to guess whether sender would prefer we sign with our cert or with his
-                //      EncryptedKey.  For now, we'll cheat, and use EncryptedKey if the request used any wse11
-                //      elements that we noticed.
-                if (wssResult != null && wssResult.isWsse11Seen()) {
-                    // Try to sign response using an existing EncryptedKey already known to the requestor,
-                    // using #EncryptedKeySHA1 KeyInfo reference, instead of making an RSA signature,
-                    // which is expensive.
-                    if (wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null) {
-                        // No EncryptedKeySHA1 reference on response yet; create one
-                        XmlSecurityToken[] tokens = wssResult.getXmlSecurityTokens();
-                        for (XmlSecurityToken token : tokens) {
-                            if (token instanceof EncryptedKey) {
-                                // We'll just use the first one we see that's unwrapped
-                                EncryptedKey ek = (EncryptedKey)token;
-                                if (ek.isUnwrapped()) {
-                                    try {
-                                        wssReq.setEncryptedKey(ek.getSecretKey());
-                                        wssReq.setEncryptedKeySha1(ek.getEncryptedKeySHA1());
-                                    } catch (InvalidDocumentFormatException e) {
-                                        throw new IllegalStateException(e); // Can't happen - it's unwrapped already
-                                    } catch (GeneralSecurityException e) {
-                                        throw new IllegalStateException(e); // Can't happen - it's unwrapped already
-                                    }
-                                    break;
-                                }
+        // TODO need some way to guess whether sender would prefer we sign with our cert or with his
+        //      EncryptedKey.  For now, we'll cheat, and use EncryptedKey if the request used any wse11
+        //      elements that we noticed.
+        if (wssResult != null && wssResult.isWsse11Seen()) {
+            // Try to sign response using an existing EncryptedKey already known to the requestor,
+            // using #EncryptedKeySHA1 KeyInfo reference, instead of making an RSA signature,
+            // which is expensive.
+            if (wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null) {
+                // No EncryptedKeySHA1 reference on response yet; create one
+                XmlSecurityToken[] tokens = wssResult.getXmlSecurityTokens();
+                for (XmlSecurityToken token : tokens) {
+                    if (token instanceof EncryptedKey) {
+                        // We'll just use the first one we see that's unwrapped
+                        EncryptedKey ek = (EncryptedKey)token;
+                        if (ek.isUnwrapped()) {
+                            try {
+                                wssReq.setEncryptedKey(ek.getSecretKey());
+                                wssReq.setEncryptedKeySha1(ek.getEncryptedKeySHA1());
+                            } catch (InvalidDocumentFormatException e) {
+                                throw new IllegalStateException(e); // Can't happen - it's unwrapped already
+                            } catch (GeneralSecurityException e) {
+                                throw new IllegalStateException(e); // Can't happen - it's unwrapped already
                             }
+                            break;
                         }
                     }
                 }
-
-                if ((wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null)
-                  && wssReq.getKerberosTicket() == null) {
-                    // No luck with #EncryptedKeySHA1 or Kerberos, so we'll have to do a full RSA signature using our own cert.
-                    wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
-                    wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
-                }
-
-
-                // how was the keyreference requested?
-                String keyReference = wssConfig.getKeyReference();
-
-                if (keyReference == null || KeyReference.BST.getName().equals(keyReference)) {
-                    wssReq.setSuppressBst(false);
-                } else if (KeyReference.SKI.getName().equals(keyReference)) {
-                    wssReq.setSuppressBst(true);
-                }
-
-                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_SIGNED, new String[] {String.valueOf(howMany)});
-
-                return AssertionStatus.NONE;
             }
+        }
 
-        });
+        if ((wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null)
+            && wssReq.getKerberosTicket() == null) {
+            // No luck with #EncryptedKeySHA1 or Kerberos, so we'll have to do a full RSA signature using our own cert.
+            wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
+            wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+        }
+
+
+        // how was the keyreference requested?
+        String keyReference = wssConfig.getKeyReference();
+
+        if (keyReference == null || KeyReference.BST.getName().equals(keyReference)) {
+            wssReq.setSuppressBst(false);
+        } else if (KeyReference.SKI.getName().equals(keyReference)) {
+            wssReq.setSuppressBst(true);
+        }
+
+        auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_SIGNED, String.valueOf(howMany));
 
         return AssertionStatus.NONE;
     }
 
     /**
-     * @return the number of elements selected for signing, zero if no elements were selected, or -1 if the assertion 
+     * Configure the decoration requirements for this signature.
+     *
+     * @param context  the PolicyEnforcementContext.  Required.
+     * @param soapmsg  the message that is to be decorated.  Required.
+     * @param wssReq   the existing decoration requirements, to which the new signature requirements should be added.  Required.
+     * @return the number of elements selected for signing, zero if no elements were selected, or -1 if the assertion
      *          should fail (subclass is expected to have logged the reason already)
+     * @throws com.l7tech.policy.assertion.PolicyAssertionException if the signature requirements cannot be added due to
+     *                                                              a misconfigured assertion (for example, if it is
+     *                                                              XPath based and the XPath is invalid)
      */
     protected abstract int addDecorationRequirements(PolicyEnforcementContext context, Document soapmsg, DecorationRequirements wssReq)
         throws PolicyAssertionException;

@@ -447,6 +447,16 @@ class PathValidator {
             }
         }
 
+        if (a instanceof ResponseWssConfig || a instanceof ResponseWssConfidentiality) {
+            if (!seenRouting) {
+                result.addWarning(
+                        new PolicyValidatorResult.Warning(a,
+                                                          assertionPath,
+                                                          "This assertion acts on the response and should be preceded by a routing assertion",
+                                                          null));
+            }
+        }
+
         if (a instanceof UsesVariables) {
             UsesVariables ua = (UsesVariables)a;
             final String[] vars = ua.getVariablesUsed();
@@ -665,6 +675,7 @@ class PathValidator {
                a instanceof WsTrustCredentialExchange ||
                a instanceof WsFederationPassiveTokenExchange ||
                a instanceof WsFederationPassiveTokenRequest ||
+               a instanceof ResponseWssConfig ||
               (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired()) ||
                a instanceof WssBasic ||
                a instanceof ResponseWssSecurityToken;

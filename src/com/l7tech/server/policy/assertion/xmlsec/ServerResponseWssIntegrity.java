@@ -58,6 +58,7 @@ public class ServerResponseWssIntegrity extends ServerResponseWssSignature {
             return 0;
         }
 
+        //noinspection unchecked
         wssReq.getElementsToSign().addAll(selectedElements);
         wssReq.setSignTimestamp();
 
