@@ -141,6 +141,7 @@ if [ -w "${MY_CNF_FILE}" ] && [ -f "${MY_CNF_FILE}" ] ; then
     # copy new file
     if [ ${EXIT_VALUE} -eq 0 ] ; then
       mv -f "${TEMP_MYCNF}" "${MY_CNF_FILE}"
+      chmod 644 "${MY_CNF_FILE}"
     fi
   fi
   
