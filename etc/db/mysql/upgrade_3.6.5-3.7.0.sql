@@ -46,4 +46,4 @@ ALTER TABLE sample_messages
 --
 -- JMS updates
 --
-ALTER TABLE jms_connection ADD column properties mediumtext default '';
+ALTER TABLE jms_connection ADD column properties mediumtext null;

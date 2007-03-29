@@ -25,6 +25,7 @@ public class WspUpgradeUtilFrom365 {
             super(originalVisitor);
         }
 
+        @Override
         public void unknownProperty(Element originalObject, Element problematicParameter, Object deserializedObject, String parameterName, TypedReference parameterValue, Throwable problemEncountered) throws InvalidPolicyStreamException {
             HttpRoutingAssertion ass;
             if (deserializedObject instanceof HttpRoutingAssertion) {

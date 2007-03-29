@@ -22,6 +22,7 @@ class WspUpgradeUtilFrom35 {
             super(originalVisitor);
         }
 
+        @Override
         public void unknownProperty(Element originalObject,
                                     Element problematicParameter,
                                     Object deserializedObject,
@@ -114,13 +115,15 @@ class WspUpgradeUtilFrom35 {
             super(originalVisitor);
         }
 
+        @Override
         public void unknownProperty(Element originalObject,
                                     Element problematicParameter,
                                     Object deserializedObject,
                                     String propertyName,
                                     TypedReference value,
-                                    Exception problemEncountered)
-                throws InvalidPolicyStreamException {
+                                    Throwable problemEncountered)
+                throws InvalidPolicyStreamException
+        {
             if (deserializedObject instanceof SchemaValidation) {
                 SchemaValidation sv = (SchemaValidation) deserializedObject;
                 if ("Schema".equals(propertyName)) {

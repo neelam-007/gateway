@@ -235,6 +235,7 @@ public class WspUpgradeUtilFrom21 {
             super(originalVisitor);
         }
 
+        @Override
         public void unknownProperty(Element originalObject,
                                     Element problematicParameter,
                                     Object deserializedObject,
