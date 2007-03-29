@@ -276,10 +276,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
             customProvider.setDefaultTopicFactoryUrl(connection.getTopicFactoryUrl());
             customProvider.setInitialContextFactoryClassname(connection.getInitialContextFactoryClassname());
         } else {
-            customProvider.setDefaultDestinationFactoryUrl("");
-            customProvider.setDefaultQueueFactoryUrl("");
-            customProvider.setDefaultTopicFactoryUrl("");
-            customProvider.setInitialContextFactoryClassname("");
+            customProvider.setDefaultDestinationFactoryUrl(null);
+            customProvider.setDefaultQueueFactoryUrl(null);
+            customProvider.setDefaultTopicFactoryUrl(null);
+            customProvider.setInitialContextFactoryClassname(null);
         }
         items[0] = new ProviderComboBoxItem(customProvider);
 
