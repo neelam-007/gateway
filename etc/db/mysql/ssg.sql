@@ -117,6 +117,7 @@ CREATE TABLE published_service (
   soap TINYINT(1) NOT NULL DEFAULT 1,
   routing_uri varchar(128),
   http_methods mediumtext,
+  lax_resolution TINYINT(1) NOT NULL DEFAULT 0, 
   PRIMARY KEY  (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 

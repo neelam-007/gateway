@@ -47,3 +47,8 @@ ALTER TABLE sample_messages
 -- JMS updates
 --
 ALTER TABLE jms_connection ADD column properties mediumtext null;
+
+--
+-- Add lax_resolution column to published_service
+--
+ALTER TABLE published_service ADD lax_resolution TINYINT(1) NOT NULL DEFAULT 0;

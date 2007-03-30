@@ -3,6 +3,8 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.Functions;
 import com.l7tech.console.panels.ServicePropertiesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
@@ -38,7 +40,7 @@ public class EditServiceProperties extends ServiceNodeAction {
     }
 
     protected OperationType getOperation() {
-        return OperationType.UPDATE;
+        return OperationType.READ;
     }
 
     public String getName() {
@@ -55,9 +57,11 @@ public class EditServiceProperties extends ServiceNodeAction {
 
     protected void performAction() {
         final ServiceNode serviceNode = ((ServiceNode)node);
+        boolean canUpdate;
         PublishedService svc;
         try {
             svc = serviceNode.getPublishedService();
+            canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get service", e);
             throw new RuntimeException(e);
@@ -99,12 +103,12 @@ public class EditServiceProperties extends ServiceNodeAction {
                 }
             }
         };
-        editServiceProperties(svc, callback);
+        editServiceProperties(svc, callback, canUpdate);
     }
 
-    private void editServiceProperties(final PublishedService svc, final Functions.UnaryVoid<Boolean> resultCallback) {
+    private void editServiceProperties(final PublishedService svc, final Functions.UnaryVoid<Boolean> resultCallback, boolean canUpdate) {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, svc);
+        final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, svc, canUpdate);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

@@ -101,6 +101,7 @@
         <property name="soap" column="soap" type="boolean"/>
         <property name="routingUri" column="routing_uri" type="string"/>
         <property name="httpMethodNames" column="http_methods" type="text"/>
+        <property name="laxResolution" column="lax_resolution" type="boolean"/>
     </class>
 
     <class name="com.l7tech.server.identity.cert.CertEntryRow" table="client_cert" lazy="false">

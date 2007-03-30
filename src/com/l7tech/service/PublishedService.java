@@ -444,6 +444,14 @@ public class PublishedService extends NamedEntityImp {
         return multipart.booleanValue();
     }
 
+    public boolean isLaxResolution() {
+        return laxResolution;
+    }
+
+    public void setLaxResolution(boolean laxResolution) {
+        this.laxResolution = laxResolution;
+    }
+
     /**
      * 
      */
@@ -471,6 +479,7 @@ public class PublishedService extends NamedEntityImp {
     private boolean soap = true;
     private String routingUri;
     private String httpMethodNames = METHODNAMES_SOAP; // invariants: never null, always in sync with httpMethods
+    private boolean laxResolution;
 
     private transient WsdlStrategy wsdlStrategy;
     private transient Wsdl _parsedWsdl;

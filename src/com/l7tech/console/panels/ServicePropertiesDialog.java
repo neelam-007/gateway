@@ -76,14 +76,17 @@ public class ServicePropertiesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JRadioButton enableRadio;
-    private JRadioButton diableRadio;
+    private JRadioButton disableRadio;
     private JButton editWSDLButton;
     private JEditorPane routingURL;
+    private JCheckBox laxResolutionCheckbox;
     private String ssgURL;
+    private final boolean canUpdate;
 
-    public ServicePropertiesDialog(Frame owner, PublishedService svc) {
+    public ServicePropertiesDialog(Frame owner, PublishedService svc, boolean canUpdate) {
         super(owner, true);
         subject = svc;
+        this.canUpdate = canUpdate;
         initialize();
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
@@ -102,7 +105,7 @@ public class ServicePropertiesDialog extends JDialog {
         // set initial data
         nameField.setText(subject.getName());
         if (subject.isDisabled()) {
-            diableRadio.setSelected(true);
+            disableRadio.setSelected(true);
         } else {
             enableRadio.setSelected(true);
         }
@@ -203,6 +206,7 @@ public class ServicePropertiesDialog extends JDialog {
             }
             wsdlPanel.setLayout(new BorderLayout());
             wsdlPanel.add(xmlContainer.getView(), BorderLayout.CENTER);
+            laxResolutionCheckbox.setSelected(subject.isLaxResolution());
         }
         // event handlers
         okButton.addActionListener(new ActionListener() {
@@ -267,6 +271,24 @@ public class ServicePropertiesDialog extends JDialog {
         });
 
         updateURL();
+
+        enableIfCanUpdate(nameField);
+        enableIfCanUpdate(okButton);
+        enableIfCanUpdate(resetWSDLButton);
+        enableIfCanUpdate(noURIRadio);
+        enableIfCanUpdate(customURIRadio);
+        enableIfCanUpdate(uriField);
+        enableIfCanUpdate(editWSDLButton);
+        enableIfCanUpdate(getCheck);
+        enableIfCanUpdate(putCheck);
+        enableIfCanUpdate(postCheck);
+        enableIfCanUpdate(deleteCheck);
+        enableIfCanUpdate(disableRadio);
+        enableIfCanUpdate(enableRadio);
+    }
+
+    private void enableIfCanUpdate(final Component component) {
+        component.setEnabled(canUpdate && component.isEnabled());
     }
 
     private void help() {
@@ -360,6 +382,7 @@ public class ServicePropertiesDialog extends JDialog {
             methods.add("DELETE");
         }
         subject.setHttpMethods(methods);
+        subject.setLaxResolution(laxResolutionCheckbox.isSelected());
 
         if (newWSDL != null) {
             try {
