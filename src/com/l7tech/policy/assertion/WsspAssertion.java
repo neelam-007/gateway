@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+
 /**
  * Assertion for WS-Security Policy compliance.
  *
@@ -8,5 +10,6 @@ package com.l7tech.policy.assertion;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
+@RequiresSOAP()
 public class WsspAssertion extends Assertion {
 }

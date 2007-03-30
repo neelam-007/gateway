@@ -6,11 +6,13 @@
 package com.l7tech.policy.assertion.credential.wss;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 
 /**
  * @author alex
  * @version $Revision$
  */
+@RequiresSOAP()
 public abstract class WssCredentialSourceAssertion extends Assertion {
     /**
      * Always an credential source

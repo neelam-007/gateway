@@ -1,6 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 
 /**
  * Base class for XML Security Assertions (Confidentiality and Integrity). Shares the concept
@@ -12,6 +13,7 @@ import com.l7tech.policy.assertion.XpathBasedAssertion;
  * User: flascell<br/>
  * Date: Jan 17, 2005<br/>
  */
+@RequiresSOAP
 public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion implements SecurityHeaderAddressable {
 
     public XmlSecurityRecipientContext getRecipientContext() {

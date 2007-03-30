@@ -3,12 +3,14 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 
 /**
  * Creates a Security Token element and adds it to the SOAP security header in the response.
  *
  * @author alex
  */
+@RequiresSOAP()
 public class ResponseWssSecurityToken extends Assertion implements ResponseWssConfig {
     public static final SecurityTokenType[] SUPPORTED_TOKEN_TYPES = new SecurityTokenType[] { SecurityTokenType.WSS_USERNAME };
 

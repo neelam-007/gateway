@@ -1,6 +1,7 @@
 package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 
 /**
  *  Assertion for WS-Federation using Passive Request Profile.
@@ -8,6 +9,7 @@ import com.l7tech.policy.assertion.Assertion;
  * @author $Author$
  * @version $Revision$
  */
+@RequiresSOAP()
 public class WsFederationPassiveTokenExchange extends Assertion {
 
     //- PUBLIC

@@ -1,11 +1,14 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+
 /**
  * Assertion for WSI-SAML Token Profile compliance.
  *
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
+@RequiresSOAP()
 public class WsiSamlAssertion extends Assertion {
 
     //- PUBLIC

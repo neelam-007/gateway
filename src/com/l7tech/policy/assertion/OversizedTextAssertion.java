@@ -5,9 +5,12 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.assertion.annotation.RequiresXML;
+
 /**
  * Assertion that can limit length of attribute and text nodes.
  */
+@RequiresXML()
 public class OversizedTextAssertion extends Assertion {
     public static final long DEFAULT_ATTR_LIMIT = 2048;
     public static final long DEFAULT_TEXT_LIMIT = 16384;

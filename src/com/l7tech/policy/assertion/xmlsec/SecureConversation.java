@@ -1,6 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 
 /**
  * This assertion requires the client to establish a secure conversation prior
@@ -18,6 +19,7 @@ import com.l7tech.policy.assertion.Assertion;
  * Date: Aug 4, 2004<br/>
  * $Id$<br/>
  */
+@RequiresSOAP()
 public class SecureConversation extends Assertion {
     /**
      *Secure Conversation is always credential source

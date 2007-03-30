@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+
 /**
  * Assertion for WSI-BSP compliance.
  *
@@ -15,6 +17,7 @@ package com.l7tech.policy.assertion;
  * @author $Author$
  * @version $Revision$
  */
+@RequiresSOAP()
 public class WsiBspAssertion extends Assertion {
 
     //- PUBLIC

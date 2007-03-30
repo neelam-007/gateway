@@ -5,6 +5,7 @@ import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
@@ -653,17 +654,9 @@ class PathValidator {
     }
 
     private boolean onlyForSoap(Assertion a) {
-        return a instanceof SecureConversation || a instanceof WssBasic ||
-               a instanceof RequestWssConfidentiality || a instanceof RequestWssIntegrity ||
-               a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
-               a instanceof ResponseWssConfidentiality || a instanceof ResponseWssIntegrity ||
-               a instanceof RequestWssSaml || a instanceof SwAAssertion ||
-               a instanceof RequestWssTimestamp || a instanceof ResponseWssTimestamp ||
-               a instanceof RequestWssKerberos || a instanceof WsiBspAssertion ||
-               a instanceof ResponseWssSecurityToken || a instanceof WsFederationPassiveTokenRequest || 
-               a instanceof WsFederationPassiveTokenExchange || a instanceof WsspAssertion ||
-               a instanceof WsiSamlAssertion || a instanceof WsTrustCredentialExchange;
-    }
+        if (a == null) return false;
+        return a.getClass().isAnnotationPresent(RequiresSOAP.class);
+     }
 
     private boolean hasPreconditionAssertion(Assertion a) {
         // check preconditions for both SslAssertion and  ResponseWssIntegrity assertions - see processPrecondition()

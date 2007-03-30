@@ -8,6 +8,7 @@ import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.annotation.RequiresXML;
 import org.apache.xalan.templates.ElemVariable;
 import org.apache.xalan.templates.StylesheetRoot;
 
@@ -36,6 +37,7 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
+@RequiresXML()
 public class XslTransformation extends Assertion implements UsesVariables, UsesResourceInfo {
     private static final Logger logger = Logger.getLogger(XslTransformation.class.getName());
 

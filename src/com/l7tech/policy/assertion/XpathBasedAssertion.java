@@ -7,6 +7,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.policy.assertion.annotation.RequiresXML;
 
 import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.SOAPConstants;
@@ -16,6 +17,7 @@ import java.util.Map;
 /**
  * Base class for XML security assertions whose primary configurable feature is an Xpath expression.
  */
+@RequiresXML()
 public abstract class XpathBasedAssertion extends Assertion {
     protected XpathExpression xpathExpression;
 

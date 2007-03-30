@@ -4,6 +4,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.util.TimeUnit;
 
@@ -12,6 +13,7 @@ import com.l7tech.common.util.TimeUnit;
  *
  * @author alex
  */
+@RequiresSOAP()
 public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig {
 
     /**
