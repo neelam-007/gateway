@@ -6,6 +6,7 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
@@ -83,6 +84,7 @@ class PathValidator {
 
     boolean seenAccessControl = false;
     boolean seenResponse = false;
+    boolean seenParsing = false;
     boolean seenRouting = false;
 
     PathValidator(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
@@ -162,6 +164,10 @@ class PathValidator {
             validateRegex((Regex)a);
         } else if (a instanceof HtmlFormDataAssertion) {
             processHtmlFormDataAssertion((HtmlFormDataAssertion)a);
+        }
+
+        if (parsesXML(a)) {
+            seenParsing = true;
         }
 
         if (a instanceof SetsVariables) {
@@ -654,9 +660,14 @@ class PathValidator {
     }
 
     private boolean onlyForSoap(Assertion a) {
-        if (a == null) return false;
-        return a.getClass().isAnnotationPresent(RequiresSOAP.class);
-     }
+        return a != null && a.getClass().isAnnotationPresent(RequiresSOAP.class);
+    }
+
+    private boolean parsesXML(Assertion a) {
+        return a != null &&
+              (a.getClass().isAnnotationPresent(RequiresXML.class) ||
+               a.getClass().isAnnotationPresent(RequiresSOAP.class));
+    }
 
     private boolean hasPreconditionAssertion(Assertion a) {
         // check preconditions for both SslAssertion and  ResponseWssIntegrity assertions - see processPrecondition()
@@ -670,8 +681,7 @@ class PathValidator {
                a instanceof WsFederationPassiveTokenRequest ||
                a instanceof ResponseWssConfig ||
               (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired()) ||
-               a instanceof WssBasic ||
-               a instanceof ResponseWssSecurityToken;
+               a instanceof WssBasic || a instanceof ResponseWssSecurityToken;
     }
 
     private boolean seenCredentials(Assertion context) {

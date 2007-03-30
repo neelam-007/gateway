@@ -5,8 +5,6 @@ import java.lang.annotation.*;
 /**
  * This annotation is declared on an Assetion class to represent the concept that the Assertion
  * will fail at runtime unless the message being processed is XML.
- * The @RequiresSOAP annotation automatically inherits this one so that you dont need to declare
- * both for soap assertions.
  * <p/>
  * <p/>
  * <br/><br/>

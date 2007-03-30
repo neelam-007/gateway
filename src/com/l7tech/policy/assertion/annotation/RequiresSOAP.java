@@ -12,8 +12,8 @@ import java.lang.annotation.*;
  * User: flascell<br/>
  * Date: Mar 29, 2007<br/>
  */
-@Documented
 @RequiresXML
+@Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Target(ElementType.TYPE)

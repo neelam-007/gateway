@@ -122,6 +122,12 @@ public class DefaultPolicyValidator extends PolicyValidator {
             r.addWarning(new PolicyValidatorResult.
               Warning(lastAssertion, ap, "No route assertion.", null));
         }
+        if (!pv.seenParsing) {
+            if (!service.isSoap()) {
+                r.addWarning(new PolicyValidatorResult.
+                  Warning(lastAssertion, ap, "This path potentially allows non-xml content through.", null));
+            }
+        }
         if (!pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE) && pv.seenResponse) {
             r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, ap,
               "No credential assertion is present in the policy. The" +
