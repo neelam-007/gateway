@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+
 /**
  * Asserts that a message being processed is identifiable as for a specific operation based on a service's WSDL.
  * <p/>
@@ -9,6 +11,7 @@ package com.l7tech.policy.assertion;
  * User: flascell<br/>
  * Date: May 17, 2006<br/>
  */
+@RequiresSOAP()
 public class Operation extends Assertion {
     private String operationName;
 

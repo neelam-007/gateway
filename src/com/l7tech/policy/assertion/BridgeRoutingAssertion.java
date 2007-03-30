@@ -5,10 +5,13 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+
 
 /**
  * Represents a routing assertion that provides the full functionality of the SecureSpan Bridge.
  */
+@RequiresSOAP()
 public class BridgeRoutingAssertion extends HttpRoutingAssertion {
     public BridgeRoutingAssertion(String protectedServiceUrl, String login, String password, String realm, int maxConnections) {
         super(protectedServiceUrl, login, password, realm, maxConnections);
