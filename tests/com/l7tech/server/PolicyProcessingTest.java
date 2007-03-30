@@ -165,6 +165,9 @@ public class PolicyProcessingTest extends TestCase {
 
             if (serviceInfo.length > 2) {
                 ps.setWsdlXml(new String(loadResource(serviceInfo[2])));
+                ps.setLaxResolution(false);
+            } else {
+                ps.setLaxResolution(true);
             }
 
             services.put(ps.getOid(), ps);
