@@ -94,7 +94,8 @@ public class TarariMessageContextImpl implements TarariMessageContext {
                         String ns = first.getNamespace(pf);
                         String ln = first.getLocalName();
                         if (ns == null) ns = ""; // treat no namespace as same as namespace URI of empty string
-                        payloadNames.add(new QName(ns, ln, pf));
+                        QName q = pf == null ? new QName(ns, ln) : new QName(ns, ln, pf);
+                        payloadNames.add(q);
                     }
                 }
             }
