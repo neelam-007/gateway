@@ -192,18 +192,18 @@ public class LicenseDialog extends JDialog {
                                         cancel);
                                 if (confResult != 0)
                                     return;
-                            } else {
-                                // Show click wrap license
-                                InputStream agreementStream = getClass().getClassLoader().getResourceAsStream(CLICKWRAP_PATH);
-                                String agreementText = agreementStream != null ?
-                                        new String(HexUtils.slurpStream(agreementStream)) : "Missing " + CLICKWRAP_PATH;
-                                ClickwrapDialog clickWrap = new ClickwrapDialog(LicenseDialog.this, agreementText);
-                                clickWrap.pack();
-                                Utilities.centerOnScreen(clickWrap);
-                                clickWrap.setVisible(true);
-                                if (!clickWrap.isConfirmed())
-                                    return;
                             }
+
+                            // Show click wrap license
+                            InputStream agreementStream = getClass().getClassLoader().getResourceAsStream(CLICKWRAP_PATH);
+                            String agreementText = agreementStream != null ?
+                                    new String(HexUtils.slurpStream(agreementStream)) : "Missing " + CLICKWRAP_PATH;
+                            ClickwrapDialog clickWrap = new ClickwrapDialog(LicenseDialog.this, agreementText);
+                            clickWrap.pack();
+                            Utilities.centerOnScreen(clickWrap);
+                            clickWrap.setVisible(true);
+                            if (!clickWrap.isConfirmed())
+                                return;
 
                             try {
                                 admin.installNewLicense(licenseXml);
