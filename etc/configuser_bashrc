@@ -1,6 +1,8 @@
 set -u
 set -e
 
+trap doLogout INT
+
 SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
 CONFWIZARD="/ssg/configwizard/ssgconfig.sh"
 UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh"
@@ -11,6 +13,10 @@ checkForUpdater() {
     else
         UPDATER_PRESENT=""
     fi
+}
+
+doLogout() {
+    exit
 }
 
 checkForUpdater
@@ -43,7 +49,7 @@ do
                     echo "Press enter to continue";
                     read;
                     clear;;
-                3)  exit;;
+                3)  doLogout;;
                 4)  echo -n "Are you sure you want to reboot the SecureSpan Gateway? [y/n]: "
                     read okToReboot
                     if [ "$okToReboot" == "y" ] || [ "$okToReboot" == "yes" ] ; then
