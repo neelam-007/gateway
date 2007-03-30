@@ -590,4 +590,30 @@ public class HexUtils {
             throw new CausedIOException(e);
         }            
     }
+
+    /**
+     * Replace a list of single bytes in a buffer with corresponding bytes from a second list.
+     * For example, with these arguments:
+     * <pre>
+     *      buffer = { 01 02 03 04 05 06 07 }
+     *      find = { 03 05 }
+     *      replace = { fe ff }
+     * </pre>
+     * this method would mutate buffer into the following:
+     * <pre>
+     *      { 01 02 fe 04 ff 06 07 }
+     * </pre>
+     *
+     * @param big          the buffer whose bytes to replace.
+     * @param find         a list of bytes to find.  Must be the same length as replaceWith.
+     * @param replaceWith  a list of replacement bytes.  Must be the same length as find.
+     */
+    public static void replaceBytes(byte[] big, int[] find, int[] replaceWith) {
+        for (int i = 0; i < big.length; i++) {
+            for (int j = 0; j < find.length; j++) {
+                if (big[i] == (byte)(find[j] & 0xFF))
+                    big[i] = (byte)replaceWith[j];
+            }
+        }
+    }
 }

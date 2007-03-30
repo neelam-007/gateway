@@ -12,11 +12,7 @@ import com.l7tech.common.License;
 import com.l7tech.common.gui.widgets.LicensePanel;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.Functions;
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -40,6 +36,7 @@ import java.security.*;
 public class LicenseDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(LicenseDialog.class.getName());
     private static final String CLICKWRAP_PATH = "com/l7tech/console/resources/clickwrap.txt";
+    private static final String CLICKWRAP_ENCODING = "ISO8859-1";
 
     final LicensePanel licensePanel;
     private JPanel rootPanel;
@@ -195,14 +192,7 @@ public class LicenseDialog extends JDialog {
                             }
 
                             // Show click wrap license
-                            InputStream agreementStream = getClass().getClassLoader().getResourceAsStream(CLICKWRAP_PATH);
-                            String agreementText = agreementStream != null ?
-                                    new String(HexUtils.slurpStream(agreementStream)) : "Missing " + CLICKWRAP_PATH;
-                            ClickwrapDialog clickWrap = new ClickwrapDialog(LicenseDialog.this, agreementText);
-                            clickWrap.pack();
-                            Utilities.centerOnScreen(clickWrap);
-                            clickWrap.setVisible(true);
-                            if (!clickWrap.isConfirmed())
+                            if (!eulaConfirmed())
                                 return;
 
                             try {
@@ -306,5 +296,37 @@ public class LicenseDialog extends JDialog {
         } catch (RemoteException e) {
             logger.log(Level.SEVERE, "Unable to get current license: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    /**
+     * Show the click-wrap EULA dialog.
+     *
+     * @return true if the user clicked "I agree"
+     * @throws IOException if there is a problem reading the license text.
+     */
+    private boolean eulaConfirmed() throws IOException {
+        boolean eulaOk = false;
+        InputStream eulaStream = null;
+        try {
+            eulaStream = getClass().getClassLoader().getResourceAsStream(CLICKWRAP_PATH);
+            byte[] eulaBytes = HexUtils.slurpStream(eulaStream);
+            // Replace "smart" quotes with smart quotes
+            HexUtils.replaceBytes(
+                    eulaBytes,
+                    new int[] { 0x82, 0x84, 0x91, 0x92, 0x93, 0x94, 0x8b, 0x9b, 0x96, 0x97 },
+                    new int[] { ',',  ',',  '\'', '\'', '\'', '\'',  '<',  '>',  '-',  '-' });
+            String eulaStr =
+                    eulaStream != null
+                    ? new String(eulaBytes, CLICKWRAP_ENCODING)
+                    : "Missing " + CLICKWRAP_PATH;
+            ClickwrapDialog clickWrap = new ClickwrapDialog(LicenseDialog.this, eulaStr);
+            clickWrap.pack();
+            Utilities.centerOnScreen(clickWrap);
+            clickWrap.setVisible(true);
+            eulaOk = clickWrap.isConfirmed();
+        } finally {
+            ResourceUtils.closeQuietly(eulaStream);
+        }
+        return eulaOk;
     }
 }
