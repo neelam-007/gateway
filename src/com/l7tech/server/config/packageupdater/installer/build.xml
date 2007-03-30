@@ -47,14 +47,27 @@
               message="Set the version information property (-Dupdateinstaller.version=xxx) property before running!"/>
 
         <echo message="building the source and jar"/>
-
+        <dirname property="basedir" file="${ant.file}"/>
+        
         <mkdir dir="${build.dir}"/>
         <javac srcdir="." destdir="${build.dir}" />
 
         <mkdir dir="${checksum.dir}"/>
+        <pathconvert property="directorylisting" pathsep="${line.separator}">
+            <map from="${basedir}/" to=""/>
+            <path>
+                <fileset dir="${bin.dir}" includes="**/*"/>
+                <fileset dir="${data.dir}" includes="**/*"/>
+            </path>
+        </pathconvert>
+
+        <echo file="${updatefiles.list}" message="${directorylisting}"/>
         <checksum todir="${checksum.dir}">
-            <fileset dir="${bin.dir}" includes="**/*"/>
-            <fileset dir="${data.dir}" includes="**/*"/>
+            <fileset dir="." >
+                <include name="${updatefiles.list} "/>
+                <include name="${bin.dir}/**/*"/>
+                <include name="${data.dir}/**/*"/>
+            </fileset>
         </checksum>
 
         <jar basedir="${build.dir}" destfile="${jar.unsigned.name}" manifest="${manifest.name}"/>
@@ -62,12 +75,13 @@
 
     <target name="makeupdatepackage" depends="package.sign">
         <zip destfile="${updatepackage.name}-${updateinstaller.version}.sup">
-            <fileset dir=".">
-                <include name="${bin.dir}/**/*"/>
+           <zipfileset dir="." includes="**/*.sh" filemode="755"/>
+           <fileset dir=".">
                 <include name="${data.dir}/**/*"/>
                 <include name="${jar.signed.name}"/>
                 <include name="${description.file}"/>
                 <include name="${readme.file}"/>
+                <include name="${updatefiles.list}"/>
             </fileset>
         </zip>
 

@@ -1,19 +1,22 @@
 package com.l7tech.server.config.packageupdater;
 
+import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.BaseConfigurationCommand;
-import com.l7tech.common.util.HexUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Logger;
+import java.util.jar.Attributes;
+import java.net.URLClassLoader;
+import java.net.URL;
+import java.net.JarURLConnection;
+import java.net.MalformedURLException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.JarURLConnection;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.jar.Attributes;
-import java.util.logging.Logger;
+import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 
 /**
  * User: megery
@@ -33,20 +36,32 @@ public class PackageUpdateConfigCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = false;
         PackageUpdateConfigBean.UpdatePackageInfo info = packageBean.getPackageInfo();
+//        success = loadAndExecuteJar(info);
+        success = executeJar(info);
+        if (success)
+            FileUtils.deleteDir(new File(info.getExpandedLocation()));
+
+        return success;
+    }
+
+    private boolean executeJar(PackageUpdateConfigBean.UpdatePackageInfo info) {
+        boolean success = false;
         if (info != null) {
             String expandedLocation = info.getExpandedLocation();
             File f = new File(expandedLocation, PackageUpdateConfigBean.INSTALLER_JAR_FILENAME);
             if (f.exists()) {
-                ProcessBuilder pb = new ProcessBuilder("java", "-jar", f.getAbsolutePath());
+                String javaExe = System.getProperty("java.home") + "/bin/java";
+                ProcessBuilder pb = new ProcessBuilder(javaExe, "-jar", f.getAbsolutePath());
                 pb.redirectErrorStream(true);
                 pb.directory(f.getParentFile());
                 try {
+                    logger.info("Launching the Update Installer [" + pb.command() + "]");
                     Process p = pb.start();
                     success = true;
                     int retCode = p.waitFor();
                     byte[] buff = HexUtils.slurpStream(p.getInputStream());
-                    logger.info("OUTPUT OF INSTALLER (return code=" + String.valueOf(retCode) + ")");
-                    logger.info(new String(buff));
+                    System.out.println("OUTPUT OF INSTALLER (return code=" + String.valueOf(retCode) + ")");
+                    System.out.println(new String(buff));
                 } catch (IOException e) {
                     logger.warning("Exception while running the installer: " + e.getMessage());
                     success = false;
@@ -54,26 +69,37 @@ public class PackageUpdateConfigCommand extends BaseConfigurationCommand {
                     logger.warning("Exception while running the installer: " + e.getMessage());
                     success = false;
                 }
-//                try {
-//                    URL jarUrl = f.toURL();
-//                    JarClassLoader jarcl = new JarClassLoader(jarUrl);
-//                    String mainClass = jarcl.getMainClassName();
-//                    jarcl.invokeClass(mainClass, new String[0]);
-//                    success = true;
-//                } catch (MalformedURLException e) {
-//                    logger.severe(MessageFormat.format("Error while loading the Update Installer. Cannot proceed.({0})\n{1}", e.getClass().getName(), e.getMessage()));
-//                } catch (IOException e) {
-//                    logger.severe(MessageFormat.format("Error while loading the Update Installer. Cannot proceed.({0})\n{1}", e.getClass().getName(), e.getMessage()));
-//                } catch (NoSuchMethodException e) {
-//                    logger.severe(MessageFormat.format("Error while loading the Update Installer. Cannot proceed.({0})\n{1}", e.getClass().getName(), e.getMessage()));
-//                } catch (InvocationTargetException e) {
-//                    logger.severe(MessageFormat.format("Error while loading the Update Installer. Cannot proceed.({0})\n{1}", e.getClass().getName(), e.getMessage()));
-//                } catch (ClassNotFoundException e) {
-//                    logger.severe(MessageFormat.format("Error while loading the Update Installer. Cannot proceed.({0})\n{1}", e.getClass().getName(), e.getMessage()));
-//                }
             }
         }
+        return success;
+    }
 
+    private boolean loadAndExecuteJar(PackageUpdateConfigBean.UpdatePackageInfo info) {
+        boolean success = true;
+        File f = new File(info.getExpandedLocation(), PackageUpdateConfigBean.INSTALLER_JAR_FILENAME);
+        String errorMsg = "Could not run the installer at " + info.getExpandedLocation() + ". ({0})";
+        try {
+            URL url = f.toURL();
+            JarClassLoader jcl = new JarClassLoader(url);
+            String mainClass = jcl.getMainClassName();
+            jcl.invokeClass(mainClass, new String[0]);
+            success = true;
+        } catch (MalformedURLException e) {
+            logger.severe(MessageFormat.format(errorMsg, e.getMessage()));
+            success = false;
+        } catch (IOException e) {
+            logger.severe(MessageFormat.format(errorMsg, e.getMessage()));
+            success = false;
+        } catch (NoSuchMethodException e) {
+            logger.severe(MessageFormat.format(errorMsg, e.getMessage()));
+            success = false;
+        } catch (InvocationTargetException e) {
+            logger.severe(MessageFormat.format(errorMsg, e.getMessage()));
+            success = false;
+        } catch (ClassNotFoundException e) {
+            logger.severe(MessageFormat.format(errorMsg, e.getMessage()));
+            success = false;           
+        }
         return success;
     }
 
@@ -119,7 +145,7 @@ public class PackageUpdateConfigCommand extends BaseConfigurationCommand {
         public void invokeClass(String name, String[] args)
             throws ClassNotFoundException,
                    NoSuchMethodException,
-                   InvocationTargetException {
+                InvocationTargetException {
             Class c = loadClass(name);
             Method m = c.getMethod("main", new Class[] { args.getClass() });
             m.setAccessible(true);

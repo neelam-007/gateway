@@ -1,13 +1,10 @@
 package com.l7tech.server.config.packageupdater.installer;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.*;
 import java.text.MessageFormat;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Arrays;
 
 /**
  * User: megery
@@ -17,6 +14,10 @@ import java.util.TreeSet;
 public class UpdatePackageInstaller {
     private static final String BIN_DIRECTORY = "bin";
     Set<File> checkFiles;
+    private File checkDir;
+    private File stagesDir;
+    private File binDir;
+
     public UpdatePackageInstaller() {
         checkFiles = new TreeSet<File>();
     }
@@ -32,23 +33,42 @@ public class UpdatePackageInstaller {
     }
 
     public void doInstall() throws InstallerException {
+        ensureStructure();
+        System.out.println("Found expected directory structure.");
+
         ensureCheckScripts();
-        System.out.println("Performing the package update pre-checks");
+        System.out.println("Found pre-update checks, now checking to see if it's ok to install the updates.");
+
         executeCheckScripts();
+
         executeBinScripts();
     }
 
+    private void ensureStructure() throws InstallerException {
+        binDir = new File("bin");
+        if (!binDir.exists())
+            throw new InstallerException("No bin directory found. Cannot proceed with the update");
+
+        stagesDir = new File(binDir, "stages");
+        if (!stagesDir.exists())
+            throw new InstallerException("No stages directory found. Cannot proceed with the update");
+
+        checkDir = new File(stagesDir, "check");
+        if (!checkDir.exists())
+            throw new InstallerException("No check directory found. Cannot proceed with the update");
+    }
+
     private void executeBinScripts() throws InstallerException {
-//        File[] stages = stagesDir.listFiles(new FilenameFilter() {
-//            public boolean accept(File dir, String name) {
-//                return !name.equalsIgnoreCase("check");
-//            }
-//        });
-//
-//        Arrays.sort(stages);
-//        for (File stage : stages) {
-//            executeScriptsInDirectory(stage);
-//        }
+        File[] stages = binDir.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return !name.equalsIgnoreCase("check");
+            }
+        });
+
+        Arrays.sort(stages);
+        for (File stage : stages) {
+            executeScriptsInDirectory(stage);
+        }
     }
 
     private void executeScriptsInDirectory(File stage) throws InstallerException {
@@ -59,9 +79,9 @@ public class UpdatePackageInstaller {
     }
 
     private void executeCheckScripts() throws InstallerException {
-//        for (File checkFile : checkFiles) {
-//            executeSingleScript(checkFile);
-//        }
+        for (File checkFile : checkFiles) {
+            executeSingleScript(checkFile);
+        }
     }
 
     private void executeSingleScript(File scriptFile) throws InstallerException {
@@ -71,12 +91,14 @@ public class UpdatePackageInstaller {
         Process p;
         InputStream is = null;
         try {
+            System.out.println("Executing " + scriptFile.getAbsolutePath());
             p = pb.start();
-            is = p.getInputStream();
+            BufferedInputStream bis = new BufferedInputStream(p.getInputStream());
             byte[] buf = new byte[512];
-            while(is.read(buf) != -1) {
+            while(bis.read(buf) != -1) {
                 System.out.println(new String(buf));
             }
+
             int retCode = p.waitFor();
             if (retCode != 0) {
                 throw new InstallerException(MessageFormat.format("Script \"{0}\" executed and returned a non-zero result. Aborting the update!", scriptFile.getAbsolutePath()));
@@ -93,29 +115,13 @@ public class UpdatePackageInstaller {
     }
 
     private void ensureCheckScripts() throws InstallerException {
-        URL binDirUrl = getClass().getClassLoader().getResource(BIN_DIRECTORY);
-        if (binDirUrl == null)
-            throw new InstallerException("No bin directory found. Cannot proceed with the update");
+        File[] checkFilesList = checkDir.listFiles();
+        if (checkFilesList == null) {
+            throw new InstallerException("No pre-update check scripts were found. Cannot proceed with update");            
+        }
 
-        if ("file".equals(binDirUrl.getProtocol())) {
-            try {
-                File stagesDir = new File(new File(binDirUrl.toURI()), "stages");
-                if (!stagesDir.exists())
-                    throw new InstallerException("No stages directory found. Cannot proceed with the update");
-
-                File checkDir = new File(stagesDir, "check");
-                if (!checkDir.exists())
-                    throw new InstallerException("No check directory found. Cannot proceed with the update");
-
-                File[] checkFilesList = checkDir.listFiles();
-                if (checkFilesList != null) {
-                    for (File checkFileName : checkFilesList) {
-                        checkFiles.add(checkFileName);
-                    }
-                }
-            } catch(URISyntaxException use) {
-                throw new InstallerException("Error while listing the files in the check directory. Cannot proceed with the update");
-            }
+        for (File checkFileName : checkFilesList) {
+            checkFiles.add(checkFileName);
         }
     }
 
