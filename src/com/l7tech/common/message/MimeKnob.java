@@ -23,10 +23,48 @@ public interface MimeKnob extends MessageKnob {
      */
     boolean isMultipart();
 
+    /**
+     * Obtain an iterator that can be used to lazily iterate some or all parts in this MimeBody.
+     * The iterator can be abandoned at any time, in which case any still-unread parts will be left in the main InputStream
+     * (as long as they hadn't already needed to be read due to other method calls on MimeBody or PartInfo).
+     * <p>
+     * Since this iterator is roughly equivalent to just calling {@link #getPart(int)}
+     * while there are more parts possible, it is safe to call other MimeKnob and {@link PartInfo} methods
+     * while iterating.  The usual caveats regarding PartInfo methods apply though: specifically, it is not safe to
+     * call any MimeKnob or PartInfo methods whatsoever if any destroyAsRead InputStreams are open
+     * on a PartInfo.
+     * <p>
+     * Note that, differing from {@link java.util.Iterator}, this PartIterator might throw NoSuchPartException
+     * from next() even if hasNext() returned true, if the input message was not properly terminated.
+     *
+     * @return a {@link PartIterator} ready to iterate all parts of this message from beginning to end.  Never null.
+     * @throws java.io.IOException  if there is a problem reading enough of the message to start the iterator
+     */
     PartIterator getParts() throws IOException;
 
+    /**
+     * Get the specified PartInfo from this message by ordinal position, with the first part as part #0.
+     * Note that getting the parts out of order is supported but will involve reading and stashing the
+     * intervening parts in the current StashManager.
+     *
+     * @param num   the ordinal number of the part within this multipart message, where the first part is Part #0
+     * @return the PartInfo describing the specified MIME part.  Never null.
+     * @throws NoSuchPartException if the specified part does not exist in this message
+     * @throws IOException if there was a problem reading the message stream
+     */
     PartInfo getPart(int num) throws IOException, NoSuchPartException;
 
+    /**
+     * Get the specified PartInfo from this message by Content-ID.  If the specified Content-ID has not already
+     * been found, this may require reading, stashing, and parsing the rest of the message InputStream all
+     * the way up to and including the closing delimiter of the multipart message in order to rule out the
+     * existence of an attachment with this Content-ID.
+     *
+     * @param contentId   the Content-ID to look for, without any enclosing angle brackets.  May not be null.
+     * @return the PartInfo describing the MIME part with the specified Content-ID.  Never null.
+     * @throws NoSuchPartException if the entire message was examined and no part with that Content-ID was found.
+     * @throws IOException if there was a problem reading the message stream
+     */
     PartInfo getPartByContentId(String contentId) throws IOException, NoSuchPartException;
 
     /**
