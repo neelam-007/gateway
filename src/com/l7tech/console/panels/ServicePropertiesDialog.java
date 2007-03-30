@@ -285,6 +285,7 @@ public class ServicePropertiesDialog extends JDialog {
         enableIfCanUpdate(deleteCheck);
         enableIfCanUpdate(disableRadio);
         enableIfCanUpdate(enableRadio);
+        enableIfCanUpdate(laxResolutionCheckbox);
     }
 
     private void enableIfCanUpdate(final Component component) {
