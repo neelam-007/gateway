@@ -1,7 +1,6 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.xml.Wsdl;
@@ -78,6 +77,10 @@ public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceRe
         }
         
         return out;
+    }
+
+    public boolean isSoap() {
+        return true;
     }
 
     protected abstract T getTargetValue( Definition def, BindingOperation operation );

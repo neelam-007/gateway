@@ -5,18 +5,15 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.Decorator;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.StaticResourceInfo;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.UnknownAssertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.ServiceReloadEvent;
@@ -78,10 +75,17 @@ public class ServiceCache
     // read-write lock for thread safety
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
 
-    /** Not final due to Spring requirement -- see {@link #initApplicationContext} */
-    private ServiceResolver[] resolvers; 
+    /**
+     * Resolvers that are used to actually resolve services.
+     * Not final due to Spring requirement -- see {@link #initApplicationContext}
+     */
+    private ServiceResolver[] activeResolvers;
 
-    private final boolean strictSoapResolution;
+    /**
+     * Resolvers that are notified of CRUD events on services.
+     * Not final due to Spring requirement -- see {@link #initApplicationContext}
+     */
+    private ServiceResolver[] notifyResolvers;
 
     //private final PeriodicExecutor checker = new PeriodicExecutor( this );
     private boolean running = false;
@@ -89,6 +93,7 @@ public class ServiceCache
     private ServerPolicyFactory policyFactory;
     private Auditor auditor;
     private boolean hasCatchAllService = false;
+    private SoapOperationResolver soapOperationResolver;
 
 
     /**
@@ -99,9 +104,7 @@ public class ServiceCache
                         Timer timer,
                         ServerConfig config)
     {
-        if (policyFactory == null) {
-            throw new IllegalArgumentException("Policy Factory is required");
-        }
+        if (policyFactory == null) throw new IllegalArgumentException("Policy Factory is required");
         if (timer == null) timer = new Timer("Service cache refresh", true);
 
         this.policyFactory = policyFactory;
@@ -110,15 +113,25 @@ public class ServiceCache
         else
             this.decorators = decorators;
         this.checker = timer;
-
-        strictSoapResolution = Boolean.valueOf(config.getPropertyCached(ServerConfig.PARAM_STRICT_SOAP_RESOLUTION));
     }
 
     @Override
     protected void initApplicationContext() throws BeansException {
         ApplicationContext spring = getApplicationContext();
-        ServiceResolver soapResolver = strictSoapResolution ? new SoapOperationResolver(spring) : new UrnResolver(spring);
-        resolvers = new ServiceResolver[] {new OriginalUrlServiceOidResolver(spring), new HttpUriResolver(spring), new SoapActionResolver(spring), soapResolver};
+
+        activeResolvers = new ServiceResolver[] {
+            new OriginalUrlServiceOidResolver(spring),
+            new HttpUriResolver(spring),
+            new SoapActionResolver(spring), 
+            new UrnResolver(spring),
+        };
+
+        soapOperationResolver = new SoapOperationResolver(spring);
+
+        ServiceResolver[] allResolvers = new ServiceResolver[activeResolvers.length+1];
+        System.arraycopy(activeResolvers, 0, allResolvers, 0, activeResolvers.length);
+        allResolvers[activeResolvers.length] = soapOperationResolver;
+        this.notifyResolvers = allResolvers;
     }
 
     public synchronized void initiateIntegrityCheckProcess() {
@@ -259,26 +272,28 @@ public class ServiceCache
                 return null;
             }
 
-            for (ServiceResolver resolver : resolvers) {
+            for (ServiceResolver resolver : activeResolvers) {
                 Set<PublishedService> resolvedServices;
-                boolean passthrough = strictSoapResolution;
-                try {
-                    resolvedServices = resolver.resolve(req, serviceSet);
-                } catch (NoServiceOIDResolutionPassthroughException e) {
-                    resolvedServices = serviceSet;
-                    passthrough = true;
+                Result result = resolver.resolve(req, serviceSet);
+                if (result == Result.NOT_APPLICABLE) {
+                    // next resolver gets the same subset
+                    continue;
+                } else if (result == Result.NO_MATCH) {
+                    // Early failure
+                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getClass().getSimpleName());
+                    return null;
+                } else {
+                    // Matched at least one... Next resolver can narrow it down
+                    resolvedServices = result.getMatches();
                 }
 
-                int newResolvedServicesSize = 0;
-                if (resolvedServices != null) {
-                    newResolvedServicesSize = resolvedServices.size();
-                }
-
+                int size = resolvedServices.size();
                 // if remaining services are 0 or 1, we are done
-                if (newResolvedServicesSize == 1 && !passthrough) {
+                if (size == 1) {
                     auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED_EARLY, resolver.getClass().getSimpleName());
-                    return resolvedServices.iterator().next();
-                } else if (newResolvedServicesSize == 0) {
+                    serviceSet = resolvedServices;
+                    break;
+                } else if (size == 0) {
                     auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getClass().getSimpleName());
                     return null;
                 }
@@ -289,18 +304,35 @@ public class ServiceCache
 
             if (serviceSet.isEmpty()) {
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_MATCH);
+                return null;
             } else if (serviceSet.size() == 1) {
                 PublishedService service = serviceSet.iterator().next();
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED, service.getName(), service.getId());
-                return service;
+
+                if (!service.isSoap() || service.isLaxResolution()) return service;
+
+                // If this service is set to strict mode, validate that the message is soap, and that it matches an
+                // operation supported in the WSDL.
+                SoapKnob sk = (SoapKnob)req.getKnob(SoapKnob.class);
+                if (sk == null) {
+                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NOT_SOAP);
+                    return null;
+                } else {
+                    Result services = soapOperationResolver.resolve(req, serviceSet);
+                    if (services.getMatches().isEmpty()) {
+                        auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_OPERATION_MISMATCH, service.getName(), service.getId());
+                        return null;
+                    } else {
+                        auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED, service.getName(), service.getId());
+                        return service;
+                    }
+                }
             } else {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_ERROR);
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_MULTI);
+                return null;
             }
         } finally {
             rwlock.readLock().unlock();
         }
-
-        return null;
     }
 
     /**
@@ -328,7 +360,7 @@ public class ServiceCache
         Long key = service.getOid();
         if (services.get(key) != null) update = true;
         if (update) {
-            for (ServiceResolver resolver : resolvers) {
+            for (ServiceResolver resolver : notifyResolvers) {
                 try {
                     resolver.serviceUpdated(service);
                 } catch (ServiceResolutionException sre) {
@@ -340,7 +372,7 @@ public class ServiceCache
         } else {
             // make sure no duplicate exist
             //validate(service);
-            for (ServiceResolver resolver : resolvers) {
+            for (ServiceResolver resolver : notifyResolvers) {
                 try {
                     resolver.serviceCreated(service);
                 } catch (ServiceResolutionException sre) {
@@ -415,7 +447,7 @@ public class ServiceCache
         services.remove(key);
         serverPolicies.remove(key);
         serviceStatistics.remove(key);
-        for (ServiceResolver resolver : resolvers) {
+        for (ServiceResolver resolver : notifyResolvers) {
             resolver.serviceDeleted(service);
         }
         service.forcePolicyRecompile();
@@ -595,7 +627,6 @@ public class ServiceCache
                     }
                     // Trigger xpath compilation if the set of registered xpaths has changed
                     TarariLoader.compile();
-                    // todo, need to check for right schemas there as well
                     for (Long key : deletions) {
                         PublishedService serviceToDelete = services.get(key);
                         removeNoLock(serviceToDelete);
@@ -624,42 +655,6 @@ public class ServiceCache
 
     public void setPolicyFactory(ServerPolicyFactory policyFactory) {
         this.policyFactory = policyFactory;
-    }
-
-    /**
-     * assumes you already have a lock through new policy contruction
-     */
-    public Collection<String> getAllPolicySchemas() {
-        ArrayList<String> output = new ArrayList<String>();
-        for (PublishedService publishedService : services.values()) {
-            try {
-                Assertion root = publishedService.rootAssertion();
-                slurpSchemas(root, output);
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "cannot parse policy(?!)", e);
-                return output;
-            }
-        }
-        return output;
-    }
-
-    private void slurpSchemas(Assertion toInspect, ArrayList<String> container) {
-        if (toInspect instanceof CompositeAssertion) {
-            CompositeAssertion ca = (CompositeAssertion)toInspect;
-            for (Iterator i = ca.children(); i.hasNext();) {
-                Assertion a = (Assertion)i.next();
-                slurpSchemas(a, container);
-            }
-        } else if (toInspect instanceof SchemaValidation) {
-            SchemaValidation tq = (SchemaValidation)toInspect;
-            if (tq.getResourceInfo() instanceof StaticResourceInfo) {
-                StaticResourceInfo sri = (StaticResourceInfo)tq.getResourceInfo();
-                String value = sri.getDocument();
-                if (value != null) {
-                    container.add(value);
-                }
-            }
-        }
     }
 
     /**

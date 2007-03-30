@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.service.resolution;
@@ -17,7 +15,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
     public NameValueServiceResolver(ApplicationContext spring) {
@@ -62,8 +59,8 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
     public void serviceUpdated(PublishedService service) throws ServiceResolutionException {
         _rwlock.writeLock().lock();
         try {
-            serviceDeleted( service);
-            serviceCreated( service);
+            serviceDeleted(service);
+            serviceCreated(service);
         } finally {
             _rwlock.writeLock().unlock();
         }
@@ -78,14 +75,14 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
             Lock read = _rwlock.readLock();
             read.lock();
             try {
-                List<T> values = serviceOidToValueListMap.get( oid );
+                List<T> values = serviceOidToValueListMap.get(oid);
                 if ( values == null ) {
-                    values = doGetTargetValues( service);
+                    values = doGetTargetValues(service);
                     read.unlock();
                     read = null;
                     _rwlock.writeLock().lock();
                     try {
-                        serviceOidToValueListMap.put( oid, values );
+                        serviceOidToValueListMap.put(oid, values);
                     } finally {
                         _rwlock.writeLock().unlock();
                     }
@@ -104,18 +101,6 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
 
     protected abstract T getRequestValue(Message request) throws ServiceResolutionException;
 
-    protected boolean matches(PublishedService candidateService, PublishedService matchService) throws ServiceResolutionException {
-        // Get the match values for this service
-        Set<Object> candidateValues = new HashSet<Object>( Arrays.asList( getTargetValues( candidateService) ) );
-        Set<Object> matchValues = new HashSet<Object>( Arrays.asList( getTargetValues( matchService) ) );
-
-        for (Object value : candidateValues) {
-            if (matchValues.contains(value)) return true;
-        }
-
-        return false;
-    }
-
     protected Map<Long, PublishedService> getServiceMap(T value) {
         Lock read = _rwlock.readLock();
         read.lock();
@@ -127,7 +112,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
                 read = null;
                 _rwlock.writeLock().lock();
                 try {
-                    _valueToServiceMapMap.put( value, serviceMap );
+                    _valueToServiceMapMap.put(value, serviceMap);
                 } finally {
                     _rwlock.writeLock().unlock();
                 }
@@ -141,12 +126,12 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         }
     }
 
-    public Set<PublishedService> resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
+    public Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
         T value = getRequestValue(request);
         return resolve(value, serviceSubset);
     }
 
-    Set<PublishedService> resolve(T value, Set serviceSubset) throws ServiceResolutionException {
+    protected Result resolve(T value, Set serviceSubset) throws ServiceResolutionException {
         /*if (value instanceof String) {
             String s = (String)value;
             if (s.length() > getMaxLength()) {
@@ -156,7 +141,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         }*/
         Map<Long, PublishedService> serviceMap = getServiceMap(value);
 
-        if ( serviceMap == null || serviceMap.isEmpty() ) return Collections.emptySet();
+        if ( serviceMap == null || serviceMap.isEmpty() ) return Result.NO_MATCH;
 
         Set<PublishedService> resultSet = null;
         List<T> targetValues;
@@ -176,7 +161,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
 
         if ( resultSet == null ) resultSet = Collections.emptySet();
 
-        return resultSet;
+        return new Result(resultSet);
     }
 
     protected final Map<T, Map<Long, PublishedService>> _valueToServiceMapMap = new HashMap<T, Map<Long, PublishedService>>();

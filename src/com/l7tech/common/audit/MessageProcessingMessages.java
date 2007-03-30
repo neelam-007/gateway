@@ -52,19 +52,19 @@ public class MessageProcessingMessages extends Messages {
     public static final M SR_ORIGURL_URI_MATCH      = m(3113, Level.FINEST, "Matched against the Request URI: \"{0}\"");
     public static final M SR_ORIGURL_URI_NOMATCH    = m(3114, Level.FINEST, "Not Matched against the request URI: \"{0}\"");
 
-    public static final M SR_SOAPACTION_NONE        = m(3120, Level.FINE, "SOAPAction not present");
-    public static final M SR_SOAPACTION_NOT_HTTP    = m(3121, Level.FINE, "Request was not received via HTTP; no SOAPAction present");
+    public static final M SR_SOAPACTION_NONE             = m(3120, Level.FINE, "SOAPAction not present");
+    public static final M SR_SOAPACTION_NOT_HTTP_OR_SOAP = m(3121, Level.FINE, "Request is not SOAP or was not received via HTTP; no SOAPAction expected");
 
-    public static final M SR_SOAPOPERATION_NOT_SOAP         = m(3130, Level.INFO, "Service is not SOAP");
+    public static final M SR_SOAPOPERATION_NOT_SOAP         = m(3130, Level.FINE, "Service is not SOAP");
     public static final M SR_SOAPOPERATION_NO_WSDL          = m(3131, Level.INFO, "Service is SOAP but has no WSDL");
     public static final M SR_SOAPOPERATION_WSDL_NO_BINDINGS = m(3132, Level.INFO, "WSDL has no bindings");
     public static final M SR_SOAPOPERATION_WSDL_NO_STYLE    = m(3133, Level.INFO, "Couldn''t get style for BindingOperation {0}");
-    public static final M SR_SOAPOPERATION_WSDL_PART_TYPE   = m(3134, Level.WARNING, "Part {0} has both an element and a type");
-    public static final M SR_SOAPOPERATION_WSDL_DOCLIT_TYPE = m(3135, Level.WARNING, "Input message {0} in document-style operation has a type, not an element");
-    public static final M SR_SOAPOPERATION_BAD_STYLE        = m(3136, Level.WARNING, "Unsupported style ''{0}'' for {1}");
-    public static final M SR_SOAPOPERATION_NO_QNAMES_FOR_OP = m(3137, Level.WARNING, "Unable to find payload element QNames for BindingOperation {0}");
-    public static final M SR_SOAPOPERATION_NO_QNAMES_AT_ALL = m(3138, Level.WARNING, "Unable to find any payload element QNames for service {0} (#{1})");
-    public static final M SR_SOAPOPERATION_BAD_WSDL         = m(3139, Level.WARNING, "Unable to parse WSDL for {0} service (#{1})");
+    public static final M SR_SOAPOPERATION_WSDL_PART_TYPE   = m(3134, Level.INFO, "Part {0} has both an element and a type");
+    public static final M SR_SOAPOPERATION_WSDL_DOCLIT_TYPE = m(3135, Level.INFO, "Input message {0} in document-style operation has a type, not an element");
+    public static final M SR_SOAPOPERATION_BAD_STYLE        = m(3136, Level.INFO, "Unsupported style ''{0}'' for {1}");
+    public static final M SR_SOAPOPERATION_NO_QNAMES_FOR_OP = m(3137, Level.INFO, "Unable to find payload element QNames for BindingOperation {0}");
+    public static final M SR_SOAPOPERATION_NO_QNAMES_AT_ALL = m(3138, Level.INFO, "Unable to find any payload element QNames for service {0} (#{1})");
+    public static final M SR_SOAPOPERATION_BAD_WSDL         = m(3139, Level.INFO, "Unable to parse WSDL for {0} service (#{1})");
     public static final M SR_SOAPOPERATION_FOUND_QNAME      = m(3140, Level.FINE, "Found payload QName \"{0}\"");
 
     public static final M SERVICE_CACHE_MODULE_UNLOAD      = m(3200, Level.INFO, "Recompiling all published services due to module unload");
@@ -75,8 +75,10 @@ public class MessageProcessingMessages extends Messages {
     public static final M SERVICE_CACHE_FAILED_EARLY       = m(3205, Level.INFO, "{0} eliminated all possible services");
     public static final M SERVICE_CACHE_NO_MATCH           = m(3206, Level.FINE, "Resolvers find no match for request");
     public static final M SERVICE_CACHE_RESOLVED           = m(3207, Level.FINEST, "Resolved request for \"{0}\" service (#{1})");
-    public static final M SERVICE_CACHE_ERROR              = m(3208, Level.WARNING, "Cache integrity error or resolver bug: this request resolves to more than one service.  This should be corrected at next cache integrity check");
-    public static final M SERVICE_CACHE_BAD_POLICY_FORMAT  = m(3209, Level.WARNING, "\"{0}\" service (#{1}) will be disabled; it has an unsupported policy format.");
-    public static final M SERVICE_CACHE_BAD_POLICY         = m(3210, Level.WARNING, "\"{0}\" service (#{1}) cannot be read properly and will be discarded from the service cache.");
-    // MAX -                                                  m(3499
+    public static final M SERVICE_CACHE_MULTI              = m(3208, Level.INFO, "Resolution failed; multiple services match the current request");
+    public static final M SERVICE_CACHE_BAD_POLICY_FORMAT  = m(3209, Level.WARNING, "\"{0}\" service (#{1}) will be disabled; it has an unsupported policy format");
+    public static final M SERVICE_CACHE_BAD_POLICY         = m(3210, Level.WARNING, "\"{0}\" service (#{1}) cannot be read properly and will be discarded from the service cache");
+    public static final M SERVICE_CACHE_NOT_SOAP           = m(3211, Level.INFO, "Non-SOAP request resolved to SOAP service");
+    public static final M SERVICE_CACHE_OPERATION_MISMATCH = m(3212, Level.INFO, "Resolved \"{0}\" service (#{1}) but request does not match any operation in the service''s WSDL");
+     // MAX -                                                  m(3499
 }

@@ -8,9 +8,6 @@ import com.l7tech.common.message.Message;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -51,44 +48,9 @@ public abstract class ServiceResolver<T> implements Comparable {
      */
     public abstract void serviceDeleted(PublishedService service);
 
-    public abstract Set<PublishedService> resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException;
-
-    /**
-     * Returns a Map of any services this ServiceResolver knows about that match the specified PublishedService.
-     * @param candidateService the service to compare against the services this ServiceResolver's already knows about.
-     * @param subset the Map to search for matches.
-     * @return a Map of matching services, which may be empty but not null.
-     * @throws ServiceResolutionException May be thrown if resolution cannot be performed one of the given services
-     */
-    public Map<Long, PublishedService> matchingServices(
-            PublishedService candidateService,
-            Map<Long, PublishedService> subset)  throws ServiceResolutionException
-    {
-        if ( subset == null || subset.isEmpty() ) return Collections.emptyMap();
-
-        Map<Long, PublishedService> result = null;
-
-        PublishedService matchService;
-        for (Long oid : subset.keySet()) {
-            matchService = subset.get(oid);
-            if (matchService != null) {
-                if (candidateService.getOid() != matchService.getOid()) {
-                    if (matches(candidateService, matchService)) {
-                        // This candidateService matches one of "mine"
-                        if (result == null) result = new HashMap<Long, PublishedService>();
-                        result.put(oid, matchService);
-                    }
-                }
-            }
-        }
-
-        if ( result == null ) result = Collections.emptyMap();
-
-        return result;
-    }
+    public abstract Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException;
 
     public abstract int getSpeed();
-    abstract boolean matches(PublishedService candidateService, PublishedService matchService) throws ServiceResolutionException;
 
     /**
      * Could throw a ClassCastException.
@@ -111,4 +73,6 @@ public abstract class ServiceResolver<T> implements Comparable {
      * @return a Set containing distinct values
      */
     public abstract Set<T> getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException ;
+
+    public abstract boolean isSoap();
 }

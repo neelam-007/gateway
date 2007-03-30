@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.service.resolution;
 
@@ -22,9 +21,7 @@ import java.util.regex.Pattern;
 
 /**
  * Resolves services based on the Service OID that is passed in the original
- * url oor at the end of uri. The format expected is <i>/service/3145729</i>.
- *
- * @author emil
+ * url or at the end of uri. The format expected is <i>/service/3145729</i>.
  */
 public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<String> {
     private final Pattern[] regexPatterns;
@@ -117,17 +114,16 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<Stri
         throw new UnsupportedOperationException();
     }
 
-    public Set<PublishedService> resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
+    public boolean isSoap() {
+        return false;
+    }
+
+    public Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
         String value = getRequestValue(request);
         // special case: if the request does not follow pattern, then all services passed
         // match, the next resolver will narrow it down
         if (value == null) {
-            if (serviceSubset.size() == 1) {
-                // in this case, i can't return the set, otherwize it will be interpreted as a match!
-                throw new NoServiceOIDResolutionPassthroughException();
-            } else {
-                return serviceSubset;
-            }
+            return Result.NOT_APPLICABLE;
         } else {
             return super.resolve(value, serviceSubset);
         }

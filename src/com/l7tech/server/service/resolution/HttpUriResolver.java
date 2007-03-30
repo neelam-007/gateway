@@ -55,20 +55,19 @@ public class HttpUriResolver extends ServiceResolver<String> {
         return FAST;
     }
 
-    public Set<PublishedService> resolve(Message request,
-                                         Set<PublishedService> serviceSubset) throws ServiceResolutionException {
+    public Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
         rwlock.readLock().lock();
         try {
             // since this only applies to http messages, we dont want to narrow down subset if msg is not http
             boolean notHttp = (request.getKnob(HttpRequestKnob.class) == null);
             if (notHttp) {
-                return serviceSubset;
+                return Result.NOT_APPLICABLE;
             } else {
                 String requestValue = getRequestValue(request);
                 // first look at repetitive failures
                 if (knownToFail.contains(requestValue)) { // why is this suspicious?
                     auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_CACHEDFAIL, requestValue);
-                    return EMPTYSERVICESET;
+                    return Result.NO_MATCH;
                 }
 
                 // second, try to get an exact match
@@ -76,7 +75,7 @@ public class HttpUriResolver extends ServiceResolver<String> {
                 if (res != null && res.size() > 0) {
                     auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_PERFECT, requestValue);
                     Set<PublishedService> output = narrowList(serviceSubset, res);
-                    if (output.size() > 0) return output; // otherwise, we continue and try to find match using wildcard ones
+                    if (output.size() > 0) return new Result(output); // otherwise, we continue and try to find match using wildcard ones
                 }
 
                 // otherwise, try to match using wildcards
@@ -103,11 +102,11 @@ public class HttpUriResolver extends ServiceResolver<String> {
                     // we should have a worker thread making sure this does not grow too big
                     knownToFail.add(requestValue);
                     auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_NONE, requestValue);
-                    return EMPTYSERVICESET;
+                    return Result.NO_MATCH;
                 } else if (matchingRegexKeys.size() == 1) {
                     auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_ONE, requestValue);
                     res = uriToServiceMap.get(matchingRegexKeys.get(0));
-                    return narrowList(serviceSubset, res);
+                    return new Result(narrowList(serviceSubset, res));
                 } else {
                     // choose best match
                     auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_MULTI, requestValue);
@@ -115,7 +114,7 @@ public class HttpUriResolver extends ServiceResolver<String> {
                                                             encounteredPathPattern,
                                                             encounteredExtensionPattern);
                     res = uriToServiceMap.get(best);
-                    return narrowList(serviceSubset, res);
+                    return new Result(narrowList(serviceSubset, res));
                 }
             }
         } finally {
@@ -172,12 +171,12 @@ public class HttpUriResolver extends ServiceResolver<String> {
         }
     }
 
-    protected boolean matches(PublishedService candidateService, PublishedService matchService) {
-        return getTargetValue(candidateService).equals(getTargetValue(matchService));
-    }
-
     public Set<String> getDistinctParameters(PublishedService candidateService) {
         throw new UnsupportedOperationException();
+    }
+
+    public boolean isSoap() {
+        return false;
     }
 
     public String doGetTargetValue(PublishedService service) {
@@ -319,6 +318,5 @@ public class HttpUriResolver extends ServiceResolver<String> {
     private final Map<Long, URIResolutionParam> servicetoURIMap = new HashMap<Long, URIResolutionParam>();
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
-    private static final Set<PublishedService> EMPTYSERVICESET = new HashSet<PublishedService>();
     private static final URIResolutionParam CATCHALLRESOLUTION = new URIResolutionParam("/*");
 }

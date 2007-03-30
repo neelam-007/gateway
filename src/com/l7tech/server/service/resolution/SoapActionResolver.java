@@ -1,14 +1,12 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
@@ -20,7 +18,6 @@ import java.util.Set;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
     public SoapActionResolver(ApplicationContext spring) {
@@ -54,12 +51,13 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
 
     }
 
-    public Set<PublishedService> resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
+    public Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
         // since this only applies to http messages, we dont want to narrow down subset if msg is not http
         boolean notHttp = (request.getKnob(HttpRequestKnob.class) == null);
-        if (notHttp) {
-            auditor.logAndAudit(MessageProcessingMessages.SR_SOAPACTION_NOT_HTTP);
-            return serviceSubset;
+        boolean notSoap = (request.getKnob(SoapKnob.class) == null);
+        if (notHttp || notSoap) {
+            auditor.logAndAudit(MessageProcessingMessages.SR_SOAPACTION_NOT_HTTP_OR_SOAP);
+            return Result.NOT_APPLICABLE;
         } else {
             return super.resolve(request, serviceSubset);
         }
