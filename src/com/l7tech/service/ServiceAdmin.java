@@ -83,7 +83,7 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * @throws VersionException if the service version conflict is detected
      * @throws PolicyAssertionException if the server policy could not be instantiated for this policy
      */
-    @Secured(stereotype=SAVE_OR_UPDATE)
+    @Secured(stereotype=SAVE_OR_UPDATE, relevantArg=0)
     long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
             throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException;
 
