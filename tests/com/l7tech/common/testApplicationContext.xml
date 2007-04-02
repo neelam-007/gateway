@@ -276,4 +276,5 @@
         </constructor-arg>
     </bean>
 
+    <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>    
 </beans>

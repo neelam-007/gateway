@@ -27,9 +27,14 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.jms.*;
+
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -51,6 +56,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         auditor = new Auditor(this, ctx, logger);
         stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
         jmsPropertyMapper = (JmsPropertyMapper) applicationContext.getBean("jmsPropertyMapper", JmsPropertyMapper.class);
+        jmsInvalidator = new JmsInvalidator(this);
+        final ApplicationEventProxy aep = (ApplicationEventProxy) applicationContext.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        aep.addApplicationListener(jmsInvalidator);
         SignerInfo signerInfo = null;
         try {
             KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
@@ -60,6 +68,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             logger.log(Level.WARNING, "Error getting SAML signer information.", e);
         }
         senderVouchesSignerInfo = signerInfo;
+        needsUpdate = false;
     }
 
     // TODO synchronized?
@@ -91,6 +100,15 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
             while (true) {
                 try {
+                    if (markedForUpdate()) {
+                        try {
+                            logger.info("JMS information needs update, closing session (if open).");                            
+                            closeBag();                            
+                        } finally {
+                            markUpdate(false);
+                        }
+                    }
+
                     JmsBag bag = getJmsBag(auditor);
                     jmsSession = bag.getSession();
                     jmsOutboundRequest = makeRequest(context, auditor);
@@ -230,6 +248,22 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         }
     }
 
+    private boolean markedForUpdate() {
+        boolean updatedRequired;
+
+        synchronized(needsUpdateSync) {
+            updatedRequired = needsUpdate;
+        }
+
+        return updatedRequired;        
+    }
+
+    private void markUpdate(boolean needsUpdate) {
+        synchronized(needsUpdateSync) {
+            this.needsUpdate = needsUpdate;
+        }
+    }
+
     private synchronized void closeBag() {
         if (bag != null)
             bag.close();
@@ -364,7 +398,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private JmsEndpoint getRoutedRequestEndpoint() throws FindException {
         if ( routedRequestEndpoint == null ) {
             JmsEndpointManager mgr = (JmsEndpointManager)applicationContext.getBean("jmsEndpointManager");
-            routedRequestEndpoint = mgr.findByPrimaryKey(data.getEndpointOid().longValue());
+            JmsEndpoint jmsEndpoint = mgr.findByPrimaryKey(data.getEndpointOid().longValue());
+            synchronized(jmsInfoSync) {
+                routedRequestEndpoint = jmsEndpoint;
+            }
         }
         return routedRequestEndpoint;
     }
@@ -377,7 +414,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                 auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NON_EXISTENT_ENDPOINT,
                         new String[] {String.valueOf(data.getEndpointOid()), data.getEndpointName()});
             } else {
-                routedRequestConnection = mgr.findByPrimaryKey( endpoint.getConnectionOid() );
+                JmsConnection jmsConn = mgr.findByPrimaryKey( endpoint.getConnectionOid() );
+                synchronized(jmsInfoSync) {
+                    routedRequestConnection = jmsConn;
+                }
             }
         }
         return routedRequestConnection;
@@ -397,12 +437,66 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         return bag;
     }
 
+    /**
+     * Invalidation listener for JMS endpoint / connection updates.
+     */
+    public static final class JmsInvalidator implements ApplicationListener {
+        private final ServerJmsRoutingAssertion serverJmsRoutingAssertion;
+
+        public JmsInvalidator(ServerJmsRoutingAssertion serverJmsRoutingAssertion) {
+            this.serverJmsRoutingAssertion = serverJmsRoutingAssertion;
+        }
+
+        public void onApplicationEvent(ApplicationEvent applicationEvent) {
+            if (applicationEvent instanceof EntityInvalidationEvent) {
+                EntityInvalidationEvent eie = (EntityInvalidationEvent) applicationEvent;
+
+                if (serverJmsRoutingAssertion != null) {
+                    JmsConnection connection;
+                    JmsEndpoint endpoint;
+                    synchronized (serverJmsRoutingAssertion.jmsInfoSync) {
+                        connection = serverJmsRoutingAssertion.routedRequestConnection;
+                        endpoint = serverJmsRoutingAssertion.routedRequestEndpoint;
+                    }
+
+                    if (connection != null && endpoint != null) {
+                        boolean updated = false;
+                        if (JmsConnection.class.isAssignableFrom(eie.getEntityClass())) {
+                            for(long invalidatedId : eie.getEntityIds()) {
+                                if (connection.getOid() == invalidatedId)
+                                    updated = true;
+                            }
+                        }
+                        if (JmsEndpoint.class.isAssignableFrom(eie.getEntityClass())) {
+                            for(long invalidatedId : eie.getEntityIds()) {
+                                if (endpoint.getOid() == invalidatedId)
+                                    updated = true;
+                            }
+                        }
+
+                        if (updated) {
+                            if (logger.isLoggable(Level.INFO)) {
+                                logger.log(Level.INFO, "Flagging JMS information for update [conn:{0}; epnt:{1}].",
+                                    new Object[]{Long.toString(connection.getOid()), Long.toString(endpoint.getOid())});
+                            }
+                            serverJmsRoutingAssertion.markUpdate(true);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     private final JmsRoutingAssertion data;
     private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
     private final JmsPropertyMapper jmsPropertyMapper;
+    private final JmsInvalidator jmsInvalidator;
     private final SignerInfo senderVouchesSignerInfo;
 
+    private Object needsUpdateSync = new Object();
+    private boolean needsUpdate;
+    private Object jmsInfoSync = new Object();
     private JmsConnection routedRequestConnection;
     private JmsEndpoint routedRequestEndpoint;
 

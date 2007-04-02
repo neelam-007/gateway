@@ -820,6 +820,8 @@
                 <ref bean="roleManager"/>
                 <ref bean="clusterPropertyManager"/>
                 <ref bean="identityProviderConfigManager"/>
+                <ref bean="jmsConnectionManager"/>
+                <ref bean="jmsEndpointManager"/>
             </list>
         </property>
         <property name="timer">
