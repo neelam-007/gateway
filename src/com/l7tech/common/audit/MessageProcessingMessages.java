@@ -72,7 +72,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M SERVICE_CACHE_DISABLING_SERVICE  = m(3202, Level.WARNING, "Unable to reenable service after license changed/module loaded: {0}: {1}");
     public static final M SERVICE_CACHE_NO_SERVICES        = m(3203, Level.FINEST, "Resolution failed; no Published Services");
     public static final M SERVICE_CACHE_RESOLVED_EARLY     = m(3204, Level.FINEST, "Service resolved early by {0}");
-    public static final M SERVICE_CACHE_FAILED_EARLY       = m(3205, Level.INFO, "{0} eliminated all possible services");
+    public static final M SERVICE_CACHE_FAILED_EARLY       = m(3205, Level.FINE, "{0} eliminated all possible services");
     public static final M SERVICE_CACHE_NO_MATCH           = m(3206, Level.FINE, "Resolvers find no match for request");
     public static final M SERVICE_CACHE_RESOLVED           = m(3207, Level.FINEST, "Resolved request for \"{0}\" service (#{1})");
     public static final M SERVICE_CACHE_MULTI              = m(3208, Level.INFO, "Resolution failed; multiple services match the current request");
