@@ -175,8 +175,10 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
 
     private PackageUpdateConfigBean.UpdatePackageInfo checkUpdateFile(File updatePath) throws UpdateWizardException {
         getAvailableUpdatePackages().clear();
+
+        File[] updateFiles = null;
         if (updatePath.isDirectory()) {
-            File[] updateFiles = updatePath.listFiles(new FilenameFilter() {
+            updateFiles = updatePath.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
                     return name.endsWith(PackageUpdateConfigBean.PACKAGE_UPDATE_EXTENSION);
                 }
@@ -196,7 +198,9 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
             if (!updatePath.getName().endsWith(PackageUpdateConfigBean.PACKAGE_UPDATE_EXTENSION))
                  throw new UpdateWizardException("Could not find a valid SecureSpan Update package using: \"" + updatePath.getAbsolutePath() + "\"");
         }
-        return getUpdateInfo(updatePath);
+        if (updateFiles == null)
+            return null;
+        return getUpdateInfo(updateFiles[0]);
     }
 
     private List<File> getAvailableUpdatePackages() {
