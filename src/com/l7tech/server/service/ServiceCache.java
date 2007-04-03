@@ -6,6 +6,7 @@ import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.SoapKnob;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.Decorator;
 import com.l7tech.common.util.ExceptionUtils;
@@ -14,7 +15,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.UnknownAssertion;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.ServiceReloadEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -101,8 +101,7 @@ public class ServiceCache
      */
     public ServiceCache(ServerPolicyFactory policyFactory,
                         Collection<Decorator<PublishedService>> decorators,
-                        Timer timer,
-                        ServerConfig config)
+                        Timer timer)
     {
         if (policyFactory == null) throw new IllegalArgumentException("Policy Factory is required");
         if (timer == null) timer = new Timer("Service cache refresh", true);
@@ -307,16 +306,21 @@ public class ServiceCache
                 return null;
             } else if (serviceSet.size() == 1) {
                 PublishedService service = serviceSet.iterator().next();
+                XmlKnob xk = (XmlKnob) req.getKnob(XmlKnob.class);
 
-                if (!service.isSoap() || service.isLaxResolution()) return service;
+                if (!service.isSoap() || service.isLaxResolution()) {
+                    if (xk != null) xk.setTarariWanted(service.isTarariWanted());
+                    return service;
+                }
 
                 // If this service is set to strict mode, validate that the message is soap, and that it matches an
                 // operation supported in the WSDL.
-                SoapKnob sk = (SoapKnob)req.getKnob(SoapKnob.class);
-                if (sk == null) {
+                if (req.getKnob(SoapKnob.class) == null) {
                     auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NOT_SOAP);
                     return null;
                 } else {
+                    // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
+                    if (xk != null) xk.setTarariWanted(service.isTarariWanted()); 
                     Result services = soapOperationResolver.resolve(req, serviceSet);
                     if (services.getMatches().isEmpty()) {
                         auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_OPERATION_MISMATCH, service.getName(), service.getId());

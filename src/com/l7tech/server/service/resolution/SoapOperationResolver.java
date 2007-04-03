@@ -7,6 +7,7 @@ import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.service.PublishedService;
 import org.xml.sax.SAXException;
 import org.springframework.context.ApplicationContext;
@@ -192,6 +193,8 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
         } catch (IOException e) {
             throw new ServiceResolutionException("Unable to parse payload element QNames", e);
         } catch (SAXException e) {
+            throw new ServiceResolutionException("Unable to parse payload element QNames", e);
+        } catch (NoSuchPartException e) {
             throw new ServiceResolutionException("Unable to parse payload element QNames", e);
         }
     }

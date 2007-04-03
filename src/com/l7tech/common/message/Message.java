@@ -537,4 +537,15 @@ public final class Message {
             invalidateCachedKnobs();
         }
     }
+
+    /**
+     * Notify any knobs attached to this Message that any cached representations of message data they may hold may now
+     * be invalid (i.e. the document may have mutated out from under the cache)
+     */
+    void invalidateCaches() {
+        TarariKnob tk = (TarariKnob)getKnob(TarariKnob.class);
+        if (tk != null) tk.close();
+        SoapKnob sk = (SoapKnob) getKnob(SoapKnob.class);
+        if (sk != null) sk.invalidate();
+    }
 }

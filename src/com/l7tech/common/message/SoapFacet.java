@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  */
 class SoapFacet extends MessageFacet {
     private SoapFaultDetail faultDetail = null;
-    private final SoapInfo soapInfo;
+    private SoapInfo soapInfo;
 
     private transient static final Logger logger = Logger.getLogger(SoapFacet.class.getName());
 
@@ -40,13 +40,13 @@ class SoapFacet extends MessageFacet {
      *
      * @param message  the message being enhanced.  May not be null.
      * @param facet  the previous root facet.  May not be null.  Must contain an XML facet.
-     * @param soapInfo  the non-null result of calling getSoapInfo() with this message's first part content.
+     * @param initialSoapInfo  the non-null result of calling getSoapInfo() with this message's first part content.
      */
-    public SoapFacet(Message message, MessageFacet facet, SoapInfo soapInfo) {
+    public SoapFacet(Message message, MessageFacet facet, SoapInfo initialSoapInfo) {
         super(message, facet);
 
-        if (soapInfo == null) throw new NullPointerException();
-        this.soapInfo = soapInfo;
+        if (initialSoapInfo == null) throw new NullPointerException();
+        this.soapInfo = initialSoapInfo;
     }
 
     /**
@@ -59,7 +59,15 @@ class SoapFacet extends MessageFacet {
      * @throws SAXException if the XML is not well formed or has invalid namespace declarations
      * @throws NoSuchPartException if the Message first part has already been destructively read
      */
-    public static SoapInfo getSoapInfo(Message message) throws IOException, SAXException, NoSuchPartException {
+    static SoapInfo getSoapInfo(Message message) throws IOException, SAXException, NoSuchPartException {
+        XmlKnob xk = (XmlKnob) message.getKnob(XmlKnob.class);
+
+        if (xk != null && xk.isDomParsed() && !xk.isTarariWanted()) {
+            // Performance hack... If this policy doesn't strongly prefer Tarari, use the DOM that's already present for
+            // SOAP identification purposes
+            return getSoapInfoDom(message.getXmlKnob().getDocumentReadOnly());
+        }
+
         TarariMessageContextFactory mcfac = TarariLoader.getMessageContextFactory();
         if (mcfac != null) {
             try {
@@ -108,13 +116,8 @@ class SoapFacet extends MessageFacet {
         if (c == SoapKnob.class) {
             return new SoapKnob() {
 
-                public QName[] getPayloadNames() throws IOException, SAXException {
-                    if (soapInfo != null) {
-                        return soapInfo.getPayloadNames();
-                    } else {
-                        // No tarari, or DOM was changed.  Just use DOM-based lookup
-                        return SoapUtil.getPayloadNames(getMessage().getXmlKnob().getDocumentReadOnly());
-                    }
+                public QName[] getPayloadNames() throws IOException, SAXException, NoSuchPartException {
+                    return getSoapInfo().getPayloadNames();
                 }
 
                 public boolean isFault() throws SAXException, IOException, InvalidDocumentFormatException {
@@ -132,8 +135,13 @@ class SoapFacet extends MessageFacet {
                     SoapFacet.this.faultDetail = faultDetail;
                 }
 
-                public boolean isSecurityHeaderPresent() {
-                    return soapInfo.hasSecurityNode;
+                public boolean isSecurityHeaderPresent() throws NoSuchPartException, IOException, SAXException {
+                    return getSoapInfo().hasSecurityNode;
+                }
+
+                public void invalidate() {
+                    // TODO invalidate faultDetail too? It's not connected to the message content anyway
+                    soapInfo = null;
                 }
 
                 /**
@@ -153,5 +161,12 @@ class SoapFacet extends MessageFacet {
             };
         }
         return super.getKnob(c);
+    }
+
+    private SoapInfo getSoapInfo() throws NoSuchPartException, IOException, SAXException {
+        if (soapInfo == null) {
+            soapInfo = SoapFacet.getSoapInfo(getMessage());
+        }
+        return soapInfo;
     }
 }

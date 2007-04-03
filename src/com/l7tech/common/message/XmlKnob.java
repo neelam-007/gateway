@@ -104,4 +104,21 @@ public interface XmlKnob extends MessageKnob {
      * @param document the new Document.  Must not be null.
      */
     void setDocument(Document document);
+
+    /**
+     * Indicate whether this XmlKnob holds an already-parsed DOM tree.
+     */
+    boolean isDomParsed();
+
+    /**
+     * Indicate whether the policy that will be processing this message has any assertions that rely so heavily on
+     * Tarari that it's worth discarding an already-parsed DOM tree.
+     */
+    void setTarariWanted(boolean pref);
+
+    /**
+     * Indicates whether the policy that will be processing this message has any assertions that rely so heavily on 
+     * Tarari that it's worth discarding an already-parsed DOM tree.
+     */
+    boolean isTarariWanted();
 }

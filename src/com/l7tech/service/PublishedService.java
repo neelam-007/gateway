@@ -11,6 +11,8 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.MimeMultipartAssertion;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.wsp.WspReader;
 import org.xml.sax.InputSource;
 
@@ -41,6 +43,8 @@ public class PublishedService extends NamedEntityImp {
     /** Used to split up the method name lists. */
     private static final Pattern SPLIT_COMMAS = Pattern.compile("\\s*,\\s*");
 
+    private volatile boolean tarariWanted;
+
     public PublishedService() {
         setVersion(1);
     }
@@ -58,8 +62,10 @@ public class PublishedService extends NamedEntityImp {
             return FalseAssertion.getInstance();
         }
 
-        if (_rootAssertion == null)
+        if (_rootAssertion == null) {
             _rootAssertion = WspReader.getDefault().parsePermissively(policyXml);
+            updatePolicyHints(_rootAssertion);
+        }
 
         return _rootAssertion;
     }
@@ -450,6 +456,27 @@ public class PublishedService extends NamedEntityImp {
 
     public void setLaxResolution(boolean laxResolution) {
         this.laxResolution = laxResolution;
+    }
+
+    /** Caller must hold lock */
+    private void updatePolicyHints(Assertion rootAssertion) {
+        // TODO split request/response into separate flags
+        tarariWanted = false;
+        Iterator i = rootAssertion.preorderIterator();
+        while (i.hasNext()) {
+            Assertion ass = (Assertion) i.next();
+            if (ass instanceof SchemaValidation || ass instanceof XslTransformation) {
+                tarariWanted = true;
+            }
+        }
+    }
+
+    /**
+     * Indicates that at least one assertion in this service's policy strongly prefers to use Tarari rather than use a
+     * pre-parsed DOM tree.
+     */
+    public boolean isTarariWanted() {
+        return tarariWanted;
     }
 
     /**

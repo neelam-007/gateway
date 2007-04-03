@@ -282,7 +282,7 @@ public class AdminWebServiceFilter implements Filter {
         }
     }
 
-    private void trogdor(PolicyEnforcementContext context, Message request) throws IOException, SAXException, InvalidDocumentFormatException, ProcessorException {
+    private void trogdor(PolicyEnforcementContext context, Message request) throws IOException, SAXException, InvalidDocumentFormatException, ProcessorException, NoSuchPartException {
         // WSS-Processing Step
         boolean isSoap = context.getRequest().isSoap();
         boolean hasSecurity = isSoap && context.getRequest().getSoapKnob().isSecurityHeaderPresent();

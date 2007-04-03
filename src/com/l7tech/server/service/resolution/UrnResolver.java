@@ -7,6 +7,7 @@ package com.l7tech.server.service.resolution;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.mime.NoSuchPartException;
 import org.xml.sax.SAXException;
 import org.springframework.context.ApplicationContext;
 
@@ -52,6 +53,8 @@ public class UrnResolver extends WsdlOperationServiceResolver<String> {
         } catch (MessageNotSoapException e) {
             throw new RuntimeException(e); // can't happen, we already checked
         } catch (IOException e) {
+            throw new ServiceResolutionException(e.getMessage(), e);
+        } catch (NoSuchPartException e) {
             throw new ServiceResolutionException(e.getMessage(), e);
         }
     }

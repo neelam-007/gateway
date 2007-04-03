@@ -89,14 +89,4 @@ public class TarariKnob implements MessageKnob, Closeable {
         }
     }
 
-    /**
-     * Invalidate any TarariKnob attached to the specified Message.
-     *
-     * @param m the Message whose TarariKnob, if any, should be closed.
-     */
-    static void invalidate(Message m) {
-        TarariKnob knob = (TarariKnob)m.getKnob(TarariKnob.class);
-        if (knob != null)
-            knob.close();
-    }
 }

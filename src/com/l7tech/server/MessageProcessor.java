@@ -7,6 +7,7 @@ package com.l7tech.server;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.mime.MimeBody;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.Auditor;
@@ -179,6 +180,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 return AssertionStatus.BAD_REQUEST;
             } catch (MessageNotSoapException e) {
                 auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP, null, e);
+            } catch (NoSuchPartException e) {
+                auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT_WITH_DETAIL, new String[]{e.getMessage()}, e);
+                status = AssertionStatus.BAD_REQUEST;
+                return AssertionStatus.BAD_REQUEST;
             }
 
             if (isSoap && hasSecurity) {
@@ -243,7 +248,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 return AssertionStatus.SERVICE_NOT_FOUND;
             }
 
-            auditor.logAndAudit(MessageProcessingMessages.RESOLVED_SERVICE, new String[]{service.getName(), String.valueOf(service.getOid())});
+            auditor.logAndAudit(MessageProcessingMessages.RESOLVED_SERVICE, service.getName(), String.valueOf(service.getOid()));
             context.setService(service);
 
             // skip the http request header version checking if it is not a Http request
@@ -280,7 +285,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
                             long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar + 1));
                             if (reqPolicyVer != service.getVersion() || reqPolicyId != service.getOid()) {
-                                auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, new String[]{requestorVersion, String.valueOf(service.getOid()), String.valueOf(service.getVersion())});
+                                auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, requestorVersion, String.valueOf(service.getOid()), String.valueOf(service.getVersion()));
                                 wrongPolicyVersion = true;
                             }
                         } catch (NumberFormatException e) {
@@ -422,7 +427,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 if (rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.NONE) {
                     /* We include NONE because it's valid (albeit silly)
                     for a policy to contain no RoutingAssertion */
-                    auditor.logAndAudit(MessageProcessingMessages.COMPLETION_STATUS, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
+                    auditor.logAndAudit(MessageProcessingMessages.COMPLETION_STATUS, String.valueOf(status.getNumeric()), status.getMessage());
                 } else {
                     // This can only happen when a post-routing assertion fails
                     auditor.logAndAudit(MessageProcessingMessages.SERVER_ERROR);
@@ -434,7 +439,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 // Add audit details
                 if (rstat == RoutingStatus.ATTEMPTED) {
                     // Most likely the failure was in the routing assertion
-                    auditor.logAndAudit(MessageProcessingMessages.ROUTING_FAILED, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
+                    auditor.logAndAudit(MessageProcessingMessages.ROUTING_FAILED, String.valueOf(status.getNumeric()), status.getMessage());
                     status = AssertionStatus.FAILED;
                 } else {
                     // Bump up the audit level to that of the highest AssertionStatus level
@@ -450,7 +455,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     if (context != null && context.getService() != null) {
                         serviceName = context.getService().getName() + " [" + context.getService().getOid() + "]";
                     }
-                    auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, new String[]{serviceName, String.valueOf(status.getNumeric()), status.getMessage()});
+                    auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, serviceName, String.valueOf(status.getNumeric()), status.getMessage());
                 }
             }
 

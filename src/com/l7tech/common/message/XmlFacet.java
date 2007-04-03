@@ -22,6 +22,7 @@ import java.io.InputStream;
 public class XmlFacet extends MessageFacet {
     private Document originalDocument = null;  // the original Document
     private DomElementCursor workingDocument = null;  // the working Document
+    private boolean tarariWanted;
 
     /** Can be assumed to be true if {@link #workingDocument} == null */
     private boolean firstPartValid = true;
@@ -206,7 +207,7 @@ public class XmlFacet extends MessageFacet {
         public Document getDocumentWritable() throws SAXException, IOException {
             Document working = getDocumentReadOnly();
             firstPartValid = false;
-            TarariKnob.invalidate(getMessage());
+            getMessage().invalidateCaches();
             if (getMessage().isEnableOriginalDocument() && originalDocument == null)
                 originalDocument = (Document)working.cloneNode(true); // todo find a way to skip this if it wont be needed
             return working;
@@ -223,7 +224,19 @@ public class XmlFacet extends MessageFacet {
         public void setDocument(Document document) {
             firstPartValid = false;
             workingDocument = new DomElementCursor(document);
-            TarariKnob.invalidate(getMessage());
+            getMessage().invalidateCaches();
+        }
+
+        public boolean isDomParsed() {
+            return workingDocument != null;
+        }
+
+        public void setTarariWanted(boolean pref) {
+            tarariWanted = pref;
+        }
+
+        public boolean isTarariWanted() {
+            return tarariWanted;
         }
     }
 
@@ -253,7 +266,7 @@ public class XmlFacet extends MessageFacet {
                     originalDocument = (Document)workingDocument.getDocument().cloneNode(true); // todo find a way to skip this if it wont be needed
                 workingDocument = null;
                 firstPartValid = false;
-                TarariKnob.invalidate(getMessage());
+                getMessage().invalidateCaches();
             }
         }
 

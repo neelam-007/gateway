@@ -6,7 +6,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.StaleCheckingHttpConnectionManager;
@@ -17,16 +16,19 @@ import com.l7tech.common.io.failover.StickyFailoverStrategy;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
+import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
-import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.identity.cert.TrustedCertManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.datamodel.*;
@@ -39,11 +41,9 @@ import com.l7tech.proxy.ssl.SslPeerHttpClient;
 import com.l7tech.proxy.ssl.SslPeerLazyDelegateSocketFactory;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
-import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.service.PublishedService;
-import com.l7tech.identity.cert.TrustedCertManager;
-import com.l7tech.objectmodel.FindException;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -58,14 +58,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
-import java.net.URL;
 import java.net.SocketTimeoutException;
+import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Set;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -295,6 +295,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ioe);
                 }
             } catch (SAXException e) {
+                thrown = e;
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+            } catch (NoSuchPartException e) {
                 thrown = e;
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             } catch (SignatureException e) {

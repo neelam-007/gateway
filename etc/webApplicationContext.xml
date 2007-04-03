@@ -226,7 +226,6 @@
                 <constructor-arg value="Service cache refresh"/>
             </bean>
         </constructor-arg>
-        <constructor-arg ref="serverConfig"/>
     </bean>
     <!-- server side HTTP routing client trust manager -->
     <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">

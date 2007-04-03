@@ -8,6 +8,7 @@ package com.l7tech.common.message;
 
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.mime.NoSuchPartException;
 import org.xml.sax.SAXException;
 
 import javax.xml.namespace.QName;
@@ -30,7 +31,7 @@ public interface SoapKnob extends MessageKnob {
      * @throws SAXException if the first part's content type is not text/xml.
      * @throws IOException if there is a problem reading XML from the first part's InputStream
      */
-    QName[] getPayloadNames() throws IOException, SAXException;
+    QName[] getPayloadNames() throws IOException, SAXException, NoSuchPartException;
 
     /**
      * Check if this SOAP message is actually a SOAP fault.  If this returns true, fault details will be
@@ -66,5 +67,10 @@ public interface SoapKnob extends MessageKnob {
     /**
      * True if a Security header was noticed.
      */
-    boolean isSecurityHeaderPresent();
+    boolean isSecurityHeaderPresent() throws NoSuchPartException, IOException, SAXException;
+
+    /**
+     * Notify this SoapKnob that its caches need to be cleared
+     */
+    void invalidate();
 }
