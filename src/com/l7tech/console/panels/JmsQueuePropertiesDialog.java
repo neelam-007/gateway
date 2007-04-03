@@ -6,23 +6,27 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.PermissionDeniedException;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 
+import javax.naming.Context;
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
-import javax.naming.Context;
 import java.awt.*;
 import java.awt.event.*;
 import java.rmi.RemoteException;
 import java.util.Properties;
+import java.text.MessageFormat;
 
 /**
  * Dialog for configuring a JMS Queue (ie, a [JmsConnection, JmsEndpoint] pair).
@@ -638,12 +642,20 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
             connection = Registry.getDefault().getJmsManager().findConnectionByPrimaryKey(newConnection.getOid());
             endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(newEndpoint.getOid());
-        } catch (Exception e1) {
-            throw new RuntimeException("Unable to save changes to this JMS Queue", e1);
+            isCanceled = false;
+            dispose();
+        } catch (Exception e) {
+            PermissionDeniedException pde = (PermissionDeniedException) ExceptionUtils.getCauseIfCausedBy(e, PermissionDeniedException.class);
+            if (pde != null) {
+                EntityType type = pde.getType();
+                String tname = type == null ? "entity" : type.getName();
+                JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
+                        MessageFormat.format("Permission to {0} the {1} denied", pde.getOperation().getName(), tname),
+                        "Permission Denied", JOptionPane.OK_OPTION);
+            } else {
+                throw new RuntimeException("Unable to save changes to this JMS Queue", e);
+            }
         }
-
-        isCanceled = false;
-        dispose();
     }
 
     private void onCancel() {
