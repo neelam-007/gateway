@@ -101,8 +101,8 @@ abstract class ServerResponseWssSignature extends AbstractServerAssertion implem
         if (howMany < 0) {
             return AssertionStatus.FAILED;
         } else if (howMany == 0) {
-            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NOT_SIGNED);
-            return AssertionStatus.NONE;
+            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NO_MATCHING_EL);
+            return AssertionStatus.FALSIFIED;
         }
 
         // TODO need some way to guess whether sender would prefer we sign with our cert or with his

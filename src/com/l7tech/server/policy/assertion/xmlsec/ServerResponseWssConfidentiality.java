@@ -87,7 +87,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
                 throw new PolicyAssertionException(responseWssConfidentiality, msg);
             }
             clientCert = recipientContextCert;
-            return requestDecoration(clientCert,
+            return addDecorationRequirements(clientCert,
                                      null,
                                      null,
                                      null,
@@ -161,7 +161,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
                 return AssertionStatus.FAILED; // todo verify that this return value is appropriate
             }
 
-            return requestDecoration(clientCert,
+            return addDecorationRequirements(clientCert,
                                      kerberosServiceTicket,
                                      secConvContext,
                                      encryptedKey,
@@ -189,7 +189,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
      * @throws com.l7tech.policy.assertion.PolicyAssertionException  if the XPath expression is invalid
      * @throws java.io.IOException if there is a problem gathering info from the request
      */
-    private AssertionStatus requestDecoration(final X509Certificate clientCert,
+    private AssertionStatus addDecorationRequirements(final X509Certificate clientCert,
                                               final KerberosServiceTicket kerberosServiceTicket,
                                               final SecurityContextToken secConvTok,
                                               final EncryptedKey encryptedKey,
@@ -226,7 +226,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
 
             if (selectedElements == null || selectedElements.size() < 1) {
                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED);
-                return AssertionStatus.NONE;
+                return AssertionStatus.FALSIFIED;
             }
             DecorationRequirements wssReq;
             wssReq = context.getResponse().getSecurityKnob().getAlternateDecorationRequirements(recipient);

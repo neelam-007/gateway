@@ -202,13 +202,13 @@ public class AssertionMessages extends Messages {
     public static final M RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN             = m(5402, Level.WARNING, true, false, "Request included more than one X509 security token whose key ownership was proven");
     public static final M RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN             = m(5403, Level.WARNING, "Unable to encrypt response. Request did not include x509 token or secure conversation.");
     public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP               = m(5404, Level.WARNING, false, true, "Response not SOAP; unable to encrypt response elements");
-    public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED          = m(5405, Level.FINE, "No matching elements to encrypt in response.  Returning success.");
+    public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED          = m(5405, Level.INFO, "No matching elements to encrypt in response.  Assertion therefore fails.");
     public static final M RESPONSE_WSS_CONF_RESPONSE_ENCRYPTED              = m(5406, Level.FINEST, "Designated {0} response elements for encryption");
 
     // ServerResponseWssIntegrity
     public static final M RESPONSE_WSS_INT_REQUEST_NOT_SOAP                 = m(5500, Level.INFO, "Request not SOAP; cannot sign response");
     public static final M RESPONSE_WSS_INT_RESPONSE_NOT_SOAP                = m(5501, Level.WARNING, false, true, "Response not SOAP; cannot apply WS-Security signature");
-    public static final M RESPONSE_WSS_INT_RESPONSE_NOT_SIGNED              = m(5502, Level.FINE, "No matching elements to sign in response.  Returning success.");
+    public static final M RESPONSE_WSS_INT_RESPONSE_NO_MATCHING_EL          = m(5502, Level.INFO, "No matching elements to sign in response.  Assertion therefore fails.");
     public static final M RESPONSE_WSS_INT_RESPONSE_SIGNED                  = m(5503, Level.FINE, "Designated {0} response elements for signing");
 
     // ServerRequestWssIntegrity
