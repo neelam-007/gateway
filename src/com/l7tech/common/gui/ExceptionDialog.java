@@ -30,7 +30,7 @@ import java.util.logging.Level;
  * @version 1.0
  */
 public class ExceptionDialog extends JDialog implements ActionListener {
-    private static final boolean SHOW_STACK_TRACES = Boolean.getBoolean("com.l7tech.common.showStackTraces");
+    private static final boolean HIDE_STACK_TRACES = Boolean.getBoolean("com.l7tech.common.hideStackTraces");
     private static final String OPEN_HTML = "<html>";
     private static final String CLOSE_HTML = "</html>";
 
@@ -387,7 +387,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         printWriter.flush();
         value = stringWriter.toString();
 
-        if (SHOW_STACK_TRACES)
+        if (!HIDE_STACK_TRACES)
             return value;
 
         try {
