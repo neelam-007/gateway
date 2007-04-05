@@ -99,5 +99,9 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
         return Cipher.getInstance("RSA/NONE/OAEPPadding", PROVIDER.getName());
     }
 
+    public Cipher getRsaPkcs1PaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return Cipher.getInstance("RSA/NONE/PKCS1Padding", PROVIDER.getName());
+    }
+
     private BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
 }
