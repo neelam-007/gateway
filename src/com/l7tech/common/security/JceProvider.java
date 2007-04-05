@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.security;
@@ -26,6 +25,7 @@ public abstract class JceProvider {
     public static final String ENTRUST_ENGINE = "com.l7tech.common.security.prov.entrust.EntrustJceProviderEngine";
     public static final String SUN_ENGINE = "com.l7tech.common.security.prov.sun.SunJceProviderEngine";
     public static final String LUNA_ENGINE = "com.l7tech.common.security.prov.luna.LunaJceProviderEngine";
+    public static final String PKCS11_ENGINE = "com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine";
 
     // Default driver
     private static final String DEFAULT_ENGINE = BC_ENGINE;
@@ -66,6 +66,10 @@ public abstract class JceProvider {
 
     public static Cipher getRsaOaepPaddingCipher() throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException {
         return Holder.engine.getRsaOaepPaddingCipher();
+    }
+
+    public static Cipher getRsaPkcs1PaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return Holder.engine.getRsaPkcs1PaddingCipher();
     }
 
     public static RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {

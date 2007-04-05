@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.security.prov.bc;
@@ -92,6 +91,10 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
 
     public Cipher getRsaOaepPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
         return Cipher.getInstance("RSA/NONE/OAEPPadding", PROVIDER.getName());
+    }
+
+    public Cipher getRsaPkcs1PaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return Cipher.getInstance("RSA/NONE/PKCS1Padding", PROVIDER.getName());
     }
 
     /**

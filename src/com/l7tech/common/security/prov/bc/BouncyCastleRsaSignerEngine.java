@@ -1,13 +1,13 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.security.prov.bc;
 
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.RsaSignerEngine;
+import com.l7tech.common.util.CertUtils;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
@@ -157,8 +157,11 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         // Self-signed, issuer == subject
         certgen.setIssuerDN(subject);
 
-        X509Certificate cert = certgen.generateX509Certificate(keypair.getPrivate());
-        return cert;
+        try {
+            return certgen.generateX509Certificate(keypair.getPrivate(), JceProvider.getAsymmetricJceProvider().getName());
+        } catch (NoSuchProviderException e) {
+            throw new SignatureException(e);
+        }
     }
 
     public static X509Certificate makeSignedCertificate(String subjectDn, Date expiration,
@@ -174,8 +177,11 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         AuthorityKeyIdentifier aki = new AuthorityKeyIdentifier(apki);
         certgen.addExtension(X509Extensions.AuthorityKeyIdentifier.getId(), false, aki);
 
-        X509Certificate cert = certgen.generateX509Certificate(caKey);
-        return cert;
+        try {
+            return certgen.generateX509Certificate(caKey, JceProvider.getAsymmetricJceProvider().getName());
+        } catch (NoSuchProviderException e) {
+            throw new SignatureException(e);
+        }
     }
 
     public static X509Certificate makeSignedCertificate(String subjectDn, int validity,
@@ -223,13 +229,15 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         }
         X509Certificate cert = null;
         if (expiration == -1) {
-            cert = makeSignedCertificate(dn, CERT_DAYS_VALID, pkcs10.getPublicKey(),
+            cert = makeSignedCertificate(dn, CERT_DAYS_VALID, pkcs10.getPublicKey(providerName),
                                          caCert, caPrivateKey, CertType.CLIENT);
         } else {
-            cert = makeSignedCertificate(dn, new Date(expiration), pkcs10.getPublicKey(),
+            cert = makeSignedCertificate(dn, new Date(expiration), pkcs10.getPublicKey(providerName),
                                          caCert, caPrivateKey, CertType.CLIENT);
         }
         // Verify before returning
+        // Convert to Sun cert first so BC won't screw us over by asking for some goofy algorithm names
+        cert = (X509Certificate)CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(cert.getEncoded()));
         cert.verify(caCert.getPublicKey(), providerName);
         return cert;
     }

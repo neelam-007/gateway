@@ -25,7 +25,6 @@ import org.apache.tomcat.util.net.ServerSocketFactory;
  *
  * <p>This will also register our crypto provider if it is available.</p>
  *
- * @author Steve Jones, $Author$
  * @version $Revision$
  */
 public class SsgSSLImplementation extends SSLImplementation {
@@ -72,7 +71,7 @@ public class SsgSSLImplementation extends SSLImplementation {
      * @return The wrapped SSL ServerSocketFactory
      */
     public ServerSocketFactory getServerSocketFactory() {
-        ServerSocketFactory ssf = delegate.getServerSocketFactory();
+        ServerSocketFactory ssf = new SsgServerSocketFactory(delegate.getServerSocketFactory());
 
         File base = new File(System.getProperty("catalina.base", "/ssg/tomcat"));
         File propFile = new File(base, "conf/SsgSSLImplementation.properties");
@@ -99,7 +98,7 @@ public class SsgSSLImplementation extends SSLImplementation {
             logger.info("No SSgSSLImplementation properties found ["+propFile.getAbsolutePath()+"]");
         }
 
-        return new SsgServerSocketFactory(ssf);
+        return ssf;
     }
 
     /**

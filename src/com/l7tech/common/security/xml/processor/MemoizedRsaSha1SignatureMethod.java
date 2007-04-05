@@ -159,7 +159,7 @@ public class MemoizedRsaSha1SignatureMethod extends SignatureMethod {
 
         // Oh well, we'll have to do the work
         try {
-            Cipher rsa = Cipher.getInstance("RSA/NONE/PKCS1PADDING", JceProvider.getAsymmetricJceProvider());
+            Cipher rsa = JceProvider.getRsaPkcs1PaddingCipher();
             rsa.init(Cipher.DECRYPT_MODE, verifyKey);
             byte[] result = rsa.doFinal(bytes);
 
@@ -192,6 +192,8 @@ public class MemoizedRsaSha1SignatureMethod extends SignatureMethod {
         } catch (BadPaddingException e) {
             throw new SignatureException(e);
         } catch (IllegalBlockSizeException e) {
+            throw new SignatureException(e);
+        } catch (NoSuchProviderException e) {
             throw new SignatureException(e);
         }
     }

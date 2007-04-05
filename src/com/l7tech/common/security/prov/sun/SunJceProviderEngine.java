@@ -18,7 +18,6 @@ import java.security.*;
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
- * $Id$
  */
 public class SunJceProviderEngine implements JceProviderEngine {
     private final Provider PROVIDER = new SunJCE();
@@ -74,6 +73,10 @@ public class SunJceProviderEngine implements JceProviderEngine {
 
     public Cipher getRsaOaepPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
         return Cipher.getInstance("RSA/ECB/OAEPPadding", PROVIDER.getName());
+    }
+
+    public Cipher getRsaPkcs1PaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return Cipher.getInstance("RSA/ECB/PKCS1Padding", PROVIDER.getName());
     }
 
     public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {

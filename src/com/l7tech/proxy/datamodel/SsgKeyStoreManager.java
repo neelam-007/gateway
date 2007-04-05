@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.proxy.datamodel;
@@ -162,7 +161,7 @@ public abstract class SsgKeyStoreManager {
     /**
      * Look up the server certificate for this SSG.
      *
-     * @return the server certificate (nominally the CA cert), or null if it hasn't yet been discovered.
+     * @return the server certificate (nominally the server SSL cert), or null if it hasn't yet been discovered.
      */
     protected abstract X509Certificate getServerCert() throws KeyStoreCorruptException;
 
