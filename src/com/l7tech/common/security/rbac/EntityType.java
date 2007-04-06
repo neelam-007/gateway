@@ -27,10 +27,8 @@ import static com.l7tech.objectmodel.EntityType.UNDEFINED;
 import com.l7tech.service.MetricsBin;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
-import com.l7tech.server.security.keystore.SsgKeyEntry;
 
 import java.util.Comparator;
-import java.security.PrivateKey;
 
 /**
  * @author alex
@@ -45,7 +43,7 @@ public enum EntityType {
     JMS_CONNECTION("JMS Connection", JmsConnection.class, com.l7tech.objectmodel.EntityType.JMS_CONNECTION, true),
     JMS_ENDPOINT("JMS Endpoint", JmsEndpoint.class, com.l7tech.objectmodel.EntityType.JMS_ENDPOINT, true),
     TRUSTED_CERT("Trusted Certificate", TrustedCert.class, com.l7tech.objectmodel.EntityType.TRUSTED_CERT, true),
-    SSG_KEY_ENTRY("Private Key", SsgKeyEntry.class, com.l7tech.objectmodel.EntityType.PRIVATE_KEY, true),
+    SSG_KEY_ENTRY("Private Key", Entity.class, com.l7tech.objectmodel.EntityType.PRIVATE_KEY, true), // TODO find a good home for SsgKeyEntry.class
     ALERT_TRIGGER("Alert Event", AlertEvent.class, com.l7tech.objectmodel.EntityType.ALERT_TRIGGER, false),
     ALERT_ACTION("Alert Notification", Notification.class, com.l7tech.objectmodel.EntityType.ALERT_ACTION, false),
     SAMPLE_MESSAGE("Sample Message", SampleMessage.class, com.l7tech.objectmodel.EntityType.SAMPLE_MESSAGE, true),
