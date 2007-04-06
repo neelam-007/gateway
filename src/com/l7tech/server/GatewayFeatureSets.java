@@ -71,6 +71,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_SNMPQUERY = "service:SnmpQuery";
     public static final String SERVICE_BRIDGE = "service:Bridge";
     public static final String SERVICE_TRUSTSTORE = "service:TrustStore"; // Ability to configure Trusted Certs
+    public static final String SERVICE_KEYSTORE = "service:KeyStore"; // Ability to configure Private Keys
     public static final String SERVICE_MODULELOADER = "service:ModuleLoader"; // Ability to load jars from /ssg/modules/assertions
 
     public static final String UI_PUBLISH_SERVICE_WIZARD = "ui:PublishServiceWizard";
@@ -146,6 +147,10 @@ public class GatewayFeatureSets {
         GatewayFeatureSet trustStore =
         fsr("set:trustStore", "Ability to configure Trusted Certificates",
             srv(SERVICE_TRUSTSTORE, "Ability to configure Trusted Certificates"));
+
+        GatewayFeatureSet keyStore =
+        fsr("set:keyStore", "Ability to configure Private Keys",
+            srv(SERVICE_KEYSTORE, "Ability to configure Private Keys"));
 
         GatewayFeatureSet moduleLoader = srv(SERVICE_MODULELOADER, "Enables the assertion module loader",
                 "Note: This feature set IS REQUIRED in order to use optional modular assertions, as well as post-release modular assertions.");
@@ -282,7 +287,8 @@ public class GatewayFeatureSets {
             fs(httpBack),
             fs(jmsFront),
             fs(jmsBack),
-            fs(trustStore));
+            fs(trustStore),
+            fs(keyStore));
 
         GatewayFeatureSet routingAccel =
         fsr("set:Routing:Accel", "SecureSpan Accelerator message routing",
@@ -296,7 +302,8 @@ public class GatewayFeatureSets {
         fsr("set:Routing:Firewall", "SecureSpan Firewall message routing",
             "Adds abiltity to configure Trusted Certificates",
             fs(routingAccel),
-            fs(trustStore));
+            fs(trustStore),
+            fs(keyStore));
 
         GatewayFeatureSet routingGateway =
         fsr("set:Routing:Gateway", "SecureSpan Gateway message routing",

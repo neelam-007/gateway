@@ -27,6 +27,7 @@ public class EntityType implements Serializable {
     public static final EntityType RBAC_ROLE = new EntityType(12, "Role");
     public static final EntityType ATTRIBUTE_CONFIG = new EntityType(13, "Attribute Config");
     public static final EntityType SCHEMA_ENTRY = new EntityType(14, "Schema Entry");
+    public static final EntityType PRIVATE_KEY = new EntityType(15, "Private Key");
     public static final EntityType UNDEFINED = new EntityType(-1, "Undefined");
 
     private static final long serialVersionUID = -5485680679515491927L;

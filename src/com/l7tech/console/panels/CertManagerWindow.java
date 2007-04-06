@@ -43,12 +43,9 @@ public class CertManagerWindow extends JDialog {
     private JButton addButton;
     private JButton removeButton;
     private JButton propertiesButton;
-    private JButton gatewayPropertiesButton;
     private JButton closeButton;
     private TrustedCertsTable trustedCertTable = null;
-    private TrustedCertsTable gatewayCertTable = null;
     private JScrollPane certTableScrollPane;
-    private JScrollPane gatewayCertTableScrollPane;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertManagerWindow.class.getName());
     private final PermissionFlags flags;
@@ -70,7 +67,6 @@ public class CertManagerWindow extends JDialog {
 
         initialize();
         loadTrustedCerts();
-        loadCerts();
     }
 
 
@@ -94,22 +90,6 @@ public class CertManagerWindow extends JDialog {
         trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 enableOrDisableButtons();
-            }
-        });
-
-        if (gatewayCertTable == null) {
-            gatewayCertTable = new TrustedCertsTable();
-        }
-        gatewayCertTableScrollPane.setViewportView(gatewayCertTable);
-        gatewayCertTableScrollPane.getViewport().setBackground(Color.white);
-
-        // Hide the cert usage data column
-        gatewayCertTable.hideColumn(TrustedCertTableSorter.CERT_TABLE_ISSUER_NAME_COLUMN_INDEX);
-        gatewayCertTable.hideColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX);
-
-        gatewayCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                enableOrDisableGatewayButtons();
             }
         });
 
@@ -170,15 +150,6 @@ public class CertManagerWindow extends JDialog {
             }
         });
 
-        gatewayPropertiesButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                int sr = gatewayCertTable.getSelectedRow();
-                TrustedCert certHolder = (TrustedCert) gatewayCertTable.getTableSorter().getData(sr);
-                CertPropertiesWindow cpw = new CertPropertiesWindow(CertManagerWindow.this, certHolder, false, false);
-                DialogDisplayer.display(cpw);
-            }
-        });
-
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 int sr = trustedCertTable.getSelectedRow();
@@ -221,7 +192,6 @@ public class CertManagerWindow extends JDialog {
 
         pack();
         enableOrDisableButtons();
-        enableOrDisableGatewayButtons();
         Utilities.setEscKeyStrokeDisposes(this);
     }
 
@@ -252,35 +222,6 @@ public class CertManagerWindow extends JDialog {
     }
 
     /**
-     * Load the certs from the SSG
-     */
-    private void loadCerts() throws RemoteException {
-
-        java.util.List<TrustedCert> certList = new ArrayList<TrustedCert>();
-        try {
-            TrustedCert rootCertHolder = new TrustedCert();
-            rootCertHolder.setName("CA");
-            rootCertHolder.setCertificate(getTrustedCertAdmin().getSSGRootCert());
-            certList.add(rootCertHolder);
-
-            TrustedCert sslCertHolder = new TrustedCert();
-            sslCertHolder.setName("SSL");
-            sslCertHolder.setCertificate(getTrustedCertAdmin().getSSGSslCert());
-            certList.add(sslCertHolder);
-
-            gatewayCertTable.getTableSorter().setData(certList);
-            gatewayCertTable.getTableSorter().getRealModel().setRowCount(certList.size());
-            gatewayCertTable.getTableSorter().fireTableDataChanged();
-        } catch (Exception e) {
-            String msg = resources.getString("cert.find.error");
-            logger.log(Level.WARNING, msg, e);
-            JOptionPane.showMessageDialog(CertManagerWindow.this, msg,
-                                          resources.getString("load.error.title"),
-                                          JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    /**
      * Enable or disable the fields based on the current selections.
      */
     private void enableOrDisableButtons() {
@@ -294,18 +235,6 @@ public class CertManagerWindow extends JDialog {
         addButton.setEnabled(flags.canCreateSome());
         removeButton.setEnabled(flags.canDeleteSome() && removeEnabled);
         propertiesButton.setEnabled(propsEnabled); // Child dialog should be read-only if !canUpdateAny
-    }
-
-    /**
-     * Enable or disable the fields based on the current selections.
-     */
-    private void enableOrDisableGatewayButtons() {
-        boolean propsEnabled = false;
-        int row = gatewayCertTable.getSelectedRow();
-        if (row >= 0) {
-            propsEnabled = true;
-        }
-        gatewayPropertiesButton.setEnabled(propsEnabled);
     }
 
     /**
