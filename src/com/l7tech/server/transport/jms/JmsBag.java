@@ -8,11 +8,11 @@ package com.l7tech.server.transport.jms;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
 import javax.jms.Session;
 import javax.naming.Context;
-import javax.naming.NamingException;
+import java.io.Closeable;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Holds references to a {@link javax.jms.ConnectionFactory}, {@link javax.jms.Connection}
@@ -20,70 +20,55 @@ import java.util.logging.Logger;
  *
  * Not thread-safe!
  */
-public class JmsBag {
+public class JmsBag implements Closeable {
     public JmsBag( Context context, ConnectionFactory factory, Connection conn, Session sess ) {
-        _connectionFactory = factory;
-        _connection = conn;
-        _session = sess;
-        _jndiContext = context;
+        connectionFactory = factory;
+        connection = conn;
+        session = sess;
+        jndiContext = context;
     }
 
     public ConnectionFactory getConnectionFactory() {
-        if ( _closed ) throw new IllegalStateException("Bag has been closed");
-        return _connectionFactory;
+        check();
+        return connectionFactory;
     }
 
     public Connection getConnection() {
-        if ( _closed ) throw new IllegalStateException("Bag has been closed");
-        return _connection;
+        check();
+        return connection;
     }
 
     public Session getSession() {
-        if ( _closed ) throw new IllegalStateException("Bag has been closed");
-        return _session;
+        check();
+        return session;
     }
 
     public Context getJndiContext() {
-        if ( _closed ) throw new IllegalStateException("Bag has been closed");
-        return _jndiContext;
+        check();
+        return jndiContext;
     }
 
     public void close() {
         try {
-            try {
-                if ( _session != null ) _session.close();
-            } catch ( JMSException e ) {
-            } finally {
-                _session = null;
-            }
-
-            try {
-                if ( _connection != null ) _connection.stop();
-            } catch ( JMSException e ) {
-            }
-
-            try {
-                if ( _connection != null ) _connection.close();
-            } catch ( JMSException e ) {
-            } finally {
-                _connection = null;
-            }
-
-            try {
-                if ( _jndiContext != null ) _jndiContext.close();
-            } catch ( NamingException e ) {
-            } finally {
-                _jndiContext = null;
-            }
+            if ( session != null ) session.close();
+            if ( connection != null ) connection.stop();
+            if ( connection != null ) connection.close();
+            if ( jndiContext != null ) jndiContext.close();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Exception while closing JmsBag", e);
         } finally {
-            _closed = true;
+            closed = true;
         }
     }
 
-    private static final Logger _logger = Logger.getLogger(JmsBag.class.getName());
-    private ConnectionFactory _connectionFactory;
-    private Connection _connection;
-    private Session _session;
-    private Context _jndiContext;
-    private volatile boolean _closed = false;
+    private void check() {
+        if (closed) throw new IllegalStateException("Bag has been closed");
+    }
+
+    private static final Logger logger = Logger.getLogger(JmsBag.class.getName());
+    private final ConnectionFactory connectionFactory;
+    private final Connection connection;
+    private final Session session;
+    private final Context jndiContext;
+    private volatile boolean closed = false;
 }
