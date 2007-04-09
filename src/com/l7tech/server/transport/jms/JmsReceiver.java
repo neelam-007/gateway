@@ -14,6 +14,8 @@ import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.JMSEvent;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -21,9 +23,6 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 /**
  * Message processing runtime support for JMS messages.
@@ -40,7 +39,7 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
     /** Set to five seconds so that the uninterruptible (!) poll doesn't pause server shutdown for too long. */
     private static final long RECEIVE_TIMEOUT = 5 * 1000;
     public static final int OOPS_RETRY = 5000; // Five seconds
-    public static final int OOPS_SLEEP = 1 * 60 * 1000; // One minute
+    public static final int OOPS_SLEEP = 60 * 1000; // One minute
     public static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
 
     // Persistence stuff
@@ -52,7 +51,7 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
     // JMS stuff
 
     // Runtime stuff
-    private Object syncRecv = new Object();
+    private final Object syncRecv = new Object();
     private boolean _initialized = false;
     private ApplicationContext applicationContext;
     private transient long lastAuditErrorTime = 0L;
@@ -232,7 +231,7 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
     }
 
     private class MessageLoop implements Runnable {
-        MessageLoop() {
+        private MessageLoop() {
             _thread = new Thread( this, toString() );
             _thread.setDaemon( true );
         }
@@ -425,8 +424,8 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
 
         // Runtime stuff
         private volatile boolean _stop = false;
-        private Object sync = new Object();
-        private Thread _thread;
+        private final Object sync = new Object();
+        private final Thread _thread;
     }
 
     /**
