@@ -39,19 +39,21 @@ public class Pkcs11JceProviderEngine implements JceProviderEngine {
         for (Provider prov : provs) {
             if (prov.getName().toLowerCase().startsWith("sunpkcs11")) {
                 found = prov;
-                logger.info("Using PKCS#11 security provider " + found.getName());
+                logger.info("Using existing preconfigured PKCS#11 security provider " + found.getName());
                 break;
             }
         }
 
         if (found == null) {
-            logger.info("No PKCS#11 provider found in JVM -- trying to add one using config file " + CONFIG_PATH);
+            logger.info("No sunpkcs11 security provider found in JVM -- trying to add one using config file " + CONFIG_PATH);
             File cf = new File(CONFIG_PATH);
             if (!cf.exists() || !cf.isFile() || !cf.canRead())
                 throw new IllegalStateException("No SunPKCS11 security provider registered, and no config file to create one (checked for " + CONFIG_PATH + ")");
 
-            found = new sun.security.pkcs11.SunPKCS11(CONFIG_PATH);
-            Security.addProvider(found);
+//            TODO uncomment when nightly build is running on Java 1.6, if we want this JceProviderEngine to be self-installing
+//            found = new sun.security.pkcs11.SunPKCS11(CONFIG_PATH);
+//            Security.addProvider(found);
+            throw new IllegalStateException("No sunpkcs11 security provider found in JVM");
         }
 
         PROVIDER = found;
