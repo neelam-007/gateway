@@ -234,4 +234,18 @@ public class ArrayUtils {
 
         return Collections.unmodifiableMap(resultMap);
     }
+
+    /**
+     * Merge two arrays.
+     *
+     * @param a  an array.  May be empty but not null.
+     * @param b  an array.  May be empty but not null.
+     * @return a new array that contains all the elements of a followed by all the elements of b.
+     */
+    public static String[] concat(String[] a, String[] b) {
+        String[] ret = new String[a.length + b.length];
+        if (a.length > 0) System.arraycopy(a, 0, ret, 0, a.length);
+        if (b.length > 0) System.arraycopy(b, 0, ret, a.length, b.length);
+        return ret;
+    }
 }

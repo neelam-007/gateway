@@ -327,6 +327,17 @@ public class HexUtils {
     }
 
     /**
+     * Write all of the specified bytes out to the specified OutputStream.
+     *
+     * @param output  the bytes to write.  May be empty but never null.
+     * @param stream  the stream to write them to.  Required.
+     * @throws IOException if there is an IOException while writing the bytes to the stream.
+     */
+    public static void spewStreasm(byte[] output, OutputStream stream) throws IOException {
+        copyStream(new ByteArrayInputStream(output), stream);
+    }
+
+    /**
      * Compare that treats null as being less than any other Comparable.
      *
      * @param s1 a Comparable object.  May be null.
