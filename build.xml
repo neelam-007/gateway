@@ -1243,6 +1243,7 @@
                 <exclude name="com/l7tech/common/security/prov/entrust/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/tarari/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/luna/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/pkcs11/**/*"/>
                 <!-- goes in lib/ext -->
                 <exclude name="com/l7tech/common/security/TrustedCert**"/>
                 <exclude name="com/l7tech/common/security/CertEntity**"/>
