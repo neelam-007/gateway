@@ -32,9 +32,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.*;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
 import java.awt.event.*;
 import java.io.*;
 import java.rmi.RemoteException;
@@ -235,9 +232,6 @@ public class LogPanel extends JPanel {
                         updateMsgDetails();
                     }
                 });
-
-        // disable copy/paste
-        getMsgTable().setTransferHandler(getCopyPasteDisablingTransferHandler());
     }
 
     private void init() {
@@ -1487,35 +1481,6 @@ public class LogPanel extends JPanel {
 
         getLogsRefreshTimer().setInitialDelay(logsRefreshInterval);
         getLogsRefreshTimer().setDelay(logsRefreshInterval);
-    }
-
-    private TransferHandler getCopyPasteDisablingTransferHandler() {
-        return new TransferHandler(){
-            public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
-                return false;
-            }
-
-            protected Transferable createTransferable(JComponent c) {
-                return null;
-            }
-
-            public int getSourceActions(JComponent c) {
-                return TransferHandler.NONE;
-            }
-
-            public Icon getVisualRepresentation(Transferable t) {
-                return super.getVisualRepresentation(t);
-            }
-
-            public boolean importData(JComponent comp, Transferable t) {
-                return false;
-            }
-
-            // do nothing
-            public void exportAsDrag(JComponent comp, InputEvent e, int action) {}
-            protected void exportDone(JComponent source, Transferable data, int action) {}
-            public void exportToClipboard(JComponent comp, Clipboard clip, int action) throws IllegalStateException {}
-        };
     }
 
     /**
