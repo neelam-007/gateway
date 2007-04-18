@@ -29,7 +29,7 @@ CREATE TABLE service_documents (
 
 -- Delete orphaned messages
 DELETE FROM sample_messages
-    WHERE objectid != NULL AND objectid NOT IN (SELECT objectid FROM published_service);
+    WHERE published_service_oid IS NULL or published_service_oid NOT IN (SELECT objectid FROM published_service);
 
 -- Add foreign key constraint
 ALTER TABLE sample_messages
