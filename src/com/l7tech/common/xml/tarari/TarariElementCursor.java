@@ -59,10 +59,10 @@ class TarariElementCursor extends ElementCursor {
     }
 
     /**
-     * Get the current TarariMessageContextImpl.  Package private.
+     * Get the current TarariMessageContextImpl.
      * @return the TarariMessageContextImpl.  Never null.
      */
-    TarariMessageContextImpl getTarariMessageContext() {
+    public TarariMessageContextImpl getTarariMessageContext() {
         return tarariMessageContext;
     }
 
@@ -255,7 +255,7 @@ class TarariElementCursor extends ElementCursor {
         of.setC14nWithComments(false);
         of.setOmitXmlDeclaration(true);
         if (inclusiveNamespacePrefixes != null && inclusiveNamespacePrefixes.length > 0)
-            of.setC14nInclusivePrefixList(new ArrayList(Arrays.asList(inclusiveNamespacePrefixes)));
+            of.setC14nInclusivePrefixList(new ArrayList<String>(Arrays.asList(inclusiveNamespacePrefixes)));
         BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
         try {
             XmlResult xr = new XmlResult(baos);

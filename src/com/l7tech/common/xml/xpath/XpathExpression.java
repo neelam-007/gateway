@@ -1,7 +1,6 @@
-package com.l7tech.common.xml;
+package com.l7tech.common.xml.xpath;
 
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.xpath.CompilableXpath;
 
 import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.SOAPConstants;
@@ -12,14 +11,10 @@ import java.util.Map;
 /**
  * Class <code>XpathExpression</code> contains the XPath expression
  * and the namespace array.
- *
- * TODO move this into xpath subpackage, but not right now while we are maintaining two branches (HEAD and rel3_5) and hence merging constantly
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class XpathExpression extends CompilableXpath implements Serializable {
     private String expression;
-    private Map namespaces = new LinkedHashMap();
+    private Map<String, String> namespaces = new LinkedHashMap<String, String>();
 
     /**
      * default constructor for XML serialization support
@@ -32,7 +27,7 @@ public class XpathExpression extends CompilableXpath implements Serializable {
     public static XpathExpression soapBodyXpathValue() {
         XpathExpression xpath = new XpathExpression();
         xpath.setExpression(SoapUtil.SOAP_BODY_XPATH);
-        Map nss = new LinkedHashMap();
+        Map<String, String> nss = new LinkedHashMap<String, String>();
         nss.put(NamespaceConstants.NSPREFIX_SOAP_ENVELOPE, SOAPConstants.URI_NS_SOAP_ENVELOPE);
         xpath.setNamespaces(nss);
         return xpath;
@@ -57,6 +52,7 @@ public class XpathExpression extends CompilableXpath implements Serializable {
     public XpathExpression(String expression, Map namespaces) {
         this.expression = expression;
         if (namespaces != null) {
+            //noinspection unchecked
             this.namespaces.putAll(namespaces);
         }
     }
@@ -88,15 +84,17 @@ public class XpathExpression extends CompilableXpath implements Serializable {
     /**
      * set the namespaces array
      *
-     * @param namespaces
+     * @param namespaces namespace map of prefix to namespace URI
      */
     public void setNamespaces(Map namespaces) {
         if (namespaces != null) {
             this.namespaces.clear();
+            //noinspection unchecked
             this.namespaces.putAll(namespaces);
         }
     }
 
+    /** @noinspection RedundantIfStatement*/
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof XpathExpression)) return false;

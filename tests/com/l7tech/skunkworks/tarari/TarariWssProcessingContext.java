@@ -15,11 +15,8 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.InvalidXpathException;
-import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.xml.xpath.CompiledXpath;
-import com.l7tech.common.xml.xpath.XpathResult;
-import com.l7tech.common.xml.xpath.XpathResultIterator;
-import com.l7tech.common.xml.xpath.XpathResultNodeSet;
+import com.l7tech.common.xml.xpath.XpathExpression;
+import com.l7tech.common.xml.xpath.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPathExpressionException;

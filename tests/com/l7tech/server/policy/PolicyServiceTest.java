@@ -15,7 +15,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.identity.TestIdentityProvider;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.*;

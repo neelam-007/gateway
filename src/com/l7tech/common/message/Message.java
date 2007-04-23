@@ -294,8 +294,8 @@ public final class Message {
      *
      * @return true if this mesage appears to contain SOAP.
      * @throws SAXException if the XML in the first part's InputStream is not well formed
-     * @throws IOException if there is a problem reading XML from the first part's InputStream
-     * @throws IOException if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
+     * @throws IOException if there is a problem reading XML from the first part's InputStream; or,
+     *                     if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
      * @throws IllegalStateException if the SOAP MIME part has already been destructively read.
      */
     public boolean isSoap() throws IOException, SAXException {
@@ -338,10 +338,7 @@ public final class Message {
      * @return true if the message is a Http request
      */
     public boolean isHttpRequest() {
-        if(getKnob(HttpRequestKnob.class) != null) {
-            return true;
-        }
-        return false;
+        return getKnob(HttpRequestKnob.class) != null;
     }
 
     /**
@@ -430,6 +427,13 @@ public final class Message {
         return knob;
     }
 
+    /**
+     * Obtain information about the JMS message that produced this Message.  This assumes that this Message
+     * has already been configured as having arrived over JMS.
+     *
+     * @return the {@link JmsKnob}.  Never null
+     * @throws IllegalStateException if this message is not configured as having arrived over JMS.
+     */
     public JmsKnob getJmsKnob() {
         JmsKnob knob = (JmsKnob)getKnob(JmsKnob.class);
         if (knob == null)
@@ -442,6 +446,8 @@ public final class Message {
      *
      * @param knobClass the class of the interface provided by this knob implementation.
      * @param knob the knob to attach.  It will be attached in a new facet.  Must not be null.
+     * @throws IllegalStateException if this message already offers an implementation of the specified knobClass
+     * @throws IllegalArgumentException if knob is not an instance of knobClass
      */
     public void attachKnob(Class knobClass, MessageKnob knob) {
         if (getKnob(knobClass) != null)

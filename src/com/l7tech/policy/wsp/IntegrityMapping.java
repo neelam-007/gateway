@@ -7,7 +7,7 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;

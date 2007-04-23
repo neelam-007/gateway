@@ -43,7 +43,7 @@ public class DomCompiledXpath extends CompiledXpath {
      * will be compiled immediately.
      * <p/>
      * In most cases, you should not be using this constructor -- instead, you should use
-     * {@link com.l7tech.common.xml.XpathExpression#compile()}, which will produce a hardware-accelerated
+     * {@link XpathExpression#compile()}, which will produce a hardware-accelerated
      * CompiledXpath if the hardware is available.
      *
      * @param xp the expression to compile.  Must not be null.

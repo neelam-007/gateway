@@ -11,7 +11,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.XpathEvaluator;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;

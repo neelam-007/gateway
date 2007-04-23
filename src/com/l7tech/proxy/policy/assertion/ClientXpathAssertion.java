@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.policy.assertion;
 
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 
 /**

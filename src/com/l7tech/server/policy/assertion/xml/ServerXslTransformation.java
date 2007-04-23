@@ -6,9 +6,7 @@ package com.l7tech.server.policy.assertion.xml;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.cache.HttpObjectCache;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.message.TarariKnob;
 import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -17,27 +15,28 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.*;
-import com.l7tech.common.xml.tarari.GlobalTarariContext;
-import com.l7tech.common.xml.tarari.TarariCompiledStylesheet;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.common.xml.xpath.XpathResultNodeSet;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.common.xml.xpath.XpathExpression;
+import com.l7tech.common.xml.xslt.CompiledStylesheet;
+import com.l7tech.common.xml.xslt.TransformInput;
+import com.l7tech.common.xml.xslt.TransformOutput;
+import com.l7tech.common.xml.xslt.StylesheetCompiler;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.util.res.ResourceGetter;
 import com.l7tech.server.util.res.ResourceObjectFactory;
 import com.l7tech.server.util.res.UrlFinder;
-import com.l7tech.server.util.HttpClientFactory;
-import com.l7tech.server.ServerConfig;
 import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -45,19 +44,11 @@ import org.xml.sax.helpers.DefaultHandler;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.Templates;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.ErrorListener;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.XMLConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.util.Map;
@@ -87,14 +78,11 @@ public class ServerXslTransformation
         }
     }
 
-    private static final HttpObjectCache.UserObjectFactory<CachedStylesheet> cacheObjectFactory =
-                new HttpObjectCache.UserObjectFactory<CachedStylesheet>() {
-                    public CachedStylesheet createUserObject(String url, String response) throws IOException {
+    private static final HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory =
+                new HttpObjectCache.UserObjectFactory<CompiledStylesheet>() {
+                    public CompiledStylesheet createUserObject(String url, String response) throws IOException {
                         try {
-                            final GlobalTarariContext gtc = TarariLoader.getGlobalContext();
-                            TarariCompiledStylesheet tarariStylesheet =
-                                    gtc == null ? null : gtc.compileStylesheet(response);
-                            return new CachedStylesheet(compileSoftware(response), tarariStylesheet);
+                            return StylesheetCompiler.compileStylesheet(response);
                         } catch (ParseException e) {
                             throw new CausedIOException(e);
                         }
@@ -102,10 +90,10 @@ public class ServerXslTransformation
                 };
 
     /** A cache for remotely loaded stylesheets. */
-    private static HttpObjectCache<CachedStylesheet> httpObjectCache = null;
+    private static HttpObjectCache<CompiledStylesheet> httpObjectCache = null;
 
     private final Auditor auditor;
-    private final ResourceGetter<CachedStylesheet> resourceGetter;
+    private final ResourceGetter<CompiledStylesheet> resourceGetter;
     private final String[] varsUsed;
 
     public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) throws ServerPolicyException {
@@ -117,10 +105,10 @@ public class ServerXslTransformation
 
         // Create ResourceGetter that will produce the XSLT for us, depending on assertion config
 
-        ResourceObjectFactory<CachedStylesheet> resourceObjectfactory =
-                new ResourceObjectFactory<CachedStylesheet>()
+        ResourceObjectFactory<CompiledStylesheet> resourceObjectfactory =
+                new ResourceObjectFactory<CompiledStylesheet>()
                 {
-                    public CachedStylesheet createResourceObject(String resourceString) throws ParseException {
+                    public CompiledStylesheet createResourceObject(String resourceString) throws ParseException {
                         try {
                             return cacheObjectFactory.createUserObject("", resourceString);
                         } catch (IOException e) {
@@ -150,14 +138,14 @@ public class ServerXslTransformation
                                                                   getCache(springContext));
     }
 
-    private static synchronized HttpObjectCache<CachedStylesheet> getCache(ApplicationContext spring) {
+    private static synchronized HttpObjectCache<CompiledStylesheet> getCache(ApplicationContext spring) {
         if (httpObjectCache != null)
             return httpObjectCache;
 
         HttpClientFactory clientFactory = (HttpClientFactory)spring.getBean("httpClientFactory");
         if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
 
-        httpObjectCache = new HttpObjectCache<CachedStylesheet>(
+        httpObjectCache = new HttpObjectCache<CompiledStylesheet>(
                     ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
                     ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000),
                     clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL);
@@ -165,55 +153,6 @@ public class ServerXslTransformation
         return httpObjectCache;
     }
 
-    /**
-     * @return successfully compiled stylesheet.  Never null
-     * @throws ParseException if the stylesheet can't be parsed
-     */
-    private static Templates compileSoftware(String thing) throws ParseException {
-        // Prepare a software template
-        try {
-            TransformerFactory transfoctory = TransformerFactory.newInstance();
-            transfoctory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            transfoctory.setURIResolver(XmlUtil.getSafeURIResolver());
-            transfoctory.setErrorListener(new ErrorListener(){
-                public void warning(TransformerException exception) throws TransformerException {}
-                public void error(TransformerException exception) throws TransformerException {}
-                public void fatalError(TransformerException exception) throws TransformerException {}
-            });
-            StreamSource xsltsource = new StreamSource(new StringReader(thing));
-            return transfoctory.newTemplates(xsltsource);
-        } catch (TransformerConfigurationException e) {
-            throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0).initCause(e);
-        }
-    }
-
-    private abstract class TransformOutput {
-        abstract void setDocument(Document doc);
-        abstract void setBytes(byte[] bytes) throws IOException;
-    }
-
-    private abstract class TransformInput {
-        private final Map vars;
-
-        protected TransformInput(Map vars) {
-            this.vars = vars;
-        }
-
-        abstract Document asDocument() throws SAXException, IOException;
-
-        abstract TarariMessageContext asTarari() throws IOException, SAXException;
-
-        abstract ElementCursor getElementCursor() throws SAXException, IOException;
-
-        Auditor getAuditor() { return auditor; }
-
-        Assertion getAssertion() { return assertion; }
-    }
-
-    /**
-     * preformes the transformation
-     * @param context
-     */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // 1. Get document to transform
         final Message message;
@@ -236,10 +175,28 @@ public class ServerXslTransformation
                 return AssertionStatus.SERVER_ERROR;
         }
 
+        try {
+            Map vars = context.getVariableMap(varsUsed, auditor);
+            return doCheckRequest(message, isrequest, vars);
+        } catch (SAXException e) {
+            auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
+            return AssertionStatus.BAD_REQUEST;
+        }
+    }
+
+
+    /*
+     * performes the transformation
+     * @param context  the context for the current request.  required
+     */
+    private AssertionStatus doCheckRequest(final Message message,
+                                           boolean isrequest,
+                                           Map vars)
+            throws IOException, PolicyAssertionException, SAXException
+    {
+
         int whichMimePart = assertion.getWhichMimePart();
         if (whichMimePart <= 0) whichMimePart = 0;
-
-        Map vars = context.getVariableMap(varsUsed, auditor);
 
         final TransformInput transformInput;
         final TransformOutput transformOutput;
@@ -252,40 +209,49 @@ public class ServerXslTransformation
                 auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
                 return AssertionStatus.BAD_REQUEST;
             }
-            transformInput = new FirstPartTransformInput(message, xmlKnob, vars);
-            transformOutput = new FirstPartTransformOutput(message);
+            transformInput = makeFirstPartTransformInput(xmlKnob, vars);
+            transformOutput = new TransformOutput() {
+                public void setBytes(byte[] bytes) throws IOException {
+                    message.getMimeKnob().getFirstPart().setBodyBytes(bytes);
+                }
+            };
         } else {
             // Make a new PartInfo based input and/or output
             final PartInfo partInfo;
             try {
                 partInfo = message.getMimeKnob().getPart(whichMimePart);
             } catch (NoSuchPartException e) {
-                auditor.logAndAudit(AssertionMessages.XSLT_NO_SUCH_PART, new String[] { Integer.toString(whichMimePart) });
+                auditor.logAndAudit(AssertionMessages.XSLT_NO_SUCH_PART, Integer.toString(whichMimePart));
                 return AssertionStatus.BAD_REQUEST;
             }
 
-            transformInput = new PartInfoTransformInput(partInfo, vars);
-            transformOutput = new PartInfoTransformOutput(partInfo);
+            transformInput = makePartInfoTransformInput(partInfo, vars);
+            transformOutput = new TransformOutput() {
+                public void setBytes(byte[] bytes) throws IOException {
+                    partInfo.setBodyBytes(bytes);
+                }
+            };
         }
 
         return transform(transformInput, transformOutput, isrequest);
     }
 
-    /** Get a stylesheet from the resourceGetter and transform input into output. */
+    //  Get a stylesheet from the resourceGetter and transform input into output
     private AssertionStatus transform(TransformInput input, TransformOutput output, boolean isReq)
             throws IOException, PolicyAssertionException
     {
         try {
             final ElementCursor ec = input.getElementCursor();
-            CachedStylesheet resource = resourceGetter.getResource(ec, input.vars);
+            CompiledStylesheet resource = resourceGetter.getResource(ec, input.getVars());
 
             if (resource == null) {
                 // Can't happen
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Internal server error: null resource"});
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Internal server error: null resource");
                 return AssertionStatus.SERVER_ERROR;
             }
 
-            return resource.transform(input, output);
+            resource.transform(input, output, getErrorListener());
+            return AssertionStatus.NONE;
 
         } catch (ResourceGetter.InvalidMessageException e) {
             auditor.logAndAudit(isReq ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
@@ -294,10 +260,10 @@ public class ServerXslTransformation
             auditor.logAndAudit(isReq ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
         } catch (ResourceGetter.MalformedResourceUrlException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] {e.getUrl(), "URL is invalid"});
+            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, e.getUrl(), "URL is invalid");
             return AssertionStatus.BAD_REQUEST;
         } catch (ResourceGetter.UrlNotPermittedException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_BAD_URL, new String[] {e.getUrl()});
+            auditor.logAndAudit(AssertionMessages.XSLT_BAD_URL, e.getUrl());
             return AssertionStatus.BAD_REQUEST;
         } catch (ResourceGetter.ResourceIOException e) {
             auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] {e.getUrl(), ExceptionUtils.getMessage(e)}, e);
@@ -306,12 +272,29 @@ public class ServerXslTransformation
             auditor.logAndAudit(AssertionMessages.XSLT_BAD_EXT_XSL, new String[] {e.getUrl(), ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.SERVER_ERROR;
         } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] { "HTTPS url: unable to create an SSL context", ExceptionUtils.getMessage(e) });
+            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, "HTTPS url: unable to create an SSL context", ExceptionUtils.getMessage(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (ResourceGetter.UrlNotFoundException e) {
             auditor.logAndAudit(AssertionMessages.XSLT_NO_PI);
             return AssertionStatus.BAD_REQUEST;
+        } catch (TransformerException e) {
+            String msg = "error transforming document";
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
+            throw new PolicyAssertionException(assertion, msg, e);
         }
+    }
+
+    private ErrorListener getErrorListener() {
+        return new ErrorListener() {
+            public void warning(TransformerException exception) throws TransformerException {
+                auditor.logAndAudit(AssertionMessages.XSLT_TRANS_WARN, exception.getMessageAndLocation());
+            }
+            public void error(TransformerException exception) throws TransformerException {
+                auditor.logAndAudit(AssertionMessages.XSLT_TRANS_ERR, exception.getMessageAndLocation());
+            }
+            public void fatalError(TransformerException exception) throws TransformerException {
+            }
+        };
     }
 
     /**
@@ -395,201 +378,39 @@ public class ServerXslTransformation
         }
     }
 
-    private static class CachedStylesheet {
-        private TarariCompiledStylesheet tarariStylesheet;
-        private Templates softwareStylesheet;
+    private TransformInput makeFirstPartTransformInput(XmlKnob xmlKnob, Map vars) throws IOException, SAXException {
+        return new TransformInput(xmlKnob.getElementCursor(), vars);
+    }
 
-        public CachedStylesheet(Templates softwareStylesheet, TarariCompiledStylesheet tarariStylesheet) {
-            this.tarariStylesheet = tarariStylesheet;
-            this.softwareStylesheet = softwareStylesheet;
-            if (softwareStylesheet == null)
-                throw new IllegalArgumentException("softwareStylesheet must be provided");
-        }
-
-        public AssertionStatus transform(TransformInput input, TransformOutput output)
-                throws SAXException, IOException, PolicyAssertionException
-        {
-            if (tarariStylesheet != null) {
-                TarariMessageContext tmc = input.asTarari();
-                if (tmc != null)
-                    return transformTarari(input, tmc, output);
-            }
-
-            return transformDom(input, output);
-        }
-
-        private AssertionStatus transformTarari(TransformInput t, TarariMessageContext tmc, TransformOutput output)
-                throws IOException, SAXException
-        {
-            assert tmc != null;
-            assert tarariStylesheet != null;
-
-            BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream(4096);
-            try {
-                tarariStylesheet.transform(tmc, os, t.vars);
-                output.setBytes(os.toByteArray());
-                logger.finest("Tarari xsl transformation completed");
-                return AssertionStatus.NONE;
-            } finally {
-                os.close();
-            }
-        }
-
-        private AssertionStatus transformDom(TransformInput t, TransformOutput output)
-                throws PolicyAssertionException, SAXException, IOException {
-            final Document doctotransform = t.asDocument();
-            final BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream(4096);
-            final StreamResult sr = new StreamResult(os);
-            final Auditor auditor = t.getAuditor();
-
-            try {
-                Transformer transformer = softwareStylesheet.newTransformer();
-                transformer.setURIResolver(XmlUtil.getSafeURIResolver());
-                transformer.setErrorListener(new ErrorListener() {
-                    public void warning(TransformerException exception) throws TransformerException {
-                        auditor.logAndAudit(AssertionMessages.XSLT_TRANS_WARN, new String[]{exception.getMessageAndLocation()});
-                    }
-                    public void error(TransformerException exception) throws TransformerException {
-                        auditor.logAndAudit(AssertionMessages.XSLT_TRANS_ERR, new String[]{exception.getMessageAndLocation()});
-                    }
-                    public void fatalError(TransformerException exception) throws TransformerException {
-                    }
-                });
-                XmlUtil.softXSLTransform(doctotransform, sr, transformer, t.vars);
-                output.setBytes(os.toByteArray());
-                logger.finest("software xsl transformation completed");
-            } catch (TransformerException e) {
-                String msg = "error transforming document";
-                t.getAuditor().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
-                throw new PolicyAssertionException(t.getAssertion(), msg, e);
-            } finally {
-                os.close();
-            }
-
-            return AssertionStatus.NONE;
+    // Builds a TarariMessageContext for the specified PartInfo, if possible, or returns null
+    private TarariMessageContext makeTarariMessageContext(PartInfo partInfo) throws IOException, SAXException {
+        TarariMessageContextFactory mcf = TarariLoader.getMessageContextFactory();
+        if (mcf == null) return null;
+        try {
+            return  mcf.makeMessageContext(partInfo.getInputStream(false));
+        } catch (SoftwareFallbackException e) {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "Falling back from Tarari to software processing for XSLT on MIME part #" +
+                        partInfo.getPosition(), e);
+            return null;
+        } catch (NoSuchPartException e) {
+            throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
         }
     }
 
-    private class FirstPartTransformInput extends TransformInput {
-        private final XmlKnob xmlKnob;
-        private final Message message;
-
-        public FirstPartTransformInput(Message message, XmlKnob xmlKnob, Map vars) {
-            super(vars);
-            this.xmlKnob = xmlKnob;
-            this.message = message;
-        }
-
-        Document asDocument() throws SAXException, IOException {
-            return xmlKnob.getDocumentReadOnly();
-        }
-
-        TarariMessageContext asTarari()
-                throws IOException, SAXException
-        {
-            message.isSoap();
-            TarariKnob tk = (TarariKnob)message.getKnob(TarariKnob.class);
-            try {
-                return tk == null ? null : tk.getContext();
-            } catch (NoSuchPartException e) {
-                throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
-            }
-        }
-
-        ElementCursor getElementCursor() throws SAXException, IOException {
-            return xmlKnob.getElementCursor();
-        }
-    }
-
-    private class FirstPartTransformOutput extends TransformOutput {
-        private final Message message;
-
-        public FirstPartTransformOutput(Message message) {
-            this.message = message;
-        }
-
-        void setDocument(Document doc) {
-            try {
-                message.getXmlKnob().setDocument(doc);
-            } catch (SAXException e) {
-                throw new RuntimeException(e); // can't happen -- we already checked that the input was XML
-            }
-        }
-
-        void setBytes(byte[] bytes) throws IOException {
-            message.getMimeKnob().getFirstPart().setBodyBytes(bytes);
-        }
-    }
-
-    /**
-     * This version of TransformInput has the special case and slower code needed to do Tarari transformation
+    /*
+     * This factory for TransformInput has the special case and slower code needed to do Tarari transformation
      * of a MIME part other than the first part.
      */
-    private class PartInfoTransformInput extends TransformInput {
-        TarariMessageContext tmc;
-        Document doc;
-        private final PartInfo partInfo;
+    private TransformInput makePartInfoTransformInput(PartInfo partInfo, Map vars) throws IOException, SAXException {
+        TarariMessageContext tmc = makeTarariMessageContext(partInfo);
+        if (tmc != null)
+            return new TransformInput(tmc.getElementCursor(), vars);
 
-        public PartInfoTransformInput(PartInfo partInfo, Map vars) {
-            super(vars);
-            this.partInfo = partInfo;
-            tmc = null;
-            doc = null;
-        }
-
-        Document asDocument() throws SAXException, IOException {
-            if (doc != null) return doc;
-            try {
-                return doc = XmlUtil.parse(partInfo.getInputStream(false));
-            } catch (NoSuchPartException e) {
-                throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
-            }
-        }
-
-        TarariMessageContext asTarari() throws IOException, SAXException {
-            if (tmc != null) return tmc;
-            TarariMessageContextFactory mcf = TarariLoader.getMessageContextFactory();
-            if (mcf == null) return null;
-            try {
-                return tmc = mcf.makeMessageContext(partInfo.getInputStream(false));
-            } catch (SoftwareFallbackException e) {
-                if (logger.isLoggable(Level.INFO))
-                    logger.log(Level.INFO, "Falling back from Tarari to software processing for XSLT on MIME part #" +
-                            partInfo.getPosition(), e);
-                return null;
-            } catch (NoSuchPartException e) {
-                throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
-            }
-        }
-
-        ElementCursor getElementCursor() throws SAXException, IOException {
-            TarariMessageContext tmc = asTarari();
-            if (tmc != null) return tmc.getElementCursor();
-            return new DomElementCursor(asDocument());
-        }
-    }
-
-    private class PartInfoTransformOutput extends TransformOutput {
-        private final PartInfo partInfo;
-
-        public PartInfoTransformOutput(PartInfo partInfo) {
-            this.partInfo = partInfo;
-        }
-
-        void setDocument(Document doc) {
-            BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream();
-            try {
-                XmlUtil.nodeToOutputStream(doc, os);
-                setBytes(os.toByteArray());
-            } catch (IOException e) {
-                throw new RuntimeException(e); // can't happen -- it's a byte array
-            } finally {
-                os.close();
-            }
-        }
-
-        void setBytes(byte[] bytes) throws IOException {
-            partInfo.setBodyBytes(bytes);
+        try {
+            return new TransformInput(new DomElementCursor(XmlUtil.parse(partInfo.getInputStream(false))), vars);
+        } catch (NoSuchPartException e) {
+            throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
         }
     }
 }

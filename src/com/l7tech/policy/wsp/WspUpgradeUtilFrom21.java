@@ -10,7 +10,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TooManyChildElementsException;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;

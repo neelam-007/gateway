@@ -7,6 +7,7 @@
 package com.l7tech.common.xml;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;

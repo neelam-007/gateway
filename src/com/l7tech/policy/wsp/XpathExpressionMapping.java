@@ -6,7 +6,7 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import org.w3c.dom.Element;
 
 import java.util.Collection;

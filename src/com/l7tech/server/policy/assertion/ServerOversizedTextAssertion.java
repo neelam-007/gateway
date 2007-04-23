@@ -12,7 +12,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.SoapValidator;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.OversizedTextAssertion;

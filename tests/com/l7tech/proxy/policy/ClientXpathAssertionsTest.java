@@ -8,7 +8,7 @@ package com.l7tech.proxy.policy;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.message.PolicyApplicationContext;

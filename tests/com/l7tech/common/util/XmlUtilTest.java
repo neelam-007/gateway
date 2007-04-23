@@ -7,6 +7,7 @@ import com.l7tech.common.xml.*;
 import com.l7tech.common.xml.xpath.DomCompiledXpath;
 import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.common.xml.xpath.XpathResultNodeSet;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;

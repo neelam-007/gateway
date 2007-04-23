@@ -9,6 +9,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.XpathResult;
+import com.l7tech.common.xml.tarari.TarariMessageContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -21,8 +22,10 @@ import java.io.OutputStream;
  * may use DOM or Tarari XmlCursor as its underlying implementation.
  * This is the central abstraction in the Layer 7 XML API.
  * <p/>
- * Cursors can be cheaply copied; however, it is strongly encouraged to avoid creating new cursors whenever existing
- * ones can be reused instead.
+ * Cursors can be cheaply copied; however, to keep down the amount of garbage produced while processing a request,
+ * it is encouraged to avoid creating new cursors whenever existing ones can be reused instead.
+ * <p/>
+ * This is very closely based on the Tarari XmlCursor interface.
  */
 public abstract class ElementCursor {
     /**
@@ -229,6 +232,10 @@ public abstract class ElementCursor {
      *         new String[] { SoapUtil.VALUETYPE_SKI },                             // synonyms for SKI
      *    });
      * </pre>
+     * <p/>
+     * The advantage of using this method over just calling getAttributeValue().equals() is that implementations
+     * may be able to accelerate the comparison (especially failed comparisons) and avoid having to convert
+     * the attribute's current value into a Java String (which may be slow and produce garbage).
      *
      * @param attrName   the name of the local attribute to match.  Not a qname -- this is only for local attributes.
      * @param values     matrix of possible attribute values to match.  Must not be null and must not contain nulls.
@@ -238,8 +245,7 @@ public abstract class ElementCursor {
         String val = getAttributeValue(attrName);
         for (int i = 0; i < values.length; i++) {
             String[] row = values[i];
-            for (int j = 0; j < row.length; j++) {
-                String wantVal = row[j];
+            for (String wantVal : row) {
                 if (val.equals(wantVal))
                     return i;
             }
@@ -289,6 +295,8 @@ public abstract class ElementCursor {
      * Serialize the current element as a String.
      *
      * @throws IOException if there is a problem serializing
+     * @return the current element as a String, from opening angle bracket of open tag up to and including
+     *         closing angle bracket of close tag.
      */
     public abstract String asString() throws IOException;
 
@@ -303,7 +311,7 @@ public abstract class ElementCursor {
     public abstract Element asDomElement(Document factory);
 
     /**
-     * Get a DOM tree representation of the current element, using or reusing any that's avialable.
+     * Get a DOM tree representation of the current element, using or reusing any that's available.
      * <p/>
      * Unless this cursor already happens to be based on a DOM tree, this is expensive and creates a lot of garbage.
      *
@@ -311,6 +319,16 @@ public abstract class ElementCursor {
      */
     public Element asDomElement() {
         return asDomElement(XmlUtil.createEmptyDocument());
+    }
+
+    /**
+     * Get the TarariMessageContext representation of the message to which this cursor belongs, if this
+     * is a Tarari-based ElementCursor.
+     *
+     * @return the TarariMessageContext for this cursor, or null if this is not a Tarari-based cursor.
+     */
+    public TarariMessageContext getTarariMessageContext() {
+        return null;
     }
 
     /**
@@ -356,6 +374,14 @@ public abstract class ElementCursor {
         return result != null && result.matches();
     }
 
+    /**
+     * Visit all immediate child elements of the current element.
+     *
+     * @param visitor a Visitor whose {@link Visitor#visit} method will immediately be invoked on every immediate
+     *                child element of the current element.  Required.
+     * @return the number of immediate child elements visited.
+     * @throws InvalidDocumentFormatException if a visitor threw this exception.
+     */
     public int visitChildElements(Visitor visitor) throws InvalidDocumentFormatException {
         pushPosition();
         try {
@@ -378,9 +404,28 @@ public abstract class ElementCursor {
         }
     }
 
+    /**
+     * Canonicalize this element and all child data per Exclusive XML Canonicalization Version 1.0.  This is
+     * needed for XML signatures.
+     *
+     * @param inclusiveNamespacePrefixes  namespace prefixes whose declarations should be included in the output even
+     *                                    if these declarations would otherwise appear to be unused and hence
+     *                                    unnecessary to include in the output.
+     * @return bytes of a well-formed XML document consisting of just the current elment and all children, in canonical
+     *         format.
+     * @throws IOException if there is a problem producing the canonicalized output.
+     */
     public abstract byte[] canonicalize(String[] inclusiveNamespacePrefixes) throws IOException;
 
+    /** Interface implemented by users of {@link ElementCursor#visitChildElements}. */
     public interface Visitor {
+        /**
+         * Visit the location pointed to by this cursor.
+         *
+         * @param ec an ElementCursor pointed at some element of interest.  Never null.
+         * @throws InvalidDocumentFormatException if some problem is discovered with this element that should
+         *                                        cause the visiting process to halt.
+         */
         void visit(ElementCursor ec) throws InvalidDocumentFormatException;
     }
 

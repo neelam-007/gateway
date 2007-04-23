@@ -7,7 +7,7 @@ package com.l7tech.policy.wssp;
 
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;

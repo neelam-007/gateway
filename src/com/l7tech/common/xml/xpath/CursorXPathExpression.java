@@ -2,7 +2,7 @@ package com.l7tech.common.xml.xpath;
 
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.InvalidXpathException;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import org.xml.sax.InputSource;
 
 import javax.xml.namespace.NamespaceContext;
@@ -20,7 +20,7 @@ import java.util.StringTokenizer;
  *
  * @author $Author$
  * @version $Revision$
- * @see com.l7tech.common.xml.XpathExpression XpathExpression
+ * @see XpathExpression XpathExpression
  * @see com.l7tech.common.xml.xpath.CompiledXpath CompiledXpath
  */
 class CursorXPathExpression implements XPathExpression {

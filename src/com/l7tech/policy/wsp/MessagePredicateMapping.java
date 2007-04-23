@@ -6,7 +6,7 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SimpleXpathAssertion;
 import com.l7tech.policy.assertion.XpathBasedAssertion;

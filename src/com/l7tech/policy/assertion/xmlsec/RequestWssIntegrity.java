@@ -1,6 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.wsp.TypeMapping;

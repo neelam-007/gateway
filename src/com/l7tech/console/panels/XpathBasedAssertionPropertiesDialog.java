@@ -13,6 +13,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.Functions;
 import com.l7tech.common.xml.*;
 import com.l7tech.common.xml.xpath.FastXpath;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.console.util.SoapMessageGenerator.Message;
 import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.console.action.Actions;

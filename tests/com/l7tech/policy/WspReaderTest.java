@@ -4,7 +4,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -18,7 +18,6 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -17,7 +17,7 @@ import org.xml.sax.InputSource;
  *
  * @author $Author$
  * @version $Revision$
- * @see com.l7tech.common.xml.XpathExpression XpathExpression
+ * @see XpathExpression XpathExpression
  * @see com.l7tech.common.xml.xpath.CompiledXpath CompiledXpath
  */
 class CursorXPath implements XPath {
