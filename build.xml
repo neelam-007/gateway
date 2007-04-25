@@ -691,6 +691,10 @@
         <checkfail/>
     </target>
 
+    <target name="test.junit" description="Run all JUnit tests" depends="test.work, test.intensive.work, test.modules, test.report">
+        <checkfail/>
+    </target>
+
     <!--
       Targets to optionally print failure warnings
     -->
