@@ -135,7 +135,7 @@ public class BeanTypeMapping extends ComplexTypeMapping {
         Object defaultTemplate = null;
         if (constructor != null) {
             try {
-                defaultTemplate = constructor.newInstance(new Object[0]);
+                defaultTemplate = constructor.newInstance();
             } catch (InstantiationException e) {
                 defaultTemplate = null;
             } catch (IllegalAccessException e) {
@@ -146,14 +146,15 @@ public class BeanTypeMapping extends ComplexTypeMapping {
         }
 
         Class ac = bean.getClass();
-        Map setters = new HashMap();
-        Map getters = new HashMap();
+        Map<String, Method> setters = new LinkedHashMap<String, Method>();
+        Map<String, Method> getters = new LinkedHashMap<String, Method>();
         findGettersAndSetters(ac, getters, setters);
-        for (Iterator i = getters.keySet().iterator(); i.hasNext();) {
-            String parm = (String)i.next();
+        List<String> sortedGetters = new ArrayList<String>(getters.keySet());
+        Collections.sort(sortedGetters);
+        for (String parm : sortedGetters) {
             if (TypeMappingUtils.isIgnorableProperty(parm))
                 continue;
-            Method getter = (Method)getters.get(parm);
+            Method getter = getters.get(parm);
             if (getter == null)
                 throw new InvalidPolicyTreeException("Internal error"); // can't happen
 
@@ -187,14 +188,11 @@ public class BeanTypeMapping extends ComplexTypeMapping {
         }
     }
 
-    private static void findGettersAndSetters(Class ac, Map getters, Map setters) {
+    private static void findGettersAndSetters(Class ac, Map<String, Method> getters, Map<String, Method> setters) {
         Method[] methods = ac.getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            Method method = methods[i];
-
-            if (Modifier.isStatic(method.getModifiers())) { // ignore statics
+        for (Method method : methods) {
+            if (Modifier.isStatic(method.getModifiers()))
                 continue;
-            }
 
             String name = method.getName();
             if (name.startsWith("is") && name.length() > 2 && method.getReturnType().equals(boolean.class))

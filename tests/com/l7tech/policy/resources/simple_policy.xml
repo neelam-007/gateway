@@ -34,8 +34,8 @@
                         </L7p:Rules>
                     </L7p:RequestHeaderRules>
                     <L7p:RequestParamRules httpPassthroughRuleSet="included">
-                        <L7p:Rules httpPassthroughRules="included"/>
                         <L7p:ForwardAll booleanValue="true"/>
+                        <L7p:Rules httpPassthroughRules="included"/>
                     </L7p:RequestParamRules>
                     <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
                         <L7p:Rules httpPassthroughRules="included">
@@ -57,8 +57,8 @@
                         </L7p:Rules>
                     </L7p:RequestHeaderRules>
                     <L7p:RequestParamRules httpPassthroughRuleSet="included">
-                        <L7p:Rules httpPassthroughRules="included"/>
                         <L7p:ForwardAll booleanValue="true"/>
+                        <L7p:Rules httpPassthroughRules="included"/>
                     </L7p:RequestParamRules>
                     <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
                         <L7p:Rules httpPassthroughRules="included">
@@ -96,8 +96,8 @@
                 <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
                     <wsse:TokenType>urn:oasis:names:tc:SAML:1.0:assertion#Assertion</wsse:TokenType>
                     <L7p:SamlParams>
-                        <L7p:SubjectConfirmations stringArrayValue="included"/>
                         <L7p:NameFormats stringArrayValue="included"/>
+                        <L7p:SubjectConfirmations stringArrayValue="included"/>
                     </L7p:SamlParams>
                 </wsse:SecurityToken>
                 <L7p:RequestWssTimestamp/>
@@ -128,8 +128,8 @@
                 <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
                     <wsse:TokenType>urn:oasis:names:tc:SAML:2.0:assertion#Assertion</wsse:TokenType>
                     <L7p:SamlParams>
-                        <L7p:SubjectConfirmations stringArrayValue="included"/>
                         <L7p:NameFormats stringArrayValue="included"/>
+                        <L7p:SubjectConfirmations stringArrayValue="included"/>
                     </L7p:SamlParams>
                 </wsse:SecurityToken>
                 <L7p:SchemaValidation/>
@@ -163,8 +163,11 @@
             <L7p:TrueAssertion/>
             <L7p:FalseAssertion/>
             <L7p:HttpRoutingAssertion>
-                <L7p:ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
+                <L7p:Login stringValue="bob&amp;joe"/>
+                <L7p:MaxConnections intValue="-5"/>
                 <L7p:Password stringValue="james;bloo=foo&amp;goo&quot;poo&quot;\sss\"/>
+                <L7p:ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
+                <L7p:Realm stringValue=""/>
                 <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
                     <L7p:Rules httpPassthroughRules="included">
                         <L7p:item httpPassthroughRule="included">
@@ -176,8 +179,8 @@
                     </L7p:Rules>
                 </L7p:RequestHeaderRules>
                 <L7p:RequestParamRules httpPassthroughRuleSet="included">
-                    <L7p:Rules httpPassthroughRules="included"/>
                     <L7p:ForwardAll booleanValue="true"/>
+                    <L7p:Rules httpPassthroughRules="included"/>
                 </L7p:RequestParamRules>
                 <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
                     <L7p:Rules httpPassthroughRules="included">
@@ -186,9 +189,6 @@
                         </L7p:item>
                     </L7p:Rules>
                 </L7p:ResponseHeaderRules>
-                <L7p:Login stringValue="bob&amp;joe"/>
-                <L7p:Realm stringValue=""/>
-                <L7p:MaxConnections intValue="-5"/>
             </L7p:HttpRoutingAssertion>
             <wsp:MessagePredicate
                 Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
