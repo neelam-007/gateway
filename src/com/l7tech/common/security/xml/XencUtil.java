@@ -369,18 +369,10 @@ public class XencUtil {
         }
         else {
             // decrypt
-            Cipher rsa = JceProvider.getRsaNoPaddingCipher();
+            Cipher rsa = JceProvider.getRsaPkcs1PaddingCipher();
             rsa.init(Cipher.DECRYPT_MODE, recipientKey);
 
-            byte[] decryptedPadded = rsa.doFinal(encryptedKeyBytes);
-
-            // unpad
-            try {
-                unencryptedKey = unPadRSADecryptedSymmetricKey(decryptedPadded);
-            } catch (IllegalArgumentException e) {
-                logger.log(Level.WARNING, "The key could not be unpadded", e);
-                throw new InvalidDocumentFormatException("The key could not be unpadded", e);
-            }
+            return rsa.doFinal(encryptedKeyBytes);
         }
         return unencryptedKey;
     }
@@ -439,12 +431,9 @@ public class XencUtil {
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
                                    publicKey.getClass().getName());
 
-        Cipher rsa = JceProvider.getRsaNoPaddingCipher();
+        Cipher rsa = JceProvider.getRsaPkcs1PaddingCipher();
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
-        final int modulusLength = ((RSAPublicKey)publicKey).getModulus().toByteArray().length;
-
-        byte[] paddedKeyBytes = XencUtil.padSymmetricKeyForRsaEncryption(keyBytes, modulusLength, rand);
-        return rsa.doFinal(paddedKeyBytes);
+        return rsa.doFinal(keyBytes);
     }
 
     /**
