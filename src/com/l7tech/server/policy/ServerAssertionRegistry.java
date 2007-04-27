@@ -78,6 +78,8 @@ public class ServerAssertionRegistry extends AssertionRegistry {
      * @param licenseManager the licenseManager, for checking to see if scanning the modules directory is enabled
      */
     public ServerAssertionRegistry(ServerConfig serverConfig, LicenseManager licenseManager) {
+        if (serverConfig == null) throw new IllegalArgumentException("A non-null serverConfig is required");
+        if (licenseManager == null) throw new IllegalArgumentException("A non-null licenseManager is required");
         this.serverConfig = serverConfig;
         this.licenseManager = licenseManager;
         installGatewayMetadataDefaults();
