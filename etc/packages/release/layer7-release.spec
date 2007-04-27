@@ -4,13 +4,13 @@
 # then use 'rpmbuild -tb layer7-release-3.6.tar.gz' to build the package.
 Summary: Layer 7 release files
 Name: layer7-release
-Version: 3.6.5
+Version: 3.7.0
 Release: 1
 Group: Applications/Internet
 License: Copyright Layer7 Technologies
 URL: http://www.layer7tech.com
 Packager: Layer7 Technologies, <support@layer7tech.com>
-Source0: %{name}-%{version}.tar.gz
+Source0: /tmp/%{name}-%{version}.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
 provides: system-logos redhat-release
 ExclusiveArch: noarch
@@ -26,7 +26,9 @@ and provides a system logo for the grub screen.
 rm -fr %{buildroot}
 
 %prep
-%setup -q
+mkdir -p %{buildroot}
+cd %{buildroot}
+tar -xzvf /tmp/%{name}-%{version}.tar.gz
 
 %build
 cat etc/*
@@ -46,5 +48,7 @@ cat etc/*
 %preun
 
 %changelog
+* Fri Apr 27 2007 JWT
+- CVS control and Makefile
 * Mon Dec 11 2006 JAM
 - Build First version
