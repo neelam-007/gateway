@@ -280,22 +280,26 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             return reallyTryUrl(context, routedRequestParams, url, true, vars);
         } catch (MalformedURLException mfe) {
             thrown = mfe;
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, mfe);
+            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, thrown.getMessage());
+            logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (IOException ioe) {
             // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
             thrown = ioe;
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ioe);
+            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, thrown.getMessage());
+            logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (SAXException e) {
             thrown = e;
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, thrown.getMessage());
+            logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (SignatureException e) {
             thrown = e;
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, thrown.getMessage());
+            logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (CertificateException e) {
             thrown = e;
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
-        }
-        finally {
+            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, thrown.getMessage());
+            logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
+        } finally {
             if(context.getRoutingStatus()!=RoutingStatus.ROUTED) {
                 RoutingResultListener rrl = context.getRoutingResultListener();
                 rrl.failed(url, thrown, context);
@@ -509,7 +513,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             return AssertionStatus.NONE;
         } catch (MalformedURLException mfe) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, mfe);
+            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, mfe.getMessage());
+            logger.log(Level.FINEST, "Problem routing: " + mfe.getMessage(), mfe);
         } catch (UnknownHostException uhe) {
             auditor.logAndAudit(AssertionMessages.HTTP_UNKNOWN_HOST, new String[]{uhe.getMessage()});
             return AssertionStatus.FAILED;
@@ -518,9 +523,11 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             return AssertionStatus.FAILED;
         } catch (IOException ioe) {
             // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ioe);
+            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, ioe.getMessage());
+            logger.log(Level.FINEST, "Problem routing: " + ioe.getMessage(), ioe);
         } catch (NoSuchPartException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, e.getMessage());
+            logger.log(Level.FINEST, "Problem routing: " + e.getMessage(), e);
         } finally {
             if (routedRequest != null || routedResponse != null) {
                 final GenericHttpRequest req = routedRequest;
