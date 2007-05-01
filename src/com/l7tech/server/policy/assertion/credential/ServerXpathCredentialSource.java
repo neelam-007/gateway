@@ -13,6 +13,8 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.jaxen.JaxenException;
+import org.jaxen.FunctionContext;
+import org.jaxen.XPathFunctionContext;
 import org.jaxen.dom.DOMXPath;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -30,6 +32,7 @@ import java.util.logging.Logger;
  */
 public class ServerXpathCredentialSource extends AbstractServerAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerXpathCredentialSource.class.getName());
+    private static final FunctionContext XPATH_FUNCTIONS = new XPathFunctionContext(false);
     private final Auditor auditor;
     private final DOMXPath loginXpath, passwordXpath;
     private final XpathCredentialSource assertion;
@@ -47,6 +50,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
                 loginXpath = null;
             } else {
                 loginXpath = new DOMXPath(loginExpr.getExpression());
+                loginXpath.setFunctionContext(XPATH_FUNCTIONS);
                 for (Iterator i = loginExpr.getNamespaces().keySet().iterator(); i.hasNext();) {
                     String prefix = (String) i.next();
                     String uri = (String)loginExpr.getNamespaces().get(prefix);
@@ -65,6 +69,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
                 passwordXpath = null;
             } else {
                 passwordXpath = new DOMXPath(passwordExpr.getExpression());
+                passwordXpath.setFunctionContext(XPATH_FUNCTIONS);
                 for (Iterator i = passwordExpr.getNamespaces().keySet().iterator(); i.hasNext();) {
                     String prefix = (String) i.next();
                     String uri = (String)passwordExpr.getNamespaces().get(prefix);
