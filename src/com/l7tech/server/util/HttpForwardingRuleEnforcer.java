@@ -44,7 +44,7 @@ public class HttpForwardingRuleEnforcer {
      */
     public static void handleRequestHeaders(GenericHttpRequestParams routedRequestParams, PolicyEnforcementContext context,
                                             String targetDomain, HttpPassthroughRuleSet rules, Auditor auditor,
-                                            Map vars, String[] varNames) {
+                                            Map vars, String[] varNames) throws IOException {
         // we should only forward def user-agent if the rules are not going to insert own
         if (rules.ruleForName(HttpConstants.HEADER_USER_AGENT) != HttpPassthroughRuleSet.BLOCK) {
             flushExisting(HttpConstants.HEADER_USER_AGENT, routedRequestParams);
@@ -61,6 +61,9 @@ public class HttpForwardingRuleEnforcer {
             String[] headerNames = knob.getHeaderNames();
             boolean cookieAlreadyHandled = false; // cause all cookies are processed in one go (unlike other headers)
             for (String headername : headerNames) {
+                if (headername.length() < 1)
+                    throw new IOException("Request contains an HTTP header with an empty name");
+
                 if (headerShouldBeIgnored(headername)) {
                     // some headers should just be ignored cause they are not 'application headers'
                     logger.fine("not passing through " + headername);
@@ -92,6 +95,8 @@ public class HttpForwardingRuleEnforcer {
                 if (rule.isUsesCustomizedValue()) {
                     // set header with custom value
                     String headername = rule.getName();
+                    if (headername.length() < 1)
+                        throw new IOException("Request contains an HTTP header with an empty name");
                     String headervalue = rule.getCustomizeValue();
                     // resolve context variable if applicable
                     if (varNames != null && varNames.length > 0) {
@@ -104,6 +109,8 @@ public class HttpForwardingRuleEnforcer {
                 } else if (knob != null) {
                     // set header with incoming value if it's present
                     String headername = rule.getName();
+                    if (headername.length() < 1)
+                        throw new IOException("Request contains an HTTP header with an empty name");
                     // special cookie handling
                     if (headername.equals(HttpConstants.HEADER_COOKIE)) {
                         List<HttpCookie> res = passableCookies(context, targetDomain, auditor);
