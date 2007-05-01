@@ -114,6 +114,11 @@ class KerberosConfig {
     private static final String SYSPROP_KRB5CFG_PATH = "java.security.krb5.conf";
     private static final String SYSPROP_KRB5_KDC = "java.security.krb5.kdc";
     private static final String SYSPROP_KRB5_REALM = "java.security.krb5.realm";
+    private static final String SYSPROP_KRB5_ENC_TKT = "com.l7tech.server.krb5.tktenc";
+    private static final String SYSPROP_KRB5_ENC_TGS = "com.l7tech.server.krb5.tgsenc";
+
+    private static final String ENCTYPES_TKT_DEFAULT = "rc4-hmac,des-cbc-md5";
+    private static final String ENCTYPES_TGS_DEFAULT = "rc4-hmac,des-cbc-md5";
 
     private static final String PATH_KEYTAB = "/kerberos.keytab";
     private static final String PATH_LOGINCFG = "/login.config";
@@ -159,6 +164,8 @@ class KerberosConfig {
             "\n" +
             "[libdefaults]\n" +
             "default_realm = {0}\n" +
+            "default_tkt_enctypes = {3}\n" +
+            "default_tgs_enctypes = {4}\n" +
             "\n" +
             "[realms]\n" +
             "{0} = '{'\n" +
@@ -283,6 +290,8 @@ class KerberosConfig {
     private static void generateKrb5Config(File file, String kdcIp, String ucRealm) {
         String ls = System.getProperty(SYSPROP_LINE_SEP, "\n");
         String lcRealm = ucRealm.toLowerCase();
+        String encTypesTkt = System.getProperty(SYSPROP_KRB5_ENC_TKT, ENCTYPES_TKT_DEFAULT);
+        String encTypesTgs= System.getProperty(SYSPROP_KRB5_ENC_TGS, ENCTYPES_TGS_DEFAULT);
 
         kerberosConfigRealm = ucRealm;
 
@@ -305,7 +314,7 @@ class KerberosConfig {
             if (file.exists()) file.delete();
             out = new FileOutputStream(file);
             out.write(MessageFormat.format(KRB5_CONF_TEMPLATE,
-                    new Object[]{ucRealm, lcRealm, kdcIp}).replace("\n", ls).getBytes("UTF-8"));
+                    new Object[]{ucRealm, lcRealm, kdcIp, encTypesTkt, encTypesTgs}).replace("\n", ls).getBytes("UTF-8"));
         }
         catch(IOException ioe) {
             logger.log(Level.WARNING, "Error writing Kerberos login configuration.", ioe);
