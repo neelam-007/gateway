@@ -62,7 +62,7 @@ do_control() {
         if [ -f "${CATALINA_PID}" ]  && [ -d "/proc/$(< ${CATALINA_PID})" ] ; then
             return 1
         fi
-        (su $SSGUSER -c "${TOMCAT_HOME}/bin/catalina.sh ${COMMAND} -config ${CONFIG_FILE} 2>&1 | logger -t SSG") <&- &>/dev/null &
+        (su $SSGUSER -c "${TOMCAT_HOME}/bin/catalina.sh ${COMMAND} -config ${CONFIG_FILE} 2>&1 | logger -t SSG-${PARTITION_NAME}") <&- &>/dev/null &
     else
         (su $SSGUSER -c "${TOMCAT_HOME}/bin/catalina.sh ${COMMAND} -config ${CONFIG_FILE}") &>/dev/null
     fi
