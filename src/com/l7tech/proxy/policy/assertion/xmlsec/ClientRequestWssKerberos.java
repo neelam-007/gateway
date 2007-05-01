@@ -1,8 +1,6 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
-import com.l7tech.common.security.kerberos.KerberosClient;
-import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -16,22 +14,10 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.NameCallback;
 
 /**
  * This assertion means that the request must provide a kerberos ticket for the service/gateway.
- *
- * @author $Author$
- * @version $Version: $
  */
 public class ClientRequestWssKerberos extends ClientAssertion {
 
@@ -57,11 +43,13 @@ public class ClientRequestWssKerberos extends ClientAssertion {
                 DecorationRequirements wssReqs = context.getDefaultWssRequirements();
 
                 if(kerberosId!=null) {
+                    context.setUsedKerberosServiceTicketReference(true);
                     wssReqs.setIncludeKerberosTicketId(true);
                     wssReqs.setKerberosTicketId(kerberosId);
                     wssReqs.setKerberosTicket(ticket); // needed if signing or encrypting
                 }
                 else {
+                    context.setUsedKerberosServiceTicketReference(false);
                     wssReqs.setIncludeKerberosTicket(true);
                     wssReqs.setKerberosTicket(ticket);
                 }

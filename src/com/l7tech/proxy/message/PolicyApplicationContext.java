@@ -78,6 +78,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     private SecretKey encryptedKeySecretKey = null;
     private String encryptedKeySha1 = null;
     private LoginCredentials requestCredentials = null;
+    private boolean usedKerberosTicketReference = false;
 
     // Policy settings, filled in by traversing policy tree, and which can all be rolled back by reset()
     private static class PolicySettings {
@@ -737,6 +738,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      * Clear the Kerberos ticket.
      */
     public void clearKerberosServiceTicket() {
+        setUsedKerberosServiceTicketReference(false);
         ssg.getRuntime().kerberosTicket(null);
     }
 
@@ -763,6 +765,24 @@ public class PolicyApplicationContext extends ProcessingContext {
         }
 
         return id;
+    }
+
+    /**
+     * Check if a reference to a previously used Kerberos token was used in the request.
+     *
+     * @return true if a reference was used.
+     */
+    public boolean usedKerberosServiceTicketReference() {
+        return usedKerberosTicketReference;
+    }
+
+    /**
+     * Set the flag for a Kerberos token.
+     * 
+     * @param used true if a reference was used.
+     */
+    public void setUsedKerberosServiceTicketReference(boolean used) {
+        usedKerberosTicketReference = used;
     }
 
     /**
@@ -831,10 +851,11 @@ public class PolicyApplicationContext extends ProcessingContext {
             if (flags[flagChallenge])
                 throw new HttpChallengeRequiredException();
 
-            KerberosServiceTicket kst = client.getKerberosServiceTicket(KerberosClient.getGSSServiceName(serviceName,hostName));
+            KerberosServiceTicket kst = client.getKerberosServiceTicket(KerberosClient.getServicePrincipalName(serviceName,hostName));
 
+            setUsedKerberosServiceTicketReference(false);
             ssg.getRuntime().kerberosTicket(kst);
-
+            
             return kst;
         }
         catch(KerberosException ke) {

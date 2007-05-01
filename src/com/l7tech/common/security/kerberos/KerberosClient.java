@@ -40,9 +40,6 @@ import com.l7tech.common.util.SyspropUtil;
  * the bridges configured password or the gateways configured kerberos keytab)</p>
  *
  * TODO investigate ways to avoid using sun.* classes
- *
- * @author $Author$
- * @version $Revision$
  */
 public class KerberosClient {
 
@@ -76,6 +73,20 @@ public class KerberosClient {
         String hostToUse = host != null ?  host : getHostName();
 
         return serviceToUse + "@" + hostToUse;
+    }
+
+    /**
+     * Get the Kerberos service principal name for the given service and host.
+     *
+     * @param service the service name, if null the default is used.
+     * @param host the host name, if null the default is used.
+     * @return the name
+     */
+    public static String getServicePrincipalName(String service, String host) {
+        String serviceToUse = service != null ?  service : getServiceName();
+        String hostToUse = host != null ?  host : getHostName();
+
+        return serviceToUse + "/" + hostToUse;
     }
 
     /**
@@ -149,14 +160,14 @@ public class KerberosClient {
                     GSSContext context = null;
                     try {
                         credential = manager.createCredential(null, GSSCredential.DEFAULT_LIFETIME, kerberos5Oid, GSSCredential.INITIATE_ONLY);
-                        GSSName serviceName = manager.createName(servicePrincipalName, GSSName.NT_HOSTBASED_SERVICE, kerberos5Oid);
+                        String gssPrincipal = KerberosUtils.toGssName(servicePrincipalName);
+                        GSSName serviceName = manager.createName(gssPrincipal, GSSName.NT_HOSTBASED_SERVICE, kerberos5Oid);
+                        if (logger.isLoggable(Level.FINE))
+                            logger.log(Level.FINE, "GSS name is '"+gssPrincipal+"'/'"+serviceName.canonicalize(kerberos5Oid)+"'.");
 
                         context = manager.createContext(serviceName, kerberos5Oid, credential, KERBEROS_LIFETIME.intValue());
                         context.requestMutualAuth(false);
-                        context.requestAnonymity(false);
-                        context.requestConf(false);
-                        context.requestInteg(true);
-                        context.requestCredDeleg(false);
+                        context.requestConf(true);
 
                         byte[] bytes = context.initSecContext(new byte[0], 0, 0);
 
@@ -209,7 +220,7 @@ public class KerberosClient {
                 throw new KerberosConfigException("No Keytab (Kerberos not configured)");
             }
 
-            LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(KerberosUtils.toGssName(servicePrincipalName)));
+            LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(servicePrincipalName));
             loginContext.login();
             ticket = (KerberosServiceTicket) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
                 public Object run() throws Exception {
@@ -220,6 +231,8 @@ public class KerberosClient {
                     try {
                         String gssPrincipal = KerberosUtils.toGssName(servicePrincipalName);
                         GSSName serviceName = manager.createName(gssPrincipal, GSSName.NT_HOSTBASED_SERVICE, kerberos5Oid);
+                        if (logger.isLoggable(Level.FINE))
+                            logger.log(Level.FINE, "GSS name is '"+gssPrincipal+"'/'"+serviceName.canonicalize(kerberos5Oid)+"'.");
                         scred = manager.createCredential(serviceName, GSSCredential.INDEFINITE_LIFETIME, kerberos5Oid, GSSCredential.ACCEPT_ONLY);
                         scontext = manager.createContext(scred);
 
@@ -491,7 +504,7 @@ public class KerberosClient {
             }
         }
 
-        if(ticket==null) throw new IllegalStateException("Ticket not found!");
+        if(ticket==null) throw new IllegalStateException("Ticket not found! (credsize:"+info.size()+")");
 
         return ticket;
     }
@@ -535,7 +548,9 @@ public class KerberosClient {
                     Callback callback = callbacks[i];
                     if(callback instanceof NameCallback) {
                         NameCallback nameCallback = (NameCallback) callback;
-                        nameCallback.setName(servicePrincipalName.replace('@','/')); //conv from GSS to kerberos name
+                        nameCallback.setName(servicePrincipalName); //conv from GSS to kerberos name
+                        if (logger.isLoggable(Level.FINE))
+                            logger.log(Level.FINE, "Using kerberos SPN '" + nameCallback.getName() + "'.");
                     }
                 }
             }

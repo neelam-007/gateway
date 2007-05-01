@@ -486,6 +486,11 @@ public class MessageProcessor {
             // TODO should we reject the response if isn't SOAP, but the request used WS-SC
             // FALLTHROUGH: not handled by agent -- fall through and send it back to the client
         }
+        else if (context.usedKerberosServiceTicketReference()) {
+            log.info("Clearing Kerberos service ticket and retrying.");
+            context.clearKerberosServiceTicket();
+            throw new PolicyRetryableException("Retry with new kerberos ticket.");
+        }
 
         if (responseFaultDetail != null &&
                 SecureSpanConstants.FAULTCODE_INVALIDSECURITYTOKEN.equals(responseFaultDetail.getFaultCode()))
