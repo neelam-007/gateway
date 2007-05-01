@@ -7,6 +7,7 @@ import org.jaxen.XPath;
 import org.jaxen.JaxenException;
 import org.jaxen.NamespaceContext;
 import org.jaxen.SimpleNamespaceContext;
+import org.jaxen.XPathFunctionContext;
 
 import javax.xml.soap.*;
 import java.util.List;
@@ -192,6 +193,7 @@ public class XpathEvaluator {
      */
     public Object evaluate(String expression) throws JaxenException {
         XPath xpath = new DOMXPath(expression);
+        xpath.setFunctionContext(new XPathFunctionContext(false));
         if (nameSpaceContext !=null) {
             xpath.setNamespaceContext(nameSpaceContext);
         }

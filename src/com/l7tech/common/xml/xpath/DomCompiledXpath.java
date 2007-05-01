@@ -9,6 +9,8 @@ import com.l7tech.common.xml.DomElementCursor;
 import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.ElementCursor;
 import org.jaxen.JaxenException;
+import org.jaxen.XPathFunctionContext;
+import org.jaxen.FunctionContext;
 import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Node;
 
@@ -24,6 +26,7 @@ import java.util.logging.Logger;
  */
 public class DomCompiledXpath extends CompiledXpath {
     private static final Logger logger = Logger.getLogger(DomCompiledXpath.class.getName());
+    private static final FunctionContext XPATH_FUNCTIONS = new XPathFunctionContext(false);
     private DOMXPath domXpath;
 
     /**
@@ -83,6 +86,7 @@ public class DomCompiledXpath extends CompiledXpath {
 
         try {
             DOMXPath domXpath = new DOMXPath(expression);
+            domXpath.setFunctionContext(XPATH_FUNCTIONS); // no JAXEN extensions
 
             if (namespaceMap != null) {
                 for (Iterator i = namespaceMap.keySet().iterator(); i.hasNext();) {
