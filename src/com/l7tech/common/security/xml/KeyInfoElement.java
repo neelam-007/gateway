@@ -10,6 +10,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.Resolver;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TooManyChildElementsException;
 import org.w3c.dom.Element;
@@ -146,6 +147,22 @@ public class KeyInfoElement implements ParsedElement {
     public static void checkKeyInfo(Element encryptedType, X509Certificate recipientCert)
             throws UnexpectedKeyInfoException, InvalidDocumentFormatException, GeneralSecurityException
     {
+        checkKeyInfo(encryptedType, recipientCert, null);
+    }
+
+    /**
+     * Checks if the specified EncryptedType's KeyInfo is addressed to the specified recipient certificate.
+     * @param encryptedType the EncryptedKey or EncryptedData element.  Must include a KeyInfo child.
+     * @param recipientCert
+     * @param certResolver resolver for certificates by identifier
+     * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there was a problem with the encryptedType, or the KeyInfo didn't match.
+     * @throws com.l7tech.common.security.xml.UnexpectedKeyInfoException      if the keyinfo did not match the recipientCert
+     * @throws java.security.GeneralSecurityException        if there was a problem with the recipient certificate or a certificate
+     *                                         embedded within the encryptedType.
+     */
+    public static void checkKeyInfo(Element encryptedType, X509Certificate recipientCert, Resolver<String,X509Certificate> certResolver)
+            throws UnexpectedKeyInfoException, InvalidDocumentFormatException, GeneralSecurityException
+    {
         // bugzilla #1582
         if (recipientCert == null) {
             // if we dont have a recipient cert, then obviously, this is not meant for us. this would happen for example
@@ -156,7 +173,7 @@ public class KeyInfoElement implements ParsedElement {
 
         Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedType, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME);
         if (kinfo == null) throw new InvalidDocumentFormatException(encryptedType.getLocalName() + " includes no KeyInfo element");
-        assertKeyInfoMatchesCertificate(kinfo, recipientCert);
+        assertKeyInfoMatchesCertificate(kinfo, recipientCert, certResolver);
     }
 
     /**
@@ -171,6 +188,22 @@ public class KeyInfoElement implements ParsedElement {
     public static void assertKeyInfoMatchesCertificate(Element keyInfo, X509Certificate cert)
             throws InvalidDocumentFormatException, UnexpectedKeyInfoException, CertificateException
     {
+        assertKeyInfoMatchesCertificate(keyInfo, cert, null);
+    }
+
+    /**
+     * Make sure that the specified KeyInfo in fact is referring to the specified certificate.
+     *
+     * @param keyInfo    the KeyInfo element to check.  Must not be null.
+     * @param cert       the X.509 certificate we expect it to be referring to.  Must not be null.
+     * @param certResolver resolver for certificates by identifier
+     * @throws InvalidDocumentFormatException   If we can't figure out the KeyInfo format.
+     * @throws UnexpectedKeyInfoException       If we understood the KeyInfo, but it is not referring to our certificate.
+     * @throws CertificateException             If we need the encoded form of the certificate but it is invalid.
+     */
+    public static void assertKeyInfoMatchesCertificate(Element keyInfo, X509Certificate cert, Resolver<String,X509Certificate> certResolver)
+            throws InvalidDocumentFormatException, UnexpectedKeyInfoException, CertificateException
+    {
         Element str = XmlUtil.findOnlyOneChildElementByName(keyInfo,
                                                             SoapUtil.SECURITY_URIS_ARRAY,
                                                             SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
@@ -178,82 +211,112 @@ public class KeyInfoElement implements ParsedElement {
         Element ki = XmlUtil.findOnlyOneChildElementByName(str,
                                                            SoapUtil.SECURITY_URIS_ARRAY,
                                                            SoapUtil.KEYIDENTIFIER_EL_NAME);
-        if (ki == null) throw new UnsupportedKeyInfoFormatException("KeyInfo's SecurityTokenReference includes no KeyIdentifier element");
-        String valueType = ki.getAttribute("ValueType");
-        String keyIdentifierValue = XmlUtil.getTextValue(ki);
-        byte[] keyIdValueBytes;
-        try {
-            keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue, true);
-        } catch (IOException e) {
-            throw new InvalidDocumentFormatException("Unable to parse base64 Key Identifier", e);
-        }
-        if (keyIdValueBytes == null || keyIdValueBytes.length < 1) throw new InvalidDocumentFormatException("KeyIdentifier was empty");
-        if (valueType == null || valueType.length() <= 0) {
-            logger.fine("The KeyId Value Type is not specified. We will therefore assume it is a Subject Key Identifier.");
-            valueType = SoapUtil.VALUETYPE_SKI;
-        }
-        if (valueType.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
-            // If not typed, assume it's a ski
-            byte[] ski = CertUtils.getSKIBytesFromCert(cert);
-            if (ski == null) {
-                // TODO try making up both RFC 3280 SKIs and see if they match (Bug #1001)
-                //throw new CertificateException("Unable to verify that KeyInfo is addressed to us -- " +
-                //                               "our own certificate does not contain a Subject Key Identifier.");
-                // TODO should reject the message until we implement fix as above
-                logger.log(Level.INFO, "Unable to verify that KeyInfo is addressed to us; skipping SKI check");
-                return;
+        if (ki == null) {
+            Element reference = XmlUtil.findOnlyOneChildElementByName(str,
+                                                              SoapUtil.SECURITY_URIS_ARRAY,
+                                                              SoapUtil.REFERENCE_EL_NAME);
+            if (reference == null) {
+                // no reference or keyidentifier
+                throw new UnsupportedKeyInfoFormatException("KeyInfo's SecurityTokenReference includes no KeyIdentifier element");
             } else {
-                // trim if necessary
-                byte[] ski2 = ski;
-                if (ski.length > keyIdValueBytes.length) {
-                    ski2 = new byte[keyIdValueBytes.length];
-                    System.arraycopy(ski, ski.length-keyIdValueBytes.length,
-                                     ski2, 0, keyIdValueBytes.length);
+                String uriAttr = reference.getAttribute("URI");
+                if (uriAttr == null || uriAttr.length() < 1) {
+                    throw new UnsupportedKeyInfoFormatException("KeyInfo contains a reference but the URI attribute cannot be obtained");
                 }
-                if (Arrays.equals(keyIdValueBytes, ski2)) {
-                    logger.fine("the Key SKI is recognized. This key is for us for sure!");
+                if (uriAttr.charAt(0) == '#') {
+                    uriAttr = uriAttr.substring(1);
+                }
+                if (certResolver == null || certResolver.resolve(uriAttr)==null) {
+                    throw new InvalidDocumentFormatException("Invalid security token reference '"+uriAttr+"' in KeyInfo");
+                }
+                X509Certificate referencedCert = certResolver.resolve(uriAttr);
+                if (CertUtils.certsAreEqual(cert, referencedCert)) {
+                    logger.fine("The Key recipient cert is recognized");
                     /* FALLTHROUGH */
                 } else {
-                    String msg = "This KeyInfo declares a specific SKI, " +
-                            "but our certificate's SKI does not match.";
-                    logger.fine(msg);
+                    String msg = "This KeyInfo declares a specific cert, " +
+                            "but our certificate does not match.";
+                    logger.warning(msg);
                     throw new UnexpectedKeyInfoException(msg);
                 }
             }
-        } else if (valueType.endsWith(SoapUtil.VALUETYPE_X509_SUFFIX)) {
-            // It seems to be a complete certificate
-            X509Certificate referencedCert = CertUtils.decodeCert(keyIdValueBytes);
-            if (CertUtils.certsAreEqual(cert, referencedCert)) {
-                logger.fine("The Key recipient cert is recognized");
-                /* FALLTHROUGH */
+        } else {
+            String valueType = ki.getAttribute("ValueType");
+            String keyIdentifierValue = XmlUtil.getTextValue(ki);
+            byte[] keyIdValueBytes;
+            try {
+                keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue, true);
+            } catch (IOException e) {
+                throw new InvalidDocumentFormatException("Unable to parse base64 Key Identifier", e);
+            }
+            if (keyIdValueBytes == null || keyIdValueBytes.length < 1) throw new InvalidDocumentFormatException("KeyIdentifier was empty");
+            if (valueType == null || valueType.length() <= 0) {
+                logger.fine("The KeyId Value Type is not specified. We will therefore assume it is a Subject Key Identifier.");
+                valueType = SoapUtil.VALUETYPE_SKI;
+            }
+            if (valueType.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
+                // If not typed, assume it's a ski
+                byte[] ski = CertUtils.getSKIBytesFromCert(cert);
+                if (ski == null) {
+                    // TODO try making up both RFC 3280 SKIs and see if they match (Bug #1001)
+                    //throw new CertificateException("Unable to verify that KeyInfo is addressed to us -- " +
+                    //                               "our own certificate does not contain a Subject Key Identifier.");
+                    // TODO should reject the message until we implement fix as above
+                    logger.log(Level.INFO, "Unable to verify that KeyInfo is addressed to us; skipping SKI check");
+                    return;
+                } else {
+                    // trim if necessary
+                    byte[] ski2 = ski;
+                    if (ski.length > keyIdValueBytes.length) {
+                        ski2 = new byte[keyIdValueBytes.length];
+                        System.arraycopy(ski, ski.length-keyIdValueBytes.length,
+                                         ski2, 0, keyIdValueBytes.length);
+                    }
+                    if (Arrays.equals(keyIdValueBytes, ski2)) {
+                        logger.fine("the Key SKI is recognized. This key is for us for sure!");
+                        /* FALLTHROUGH */
+                    } else {
+                        String msg = "This KeyInfo declares a specific SKI, " +
+                                "but our certificate's SKI does not match.";
+                        logger.fine(msg);
+                        throw new UnexpectedKeyInfoException(msg);
+                    }
+                }
+            } else if (valueType.endsWith(SoapUtil.VALUETYPE_X509_SUFFIX)) {
+                // It seems to be a complete certificate
+                X509Certificate referencedCert = CertUtils.decodeCert(keyIdValueBytes);
+                if (CertUtils.certsAreEqual(cert, referencedCert)) {
+                    logger.fine("The Key recipient cert is recognized");
+                    /* FALLTHROUGH */
 
-            } else {
-                String msg = "This KeyInfo declares a specific cert, " +
-                        "but our certificate does not match.";
-                logger.warning(msg);
-                throw new UnexpectedKeyInfoException(msg);
-            }
-        } else if (valueType.endsWith(SoapUtil.VALUETYPE_X509_THUMB_SHA1_SUFFIX))
-        {
-            // TODO replace this with a cert cache lookup by SHA1 thumbprint
-            byte[] certBytes = cert.getEncoded();
-            byte[] certSha1 = HexUtils.getSha1Digest(certBytes);
-            if (Arrays.equals(certSha1, keyIdValueBytes)) {
-                logger.fine("The cert SHA1 thumbprint was recognized.  The cert is ours for sure.");
-                /* FALLTHROUGH */
-            } else {
-                String msg = "This KeyInfo declares a specific cert SHA1 thumbprint, " +
-                        "but our certificate's thumbprint does not match.";
-                logger.fine(msg);
-                throw new UnexpectedKeyInfoException(msg);
-            }
-        } else if (valueType.endsWith(SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX)) {
-            // TODO - to support this, need to be able to look up a (long-)previously-processed EncryptedKey by its hash
-            throw new UnsupportedKeyInfoFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
-                    "ValueType: " + valueType);
-        } else
-            throw new UnsupportedKeyInfoFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
-                    "ValueType: " + valueType);
+                } else {
+                    String msg = "This KeyInfo declares a specific cert, " +
+                            "but our certificate does not match.";
+                    logger.warning(msg);
+                    throw new UnexpectedKeyInfoException(msg);
+                }
+            } else if (valueType.endsWith(SoapUtil.VALUETYPE_X509_THUMB_SHA1_SUFFIX))
+            {
+                // TODO replace this with a cert cache lookup by SHA1 thumbprint
+                byte[] certBytes = cert.getEncoded();
+                byte[] certSha1 = HexUtils.getSha1Digest(certBytes);
+                if (Arrays.equals(certSha1, keyIdValueBytes)) {
+                    logger.fine("The cert SHA1 thumbprint was recognized.  The cert is ours for sure.");
+                    /* FALLTHROUGH */
+                } else {
+                    String msg = "This KeyInfo declares a specific cert SHA1 thumbprint, " +
+                            "but our certificate's thumbprint does not match.";
+                    logger.fine(msg);
+                    throw new UnexpectedKeyInfoException(msg);
+                }
+            } else if (valueType.endsWith(SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX)) {
+                // TODO - to support this, need to be able to look up a (long-)previously-processed EncryptedKey by its hash
+                throw new UnsupportedKeyInfoFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
+                        "ValueType: " + valueType);
+            } else
+                throw new UnsupportedKeyInfoFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
+                        "ValueType: " + valueType);
+        }
     }
 
     public static class UnsupportedKeyInfoFormatException extends InvalidDocumentFormatException {

@@ -638,7 +638,7 @@ public class WssProcessorImpl implements WssProcessor {
     private Element processEncryptedKey(Element encryptedKeyElement,
                                         PrivateKey recipientKey,
                                         X509Certificate recipientCert,
-                                        ProcessingStatusHolder cntx)
+                                        final ProcessingStatusHolder cntx)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
     {
         if(logger.isLoggable(Level.FINEST)) logger.finest("Processing EncryptedKey");
@@ -646,7 +646,17 @@ public class WssProcessorImpl implements WssProcessor {
         // If there's a KeyIdentifier, log whether it's talking about our key
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
         try {
-            KeyInfoElement.checkKeyInfo(encryptedKeyElement, recipientCert);
+            KeyInfoElement.checkKeyInfo(encryptedKeyElement, recipientCert, new Resolver<String,X509Certificate>(){
+                public X509Certificate resolve(String id) {
+                    X509Certificate resolved = null;
+                    Object token = cntx.x509TokensById.get(id);
+                    if (token instanceof X509BinarySecurityTokenImpl) {
+                        X509BinarySecurityTokenImpl bst = (X509BinarySecurityTokenImpl) token;
+                        resolved = bst.getCertificate(); 
+                    }
+                    return resolved;
+                }
+            });
         } catch (UnexpectedKeyInfoException e) {
             if (cntx.secHeaderActor == SecurityActor.L7ACTOR) {
                 logger.warning("We do not appear to be the intended recipient for this EncryptedKey however the " +
