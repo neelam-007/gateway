@@ -118,8 +118,20 @@ public class SecureSpanBridgeFactory {
         }
         if (options.getGatewayCertificateTrustManager() != null) {
             final SecureSpanBridgeOptions.GatewayCertificateTrustManager tm = options.getGatewayCertificateTrustManager();
+            final String msgNoTrust = "Bridge API user's GatewayCertificateTrustManager rejected Gateway certificate";
             credentialManagerMap.put(ssg, new CredentialManagerImpl() {
-                final String msgNoTrust = "Bridge API user's GatewayCertificateTrustManager rejected Gateway certificate";
+                public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException {
+                    try {
+                        if (tm.isGatewayCertificateTrusted(new X509Certificate[] {untrustedCertificate}))
+                            return;
+                    } catch (CertificateException e) {
+                        throw new OperationCanceledException(msgNoTrust, e);
+                    }
+                    throw new OperationCanceledException(msgNoTrust);
+                }
+            });
+            final CredentialManager oldcm = ssg.getRuntime().getCredentialManager();
+            ssg.getRuntime().setCredentialManager(new DelegatingCredentialManager(oldcm) {
                 public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException {
                     try {
                         if (tm.isGatewayCertificateTrusted(new X509Certificate[] {untrustedCertificate}))
