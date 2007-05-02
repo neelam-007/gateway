@@ -215,7 +215,7 @@ public class KeyInfoElement implements ParsedElement {
             Element reference = XmlUtil.findOnlyOneChildElementByName(str,
                                                               SoapUtil.SECURITY_URIS_ARRAY,
                                                               SoapUtil.REFERENCE_EL_NAME);
-            if (reference == null) {
+            if (reference == null || certResolver == null) {
                 // no reference or keyidentifier
                 throw new UnsupportedKeyInfoFormatException("KeyInfo's SecurityTokenReference includes no KeyIdentifier element");
             } else {
@@ -226,7 +226,7 @@ public class KeyInfoElement implements ParsedElement {
                 if (uriAttr.charAt(0) == '#') {
                     uriAttr = uriAttr.substring(1);
                 }
-                if (certResolver == null || certResolver.resolve(uriAttr)==null) {
+                if (certResolver.resolve(uriAttr)==null) {
                     throw new InvalidDocumentFormatException("Invalid security token reference '"+uriAttr+"' in KeyInfo");
                 }
                 X509Certificate referencedCert = certResolver.resolve(uriAttr);
