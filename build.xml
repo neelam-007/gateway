@@ -176,6 +176,8 @@
         <include name="com/l7tech/common/alert/AlertAdmin.java"/>
         <include name="com/l7tech/common/audit/AuditAdmin*.java"/>
         <include name="com/l7tech/common/audit/LogonEvent.java"/>
+        <include name="com/l7tech/common/security/rbac/RbacAdmin.java"/>
+        <include name="com/l7tech/common/security/TrustedCertAdmin.java"/>
         <include name="com/l7tech/common/transport/jms/JmsAdmin*.java"/>
         <include name="com/l7tech/common/transport/jms/JmsConnection.java"/>
         <include name="com/l7tech/common/transport/jms/JmsEndpoint.java"/>
@@ -257,7 +259,7 @@
         <include name="com/l7tech/service/ServiceDocument.java"/>
         <include name="com/l7tech/service/ServiceStatistics.java"/>
     </patternset>
-
+    
     <!--
       License Generator library patternset (also ".")
     -->
@@ -2079,6 +2081,7 @@
     </target>
 
     <target name="managerapi.javadoc">
+        <mkdir dir="${build.dir}/docs"/>
         <javadoc
                 destdir="${build.dir}/docs/manager-api"
                 version="true"
@@ -2090,6 +2093,8 @@
             <fileset dir="${src.root}/src/" defaultexcludes="yes">
                 <patternset refid="managerapi.sources"/>
             </fileset>
+            
+            <classpath refid="project.classpath"/>
         </javadoc>
     </target>
 
