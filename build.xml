@@ -160,6 +160,105 @@
     </patternset>
 
     <!--
+      Patternset used for Manager API javadoc
+    -->
+    <patternset id="managerapi.sources">
+        <include name="com/l7tech/admin/AdminContext*.java"/>
+        <include name="com/l7tech/admin/AdminLogin*.java"/>
+        <include name="com/l7tech/cluster/ClusterNodeInfo.java"/>
+        <include name="com/l7tech/cluster/ClusterProperty.java"/>
+        <include name="com/l7tech/cluster/ClusterStatusAdmin*.java"/>
+        <include name="com/l7tech/cluster/GatewayStatus.java"/>
+        <include name="com/l7tech/cluster/LogRequest.java"/>
+        <include name="com/l7tech/cluster/ServiceUsage.java"/>
+        <include name="com/l7tech/common/VersionException.java"/>
+        <include name="com/l7tech/common/alert/AdminAlertEvent.java"/>
+        <include name="com/l7tech/common/alert/AlertAdmin.java"/>
+        <include name="com/l7tech/common/audit/AuditAdmin*.java"/>
+        <include name="com/l7tech/common/audit/LogonEvent.java"/>
+        <include name="com/l7tech/common/transport/jms/JmsAdmin*.java"/>
+        <include name="com/l7tech/common/transport/jms/JmsConnection.java"/>
+        <include name="com/l7tech/common/transport/jms/JmsEndpoint.java"/>
+        <include name="com/l7tech/common/transport/jms/JmsProvider.java"/>
+        <include name="com/l7tech/common/transport/jms/JmsReplyType.java"/>
+        <include name="com/l7tech/common/transport/jms/JmsTestException.java"/>
+        <include name="com/l7tech/console/SsmApplication*.java"/>
+        <include name="com/l7tech/console/security/AuthenticationProvider.java"/>
+        <include name="com/l7tech/console/security/InvalidHostCertificateException.java"/>
+        <include name="com/l7tech/console/security/InvalidHostNameException.java"/>
+        <include name="com/l7tech/console/security/LogonListener.java"/>
+        <include name="com/l7tech/identity/Group.java"/>
+        <include name="com/l7tech/identity/GroupBean.java"/>
+        <include name="com/l7tech/identity/GroupManager.java"/>
+        <include name="com/l7tech/identity/GroupMembership.java"/>
+        <include name="com/l7tech/identity/Identity.java"/>
+        <include name="com/l7tech/identity/IdentityAdmin.java"/>
+        <include name="com/l7tech/identity/IdentityProvider.java"/>
+        <include name="com/l7tech/identity/IdentityProviderConfig.java"/>
+        <include name="com/l7tech/identity/IdentityProviderConfigManager.java"/>
+        <include name="com/l7tech/identity/IdentityProviderType.java"/>
+        <include name="com/l7tech/identity/PersistentGroup.java"/>
+        <include name="com/l7tech/identity/PersistentUser.java"/>
+        <include name="com/l7tech/identity/User.java"/>
+        <include name="com/l7tech/identity/UserBean.java"/>
+        <include name="com/l7tech/identity/UserManager.java"/>
+        <include name="com/l7tech/identity/cert/ClientCertManager*.java"/>
+        <include name="com/l7tech/identity/cert/TrustedCertManager.java"/>
+        <include name="com/l7tech/identity/fed/FederatedGroup.java"/>
+        <include name="com/l7tech/identity/fed/FederatedGroupMembership.java"/>
+        <include name="com/l7tech/identity/fed/FederatedIdentityProviderConfig.java"/>
+        <include name="com/l7tech/identity/fed/FederatedUser.java"/>
+        <include name="com/l7tech/identity/fed/VirtualGroup.java"/>
+        <include name="com/l7tech/identity/fed/X509Config.java"/>
+        <include name="com/l7tech/identity/internal/InternalGroup.java"/>
+        <include name="com/l7tech/identity/internal/InternalGroupMembership.java"/>
+        <include name="com/l7tech/identity/internal/InternalUser.java"/>
+        <include name="com/l7tech/identity/ldap/GroupMappingConfig.java"/>
+        <include name="com/l7tech/identity/ldap/LdapGroup.java"/>
+        <include name="com/l7tech/identity/ldap/LdapIdentity.java"/>
+        <include name="com/l7tech/identity/ldap/LdapIdentityProviderConfig.java"/>
+        <include name="com/l7tech/identity/ldap/LdapUser.java"/>
+        <include name="com/l7tech/identity/ldap/MemberStrategy.java"/>
+        <include name="com/l7tech/identity/ldap/PasswdStrategy.java"/>
+        <include name="com/l7tech/identity/ldap/UserMappingConfig.java"/>
+        <include name="com/l7tech/identity/mapping/AttributeConfig.java"/>
+        <include name="com/l7tech/identity/mapping/AttributeMapping.java"/>
+        <include name="com/l7tech/identity/mapping/IdentityMapping.java"/>
+        <include name="com/l7tech/identity/mapping/InternalIdentityMapping.java"/>
+        <include name="com/l7tech/identity/mapping/KerberosSecurityTokenMapping.java"/>
+        <include name="com/l7tech/identity/mapping/LdapAttributeMapping.java"/>
+        <include name="com/l7tech/identity/mapping/NameFormat.java"/>
+        <include name="com/l7tech/identity/mapping/SecurityTokenMapping.java"/>
+        <include name="com/l7tech/identity/mapping/X509SecurityTokenMapping.java"/>
+        <include name="com/l7tech/logging/GenericLogAdmin.java"/>
+        <include name="com/l7tech/logging/LogMessage.java"/>
+        <include name="com/l7tech/logging/SSGLogRecord.java"/>
+        <include name="com/l7tech/logging/StatisticsRecord.java"/>
+        <include name="com/l7tech/objectmodel/Entity.java"/>
+        <include name="com/l7tech/objectmodel/EntityHeader.java"/>
+        <include name="com/l7tech/objectmodel/EntityHeaderComparator.java"/>
+        <include name="com/l7tech/objectmodel/EntityManager.java"/>
+        <include name="com/l7tech/objectmodel/EntityType.java"/>
+        <include name="com/l7tech/objectmodel/FindException.java"/>
+        <include name="com/l7tech/objectmodel/IdentityHeader.java"/>
+        <include name="com/l7tech/objectmodel/NamedEntity.java"/>
+        <include name="com/l7tech/objectmodel/ObjectModelException.java"/>
+        <include name="com/l7tech/objectmodel/ObjectNotFoundException.java"/>
+        <include name="com/l7tech/objectmodel/PersistentEntity.java"/>
+        <include name="com/l7tech/objectmodel/SaveException.java"/>
+        <include name="com/l7tech/objectmodel/StaleUpdateException.java"/>
+        <include name="com/l7tech/objectmodel/TransactionException.java"/>
+        <include name="com/l7tech/objectmodel/UpdateException.java"/>
+        <include name="com/l7tech/objectmodel/VersionException.java"/>
+        <include name="com/l7tech/service/PublishedService*.java"/>
+        <include name="com/l7tech/service/SampleMessage.java"/>
+        <include name="com/l7tech/service/ServiceAdmin.java"/>
+        <include name="com/l7tech/service/ServiceAdminPublic.java"/>
+        <include name="com/l7tech/service/ServiceDocument.java"/>
+        <include name="com/l7tech/service/ServiceStatistics.java"/>
+    </patternset>
+
+    <!--
       License Generator library patternset (also ".")
     -->
     <patternset id="licensegenerator.libs">
@@ -1977,6 +2076,21 @@
             </fileset>
         </javadoc>
 
+    </target>
+
+    <target name="managerapi.javadoc">
+        <javadoc
+                destdir="${build.dir}/docs/manager-api"
+                version="true"
+                author="false"
+                use="true"
+                public="true"
+                windowtitle="Layer 7 Manager API">
+
+            <fileset dir="${src.root}/src/" defaultexcludes="yes">
+                <patternset refid="managerapi.sources"/>
+            </fileset>
+        </javadoc>
     </target>
 
     <target name="zip.api" depends="package.api">
