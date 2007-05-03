@@ -24,10 +24,7 @@ import org.w3c.dom.Document;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
@@ -234,6 +231,16 @@ public class ServicePropertiesDialog extends JDialog {
             }
             public void keyTyped(KeyEvent e) {}
         });
+        uriField.addFocusListener(new FocusListener() {
+            public void focusGained(FocusEvent e) {}
+            public void focusLost(FocusEvent e) {
+                if (customURIRadio.isSelected()) {
+                    String url = updateURL();
+                    if (!url.startsWith("/")) url = "/" + url;
+                    uriField.setText(url);
+                }
+            }
+        });
 
         noURIRadio.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent actionEvent) {
@@ -402,7 +409,7 @@ public class ServicePropertiesDialog extends JDialog {
         cancel();
     }
 
-    private void updateURL() {
+    private String updateURL() {
         String currentValue = null;
         if (customURIRadio.isSelected()) {
             currentValue = uriField.getText();
@@ -422,9 +429,6 @@ public class ServicePropertiesDialog extends JDialog {
                 urlvalue = ssgURL + currentValue;
             } else {
                 urlvalue = ssgURL + "/" + currentValue;
-                if (currentValue.length() > 0) {
-                    uriField.setText("/" + currentValue);
-                }
             }
         }
 
@@ -432,6 +436,7 @@ public class ServicePropertiesDialog extends JDialog {
         tmp = tmp.replace("http://", "http(s)://");
         routingURL.setText("<html><a href=\"" + urlvalue + "\">" + tmp + "</a></html>");
         routingURL.setCaretPosition(0);
+        return currentValue;
     }
 
     private void editWsdl() {
