@@ -1522,6 +1522,25 @@
     </target>
 
     <!--
+      Package the RandomXmlGenerator (Always invoked by hand)
+    -->
+    <target name="package.randomxmlgenerator"
+            description="Compile and package the RandomXmlGenerator"
+            depends="dev">
+        <jar jarfile="${build.dir}/RandomXmlGenerator.jar">
+            <manifest>
+                <attribute name="Implementation-Title" value="${app.name}"/>
+                <attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}"/>
+                <attribute name="Implementation-Vendor" value="${vendor.name}"/>
+                <attribute name="Main-Class" value="com.l7tech.skunkworks.xml.RandomXmlGenerator"/>
+            </manifest>
+            <fileset dir="${build.test.classes}">
+                <include name="com/l7tech/skunkworks/xml/**/*"/>
+            </fileset>
+        </jar>
+    </target>
+
+    <!--
       Package the LicenseGenerator (Aways invoked by hand)
     -->
     <target name="package.licensegenerator"
