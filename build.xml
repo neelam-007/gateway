@@ -808,6 +808,8 @@
             </fileset>
             <report format="frames" todir="${build.reports}/html"/>
         </junitreport>
+        <mkdir dir="${build.reports}/teamcity"/>
+        <zip destfile="${build.reports}/teamcity/junit.zip" basedir="${build.reports}/html" />
     </target>
     <target name="test.report.error" if="test.error">
         <echo level="warning">One or more JUnit tests exited due to error.</echo>
