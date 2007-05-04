@@ -947,7 +947,7 @@
                  version="true"
                  use="true"
                  splitindex="true"
-                 maxmemory="192m">
+                 maxmemory="512m">
                 <!-- other possible options:
                  author="true"
                  private="true"
