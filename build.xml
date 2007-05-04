@@ -798,7 +798,7 @@
         <checkfail/>
     </target>
 
-    <target name="test.junit" description="Run all JUnit tests" depends="test.work, test.intensive.work, test.modules, test.report, report.jdepend">
+    <target name="test.junit" description="Run all JUnit tests" depends="test.work, test.intensive.work, test.modules, test.report, report.jdepend, javadoc">
         <checkfail/>
     </target>
 
@@ -947,14 +947,14 @@
                  version="true"
                  use="true"
                  splitindex="true"
-                 maxmemory="128m">
+                 maxmemory="192m">
                 <!-- other possible options:
                  author="true"
                  private="true"
                  additionalparam="-linksource"
                 -->
             <header><![CDATA[<b>Layer 7 Technologies Inc.<b><br><font size='-1'>UneasyRooster</font>]]></header>
-            <bottom><![CDATA[<i>Copyright &#169; 2006 Layer 7 Technologies Inc. All Rights Reserved.</i>]]></bottom>
+            <bottom><![CDATA[<i>Copyright &#169; 2007 Layer 7 Technologies Inc. All Rights Reserved.</i>]]></bottom>
             <link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
             <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
             <link href="http://static.springframework.org/spring/docs/1.1.5/api"/>
@@ -967,6 +967,8 @@
             <link href="http://tomcat.apache.org/tomcat-5.5-doc/catalina/docs/api"/>
             <link href="http://www.jfree.org/jfreechart/api/javadoc"/>
         </javadoc>
+        <mkdir dir="${build.reports}/teamcity"/>
+        <zip destfile="${build.reports}/teamcity/javadoc.zip" basedir="${javadoc.home}" />
     </target>
 
     <!--
