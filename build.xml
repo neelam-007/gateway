@@ -84,6 +84,12 @@
              classname="org.jdesktop.deployment.ant.pack200.Pack200Task"
     	     classpath="lib/tools/deployment-ant-pack200-1.0beta.jar"/>
 
+    <!--
+      Task definition for JDepend
+    -->
+    <taskdef name="jdepend"
+             classname="org.apache.tools.ant.taskdefs.optional.jdepend.JDependTask"
+             classpath="lib/tools/ant-jdepend.jar:lib/tools/jdepend-2.9.jar"/>
 
     <macrodef name="javac2">
         <attribute name="srcdir"/>
@@ -792,8 +798,57 @@
         <checkfail/>
     </target>
 
-    <target name="test.junit" description="Run all JUnit tests" depends="test.work, test.intensive.work, test.modules, test.report">
+    <target name="test.junit" description="Run all JUnit tests" depends="test.work, test.intensive.work, test.modules, test.report, report.jdepend">
         <checkfail/>
+    </target>
+
+    <target name="report.jdepend" depends="compile">
+        <mkdir dir="${build.reports}/jdepend"/>
+        <mkdir dir="${build.reports}/teamcity"/>
+
+        <jdepend format="xml" outputfile="${build.reports}/jdepend/index.xml">
+            <exclude name="java.*"/>
+            <exclude name="javax.*"/>
+            <exclude name="EDU.*"/>
+            <exclude name="edu.*"/>
+            <exclude name="org.*"/>
+            <exclude name="sun.*"/>
+            <exclude name="snoozesoft.*"/>
+            <exclude name="x0AcClassesPassword.*"/>
+            <exclude name="x0AcClassesTLSClient.*"/>
+            <exclude name="x0AcClassesXMLDSig.*"/>
+            <exclude name="x0Assertion.*"/>
+            <exclude name="net.*"/>
+            <exclude name="com.whirlycott.*"/>
+            <exclude name="com.tibco.*"/>
+            <exclude name="com.tarari.*"/>
+            <exclude name="com.sun.*"/>
+            <exclude name="com.rsa.*"/>
+            <exclude name="com.ncipher.*"/>
+            <exclude name="com.mchange.*"/>
+            <exclude name="com.jgoodies.*"/>
+            <exclude name="com.japisoft.*"/>
+            <exclude name="com.intellij.*"/>
+            <exclude name="com.incors.*"/>
+            <exclude name="com.ibm.*"/>
+            <exclude name="com.chrysalisits.*"/>
+            <exclude name="antlr"/>
+            <exclude name="antlr.*"/>
+
+            <classespath>
+                <pathelement location="${build.classes}" />
+            </classespath>
+        </jdepend>
+
+        <xslt processor="trax"
+              classpath="lib/tools/ant-trax.jar"
+              style="etc/jdepend.xsl"
+              basedir="${build.reports}/jdepend"
+              destdir="${build.reports}/jdepend"
+              includes="index.xml"
+              />
+
+        <zip destfile="${build.reports}/teamcity/jdepend.zip" basedir="${build.reports}/jdepend" /> 
     </target>
 
     <!--
