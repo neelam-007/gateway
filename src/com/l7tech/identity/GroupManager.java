@@ -29,7 +29,7 @@ public interface GroupManager<UT extends User, GT extends Group> {
      * @return
      * @throws FindException
      */
-    boolean isMember(UT user, GT group) throws FindException;
+    boolean isMember(User user, GT group) throws FindException;
 
     /**
      * Add a setInstance of Users to a single Group.  If the set is null or empty, nothing is done.

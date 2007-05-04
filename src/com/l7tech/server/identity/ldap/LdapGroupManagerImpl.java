@@ -2,6 +2,7 @@ package com.l7tech.server.identity.ldap;
 
 import com.l7tech.identity.ldap.*;
 import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 
 import javax.naming.NamingEnumeration;
@@ -171,11 +172,17 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * @return true if user is member of group, false otherwise
      * @throws FindException
      */
-    public boolean isMember(LdapUser user, LdapGroup group) throws FindException {
+    public boolean isMember(User user, LdapGroup group) throws FindException {
+        if (user.getProviderId() != this.providerOid) {
+            logger.log(Level.FINE, "User is not from this Identity Provider");
+            return false;
+        }
+
         Set<IdentityHeader> userHeaders = getUserHeaders(group);
         for (IdentityHeader header : userHeaders) {
-            String login = header.getName();
-            if (login != null && login.equals(user.getLogin())) return true;
+            String dn = header.getStrId();
+            if (dn == null || dn.length() == 0) continue;
+            if (dn.equals(user.getId())) return true;
         }
         return false;
     }
@@ -498,7 +505,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                                     String memberlogin = val.toString();
                                     LdapUser u = getUserManager().findByLogin(memberlogin);
                                     if (u != null) {
-                                        IdentityHeader h = new IdentityHeader(providerOid, u.getName(), EntityType.USER,
+                                        IdentityHeader h = new IdentityHeader(providerOid, u.getDn(), EntityType.USER,
                                                                               u.getLogin(), null);
                                         if (h == null) {
                                             logger.info("the user " + u + " is not valid according to template " +

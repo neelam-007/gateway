@@ -89,7 +89,7 @@ public class FederatedGroupManagerImpl
     }
 
     @Transactional(readOnly=true)
-    public boolean isMember(FederatedUser user, FederatedGroup genericGroup) throws FindException {
+    public boolean isMember(User user, FederatedGroup genericGroup) throws FindException {
         FederatedGroup group = cast(genericGroup);
         if ( group instanceof VirtualGroup ) {
             // fix for bugzilla 1101 virtual group membership enforces trusted fip cert

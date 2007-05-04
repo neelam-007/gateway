@@ -331,7 +331,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
         }
     }
 
-    public boolean isMember(final UT user, final GT group) throws FindException {
+    public boolean isMember(final User user, final GT group) throws FindException {
         if (!checkProvider(user)) return false;
         try {
             return (Boolean)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
