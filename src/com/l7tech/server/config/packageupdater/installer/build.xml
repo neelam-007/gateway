@@ -100,6 +100,8 @@
     <target name="clean">
         <delete dir="${build.dir}"/>
         <delete file="${updatefiles.list}"/>
+        <delete file="${jar.unsigned.name}"/>
+        <delete file="${jar.signed.name}"/>
     </target>
 
 </project>
