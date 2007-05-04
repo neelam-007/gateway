@@ -62,13 +62,15 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
             GroupManager gman = getIdentityProvider(context).getGroupManager();
             Boolean wasMember = authResult.getCachedGroupMembership(targetGroup);
             if (wasMember == null) {
-                // Cache miss
-                if (gman.isMember(authResult.getUser(), targetGroup)) {
-                    authResult.setCachedGroupMembership(targetGroup, true);
-                    logger.finest("membership established");
-                    return AssertionStatus.NONE;
+                if (authResult.getUser() != null &&
+                    authResult.getUser().getProviderId() == identityAssertion.getIdentityProviderOid()) {
+                    // Cache miss
+                    if (gman.isMember(authResult.getUser(), targetGroup)) {
+                        authResult.setCachedGroupMembership(targetGroup, true);
+                        logger.finest("membership established");
+                        return AssertionStatus.NONE;
+                    }
                 }
-
                 authResult.setCachedGroupMembership(targetGroup, false);
                 auditor.logAndAudit(AssertionMessages.USER_NOT_IN_GROUP);
                 return AssertionStatus.UNAUTHORIZED;
