@@ -8,6 +8,7 @@ package com.l7tech.server.config;
 public enum KeystoreType {
     DEFAULT_KEYSTORE_NAME("Default (PKCS12) Keystore"),
     LUNA_KEYSTORE_NAME("Luna Keystore"),
+    SCA6000_KEYSTORE_NAME("Internal Hardware Security Module"),
     NO_KEYSTORE(""),
     UNDEFINED(""),
     ;

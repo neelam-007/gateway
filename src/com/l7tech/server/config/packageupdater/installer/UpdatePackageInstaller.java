@@ -3,6 +3,8 @@ package com.l7tech.server.config.packageupdater.installer;
 import java.io.*;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * User: megery
@@ -14,11 +16,15 @@ public class UpdatePackageInstaller {
     private static final String STAGES_DIRECTORY = "stages";
     private static final String CHECK_DIRECTORY = "check";
     private static final String PASSED_STRING = " - PASSED";
+    private static final String UPDATEFILES_LIST = "updatefiles.txt";
+
     Set<File> checkFiles;
     private File baseDir;
     private File checkDir;
     private File  binDir;
     private File  stagesDir;
+
+    private Logger logger;
 
     public UpdatePackageInstaller(File workingDirectory) throws InstallerException {
         if (workingDirectory == null)
@@ -29,6 +35,7 @@ public class UpdatePackageInstaller {
         }
         baseDir = workingDirectory;
         checkFiles = new TreeSet<File>();
+        logger = null;
     }
 
     public static void main(String[] args) throws Exception {
@@ -43,30 +50,84 @@ public class UpdatePackageInstaller {
     public int doInstall() {
         int status = 0;
         try {
-            ensureStructure();
+            checkStructure();
             ensureCheckScripts();
 
-            printMsg("");   //empty line
             executeCheckScripts();
-
-            printMsg("");   //empty line
             executeBinScripts();
         } catch (InstallerException e) {
-            System.out.println("*************************************************************");
-            System.out.println(e.getMessage());
-            System.out.println("*************************************************************");
+            printErrorMsg("*************************************************************", false);
+            printErrorMsg(e.getMessage(), false);
+            printErrorMsg("*************************************************************", false);
             status = 1;
         }
         return status;
     }
 
-    private void ensureStructure() throws InstallerException {
+    private void printErrorMsg(String msg, boolean warning) {
+        if (msg == null || msg.length() == 0)
+            return;
+
+        if (logger != null) {
+            Level level = warning?Level.WARNING:Level.SEVERE;
+            logger.log(level, msg);
+        } else {
+            System.out.println(msg);
+            System.err.println(msg);
+        }
+
+    }
+
+    public void setLogger(Logger logger) {
+        this.logger = logger;
+    }
+    
+    private void checkStructure() throws InstallerException {
         String msg = "Checking for expected directory structure at " + baseDir.getAbsolutePath();
         try {
             ensureBinDirectory();
             ensureStagesDirectory();
             ensureCheckDir();
+            ensureUpdateList();
             msg += PASSED_STRING;
+        } finally {
+            printMsg(msg);
+        }
+    }
+
+    private void ensureUpdateList() throws InstallerException {
+        String msg = "Checking that all update files are present in " + baseDir.getAbsolutePath();        
+        try {
+            File updateList = new File(baseDir, UPDATEFILES_LIST);
+            if (!updateList.exists())
+                throw new InstallerException("No update list found. Cannot proceed with the update");
+
+            List<String> updateFiles = new ArrayList<String>();
+            InputStream is = null;
+            BufferedReader reader = null;
+            try {
+                is = new FileInputStream(updateList);
+                reader = new BufferedReader(new InputStreamReader(is));
+                String s = null;
+                while ( (s = reader.readLine()) != null) {
+                    updateFiles.add(s);
+                }
+
+                for (String updateFile : updateFiles) {
+                    File f = new File(baseDir, updateFile);
+                    if (!f.exists()) {
+                        throw new InstallerException(MessageFormat.format("File {0} is in the update list but could not be found in the update package. Cannot proceed with the update", updateFile));
+                    }
+                }
+                msg += PASSED_STRING;                
+            } catch (FileNotFoundException e) {
+                throw new InstallerException(MessageFormat.format("Error while reading the update list.= [{0}]. Cannot proceed with the update", e.getMessage()), e);
+            } catch (IOException e) {
+                throw new InstallerException(MessageFormat.format("Error while reading the update list. [{0}]. Cannot proceed with the update", e.getMessage()), e);
+            } finally {
+                if (reader != null) try { reader.close(); } catch (IOException e) {}
+                if (is != null) try { is.close(); } catch (IOException e) {}
+            }
         } finally {
             printMsg(msg);
         }
@@ -158,7 +219,10 @@ public class UpdatePackageInstaller {
     private void printMsg(String msg) {
         if (msg == null || msg.length() == 0)
             return;
-        System.out.println(msg);
+        if (logger == null)
+            System.out.println(msg);
+        else
+            logger.info(msg);
     }
 
     private List<String> getCommandLineForPlatform(String absolutePath) {

@@ -9,10 +9,12 @@ import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
+import java.security.MessageDigest;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -34,6 +36,8 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
 
     List<File> availableUpdatePackages;
     private PackageUpdateConfigBean.UpdatePackageInfo selectedUpdatePackage;
+
+    private static final String CHECKSUM_ALGORITHM_NAME = ".MD5";
 
     //CONSTRUCTOR
     public UpdateWizardPackageQuestionsStep(ConfigurationWizard parentWiz) {
@@ -162,20 +166,100 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
         try {
             logger.info("Checking jar signature");
             JarFile jarFile = new JarFile(new File(updatePackage.getExpandedLocation(), PackageUpdateConfigBean.INSTALLER_JAR_FILENAME));
+            Enumeration entries = jarFile.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry zipEntry = (ZipEntry) entries.nextElement();
+                jarFile.getInputStream(zipEntry);
+            }
         } catch (IOException e) {
             String message = MessageFormat.format("Error while loading the update installer from {0}. ({1})", updatePackage.getExpandedLocation(), e.getMessage());
-            logger.warning(message);
             throw new UpdateWizardException(message);
         }
     }
 
     private void checkChecksums(PackageUpdateConfigBean.UpdatePackageInfo updatePackage) throws UpdateWizardException {
-//        throw new UpdateWizardException("The update package has been changed since being created by Layer 7 Technologies. This is not a valid SecureSpan Update package.");
+        logger.info("Verifying Checksums");
+        //get listing of scripts from the updatelist.txt
+        String upgradePackageWorkingDir = updatePackage.getExpandedLocation();
+
+        JarFile updatejar = null;
+        try {
+            updatejar = new JarFile(new File(upgradePackageWorkingDir, PackageUpdateConfigBean.INSTALLER_JAR_FILENAME));
+        } catch (IOException e) {
+            throw new UpdateWizardException(MessageFormat.format("Could not find the installer jar in package \"{0}\". Cannot proceed with the update", updatePackage.getExpandedLocation()));
+        }
+
+        File updateList = new File(upgradePackageWorkingDir, PackageUpdateConfigBean.UPDATE_FILE_LIST);
+        if (!updateList.exists())
+            throw new UpdateWizardException(MessageFormat.format("Could not find the list of update files in package \"{0}\". Cannot proceed with the update", updatePackage.getExpandedLocation()));
+
+        List<String> updates = readUpdateList(updateList);
+
+        //for each listing locate the real file and the checksum file in the jar
+        for (String update : updates) {
+            InputStream originalFileInputStream = null;
+            InputStream jarEntryInputStream = null;
+
+            File originalFile = new File(upgradePackageWorkingDir, update);
+            if (!originalFile.exists())
+                throw new UpdateWizardException(MessageFormat.format("The file \"{0}\" could not be found in location \"{1}\". The Update Package is corrupt. Cannot proceed with the update", update, updatePackage.getExpandedLocation()));
+
+            String checkSumName = "checksums/" + update + CHECKSUM_ALGORITHM_NAME;
+            JarEntry checkSumEntry = updatejar.getJarEntry(checkSumName);
+            if (checkSumEntry == null)
+                throw new UpdateWizardException(MessageFormat.format("Could not find the checksum for file \"{0}\" in the update installer at \"{1}\". The Update Package is corrupt. Cannot proceed with the update", update, updatePackage.getExpandedLocation()));
+
+            try {
+                originalFileInputStream = new FileInputStream(originalFile);
+                byte[] originalFileBytes = HexUtils.slurpStream(originalFileInputStream);
+
+                jarEntryInputStream = updatejar.getInputStream(checkSumEntry);
+                byte[] checkSumBytes = HexUtils.slurpStream(jarEntryInputStream);
+
+                 //checksum the real file and compare with the checksum in the jar
+                boolean checkSumsMatch = compareCheckSums(checkSumBytes, originalFileBytes);
+                if (!checkSumsMatch)
+                    throw new UpdateWizardException(MessageFormat.format("File {0} has been changed since being created by Layer 7 Technologies. This is not a valid SecureSpan Update package.", update));            
+            } catch (IOException e) {
+                throw new UpdateWizardException(MessageFormat.format("Error while reading the checksum for file {0}. [{1}].", update, e.getMessage()));
+            } finally {
+                ResourceUtils.closeQuietly(originalFileInputStream);
+                ResourceUtils.closeQuietly(jarEntryInputStream);
+            }
+        }
+    }
+
+    private boolean compareCheckSums(byte[] checkSumBytes, byte[] originalFileBytes) {
+        byte[] originalFileChecksum = HexUtils.getMd5Digest(originalFileBytes);
+        byte[] encodedBytes = HexUtils.encodeMd5Digest(originalFileChecksum).getBytes();
+
+        return MessageDigest.isEqual(checkSumBytes, encodedBytes);
+    }
+
+    private List<String> readUpdateList(File updateList) {
+        List<String> lines = new ArrayList<String>();
+
+        BufferedReader reader = null;
+        try {
+            InputStream is = new FileInputStream(updateList);
+            reader = new BufferedReader(new InputStreamReader(is));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+            reader.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            ResourceUtils.closeQuietly(reader);
+        }
+        return lines;
     }
 
     private PackageUpdateConfigBean.UpdatePackageInfo checkUpdateFile(File updatePath) throws UpdateWizardException {
         getAvailableUpdatePackages().clear();
-
         File[] updateFiles = null;
         if (updatePath.isDirectory()) {
             updateFiles = updatePath.listFiles(new FilenameFilter() {
@@ -194,13 +278,12 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
 
                 throw new UpdateWizardException(MessageFormat.format("Multiple SecureSpan Update Packages were found in \"{0}\". Please specify the package you wish to install.", updatePath.getAbsolutePath()));
             }
+            updatePath = updateFiles[0];
         } else {
             if (!updatePath.getName().endsWith(PackageUpdateConfigBean.PACKAGE_UPDATE_EXTENSION))
                  throw new UpdateWizardException("Could not find a valid SecureSpan Update package using: \"" + updatePath.getAbsolutePath() + "\"");
         }
-        if (updateFiles == null)
-            return null;
-        return getUpdateInfo(updateFiles[0]);
+        return getUpdateInfo(updatePath);
     }
 
     private List<File> getAvailableUpdatePackages() {
@@ -212,47 +295,36 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
         PackageUpdateConfigBean.UpdatePackageInfo info = null;
 
         try {
-            File updatePackagesDir = new File(UPDATE_PACKAGES_BASE_DIR);
-            updatePackagesDir.mkdir();
-            File tempDir = getTempDir(updatePackagesDir);
-
-            File zipOutputDir = new File(tempDir,  updateFile.getName());
-//            tempDir.deleteOnExit();
-
-            ZipFile zipFile = new ZipFile(updateFile);
-            if (zipFile.size() == 0) {
-                logger.warning(MessageFormat.format("Update package {0} is empty. This is not a valid SecureSpan update package.",
-                                                    updateFile.getAbsolutePath()));
-                return null;
-            }
-
-            if (zipOutputDir.exists()) {
-                FileUtils.deleteDir(zipOutputDir);
-            }
-            zipOutputDir.mkdirs();
-
-            unzipUpdatePackage(zipFile, zipOutputDir);
-
-            //now check to see if things we expect are there.
-            if (!new File(zipOutputDir, PackageUpdateConfigBean.INSTALLER_JAR_FILENAME).exists()) {
-                logger.warning(MessageFormat.format("Could not find a {0} in the update package {1}. This is not a valid SecureSpan update package.", PackageUpdateConfigBean.INSTALLER_JAR_FILENAME, updateFile.getAbsolutePath()));
-                return null;
-            }
-
-            File descriptionFile = new File(zipOutputDir, PackageUpdateConfigBean.DESCRIPTION_FILENAME);
-            if (!descriptionFile.exists()) {
-                logger.warning(MessageFormat.format("Could not find a {0} in the update package {1}. This is not a valid SecureSpan update package.", PackageUpdateConfigBean.DESCRIPTION_FILENAME, updateFile.getAbsolutePath()));
-            }
-            String description = getDescription(descriptionFile);
+            File zipOutputDir = unzipUpdatePackage(updateFile);
+            checkStructure(zipOutputDir);
+            String description = getDescription(zipOutputDir);
             info = populateUpdateInfo(updateFile, zipOutputDir, description);
         } catch (FileNotFoundException e) {
-            logger.warning(MessageFormat.format("Could not read update package from file \"{0}\". ({1})", updateFile.getAbsolutePath(), e.getMessage()));
+            logger.warning(MessageFormat.format("Error while reading update package \"{0}\". ({1})", updateFile.getAbsolutePath(), e.getMessage()));
         } catch (IOException e) {
-            logger.warning(MessageFormat.format("Could not read update package from file \"{0}\". ({1})", updateFile.getAbsolutePath(), e.getMessage()));
+            logger.warning(MessageFormat.format("Error while reading update package \"{0}\". ({1})", updateFile.getAbsolutePath(), e.getMessage()));
         } catch (UpdateWizardException e) {
-            logger.warning(MessageFormat.format("Could not read update package from file \"{0}\". ({1})", updateFile.getAbsolutePath(), e.getMessage()));
+            logger.warning(MessageFormat.format("Error while reading update package \"{0}\". ({1})", updateFile.getAbsolutePath(), e.getMessage()));
         }
         return info;
+    }
+
+    private void checkStructure(File zipOutputDir) throws UpdateWizardException {
+        //now check to see if things we expect are there.
+        if (!new File(zipOutputDir, PackageUpdateConfigBean.INSTALLER_JAR_FILENAME).exists()) {
+            String msg = MessageFormat.format("Could not find a {0} in the update package. This is not a valid SecureSpan update package.", PackageUpdateConfigBean.INSTALLER_JAR_FILENAME);
+            throw new UpdateWizardException(msg);
+        }
+
+        if (!new File(zipOutputDir, PackageUpdateConfigBean.UPDATE_FILE_LIST).exists()) {
+            String msg = MessageFormat.format("Could not find a {0} in the update package. This is not a valid SecureSpan update package.", PackageUpdateConfigBean.UPDATE_FILE_LIST);
+            throw new UpdateWizardException(msg);
+        }
+
+        File descriptionFile = new File(zipOutputDir, PackageUpdateConfigBean.DESCRIPTION_FILENAME);
+        if (!descriptionFile.exists()) {
+            logger.warning(MessageFormat.format("Could not find a {0} in the update package. This is not a valid SecureSpan update package.", PackageUpdateConfigBean.DESCRIPTION_FILENAME));
+        }
     }
 
     private PackageUpdateConfigBean.UpdatePackageInfo populateUpdateInfo(File updateFile, File zipOutputDir, String description) {
@@ -264,7 +336,24 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
         return info;
     }
 
-    private void unzipUpdatePackage(ZipFile zipFile, File zipOutputDir) throws IOException {
+    private File unzipUpdatePackage(File updateFile) throws IOException {
+        File updatePackagesDir = new File(UPDATE_PACKAGES_BASE_DIR);
+        updatePackagesDir.mkdir();
+        File tempDir = getTempDir(updatePackagesDir);
+
+        File zipOutputDir = new File(tempDir,  updateFile.getName());
+
+        ZipFile zipFile = new ZipFile(updateFile);
+        if (zipFile.size() == 0) {
+            logger.warning(MessageFormat.format("Update package {0} is empty. This is not a valid SecureSpan update package.",
+                                                updateFile.getAbsolutePath()));
+            return null;
+        }
+
+        if (zipOutputDir.exists()) {
+            FileUtils.deleteDir(zipOutputDir);
+        }
+        zipOutputDir.mkdirs();
         BufferedOutputStream dest = null;
         Enumeration e = zipFile.entries();
         try {
@@ -296,6 +385,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
             try {if (dest != null) dest.flush();} catch (IOException e1) {}
             ResourceUtils.closeQuietly(dest);
         }
+        return zipOutputDir;
     }
 
     private File getTempDir(File updatePackagesDir) throws IOException {
@@ -307,10 +397,11 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
         return new File(updatePackagesDir, tempName);
     }
 
-    private String getDescription(File descriptionFile) throws UpdateWizardException {
+    private String getDescription(File zipDir) throws UpdateWizardException {
         BufferedInputStream bis = null;
         String description = null;
         try {
+            File descriptionFile = new File(zipDir, PackageUpdateConfigBean.DESCRIPTION_FILENAME);
             bis = new BufferedInputStream(new FileInputStream(descriptionFile));
             byte[] buf = HexUtils.slurpStream(bis);
             description = new String(buf);

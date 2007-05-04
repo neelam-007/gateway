@@ -74,13 +74,9 @@ public abstract class OSSpecificFunctions {
         return new File(getPartitionBase()).exists();
     }
 
-    public boolean isWindows() {
-        return false;
-    }
+    public abstract boolean isWindows();
 
-    public boolean isLinux() {
-        return false;
-    }
+    public abstract boolean isLinux();
 
     abstract void makeOSSpecificFilenames();
 

@@ -53,6 +53,7 @@ public class PackageUpdateConfigCommand extends BaseConfigurationCommand {
             Class clazz = urlCl.loadClass(INSTALLER_CLASSNAME);
             Constructor ctor = clazz.getConstructor(File.class);
             UpdatePackageInstaller installClass = (UpdatePackageInstaller) ctor.newInstance(f.getParentFile());
+            installClass.setLogger(logger);
             int returnVal = installClass.doInstall();
             success = (returnVal == 0);
         } catch (MalformedURLException e) {

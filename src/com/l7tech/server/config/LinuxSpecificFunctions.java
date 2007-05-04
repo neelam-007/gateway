@@ -1,13 +1,6 @@
 package com.l7tech.server.config;
 
-/**
- * Created by IntelliJ IDEA.
- * User: megery
- * Date: Aug 15, 2005
- * Time: 2:23:07 PM
- * To change this template use File | Settings | File Templates.
- */
-public class LinuxSpecificFunctions extends OSSpecificFunctions {
+public class LinuxSpecificFunctions extends UnixSpecificFunctions {
 
     public LinuxSpecificFunctions(String osname) {
         super(osname);
@@ -50,6 +43,15 @@ public class LinuxSpecificFunctions extends OSSpecificFunctions {
 
     public String getUpgradedFileExtension() {
         return "rpmnew";
+    }
+
+
+    public boolean isUnix() {
+        return true;
+    }
+
+    public boolean isWindows() {
+        return false;
     }
 
     public boolean isLinux() {

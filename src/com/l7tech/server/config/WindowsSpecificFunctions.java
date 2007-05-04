@@ -2,13 +2,6 @@ package com.l7tech.server.config;
 
 import java.io.File;
 
-/**
- * Created by IntelliJ IDEA.
- * User: megery
- * Date: Aug 15, 2005
- * Time: 2:23:39 PM
- * To change this template use File | Settings | File Templates.
- */
 public class WindowsSpecificFunctions extends OSSpecificFunctions {
 
     //- PUBLIC
@@ -47,6 +40,10 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
 
     public boolean isWindows() {
         return true;
+    }
+
+    public boolean isLinux() {
+        return false;
     }
 
     //- PACKAGE

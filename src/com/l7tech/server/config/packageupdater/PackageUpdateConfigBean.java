@@ -9,8 +9,9 @@ import com.l7tech.server.config.beans.BaseConfigurationBean;
  */
 public class PackageUpdateConfigBean extends BaseConfigurationBean {
     public static final String PACKAGE_UPDATE_EXTENSION = "sup";
-    public static String DESCRIPTION_FILENAME = "description.txt";
-    public static String INSTALLER_JAR_FILENAME = "UpdateInstaller.jar";
+    public static final String DESCRIPTION_FILENAME = "description.txt";
+    public static final String INSTALLER_JAR_FILENAME = "UpdateInstaller.jar";
+    public static final String UPDATE_FILE_LIST = "updatefiles.txt";
 
     private UpdatePackageInfo packageInfo;
 
