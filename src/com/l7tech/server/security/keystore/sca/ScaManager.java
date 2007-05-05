@@ -144,11 +144,14 @@ public class ScaManager {
      *
      * @param data  bytes of a gzipped tar file, whose contents are relative to the KEYDATA_DIR, containing
      *              all files and directories composing the updated keystore data to use for this node.
-     * @throws ScaException if there is a problem invoking the tar program
+     * @return a ProcResult if the save was successful.  Never null.
+     * @throws ScaException if there is a problem invoking the tar program, or if the tar program exited nonzero.
+     *                      the keystore data may be corrupted in the latter case.
      */
-    private void doSaveKeydata(byte[] data) throws ScaException {
+    private ProcResult doSaveKeydata(byte[] data) throws ScaException {
+        // TODO change so it is actually safe (writes to ".new" directory)
         try {
-            exec(keydataDir, tar, args("xzf", "-"), data);
+            return exec(keydataDir, tar, args("xzf", "-"), data, false);
         } catch (IOException e) {
             throw new ScaException(e);
         }
@@ -201,14 +204,23 @@ public class ScaManager {
      * @param keydata  the bytes of a gzipped tar file, with all paths relative to the keydata directory,
      *                 containing all keystore data intended for this node.  The keystore data must match
      *                 the master key already installed on this node's SCA6000.
-     * @throws ScaException if there is a problem storing this data.
+     * @throws ScaException if there is a problem storing this data.  The node's keystore may have been left
+     *                      in an unusable state.
      */
     public void saveKeydata(byte[] keydata) throws ScaException {
         synchronized (globalMutex) {
+            ProcResult result = null;
             try {
                 doStopSca();
-                doSaveKeydata(keydata);
+                beginKeydataChange();
+                result = doSaveKeydata(keydata);
             } finally {
+                if (result == null) {
+                    // Failed to save new keydata -- try to restore old stuff
+                    rollbackKeydataChange();
+                } else {
+                    commitKeydataChange();
+                }
                 try {
                     doStartSca();
                 } catch (ScaException e) {
@@ -216,6 +228,49 @@ public class ScaManager {
                 }
             }
         }
+    }
+
+    /**
+     * Prepare to replace the keydata directory with new data.
+     * <p><b>NOTE:</b>scakiod must not be running when this is called.</p>
+     */
+    private void beginKeydataChange() {
+        // TODO change this so it is actually safe
+        // - if symlink is pointing at ".old", delete any ".current" then copy ".old" to ".current", and snap symlink to ".current"
+        // - copy ".current" to ".new"
+        // - make sure save is changed so it writes into ".new"
+
+        // Invariants:
+        //  - symlink always points to valid data
+        //  - if begin completes normally, we always leave symlink pointing at ".current" with a copy of it in ".new" waiting
+        //    to be overwritten/modified, and possibly some old data in ".old"
+    }
+
+    /**
+     * Commit a successfully-written keydata directory.
+     * <p><b>NOTE:</b>scakiod must not be running when this is called.</p>
+     */
+    private void commitKeydataChange() {
+        // TODO change this so it is actually safe
+        // - if symlink is pointing at ".old", delete any ".current" then copy ".old" to ".current", and snap symlink to ".current"
+        // - delete any existing ".old"
+        // - copy ".current" to ".old"
+        // - snap symlink to point at ".old"
+        // - delete ".current" and rename ".new" to ".current"
+        // - snap symlink to point at ".current"
+
+        // Invariants:
+        //  - symlink always points to valid data
+        //  - if commit completes normally, we always leave symlink pointing at ".current" with the previous data in ".old"
+    }
+
+    /**
+     * Roll back an unsuccessfully-written keydata directory.
+     * <p><b>NOTE:</b>scakiod must not be running when this is called.</p>
+     */
+    private void rollbackKeydataChange() {
+        // TODO change so it is actually safe
+        // - delete any ".new" directory
     }
 }
 

@@ -11,18 +11,6 @@ import java.security.cert.X509Certificate;
  * SSG node.
  */
 public interface SsgKeyStore extends SsgKeyFinder {
-    enum SsgKeyStoreType {
-        OTHER,
-        PKCS12_SOFTWARE,
-        PKCS11_HARDWARE
-    }
-
-    /** @return ID of this key store.  Only unique on a particular SSG node. */
-    int getId();
-
-    /** @return the display name of this key store.  Not necessarily unique.  Never null. */
-    String getName();
-
     /**
      * Add an entry to this key store.  Any previous entry with this alias will be overwritten.  However, due to
      * key caching, callers should not count on this taking effect immediately.  Instead, it is recommended to

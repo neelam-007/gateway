@@ -9,6 +9,27 @@ import java.util.List;
  * KeyStore-like interface implemented by SSG components that provide access to certificates with private keys.
  */
 public interface SsgKeyFinder {
+    enum SsgKeyStoreType {
+        OTHER,
+        PKCS12_SOFTWARE,
+        PKCS11_HARDWARE
+    }
+
+    /** @return ID of this key store.  Only unique on a particular SSG node. */
+    int getId();
+
+    /** @return the display name of this key store.  Not necessarily unique.  Never null. */
+    String getName();
+
+    /** @return the SsgKeyStoreType of this keystore instance. */
+    SsgKeyStoreType getType();
+
+    /** @return true iff. getKeyStore would return a non-null value. */
+    boolean isMutable();
+
+    /** @return a mutable SsgKeyStore interface to this KeyFinder, or null if this KeyFinder is read-only. */
+    SsgKeyStore getKeyStore();
+
     /**
      * Get the aliases available.
      *

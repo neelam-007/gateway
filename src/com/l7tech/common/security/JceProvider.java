@@ -52,6 +52,12 @@ public abstract class JceProvider {
         Holder.getEngine();
     }
 
+    /** @return the JceProviderEngine class name currently being used. */
+    public static String getEngineClass() {
+        init();
+        return Holder.ENGINE;
+    }
+
     public static Provider getSymmetricJceProvider() {
         return Holder.engine.getSymmetricProvider();
     }

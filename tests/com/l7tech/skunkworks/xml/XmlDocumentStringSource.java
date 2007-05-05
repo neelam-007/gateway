@@ -1,7 +1,5 @@
 package com.l7tech.skunkworks.xml;
 
-import java.util.Random;
-
 /**
  * A StringSource that produces a random XML document.
  */
