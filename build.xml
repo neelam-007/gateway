@@ -1820,8 +1820,10 @@
         </exec>
     </target>
 
-    <target name="package.installgateway.work" depends="package.gateway, INTERNAL-ssg-install, package.installgateway.work.nsis, package.installgateway.work.rpm"/>
+    <!-- comment out package.installgateway.work.nsis depends item, bug 3703, as Gateway exe not supported post-3.7 -->
+    <!-- target name="package.installgateway.work" depends="package.gateway, INTERNAL-ssg-install, package.installgateway.work.nsis, package.installgateway.work.rpm"/ -->
 
+    <target name="package.installgateway.work" depends="package.gateway, INTERNAL-ssg-install, package.installgateway.work.rpm"/>
     <!--
       Build the SSG windows installer
       - Update NSI (with jars)
