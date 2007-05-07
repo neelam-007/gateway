@@ -4,12 +4,12 @@
 
 if [ -z "$JAVA_OPTS" ]; then
 	# we don't have java opts, so we set them ourselves
-	JAVA_OPTS=" -Xms128M -Xmx256M -Xss256k -server ";
+	JAVA_OPTS="-Xmx256M -Xss256k ";
 elif [ `expr "$JAVA_OPTS" : ".*headless.*"` != 0 ]; then
        # We look in $JAVA_OPTS ... if java.awt.headless mode is there
        # then we've likely got the default options for SSG and it would prevent a gui
        # from coming up. So we over-write them with the following
-       JAVA_OPTS=" -Xms128M -Xmx256M -Xss256k -server ";
+       JAVA_OPTS=" -Xmx256M -Xss256k ";
 fi
 
 # set current dir to where this script is
