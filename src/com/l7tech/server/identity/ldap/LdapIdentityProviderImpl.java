@@ -334,14 +334,12 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
             while (answer.hasMore()) {
                 // get this item
                 SearchResult sr = (SearchResult)answer.next();
-                // set the dn (unique id)
-                String dn = sr.getName() + "," + config.getSearchBase();
-                IdentityHeader header = searchResultToHeader(sr, dn);
+                IdentityHeader header = searchResultToHeader(sr);
                 // if we successfully constructed a header, add it to result list
                 if (header != null)
                     output.add(header);
                 else
-                    logger.info("entry not valid or objectclass not supported for dn=" + dn + ". this " +
+                    logger.info("entry not valid or objectclass not supported for dn=" + sr.getNameInNamespace() + ". this " +
                       "entry will not be presented as part of the search results.");
             }
         } catch (SizeLimitExceededException e) {
@@ -601,9 +599,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
                 answer = context.search(config.getSearchBase(), filter, sc);
                 while (answer.hasMore()) {
                     SearchResult sr = (SearchResult) answer.next();
-                    // set the dn (unique id)
-                    String dn = sr.getName() + "," + config.getSearchBase();
-                    EntityHeader header = searchResultToHeader(sr, dn);
+                    EntityHeader header = searchResultToHeader(sr);
                     // if we successfully constructed a header, add it to result list
                     if (header != null) {
                         atLeastOneUser = true;
@@ -630,9 +626,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
                 answer = context.search(config.getSearchBase(), filter, sc);
                 while (answer.hasMore()) {
                     SearchResult sr = (SearchResult) answer.next();
-                    // set the dn (unique id)
-                    String dn = sr.getName() + "," + config.getSearchBase();
-                    EntityHeader header = searchResultToHeader(sr, dn);
+                    EntityHeader header = searchResultToHeader(sr);
                     // if we successfully constructed a header, add it to result list
                     if (header != null) {
                         atLeastOneGroup = true;
@@ -822,8 +816,9 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
      * @return the EntityHeader for the dn or null if the object class is not supported or if the entity
      *         should be ignored (perhaps disabled)
      */
-    public IdentityHeader searchResultToHeader(SearchResult sr, String dn) {
+    public IdentityHeader searchResultToHeader(SearchResult sr) {
         Attributes atts = sr.getAttributes();
+        final String dn = sr.getNameInNamespace();
         // is it user or group ?
         Attribute objectclasses = atts.get("objectclass");
         // check if it's a user

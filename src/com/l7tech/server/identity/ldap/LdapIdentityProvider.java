@@ -35,7 +35,7 @@ public interface LdapIdentityProvider extends IdentityProvider<LdapUser, LdapGro
 
     long getMaxSearchResultSize();
 
-    IdentityHeader searchResultToHeader(SearchResult sr, String dn);
+    IdentityHeader searchResultToHeader(SearchResult sr);
 
     boolean isValidEntryBasedOnUserAccountControlAttribute(Attributes attributes);
 

@@ -289,16 +289,13 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 try {
                     while (answer.hasMore()) {
                         SearchResult sr = (SearchResult)answer.next();
-                        // set the dn (unique id)
-                        String dn = sr.getName() + "," + ldapIdentityProviderConfig.getSearchBase();
-                        //Attributes atts = sr.getAttributes();
-                        IdentityHeader header = identityProvider.searchResultToHeader(sr, dn);
+                        IdentityHeader header = identityProvider.searchResultToHeader(sr);
                         if (header != null) {
                             output.add(header);
                             // Groups within groups.
                             // check if this group refer to other groups. if so, then user belongs to those
                             // groups too.
-                            output.addAll(getSubGroups(context, dn));
+                            output.addAll(getSubGroups(context, sr.getNameInNamespace()));
                         }
                     }
                 } catch (SizeLimitExceededException e) {
@@ -393,12 +390,10 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 while (answer.hasMore()) {
                     // get this item
                     SearchResult sr = (SearchResult)answer.next();
-                    // set the dn (unique id)
-                    String subgroupdn = sr.getName() + "," + ldapIdentityProviderConfig.getSearchBase();
-                    IdentityHeader header = identityProvider.searchResultToHeader(sr, subgroupdn);
+                    IdentityHeader header = identityProvider.searchResultToHeader(sr);
                     if (header != null && header.getType().equals(EntityType.GROUP)) {
                         output.add(header);
-                        output.addAll(getSubGroups(context, subgroupdn));
+                        output.addAll(getSubGroups(context, sr.getNameInNamespace()));
                     }
                 }
             } catch (SizeLimitExceededException e) {
@@ -693,12 +688,10 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         answer = context.search(dn, filter, sc);
         try {
             while (answer.hasMore()) {
-                String entitydn;
                 SearchResult sr = (SearchResult)answer.next();
-                entitydn = sr.getName() + "," + dn;
-                IdentityHeader header = identityProvider.searchResultToHeader(sr, entitydn);
+                IdentityHeader header = identityProvider.searchResultToHeader(sr);
                 if (header == null) {
-                    logger.info("The user " + entitydn + " is not valid according to template and will not " +
+                    logger.info("The user " + sr.getNameInNamespace() + " is not valid according to template and will not " +
                                 "be considered as a member");
                 } else {
                     memberHeaders.add(header);
@@ -779,12 +772,10 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             return;
         }
         while (answer.hasMore()) {
-            String userdn;
             SearchResult sr = (SearchResult)answer.next();
-            userdn = sr.getName() + "," + ldapIdentityProviderConfig.getSearchBase();
-            IdentityHeader newheader = identityProvider.searchResultToHeader(sr, userdn);
+            IdentityHeader newheader = identityProvider.searchResultToHeader(sr);
             if (newheader == null) {
-                logger.info("User " + userdn + " is not valid according to the template and will not " +
+                logger.info("User " + sr.getNameInNamespace() + " is not valid according to the template and will not " +
                             "be considered as a member");
             } else {
                 if (!memberHeaders.contains(newheader)) {

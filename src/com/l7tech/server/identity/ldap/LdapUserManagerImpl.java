@@ -128,8 +128,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
             String dn = null;
             try {
                 if (answer.hasMore()) {
-                    SearchResult sr = (SearchResult)answer.next();
-                    dn = sr.getName() + "," + ldapIdentityProviderConfig.getSearchBase();
+                    dn = ((SearchResult)answer.next()).getNameInNamespace();
                 } else {
                     logger.fine(ldapIdentityProviderConfig.getName() + " cannot find cn=" + login);
                     return null;
