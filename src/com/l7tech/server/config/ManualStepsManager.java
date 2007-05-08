@@ -14,7 +14,7 @@ public class ManualStepsManager {
 
     private final String eol = System.getProperty("line.separator");
 
-    private final String linuxLunaConfigCopy =
+    private final String unixLunaConfigCopy =
                 "<li>" +
                     "LUNA CONFIGURATION: Copy the etc/Chrystoki.conf file from the primary node to each SSG in the cluster" + eol +
                         "<dl><dt></dt></dl>" + eol +
@@ -51,7 +51,7 @@ public class ManualStepsManager {
             "</dl>" + eol +
             "where AppIdMajor and AppIdMinor correspond to your Luna configuration" + eol;
 
-    private final String linuxUpdateCrystokiLine =
+    private final String unixUpdateCrystokiLine =
             "<li>LUNA CONFIGURATION: Append the following to the etc/Chrystoki.conf file:" + eol +
                  linuxLunaString + eol +
             "</li>" + eol;
@@ -128,11 +128,11 @@ public class ManualStepsManager {
             switch (getClusteringType()) {
                 case CLUSTER_NONE:
                 case CLUSTER_NEW:
-                    steps.add(getOsFunctions().isLinux()?linuxUpdateCrystokiLine:windowsUpdateCrystokiLine);
+                    steps.add(getOsFunctions().isUnix()? unixUpdateCrystokiLine :windowsUpdateCrystokiLine);
                     break;
 
                 case CLUSTER_JOIN:
-                    steps.add(getOsFunctions().isLinux()?linuxLunaConfigCopy:windowsLunaConfigCopy);
+                    steps.add(getOsFunctions().isUnix()? unixLunaConfigCopy :windowsLunaConfigCopy);
                     break;
                 case UNDEFINED:
                     break;

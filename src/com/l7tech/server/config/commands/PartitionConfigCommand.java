@@ -6,7 +6,6 @@ import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.partition.PartitionInformation;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -14,7 +13,7 @@ import java.util.logging.Logger;
  * Time: 10:51:03 AM
  */
 public class PartitionConfigCommand extends BaseConfigurationCommand{
-    private static final Logger logger = Logger.getLogger(PartitionConfigCommand.class.getName());
+//    private static final Logger logger = Logger.getLogger(PartitionConfigCommand.class.getName());
     PartitionConfigBean partitionBean;
 
     public PartitionConfigCommand(ConfigurationBean bean) {
@@ -52,7 +51,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     }
 
     private void updateFirewallRules(PartitionInformation pInfo) {
-        if (pInfo.getOSSpecificFunctions().isLinux())
+        if (pInfo.getOSSpecificFunctions().isUnix())
             PartitionActions.doFirewallConfig(pInfo);
     }
 

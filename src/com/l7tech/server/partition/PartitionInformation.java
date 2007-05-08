@@ -62,21 +62,7 @@ public class PartitionInformation{
     private static String DEFAULT_SHUTDOWN_PORT = "8005";
 
 
-    public static final String BASIC_IP_MARKER = "<HTTP_BASIC_IP>";
-    public static final String BASIC_PORT_MARKER = "<HTTP_BASIC_PORT>";
-    public static final String SSL_IP_MARKER = "<SSL_IP>";
-    public static final String SSL_PORT_MARKER = "<SSL_PORT>";
-    public static final String NOAUTH_SSL_IP_MARKER = "<SSL_NOAUTH_IP>";
-    public static final String NOAUTH_SSL_PORT_MARKER = "<SSL_NOAUTH_PORT>";
-    public static final String RMI_PORT_MARKER = "<RMI_PORT>";
-
     public static final String ALLOWED_PARTITION_NAME_PATTERN = "[^\\p{Punct}\\s]{1,128}";
-    public static String firewallRules = new String(
-        "[0:0] -I INPUT $Rule_Insert_Point -d "+ BASIC_IP_MARKER +" -p tcp -m tcp --dport " + BASIC_PORT_MARKER +" -j ACCEPT\n" +
-        "[0:0] -I INPUT $Rule_Insert_Point -d " + SSL_IP_MARKER +" -p tcp -m tcp --dport " + SSL_PORT_MARKER + " -j ACCEPT\n" +
-        "[0:0] -I INPUT $Rule_Insert_Point -d " + NOAUTH_SSL_IP_MARKER + " -p tcp -m tcp --dport " + NOAUTH_SSL_PORT_MARKER + " -j ACCEPT\n" +
-        "[0:0] -I INPUT $Rule_Insert_Point -p tcp -m tcp --dport " + RMI_PORT_MARKER + " -j ACCEPT\n"
-    );
 
     public enum OtherEndpointType {
         RMI_ENDPOINT("Inter-Node Communication Port"),
@@ -286,7 +272,7 @@ public class PartitionInformation{
     }
 
     public String toString() {
-        if (getOSSpecificFunctions().isLinux())
+        if (getOSSpecificFunctions().isUnix())
             return partitionId + (isEnabled?"":" (Disabled)");
 
         return partitionId;

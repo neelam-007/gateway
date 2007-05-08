@@ -163,12 +163,12 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
         for (int i = 0; i < deleteThem.length; i++) {
             Object o = deleteThem[i];
             final PartitionInformation pi = (PartitionInformation) o;
-            boolean isLinux = pi.getOSSpecificFunctions().isLinux();
+            boolean isUnix = pi.getOSSpecificFunctions().isUnix();
             if (!pi.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
                 final int index = i;
                 String warningMessage;
 
-                if (isLinux) {
+                if (isUnix) {
                     warningMessage = "Removing the \"" + pi.getPartitionId() + "\" partition will remove all the associated configuration.\n\n" +
                         "This cannot be undone.\n" +
                         "Do you wish to proceed?";

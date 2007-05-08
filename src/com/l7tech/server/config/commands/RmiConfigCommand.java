@@ -1,23 +1,19 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.CausedIOException;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 import java.io.*;
 import java.util.Date;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-
 /**
- * Created by IntelliJ IDEA.
  * User: megery
  * Date: Nov 18, 2005
- * Time: 11:45:34 AM
- * To change this template use File | Settings | File Templates.
  */
 public class RmiConfigCommand extends BaseConfigurationCommand {
     private static final Logger logger = Logger.getLogger(RmiConfigCommand.class.getName());
@@ -53,7 +49,7 @@ public class RmiConfigCommand extends BaseConfigurationCommand {
 
             PropertiesConfiguration props = PropertyHelper.mergeProperties(
                     systemPropertiesFile,
-                    new File(systemPropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
+                    new File(systemPropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedNewFileExtension()),
                     true, true);
             
             props.setProperty(PROP_RMI_RANDOMIZE, "true");

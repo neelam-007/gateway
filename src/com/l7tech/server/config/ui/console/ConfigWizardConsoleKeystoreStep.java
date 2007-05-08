@@ -3,6 +3,7 @@ package com.l7tech.server.config.ui.console;
 import com.l7tech.server.config.KeyStoreConstants;
 import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.WizardInputValidator;
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
@@ -44,8 +45,6 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
         keystoreBean = (KeystoreConfigBean) configBean;
         configCommand = new KeystoreConfigCommand(configBean);
         ksTypeMap = new TreeMap<String,KeystoreType>();
-        ksTypeMap.put("1", KeystoreType.DEFAULT_KEYSTORE_NAME);
-        ksTypeMap.put("2", KeystoreType.LUNA_KEYSTORE_NAME);
     }
 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
@@ -65,9 +64,17 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
     }
 
     private void doKeystoreTypePrompts() throws IOException, WizardNavigationException {
+        ksTypeMap.clear();
+        
+        OSSpecificFunctions.KeystoreInfo[] keystores = osFunctions.getAvailableKeystores();
+        int x = 1;
+        for (OSSpecificFunctions.KeystoreInfo keystore : keystores) {
+            ksTypeMap.put(String.valueOf(x), keystore.getType());
+            x++;
+        }
         Set<Map.Entry<String,KeystoreType>> entries = ksTypeMap.entrySet();
         List<String> prompts = new ArrayList<String>();
-
+                      
         prompts.add(KEYSTORE_TYPE_HEADER);
 
         for (Map.Entry<String, KeystoreType> entry : entries) {
@@ -85,11 +92,33 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
         keystoreBean.setKeyStoreType(ksType);
         getParentWizard().setKeystoreType(ksType);
 
-        if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME) {
-            askDefaultKeystoreQuestions();
-        } else if (ksType == KeystoreType.LUNA_KEYSTORE_NAME) {
-            askLunaKeystoreQuestions();
+        switch (ksType) {
+            case DEFAULT_KEYSTORE_NAME:
+                askDefaultKeystoreQuestions();
+                break;
+            case SCA6000_KEYSTORE_NAME:
+                askHSMQuestions();
+                break;
+            case LUNA_KEYSTORE_NAME:
+                askLunaKeystoreQuestions();
+                break;
         }
+    }
+
+    private void askHSMQuestions() throws IOException, WizardNavigationException {
+        doHSMPrompts();
+    }
+
+    private void doHSMPrompts() throws IOException, WizardNavigationException {
+        printText("\n-- Configure Hardware Security Module (HSM) --\n");
+
+
+        String[] prompts = new String[] {
+                "This will prompt the user for input to configure the SCA 6000 HSM." + getEolChar(),
+                "Press enter to continue"
+        };
+
+        getData(prompts, "");
     }
 
     private void askLunaKeystoreQuestions() throws IOException, WizardNavigationException {
@@ -131,8 +160,10 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
 
     private void doLunaPrompts() throws IOException, WizardNavigationException {
         printText("\n-- Luna Install Paths --\n");
-        String defaultInstallPath = osFunctions.getLunaInstallDir();
-        String defaultJspPath = osFunctions.getLunaJSPDir();
+        OSSpecificFunctions.KeystoreInfo lunaInfo = osFunctions.getKeystore(KeystoreType.LUNA_KEYSTORE_NAME);
+
+        String defaultInstallPath = lunaInfo.getMetaInfo("INSTALL_DIR");
+        String defaultJspPath = lunaInfo.getMetaInfo("JSP_DIR");
 
         String installPathPrompt = "Enter the Luna installation path: [" + defaultInstallPath +"]";
         String jspPathPrompt = "Enter the path to the luna java service provider: [" + defaultJspPath +"]";

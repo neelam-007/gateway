@@ -1,27 +1,22 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.server.config.ClusteringType;
+import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.beans.ConfigurationBean;
-import com.l7tech.server.config.PropertyHelper;
-import com.l7tech.server.config.ClusteringType;
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.CausedIOException;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
-import java.util.Properties;
 import java.util.Date;
 import java.util.logging.Logger;
 
 /**
- * Created by IntelliJ IDEA.
  * User: megery
  * Date: Aug 16, 2005
- * Time: 2:52:47 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ClusteringConfigCommand extends BaseConfigurationCommand {
     static Logger logger = Logger.getLogger(ClusteringConfigCommand.class.getName());
@@ -92,7 +87,7 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         OutputStream fos = null;
         try {
             PropertiesConfiguration props = PropertyHelper.mergeProperties(systemPropertiesFile,
-                    new File(systemPropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
+                    new File(systemPropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedNewFileExtension()),
                     true, true);
 
             props.setProperty(PROP_RMI_HOSTNAME, hostname);

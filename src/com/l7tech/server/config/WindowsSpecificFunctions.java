@@ -7,19 +7,11 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
     //- PUBLIC
 
     public WindowsSpecificFunctions(String osname) {
-        super(osname);
+        this(osname, null);
     }
 
     public WindowsSpecificFunctions(String osname, String partitionName) {
         super(osname, partitionName);
-    }
-
-    public String[] getKeystoreTypes() {
-        return new String[]
-        {
-            KeystoreType.DEFAULT_KEYSTORE_NAME.getName(),
-            KeystoreType.LUNA_KEYSTORE_NAME.getName()
-        };
     }
 
     public String getOriginalPartitionControlScriptName() {
@@ -34,21 +26,13 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
         throw new IllegalStateException("Cannot Configure the network on Windows.");
     }
 
-    public String getUpgradedFileExtension() {
-        return "new";
-    }
-
     public boolean isWindows() {
         return true;
     }
 
-    public boolean isLinux() {
-        return false;
-    }
-
     //- PACKAGE
 
-    void makeOSSpecificFilenames() {
+    void doOsSpecificSetup() {
         if (isEmptyString(installRoot)) {
             installRoot = detectInstallRoot();
 
@@ -56,11 +40,23 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
                 installRoot = "C:/Program Files/Layer 7 Technologies/SecureSpan Gateway/";
             }
         }
-        lunaInstallDir = "C:/Program Files/LunaSA/";
-        lunaJSPDir = "C:/Program Files/LunaSA/JSP";
-        lunaCmuPath = "cmu.exe";
+
+        KeystoreInfo lunaInfo = new KeystoreInfo(KeystoreType.LUNA_KEYSTORE_NAME);
+        lunaInfo.addMetaInfo("INSTALL_DIR", "C:/Program Files/LunaSA/");
+        lunaInfo.addMetaInfo("JSP_DIR", "C:/Program Files/LunaSA/JSP");
+        lunaInfo.addMetaInfo("CMU_PATH", "cmu.exe");
+
         pathToJdk = "jdk/";
         partitionControlScriptName= "service.cmd";
+
+        keystoreInfos = new KeystoreInfo[]
+        {
+            new KeystoreInfo(KeystoreType.DEFAULT_KEYSTORE_NAME),
+            lunaInfo
+        };
+
+        upgradeFileNewExt = "new";
+
     }
     
     //- PRIVATE

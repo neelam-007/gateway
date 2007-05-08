@@ -87,7 +87,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     }
 
     private void getExistingInterfaces() {
-        if (getOsFunctions().isLinux()) {
+        if (getOsFunctions().isUnix()) {
             getExistingInterfacesLinux();
         } else if (getOsFunctions().isWindows()){
             getExistingInterfacesWindows();            

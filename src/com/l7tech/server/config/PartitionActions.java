@@ -95,9 +95,9 @@ public class PartitionActions {
             newPartitionDir.mkdir();
         }
         copyTemplateFiles(newPartitionDir);
-        setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath()}, "775", newPartitionDir, osFunctions);
-        setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath() + "/var/attachments"}, "775", newPartitionDir, osFunctions);
-        setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath() + "/var/modules"}, "775", newPartitionDir, osFunctions);
+        setUnixFilePermissions(new String[]{newPartitionDir.getAbsolutePath()}, "775", newPartitionDir, osFunctions);
+        setUnixFilePermissions(new String[]{newPartitionDir.getAbsolutePath() + "/var/attachments"}, "775", newPartitionDir, osFunctions);
+        setUnixFilePermissions(new String[]{newPartitionDir.getAbsolutePath() + "/var/modules"}, "775", newPartitionDir, osFunctions);
         return newPartitionDir;
     }
 
@@ -154,7 +154,7 @@ public class PartitionActions {
             boolean confirmationGoAhead = true;
             if (listener != null) {
                 String message;
-                if (partitionToRename.getOSSpecificFunctions().isLinux()) {
+                if (partitionToRename.getOSSpecificFunctions().isUnix()) {
                     message = "Please ensure that the \"" + partitionToRename.getPartitionId() + "\" partition is stopped before proceeding.\n\n" +
                             "Is the partition stopped and ready to be renamed?";
                 } else {
@@ -717,8 +717,8 @@ public class PartitionActions {
         return new Vector<String>(allIpAddresses);
     }
 
-    public void setLinuxFilePermissions(String[] files, String permissions, File workingDir, OSSpecificFunctions osf) throws IOException, InterruptedException {
-        if (!osf.isLinux())
+    public void setUnixFilePermissions(String[] files, String permissions, File workingDir, OSSpecificFunctions osf) throws IOException, InterruptedException {
+        if (!osf.isUnix())
             return;
 
         logger.fine("Setting Permissions on var directory to 775");
@@ -861,54 +861,40 @@ public class PartitionActions {
     }
 
     public static void doFirewallConfig(PartitionInformation pInfo) {
-        List<PartitionInformation.HttpEndpointHolder> httpEndpoints = pInfo.getHttpEndpoints();
-        List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
+        OSSpecificFunctions osFunctions = pInfo.getOSSpecificFunctions();
+        if ( !(osFunctions instanceof UnixSpecificFunctions) ) {
+            return;
+        } else {
+            UnixSpecificFunctions unixSpecificFunctions = (UnixSpecificFunctions) osFunctions;
+            List<PartitionInformation.HttpEndpointHolder> httpEndpoints = pInfo.getHttpEndpoints();
+            List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
 
-        PartitionInformation.HttpEndpointHolder basicEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
-        PartitionInformation.HttpEndpointHolder sslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
-        PartitionInformation.HttpEndpointHolder noAuthSslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, httpEndpoints);
-        PartitionInformation.OtherEndpointHolder rmiEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
+            PartitionInformation.HttpEndpointHolder basicEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
+            PartitionInformation.HttpEndpointHolder sslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
+            PartitionInformation.HttpEndpointHolder noAuthSslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, httpEndpoints);
+            PartitionInformation.OtherEndpointHolder rmiEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
 
-        String rules = PartitionInformation.firewallRules;
-        if (basicEndpoint.getIpAddress().equals("*"))
-            rules = rules.replaceAll("-d " + PartitionInformation.BASIC_IP_MARKER, "");
-        else
-            rules = rules.replaceAll(PartitionInformation.BASIC_IP_MARKER, basicEndpoint.getIpAddress());
-        rules = rules.replaceAll(PartitionInformation.BASIC_PORT_MARKER, basicEndpoint.getPort());
+            String rules = unixSpecificFunctions.getFirewallRulesForPartition(basicEndpoint, sslEndpoint, noAuthSslEndpoint, rmiEndpoint);
 
-        if (sslEndpoint.getIpAddress().equals("*"))
-            rules = rules.replaceAll("-d " + PartitionInformation.SSL_IP_MARKER, "");
-        else
-            rules = rules.replaceAll(PartitionInformation.SSL_IP_MARKER, sslEndpoint.getIpAddress());
-        rules = rules.replaceAll(PartitionInformation.SSL_PORT_MARKER, sslEndpoint.getPort());
-
-        if (noAuthSslEndpoint.getIpAddress().equals("*"))
-            rules = rules.replaceAll("-d " + PartitionInformation.NOAUTH_SSL_IP_MARKER, "");
-        else
-            rules = rules.replaceAll(PartitionInformation.NOAUTH_SSL_IP_MARKER, noAuthSslEndpoint.getIpAddress());
-
-        rules = rules.replaceAll(PartitionInformation.NOAUTH_SSL_PORT_MARKER, noAuthSslEndpoint.getPort());
-
-        rules = rules.replaceAll(PartitionInformation.RMI_PORT_MARKER, rmiEndpoint.getPort());
-
-        FileOutputStream fos = null;
-        String fileName = pInfo.getOSSpecificFunctions().getPartitionBase() + pInfo.getPartitionId() + "/" + "firewall_rules";
-        try {
-            fos = new FileOutputStream(fileName);
-            fos.write(rules.getBytes());
-        } catch (FileNotFoundException e) {
-            logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
-            logger.severe("The partition will be disabled");
-            pInfo.setShouldDisable(true);
-            enablePartitionForStartup(pInfo);
-        } catch (IOException e) {
-            logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
-            logger.severe("The partition will be disabled");
-            pInfo.setShouldDisable(true);
-            enablePartitionForStartup(pInfo);
-        } finally {
-            ResourceUtils.closeQuietly(fos);
-        }
+            FileOutputStream fos = null;
+            String fileName = pInfo.getOSSpecificFunctions().getPartitionBase() + pInfo.getPartitionId() + "/" + "firewall_rules";
+            try {
+                fos = new FileOutputStream(fileName);
+                fos.write(rules.getBytes());
+            } catch (FileNotFoundException e) {
+                logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
+                logger.severe("The partition will be disabled");
+                pInfo.setShouldDisable(true);
+                enablePartitionForStartup(pInfo);
+            } catch (IOException e) {
+                logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
+                logger.severe("The partition will be disabled");
+                pInfo.setShouldDisable(true);
+                enablePartitionForStartup(pInfo);
+            } finally {
+                ResourceUtils.closeQuietly(fos);
+            }
+            }
     }
 
     public static PartitionInformation.HttpEndpointHolder getHttpEndpointByType(PartitionInformation.HttpEndpointType type,
@@ -948,7 +934,7 @@ public class PartitionActions {
 
     public static void enablePartitionForStartup(PartitionInformation pInfo){
         OSSpecificFunctions osf = pInfo.getOSSpecificFunctions();
-        if (osf.isLinux()) {
+        if (osf.isUnix()) {
             File enableStartupFile = new File(osf.getPartitionBase() + pInfo.getPartitionId(), PartitionInformation.ENABLED_FILE);
             if (pInfo.shouldDisable()) {
                 logger.warning("Disabling the \"" + pInfo.getPartitionId() + "\" partition.");

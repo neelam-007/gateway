@@ -20,15 +20,20 @@ public class OSDetector {
     }
 
     private static OSSpecificFunctions createPartitionAwareOSFunctions(String partitionName) {
-        if (isWindows()) {
-            return new WindowsSpecificFunctions(OSName,partitionName);
-        } else if (isUnix()) {
-
-            return new LinuxSpecificFunctions(OSName,partitionName);
-        }
-        else {
+        if (!isWindows() && !isUnix())
             throw new UnsupportedOsException(OSName + " is not a supported operating system.");
+
+        OSSpecificFunctions osf = null;
+        if (isWindows()) {
+            osf = new WindowsSpecificFunctions(OSName,partitionName);
+        } else {
+            if (isLinux())
+                osf = new LinuxSpecificFunctions(OSName,partitionName);
+            else if (isSolaris())
+                osf = new SolarisSpecificFunctions(OSName, partitionName);
         }
+
+        return osf;
     }
 
     public static boolean isWindows() {

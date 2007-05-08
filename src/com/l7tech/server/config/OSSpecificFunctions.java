@@ -3,6 +3,8 @@ package com.l7tech.server.config;
 import com.l7tech.server.partition.PartitionInformation;
 
 import java.io.*;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * A class that encapsulates the configuraration locations for an SSG on a supported platform.
@@ -27,14 +29,15 @@ public abstract class OSSpecificFunctions {
     protected String tomcatServerConfig;
     protected String keystoreDir;
 
-    protected String lunaInstallDir;
-    protected String lunaJSPDir;
+//    protected String lunaInstallDir;
+//    protected String lunaJSPDir;
+//    protected String lunaCmuPath;
 
     protected String pathToJdk;
     protected String pathToJreLibExt;
 
     protected String ssgLogProperties;
-    protected String lunaCmuPath;
+
     protected String pathToJavaSecurityFile;
     protected String ssgSystemPropertiesFile;
     protected String pathToJavaLibPath;
@@ -46,6 +49,12 @@ public abstract class OSSpecificFunctions {
     private boolean hasPartitions;
 
     String partitionControlScriptName;
+
+    protected String networkConfigDir;
+    protected String upgradeFileNewExt;
+    protected String upgradeFileOldExt;
+
+    protected KeystoreInfo[] keystoreInfos;
 
     public OSSpecificFunctions(String OSName) {
         this(OSName, "");
@@ -65,7 +74,7 @@ public abstract class OSSpecificFunctions {
         else
             this.partitionName = "";
         
-        makeOSSpecificFilenames();
+        doOsSpecificSetup();
         makeFilenames();
         hasPartitions = checkIsPartitioned();
     }
@@ -74,11 +83,15 @@ public abstract class OSSpecificFunctions {
         return new File(getPartitionBase()).exists();
     }
 
-    public abstract boolean isWindows();
+    public boolean isWindows() {
+        return false;
+    }
 
-    public abstract boolean isLinux();
+    public boolean isUnix() {
+        return false;    
+    }
 
-    abstract void makeOSSpecificFilenames();
+    abstract void doOsSpecificSetup();
 
     public void makeFilenames() {
         clusterHostFile = "cluster_hostname";
@@ -163,8 +176,6 @@ public abstract class OSSpecificFunctions {
         return getConfigurationBase() + clusterHostFile;
     }
 
-    public abstract String[] getKeystoreTypes();
-
     public String getSsgLogPropertiesFile() {
         return getConfigurationBase() + ssgLogProperties;
     }
@@ -187,21 +198,21 @@ public abstract class OSSpecificFunctions {
         return getConfigurationBase() + keystoreDir;
     }
 
-    public String getLunaJSPDir() {
-        return lunaJSPDir;
-    }
+//    public String getLunaJSPDir() {
+//        return lunaJSPDir;
+//    }
 
-    public void setLunaJSPDir(String lunaJSPDir) {
-        this.lunaJSPDir = lunaJSPDir;
-    }
+//    public void setLunaJSPDir(String lunaJSPDir) {
+//        this.lunaJSPDir = lunaJSPDir;
+//    }
 
-    public String getLunaInstallDir() {
-        return lunaInstallDir;
-    }
+//    public String getLunaInstallDir() {
+//        return lunaInstallDir;
+//    }
 
-    public void setLunaInstallDir(String lunaInstallDir) {
-        this.lunaInstallDir = lunaInstallDir;
-    }
+//    public void setLunaInstallDir(String lunaInstallDir) {
+//        this.lunaInstallDir = lunaInstallDir;
+//    }
 
     public String getPathToJdk() {
         return getSsgInstallRoot() + pathToJdk;
@@ -215,9 +226,9 @@ public abstract class OSSpecificFunctions {
         return getPathToJdk() + pathToJreLibExt;
     }
 
-    public String getLunaCmuPath() {
-        return lunaCmuPath;
-    }
+//    public String getLunaCmuPath() {
+//        return lunaCmuPath;
+//    }
 
     public String getSsgSystemPropertiesFile() {
         return getConfigurationBase() + ssgSystemPropertiesFile;
@@ -231,11 +242,64 @@ public abstract class OSSpecificFunctions {
         return getSsgInstallRoot() + pathToDBCreateFile;
     }
 
+    public KeystoreInfo[] getAvailableKeystores() {
+        return keystoreInfos;
+    }
 
     public abstract String getOriginalPartitionControlScriptName();
     public abstract String getSpecificPartitionControlScriptName();
 
-    public abstract String getNetworkConfigurationDirectory();
+    public String getNetworkConfigurationDirectory() {
+        return networkConfigDir;
+    }
 
-    public abstract String getUpgradedFileExtension();
+    public String getUpgradedNewFileExtension() {
+        return upgradeFileNewExt;
+    }
+
+    public String getUpgradedOldFileExtension() {
+        return upgradeFileOldExt;
+    }
+
+    public KeystoreInfo getKeystore(KeystoreType keystoreType) {
+        if (keystoreInfos == null)
+            return null;
+
+        for (KeystoreInfo keystoreInfo : keystoreInfos) {
+            if (keystoreInfo.getType() == keystoreType)
+                return keystoreInfo;
+        }
+
+        return null;
+    }
+
+    public static class KeystoreInfo {
+        KeystoreType type;
+        Map<String, String> metaInfo;
+
+        public KeystoreInfo(KeystoreType type) {
+            this.type = type;
+            metaInfo = new HashMap<String, String>();
+        }
+
+        public void addMetaInfo(String key, String data) {
+            metaInfo.put(key, data);
+        }
+
+        public void removeMetaInfo(String key) {
+            metaInfo.remove(key);
+        }
+
+        public Map<String, String> getAllMetaInfo() {
+            return metaInfo;   
+        }
+
+        public String getMetaInfo(String key) {
+            return getAllMetaInfo().get(key);
+        }
+
+        public KeystoreType getType() {
+            return type;
+        }
+    }
 }

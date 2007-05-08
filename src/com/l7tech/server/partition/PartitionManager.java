@@ -234,7 +234,7 @@ public class PartitionManager {
                     for (File originalFile : originalFiles) {
                         fileNames.add(originalFile.getName());
                     }
-                    pa.setLinuxFilePermissions(fileNames.toArray(new String[0]), "775", templatePartitionDir, osf);
+                    pa.setUnixFilePermissions(fileNames.toArray(new String[0]), "775", templatePartitionDir, osf);
 
                 } catch (IOException e) {
                     System.out.println("Error while creating the template partition: " + e.getMessage());
@@ -259,26 +259,26 @@ public class PartitionManager {
                         for (File templateFile : templateFiles) {
                             fileNames.add(templateFile.getName());
                         }
-                        pa.setLinuxFilePermissions(fileNames.toArray(new String[0]), "775", defaultPartitionDir, osf);
+                        pa.setUnixFilePermissions(fileNames.toArray(new String[0]), "775", defaultPartitionDir, osf);
                     } else {
                         // copy old config, backup any existing files with the given extension.
-                        copyConfigurations(originalFiles, defaultPartitionDir, osf.getUpgradedFileExtension());
+                        copyConfigurations(originalFiles, defaultPartitionDir, osf.getUpgradedNewFileExtension());
                         fileNames.clear();
                         for (File originalFile : originalFiles) {
                             fileNames.add(originalFile.getName());
                         }
-                        pa.setLinuxFilePermissions(fileNames.toArray(new String[0]), "775", defaultPartitionDir, osf);
-                        renameUpgradeFiles(defaultPartitionDir, ".rpmsave");
-                        if (osf.isLinux()) {
+                        pa.setUnixFilePermissions(fileNames.toArray(new String[0]), "775", defaultPartitionDir, osf);
+                        renameUpgradeFiles(defaultPartitionDir, osf.getUpgradedOldFileExtension());
+                        if (osf.isUnix()) {
                             File f = new File(osf.getPartitionBase() + "default_/" + "enabled");
                             if (!f.exists())
                                 f.createNewFile();
                         }
                     }
                     String s = defaultPartitionDir.getAbsolutePath() + "/var/attachments";
-                    pa.setLinuxFilePermissions(new String[]{s}, "775", defaultPartitionDir, osf);
+                    pa.setUnixFilePermissions(new String[]{s}, "775", defaultPartitionDir, osf);
                     s = defaultPartitionDir.getAbsolutePath() + "/var/modules";
-                    pa.setLinuxFilePermissions(new String[]{s}, "775", defaultPartitionDir, osf);
+                    pa.setUnixFilePermissions(new String[]{s}, "775", defaultPartitionDir, osf);
 
                     PartitionActions.fixKeystorePaths(defaultPartitionDir);
                     PartitionActions.doFirewallConfig(new PartitionInformation(PartitionInformation.DEFAULT_PARTITION_NAME));

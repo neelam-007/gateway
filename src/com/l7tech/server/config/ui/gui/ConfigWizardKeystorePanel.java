@@ -2,6 +2,7 @@ package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.KeystoreType;
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.partition.PartitionManager;
@@ -109,7 +110,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         setShowDescriptionPanel(false);
         java.util.List<KeystoreType> kstypes = new ArrayList<KeystoreType>();
         for (KeystoreType type : KeystoreType.values()) {
-            if (type != KeystoreType.NO_KEYSTORE)
+            if (type != KeystoreType.NO_KEYSTORE && type != KeystoreType.UNDEFINED)
                 kstypes.add(type);
         }
         keystoreType.setModel(new DefaultComboBoxModel(kstypes.toArray(new KeystoreType[0])));
@@ -152,7 +153,16 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
 
     private String[] getKeystores() {
         if (keystoresList == null) {
-            keystoresList = osFunctions.getKeystoreTypes();
+            OSSpecificFunctions.KeystoreInfo[] keystoreInfos = osFunctions.getAvailableKeystores();
+            if (keystoreInfos == null) {
+                keystoresList = new String[0];
+            } else {
+                keystoresList = new String[keystoreInfos.length];
+                for (int i = 0; i < keystoreInfos.length; i++) {
+                    KeystoreType type = keystoreInfos[i].getType();
+                    keystoresList[i] = type.getName();
+                }
+            }
         }
         return keystoresList;
     }
@@ -173,13 +183,20 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
             return;
         }
 
-        if (selectedItem == KeystoreType.DEFAULT_KEYSTORE_NAME) {
-            whichKeystorePanel = new DefaultKeystorePanel();
-        } else if (selectedItem == KeystoreType.LUNA_KEYSTORE_NAME) {
-            whichKeystorePanel = new LunaKeystorePanel();
-            ((LunaKeystorePanel)whichKeystorePanel).setDefaultLunaInstallPath(osFunctions.getLunaInstallDir());
-            ((LunaKeystorePanel)whichKeystorePanel).setDefaultLunaJSPPath(osFunctions.getLunaJSPDir());
-        } else {
+        switch (selectedItem) {
+            case DEFAULT_KEYSTORE_NAME:
+                whichKeystorePanel = new DefaultKeystorePanel();
+                break;
+            case LUNA_KEYSTORE_NAME:
+                whichKeystorePanel = new LunaKeystorePanel();
+                LunaKeystorePanel lkp = (LunaKeystorePanel) whichKeystorePanel;
+                OSSpecificFunctions.KeystoreInfo ksInfo = osFunctions.getKeystore(KeystoreType.LUNA_KEYSTORE_NAME);
+                lkp.setDefaultLunaInstallPath(ksInfo.getMetaInfo("INSTALL_DIR"));
+                lkp.setDefaultLunaJSPPath(ksInfo.getMetaInfo("JSP_DIR"));
+                break;
+            case SCA6000_KEYSTORE_NAME:
+                whichKeystorePanel = new Sca6000KeystorePanel();
+                break;
         }
 
         ksDataPanel.removeAll();

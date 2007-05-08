@@ -115,7 +115,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         try {
             PropertiesConfiguration dbProps = PropertyHelper.mergeProperties(
                     dbConfigFile,
-                    new File(dbConfigFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
+                    new File(dbConfigFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedNewFileExtension()),
                     true, true);
 
             String origUrl = dbProps.getString(HIBERNATE_URL_KEY);

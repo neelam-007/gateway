@@ -228,9 +228,9 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
             String whichPartitionName = nameList.get(whichIndex);
 
             PartitionInformation partitionToRemove = PartitionManager.getInstance().getPartition(whichPartitionName);
-            boolean isLinux = partitionToRemove.getOSSpecificFunctions().isLinux();
+            boolean isUnix = partitionToRemove.getOSSpecificFunctions().isUnix();
             String warningMessage;
-            if (isLinux) {
+            if (isUnix) {
                 warningMessage = "Removing the \"" + partitionToRemove.getPartitionId() + "\" partition will remove all the associated configuration.\n\n" +
                     "This cannot be undone.\n" +
                     "Do you wish to proceed?";

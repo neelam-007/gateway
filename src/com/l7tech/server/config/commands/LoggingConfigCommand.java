@@ -1,24 +1,20 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
-import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.partition.PartitionInformation;
-import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.server.partition.PartitionManager;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 import java.io.*;
 import java.util.Date;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-
 /**
- * Created by IntelliJ IDEA.
  * User: megery
  * Date: Aug 23, 2005
- * Time: 4:48:51 PM
- * To change this template use File | Settings | File Templates.
  */
 public class LoggingConfigCommand extends BaseConfigurationCommand {
     static Logger logger = Logger.getLogger(LoggingConfigCommand.class.getName());
@@ -62,7 +58,7 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
             File loggingPropertiesFile = new File(ssgLogPropsPath);
             props = PropertyHelper.mergeProperties(
                     loggingPropertiesFile,
-                    new File(ssgLogPropsPath + "." + getOsFunctions().getUpgradedFileExtension()),
+                    new File(ssgLogPropsPath + "." + getOsFunctions().getUpgradedNewFileExtension()),
                     true, true);
 
             String fullLogPattern = getOsFunctions().getSsgInstallRoot() + SSG_LOG_DIR + partitionName + "-" + SSG_LOG_PATTERN;
