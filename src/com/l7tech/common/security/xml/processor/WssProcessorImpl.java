@@ -805,13 +805,27 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
         // soapMsg document
-        DecryptionContext dc = new DecryptionContext();
+        final DecryptionContext dc = new DecryptionContext();
         final Collection algorithm = new ArrayList();
+
+        // Support "flexible" answers to getAlgorithm() query when using 3des with HSM (Bug #3705)
+        final String[] overrideAlg = { null };
+        byte[] keyBytes = key.getEncoded();
+        final Key wrappedKey = new AesKey(keyBytes, keyBytes.length * 8) {
+            public String getAlgorithm() {
+                if (overrideAlg[0] != null)
+                    return overrideAlg[0];
+                return super.getAlgorithm();
+            }
+        };
+
         // override getEncryptionEngine to collect the encryptionmethod algorithm
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn() {
             public EncryptionEngine getEncryptionEngine(EncryptionMethod encryptionMethod)
                     throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException  {
                 algorithm.add(encryptionMethod.getAlgorithm());
+                if (EncryptionMethod.TRIPLEDES_CBC.equals(encryptionMethod.getAlgorithm()))
+                    overrideAlg[0] = "DESede"; // Bug #3705
                 return super.getEncryptionEngine(encryptionMethod);
             }
         };
@@ -820,7 +834,7 @@ public class WssProcessorImpl implements WssProcessor {
         dc.setAlgorithmFactory(af);
         dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT,
                             null, null);
-        dc.setKey(key);
+        dc.setKey(wrappedKey);
         NodeList dataList;
         try {
             // do the actual decryption
@@ -841,6 +855,8 @@ public class WssProcessorImpl implements WssProcessor {
         // determine algorithm
         String algorithmName = XencAlgorithm.AES_128_CBC.getXEncName();
         if (!algorithm.isEmpty()) {
+            if (algorithm.size() > 1)
+                throw new ProcessorException("Multiple encryption algorithms found in element " + encryptedDataElement.getNodeName());
             algorithmName = algorithm.iterator().next().toString();
         }
 
