@@ -5,10 +5,7 @@ import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.CausedIOException;
-import com.l7tech.server.config.ClusteringType;
-import com.l7tech.server.config.KeystoreType;
-import com.l7tech.server.config.PropertyHelper;
-import com.l7tech.server.config.KeyStoreConstants;
+import com.l7tech.server.config.*;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.util.MakeLunaCerts;
@@ -119,14 +116,14 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
 
         if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME) {
-            if (isJava15()) {
+//            if (!isJava14()) {
                 Security.addProvider(new sun.security.provider.Sun());
                 Security.addProvider(new sun.security.rsa.SunRsaSign());
                 Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
                 Security.addProvider(new com.sun.crypto.provider.SunJCE());
                 Security.addProvider(new sun.security.jgss.SunProvider());
                 Security.addProvider(new com.sun.security.sasl.Provider());
-            }
+//            }
         } else if (ksType == KeystoreType.LUNA_KEYSTORE_NAME) {
             File classDir = new File(getOsFunctions().getPathToJreLibExt());
             if (!classDir.exists()) {
@@ -522,7 +519,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void setLunaSystemProps(KeystoreConfigBean ksBean) {
-        System.setProperty(LUNA_SYSTEM_CMU_PROPERTY, ksBean.getLunaInstallationPath() + getOsFunctions().getLunaCmuPath());
+        OSSpecificFunctions.KeystoreInfo lunaInfo = getOsFunctions().getKeystore(KeystoreType.LUNA_KEYSTORE_NAME);
+        if (lunaInfo != null)
+            System.setProperty(LUNA_SYSTEM_CMU_PROPERTY, ksBean.getLunaInstallationPath() + lunaInfo.getMetaInfo("CMU_PATH"));
     }
 
     private void truncateKeystores(File caKeyStore, File sslKeyStore) {
@@ -620,7 +619,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         try {
             PropertiesConfiguration keystoreProps = PropertyHelper.mergeProperties(
                     keystorePropertiesFile,
-                    new File(keystorePropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
+                    new File(keystorePropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedNewFileExtension()),
                     true, true);
 
             keystoreProps.setProperty(KeyStoreConstants.PROP_KS_TYPE, getKsType());
@@ -657,19 +656,18 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         KeystoreType ksTypeFromBean = ((KeystoreConfigBean)configBean).getKeyStoreType();
         if (ksTypeFromBean == KeystoreType.LUNA_KEYSTORE_NAME) {
             return "Luna";
-        }
-        else {
-            if (isJava15()) {
+        } else if (ksTypeFromBean == KeystoreType.DEFAULT_KEYSTORE_NAME) {
+//            if (isJava14())
+//                return "BCPKCS12";
+//            else
                 return "PKCS12";
-            }
-            else {
-                return "BCPKCS12";
-            }
+        } else {
+            return "Internal Hardware Security Module";
         }
     }
 
-    private boolean isJava15() {
-        String version = System.getProperty("java.version");
-        return version.startsWith("1.5");
-    }
+//    private boolean isJava14() {
+//        String version = System.getProperty("java.version");
+//        return version.startsWith("1.4");
+//    }
 }
