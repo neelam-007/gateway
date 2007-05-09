@@ -112,13 +112,18 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
     private void doHSMPrompts() throws IOException, WizardNavigationException {
         printText("\n-- Configure Hardware Security Module (HSM) --\n");
 
-
+        String defaultValue = "1";
         String[] prompts = new String[] {
-                "This will prompt the user for input to configure the SCA 6000 HSM." + getEolChar(),
-                "Press enter to continue"
+            "1) Initialize Keystore" + getEolChar(),
+            "2) Restore Keystore Backup" + getEolChar(),
+            "Please make a selection: [" + defaultValue + "] ",
         };
+        String input = getData(prompts, defaultValue, new String[] {"1", "2"});
+        keystoreBean.setInitializeHSM((input != null && "1".equals(input)));
 
-        getData(prompts, "");
+        doKeystorePasswordPrompts("Set the HSM Password",
+                                  "Enter the HSM password: ",
+                                  keystoreBean.isInitializeHSM()?"Confirm the HSM password: ":null);
     }
 
     private void askLunaKeystoreQuestions() throws IOException, WizardNavigationException {
@@ -184,14 +189,16 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
         };
         String input = getData(prompts, defaultValue, new String[] {"1", "2"});
         keystoreBean.setDoBothKeys( (input != null && "1".equals(input)));
-        doKeystorePasswordPrompts();
+        doKeystorePasswordPrompts("Keystore Password",
+                                  "Enter the keystore password (must be a minimum of 6 characters): ",
+                                  "Enter the keystore password again (must match the first password): ");
     }
 
-    private void doKeystorePasswordPrompts() throws IOException, WizardNavigationException {
-        printText("\n-- Keystore Password --\n");
+    private void doKeystorePasswordPrompts(String header, String firstMsg, String secondMsg) throws IOException, WizardNavigationException {
+        printText(getEolChar() + "-- " + header + " --" + getEolChar());
         String password = getMatchingPasswords(
-                "Enter the keystore password (must be a minimum of 6 characters): ",
-                "Enter the keystore password again (must match the first password): ",
+                firstMsg,
+                secondMsg,
                 KeyStoreConstants.PASSWORD_LENGTH
         );
 

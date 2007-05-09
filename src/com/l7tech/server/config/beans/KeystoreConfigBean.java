@@ -4,19 +4,16 @@ import com.l7tech.server.config.ClusteringType;
 import com.l7tech.server.config.KeystoreType;
 
 /**
- * Created by IntelliJ IDEA.
  * User: megery
  * Date: Aug 17, 2005
- * Time: 1:39:53 PM
- * To change this template use File | Settings | File Templates.
  */
 public class KeystoreConfigBean extends BaseConfigurationBean {
     private final static String NAME = "Keystore Configuration";
     private final static String DESCRIPTION = "Configures the keystore for the SSG";
 
     private char[] ksPassword;
-    boolean doBothKeys;
-    String hostname;
+    private boolean doBothKeys;
+    private String hostname;
 
     private static final String DO_BOTH_KEYS_INFO = "Creating CA and SSL keys";
     private static final String SKIP_CA_KEY_INFO = "Skipping CA keys creation";
@@ -28,6 +25,7 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private boolean doKeystoreConfig;
     private ClusteringType clusteringType;
     private KeystoreType keyStoreType;
+    private boolean initializeHSM;
 
 
     public KeystoreType getKeyStoreType() {
@@ -125,5 +123,13 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
 
     public ClusteringType getClusteringType() {
         return clusteringType;
+    }
+
+    public void setInitializeHSM(boolean b) {
+        initializeHSM = b;
+    }
+
+    public boolean isInitializeHSM() {
+        return initializeHSM;
     }
 }

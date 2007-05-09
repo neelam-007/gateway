@@ -64,13 +64,21 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
             KeystoreType ksType = (KeystoreType) keystoreType.getSelectedItem();
             ksBean.setKeyStoreType(ksType);
 
-            if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME) {
-                ksBean.setKsPassword(((DefaultKeystorePanel)whichKeystorePanel).getKsPassword());
-                ksBean.setDoBothKeys(((DefaultKeystorePanel)whichKeystorePanel).doBothKeys());
-            } else {
-                ksBean.setLunaInstallationPath(((LunaKeystorePanel)whichKeystorePanel).getLunaInstallPath());
-                ksBean.setLunaJspPath(((LunaKeystorePanel)whichKeystorePanel).getLunaJSPPath());
+            switch (ksType) {
+                case DEFAULT_KEYSTORE_NAME:
+                    ksBean.setKsPassword(((DefaultKeystorePanel)whichKeystorePanel).getKsPassword());
+                    ksBean.setDoBothKeys(((DefaultKeystorePanel)whichKeystorePanel).doBothKeys());
+                    break;
+                case LUNA_KEYSTORE_NAME:
+                    ksBean.setLunaInstallationPath(((LunaKeystorePanel)whichKeystorePanel).getLunaInstallPath());
+                    ksBean.setLunaJspPath(((LunaKeystorePanel)whichKeystorePanel).getLunaJSPPath());
+                    break;
+                case SCA6000_KEYSTORE_NAME:
+                    break;
+                default:
+                    break;
             }
+
             getParentWizard().setKeystoreType(ksType);
         }
     }

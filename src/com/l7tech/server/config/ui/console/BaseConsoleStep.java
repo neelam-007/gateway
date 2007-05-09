@@ -122,7 +122,8 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
                     } else if (password1.length() < passwordLength) {
                         errorMessages.add("**** The password must be at least " + passwordLength +" characters long. Please try again ****" + eolChar);
                     } else if (!StringUtils.equals(password1, password2)) {
-                        errorMessages.add("**** The passwords do not match ****" + eolChar);
+                        if (!StringUtils.isEmpty(secondPrompt)) //only complain if the caller actually prompted for a second password
+                            errorMessages.add("**** The passwords do not match ****" + eolChar);
                     }
 
                     if (errorMessages.size() > 0) {

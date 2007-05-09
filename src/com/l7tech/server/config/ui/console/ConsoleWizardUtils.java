@@ -191,6 +191,7 @@ public class ConsoleWizardUtils {
 
         for (int i = 0; i < prompts.length; i++) {
             String prompt = prompts[i];
+            if (prompt == null) continue;
             if (isNoDefaults) {
                 gotData.put(prompt, getData(new String[]{prompt}, null, isNavAware, (String[])null, null));
             } else {
