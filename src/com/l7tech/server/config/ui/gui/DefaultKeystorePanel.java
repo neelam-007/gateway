@@ -51,6 +51,6 @@ public class DefaultKeystorePanel extends KeystorePanel{
     }
 
     public boolean validateInput() {
-        return pwPanel.validateInput();
+        return pwPanel.validateInput(true);
     }
 }

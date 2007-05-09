@@ -1,13 +1,10 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.server.config.KeyStoreConstants;
-import com.l7tech.server.config.WizardInputValidator;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * User: megery
@@ -89,26 +86,22 @@ public class KeystorePasswordPanel extends JPanel {
         passwordAgainMsg.setVisible(true);
     }
 
-    public boolean validateInput() {
+    public boolean validateInput(final boolean validateBothInputs) {
         setLabelDefaults();
         final String password1 = new String(getPassword());
-        final String password2 = new String(getConfirmedPassword());
+        final String password2 = validateBothInputs?new String(getConfirmedPassword()):null;
 
-        WizardInputValidator validatorWizard = new WizardInputValidator() {
-            public String[] validate(Map inputs) {
-                boolean badInput = false;
-                if (StringUtils.isEmpty(password1) || password1.length() < KeyStoreConstants.PASSWORD_LENGTH) {
-                    showPasswordErrorMsg();
-                    badInput = true;
-                } else if (!password1.equals(password2)) {
-                    showPasswordConfirmationErrorMsg();
-                    badInput = true;
-                }
-
-                return (badInput? new String[0]: null);
+        boolean goodInput = true;
+        if (StringUtils.isEmpty(password1) || password1.length() < KeyStoreConstants.PASSWORD_LENGTH) {
+            showPasswordErrorMsg();
+            goodInput = false;
+        } else if (validateBothInputs) {
+            if (!password1.equals(password2)) {
+                showPasswordConfirmationErrorMsg();
+                goodInput = false;
             }
-        };
+        }
 
-        return (validatorWizard.validate(new HashMap()) == null);
+        return goodInput;
     }
 }

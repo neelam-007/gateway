@@ -51,14 +51,24 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     protected void populateExplanations() {
         explanations.add(getName() + " - " + getDescription());
         if (isDoKeystoreConfig()) {
-            explanations.add(insertTab + "Create " + getKeyStoreType());
-            if (getKeyStoreType() == KeystoreType.DEFAULT_KEYSTORE_NAME) {
-                if (isDoBothKeys()) {
-                    explanations.add(insertTab + DO_BOTH_KEYS_INFO);
+            KeystoreType type = getKeyStoreType();
+            if (type == KeystoreType.DEFAULT_KEYSTORE_NAME || type == KeystoreType.LUNA_KEYSTORE_NAME) {
+                explanations.add(insertTab + "Create " + getKeyStoreType());
+                if (type == KeystoreType.DEFAULT_KEYSTORE_NAME) {
+                    if (isDoBothKeys()) {
+                        explanations.add(insertTab + DO_BOTH_KEYS_INFO);
+                    } else {
+                        explanations.add(insertTab + SKIP_CA_KEY_INFO);
+                    }
+                }
+            } else if (type == KeystoreType.SCA6000_KEYSTORE_NAME) {
+                if (isInitializeHSM()) {
+                    explanations.add(insertTab + "Initialize " + getKeyStoreType());
                 } else {
-                    explanations.add(insertTab + SKIP_CA_KEY_INFO);
+                    explanations.add(insertTab + "Restore " + getKeyStoreType());
                 }
             }
+
             explanations.add(insertTab + USING_HOSTNAME_INFO + getHostname());
         }
         else {
@@ -125,8 +135,8 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
         return clusteringType;
     }
 
-    public void setInitializeHSM(boolean b) {
-        initializeHSM = b;
+    public void setInitializeHSM(boolean shouldInitialise) {
+        initializeHSM = shouldInitialise;
     }
 
     public boolean isInitializeHSM() {

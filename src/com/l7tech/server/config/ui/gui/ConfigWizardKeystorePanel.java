@@ -74,6 +74,8 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
                     ksBean.setLunaJspPath(((LunaKeystorePanel)whichKeystorePanel).getLunaJSPPath());
                     break;
                 case SCA6000_KEYSTORE_NAME:
+                    ksBean.setKsPassword(((Sca6000KeystorePanel)whichKeystorePanel).getPassword());
+                    ksBean.setInitializeHSM(((Sca6000KeystorePanel)whichKeystorePanel).isInitializeHSM());
                     break;
                 default:
                     break;

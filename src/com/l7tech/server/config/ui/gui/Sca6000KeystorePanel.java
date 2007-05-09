@@ -67,10 +67,17 @@ public class Sca6000KeystorePanel extends KeystorePanel{
         } else {
             pwPanel.setPasswordPrompts("Enter the HSM password", null);
         }
+    }
 
+    public char[] getPassword() {
+        return pwPanel.getPassword();
     }
 
     public boolean validateInput() {
-        return pwPanel.validateInput();
+        return pwPanel.validateInput(initializeKeystore.isSelected());
+    }
+
+    public boolean isInitializeHSM() {
+        return initializeKeystore.isSelected();
     }
 }
