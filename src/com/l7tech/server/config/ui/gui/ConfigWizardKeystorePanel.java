@@ -117,9 +117,11 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
 
         setShowDescriptionPanel(false);
         java.util.List<KeystoreType> kstypes = new ArrayList<KeystoreType>();
-        for (KeystoreType type : KeystoreType.values()) {
-            if (type != KeystoreType.NO_KEYSTORE && type != KeystoreType.UNDEFINED)
-                kstypes.add(type);
+
+        for (OSSpecificFunctions.KeystoreInfo ksInfo : osFunctions.getAvailableKeystores()) {
+            KeystoreType kstype = ksInfo.getType();
+            if (kstype != KeystoreType.NO_KEYSTORE && kstype != KeystoreType.UNDEFINED)
+                kstypes.add(kstype);
         }
         keystoreType.setModel(new DefaultComboBoxModel(kstypes.toArray(new KeystoreType[0])));
         configBean = new KeystoreConfigBean();

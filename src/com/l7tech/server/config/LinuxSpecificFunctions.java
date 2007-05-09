@@ -2,6 +2,9 @@ package com.l7tech.server.config;
 
 import com.l7tech.server.partition.PartitionInformation;
 
+import java.util.List;
+import java.util.ArrayList;
+
 public class LinuxSpecificFunctions extends UnixSpecificFunctions {
     private static final String BASIC_IP_MARKER = "<HTTP_BASIC_IP>";
     private static final String BASIC_PORT_MARKER = "<HTTP_BASIC_PORT>";
@@ -29,12 +32,13 @@ public class LinuxSpecificFunctions extends UnixSpecificFunctions {
         upgradeFileNewExt = "rpmnew";
         upgradeFileOldExt = "rpmsave";
 
-        keystoreInfos = new KeystoreInfo[]
-        {
-            new KeystoreInfo(KeystoreType.DEFAULT_KEYSTORE_NAME),
-            new KeystoreInfo(KeystoreType.SCA6000_KEYSTORE_NAME),
-            lunaInfo
-        };
+        List<KeystoreInfo> infos = new ArrayList<KeystoreInfo>();
+        infos.add(new KeystoreInfo(KeystoreType.DEFAULT_KEYSTORE_NAME));
+        infos.add(lunaInfo);
+        if (KeystoreInfo.isHSMEnabled())
+            infos.add(new KeystoreInfo(KeystoreType.SCA6000_KEYSTORE_NAME));
+
+        keystoreInfos = infos.toArray(new KeystoreInfo[0]);
     }
 
     public boolean isLinux() {

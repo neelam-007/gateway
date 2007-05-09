@@ -2,6 +2,9 @@ package com.l7tech.server.config;
 
 import com.l7tech.server.partition.PartitionInformation;
 
+import java.util.List;
+import java.util.ArrayList;
+
 /**
  * User: megery
  * Date: May 7, 2007
@@ -25,11 +28,12 @@ public class SolarisSpecificFunctions extends UnixSpecificFunctions {
         upgradeFileNewExt = "newpkgfiles";
         upgradeFileOldExt = "oldpkgfiles";
 
-        keystoreInfos = new KeystoreInfo[]
-        {
-            new KeystoreInfo(KeystoreType.DEFAULT_KEYSTORE_NAME),
-            new KeystoreInfo(KeystoreType.SCA6000_KEYSTORE_NAME),
-        };
+        List<KeystoreInfo> infos = new ArrayList<KeystoreInfo>();
+        infos.add(new KeystoreInfo(KeystoreType.DEFAULT_KEYSTORE_NAME));
+        if (KeystoreInfo.isHSMEnabled())
+            infos.add(new KeystoreInfo(KeystoreType.SCA6000_KEYSTORE_NAME));
+
+        keystoreInfos = infos.toArray(new KeystoreInfo[0]);
     }
 
     public String getFirewallRulesForPartition(PartitionInformation.HttpEndpointHolder basicEndpoint, PartitionInformation.HttpEndpointHolder sslEndpoint, PartitionInformation.HttpEndpointHolder noAuthSslEndpoint, PartitionInformation.OtherEndpointHolder rmiEndpoint) {

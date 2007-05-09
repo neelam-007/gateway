@@ -29,10 +29,6 @@ public abstract class OSSpecificFunctions {
     protected String tomcatServerConfig;
     protected String keystoreDir;
 
-//    protected String lunaInstallDir;
-//    protected String lunaJSPDir;
-//    protected String lunaCmuPath;
-
     protected String pathToJdk;
     protected String pathToJreLibExt;
 
@@ -276,6 +272,7 @@ public abstract class OSSpecificFunctions {
     public static class KeystoreInfo {
         KeystoreType type;
         Map<String, String> metaInfo;
+        private static final String ENABLE_HSM ="com.l7tech.server.keystore.enabledhsm";
 
         public KeystoreInfo(KeystoreType type) {
             this.type = type;
@@ -300,6 +297,10 @@ public abstract class OSSpecificFunctions {
 
         public KeystoreType getType() {
             return type;
+        }
+
+        public static boolean isHSMEnabled() {
+            return Boolean.getBoolean(ENABLE_HSM) ;
         }
     }
 }
