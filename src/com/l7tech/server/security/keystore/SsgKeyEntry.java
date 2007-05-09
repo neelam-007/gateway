@@ -67,7 +67,7 @@ public class SsgKeyEntry implements Entity {
      */
     public RSAPrivateKey getRSAPrivateKey() throws UnrecoverableKeyException {
         if (rsaPrivateKey == null)
-            throw new UnrecoverableKeyException("The private key cannot be extracted from the hardware security module");
+            throw new UnrecoverableKeyException("The private key is not available to this code");
         return rsaPrivateKey;
     }
 

@@ -378,6 +378,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
     /**
      * Check whether or not the passed cert is related somehow to the ssg's root cert.
+     * See Bug #1019
      * @return true if it is
      */
     private boolean isCertRelatedToSSG(TrustedCert trustedCert) throws IOException, CertificateException {
