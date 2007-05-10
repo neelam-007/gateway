@@ -245,7 +245,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                     sendExceptionFault(context, e, hrequest, hresponse);
                 } else if (e instanceof MethodNotAllowedException) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    logger.warning(e.getMessage());
                     sendExceptionFault(context, e, hrequest, hresponse);
                 } else if (e instanceof IOException &&
                            e.getClass().getName().equals("org.apache.catalina.connector.ClientAbortException")){
