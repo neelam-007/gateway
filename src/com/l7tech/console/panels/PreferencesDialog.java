@@ -39,6 +39,7 @@ public class PreferencesDialog extends JDialog {
     private JComboBox lfComboBox = null;
     private JTextField inactivityTextField = null;
     private JCheckBox rememberLastIdCheckBox = null;
+    private JCheckBox enableValidationCheckBox = null;
 
 
     /**
@@ -220,6 +221,51 @@ public class PreferencesDialog extends JDialog {
               }
           });
 
+        // new in 4.0 checkbox to turn on/off validation
+        JLabel validationStateLabel = new JLabel("Policy Validation Feedback:");
+        rememberLastIdLabel.setToolTipText("Enable/Disable Policy Validation Feedback");
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 16;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(11, 12, 0, 0);
+        contents.add(validationStateLabel, constraints);
+
+        enableValidationCheckBox = new JCheckBox();
+        enableValidationCheckBox.setToolTipText("Enable/Disable Policy Validation Feedback");
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 16;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.insets = new Insets(11, 7, 0, 11);
+        contents.add(enableValidationCheckBox, constraints);
+        try {
+            String sb = getPreferences().getProperty(SsmPreferences.ENABLE_POLICY_VALIDATION_ID);
+            boolean b = Boolean.valueOf(sb).booleanValue();
+            if (sb == null || sb.length() < 1) {
+                b = true;
+            }
+            enableValidationCheckBox.setSelected(b);
+        } catch (IOException e) {
+            log.log(Level.WARNING, "initComponents()", e);
+        }
+
+        enableValidationCheckBox.addActionListener(new ActionListener() {
+              /**
+               * Invoked when an action occurs.
+               */
+              public void actionPerformed(ActionEvent e) {
+                  try {
+                      getPreferences().
+                        setProperty(SsmPreferences.ENABLE_POLICY_VALIDATION_ID,
+                          (new Boolean(((JCheckBox) e.getSource()).isSelected())).toString());
+                  } catch (IOException ex) {
+                      ; // swallow
+                  }
+              }
+          });
+
+
         // Button panel at the bottom of the window
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, 0));
@@ -267,7 +313,7 @@ public class PreferencesDialog extends JDialog {
 
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
-        constraints.gridy = 16;
+        constraints.gridy = 18;
         constraints.gridwidth = 7;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.insets = new Insets(17, 12, 11, 11);

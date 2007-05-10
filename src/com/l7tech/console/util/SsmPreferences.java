@@ -35,6 +35,8 @@ public interface SsmPreferences {
      * remember last login id
      */
     String SAVE_LAST_LOGIN_ID = "last.login.id.save";
+
+    String ENABLE_POLICY_VALIDATION_ID = "enable.policy.validation";
     /**
      * toolbars property (icons, text, icons and text)
      */
