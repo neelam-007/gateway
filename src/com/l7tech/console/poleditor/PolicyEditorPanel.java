@@ -55,7 +55,7 @@ import java.util.logging.Logger;
 
 /**
  * The class represents the policy editor
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
@@ -167,6 +167,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return subject.getServiceNode();
     }
 
+    protected boolean isPolicyValidationOn() {
+        String maybe = preferences.asProperties().getProperty(SsmPreferences.ENABLE_POLICY_VALIDATION_ID);
+        boolean output = Boolean.valueOf(maybe).booleanValue();
+        if (maybe == null || maybe.length() < 1) {
+            output = true;
+        }
+        return output;
+    }
+
     protected PublishedService getPublishedService() {
         PublishedService service = null;
         if (subject.getServiceNode() != null) {
@@ -188,6 +197,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         validatePolicy(true);
     }
 
+    protected static final Callable<PolicyValidatorResult> NO_VAL_CALLBACK = new Callable<PolicyValidatorResult>() {
+        public PolicyValidatorResult call() throws Exception {
+            PolicyValidatorResult output = new PolicyValidatorResult();
+            output.addWarning(new PolicyValidatorResult.Warning(0, 0, "Policy Validation Disabled", null));
+            return output;
+        }
+    };
+
     /**
      * validate the service policy.
      * @param displayResult if true, will call displayResult before returning.  otherwise, just returns the results
@@ -197,12 +214,16 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final Assertion assertion = rootAssertion.asAssertion();
         final PublishedService service = getPublishedService();
         final ConsoleLicenseManager licenseManager = Registry.getDefault().getLicenseManager();
-        Callable<PolicyValidatorResult> callable = new Callable<PolicyValidatorResult>() {
-            public PolicyValidatorResult call() throws Exception {
-                return PolicyValidator.getDefault().validate(assertion, service, licenseManager);
-            }
-        };
-
+        Callable<PolicyValidatorResult> callable;
+        if (isPolicyValidationOn()) {
+            callable = new Callable<PolicyValidatorResult>() {
+                public PolicyValidatorResult call() throws Exception {
+                    return PolicyValidator.getDefault().validate(assertion, service, licenseManager);
+                }
+            };
+        } else {
+            callable = NO_VAL_CALLBACK;
+        }
         return validateAndDisplay(callable, displayResult);
     }
 
@@ -546,30 +567,35 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final String policyXml = WspWriter.getPolicyXml(assertion);
         final PublishedService service = getPublishedService();
         final ConsoleLicenseManager licenseManager = Registry.getDefault().getLicenseManager();
-        Callable<PolicyValidatorResult> callable = new Callable<PolicyValidatorResult>() {
-            public PolicyValidatorResult call() throws Exception {
-                PolicyValidatorResult result = PolicyValidator.getDefault().validate(assertion, service, licenseManager);
-                try {
-                    if (getPublishedService() != null) {
-                        PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
-                                validatePolicy(policyXml, getPublishedService().getOid());
-                        if (result2.getErrorCount() > 0) {
-                            for (Object o : result2.getErrors()) {
-                                result.addError((PolicyValidatorResult.Error)o);
+        Callable<PolicyValidatorResult> callable;
+        if (isPolicyValidationOn()) {
+            callable = new Callable<PolicyValidatorResult>() {
+                public PolicyValidatorResult call() throws Exception {
+                    PolicyValidatorResult result = PolicyValidator.getDefault().validate(assertion, service, licenseManager);
+                    try {
+                        if (getPublishedService() != null) {
+                            PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
+                                    validatePolicy(policyXml, getPublishedService().getOid());
+                            if (result2.getErrorCount() > 0) {
+                                for (Object o : result2.getErrors()) {
+                                    result.addError((PolicyValidatorResult.Error)o);
+                                }
+                            }
+                            if (result2.getWarningCount() > 0) {
+                                for (Object o : result2.getWarnings()) {
+                                    result.addWarning((PolicyValidatorResult.Warning)o);
+                                }
                             }
                         }
-                        if (result2.getWarningCount() > 0) {
-                            for (Object o : result2.getWarnings()) {
-                                result.addWarning((PolicyValidatorResult.Warning)o);
-                            }
-                        }
+                    } catch (RemoteException e) {
+                        log.log(Level.WARNING, "Problem running server side validation", e);
                     }
-                } catch (RemoteException e) {
-                    log.log(Level.WARNING, "Problem running server side validation", e);
+                    return result;
                 }
-                return result;
-            }
-        };
+            };
+        } else {
+            callable = NO_VAL_CALLBACK;
+        }
 
         PolicyValidatorResult result = validateAndDisplay(callable, true);
         if (result == null)
