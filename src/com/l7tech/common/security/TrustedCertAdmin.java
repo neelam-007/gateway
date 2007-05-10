@@ -125,13 +125,4 @@ public interface TrustedCertAdmin  {
      */
     @Transactional(propagation=Propagation.SUPPORTS)
     public X509Certificate getSSGSslCert() throws IOException, CertificateException, RemoteException;
-
-    /**
-     * Get all gateway certs
-     * @return
-     * @throws RemoteException
-     */
-    @Transactional(propagation=Propagation.SUPPORTS)
-    public X509Certificate getSSGPrivateKeyCerts() throws RemoteException;
-
 }
