@@ -1,0 +1,68 @@
+#!/usr/bin/expect -f
+
+set keystoreName ssg
+set soUsername so
+set soPassword [lindex $argv 0]
+set username gateway
+set password [lindex $argv 0]
+
+set initializationTimeout 120
+set defaultTimeout 120
+
+spawn /opt/sun/sca6000/bin/scamgr create user $username
+
+
+exit -onexit { puts "\n\nTimed out waiting for an expected response from scamgr\n" ; exit 1 }
+
+# Trust session key and ensure board is uninitialized
+expect {
+    -re "3. Trust the board for all future sessions.*--> " { send "3\r" ; exp_continue }
+    -re "3. Replace the trusted key with the new key.*--> " { send "3\r" ; exp_continue }
+    "Security Officer Login: " { exit -onexit { exit 3 } ; puts "\n\nBoard appears to be initialized already.  To zeroize it, use scadiag -z mca0" ; exit 3 }
+    "This board is uninitialized."
+}
+
+# Initialize board
+expect {
+    -re "1. Initialize the board with a new keystore.*--> " { 
+	send "1\r"
+	expect {
+	    "Keystore Name:" { send "$keystoreName\r" ; exp_continue }
+	    -re "Run in FIPS 140-2 mode?.*: " { send "y\r" ; exp_continue }
+	    "Initial Security Officer Name: " { send "$soUsername\r" ; exp_continue }
+	    "Initial Security Officer Password: " { 
+		send "$soPassword\r"
+		expect  {
+		    "Confirm password: " { send "$soPassword\r" }
+		    "Passwords must be at least 6 characters long" { exit -onexit { exit 2 } ; puts "New HSM password is too short" ; exit 2 }
+		    "Passwords must have at least 3 alphabetic and 1 nonalphabetic characters." { exit -onexit { exit 2 } ; puts "New HSM password must contain at least 1 nonalphabetic character" ; exit 2 }
+		}
+	    }
+	}
+
+	expect {
+	    -re "Board initialization parameters.*Is this correct?.*: " { 
+		send "y\r"
+		set timeout $initializationTimeout
+		expect "a new remote access key has been"
+		set timeout $defaultTimeout
+	    }
+	}
+    }
+}
+
+# Log in the security officer
+expect {
+    "Security Officer Login: " { send "$soUsername\r" ; exp_continue }
+    "Security Officer Password: " { send "$soPassword\r" }
+}
+
+# Handle the prompts for the payload command ("CREATE USER $username")
+expect {
+    "Enter new user password: " { send "$password\r" ; exp_continue }
+    "Confirm password: " { send "$password\r" ; exp_continue }
+    "Failed creating user " { exit -onexit { exit 5 } ; puts "\n\nUnable to create new HSM user $username\n" ; exit 5 }
+    -re "User .* created successfully." { exit -onexit { exit 0 } ; exit 0 }
+    -re "scamgr.*> " {send "quit\r" ; exit -onexit { exit 4 } ; puts "\n\nUnexpected scamgr state -- got command prompt\n" ; exit 4 }
+}
+
