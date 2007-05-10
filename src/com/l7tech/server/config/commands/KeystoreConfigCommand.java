@@ -78,6 +78,15 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 "com.sun.security.sasl.Provider"
             };
 
+    private static final String PKCS11_CFG_FILE = "/ssg/pkcs11.cfg;";
+    private static final String[] HSM_SECURITY_PROVIDERS =
+            {
+                "sun.security.pkcs11.SunPKCS11 " + PKCS11_CFG_FILE,
+                "sun.security.provider.Sun",
+                "com.sun.net.ssl.internal.ssl.Provider",
+                "com.sun.crypto.provider.SunJCE"
+            };
+
     public KeystoreConfigCommand(ConfigurationBean bean) {
         super(bean);
     }
@@ -86,16 +95,18 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         boolean success = true;
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         if (ksBean.isDoKeystoreConfig()) {
-
             KeystoreType ksType = ksBean.getKeyStoreType();
             try {
                  if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME) {
                     doDefaultKeyConfig(ksBean);
                     success = true;
-                } else {
+                } else if (ksType == KeystoreType.LUNA_KEYSTORE_NAME) {
                     doLunaKeyConfig(ksBean);
                     success = true;
-                }
+                } else if (ksType == KeystoreType.SCA6000_KEYSTORE_NAME) {
+                     doHSMConfig(ksBean);
+                     success = true;
+                 }
             } catch (Exception e) {
                 success = false;
             }
@@ -109,21 +120,131 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return success;
     }
 
-    private void prepareJvm(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException {
+    private void doHSMConfig(KeystoreConfigBean ksBean) throws Exception {
+        char[] ksPassword = ksBean.getKsPassword();
+        String ksDir = getOsFunctions().getKeystoreDir();
+        File keystoreDir = new File(ksDir);
+        if (!keystoreDir.exists() && !keystoreDir.mkdir()) {
+            String msg = "Could not create the directory: \"" + ksDir + "\". Cannot generate keystores";
+            logger.severe(msg);
+            throw new IOException(msg);
+        }
+
+        File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
+        File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
+        File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
+        File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
+        File caCertFile = new File(ksDir + CA_CERT_FILE);
+        File sslCertFile = new File(ksDir + SSL_CERT_FILE);
+        File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
+        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
+
+        //TODO make this location independant in case the ssg isn't installed at /ssg
+        File pkcs11ConfigFile = new File(PKCS11_CFG_FILE);
+
+        File newJavaSecFile  = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
+
+        File[] files = new File[]
+        {
+            javaSecFile,
+            pkcs11ConfigFile,
+            keystorePropertiesFile,
+            tomcatServerConfigFile,
+            caKeyStoreFile,
+            sslKeyStoreFile,
+            caCertFile,
+            sslCertFile,
+            systemPropertiesFile
+        };
+
+        backupFiles(files, BACKUP_FILE_NAME);
+        if (ksBean.isInitializeHSM()) {
+            logger.info("Initializing HSM");
+            try {
+                startSCA();
+                initializeSCA();
+
+//                prepareJvm(KeystoreType.SCA6000_KEYSTORE_NAME);
+//                updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
+//                writePKCS11Config(pkcs11ConfigFile);
+//                makeHSMKeys(ksBean, ksDir, ksPassword);
+//                updateKeystoreProperties(keystorePropertiesFile, ksPassword);
+//                updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
+//                updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+            } catch (Exception e) {
+                logger.severe("problem initializing the HSM - skipping HSM configuration");
+                logger.severe(e.getMessage());
+                throw e;
+            }
+        } else {
+            logger.info("Restoring HSM Backup");
+        }
+    }
+
+    private void initializeSCA() {
+        if (getOsFunctions().isUnix()) {
+            String zeroHSM = "scadiag -z mca0";
+            logger.info("Execute \"" + zeroHSM + "\"");
+
+            String initializeScript = getOsFunctions().getSsgInstallRoot() + "bin/" + "initialize-hsm.expect <keystorepassword>";
+            logger.info("Execute \"" + initializeScript + "\"");
+        }
+    }
+
+    private void startSCA() {
+        if (getOsFunctions().isUnix()) {
+            String startScaCommand = null;
+
+            if (OSDetector.isLinux()) {
+                startScaCommand = "service sca start";
+            } else {
+                startScaCommand = "scvadmin start sca";
+            }
+            logger.info("Starting the SCA.");
+            logger.info("Execute \"" + startScaCommand + "\"");
+        }
+    }
+
+    private void makeHSMKeys(KeystoreConfigBean ksBean, String ksDir, char[] ksPassword) {
+    }
+
+    private void writePKCS11Config(File pkcs11ConfigFile) {
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(pkcs11ConfigFile);
+            pw.println("name=SCA6000");
+            pw.println("library=/usr/local/lib/pkcs11/PKCS11_API.so64");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            ResourceUtils.closeQuietly(pw);
+        }
+    }
+
+    private void prepareJvm(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException {
         Provider[] currentProviders = Security.getProviders();
         for (Provider provider : currentProviders) {
             Security.removeProvider(provider.getName());
         }
 
-        if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME) {
-//            if (!isJava14()) {
-                Security.addProvider(new sun.security.provider.Sun());
-                Security.addProvider(new sun.security.rsa.SunRsaSign());
-                Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
-                Security.addProvider(new com.sun.crypto.provider.SunJCE());
-                Security.addProvider(new sun.security.jgss.SunProvider());
-                Security.addProvider(new com.sun.security.sasl.Provider());
-//            }
+        if(ksType == KeystoreType.SCA6000_KEYSTORE_NAME) {
+
+
+        } else if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME || ksType == KeystoreType.SCA6000_KEYSTORE_NAME) {
+            String[] whichProviders = null;
+            if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME)
+                whichProviders = DEFAULT_SECURITY_PROVIDERS;
+            else
+                whichProviders = HSM_SECURITY_PROVIDERS;
+
+            for (String providerName : whichProviders) {
+                try {
+                    Security.addProvider((Provider) Class.forName(providerName).newInstance());
+                } catch (ClassNotFoundException e) {
+                    logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
+                    throw e;
+                }
+            }
         } else if (ksType == KeystoreType.LUNA_KEYSTORE_NAME) {
             File classDir = new File(getOsFunctions().getPathToJreLibExt());
             if (!classDir.exists()) {
@@ -657,17 +778,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         if (ksTypeFromBean == KeystoreType.LUNA_KEYSTORE_NAME) {
             return "Luna";
         } else if (ksTypeFromBean == KeystoreType.DEFAULT_KEYSTORE_NAME) {
-//            if (isJava14())
-//                return "BCPKCS12";
-//            else
                 return "PKCS12";
         } else {
-            return "Internal Hardware Security Module";
+            return "PKCS11";
         }
     }
-
-//    private boolean isJava14() {
-//        String version = System.getProperty("java.version");
-//        return version.startsWith("1.4");
-//    }
 }
