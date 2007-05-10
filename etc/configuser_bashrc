@@ -6,6 +6,7 @@ trap doLogout INT
 SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
 CONFWIZARD="/ssg/configwizard/ssgconfig.sh"
 UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh"
+GETROOT="su -"
 
 checkForUpdater() {
     if [ -e "/ssg/updatewizard/ssgupdatewizard.sh" ] ; then
@@ -30,10 +31,11 @@ do
     echo "What would you like to do?"
         echo "1) Configure networking on this SecureSpan Gateway appliance"
         echo "2) Configure the SecureSpan Gateway application on this appliance"
-        echo "3) Logout (no reboot)"
-        echo "4) Reboot the SSG appliance (apply the new configuration)"
+        echo "3) Use a privileged shell (root)"
+        echo "4) Logout (no reboot)"
+        echo "5) Reboot the SSG appliance (apply the new configuration)"
         if [ "${UPDATER_PRESENT}" = "true" ] ; then
-            echo "5) Upgrade the SecureSpan Appliance"
+            echo "6) Upgrade the SecureSpan Appliance"
         fi
         echo -n "Please make a selection: "
         read choice
@@ -49,14 +51,17 @@ do
                     echo "Press enter to continue";
                     read;
                     clear;;
-                3)  doLogout;;
-                4)  echo -n "Are you sure you want to reboot the SecureSpan Gateway? [y/n]: "
+                3)  clear;
+                    (${GETROOT});
+                    clear;;
+                4)  doLogout;;
+                5)  echo -n "Are you sure you want to reboot the SecureSpan Gateway? [y/n]: "
                     read okToReboot
                     if [ "$okToReboot" == "y" ] || [ "$okToReboot" == "yes" ] ; then
                         sudo /sbin/reboot
                     fi
                     clear;;
-                5)  if [ -n ${UPDATER_PRESENT} ] ; then
+                6)  if [ -n ${UPDATER_PRESENT} ] ; then
                         clear;
                         (${UPDATEWIZARD})
                         echo "Press enter to continue";
