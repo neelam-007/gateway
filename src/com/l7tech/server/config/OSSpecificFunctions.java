@@ -50,6 +50,8 @@ public abstract class OSSpecificFunctions {
     protected String upgradeFileNewExt;
     protected String upgradeFileOldExt;
 
+    protected String timeZonesDir;
+
     protected KeystoreInfo[] keystoreInfos;
 
     public OSSpecificFunctions(String OSName) {
@@ -267,6 +269,10 @@ public abstract class OSSpecificFunctions {
         }
 
         return null;
+    }
+
+    public String getTimeZonesDir() {
+        return timeZonesDir;
     }
 
     public static class KeystoreInfo {

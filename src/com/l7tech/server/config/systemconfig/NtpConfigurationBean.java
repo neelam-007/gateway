@@ -11,6 +11,7 @@ import org.apache.commons.lang.StringUtils;
 public class NtpConfigurationBean extends BaseConfigurationBean {
     private String timeServerAddress;
     private String timeServerName;
+    private String timezone;
 
     public NtpConfigurationBean(String name, String description) {
         super(name, description);
@@ -37,6 +38,10 @@ public class NtpConfigurationBean extends BaseConfigurationBean {
             s += eol;
             explanations.add(s);
         }
+        if (StringUtils.isNotEmpty(timezone)) {
+            explanations.add("Configure the timezone on this server");
+            explanations.add("\tTimezone: " + timezone + eol);
+        }
     }
 
     public String getTimeServerAddress() {
@@ -53,5 +58,14 @@ public class NtpConfigurationBean extends BaseConfigurationBean {
 
     public void setTimeServerName(String timeServerName) {
         this.timeServerName = timeServerName;
+    }
+
+    public void setTimeZoneInfo(String tzInfo) {
+        this.timezone = tzInfo;
+    }
+
+
+    public String getTimezone() {
+        return timezone;
     }
 }

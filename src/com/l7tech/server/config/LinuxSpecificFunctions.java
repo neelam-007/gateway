@@ -39,6 +39,8 @@ public class LinuxSpecificFunctions extends UnixSpecificFunctions {
             infos.add(new KeystoreInfo(KeystoreType.SCA6000_KEYSTORE_NAME));
 
         keystoreInfos = infos.toArray(new KeystoreInfo[0]);
+
+        timeZonesDir = "/usr/share/zoneinfo/";
     }
 
     public boolean isLinux() {

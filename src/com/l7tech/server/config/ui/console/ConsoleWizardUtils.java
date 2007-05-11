@@ -72,6 +72,7 @@ public class ConsoleWizardUtils {
         return input;
     }
 
+
     public String getData(String[] promptLines, String defaultValue, boolean isNavAware, String[] allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
         boolean isValidInput = true;
 

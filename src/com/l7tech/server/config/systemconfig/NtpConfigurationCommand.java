@@ -27,9 +27,51 @@ public class NtpConfigurationCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = true;
 
-        success = writeNtpLitterFiles();
+        boolean ntpSuccess = writeNtpLitterFiles();
+        boolean timezoneSuccess = writeTimezoneLitterFiles();
 
         return success;
+    }
+
+    private boolean writeTimezoneLitterFiles() {
+        boolean success = true;
+        if (StringUtils.isNotEmpty(ntpBean.getTimezone())) {
+            File configDir = checkConfigDir();
+
+            if (configDir == null) {
+                logger.severe("Could not create the configuration directory. System configuration will not be complete.");
+                return false;
+            }
+
+            File timezoneConfigFile = new File(configDir, "timezone");
+            PrintWriter pw = null;
+            try {
+                if (timezoneConfigFile.createNewFile())
+                    logger.info("created file \"" + timezoneConfigFile.getAbsolutePath() + "\"");
+                else
+                    logger.info("editing file \"" + timezoneConfigFile.getAbsolutePath() + "\"");
+                pw = new PrintWriter(new FileOutputStream(timezoneConfigFile));
+                pw.println(ntpBean.getTimezone());
+            } catch (IOException e) {
+                logger.severe("Error while writing the timezone configuration file: " + e.getMessage());
+                success = false;
+            } finally {
+                if (pw != null) {
+                    pw.close();
+                }
+            }
+        }
+        return success;
+    }
+
+    private File  checkConfigDir() {
+        File currentWorkingDir = new File(".");
+        File configDir = new File(currentWorkingDir, "configfiles");
+        if (configDir.mkdir())
+            logger.info("Created new directory for NTP and Timezone configuration: " + configDir.getAbsolutePath());
+
+        return configDir;
+
     }
 
     private boolean writeNtpLitterFiles() {
@@ -38,7 +80,7 @@ public class NtpConfigurationCommand extends BaseConfigurationCommand {
             File currentWorkingDir = new File(".");
             File configDir = new File(currentWorkingDir, "configfiles");
             if (configDir.mkdir())
-                logger.info("Created new directory for NTP configuration: " + configDir.getAbsolutePath());
+                logger.info("Created new directory for NTP and Timezone configuration: " + configDir.getAbsolutePath());
 
             File ntpConfFile = ntpConfFile = new File(configDir, "ntpconfig");
             PrintWriter pw = null;

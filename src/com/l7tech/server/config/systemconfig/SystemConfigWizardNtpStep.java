@@ -5,8 +5,11 @@ import com.l7tech.server.config.ui.console.BaseConsoleStep;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import org.apache.commons.lang.StringUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -38,16 +41,71 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
         try {
-            String shouldConfigureNtp = getData(new String[] {
-                    "Would you like to configure time synchronization on this system (NTP) [y]:"
-            },"y");
-
-            if (isYes(shouldConfigureNtp)) {
-                doNtpConfigurationPrompts("");
-            }
+            doTimeZoneConfig();
+            doNtpConfig();
             storeInput();
         } catch (IOException e) {
             logger.severe("Exception caught: " + e.getMessage());
+        }
+    }
+
+    private void doTimeZoneConfig() throws IOException, WizardNavigationException {
+        if (StringUtils.isNotEmpty(osFunctions.getTimeZonesDir())) {
+            String shouldConfigureTz = getData(new String[] {"Would you like to configure the timezone on this system  [y]:"}, "y");
+            if (isYes(shouldConfigureTz)) {
+                File tzInfo = doTzConfigurationPrompts(new File(osFunctions.getTimeZonesDir()));
+                String absolutePath = tzInfo.getAbsolutePath();
+                String base = osFunctions.getTimeZonesDir();
+                ntpBean.setTimeZoneInfo(absolutePath.replace(base, ""));
+            }
+        }
+    }
+
+    private File doTzConfigurationPrompts(File dir) throws IOException, WizardNavigationException {
+        if (dir != null) {
+            if (!dir.isDirectory()) {
+                return dir;
+            }
+        }
+        List<String> prompts = new ArrayList<String>();
+        prompts.add("Select a timezone from the following list " + getEolChar());
+        if (dir.isDirectory())
+            prompts.add("[" + dir.getName() + "]" + getEolChar());
+
+        File f = null;
+        if (!dir.exists()) {
+            printText("*** " + "Could not determine available timezones. Timezone directory \"" + dir.getAbsolutePath() + "\" does not exist" + " ***" + getEolChar());
+            logger.warning("Could not determine available timezones. Timezone directory \"" + dir.getAbsolutePath() + "\" does not exist");
+        } else {
+            File[] files = dir.listFiles();
+
+            int x = 1;
+            for (File file : files) {
+                String indexStr = String.valueOf(x++);
+                String prompt = indexStr + ") " + file.getName() + (file.isDirectory()?"[more choices]":"");
+                prompts.add(prompt + getEolChar());
+            }
+            
+            prompts.add("Please make a selection [1]: ");
+            String[] allowedEntries = new String[x];
+            for (int index=1; index <= x; ++index) {
+                allowedEntries[index-1] = String.valueOf(index);
+            }
+
+            String tzSelection = getData(prompts, "1", allowedEntries);
+            int whichChoice = Integer.parseInt(tzSelection);
+
+            f = doTzConfigurationPrompts(files[whichChoice -1]);
+        }
+        return f;
+    }
+
+    private void doNtpConfig() throws IOException, WizardNavigationException {
+        String shouldConfigureNtp = getData(
+            new String[] {"Would you like to configure time synchronization on this system (NTP) [y]:"},"y");
+
+        if (isYes(shouldConfigureNtp)) {
+            doNtpConfigurationPrompts("");
         }
     }
 

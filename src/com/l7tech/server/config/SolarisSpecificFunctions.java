@@ -34,6 +34,8 @@ public class SolarisSpecificFunctions extends UnixSpecificFunctions {
             infos.add(new KeystoreInfo(KeystoreType.SCA6000_KEYSTORE_NAME));
 
         keystoreInfos = infos.toArray(new KeystoreInfo[0]);
+
+        timeZonesDir = null;
     }
 
     public String getFirewallRulesForPartition(PartitionInformation.HttpEndpointHolder basicEndpoint, PartitionInformation.HttpEndpointHolder sslEndpoint, PartitionInformation.HttpEndpointHolder noAuthSslEndpoint, PartitionInformation.OtherEndpointHolder rmiEndpoint) {

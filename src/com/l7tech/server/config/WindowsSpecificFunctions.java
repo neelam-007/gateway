@@ -57,6 +57,8 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
 
         upgradeFileNewExt = "new";
 
+        timeZonesDir = null;
+
     }
     
     //- PRIVATE
