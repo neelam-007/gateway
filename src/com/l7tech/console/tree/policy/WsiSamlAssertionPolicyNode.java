@@ -31,7 +31,7 @@ public class WsiSamlAssertionPolicyNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "WS-I SAML Compliance.";
+        return "WS-I SAML Compliance";
     }
 
     /**

@@ -31,7 +31,7 @@ public class WsiBspAssertionPolicyNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "WS-I BSP Compliance.";
+        return "WS-I BSP Compliance";
     }
 
     /**
