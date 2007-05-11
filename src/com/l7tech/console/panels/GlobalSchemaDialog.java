@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * A dialog for the SSM administrator to manage the global schemas loaded on a gateway.
@@ -142,7 +143,11 @@ public class GlobalSchemaDialog extends JDialog {
     private void setListeners() {
         addbutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                add((String)null);
+                try {
+                    add((String)null, (java.util.List<SchemaEntry>)null);
+                } catch (IOException e1) {
+                    // wont happen
+                }
             }
         });
 
@@ -205,7 +210,7 @@ public class GlobalSchemaDialog extends JDialog {
         editbutton.setEnabled(validSelection);
     }
 
-    private void add(String systemid) {
+    private void add(String systemid, java.util.List<SchemaEntry> deps) throws IOException {
         final SchemaEntry newEntry = new SchemaEntry();
         if (systemid != null) {
             newEntry.setName(systemid);
@@ -221,7 +226,18 @@ public class GlobalSchemaDialog extends JDialog {
                 logger.warning("No access to registry. Cannot save.");
                 return;
             }
-            checkEntryForUnresolvedImports(newEntry);
+            try {
+                checkEntryForUnresolvedImports(newEntry, deps);
+            } catch (CircularReferenceException e) {
+                JOptionPane.showMessageDialog(this, "You are trying to import XML Schemas that refer to " +
+                                                    "each other. Circular referencing is currently not " +
+                                                    "supported in XML Schemas.",
+                                              "Circular Reference Error", JOptionPane.ERROR_MESSAGE);
+                throw new IOException(e.getMessage());
+            } catch (IOException e) {
+                logger.log(Level.INFO, "circular ref caught", e);
+                return;
+            }
             Throwable err = null;
             try {
                 reg.getSchemaAdmin().saveSchemaEntry(newEntry);
@@ -261,6 +277,12 @@ public class GlobalSchemaDialog extends JDialog {
                                       JOptionPane.ERROR_MESSAGE);
     }
 
+    private class CircularReferenceException extends Exception {
+        public CircularReferenceException(String msg) {
+            super(msg);
+        }
+    }
+
     /**
      * returns true if there was at least one unresolved import
      *
@@ -268,7 +290,7 @@ public class GlobalSchemaDialog extends JDialog {
      * @param schemaTobeSaved the schema that is about to be saved
      * @return true if there was at least one unresolved import
      */
-    private boolean checkEntryForUnresolvedImports(SchemaEntry schemaTobeSaved) {
+    private boolean checkEntryForUnresolvedImports(SchemaEntry schemaTobeSaved, java.util.List<SchemaEntry> dependants) throws CircularReferenceException, IOException {
         final Document schemaDoc;
         try {
             String schemaString = schemaTobeSaved.getSchema();
@@ -294,6 +316,24 @@ public class GlobalSchemaDialog extends JDialog {
         for (Element importEl : listofimports) {
             String importns = importEl.getAttribute("namespace");
             String importloc = importEl.getAttribute("schemaLocation");
+
+            // first, check dependants
+            if (dependants != null) {
+                boolean foundindep = false;
+                for (SchemaEntry schemadep : dependants) {
+                    if (schemadep.getName().equals(importloc)) {
+                        foundindep = true;
+                        break;
+                    }
+                    if (schemadep.getTns().equals(importns)) {
+                        foundindep = true;
+                        break;
+                    }
+                }
+                if (foundindep) throw new CircularReferenceException("Namespace " + importns + " involved in circular reference");
+            }
+
+            // then check on SSG
             try {
                 if (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) {
                     if (importloc != null) {
@@ -332,7 +372,9 @@ public class GlobalSchemaDialog extends JDialog {
                 msg = TextUtils.breakOnMultipleLines(msg, 30);
                 if (JOptionPane.showConfirmDialog(this, msg, "Unresolved Imports", JOptionPane.YES_NO_OPTION) ==
                     JOptionPane.YES_OPTION) {
-                    add(unresolvedimportname);
+                    if (dependants == null) dependants = new ArrayList<SchemaEntry>();
+                    dependants.add(schemaTobeSaved);
+                    add(unresolvedimportname, dependants);
                 } else if (!isurl) {
                     // if user wants to abort, then we're all done
                     break;
@@ -361,14 +403,10 @@ public class GlobalSchemaDialog extends JDialog {
                     }
                     Throwable err = null;
                     try {
-                        checkEntryForUnresolvedImports(toedit);
+                        checkEntryForUnresolvedImports(toedit, null);
                         reg.getSchemaAdmin().saveSchemaEntry(toedit);
                         populate();
-                    } catch (RemoteException e) {
-                        err = e;
-                    } catch (SaveException e) {
-                        err = e;
-                    } catch (UpdateException e) {
+                    } catch (Exception e) {
                         err = e;
                     }
 
@@ -407,14 +445,12 @@ public class GlobalSchemaDialog extends JDialog {
             try {
                 Collection<SchemaEntry> allschemas = reg.getSchemaAdmin().findAllSchemas();
                 for (SchemaEntry schemaEntry : allschemas) {
-                    if (checkEntryForUnresolvedImports(schemaEntry)) {
+                    if (checkEntryForUnresolvedImports(schemaEntry, null)) {
                         okToClose = false;
                         break;
                     }
                 }
-            } catch (RemoteException e) {
-                logger.log(Level.WARNING, "could not get schemas", e);
-            } catch (FindException e) {
+            } catch (Exception e) {
                 logger.log(Level.WARNING, "could not get schemas", e);
             }
         } else {
