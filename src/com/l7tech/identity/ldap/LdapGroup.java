@@ -3,17 +3,13 @@ package com.l7tech.identity.ldap;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
 
-import javax.naming.directory.Attributes;
 import java.io.Serializable;
 
-public class LdapGroup implements Group, Serializable, LdapIdentity {
+public class LdapGroup extends LdapIdentityBase implements Group, Serializable, LdapIdentity {
     public static final int OU_GROUP = 0;
     public static final int NORMAL_GROUP = 1;
 
-    private String dn;
     private GroupBean groupBean;
-    private long providerId;
-    private transient Attributes attributes;
 
     public LdapGroup( GroupBean bean ) {
         groupBean = bean;
@@ -27,57 +23,31 @@ public class LdapGroup implements Group, Serializable, LdapIdentity {
         return groupBean.getDescription();
     }
 
-    public String getName() {
-        return groupBean.getName();
-    }
-
     public void setDescription(String description) {
         groupBean.setDescription( description );
     }
 
-    public String getId() {
-        return dn;
-    }
-
-    /**
-     * this is not persisted, it is set at run time by the provider who creates the object
-     */
-    public long getProviderId() {
-        return providerId;
-    }
-
-    /**
-     * this is not persisted, it is set at run time by the provider who creates the object
-     */
-    public void setProviderId( long providerId ) {
-        this.providerId = providerId;
-    }
-
-    public String getDn() {
-        return dn;
-    }
-
-    public void setDn(String dn) {
-        if (dn == null) throw new NullPointerException();
-        this.dn = dn;
+    public synchronized void setDn(String dn) {
+        super.setDn(dn);
         groupBean.setUniqueIdentifier(dn);
     }
 
-    public String getCn() {
-        return groupBean.getName();
+    @Override
+    public void setName(String name) {
+        super.setName(name);
+        groupBean.setName(name);
     }
 
-    public Attributes getAttributes() {
-        return attributes;
-    }
-
-
-    public void setAttributes(Attributes attributes) {
-        this.attributes = attributes;
-    }
-
+    @Override
     public void setCn(String cn) {
-        groupBean.setName( cn );
+        super.setCn(cn);
+        groupBean.setName(cn);
+    }
+
+    @Override
+    public void setProviderId(long providerOid) {
+        super.setProviderId(providerOid);
+        groupBean.setProviderId(providerOid);
     }
 
     public String toString() {
@@ -85,23 +55,6 @@ public class LdapGroup implements Group, Serializable, LdapIdentity {
                 "\n\tName=" + getName() +
                 "\n\tDN=" + getDn() +
                 "\n\tproviderId=" + providerId;
-    }
-
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof LdapGroup)) return false;
-        final LdapGroup groupImp = (LdapGroup) o;
-        if ( providerId != groupImp.providerId ) return false;
-        return dn.equals(groupImp.dn);
-    }
-
-    public int hashCode() {
-        if ( dn == null ) return System.identityHashCode( this );
-
-        int hash = dn.hashCode();
-        hash += 29 * (int)providerId;
-
-        return hash;
     }
 
     /**

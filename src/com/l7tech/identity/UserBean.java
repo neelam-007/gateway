@@ -16,9 +16,9 @@ public class UserBean implements User, Serializable {
     }
 
     public UserBean(long providerId, String login) {
-        this._providerId = providerId;
-        this._name = login;
-        this._login = login;
+        this.providerId = providerId;
+        this.name = login;
+        this.login = login;
     }
 
     public UserBean(String login) {
@@ -26,39 +26,39 @@ public class UserBean implements User, Serializable {
     }
 
     public String getId() {
-        return _uniqueId;
+        return uniqueId;
     }
 
     public void setUniqueIdentifier( String uid ) {
-        _uniqueId = uid;
+        this.uniqueId = uid;
     }
 
     public void setLogin(String login) {
-        _login = login;
+        this.login = login;
     }
 
     public String getLogin() {
-        return _login;
+        return login;
     }
 
     public String getPassword() {
-        return _password;
+        return password;
     }
 
     public String getFirstName() {
-        return _firstName;
+        return firstName;
     }
 
     public String getLastName() {
-        return _lastName;
+        return lastName;
     }
 
     public String getEmail() {
-        return _email;
+        return email;
     }
 
     public String getDepartment() {
-        return _department;
+        return department;
     }
 
     public UserBean getUserBean() {
@@ -66,11 +66,15 @@ public class UserBean implements User, Serializable {
     }
 
     public long getProviderId() {
-        return _providerId;
+        return providerId;
+    }
+
+    public boolean isEquivalentId(Object thatId) {
+        return uniqueId != null && uniqueId.equals(thatId);
     }
 
     public void setProviderId( long providerId ) {
-        _providerId = providerId;
+        this.providerId = providerId;
     }
 
     public void setPassword(String password) throws IllegalStateException {
@@ -85,81 +89,107 @@ public class UserBean implements User, Serializable {
      */
     public void setPassword(String password, boolean hintIsClear) throws IllegalStateException {
         if (password != null && (hintIsClear || !HexUtils.containsOnlyHex(password))) {
-            if (_login == null) throw new IllegalStateException("login must be set prior to encoding the password");
-            _password = HexUtils.encodePasswd(_login, password);
+            if (login == null) throw new IllegalStateException("login must be set prior to encoding the password");
+            this.password = HexUtils.encodePasswd(login, password);
         }
-        else _password = password;
+        else this.password = password;
     }
 
     public void setFirstName(String firstName) {
-        _firstName = firstName;
+        this.firstName = firstName;
     }
 
     public void setLastName(String lastName) {
-        _lastName = lastName;
+        this.lastName = lastName;
     }
 
     public void setEmail(String email) {
-        _email = email;
+        this.email = email;
     }
 
     public void setDepartment(String department) {
-        _department = department;
+        this.department = department;
     }
 
     public String getName() {
-        return _name;
+        return name;
     }
 
-    public void setName( String name ) {
-        _name = name;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getSubjectDn() {
         return subjectDn;
     }
 
-    public void setSubjectDn( String subjectDn ) {
+    public void setSubjectDn(String subjectDn) {
         this.subjectDn = subjectDn;
     }
 
     public int getVersion() {
-        return _version;
+        return version;
     }
 
-    public void setVersion( int version ) {
-        _version = version;
+    public void setVersion(int version) {
+        this.version = version;
     }
 
+    /**
+     * {@link User} implementations that delegate their bean properties to {@link UserBean} <b>must</b> override
+     * {@link #equals} and {@link #hashCode} to include their own identity information!
+     *
+     * NOTE: if you regenerate this method, make sure the {@link #uniqueId} property is NOT included!
+     * Particular {@link User} implementations have their own logic for identity equality.
+     */
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof UserBean)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        final UserBean userBean = (UserBean) o;
+        UserBean userBean = (UserBean) o;
 
-        if (_providerId != userBean._providerId) return false;
-        return !(_login != null ? !_login.equals(userBean._login) : userBean._login != null);
+        if (providerId != userBean.providerId) return false;
+        if (department != null ? !department.equals(userBean.department) : userBean.department != null)
+            return false;
+        if (email != null ? !email.equals(userBean.email) : userBean.email != null) return false;
+        if (firstName != null ? !firstName.equals(userBean.firstName) : userBean.firstName != null) return false;
+        if (lastName != null ? !lastName.equals(userBean.lastName) : userBean.lastName != null) return false;
+        if (login != null ? !login.equals(userBean.login) : userBean.login != null) return false;
+        if (name != null ? !name.equals(userBean.name) : userBean.name != null) return false;
 
+        return true;
     }
 
+    /**
+     * {@link User} implementations that delegate their bean properties to {@link UserBean} <b>must</b> override
+     * {@link #equals} and {@link #hashCode} to include their own identity information!
+     *
+     * NOTE: if you regenerate this method, make sure the {@link #uniqueId} property is NOT included!
+     * Particular {@link User} implementations have their own logic for identity equality.
+     */
     public int hashCode() {
         int result;
-        result = (int) (_providerId ^ (_providerId >>> 32));
-        result = 29 * result + (_login != null ? _login.hashCode() : 0);
+        result = (int) (providerId ^ (providerId >>> 32));
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (login != null ? login.hashCode() : 0);
+        result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
+        result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
+        result = 31 * result + (email != null ? email.hashCode() : 0);
+        result = 31 * result + (department != null ? department.hashCode() : 0);
         return result;
     }
 
     private static final long serialVersionUID = -2689153614711342567L;
 
-    protected long _providerId = IdentityProviderConfig.DEFAULT_OID;
-    protected String _uniqueId;
-    protected String _name;
-    protected String _login;
-    protected String _password;
-    protected String _firstName;
-    protected String _lastName;
-    protected String _email;
-    protected String _department;
+    protected long providerId = IdentityProviderConfig.DEFAULT_OID;
+    protected String uniqueId;
+    protected String name;
+    protected String login;
+    protected String password;
+    protected String firstName;
+    protected String lastName;
+    protected String email;
+    protected String department;
     protected String subjectDn;
-    protected int _version;
+    protected int version;
 }

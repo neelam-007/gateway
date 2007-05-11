@@ -35,7 +35,8 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         if ( xml != null && xml.length() > 0 ) {
             try {
                 XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
-                bean.setProperties((Map)xd.readObject());
+                //noinspection unchecked
+                bean.setProperties((Map<String, String>)xd.readObject());
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e); // Can't happen
             }
@@ -44,7 +45,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
 
     public String getXmlProperties() {
         if ( xmlProperties == null ) {
-            Map properties = bean.getProperties();
+            Map<String, String> properties = bean.getProperties();
             if ( properties == null ) return null;
             BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
             try {
@@ -123,23 +124,29 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
     public GroupBean getGroupBean() {
         return bean;
     }
+    
+    public boolean isEquivalentId(Object thatId) {
+        return getId().equals(thatId.toString());
+    }
 
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        final PersistentGroup that = (PersistentGroup)o;
+        PersistentGroup that = (PersistentGroup) o;
 
-        if (getProviderId() != that.getProviderId()) return false;
+        if (bean != null ? !bean.equals(that.bean) : that.bean != null) return false;
+        if (xmlProperties != null ? !xmlProperties.equals(that.xmlProperties) : that.xmlProperties != null)
+            return false;
 
         return true;
     }
 
     public int hashCode() {
         int result = super.hashCode();
-        long providerOid = getProviderId();
-        result = 31 * result + (int)(providerOid ^ (providerOid >>> 32));
+        result = 31 * result + (bean != null ? bean.hashCode() : 0);
+        result = 31 * result + (xmlProperties != null ? xmlProperties.hashCode() : 0);
         return result;
     }
 

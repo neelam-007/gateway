@@ -714,6 +714,7 @@
             <!--
               Add fast precheckin tests here **
             -->
+            <test name="com.l7tech.identity.IdentityEqualityTest" haltonfailure="no" fork="yes"/>
         </junit>
     </target>
 

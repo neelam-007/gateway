@@ -7,22 +7,22 @@ import java.util.HashMap;
 public class GroupBean implements Group, Serializable {
     public GroupBean(long providerId, String _name) {
         this.providerId = providerId;
-        this._name = _name;
+        this.name = _name;
     }
 
     public GroupBean() {
     }
 
     public String getId() {
-        return _uniqueId;
+        return uniqueId;
     }
 
     public void setUniqueIdentifier( String uid ) {
-        _uniqueId = uid;
+        uniqueId = uid;
     }
 
     public String getDescription() {
-        return _description;
+        return description;
     }
 
     public GroupBean getGroupBean() {
@@ -30,73 +30,92 @@ public class GroupBean implements Group, Serializable {
     }
 
     public void setDescription(String description) {
-        _description = description;
+        this.description = description;
     }
 
     public String getName() {
-        return _name;
+        return name;
     }
 
     public void setName(String name) {
-        _name = name;
+        this.name = name;
     }
 
     public int getVersion() {
-        return _version;
+        return version;
     }
 
     public void setVersion( int version ) {
-        _version = version;
+        this.version = version;
     }
 
-    /**
-     * this is not persisted, it is set at run time by the provider who creates the object
-     */
     public long getProviderId() {
         return providerId;
     }
 
-    public Map getProperties() {
-        if ( properties == null ) properties = new HashMap();
+    public boolean isEquivalentId(Object thatId) {
+        return uniqueId != null && uniqueId.equals(thatId);
+    }
+
+    public Map<String, String> getProperties() {
+        if ( properties == null ) properties = new HashMap<String, String>();
         return properties;
     }
 
-    public void setProperties( Map properties ) {
+    public void setProperties( Map<String, String> properties ) {
         this.properties = properties;
     }
 
+
+    /**
+     * {@link Group} implementations that delegate their bean properties to {@link GroupBean} <b>must</b> override
+     * {@link #equals} and {@link #hashCode} to include their own identity information!
+     *
+     * NOTE: if you regenerate this method, make sure the {@link #uniqueId} property is NOT included!
+     * Particular {@link Group} implementations have their own logic for identity equality.
+     */
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof GroupBean)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        final GroupBean groupBean = (GroupBean)o;
+        GroupBean groupBean = (GroupBean) o;
 
         if (providerId != groupBean.providerId) return false;
-        if (_uniqueId != null ? !_uniqueId.equals(groupBean._uniqueId) : groupBean._uniqueId != null) return false;
+        if (description != null ? !description.equals(groupBean.description) : groupBean.description != null)
+            return false;
+        if (name != null ? !name.equals(groupBean.name) : groupBean.name != null) return false;
+        if (properties != null ? !properties.equals(groupBean.properties) : groupBean.properties != null) return false;
 
         return true;
     }
 
+    /**
+     * {@link Group} implementations that delegate their bean properties to {@link GroupBean} <b>must</b> override
+     * {@link #equals} and {@link #hashCode} to include their own identity information!
+     *
+     * NOTE: if you regenerate this method, make sure the {@link #uniqueId} property is NOT included!
+     * Particular {@link Group} implementations have their own logic for identity equality.
+     */
     public int hashCode() {
         int result;
-        result = (_uniqueId != null ? _uniqueId.hashCode() : 0);
-        result = 29 * result + (int)(providerId ^ (providerId >>> 32));
+        result = (name != null ? name.hashCode() : 0);
+        result = 31 * result + (description != null ? description.hashCode() : 0);
+        result = 31 * result + (int) (providerId ^ (providerId >>> 32));
+        result = 31 * result + (properties != null ? properties.hashCode() : 0);
         return result;
     }
 
-    /**
-     * this is not persisted, it is set at run time by the provider who creates the object
-     */
     public void setProviderId( long providerId ) {
         this.providerId = providerId;
     }
 
     private static final long serialVersionUID = -2260828785148311161L;
 
-    private String _uniqueId;
-    private String _name;
-    private String _description;
+    private String uniqueId;
+    private String name;
+    private String description;
     private long providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
-    private Map properties;
-    private int _version;
+    private Map<String, String> properties;
+    private int version;
 }

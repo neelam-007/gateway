@@ -1,10 +1,8 @@
 package com.l7tech.identity.ldap;
 
-import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 
-import javax.naming.directory.Attributes;
 import java.io.Serializable;
 
 /**
@@ -15,16 +13,14 @@ import java.io.Serializable;
  * User: flascelles<br/>
  * Date: Jun 24, 2003
  */
-public class LdapUser implements User, LdapIdentity, Serializable {
+public class LdapUser extends LdapIdentityBase implements User, Serializable {
     public static final String[] HASH_PREFIXES = {
         "{md5}", "{md4}", "{smd5}",
         "{sha}", "{sha1}", "{ssha}",
         "{crypt}",
     };
 
-    private String dn;
     private UserBean userBean;
-    private transient Attributes attributes;
 
     public LdapUser( UserBean bean ) {
         userBean = bean;
@@ -78,9 +74,8 @@ public class LdapUser implements User, LdapIdentity, Serializable {
         if ( password != null && !isAlreadyEncoded(password)) {
             // Check for LDAP hashed passwords
             String lcpass = password.toLowerCase();
-            for (int i = 0; i < HASH_PREFIXES.length; i++) {
-                String prefix = HASH_PREFIXES[i];
-                if ( lcpass.startsWith( prefix ) ) {
+            for (String prefix : HASH_PREFIXES) {
+                if (lcpass.startsWith(prefix)) {
                     userBean.setPassword(null);
                     return;
                 }
@@ -107,26 +102,32 @@ public class LdapUser implements User, LdapIdentity, Serializable {
         userBean.setDepartment( department );
     }
 
-    public String getId() {
-        return dn;
-    }
-
-    /**
-     * this is not persisted, it is set at run time by the provider who creates the object
-     */
     public long getProviderId() {
         return userBean.getProviderId();
     }
 
-    /**
-     * this is not persisted, it is set at run time by the provider who creates the object
-     */
+    @Override
     public void setProviderId( long providerId) {
+        super.setProviderId(providerId);
         userBean.setProviderId(providerId);
     }
 
-    public void setAttributes(Attributes attributes) {
-        this.attributes = attributes;
+    @Override
+    public void setName(String name) {
+        super.setName(name);
+        userBean.setName(name);
+    }
+
+    @Override
+    public synchronized void setDn(String dn) {
+        super.setDn(dn);
+        userBean.setSubjectDn(dn);
+    }
+
+    @Override
+    public void setCn(String cn) {
+        super.setCn(cn);
+        userBean.setName(cn);
     }
 
     public String toString() {
@@ -136,51 +137,6 @@ public class LdapUser implements User, LdapIdentity, Serializable {
                 "\n\tLast name=" + getLastName() +
                 "\n\tLogin=" + getLogin() +
                 "\n\tproviderId=" + userBean.getProviderId();
-    }
-
-    public String getDn() {
-        return dn;
-    }
-
-    public void setDn(String dn) {
-        this.dn = dn;
-        userBean.setUniqueIdentifier(dn);
-    }
-
-    public String getCn() {
-        return userBean.getName();
-    }
-
-    public Attributes getAttributes() {
-        return attributes;
-    }
-
-    public void setCn(String cn) {
-        userBean.setName( cn );
-    }
-
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof LdapUser)) return false;
-        final LdapUser userImp = (LdapUser) o;
-        final long providerId = userBean.getProviderId();
-        if ( providerId != IdentityProviderConfig.DEFAULT_OID ? !( providerId == userImp.getProviderId() ) : userImp.getProviderId() != IdentityProviderConfig.DEFAULT_OID ) return false;
-        String login = userBean.getLogin();
-        String ologin = userImp.getLogin();
-        if ( login != null ? !login.equals(ologin) : ologin != null) return false;
-        return true;
-    }
-
-    public int hashCode() {
-        if ( dn == null ) return System.identityHashCode(this);
-
-        int hash = dn.hashCode();
-        hash += 29 * (int)getProviderId();
-        return hash;
-    }
-
-    public String getName() {
-        return userBean.getName();
     }
 
     /**
@@ -200,7 +156,24 @@ public class LdapUser implements User, LdapIdentity, Serializable {
         setAttributes(imp.getAttributes());
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
 
+        LdapUser ldapUser = (LdapUser) o;
+
+        if (userBean != null ? !userBean.equals(ldapUser.userBean) : ldapUser.userBean != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (userBean != null ? userBean.hashCode() : 0);
+        return result;
+    }
 
     // ************************************************
     // PRIVATES
@@ -217,5 +190,4 @@ public class LdapUser implements User, LdapIdentity, Serializable {
         }
         return true;
     }
-
 }

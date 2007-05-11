@@ -51,13 +51,13 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
         // provider must always match
         if (requestProvider != requiredProvider) {
             auditor.logAndAudit(AssertionMessages.IDPROV_MISMATCH,
-                    new String[] {Long.toString(requestProvider), Long.toString(requiredProvider)});
+                    Long.toString(requestProvider), Long.toString(requiredProvider));
             return AssertionStatus.AUTH_FAILED;
         }
 
         // uid only needs to match if it's set as part of the assertion
         if (requiredUid != null && !"".equals(requiredUid)) {
-            if (!requiredUid.equals(requestUid)) {
+            if (!requestingUser.isEquivalentId(requestUid)) {
                 auditor.logAndAudit(AssertionMessages.USERID_MISMATCH);
                 return AssertionStatus.AUTH_FAILED;
             }

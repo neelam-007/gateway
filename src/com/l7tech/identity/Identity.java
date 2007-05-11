@@ -24,4 +24,11 @@ public interface Identity extends Principal, Entity {
      * For internal users, the provider ID is {@link com.l7tech.identity.IdentityProviderConfigManager#INTERNALPROVIDER_SPECIAL_OID}
      */
     long getProviderId();
+
+    /**
+     * Check whether the provided ID is semantically equivalent to this Identity's.
+     * @param thatId the ID to compare against this Identity's ID.  Must not be null.
+     * @return <code>true</code> if the IDs are semantically equivalent, <code>false</code> otherwise.
+     */
+    boolean isEquivalentId(Object thatId);
 }

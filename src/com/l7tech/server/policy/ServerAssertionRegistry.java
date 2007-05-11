@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.MetadataFinder;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.LicenseEvent;
+import org.springframework.context.ApplicationEvent;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,8 +30,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.springframework.context.ApplicationEvent;
 
 /**
  * The Gateway's AssertionRegistry, which extends the default registry with the ability to look for
@@ -173,7 +172,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             return false;
         }
 
-        logger.info("Scanning assertion modules directory " + dir.getAbsolutePath() + "...");
+        logger.log(Level.FINE, "Scanning assertion modules directory {0}...", dir.getAbsolutePath());
 
         try {
             return scanModularAssertionsImpl(dir, dirLastModified, extsList);

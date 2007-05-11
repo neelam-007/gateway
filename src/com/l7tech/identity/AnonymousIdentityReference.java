@@ -20,6 +20,10 @@ public class AnonymousIdentityReference extends AnonymousEntityReference impleme
         return providerOid;
     }
 
+    public boolean isEquivalentId(Object thatId) {
+        return uniqueId != null && uniqueId.equals(thatId);
+    }
+
     public String getId() {
         return uniqueId;
     }

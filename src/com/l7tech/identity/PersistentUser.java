@@ -120,27 +120,6 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
                 "\n\tproviderId=" + bean.getProviderId();
     }
 
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof PersistentUser)) return false;
-        final PersistentUser userImp = (PersistentUser) o;
-        if (bean.getProviderId() != DEFAULT_OID ? !( bean.getProviderId()== userImp.bean.getProviderId())
-                : userImp.bean.getProviderId() != DEFAULT_OID ) return false;
-        String login = getLogin();
-        String ologin = userImp.getLogin();
-        return !(login != null ? !login.equals(ologin) : ologin != null);
-    }
-
-    public int hashCode() {
-        if (_oid != DEFAULT_OID) return (int)_oid;
-        String login = getLogin();
-        if ( login == null ) return System.identityHashCode(this);
-
-        int hash = login.hashCode();
-        hash += 29 * (int)bean.getProviderId();
-        return hash;
-    }
-
     public void setDepartment( String department ) {
         bean.setDepartment( department );
     }
@@ -165,7 +144,30 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         bean.setVersion(version);
     }
 
+    public boolean isEquivalentId(Object thatId) {
+        return getId().equals(thatId.toString());
+    }
+
     public abstract void copyFrom(User user);
+
+    @SuppressWarnings({"RedundantIfStatement"})
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        PersistentUser that = (PersistentUser) o;
+
+        if (bean != null ? !bean.equals(that.bean) : that.bean != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (bean != null ? bean.hashCode() : 0);
+        return result;
+    }
 
     protected UserBean bean;
 }
