@@ -603,7 +603,7 @@
           make the ssl cert and record it's keystore password in it
         -->
         <copy file="${src.root}/etc/tomcat/server.xml" tofile="${tomcat.home}/conf/server.xml"/>
-        <copy file="${src.root}/etc/tomcat/truststore.ks" tofile="${tomcat.home}/conf/truststore.ks"/>
+        <copy file="${src.root}/etc/tomcat/truststore.jks" tofile="${tomcat.home}/conf/truststore.jks"/>
         <copy file="${src.root}/etc/tomcat/SsgSSLImplementation.properties" tofile="${tomcat.home}/conf/SsgSSLImplementation.properties"/>
     </target>
 
@@ -3060,7 +3060,7 @@
         <!-- Copy modified / new files -->
         <copy file="${src.root}/etc/tomcat/catalina.sh" tofile="${install.src.tomcat}/bin/catalina.sh"/>
         <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.tomcat}/conf/server.xml"/>
-        <copy file="${src.root}/etc/tomcat/truststore.ks" tofile="${install.src.tomcat}/conf/truststore.ks"/>
+        <copy file="${src.root}/etc/tomcat/truststore.jks" tofile="${install.src.tomcat}/conf/truststore.jks"/>
         <copy file="${src.root}/etc/tomcat/SsgSSLImplementation.properties"
               tofile="${install.src.tomcat}/conf/SsgSSLImplementation.properties"/>
     </target>
