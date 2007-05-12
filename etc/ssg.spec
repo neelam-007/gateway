@@ -7,7 +7,8 @@ License: Commercial
 URL: http://www.layer7tech.com
 Vendor: Layer 7 Technologies
 Packager: Layer 7 Technologies, <support@layer7tech.com>
-source: ssg.tar.gz
+source0: ssg.tar.gz
+source1: jdk.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
 
 # Prevents rpm build from erroring and halting
@@ -21,8 +22,23 @@ rm -fr %{buildroot}
 
 %prep
 rm -fr %{buildroot}
+
 %setup -qc %{buildroot}
+%setup -qDTa 1 %{buildroot}
+rm -rf %{buildroot}/ssg/jdk
+mv %{buildroot}/jdk %{buildroot}/ssg/
+[ ! -e %{buildroot}/ssg/jdk/db ] || rm -rf %{buildroot}/ssg/jdk/db
+[ ! -e %{buildroot}/ssg/jdk/demo ] || rm -rf %{buildroot}/ssg/jdk/demo
+[ ! -e %{buildroot}/ssg/jdk/sample ] || rm -rf %{buildroot}/ssg/jdk/sample
+[ ! -e %{buildroot}/ssg/jdk/man ] || rm -rf %{buildroot}/ssg/jdk/man
 [ ! -e %{buildroot}/ssg/jdk/jre/.systemPrefs ] || rm -rf %{buildroot}/ssg/jdk/jre/.systemPrefs
+[ ! -e %{buildroot}/ssg/jdk/jre/javaws ] || rm -rf %{buildroot}/ssg/jdk/jre/javaws
+[ ! -e %{buildroot}/ssg/jdk/jre/plugin ] || rm -rf %{buildroot}/ssg/jdk/jre/plugin
+[ ! -e %{buildroot}/ssg/jdk/jre/CHANGES ] || rm -f %{buildroot}/ssg/jdk/jre/CHANGES
+[ ! -e %{buildroot}/ssg/jdk/jre/lib/deploy ] || rm -rf %{buildroot}/ssg/jdk/jre/lib/deploy
+[ ! -e %{buildroot}/ssg/jdk/jre/lib/desktop ] || rm -rf %{buildroot}/ssg/jdk/jre/lib/desktop
+# Ensure that the libs are not executable, if they are then their dependencies are required by this rpm.
+chmod -R '-x+X' %{buildroot}/ssg/jdk/jre/lib
 
 %build
 mkdir %{buildroot}/etc/
@@ -113,37 +129,14 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 %attr(0755,gateway,gateway) /ssg/jdk/bin
 /ssg/jdk/include
 %dir /ssg/jdk/jre
-/ssg/jdk/jre/CHANGES
 /ssg/jdk/jre/COPYRIGHT
 /ssg/jdk/jre/LICENSE
 /ssg/jdk/jre/README
 /ssg/jdk/jre/THIRDPARTYLICENSEREADME.txt
 /ssg/jdk/jre/Welcome.html
 %attr(0755,gateway,gateway) /ssg/jdk/jre/bin
-/ssg/jdk/jre/javaws
-%dir /ssg/jdk/jre/lib
-/ssg/jdk/jre/lib/*.bfc
-/ssg/jdk/jre/lib/*.jar
-/ssg/jdk/jre/lib/*.properties
-/ssg/jdk/jre/lib/*.properties.ja
-/ssg/jdk/jre/lib/*.src
-/ssg/jdk/jre/lib/*.txt
-/ssg/jdk/jre/lib/classlist
-/ssg/jdk/jre/lib/applet
-/ssg/jdk/jre/lib/audio
-/ssg/jdk/jre/lib/cmm
-%config(noreplace) /ssg/jdk/jre/lib/ext
-/ssg/jdk/jre/lib/fonts
-/ssg/jdk/jre/lib/i386
-/ssg/jdk/jre/lib/im
-/ssg/jdk/jre/lib/images
-/ssg/jdk/jre/lib/javaws
-/ssg/jdk/jre/lib/locale
-/ssg/jdk/jre/lib/management
-/ssg/jdk/jre/lib/oblique-fonts
-%config(noreplace) /ssg/jdk/jre/lib/security
-/ssg/jdk/jre/lib/zi
-/ssg/jdk/jre/plugin
+/ssg/jdk/jre/lib
+%config(noreplace) /ssg/jdk/jre/lib/security/java.security
 /ssg/jdk/lib
 
 # Other stuff

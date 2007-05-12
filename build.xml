@@ -1853,22 +1853,22 @@
     </target>
 
     <!--
-      Set the release for the build, by default this is the date with "cvs" prepended.
+      Set the release for the build, by default this is the date with "svn" prepended.
 
       Other (optional) additions could be:
         - .rc1 (release candidate)
         - .m1  (milestone)
 
-      This gets added after any existing release number in the spec file (e.g 0.1.cvs20060201)
+      This gets added after any existing release number in the spec file (e.g 0.1.svn20060201)
     -->
     <target name="package.checkrelease" unless="ssg.install.official">
-        <property name="build.release" value=".cvs${DSTAMP}"/>
+        <property name="build.release" value=".svn${DSTAMP}"/>
     </target>
 
     <!--
-      Create the SSG RPM
+      Create the SSG RPM (Core)
     -->
-    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.check, package.readversion, package.checkrelease" if="package.installgateway.work.rpm.sourceavailable">
+    <target name="package.installgateway.work.rpm.core" depends="package.installgateway.work.rpm.check, package.readversion, package.checkrelease" if="package.installgateway.work.rpm.sourceavailable">
         <!-- create directories -->
         <mkdir dir="${build.rpm}/BUILD"/>
         <mkdir dir="${build.rpm}/RPMS"/>
@@ -1881,7 +1881,9 @@
         <property name="package.installgateway.work.rpmspec" value="etc/ssg.spec"/>
         <echo level="info">Using spec file : ${package.installgateway.work.rpmspec}</echo>
         <echo level="info">Using source TGZ: ${tarball}</echo>
+        <echo level="info">Using source JDK: ${install.jdk.tar.gz}</echo>
         <copy file="${tarball}" tofile="${build.rpm}/SOURCES/ssg.tar.gz"/>
+        <copy file="${install.jdk.tar.gz}" tofile="${build.rpm}/SOURCES/jdk.tar.gz"/>
         <copy file="${package.installgateway.work.rpmspec}" todir="${build.rpm}/SPECS">
             <filterchain>
                 <tokenfilter>
@@ -1893,6 +1895,26 @@
         </copy>
 
         <rpm specFile="ssg.spec" topDir="${build.rpm}" command="-bb --target i386"/>
+
+        <condition property="package.installgateway.work.rpm.x86_64.required">
+          <isset property="install.jdk64.tar.gz"/>
+        </condition>
+    </target>
+   
+    <!--
+      Create the SSG RPM (x86_64)
+    -->
+    <target name="package.installgateway.work.rpm.x86_64" depends="package.installgateway.work.rpm.core" if="package.installgateway.work.rpm.x86_64.required">
+        <echo level="info">Using source JDK: ${install.jdk64.tar.gz}</echo>
+        <copy file="${install.jdk64.tar.gz}" tofile="${build.rpm}/SOURCES/jdk.tar.gz" overwrite="true"/>
+        <rpm specFile="ssg.spec" topDir="${build.rpm}" command="-bb --target x86_64"/>
+    </target>
+ 
+    <!--
+      Create the SSG RPM
+    -->
+    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.x86_64">
+        <echo level="info">RPM build completed.</echo>
     </target>
 
     <!--
@@ -2995,6 +3017,7 @@
     <target name="INTERNAL-ssg-install-main" depends="INTERNAL-ssg-install-properties" if="ssg.install.enabled">
         <!-- Extract Tomcat & JDK tarballs -->
         <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip"/>
+        <!-- Note that the RPM does this later to get the correct JDK for the architecture -->
         <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
 
         <copy todir="${install.src.base}/tomcat/common/endorsed">
