@@ -15,7 +15,7 @@ OPTIONS="-Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT
 check_options(){
     ENABLE_HSM="yesfornow"
     if [ -n "${ENABLE_HSM}" ]; then
-        OPTIONS="$OPTIONS -Dcom.l7tech.server.keystore.enabledhsm=true"
+        OPTIONS="$OPTIONS -Dcom.l7tech.server.keystore.enablehsm=true"
     fi
 }
 

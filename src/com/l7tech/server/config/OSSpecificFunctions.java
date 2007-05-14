@@ -278,7 +278,7 @@ public abstract class OSSpecificFunctions {
     public static class KeystoreInfo {
         KeystoreType type;
         Map<String, String> metaInfo;
-        private static final String ENABLE_HSM ="com.l7tech.server.keystore.enabledhsm";
+        private static final String ENABLE_HSM ="com.l7tech.server.keystore.enablehsm";
 
         public KeystoreInfo(KeystoreType type) {
             this.type = type;
