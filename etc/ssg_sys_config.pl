@@ -17,6 +17,7 @@ my @commandArray;
 my @dhcpInterfaces;
 my %hostnameInfo = ();
 my $ntpServerToUse = undef;
+my $timezone = undef;
 my @filesToDelete;
 
 my $netConfigCommand = "/usr/sbin/netconfig";
@@ -25,17 +26,25 @@ my $netConfigPattern = "/ssg/sysconfigwizard/configfiles/netconfig_*";
 my $inputFh = new FileHandle;
 my %inputFiles = (
     "HOSTNAMEFILE" => "/ssg/sysconfigwizard/configfiles/hostname",
-    "NTPFILE" => "/ssg/sysconfigwizard/configfiles/ntpconfig"
+    "NTPFILE" => "/ssg/sysconfigwizard/configfiles/ntpconfig",
+    "TIMEZONEFILE" => "/ssg/sysconfigwizard/configfiles/timezone"
 );
 
 my $outputFh = new FileHandle;
 my %outputFiles = (
     "NETFILE" => "/etc/sysconfig/network",
     "NTPCONFFILE" => "/etc/ntp.conf",
-    "STEPTICKERSFILE" => "/etc/ntp/step-tickers"
+    "STEPTICKERSFILE" => "/etc/ntp/step-tickers",
+    "TZCLOCKFILE" => "/etc/sysconfig/clock",
+    "TZSYMLINK" => "/etc/localtime",
+    "TZBASEDIR" => "/usr/share/zoneinfo/"
 );
 
+##
+## READ ALL THE INPUTS
+##
 
+#network configurations
 my @netConfigFiles = glob($netConfigPattern);
 for my $configFile(@netConfigFiles) {
     if($inputFh->open("<$configFile")) {
@@ -52,6 +61,7 @@ for my $configFile(@netConfigFiles) {
     }
 }
 
+#hostname
 if ($inputFh->open("<$inputFiles{'HOSTNAMEFILE'}")) {
 	my $fileContent = do { local( $/ ) ; <$inputFh> } ;
     %hostnameInfo = $fileContent =~ /^(\w+)=(.+)$/mg ;
@@ -68,6 +78,22 @@ if ($inputFh->open("<$inputFiles{'HOSTNAMEFILE'}")) {
 	$logFile->print("$timestamp: $inputFiles{'HOSTNAMEFILE'} not found. The hostname will not be changed.\n");
 }
 
+#timezone
+if ($inputFh->open("<$inputFiles{'TIMEZONEFILE'}")) {
+    $timezone = do  { local( $/ ) ; <$inputFh> } ;
+    chomp($timezone);
+    push (@filesToDelete, $inputFiles{'TIMEZONEFILE'});
+    if ($timezone ne "") {
+        $logFile->print("$timestamp: timezone found: $timezone\n");
+    } else {
+        $logFile->print("$timestamp: no new timezone found. Timezone will not be changed.\n");
+    }
+    $inputFh->close();
+} else {
+	$logFile->print("$timestamp: $inputFiles{'TIMEZONEFILE'} not found. The timezone will not be changed.\n");
+}
+
+#ntp server
 if ($inputFh->open("<$inputFiles{'NTPFILE'}")) {
 	my @serverNames = $inputFh->getlines();
 	$ntpServerToUse = $serverNames[0];
@@ -78,6 +104,10 @@ if ($inputFh->open("<$inputFiles{'NTPFILE'}")) {
 } else {
 	$logFile->print("$timestamp: $inputFiles{'NTPFILE'} not found. The NTP configuration will not be changed.\n");
 }
+
+##
+## APPLY THE CONFIGURATION BASED ON THE INPUTS
+##
 
 #configure the network interfaces
 for my $command (@commandArray) {
@@ -114,6 +144,28 @@ if (defined($hostnameInfo{'hostname'}) && $hostnameInfo{'hostname'} ne "") {
 	} else {
 		$logFile->print("$timestamp: Couldn't open $outputFiles{'NETFILE'}. Skipping Network configuration\n");
 	}
+}
+
+#configure the timezone
+if (defined($timezone)) {
+    my $originalFile = new FileHandle;
+    if ($originalFile->open("<$outputFiles{'TZCLOCKFILE'}")) {
+        my $originalFileContent = do { local( $/ ); <$originalFile> } ;
+        $originalFile->close();
+        $originalFileContent =~ s/(ZONE=).*/$1\"$timezone\"/g;
+
+        if ( $outputFh->open(">$outputFiles{'TZCLOCKFILE'}")) {
+            $outputFh->print($originalFileContent);
+            $outputFh->close();
+            unlink($outputFiles{'TZSYMLINK'});
+            my $oldFile = $outputFiles{'TZBASEDIR'}.$timezone;
+            symlink($oldFile, $outputFiles{'TZSYMLINK'});
+        } else {
+            $logFile->print("$timestamp: Couldn't open $outputFiles{'TZCLOCKFILE'}. Skipping timezone configuration\n");
+        }
+    } else {
+        $logFile->print("$timestamp: Couldn't open $outputFiles{'TZCLOCKFILE'}. Skipping timezone configuration\n");
+    }
 }
 
 #configure NTP
