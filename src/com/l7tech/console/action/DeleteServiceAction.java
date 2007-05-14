@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.util.Functions;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.HomePagePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
@@ -88,7 +89,7 @@ public class DeleteServiceAction extends ServiceNodeAction {
                             PublishedService svc = pe.getServiceNode().getPublishedService();
                             // if currently edited service was deleted
                             if (serviceNode.getPublishedService().getOid() == svc.getOid()) {
-                                cws.clearWorkspace();
+                                cws.setComponent(new HomePagePanel());
                             }
                         } catch (Exception e) {
                             throw new RuntimeException(e);
