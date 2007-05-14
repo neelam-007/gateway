@@ -26,7 +26,7 @@ public class PublishPolicyToUDDIWizard extends Wizard {
 
     protected PublishPolicyToUDDIWizard(Frame parent, WizardStepPanel panel, String policyConsumptionURL) {
         super(parent, panel);
-        setTitle("Publish WS-Policy Document Reference to UDDI Registry");
+        setTitle("Publish Policy tModel to UDDI Registry Wizard");
         getButtonHelp().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(PublishPolicyToUDDIWizard.this);
