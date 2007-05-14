@@ -136,6 +136,20 @@
     <taskdef name="Zelix" classname="ZKMTask" classpathref="zelix.classpath"/>
 
     <!--
+      Classpath for svn
+    -->
+    <path id= "svnant.classpath"  >
+        <fileset dir= "lib/tools" >
+            <include name= "svn*.jar" />
+        </fileset>
+    </path>
+
+    <!-- 
+      Taskdef for svn
+    -->
+    <taskdef name="svn" classname="org.tigris.subversion.svnant.SvnTask" classpathref="svnant.classpath" />
+
+    <!--
       Various bolt-on task definitions
     -->
     <taskdef resource="net/sf/antcontrib/antcontrib.properties">
@@ -3206,8 +3220,10 @@
 
         <input message="Enter a version number" addproperty="build.version"/>
 
-        <echo level="info">Running cvs update -A -C build.number</echo>
-        <cvs command="update -A -C build.number"/>
+        <echo level="info">Running svn switch for build.number (to trunk/HEAD)</echo>
+        <svn>
+            <switch path="build.number" recurse="false" url="svn+ssh://sarek/home/svnuser/UneasyRooster/trunk/build.number"/>
+        </svn>
 
         <buildnumber/>
 
@@ -3221,7 +3237,9 @@
             description="Set the official buildnumber and product version."
             depends="OFFICIAL-build.init, clean, testpackage">
         <echo level="info">commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number</echo>
-        <cvs command="commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number"/>
+        <svn>
+            <commit file="build.number" recurse="false" message="[OFFICIAL-build] Incremented build number to ${build.number}"/>
+        </svn>
     </target>
 
     <!--
