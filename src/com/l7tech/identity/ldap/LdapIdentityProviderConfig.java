@@ -267,8 +267,8 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         setProperty(BASE_TEMPLATE, name);
     }
 
-    private static final String URL = "ldapurl";
-    private static final String SEARCH_BASE = "ldapsearchbase";
+    public static final String URL = "ldapurl";
+    public static final String SEARCH_BASE = "ldapsearchbase";
     private static final String CUSTOM_GROUP_SEARCH_FILTER = "customgrpsearchfilter";
     private static final String CUSTOM_USER_SEARCH_FILTER = "customusersearchfilter";
     private static final String GROUP_MAPPINGS = "grpmappings";

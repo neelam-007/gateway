@@ -7,6 +7,8 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
@@ -23,6 +25,7 @@ import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -195,6 +198,41 @@ public class IdProviderReference extends ExternalReference {
                     locallyMatchingProviderId = configOnThisSystem.getOid();
                     logger.fine("the provider was matched using the config's properties.");
                     return true;
+                } else {
+                    // try to do a smart comparison match for LDAP
+                    Map localPropsMap = deserializeIDPProps(localProps);
+                    Map otherPropsMap = deserializeIDPProps(getIdProviderConfProps());
+                    if (getIdProviderTypeVal() == IdentityProviderType.LDAP.toVal()) {
+                        // use LdapIdentityProviderConfig.URL and LdapIdentityProviderConfig.SEARCH_BASE
+                        String val1 = (String)localPropsMap.get(LdapIdentityProviderConfig.SEARCH_BASE);
+                        String val2 = (String)otherPropsMap.get(LdapIdentityProviderConfig.SEARCH_BASE);
+                        val1 = val1.trim();
+                        val2 = val2.trim();
+                        if (val1.equalsIgnoreCase(val2)) {
+                            logger.fine("same Search base established");
+                            Object tmp = localPropsMap.get(LdapIdentityProviderConfig.URL);
+                            String[] urls1;
+                            if (tmp instanceof String) urls1 = new String[]{(String)tmp};
+                            else urls1 = (String[])tmp;
+
+                            tmp = otherPropsMap.get(LdapIdentityProviderConfig.URL);
+                            String[] urls2;
+                            if (tmp instanceof String) urls2 = new String[]{(String)tmp};
+                            else urls2 = (String[])tmp;
+
+                            // check that at least one url is common
+                            for (String s1 : urls1) {
+                                for (String s2 : urls2) {
+                                   if (s1.equalsIgnoreCase(s2)) {
+                                       logger.fine("LDAP URL common to both id providers (" + s1 + ")");
+                                       return true;
+                                   }
+                                }
+                            }
+                        } else {
+                            logger.fine("The search base are not the same " + val1 + " vs " + val2);
+                        }
+                    }
                 }
             }
         }
@@ -203,20 +241,19 @@ public class IdProviderReference extends ExternalReference {
         return false;
     }
 
-    private boolean equalsProps(String props1, String props2) {
-        if (props1 == null || props1.equals("")) {
-            return props2 == null || props2.equals("");
+    private Map deserializeIDPProps(String serializedProps) {
+        if (serializedProps == null) {
+            return new HashMap();
         }
-        if (props2 == null || props2.equals("")) return false;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(props1));
+        ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
         java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
-        Map map1 = (Map)decoder.readObject();
-        in = new ByteArrayInputStream(HexUtils.encodeUtf8(props2));
-        decoder = new java.beans.XMLDecoder(in);
-        Map map2 = (Map)decoder.readObject();
+        return (Map)decoder.readObject();
+    }
 
-        return mapEquals(map1, map2);
+    private boolean equalsProps(String props1, String props2) {
+        if (props1 == null) props1 = "";
+        if (props2 == null) props2 = "";
+        return props1.equalsIgnoreCase(props2);
     }
 
     private boolean mapEquals(Map map1, Map map2) {
