@@ -134,7 +134,7 @@ public class IdentityAdminStub implements IdentityAdmin {
             Group g = groups.get(gid);
             results.add(fromGroup(g));
         }
-        return (IdentityHeader[])results.toArray(new EntityHeader[0]);
+        return results.toArray(new IdentityHeader[0]);
     }
 
     public Group findGroupByID(long idProvCfgId, String groupId) throws RemoteException, FindException {
