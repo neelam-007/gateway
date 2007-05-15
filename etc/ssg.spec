@@ -1,7 +1,7 @@
 Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2007
 Name: ssg
-Version: 3.7
-Release: 2
+Version: 4.0
+Release: 1
 Group: Applications/Internet
 License: Commercial
 URL: http://www.layer7tech.com
@@ -251,7 +251,7 @@ fi
 
 %post
 
-echo "Layer 7 SecureSpan(tm) Gateway v3.7" >/etc/issue
+echo "Layer 7 SecureSpan(tm) Gateway v4.0" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
 #add the ssg and the configuration service to chkconfig if they are not already there
 /sbin/chkconfig --list ssg &>/dev/null
@@ -335,6 +335,8 @@ if [ "$1" = "0" ] ; then
 fi
 
 %changelog
+* Tue May 15 2007 CY
+- 4.0
 * Mon Jan 29 2007 CY
 - 3.7
 * Wed Dec 20 2006 SMJ
