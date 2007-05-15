@@ -283,7 +283,7 @@ public class SamlAssertionGeneratorSaml2 {
         if (tmp != null) offset = Integer.parseInt(tmp);
         calendar.add(Calendar.MINUTE, (-1 * offset)); //bzilla #3616
         ct.setNotBefore(calendar);
-        Calendar c2 = (Calendar)calendar.clone();
+        Calendar c2 = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         c2.add(Calendar.MINUTE, expiryMinutes);
         ct.setNotOnOrAfter(c2);
         assertion.setConditions(ct);
