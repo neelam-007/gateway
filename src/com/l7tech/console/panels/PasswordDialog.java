@@ -6,7 +6,7 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.User;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -57,7 +57,7 @@ public class PasswordDialog extends JDialog {
     private JPasswordField confirmPasswordField = null;
 
     /* the user to change the password for */
-    private User user;
+    private InternalUser user;
 
     private int MIN_PASSWORD_LENGTH = 6;
     private int MAX_PASSWORD_LENGTH = 32;
@@ -69,7 +69,7 @@ public class PasswordDialog extends JDialog {
      *
      * @param parent the parent Frame. May be <B>null</B>
      */
-    public PasswordDialog(Frame parent, UserPanel userPanel, User user, EntityListener l) {
+    public PasswordDialog(Frame parent, UserPanel userPanel, InternalUser user, EntityListener l) {
         super(parent, true);
         this.userPanel = userPanel;
         this.user = user;
@@ -331,7 +331,7 @@ public class PasswordDialog extends JDialog {
                 }
             }
 
-            user.getUserBean().setPassword(new String(newPass), true);
+            user.setPassword(new String(newPass), true);
             Registry.getDefault().getIdentityAdmin().saveUser(
                     IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, user, null); // TODO make sure passing null here won't clear group memberships
             dispose();

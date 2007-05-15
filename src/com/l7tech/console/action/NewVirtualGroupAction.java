@@ -1,19 +1,18 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.NewVirtualGroupDialog;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
 import javax.swing.*;
-import java.util.logging.Logger;
 import java.awt.*;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -28,7 +27,7 @@ public class NewVirtualGroupAction extends NodeAction {
             MemberOfGroup.class,
             new AttemptedCreateSpecific(
                     EntityType.GROUP,
-                    new VirtualGroup(new GroupBean(node.getEntityHeader().getOid(), "<new virtual group>"))));
+                    new VirtualGroup(node.getEntityHeader().getOid(), "<new virtual group>")));
     }
 
     /**

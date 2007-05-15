@@ -1,18 +1,17 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.NewFederatedUserDialog;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.UserBean;
 import com.l7tech.identity.fed.FederatedUser;
 
 import javax.swing.*;
-import java.util.logging.Logger;
 import java.awt.*;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -27,7 +26,7 @@ public class NewFederatedUserAction extends NodeAction {
             LIC_AUTH_ASSERTIONS,
             new AttemptedCreateSpecific(
                     EntityType.USER,
-                    new FederatedUser(new UserBean(node.getEntityHeader().getOid(), "<new federated user>"))));
+                    new FederatedUser(node.getEntityHeader().getOid(), "<new federated user>")));
     }
 
     /**

@@ -3,16 +3,19 @@
  */
 package com.l7tech.identity.ldap;
 
-import javax.naming.ldap.LdapName;
+import com.l7tech.identity.IdentityProviderConfig;
+
 import javax.naming.InvalidNameException;
 import javax.naming.directory.Attributes;
+import javax.naming.ldap.LdapName;
+import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * @author alex
  */
-public abstract class LdapIdentityBase implements LdapIdentity {
+abstract class LdapIdentityBase implements LdapIdentity, Serializable {
     private static final Logger logger = Logger.getLogger(LdapIdentityBase.class.getName());
 
     /** Used in {@link #equals} and {@link #hashCode} for a semantic comparison (e.g. <code>OU=foo</code> is equivalent to <code>ou=foo</code>) */
@@ -22,6 +25,20 @@ public abstract class LdapIdentityBase implements LdapIdentity {
     protected String cn;
     protected String dn;
     protected transient Attributes attributes;
+
+    /**
+     * Required for serialization
+     */
+    @Deprecated
+    protected LdapIdentityBase() {
+        this(IdentityProviderConfig.DEFAULT_OID, null, null);
+    }
+
+    protected LdapIdentityBase(long providerOid, String dn, String cn) {
+        this.providerId = providerOid;
+        this.dn = dn;
+        this.cn = cn;
+    }
 
     public String getId() {
         return dn;
@@ -100,6 +117,10 @@ public abstract class LdapIdentityBase implements LdapIdentity {
         this.attributes = attributes;
     }
 
+    /**
+     * DO NOT REGENERATE!  This class has special equality rules: the {@link #ldapName} field is considered 
+     * rather than {@link #dn}.
+     */
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -118,6 +139,10 @@ public abstract class LdapIdentityBase implements LdapIdentity {
         return true;
     }
 
+    /**
+     * DO NOT REGENERATE!  This class has special equality rules: the {@link #ldapName} field is considered
+     * rather than {@link #dn}.
+     */
     public int hashCode() {
         int result;
         final LdapName thisName = getLdapName();

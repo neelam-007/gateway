@@ -308,7 +308,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
 
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Object o = getUserList().getSelectedValue();
+                UserMappingConfig o = (UserMappingConfig) getUserList().getSelectedValue();
                  if(o != null) {
                      // remove the item from the data model
                      getUserListModel().removeElement(o);
@@ -449,25 +449,15 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
      *
      * @return SortedListModel  The data model for the user objects.
      */
-    private SortedListModel getUserListModel() {
+    private SortedListModel<UserMappingConfig> getUserListModel() {
         if (userListModel != null) return userListModel;
 
         userListModel =
-                new SortedListModel(new Comparator() {
+                new SortedListModel<UserMappingConfig>(new Comparator<UserMappingConfig>() {
                     /**
                      * Compares user objectclass mapping by objectclass alphabetically.
-                     * @param o1 the first object to be compared.
-                     * @param o2 the second object to be compared.
-                     * @return a negative integer, zero, or a positive integer as the
-                     * 	       first argument is less than, equal to, or greater than the
-                     *	       second.
-                     * @throws ClassCastException if the arguments' types prevent them from
-                     * 	       being compared by this Comparator.
                      */
-                    public int compare(Object o1, Object o2) {
-                        UserMappingConfig e1 = (UserMappingConfig) o1;
-                        UserMappingConfig e2 = (UserMappingConfig) o2;
-
+                    public int compare(UserMappingConfig e1, UserMappingConfig e2) {
                         return e1.getObjClass().compareTo(e2.getObjClass());
                     }
                 });
@@ -834,7 +824,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
     private JPanel mainPanel;
 
     private LdapIdentityProviderConfig iProviderConfig = null;
-    private SortedListModel userListModel = null;
+    private SortedListModel<UserMappingConfig> userListModel = null;
     private static int nameIndex = 0;
 //    private String originalObjectClass = "";
 

@@ -79,7 +79,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     }
 
     public LdapGroup reify(GroupBean bean) {
-        return new LdapGroup(bean);
+        LdapGroup lg = new LdapGroup(bean.getProviderId(), bean.getId(), bean.getName());
+        lg.setDescription(bean.getDescription());
+        return lg;
     }
 
     /**

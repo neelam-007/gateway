@@ -3,7 +3,9 @@ package com.l7tech.identity;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.registry.RegistryStub;
 import com.l7tech.identity.internal.InternalGroup;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.IdentityHeader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -52,7 +54,7 @@ public class StubDataStoreTest extends TestCase {
         IdentityProviderConfig ipc = registry.getInternalProviderConfig();
         final long providerConfigOid = ipc.getOid();
 
-        EntityHeader[] headers = admin.findAllUsers(providerConfigOid);
+        IdentityHeader[] headers = admin.findAllUsers(providerConfigOid);
         for ( int i = 0; i < headers.length; i++ ) {
             EntityHeader header = headers[i];
             User u = admin.findUserByID(providerConfigOid, header.getStrId());
@@ -72,19 +74,19 @@ public class StubDataStoreTest extends TestCase {
     public void testAddAndUpdateUser() throws Exception {
         long provider = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
         IdentityAdmin admin = registry.getIdentityAdmin();
-        UserBean user = new UserBean();
+        InternalUser user = new InternalUser();
         user.setLogin("mgreen");
         user.setName(user.getLogin());
         user.setFirstName("Mary");
         user.setLastName("Green");
         user.setEmail("mgreen@one.com");
         String uid = admin.saveUser(provider, user, null);
-        User found = admin.findUserByID(provider, uid);
+        InternalUser found = (InternalUser) admin.findUserByID(provider, uid);
         assertTrue("Expected user could not be found " + uid, found != null);
 
-        found.getUserBean().setLastName("Red");
+        found.setLastName("Red");
         admin.saveUser(provider, found, null);
-        User updated = admin.findUserByID(provider, uid);
+        InternalUser updated = (InternalUser) admin.findUserByID(provider, uid);
         assertTrue("Expected user could not be found " + uid, updated != null);
 
         assertTrue("Expected updated user " + uid, "Red".equals(updated.getLastName()));
@@ -101,10 +103,10 @@ public class StubDataStoreTest extends TestCase {
         group.setName("26-floor");
         group.setDescription("people at 26th floor");
         String gid = admin.saveGroup(provider, group, null);
-        Group found = admin.findGroupByID(provider, gid);
+        InternalGroup found = (InternalGroup) admin.findGroupByID(provider, gid);
         assertTrue("Expected group could not be found " + gid, found != null);
 
-        found.getGroupBean().setDescription("none");
+        found.setDescription("none");
         admin.saveGroup(provider, found, null);
         Group updated = admin.findGroupByID(provider, gid);
         assertTrue("Expected group could not be found " + gid, updated != null);

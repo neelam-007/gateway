@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.PersistentGroup;
 import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
@@ -20,14 +19,13 @@ import java.util.logging.Level;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class PhysicalGroupPanel extends GroupPanel {
     protected PhysicalGroupPanel( IdentityProviderConfig ipc ) {
         super( ipc );
     }
 
-    protected void loadedGroup( Group g ) throws RemoteException, FindException {
+    protected void loadedGroup(Group g) throws RemoteException, FindException {
         groupMembers = getIdentityAdmin().getUserHeaders(config.getOid(), group.getId());
     }
 
@@ -46,8 +44,8 @@ public class PhysicalGroupPanel extends GroupPanel {
         }
     }
 
-    Set getGroupMembers() {
-        if (groupMembers == null) groupMembers = new HashSet();
+    Set<IdentityHeader> getGroupMembers() {
+        if (groupMembers == null) groupMembers = new HashSet<IdentityHeader>();
         return groupMembers;
     }
 
@@ -126,9 +124,17 @@ public class PhysicalGroupPanel extends GroupPanel {
         return usersPanel;
     }
 
+    @Override
+    protected Group collectChanges() {
+        if (group instanceof PersistentGroup) {
+            PersistentGroup pg = (PersistentGroup) group;
+            pg.setDescription(getDescriptionTextField().getText());
+        }
+        return group;
+    }
 
     private JPanel detailsPanel;
     private GroupUsersPanel usersPanel; // membership
 
-    private Set groupMembers;
+    private Set<IdentityHeader> groupMembers;
 }

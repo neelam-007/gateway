@@ -1,20 +1,20 @@
 package com.l7tech.identity.internal;
 
-import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.PersistentGroup;
 
 public class InternalGroup extends PersistentGroup {
     public InternalGroup() {
-        super();
+        this(null);
     }
 
-    public InternalGroup(GroupBean bean) {
-        super(bean);
+    public InternalGroup(String name) {
+        super(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, name);
     }
 
     public String toString() {
         return "com.l7tech.identity.internal.InternalGroup." +
                 "\n\tname=" + _name +
-                "\n\tproviderId=" + bean.getProviderId();
+                "\n\tproviderId=" + getProviderId();
     }
 }

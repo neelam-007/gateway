@@ -61,10 +61,6 @@ public class UserBean implements User, Serializable {
         return department;
     }
 
-    public UserBean getUserBean() {
-        return this;
-    }
-
     public long getProviderId() {
         return providerId;
     }

@@ -1,53 +1,30 @@
 package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.Group;
-import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.IdentityProviderConfig;
 
 import java.io.Serializable;
 
-public class LdapGroup extends LdapIdentityBase implements Group, Serializable, LdapIdentity {
+public class LdapGroup extends LdapIdentityBase implements Group, LdapIdentity, Serializable {
     public static final int OU_GROUP = 0;
     public static final int NORMAL_GROUP = 1;
 
-    private GroupBean groupBean;
-
-    public LdapGroup( GroupBean bean ) {
-        groupBean = bean;
-    }
+    private String description;
 
     public LdapGroup() {
-        groupBean = new GroupBean();
+        this(IdentityProviderConfig.DEFAULT_OID, null, null);
+    }
+
+    public LdapGroup(long providerOid, String dn, String cn) {
+        super(providerOid, dn, cn);
     }
 
     public String getDescription() {
-        return groupBean.getDescription();
+        return description;
     }
 
     public void setDescription(String description) {
-        groupBean.setDescription( description );
-    }
-
-    public synchronized void setDn(String dn) {
-        super.setDn(dn);
-        groupBean.setUniqueIdentifier(dn);
-    }
-
-    @Override
-    public void setName(String name) {
-        super.setName(name);
-        groupBean.setName(name);
-    }
-
-    @Override
-    public void setCn(String cn) {
-        super.setCn(cn);
-        groupBean.setName(cn);
-    }
-
-    @Override
-    public void setProviderId(long providerOid) {
-        super.setProviderId(providerOid);
-        groupBean.setProviderId(providerOid);
+        this.description = description;
     }
 
     public String toString() {
@@ -69,8 +46,22 @@ public class LdapGroup extends LdapIdentityBase implements Group, Serializable, 
         setAttributes(imp.getAttributes());
     }
 
-    public GroupBean getGroupBean() {
-        return groupBean;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        LdapGroup ldapGroup = (LdapGroup) o;
+
+        if (description != null ? !description.equals(ldapGroup.description) : ldapGroup.description != null)
+            return false;
+
+        return true;
     }
 
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (description != null ? description.hashCode() : 0);
+        return result;
+    }
 }

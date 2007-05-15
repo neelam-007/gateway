@@ -230,8 +230,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         }
         FederatedUser u;
         // Make a fake user for virtual groups
-        u = new FederatedUser();
-        u.setProviderId(provider.getConfig().getOid());
+        u = new FederatedUser(provider.getConfig().getOid(), null);
         u.setSubjectDn(certSubjectDn);
         if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
             u.setEmail(niValue);

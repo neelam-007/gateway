@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * <p> @author fpang </p>
  * $Id$
  */
-public class VirtualGroupPanel extends GroupPanel {
+public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
 
     static Logger log = Logger.getLogger(VirtualGroupPanel.class.getName());
 
@@ -47,10 +47,8 @@ public class VirtualGroupPanel extends GroupPanel {
         // do nothing - no group members will be shown
     }
 
-    protected Group newGroup(EntityHeader groupHeader) {
-        VirtualGroup v = new VirtualGroup();
-        v.setName(groupHeader.getName());
-        return v;
+    protected VirtualGroup newGroup(EntityHeader groupHeader) {
+        return new VirtualGroup(config.getOid(), groupHeader.getName());
     }
 
     IdentityProviderConfig getIdentityProviderConfig() {
@@ -146,11 +144,11 @@ public class VirtualGroupPanel extends GroupPanel {
      * @return Group   the instance with changes applied
      */
     protected Group collectChanges() {
-        VirtualGroup vGroup = (VirtualGroup)group;
-        vGroup.getGroupBean().setDescription(virtualGroupDetailsPanel.getGroupDescTextField().getText());
+        VirtualGroup vGroup = group;
+        vGroup.setProviderId(config.getOid());
+        vGroup.setDescription(virtualGroupDetailsPanel.getGroupDescTextField().getText());
         vGroup.setSamlEmailPattern(virtualGroupDetailsPanel.getEmailTextField().getText());
         vGroup.setX509SubjectDnPattern(virtualGroupDetailsPanel.getX509SubjectDNTextField().getText());
-        vGroup.setProviderId(config.getOid());
         return group;
     }
 

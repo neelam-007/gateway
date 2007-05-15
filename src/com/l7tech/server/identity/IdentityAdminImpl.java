@@ -3,8 +3,7 @@ package com.l7tech.server.identity;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.rbac.*;
-import static com.l7tech.common.security.rbac.EntityType.*;
+import static com.l7tech.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.JaasUtils;
@@ -13,11 +12,9 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.security.rbac.PermissionMatchCallback;
 
 import java.rmi.RemoteException;
 import java.security.SecureRandom;
@@ -73,8 +70,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
      * @throws RemoteException
      */
     public EntityHeader[] findAllIdentityProviderConfig() throws RemoteException, FindException {
-            Collection res = getIdProvCfgMan().findAllHeaders();
-        return (EntityHeader[])res.toArray(new EntityHeader[] {});
+            Collection<EntityHeader> res = getIdProvCfgMan().findAllHeaders();
+        return res.toArray(new EntityHeader[0]);
     }
 
     /**
@@ -191,14 +188,14 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    public EntityHeader[] findAllUsers(long identityProviderConfigId) throws RemoteException, FindException {
+    public IdentityHeader[] findAllUsers(long identityProviderConfigId) throws RemoteException, FindException {
             checkLicense();
             UserManager userManager = retrieveUserManager(identityProviderConfigId);
             Collection<IdentityHeader> res = userManager.findAllHeaders();
-            return res.toArray(new EntityHeader[]{});
+            return res.toArray(new IdentityHeader[0]);
     }
 
-    public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
+    public IdentityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
       throws RemoteException, FindException {
             checkLicense();
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
@@ -211,7 +208,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
             }
             Collection<IdentityHeader> searchResults = provider.search(types, pattern);
             if (searchResults == null) return new IdentityHeader[0];
-            return searchResults.toArray(new IdentityHeader[]{});
+            return searchResults.toArray(new IdentityHeader[0]);
     }
 
     public User findUserByID(long identityProviderConfigId, String userId)
@@ -267,7 +264,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
             if (user instanceof UserBean) user = userManager.reify((UserBean) user);
-            user.getUserBean().setProviderId(identityProviderConfigId);
 
             String id = user.getId();
             if (id == null || DEFAULT_ID.equals(id)) {
@@ -286,10 +282,10 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
 
-    public EntityHeader[] findAllGroups(long cfgid) throws RemoteException, FindException {
+    public IdentityHeader[] findAllGroups(long cfgid) throws RemoteException, FindException {
             checkLicense();
-            Collection res = retrieveGroupManager(cfgid).findAllHeaders();
-            return (EntityHeader[])res.toArray(new EntityHeader[]{});
+            Collection<IdentityHeader> res = retrieveGroupManager(cfgid).findAllHeaders();
+            return res.toArray(new IdentityHeader[0]);
     }
 
     public Group findGroupByID(long cfgid, String groupId) throws RemoteException, FindException {
@@ -318,7 +314,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    public String saveGroup(long identityProviderConfigId, Group group, Set userHeaders)
+    public String saveGroup(long identityProviderConfigId, Group group, Set<IdentityHeader> userHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         try {
             checkLicense();
@@ -326,7 +322,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
             if (group instanceof GroupBean) group = groupManager.reify((GroupBean) group);
-            group.getGroupBean().setProviderId(identityProviderConfigId);
 
             String id = group.getId();
             if (id == null || id.equals(DEFAULT_ID)) {
@@ -413,22 +408,22 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    public Set getGroupHeaders(long providerId, String userId) throws RemoteException, FindException {
+    public Set<IdentityHeader> getGroupHeaders(long providerId, String userId) throws RemoteException, FindException {
         checkLicense();
         return retrieveGroupManager(providerId).getGroupHeaders(userId);
     }
 
-    public void setGroupHeaders(long providerId, String userId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
+    public void setGroupHeaders(long providerId, String userId, Set<IdentityHeader> groupHeaders) throws RemoteException, FindException, UpdateException {
         checkLicense();
         retrieveGroupManager(providerId).setGroupHeaders(userId, groupHeaders);
     }
 
-    public Set getUserHeaders(long providerId, String groupId) throws RemoteException, FindException {
+    public Set<IdentityHeader> getUserHeaders(long providerId, String groupId) throws RemoteException, FindException {
         checkLicense();
         return retrieveGroupManager(providerId).getUserHeaders(groupId);
     }
 
-    public void setUserHeaders(long providerId, String groupId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
+    public void setUserHeaders(long providerId, String groupId, Set<IdentityHeader> groupHeaders) throws RemoteException, FindException, UpdateException {
         checkLicense();
         retrieveGroupManager(providerId).setUserHeaders(groupId, groupHeaders);
     }
@@ -517,39 +512,4 @@ public class IdentityAdminImpl implements IdentityAdmin {
     private IdentityProviderFactory identityProviderFactory = null;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
-
-    private static class DeleteProviderCallback implements PermissionMatchCallback {
-        private final IdentityProviderConfig ipc;
-
-        public DeleteProviderCallback(IdentityProviderConfig ipc) {
-            this.ipc = ipc;
-        }
-
-        public boolean matches(Permission permission) {
-            com.l7tech.common.security.rbac.EntityType etype = permission.getEntityType();
-            Set<ScopePredicate> scope = permission.getScope();
-            if (scope.size() > 1) return false;
-
-            ScopePredicate pred = scope.isEmpty() ? null : scope.iterator().next();
-            switch(etype) {
-                case ID_PROVIDER_CONFIG:
-                    if (pred instanceof ObjectIdentityPredicate) {
-                        ObjectIdentityPredicate oip = (ObjectIdentityPredicate) pred;
-                        if (oip.getTargetEntityId().equals(ipc.getId())) return true;
-                    }
-                    return false;
-                case USER:
-                case GROUP:
-                    if (pred instanceof AttributePredicate) {
-                        AttributePredicate ap = (AttributePredicate) pred;
-                        if (ap.getAttribute().equals(Identity.ATTR_PROVIDER_OID) && ap.getValue().equals(ipc.getId())) return true;
-                    }
-                    return false;
-                case TRUSTED_CERT:
-                    return pred == null && permission.getOperation() == OperationType.READ;
-                default:
-                    return false;
-            }
-        }
-    }
 }

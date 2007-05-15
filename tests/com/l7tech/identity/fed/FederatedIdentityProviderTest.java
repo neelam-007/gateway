@@ -85,8 +85,7 @@ public class FederatedIdentityProviderTest extends TestCase {
 
         assertNotNull("There must already be a Federated Identity Provider", config);
 
-        final VirtualGroup vg = new VirtualGroup();
-        vg.setName("CN is anything");
+        final VirtualGroup vg = new VirtualGroup(config.getOid(), "CN is anything");
         vg.setX509SubjectDnPattern("CN=*");
         String soid = identityAdmin.saveGroup(config.getOid(), vg, null);
 

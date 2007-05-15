@@ -47,7 +47,20 @@ public class InternalUserManagerImpl
     }
 
     public InternalUser reify(UserBean bean) {
-        return new InternalUser(bean);
+        InternalUser iu = new InternalUser(bean.getLogin());
+        iu.setDepartment(bean.getDepartment());
+        iu.setEmail(bean.getEmail());
+        iu.setFirstName(bean.getFirstName());
+        iu.setLastName(bean.getLastName());
+        iu.setName(bean.getName());
+        iu.setOid(bean.getId() == null ? InternalUser.DEFAULT_OID : Long.valueOf(bean.getId()));
+        try {
+            iu.setPassword(bean.getPassword());
+        } catch (InvalidPasswordException e) {
+            throw new RuntimeException(e); // Can't happen?
+        }
+        iu.setSubjectDn(bean.getSubjectDn());
+        return iu;
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -130,13 +143,11 @@ public class InternalUserManagerImpl
     }
 
     public InternalUser cast(User user) {
-        InternalUser imp;
         if (user instanceof UserBean) {
-            imp = new InternalUser((UserBean)user);
+            return reify((UserBean) user);
         } else {
-            imp = (InternalUser)user;
+            return (InternalUser)user;
         }
-        return imp;
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());

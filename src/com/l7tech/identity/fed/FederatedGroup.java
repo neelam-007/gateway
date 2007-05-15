@@ -4,8 +4,8 @@
 
 package com.l7tech.identity.fed;
 
-import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.PersistentGroup;
+import com.l7tech.identity.IdentityProviderConfig;
 
 /**
  * A "physical" federated group.
@@ -18,17 +18,17 @@ import com.l7tech.identity.PersistentGroup;
  * @see VirtualGroup
  */
 public class FederatedGroup extends PersistentGroup {
-    public FederatedGroup(GroupBean bean) {
-        super(bean);
+    public FederatedGroup() {
+        this(IdentityProviderConfig.DEFAULT_OID, null);
     }
 
-    public FederatedGroup() {
-        super();
+    public FederatedGroup(long providerOid, String name) {
+        super(providerOid, name);
     }
 
     public String toString() {
         return "com.l7tech.identity.fed.FederatedGroup." +
                 "\n\tname=" + _name +
-                "\n\tproviderId=" + bean.getProviderId();
+                "\n\tproviderId=" + getProviderId();
     }
 }

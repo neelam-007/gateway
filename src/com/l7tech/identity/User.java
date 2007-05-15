@@ -56,9 +56,4 @@ public interface User extends Identity {
      */
     String getSubjectDn();
 
-    /**
-     * Gets the mutable {@link UserBean} for this User.
-     * @return the mutable {@link UserBean} for this User.
-     */
-    UserBean getUserBean();
 }

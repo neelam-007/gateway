@@ -8,6 +8,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
@@ -45,7 +46,7 @@ class GroupUsersPanel extends JPanel {
     private JScrollPane groupInListJScrollPane;
     private JList groupMemberList = null;
 
-    SortedListModel listInModel;
+    SortedListModel<IdentityHeader> listInModel;
 
     private JButton groupAdd = null;
     private JButton groupRemove = null;
@@ -82,15 +83,15 @@ class GroupUsersPanel extends JPanel {
     /**
      * package private method, allows adding users
      */
-    void addUsers(Set userHeaders) {
+    void addUsers(Set<IdentityHeader> userHeaders) {
         listInModel.addAll(userHeaders);
     }
 
     /**
      * package private method, allows adding users
      */
-    Set getCurrentUsers() {
-        return new HashSet(Arrays.asList(listInModel.toArray()));
+    Set<IdentityHeader> getCurrentUsers() {
+        return new HashSet<IdentityHeader>(Arrays.asList(listInModel.toArray()));
     }
 
 
@@ -150,21 +151,11 @@ class GroupUsersPanel extends JPanel {
         if (listInModel != null) return listInModel;
 
         listInModel =
-          new SortedListModel(new Comparator() {
+          new SortedListModel<IdentityHeader>(new Comparator<IdentityHeader>() {
               /**
                * Compares group users by login alphabetically.
-               *
-               * @param o1 the first object to be compared.
-               * @param o2 the second object to be compared.
-               * @return a negative integer, zero, or a positive integer as the
-               *         first argument is less than, equal to, or greater than the
-               *         second.
-               * @throws ClassCastException if the arguments' types prevent them from
-               *                            being compared by this Comparator.
                */
-              public int compare(Object o1, Object o2) {
-                  EntityHeader e1 = (EntityHeader)o1;
-                  EntityHeader e2 = (EntityHeader)o2;
+              public int compare(IdentityHeader e1, IdentityHeader e2) {
                   String s1 = null;
                   if (e1 != null) s1 = e1.getName();
                   String s2 = null;
@@ -211,10 +202,10 @@ class GroupUsersPanel extends JPanel {
             }
 
             private void updateGroupMembers() {
-                Set memberHeaders = groupPanel.getGroupMembers();
+                Set<IdentityHeader> memberHeaders = groupPanel.getGroupMembers();
                 memberHeaders.clear();
                 for (int i = 0; i < listInModel.getSize(); i++) {
-                    EntityHeader g = (EntityHeader)listInModel.getElementAt(i);
+                    IdentityHeader g = (IdentityHeader)listInModel.getElementAt(i);
                     memberHeaders.add(g);
                 }
             }
@@ -415,7 +406,7 @@ class GroupUsersPanel extends JPanel {
                     Set members = groupPanel.getGroupMembers();
 
                     for (int i = 0; removals != null && i < removals.length; i++) {
-                        listInModel.removeElement(removals[i]);
+                        listInModel.removeElement((IdentityHeader) removals[i]);
                         members.remove(removals[i]);
                     }
                     setAddRemoveButtons();

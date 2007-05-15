@@ -1,18 +1,21 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.ldap.GroupMappingConfig;
-import com.l7tech.identity.ldap.MemberStrategy;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.identity.ldap.GroupMappingConfig;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.MemberStrategy;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Locale;
@@ -126,10 +129,9 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
             // clear the model
             getGroupListModel().clear();
 
-            for (int i = 0; i < groupMappings.length; i++) {
-
+            for (GroupMappingConfig groupMapping : groupMappings) {
                 // update the user list display
-                getGroupListModel().add(groupMappings[i]);
+                getGroupListModel().add(groupMapping);
             }
 
             // select the first row for display of attributes
@@ -173,8 +175,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      * @param settings the object representing wizard panel state
      */
     public void storeSettings(Object settings) {
-
-        Object groupMapping = null;
+        Object groupMapping;
 
         // store the current record if selected
         if((groupMapping = getGroupList().getSelectedValue()) != null) {
@@ -286,10 +287,10 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
 
-                Object o = getGroupList().getSelectedValue();
-                if (o != null) {
+                GroupMappingConfig gmc = (GroupMappingConfig)getGroupList().getSelectedValue();
+                if (gmc != null) {
                     // remove the item from the data model
-                    getGroupListModel().removeElement(o);
+                    getGroupListModel().removeElement(gmc);
 
                     // clear the setting as it doesn't exist any more
                     lastSelectedGroup = null;
@@ -429,25 +430,14 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      *
      * @return SortedListModel  The data model for the group objects.
      */
-    private SortedListModel getGroupListModel() {
+    private SortedListModel<GroupMappingConfig> getGroupListModel() {
         if (groupListModel != null) return groupListModel;
 
-        groupListModel =
-                new SortedListModel(new Comparator() {
+        groupListModel = new SortedListModel<GroupMappingConfig>(new Comparator<GroupMappingConfig>() {
                     /**
                      * Compares user objectclass mapping by objectclass alphabetically.
-                     * @param o1 the first object to be compared.
-                     * @param o2 the second object to be compared.
-                     * @return a negative integer, zero, or a positive integer as the
-                     * 	       first argument is less than, equal to, or greater than the
-                     *	       second.
-                     * @throws ClassCastException if the arguments' types prevent them from
-                     * 	       being compared by this Comparator.
                      */
-                    public int compare(Object o1, Object o2) {
-                        GroupMappingConfig e1 = (GroupMappingConfig) o1;
-                        GroupMappingConfig e2 = (GroupMappingConfig) o2;
-
+                    public int compare(GroupMappingConfig e1, GroupMappingConfig e2) {
                         return e1.getObjClass().compareTo(e2.getObjClass());
                     }
                 });
@@ -721,7 +711,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
     private JComboBox memberStrategy;
 
     private LdapIdentityProviderConfig iProviderConfig = null;
-    private SortedListModel groupListModel = null;
+    private SortedListModel<GroupMappingConfig> groupListModel = null;
     private static int nameIndex = 0;
     private GroupMappingConfig lastSelectedGroup = null;
     private ResourceBundle resources = null;

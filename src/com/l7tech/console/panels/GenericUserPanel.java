@@ -156,11 +156,14 @@ public class GenericUserPanel extends UserPanel {
             AttemptedOperation ao;
             if (isNew) {
                 if (config.type().equals(IdentityProviderType.INTERNAL)) {
-                    user = new InternalUser();
+                    InternalUser iu = new InternalUser();
+                    iu.setName(userHeader.getName());
+                    user = iu;
                 } else if (config.type().equals(IdentityProviderType.LDAP)) {
-                    user = new LdapUser();
+                    LdapUser lu = new LdapUser();
+                    lu.setName(userHeader.getName());
+                    user = lu;
                 }
-                user.getUserBean().setName(userHeader.getName());
                 userGroups = null;
                 ao = new AttemptedCreateSpecific(USER, new UserBean(config.getOid(), "<new user>"));
             } else {
@@ -615,9 +618,14 @@ public class GenericUserPanel extends UserPanel {
             changePassButton.
             addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    DialogDisplayer.display(new PasswordDialog(TopComponents.getInstance().getTopParent(), userPanel,
-                      user.getUserBean(), passwordChangeListener));
-                    // Refresh the panel (since the Bridge's cert might have been revoked)
+                    if (user instanceof InternalUser) {
+                        InternalUser iu = (InternalUser) user;
+                        DialogDisplayer.display(new PasswordDialog(TopComponents.getInstance().getTopParent(), userPanel,
+                                iu, passwordChangeListener));
+                        // Refresh the panel (since the Bridge's cert might have been revoked)
+                    } else {
+                        throw new IllegalStateException("Password can only be changed for Internal users");
+                    }
                 }
             });
 

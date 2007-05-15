@@ -161,7 +161,7 @@ public class NewVirtualGroupDialog extends JDialog {
     private void insertGroup() {
         group.setName(groupNameTextField.getText());
         group.setDescription(groupDescriptionTextField.getText());
-        final VirtualGroup vGroup = new VirtualGroup(group);
+        final VirtualGroup vGroup = new VirtualGroup(ipc.getOid(), groupNameTextField.getText());
         vGroup.setProviderId(ipc.getOid());
         vGroup.setX509SubjectDnPattern(x509DNPatternTextField.getText());
         vGroup.setSamlEmailPattern(emailPatternTextField.getText());

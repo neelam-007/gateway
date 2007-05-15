@@ -25,10 +25,6 @@ public class GroupBean implements Group, Serializable {
         return description;
     }
 
-    public GroupBean getGroupBean() {
-        return this;
-    }
-
     public void setDescription(String description) {
         this.description = description;
     }

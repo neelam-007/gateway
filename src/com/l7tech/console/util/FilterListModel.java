@@ -1,13 +1,10 @@
 package com.l7tech.console.util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.swing.ListModel;
+import javax.swing.*;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
-import javax.swing.AbstractListModel;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * FilterListModel extends AbstractListModel and provides simple
@@ -24,7 +21,7 @@ import javax.swing.AbstractListModel;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class FilterListModel extends AbstractListModel {
+public class FilterListModel<E> extends AbstractListModel {
     /**
      * Creates a new instance of FilteredTreeModel encapsulating
      * the root of this model.
@@ -108,7 +105,7 @@ public class FilterListModel extends AbstractListModel {
      *
      * @param filter new Filter
      */
-    public void setFilter(Filter filter) {
+    public void setFilter(Filter<E> filter) {
         this.filter = filter;
         loadFilteredIndices();
         fireContentsChanged(this, 0, getSize());
@@ -139,11 +136,11 @@ public class FilterListModel extends AbstractListModel {
      * @param index  the index of the elemnt
      * @return the value at the specified index.
      */
-    public Object getElementAt(int index) {
+    public E getElementAt(int index) {
         if (filter == null) {
-            return model.getElementAt(index);
+            return (E) model.getElementAt(index);
         } else {
-            return model.getElementAt(((Integer)filteredIndices.get(index)).intValue());
+            return (E) model.getElementAt(((Integer)filteredIndices.get(index)).intValue());
         }
     }
 
@@ -167,17 +164,17 @@ public class FilterListModel extends AbstractListModel {
             // NOTE: due to the nature of populating the filteredIndices array,
             // the array can be considered sorted
             int size = model.getSize();
-            filteredIndices = new ArrayList(size);
+            filteredIndices = new ArrayList<Integer>(size);
             for (int i = 0, index = 0; index < size; index++) {
-                if (filter.accept(model.getElementAt(index))) {
+                if (filter.accept((E) model.getElementAt(index))) {
                     filteredIndices.add(new Integer(index));
                 }
             }
         }
     }
 
-    private Filter filter;
+    private Filter<E> filter;
     private ListModel model;
-    private List filteredIndices; // sorted list of filtered indices
+    private List<Integer> filteredIndices; // sorted list of filtered indices
 }
 

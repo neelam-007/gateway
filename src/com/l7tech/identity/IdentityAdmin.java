@@ -104,7 +104,7 @@ public interface IdentityAdmin {
      * Retrieve all available {@link User}s for a given {@link IdentityProviderConfig}.
      *
      * @param idProvCfgId     the unique object ID of the {@link IdentityProviderConfig} whose users to load.
-     * @return array of {@link EntityHeader}s for all {@link User}s within this {@link IdentityProviderConfig}.
+     * @return array of {@link IdentityHeader}s for all {@link User}s within this {@link IdentityProviderConfig}.
      *         May be empty but never null.
      * @throws FindException if the specified object ID did not exist or was not an identity provider config
      * @throws FindException if there was a problem accessing the requested information
@@ -112,7 +112,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=USER, stereotype=FIND_HEADERS)
-    EntityHeader[] findAllUsers(long idProvCfgId) throws RemoteException, FindException;
+    IdentityHeader[] findAllUsers(long idProvCfgId) throws RemoteException, FindException;
 
     /**
      * Search for {@link com.l7tech.identity.Identity}s matching a pattern within the specified {@link IdentityProviderConfig}.
@@ -128,13 +128,13 @@ public interface IdentityAdmin {
      *                                <li>pattern "ike*" will match "ike", "Ike" and "ike22" but not "mike";</li>
      *                                <li>pattern "i?e*" will match "ike", "Ike", "ice" and "ike22" but not "eke" or "ikke"</li></ul>
      *
-     * @return array of {@link EntityHeader}s matching the specified requirements.
+     * @return array of {@link IdentityHeader}s matching the specified requirements.
      * @throws FindException   if there was a problem accessing the requested information.
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
     @Secured(types={USER, GROUP}, stereotype=FIND_HEADERS)
-    EntityHeader[] searchIdentities(long idProvCfgId, EntityType[] types, String pattern)
+    IdentityHeader[] searchIdentities(long idProvCfgId, EntityType[] types, String pattern)
       throws RemoteException, FindException;
 
     /**
@@ -190,7 +190,7 @@ public interface IdentityAdmin {
      *                     a null unique identifier, this call will create a new {@link User} instance.  Otherwise,
      *                     if this user contains a unique identifier, the specified {@link User}'s state will be
      *                     replaced with the data from user.
-     * @param groupHeaders the set of {@link EntityHeader}s corresponding to the {@link Group}s to which this
+     * @param groupHeaders the set of {@link IdentityHeader}s corresponding to the {@link Group}s to which this
      *                     {@link User} should belong when this call completes.
      *                     May be empty but not null.
      *                     If the user already exists, any existing group memberships not included in this set will
@@ -203,14 +203,14 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)
-    String saveUser(long idProvCfgId, User user, Set groupHeaders)
+    String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException;
 
     /**
      * Retrieve all available {@link Group}s for a given {@link IdentityProviderConfig}.
      *
      * @param idProvCfgId     the unique object ID of the {@link IdentityProviderConfig} whose groups to load.
-     * @return array of {@link EntityHeader}s for all {@link Group}s within this {@link IdentityProviderConfig}.
+     * @return array of {@link IdentityHeader}s for all {@link Group}s within this {@link IdentityProviderConfig}.
      *         May be empty but never null.
      * @throws FindException if the specified object ID did not exist or was not an identity provider config
      * @throws FindException if there was a problem accessing the requested information
@@ -218,7 +218,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=GROUP, stereotype=FIND_HEADERS)
-    EntityHeader[] findAllGroups(long idProvCfgId) throws RemoteException, FindException;
+    IdentityHeader[] findAllGroups(long idProvCfgId) throws RemoteException, FindException;
 
     /**
      * Search for a {@link Group} by its user ID within an {@link IdentityProviderConfig}.
@@ -260,7 +260,7 @@ public interface IdentityAdmin {
      *                     a null unique identifier, this call will create a new {@link Group} instance.  Otherwise,
      *                     if this group contains a unique identifier, the specified {@link Group}'s state will be
      *                     replaced with the data from group.
-     * @param userHeaders the set of {@link EntityHeader}s corresponding to the {@link User}s which should belong
+     * @param userHeaders the set of {@link IdentityHeader}s corresponding to the {@link User}s which should belong
      *                    to this {@link Group} when this call completes.
      *                     May be empty but not null.
      *                     If the group already exists, any existing group memberships not included in this set will
@@ -273,7 +273,7 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Secured(types=GROUP, stereotype=SAVE_OR_UPDATE, relevantArg=1)
-    String saveGroup(long idProvCfgId, Group group, Set userHeaders)
+    String saveGroup(long idProvCfgId, Group group, Set<IdentityHeader> userHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException;
 
     /**
@@ -340,31 +340,31 @@ public interface IdentityAdmin {
       throws RemoteException, InvalidIdProviderCfgException;
 
     /**
-     * Get the specified {@link User}'s set of group membership {@link EntityHeader}s.
+     * Get the specified {@link User}'s set of group membership {@link IdentityHeader}s.
      *
      * @param providerId the object ID of the {@link IdentityProviderConfig} in which this user can be found
      * @param userId the unique identifier of the {@link User} whose {@link Group} memberships to look up.  Must not be null.
-     * @return the Set of {@link EntityHeader}s corresponding to {@link Group}s that this {@link User} belongs to.
+     * @return the Set of {@link IdentityHeader}s corresponding to {@link Group}s that this {@link User} belongs to.
      *         May be empty but not null.
      * @throws FindException if the specified information could not be accessed
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
     @Secured(types=USER, stereotype=GET_IDENTITY_PROPERTY_BY_ID, relevantArg=1)
-    Set getGroupHeaders(long providerId, String userId) throws RemoteException, FindException;
+    Set<IdentityHeader> getGroupHeaders(long providerId, String userId) throws RemoteException, FindException;
 
     /**
-     * Get the specified {@link Group}'s set of member user {@link EntityHeader}s.
+     * Get the specified {@link Group}'s set of member user {@link IdentityHeader}s.
      *
      * @param providerId the object ID of the {@link IdentityProviderConfig} in which this group can be found
      * @param groupId the unique identifier of the {@link Group} whose {@link User} members to look up.  Must not be null.
-     * @return the Set of {@link EntityHeader}s corresponding to {@link User}s who belong to this {@link Group}.
+     * @return the Set of {@link IdentityHeader}s corresponding to {@link User}s who belong to this {@link Group}.
      *         May be empty but not null.
      * @throws FindException if the specified information could not be accessed
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
     @Secured(types=GROUP, stereotype=GET_IDENTITY_PROPERTY_BY_ID, relevantArg=1)
-    Set getUserHeaders(long providerId, String groupId) throws RemoteException, FindException;
+    Set<IdentityHeader> getUserHeaders(long providerId, String groupId) throws RemoteException, FindException;
 
 }

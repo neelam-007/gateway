@@ -132,14 +132,13 @@ public class FederatedUserPanel extends UserPanel {
             AttemptedOperation ao;
             boolean isNew = userHeader.getOid() == 0;
             if (isNew) {
-                user = new FederatedUser();
-                user.getUserBean().setName(userHeader.getName());
-                user.getUserBean().setProviderId(config.getOid());
+                FederatedUser user = new FederatedUser(config.getOid(), userHeader.getName());
                 userGroups = null;
                 ao = new AttemptedCreateSpecific(USER, user);
+                this.user = user;
             } else {
                 IdentityAdmin admin = getIdentityAdmin();
-                User u = admin.findUserByID(config.getOid(), userHeader.getStrId());
+                FederatedUser u = (FederatedUser) admin.findUserByID(config.getOid(), userHeader.getStrId());
                 if (u == null) {
                     JOptionPane.showMessageDialog(topParent, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
@@ -645,13 +644,14 @@ public class FederatedUserPanel extends UserPanel {
      * @return User   the instance with changes applied
      */
     private User collectChanges() {
-        user.getUserBean().setLastName(this.getLastNameTextField().getText());
-        user.getUserBean().setFirstName(this.getFirstNameTextField().getText());
-        user.getUserBean().setEmail(getEmailTextField().getText());
-        user.getUserBean().setLogin(getLoginTextField().getText());
-        user.getUserBean().setSubjectDn(getX509SubjectNameTextField().getText());
+        FederatedUser fu = (FederatedUser) user;
+        fu.setLastName(this.getLastNameTextField().getText());
+        fu.setFirstName(this.getFirstNameTextField().getText());
+        fu.setEmail(getEmailTextField().getText());
+        fu.setLogin(getLoginTextField().getText());
+        fu.setSubjectDn(getX509SubjectNameTextField().getText());
         // user.setGroupHeaders(groupPanel.getCurrentGroups());
-        return user;
+        return fu;
     }
 
 

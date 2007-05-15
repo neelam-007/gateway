@@ -1,12 +1,19 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.console.util.Filter;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.fed.FederatedGroup;
+import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
@@ -45,7 +52,7 @@ class UserGroupsPanel extends JPanel {
     private JScrollPane groupInListJScrollPane;
     private JList groupMemberList = null;
 
-    SortedListModel listInModel;
+    SortedListModel<IdentityHeader> listInModel;
 
     private JButton groupAdd = null;
     private JButton groupRemove = null;
@@ -77,15 +84,15 @@ class UserGroupsPanel extends JPanel {
     /**
      * package private method, allows adding users
      */
-    void addGroups(Set groupHeaders) {
+    void addGroups(Set<IdentityHeader> groupHeaders) {
         listInModel.addAll(groupHeaders);
     }
 
     /**
      * package private method, allows adding users
      */
-    Set getCurrentGroups() {
-        return new HashSet(Arrays.asList(listInModel.toArray()));
+    Set<IdentityHeader> getCurrentGroups() {
+        return new HashSet<IdentityHeader>(Arrays.asList(listInModel.toArray()));
     }
 
 
@@ -152,26 +159,12 @@ class UserGroupsPanel extends JPanel {
      *
      * @return SortedListModel
      */
-    private SortedListModel getListInModel() {
+    private SortedListModel<IdentityHeader> getListInModel() {
         if (listInModel != null) return listInModel;
 
         listInModel =
-          new SortedListModel(new Comparator() {
-              /**
-               * Compares group users by login alphabetically.
-               *
-               * @param o1 the first object to be compared.
-               * @param o2 the second object to be compared.
-               * @return a negative integer, zero, or a positive integer as the
-               *         first argument is less than, equal to, or greater than the
-               *         second.
-               * @throws ClassCastException if the arguments' types prevent them from
-               *                            being compared by this Comparator.
-               */
-              public int compare(Object o1, Object o2) {
-                  EntityHeader e1 = (EntityHeader)o1;
-                  EntityHeader e2 = (EntityHeader)o2;
-
+          new SortedListModel<IdentityHeader>(new Comparator<IdentityHeader>() {
+              public int compare(IdentityHeader e1, IdentityHeader e2) {
                   return e1.getName().compareTo(e2.getName());
               }
           });
@@ -211,10 +204,10 @@ class UserGroupsPanel extends JPanel {
             }
 
             private void updateUserHeaders() {
-                final Set groupHeaders = userPanel.getUserGroups();
+                final Set<IdentityHeader> groupHeaders = userPanel.getUserGroups();
                 groupHeaders.clear();
                 for (int i = 0; i < listInModel.getSize(); i++) {
-                    EntityHeader g = (EntityHeader)listInModel.getElementAt(i);
+                    IdentityHeader g = listInModel.getElementAt(i);
                     groupHeaders.add(g);
                 }
             }
@@ -375,12 +368,28 @@ class UserGroupsPanel extends JPanel {
             groupAdd = new JButton();
             groupAdd.setText("Add");
 
+            final Filter<IdentityHeader> filter;
+            if (ipc.type() == IdentityProviderType.FEDERATED) {
+                filter = new Filter<IdentityHeader>() {
+                    public boolean accept(IdentityHeader ih) {
+                        try {
+                            Group g = Registry.getDefault().getIdentityAdmin().findGroupByID(ih.getProviderOid(), ih.getStrId());
+                            return g instanceof FederatedGroup && !(g instanceof VirtualGroup);
+                        } catch (Exception e) {
+                            throw new RuntimeException("Couldn't retrieve Federated Group", e);
+                        }
+                    }
+                };
+            } else {
+                filter = null;
+            }
+
             groupAdd.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     Window d = SwingUtilities.windowForComponent(UserGroupsPanel.this);                    
                     JDialog dialog = d instanceof Dialog
-                        ? new NewGroupForUserDialog((Dialog)d, UserGroupsPanel.this, ipc)
-                        : new NewGroupForUserDialog(TopComponents.getInstance().getTopParent(), UserGroupsPanel.this, ipc);
+                        ? new NewGroupForUserDialog((Dialog)d, UserGroupsPanel.this, ipc, filter)
+                        : new NewGroupForUserDialog(TopComponents.getInstance().getTopParent(), UserGroupsPanel.this, ipc, filter);
                     dialog.setTitle("Add User to Groups");
                     dialog.setResizable(false);
                     DialogDisplayer.display(dialog, new Runnable() {
@@ -412,7 +421,7 @@ class UserGroupsPanel extends JPanel {
                     Set groups = userPanel.getUserGroups();
 
                     for (int i = 0; removals != null && i < removals.length; i++) {
-                        listInModel.removeElement(removals[i]);
+                        listInModel.removeElement((IdentityHeader) removals[i]);
                         groups.remove(removals[i]);
                     }
                     setAddRemoveButtons();
@@ -440,7 +449,7 @@ class UserGroupsPanel extends JPanel {
     private void loadUserGroups() {
         try {
             isLoading = true;
-            Collection groups = userPanel.getUserGroups();
+            Collection<IdentityHeader> groups = userPanel.getUserGroups();
             if (groups != null) {
                 listInModel.addAll(groups);
             }

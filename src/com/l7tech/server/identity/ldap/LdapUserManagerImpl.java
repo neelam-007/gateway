@@ -192,7 +192,14 @@ public class LdapUserManagerImpl implements LdapUserManager {
     }
 
     public LdapUser reify(UserBean bean) {
-        return new LdapUser(bean);
+        LdapUser lu = new LdapUser(bean.getProviderId(), bean.getSubjectDn(), bean.getName());
+        lu.setDepartment(bean.getDepartment());
+        lu.setEmail(bean.getEmail());
+        lu.setFirstName(bean.getFirstName());
+        lu.setLastName(bean.getLastName());
+        lu.setLogin(bean.getLogin());
+        lu.setPassword(bean.getPassword());
+        return lu;
     }
 
     /**

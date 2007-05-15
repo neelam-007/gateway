@@ -4,8 +4,10 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.FilterListModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
+import com.l7tech.console.util.Filter;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -21,48 +23,41 @@ import java.util.*;
  * This dialog adds the group to the user.
  */
 public class NewGroupForUserDialog extends JDialog {
-    private FilterListModel listOutModel;
+    private FilterListModel<IdentityHeader> listOutModel;
     private JList nonGroupMemberList;
     private IdentityProviderConfig ipc;
-    private final Comparator entityNameComparator = new Comparator() {
-                        /**
-                         * Compares group users by login alphabetically.
-                         * @param o1 the first object to be compared.
-                         * @param o2 the second object to be compared.
-                         * @return a negative integer, zero, or a positive integer as the
-                         * 	       first argument is less than, equal to, or greater than the
-                         *	       second.
-                         * @throws ClassCastException if the arguments' types prevent them from
-                         * 	       being compared by this Comparator.
-                         */
-                        public int compare(Object o1, Object o2) {
-                            EntityHeader e1 = (EntityHeader)o1;
-                            EntityHeader e2 = (EntityHeader)o2;
-
-                            return e1.getName().compareTo(e2.getName());
-                        }
-                    };
+    private Filter<IdentityHeader> filter;
+    private final Comparator<IdentityHeader> entityNameComparator = new Comparator<IdentityHeader>() {
+        /**
+         * Compares group users by login alphabetically.
+         */
+        public int compare(IdentityHeader e1, IdentityHeader e2) {
+            return e1.getName().compareTo(e2.getName());
+        }
+    };
 
     /**
      * Create a new NewGroupMemberDialog
      *
      * @param parent the GroupPanel parent.
+     * @param filter
      */
-    public NewGroupForUserDialog(Dialog owner, UserGroupsPanel parent, IdentityProviderConfig ipc) {
+    public NewGroupForUserDialog(Dialog owner, UserGroupsPanel parent, IdentityProviderConfig ipc, Filter<IdentityHeader> filter) {
         // Init UI
         super(owner, true);
-        init(parent, ipc);
+        init(parent, ipc, filter);
     }
 
-    public NewGroupForUserDialog(Frame owner, UserGroupsPanel parent, IdentityProviderConfig ipc) {
+    public NewGroupForUserDialog(Frame owner, UserGroupsPanel parent, IdentityProviderConfig ipc, Filter<IdentityHeader> filter) {
         // Init UI
         super(owner, true);
-        init(parent, ipc);
+        init(parent, ipc, filter);
     }
 
-    private void init(UserGroupsPanel parent, IdentityProviderConfig ipc) {
+    private void init(UserGroupsPanel parent, IdentityProviderConfig ipc, Filter<IdentityHeader> filter) {
         this.parent = parent;
         this.ipc = ipc;
+        this.filter = filter;
         initResources();
         initComponents();
         pack();
@@ -203,23 +198,22 @@ public class NewGroupForUserDialog extends JDialog {
     private ListModel getListOutModel() {
         if (listOutModel != null) return listOutModel;
 
-        final SortedListModel sl =
-                new SortedListModel(entityNameComparator);
+        final SortedListModel<IdentityHeader> sl =
+                new SortedListModel<IdentityHeader>(entityNameComparator);
 
-        listOutModel = new FilterListModel(sl);
+        listOutModel = new FilterListModel<IdentityHeader>(sl);
+        if (filter != null) listOutModel.setFilter(filter);
 
         SwingUtilities.invokeLater(new Runnable() {
-            /** */
             public void run() {
                 try {
-                    Set currentGroups = new TreeSet(entityNameComparator);
-                    Set set = parent.getCurrentGroups();
-                    if (set !=null) currentGroups.addAll(set);
+                    Set<IdentityHeader> currentGroups = new TreeSet<IdentityHeader>(entityNameComparator);
+                    Set<IdentityHeader> set = parent.getCurrentGroups();
+                    if (set != null) currentGroups.addAll(set);
 
-                    EntityHeader[] headers = Registry.getDefault().getIdentityAdmin().findAllGroups(ipc.getOid());
+                    IdentityHeader[] headers = Registry.getDefault().getIdentityAdmin().findAllGroups(ipc.getOid());
 
-                    for ( int i = 0; i < headers.length; i++ ) {
-                        EntityHeader header = headers[i];
+                    for (IdentityHeader header : headers) {
                         if (!currentGroups.contains(header)) sl.add(header);
                     }
                 } catch (Exception e) {
@@ -281,7 +275,7 @@ public class NewGroupForUserDialog extends JDialog {
             return;
         }
 
-        Set groupHeaders = new HashSet();
+        Set<IdentityHeader> groupHeaders = new HashSet<IdentityHeader>();
 
         for (int i=size-1; i >=0;i--){
             groupHeaders.add(listOutModel.getElementAt(groupsToAdd[i]));
@@ -325,7 +319,5 @@ public class NewGroupForUserDialog extends JDialog {
     private final String CMD_CANCEL = "cmd.cancel";
     private final String CMD_OK = "cmd.ok";
     private static final String NON_MEMBER_LABEL = "Not a member of";
-
-    private final ClassLoader cl = NewGroupForUserDialog.class.getClassLoader();
 }
 

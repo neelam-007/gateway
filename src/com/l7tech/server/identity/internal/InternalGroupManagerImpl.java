@@ -31,7 +31,11 @@ public class InternalGroupManagerImpl
     }
 
     public InternalGroup reify(GroupBean bean) {
-        return new InternalGroup(bean);
+        InternalGroup ig = new InternalGroup(bean.getName());
+        ig.setDescription(bean.getDescription());
+        ig.setOid(bean.getId() == null ? InternalGroup.DEFAULT_OID : Long.valueOf(bean.getId()));
+        ig.setProperties(bean.getProperties());
+        return ig;
     }
 
     public GroupMembership newMembership(InternalGroup group, InternalUser user) {
@@ -46,13 +50,11 @@ public class InternalGroupManagerImpl
 
     @Transactional(propagation=Propagation.SUPPORTS)
     public InternalGroup cast(Group group) {
-        InternalGroup imp;
         if ( group instanceof GroupBean ) {
-            imp = new InternalGroup( (GroupBean)group );
+            return reify((GroupBean)group);
         } else {
-            imp = (InternalGroup)group;
+            return (InternalGroup)group;
         }
-        return imp;
     }
 
     public String getTableName() {

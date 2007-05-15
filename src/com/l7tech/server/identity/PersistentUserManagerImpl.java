@@ -230,6 +230,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     @Secured(operation=OperationType.CREATE)
     public String save(UT user, Set<IdentityHeader> groupHeaders) throws SaveException {
         UT imp = cast(user);
+        imp.setProviderId(identityProvider.getConfig().getOid());
 
         try {
             preSave(imp);
@@ -270,6 +271,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     public void update(UT user, Set<IdentityHeader> groupHeaders) throws UpdateException {
         UT imp = cast(user);
 
+        if (imp.getProviderId() != this.identityProvider.getConfig().getOid()) throw new UpdateException("Can't update users from a different provider");
         try {
             UT originalUser = findByPrimaryKey(user.getId());
             if (originalUser == null) {

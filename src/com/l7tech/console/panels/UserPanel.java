@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -11,9 +10,9 @@ import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import java.awt.*;
 import java.util.HashSet;
 import java.util.Set;
-import java.awt.*;
 
 /**
  * A abstract class for handling common tasks of User Panel. A subclass derived from this
@@ -29,7 +28,7 @@ abstract public class UserPanel extends EntityEditorPanel {
     // user
     protected IdentityHeader userHeader;
     protected User user;
-    protected Set userGroups;
+    protected Set<IdentityHeader> userGroups;
 
     protected boolean formModified;
     protected IdentityProviderConfig config;
@@ -78,8 +77,8 @@ abstract public class UserPanel extends EntityEditorPanel {
         return user;
     }
 
-    Set getUserGroups() {
-        if (userGroups == null) userGroups = new HashSet();
+    Set<IdentityHeader> getUserGroups() {
+        if (userGroups == null) userGroups = new HashSet<IdentityHeader>();
         return userGroups;
     }
 

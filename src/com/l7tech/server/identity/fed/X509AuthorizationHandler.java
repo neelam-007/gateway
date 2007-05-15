@@ -119,8 +119,7 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
 
         if ( u == null ) {
             // Make a fake user so that a VirtualGroup can still resolve it
-            u = new FederatedUser();
-            u.setProviderId(providerConfig.getOid());
+            u = new FederatedUser(providerConfig.getOid(), null);
             u.setSubjectDn(subjectDn);
         }
         return u;

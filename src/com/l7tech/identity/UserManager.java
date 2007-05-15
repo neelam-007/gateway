@@ -85,7 +85,7 @@ public interface UserManager<UT extends User> {
     /**
      * @return the {@link Class} that entities managed by this manager belong to.
      */
-    Class getImpClass();
+    Class<? extends User> getImpClass();
 
     Collection<IdentityHeader> findAllHeaders() throws FindException;
 }

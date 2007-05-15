@@ -17,14 +17,14 @@ import java.util.*;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class SortedListModel extends AbstractListModel {
+public class SortedListModel<E> extends AbstractListModel {
 
     /** SortedSet that backs the list */
-    SortedSet model;
+    SortedSet<E> model;
 
     /** default constructor */
     public SortedListModel() {
-        model = new TreeSet();
+        model = new TreeSet<E>();
     }
 
     /**
@@ -34,8 +34,8 @@ public class SortedListModel extends AbstractListModel {
      * @param c      Comparator, that governs the ordering
      *               of ListModel
      */
-    public SortedListModel(Comparator c) {
-        model = new TreeSet(c);
+    public SortedListModel(Comparator<? super E> c) {
+        model = new TreeSet<E>(c);
     }
 
     /** @return the length of the list. */
@@ -47,8 +47,8 @@ public class SortedListModel extends AbstractListModel {
      * @param index  integer the index
      * @return the value at the specified index.
      */
-    public Object getElementAt(int index) {
-        return model.toArray()[index];
+    public E getElementAt(int index) {
+        return (E) model.toArray()[index];
     }
 
     /**
@@ -56,7 +56,7 @@ public class SortedListModel extends AbstractListModel {
      *
      * @param element Object the element to add
      */
-    public void add(Object element) {
+    public void add(E element) {
         if (model.add(element)) {
             fireContentsChanged(this, 0, getSize());
         }
@@ -67,7 +67,7 @@ public class SortedListModel extends AbstractListModel {
      *
      * @param c Collection of elements
      */
-    public void addAll(Collection c) {
+    public void addAll(Collection<E> c) {
         model.addAll(c);
         fireContentsChanged(this, 0, getSize());
     }
@@ -77,8 +77,8 @@ public class SortedListModel extends AbstractListModel {
      *
      * @param elements Object array of elements
      */
-    public void addAll(Object elements[]) {
-        Collection c = Arrays.asList(elements);
+    public void addAll(E[] elements) {
+        Collection<E> c = Arrays.asList(elements);
         model.addAll(c);
         fireContentsChanged(this, 0, getSize());
     }
@@ -97,12 +97,12 @@ public class SortedListModel extends AbstractListModel {
      * @param element Object to search the ListModel for
      * @return true if it contains, false otherwise
      */
-    public boolean contains(Object element) {
+    public boolean contains(E element) {
         return model.contains(element);
     }
 
     /** @return the first element in the ListModel */
-    public Object firstElement() {
+    public E firstElement() {
         return model.first();
     }
 
@@ -116,7 +116,7 @@ public class SortedListModel extends AbstractListModel {
     }
 
     /** @return the last element in the ListModel */
-    public Object lastElement() {
+    public E lastElement() {
         return model.last();
     }
 
@@ -125,8 +125,8 @@ public class SortedListModel extends AbstractListModel {
      * @return an array containing all of the elements in
      * this  list in the correct order.
      */
-    public Object[] toArray() {
-        return model.toArray();
+    public E[] toArray() {
+        return (E[]) model.toArray();
     }
 
     /**
@@ -135,7 +135,7 @@ public class SortedListModel extends AbstractListModel {
      * @param element the elment to remove
      * @return true of the object has been remvoed, false otherwise
      */
-    public boolean removeElement(Object element) {
+    public boolean removeElement(E element) {
         boolean removed = model.remove(element);
         if (removed) {
             fireContentsChanged(this, 0, getSize());

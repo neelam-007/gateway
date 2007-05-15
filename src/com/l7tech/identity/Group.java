@@ -7,16 +7,9 @@ package com.l7tech.identity;
  * the Group objects themselves.
  */
 public interface Group extends Identity {
-
     /**
      * Gets a human-readable description for this Group
      * @return a human-readable description for this Group
      */
     String getDescription();
-
-    /**
-     * Gets the mutable {@link GroupBean} for this Group.
-     * @return the mutable {@link GroupBean} for this Group.
-     */
-    GroupBean getGroupBean();
 }

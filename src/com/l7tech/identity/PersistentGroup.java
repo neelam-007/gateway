@@ -12,6 +12,7 @@ import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Abstract superclass of {@link Group}s that are stored in the database, as opposed to in external directories.
@@ -21,31 +22,33 @@ import java.util.Map;
 public abstract class PersistentGroup extends NamedEntityImp implements Group {
     public static final String PROPERTIES_ENCODING = "UTF-8";
 
-    public PersistentGroup() {
-        this.bean = new GroupBean();
+    private long providerOid;
+    private String description;
+    protected String xmlProperties;
+    private transient Map<String, String> properties;
+
+    protected PersistentGroup(long providerOid, String name) {
+        this.providerOid = providerOid;
+        this._name = name;
     }
 
-    public PersistentGroup(GroupBean bean) {
-        this.bean = bean;
-    }
-
-    public void setXmlProperties(String xml) {
+    public synchronized void setXmlProperties(String xml) {
         if (xml != null && xml.equals(xmlProperties)) return;
         this.xmlProperties = xml;
         if ( xml != null && xml.length() > 0 ) {
             try {
                 XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
                 //noinspection unchecked
-                bean.setProperties((Map<String, String>)xd.readObject());
+                this.properties = (Map<String, String>)xd.readObject();
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e); // Can't happen
             }
         }
     }
 
-    public String getXmlProperties() {
+    public synchronized String getXmlProperties() {
         if ( xmlProperties == null ) {
-            Map<String, String> properties = bean.getProperties();
+            Map<String, String> properties = getProperties();
             if ( properties == null ) return null;
             BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
             try {
@@ -61,55 +64,30 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         return xmlProperties;
     }
 
-    public void setOid( long oid ) {
-        super.setOid(oid);
-        bean.setUniqueIdentifier( Long.toString( oid ) );
+    protected Map<String, String> getProperties() {
+        if (properties == null) properties = new HashMap<String, String>();
+        return properties;
     }
 
-    public long getOid() {
-        String uniqueId = bean.getId();
-        if ( uniqueId == null || uniqueId.length() == 0 ) {
-            return -1L;
-        } else {
-            return Long.parseLong(bean.getId());
-        }
+    public synchronized void setProperties(Map<String, String> properties) {
+        this.properties = properties;
+        this.xmlProperties = null;
     }
 
     public String getDescription() {
-        return bean.getDescription();
-    }
-
-    public String getName() {
-        return bean.getName();
+        return description;
     }
 
     public void setDescription(String description) {
-        bean.setDescription( description );
-    }
-
-    public void setName( String name ) {
-        super.setName(name);
-        bean.setName( name );
-    }
-
-    public String getId() {
-        return Long.toString(_oid);
+        this.description = description;
     }
 
     public long getProviderId() {
-        return bean.getProviderId();
+        return providerOid;
     }
 
     public void setProviderId( long providerId ) {
-        bean.setProviderId( providerId );
-    }
-
-    public int getVersion() {
-        return bean.getVersion();
-    }
-
-    public void setVersion(int version) {
-        bean.setVersion(version);
+        this.providerOid = providerId;
     }
 
     public void copyFrom( Group objToCopy) {
@@ -121,10 +99,6 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         setXmlProperties(imp.getXmlProperties());
     }
 
-    public GroupBean getGroupBean() {
-        return bean;
-    }
-    
     public boolean isEquivalentId(Object thatId) {
         return getId().equals(thatId.toString());
     }
@@ -136,20 +110,16 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
 
         PersistentGroup that = (PersistentGroup) o;
 
-        if (bean != null ? !bean.equals(that.bean) : that.bean != null) return false;
-        if (xmlProperties != null ? !xmlProperties.equals(that.xmlProperties) : that.xmlProperties != null)
-            return false;
+        if (providerOid != that.providerOid) return false;
+        if (description != null ? !description.equals(that.description) : that.description != null) return false;
 
         return true;
     }
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (bean != null ? bean.hashCode() : 0);
-        result = 31 * result + (xmlProperties != null ? xmlProperties.hashCode() : 0);
+        result = 31 * result + (int) (providerOid ^ (providerOid >>> 32));
+        result = 31 * result + (description != null ? description.hashCode() : 0);
         return result;
     }
-
-    protected GroupBean bean;
-    protected String xmlProperties;
 }

@@ -45,15 +45,21 @@ public class FederatedUserManagerImpl
 
     @Transactional(propagation=Propagation.SUPPORTS)
     public FederatedUser headerToUser(IdentityHeader header) {
-        FederatedUser fu = new FederatedUser();
+        FederatedUser fu = new FederatedUser(getProviderOid(), header.getName());
         fu.setOid(header.getOid());
-        fu.setName(header.getName());
-        fu.setProviderId(getProviderOid());
         return fu;
     }
 
     public FederatedUser reify(UserBean bean) {
-        return new FederatedUser(bean);
+        FederatedUser fu = new FederatedUser(bean.getProviderId(), bean.getLogin());
+        fu.setOid(bean.getId() == null ? FederatedUser.DEFAULT_OID : Long.valueOf(bean.getId()));
+        fu.setName(bean.getName());
+        fu.setDepartment(bean.getDepartment());
+        fu.setEmail(bean.getEmail());
+        fu.setFirstName(bean.getFirstName());
+        fu.setLastName(bean.getLastName());
+        fu.setSubjectDn(bean.getSubjectDn());
+        return fu;
     }
 
     public Class getImpClass() {
@@ -104,13 +110,11 @@ public class FederatedUserManagerImpl
     }
 
     public FederatedUser cast( User user ) {
-        FederatedUser imp;
         if ( user instanceof UserBean ) {
-            imp = new FederatedUser( (UserBean)user );
+            return reify((UserBean) user);
         } else {
-            imp = (FederatedUser)user;
+            return (FederatedUser)user;
         }
-        return imp;
     }
 
     protected void preSave(FederatedUser user) throws SaveException {

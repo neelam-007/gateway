@@ -3,14 +3,13 @@
  */
 package com.l7tech.identity;
 
+import com.l7tech.identity.internal.InternalGroup;
+import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.ldap.LdapGroup;
+import com.l7tech.identity.ldap.LdapUser;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import com.l7tech.identity.ldap.LdapUser;
-import com.l7tech.identity.ldap.LdapGroup;
-import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.identity.internal.InternalGroup;
-import com.l7tech.server.identity.IdProvConfManagerServer;
 
 /**
  * @author alex
@@ -115,19 +114,19 @@ public class IdentityEqualityTest extends TestCase {
     }
 
     private InternalGroup internalDevelopers() {
-        return new InternalGroup(new GroupBean(1234, "Developers"));
+        return new InternalGroup("Developers");
     }
 
     private LdapUser ldapBob() {
-        return new LdapUser(new UserBean(1234, "bob"));
+        return new LdapUser(1234, null, "bob");
     }
 
     private LdapGroup ldapDevelopers() {
-        return new LdapGroup(new GroupBean(1234, "developers"));
+        return new LdapGroup(1234, null, "developers");
     }
 
     private InternalUser internalBob() {
-        return new InternalUser(new UserBean(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID, "bob"));
+        return new InternalUser("bob");
     }
 
     public static void main(String[] args) {

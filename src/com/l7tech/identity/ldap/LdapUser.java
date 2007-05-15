@@ -1,7 +1,7 @@
 package com.l7tech.identity.ldap;
 
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
 
 import java.io.Serializable;
 
@@ -20,50 +20,51 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
         "{crypt}",
     };
 
-    private UserBean userBean;
-
-    public LdapUser( UserBean bean ) {
-        userBean = bean;
-    }
+    private String login;
+    private String password;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String department;
 
     public LdapUser() {
-        userBean = new UserBean();
+        this(IdentityProviderConfig.DEFAULT_OID, null, null);
+    }
+
+    public LdapUser(long providerOid, String dn, String cn) {
+        super(providerOid, dn, cn);
     }
 
     public String getLogin() {
-        return userBean.getLogin();
+        return login;
     }
 
     public String getPassword() {
-        return userBean.getPassword();
+        return password;
     }
 
     public String getFirstName() {
-        return userBean.getFirstName();
+        return firstName;
     }
 
     public String getLastName() {
-        return userBean.getLastName();
+        return lastName;
     }
 
     public String getEmail() {
-        return userBean.getEmail();
+        return email;
     }
 
     public String getDepartment() {
-        return userBean.getDepartment();
+        return department;
     }
 
     public String getSubjectDn() {
         return dn;
     }
 
-    public UserBean getUserBean() {
-        return userBean;
-    }
-
     public void setLogin(String login) {
-        userBean.setLogin( login );
+        this.login = login;
     }
 
     /**
@@ -76,58 +77,58 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
             String lcpass = password.toLowerCase();
             for (String prefix : HASH_PREFIXES) {
                 if (lcpass.startsWith(prefix)) {
-                    userBean.setPassword(null);
+                    this.password = null;
                     return;
                 }
             }
         }
-        String login = userBean.getLogin();
+        String login = getLogin();
         if ( login == null) throw new IllegalStateException("login must be set prior to encoding the password");
-        userBean.setPassword( password );
+        this.password = password;
     }
 
     public void setFirstName(String firstName) {
-        userBean.setFirstName( firstName );
+        this.firstName = firstName;
     }
 
     public void setLastName(String lastName) {
-        userBean.setLastName( lastName );
+        this.lastName = lastName;
     }
 
     public void setEmail(String email) {
-        userBean.setEmail( email );
+        this.email = email;
     }
 
     public void setDepartment(String department) {
-        userBean.setDepartment( department );
+        this.department = department;
     }
 
-    public long getProviderId() {
-        return userBean.getProviderId();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        LdapUser ldapUser = (LdapUser) o;
+
+        if (department != null ? !department.equals(ldapUser.department) : ldapUser.department != null) return false;
+        if (email != null ? !email.equals(ldapUser.email) : ldapUser.email != null) return false;
+        if (firstName != null ? !firstName.equals(ldapUser.firstName) : ldapUser.firstName != null) return false;
+        if (lastName != null ? !lastName.equals(ldapUser.lastName) : ldapUser.lastName != null) return false;
+        if (login != null ? !login.equals(ldapUser.login) : ldapUser.login != null) return false;
+        if (password != null ? !password.equals(ldapUser.password) : ldapUser.password != null) return false;
+
+        return true;
     }
 
-    @Override
-    public void setProviderId( long providerId) {
-        super.setProviderId(providerId);
-        userBean.setProviderId(providerId);
-    }
-
-    @Override
-    public void setName(String name) {
-        super.setName(name);
-        userBean.setName(name);
-    }
-
-    @Override
-    public synchronized void setDn(String dn) {
-        super.setDn(dn);
-        userBean.setSubjectDn(dn);
-    }
-
-    @Override
-    public void setCn(String cn) {
-        super.setCn(cn);
-        userBean.setName(cn);
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (login != null ? login.hashCode() : 0);
+        result = 31 * result + (password != null ? password.hashCode() : 0);
+        result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
+        result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
+        result = 31 * result + (email != null ? email.hashCode() : 0);
+        result = 31 * result + (department != null ? department.hashCode() : 0);
+        return result;
     }
 
     public String toString() {
@@ -136,7 +137,7 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
                 "\n\tFirst name=" + getFirstName() +
                 "\n\tLast name=" + getLastName() +
                 "\n\tLogin=" + getLogin() +
-                "\n\tproviderId=" + userBean.getProviderId();
+                "\n\tproviderId=" + getProviderId();
     }
 
     /**
@@ -156,24 +157,6 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
         setAttributes(imp.getAttributes());
     }
 
-    @SuppressWarnings({"RedundantIfStatement"})
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-
-        LdapUser ldapUser = (LdapUser) o;
-
-        if (userBean != null ? !userBean.equals(ldapUser.userBean) : ldapUser.userBean != null) return false;
-
-        return true;
-    }
-
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (userBean != null ? userBean.hashCode() : 0);
-        return result;
-    }
 
     // ************************************************
     // PRIVATES

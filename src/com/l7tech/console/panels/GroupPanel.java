@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 /**
  * GroupPanel is the main entry point panel for the <CODE>Group</CODE>.
  */
-public abstract class GroupPanel extends EntityEditorPanel {
+public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
     static Logger log = Logger.getLogger(GroupPanel.class.getName());
     public final static String GROUP_ICON_RESOURCE = "com/l7tech/console/resources/group16.png";
 
@@ -57,7 +57,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     // group
     private EntityHeader groupHeader;
-    protected Group group;
+    protected GT group;
 
     // Titles/Labels
     protected static final String DETAILS_LABEL = "General";
@@ -119,7 +119,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
         return new VirtualGroupPanel(config);
     }
 
-    abstract Set getGroupMembers();
+    abstract Set<IdentityHeader> getGroupMembers();
 
     /**
      * Enables or disables the buttons based
@@ -175,7 +175,8 @@ public abstract class GroupPanel extends EntityEditorPanel {
                 ao = new AttemptedCreateSpecific(GROUP, group);
             } else {
                 final IdentityAdmin admin = getIdentityAdmin();
-                Group g = admin.findGroupByID(config.getOid(), groupHeader.getStrId());
+                //noinspection unchecked
+                GT g = (GT) admin.findGroupByID(config.getOid(), groupHeader.getStrId());
                 if (g == null) {
                     JOptionPane.showMessageDialog(topParent, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + groupHeader.getOid());
@@ -202,7 +203,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     protected abstract void loadedGroup(Group g) throws RemoteException, FindException;
 
-    protected abstract Group newGroup(EntityHeader groupHeader);
+    protected abstract GT newGroup(EntityHeader groupHeader);
 
     protected void initialize() {
         layoutComponents();
@@ -444,11 +445,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
      *
      * @return Group   the instance with changes applied
      */
-    protected Group collectChanges() {
-        group.getGroupBean().setDescription(this.getDescriptionTextField().getText());
-        // group.setMemberHeaders(usersPanel.getCurrentUsers());
-        return group;
-    }
+    protected abstract Group collectChanges();
 
     protected void applyFormSecurity() {
         getDescriptionTextField().setEnabled(config.isWritable() && canUpdate);

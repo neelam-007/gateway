@@ -50,7 +50,11 @@ public class FederatedGroupManagerImpl
     }
 
     public FederatedGroup reify(GroupBean bean) {
-        return new FederatedGroup(bean);
+        FederatedGroup fg = new FederatedGroup(bean.getProviderId(), bean.getName());
+        fg.setDescription(bean.getDescription());
+        fg.setOid(bean.getId() == null ? FederatedGroup.DEFAULT_OID : Long.valueOf(bean.getId()));
+        fg.setProperties(bean.getProperties());
+        return fg;
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -79,7 +83,7 @@ public class FederatedGroupManagerImpl
             if ( g == null ) {
                 g = findByPrimaryKey(VirtualGroup.class, Long.parseLong(oid));
                 if (g != null) {
-                    g.getGroupBean().setProviderId(providerConfig.getOid());
+                    g.setProviderId(providerConfig.getOid());
                 }
             }
             return g;
@@ -151,13 +155,11 @@ public class FederatedGroupManagerImpl
 
     @Transactional(propagation=Propagation.SUPPORTS)
     public FederatedGroup cast(Group group) {
-        FederatedGroup imp;
         if ( group instanceof GroupBean ) {
-            imp = new FederatedGroup( (GroupBean)group );
+            return reify((GroupBean) group);
         } else {
-            imp = (FederatedGroup)group;
+            return (FederatedGroup)group;
         }
-        return imp;
     }
 
     public Class getImpClass() {

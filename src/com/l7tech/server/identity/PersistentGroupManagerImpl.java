@@ -277,6 +277,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             }
 
             GT imp = cast(group);
+            imp.setProviderId(identityProvider.getConfig().getOid());
             preSave(imp);
             String oid = getHibernateTemplate().save(imp).toString();
 
@@ -320,6 +321,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                 throw new StaleUpdateException(msg);
             }
 
+            if (group.getProviderId() != identityProvider.getConfig().getOid()) throw new IllegalArgumentException("Can't update a Group from a different provider");
             setUserHeaders(group.getId(), userHeaders);
 
             originalGroup.copyFrom(imp);

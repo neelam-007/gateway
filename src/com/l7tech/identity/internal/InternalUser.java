@@ -4,7 +4,6 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.InvalidPasswordException;
 
 /**
@@ -20,13 +19,12 @@ import com.l7tech.objectmodel.InvalidPasswordException;
  *
  */
 public class InternalUser extends PersistentUser {
-    public InternalUser( UserBean bean ) {
-        super(bean);
+    public InternalUser() {
+        this(null);
     }
 
-    public InternalUser() {
-        super();
-        bean.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+    public InternalUser(String login) {
+        super(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, login);
     }
 
     /**
@@ -70,7 +68,7 @@ public class InternalUser extends PersistentUser {
             if (password.length() > 32) throw new InvalidPasswordException("Password must be no longer " +
                                                                            "than 32 characters long");
         }
-        bean.setPassword(password, hintIsClear);
+        this.password = password;
     }
 
     /**
@@ -87,6 +85,24 @@ public class InternalUser extends PersistentUser {
      */
     public void setExpiration(long expiration) {
         this.expiration = expiration;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        InternalUser that = (InternalUser) o;
+
+        if (expiration != that.expiration) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (int) (expiration ^ (expiration >>> 32));
+        return result;
     }
 
     private long expiration = -1;

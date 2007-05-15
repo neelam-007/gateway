@@ -5,12 +5,13 @@ import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.internal.InternalGroup;
-import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.internal.InternalGroupMembership;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
@@ -21,7 +22,6 @@ import javax.wsdl.WSDLException;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.*;
-import java.net.MalformedURLException;
 import java.util.*;
 
 /**
@@ -63,7 +63,7 @@ public class StubDataStore {
      * @param storePath
      */
     protected StubDataStore(String storePath)
-      throws IOException, WSDLException, MalformedURLException {
+      throws IOException, WSDLException {
         if (!new File(storePath).exists()) {
             initializeSeedData(storePath);
         }
@@ -71,19 +71,19 @@ public class StubDataStore {
 
     }
 
-    Map getUsers() {
+    Map<String, PersistentUser> getUsers() {
         return users;
     }
 
-    Map getGroups() {
+    Map<String, PersistentGroup> getGroups() {
         return groups;
     }
 
-    Set getGroupMemberships() {
+    Set<GroupMembership> getGroupMemberships() {
         return memberships;
     }
 
-    Map getIdentityProviderConfigs() {
+    Map<Long, IdentityProviderConfig> getIdentityProviderConfigs() {
         return providerConfigs;
     }
 
@@ -158,11 +158,6 @@ public class StubDataStore {
         group.setName("all-staff");
         group.setDescription("All staff group");
 
-        Set members = new HashSet();
-        for (Iterator i = users.keySet().iterator(); i.hasNext();) {
-            members.add(users.get(i.next()));
-        }
-
         encoder.writeObject(group);
         populate(group);
 
@@ -185,8 +180,7 @@ public class StubDataStore {
         Iterator groups = getGroups().values().iterator();
         for (; groups.hasNext();) {
             InternalGroup g = (InternalGroup)groups.next();
-            for (Iterator i = users.values().iterator(); i.hasNext();) {
-                InternalUser u = (InternalUser)i.next();
+            for (PersistentUser u : users.values()) {
                 InternalGroupMembership gm = InternalGroupMembership.newInternalMembership(g.getOid(), u.getOid());
                 encoder.writeObject(gm);
                 populate(gm);
@@ -195,10 +189,9 @@ public class StubDataStore {
     }
 
     private void initialServices(XMLEncoder encoder, IdentityProviderConfig pc)
-      throws IOException, WSDLException, MalformedURLException {
+      throws IOException, WSDLException {
         String[] wsdls = {TestDocuments.WSDL, TestDocuments.WSDL_DOC_LITERAL, TestDocuments.WSDL_DOC_LITERAL2, TestDocuments.WSDL_DOC_LITERAL3};
-        for (int i = 0; i < wsdls.length; i++) {
-            String fileName = wsdls[i];
+        for (String fileName : wsdls) {
             Wsdl wsdl = Wsdl.newInstance(null, new WsdlTest("blah").getWsdlReader(fileName));
 
             ClassLoader cl = getClass().getClassLoader();
@@ -249,9 +242,8 @@ public class StubDataStore {
     }
 
     private Assertion sampleAssertion(IdentityProviderConfig pc) {
-        Group g =
-          (Group)groups.values().iterator().next();
-        List identities = new ArrayList();
+        Group g = groups.values().iterator().next();
+        List<IdentityAssertion> identities = new ArrayList<IdentityAssertion>();
 
         long providerId = pc.getOid();
 
@@ -259,14 +251,11 @@ public class StubDataStore {
         memberOfGroup.setGroupName(g.getName());
         memberOfGroup.setGroupId(g.getId());
         identities.add(memberOfGroup);
-        for (Iterator i = users.values().iterator(); i.hasNext();) {
-            final User u = (User)i.next();
+        for (PersistentUser u : users.values()) {
             identities.add(new SpecificUser(providerId, u.getLogin(), u.getId(), u.getName()));
         }
         OneOrMoreAssertion oom = new OneOrMoreAssertion(identities);
-        AllAssertion assertion =
-          new AllAssertion(Arrays.asList(new Assertion[]{new HttpBasic(), oom}));
-        return assertion;
+        return new AllAssertion(Arrays.asList(new HttpBasic(), oom));
     }
 
     private void reconstituteFrom(String path)
@@ -274,6 +263,7 @@ public class StubDataStore {
         XMLDecoder decoder = null;
         try {
             decoder = new XMLDecoder(new BufferedInputStream(new FileInputStream(path)));
+            //noinspection InfiniteLoopStatement
             while (true) {
                 populate(decoder.readObject());
                 this.nextObjectId();
@@ -290,26 +280,26 @@ public class StubDataStore {
 
     private void populate(Object o) {
         if (o instanceof InternalGroup) {
-            groups.put(((InternalGroup)o).getId(), o);
-        } else if (o instanceof InternalUser) {
-            users.put(((InternalUser)o).getId(), o);
+            groups.put(((InternalGroup)o).getId(), (PersistentGroup) o);
+        } else if (o instanceof PersistentUser) {
+            users.put(((PersistentUser)o).getId(), (PersistentUser) o);
         } else if (o instanceof GroupMembership) {
-            memberships.add(o);
+            memberships.add((GroupMembership) o);
         } else if (o instanceof IdentityProviderConfig) {
-            providerConfigs.put(new Long(((IdentityProviderConfig)o).getOid()), o);
+            providerConfigs.put(new Long(((IdentityProviderConfig)o).getOid()), (IdentityProviderConfig) o);
         } else if (o instanceof PublishedService) {
             pubServices.put(((PublishedService)o).getOid(), (PublishedService) o);
         } else if (o instanceof JmsConnection) {
-            jmsProviders.put(new Long(((JmsConnection)o).getOid()), o);
+            jmsProviders.put(new Long(((JmsConnection)o).getOid()), (JmsConnection) o);
         } else if (o instanceof JmsEndpoint) {
-            jmsEndpoints.put(new Long(((JmsEndpoint)o).getOid()), o);
+            jmsEndpoints.put(new Long(((JmsEndpoint)o).getOid()), (JmsEndpoint) o);
         } else if (o != null) {
             System.err.println("Don't know how to handle " + o.getClass());
         }
     }
 
     private void initializeSeedData(String storePath)
-      throws IOException, MalformedURLException, WSDLException {
+      throws IOException, WSDLException {
         XMLEncoder encoder = null;
         try {
             File target = new File(storePath);
@@ -329,14 +319,14 @@ public class StubDataStore {
         }
     }
 
-    private Map providerConfigs = new HashMap();
-    private Map users = new HashMap();
-    private Map groups = new HashMap();
-    private Set memberships = new HashSet();
+    private Map<Long, IdentityProviderConfig> providerConfigs = new HashMap<Long, IdentityProviderConfig>();
+    private Map<String, PersistentUser> users = new HashMap<String, PersistentUser>();
+    private Map<String, PersistentGroup> groups = new HashMap<String, PersistentGroup>();
+    private Set<GroupMembership> memberships = new HashSet<GroupMembership>();
 
     private Map<Long, PublishedService> pubServices = new HashMap<Long, PublishedService>();
-    private Map jmsProviders = new HashMap();
-    private Map jmsEndpoints = new HashMap();
+    private Map<Long, JmsConnection> jmsProviders = new HashMap<Long, JmsConnection>();
+    private Map<Long, JmsEndpoint> jmsEndpoints = new HashMap<Long, JmsEndpoint>();
 
     private long objectIdSequence = 100;
 

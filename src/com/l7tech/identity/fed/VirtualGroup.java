@@ -4,8 +4,8 @@
 
 package com.l7tech.identity.fed;
 
-import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProviderConfig;
 
 /**
  * A "virtual" federated group.
@@ -19,27 +19,27 @@ import com.l7tech.identity.Group;
  */
 public class VirtualGroup extends FederatedGroup {
     public VirtualGroup() {
-        super();
+        this(IdentityProviderConfig.DEFAULT_OID, null);
     }
 
-    public VirtualGroup(GroupBean bean) {
-        super(bean);
+    public VirtualGroup(long providerOid, String name) {
+        super(providerOid, name);
     }
 
     public String getSamlEmailPattern() { 
-        return (String)bean.getProperties().get(PROP_SAML_EMAIL_PATTERN);
+        return getProperties().get(PROP_SAML_EMAIL_PATTERN);
     }
 
     public void setSamlEmailPattern( String samlEmailPattern ) {
-        bean.getProperties().put(PROP_SAML_EMAIL_PATTERN, samlEmailPattern);
+        getProperties().put(PROP_SAML_EMAIL_PATTERN, samlEmailPattern);
     }
 
     public String getX509SubjectDnPattern() {
-        return (String)bean.getProperties().get(PROP_X509_DN_PATTERN);
+        return getProperties().get(PROP_X509_DN_PATTERN);
     }
 
     public void setX509SubjectDnPattern( String x509SubjectDnPattern ) {
-        bean.getProperties().put(PROP_X509_DN_PATTERN, x509SubjectDnPattern);
+        getProperties().put(PROP_X509_DN_PATTERN, x509SubjectDnPattern);
     }
 
     /**
@@ -48,9 +48,9 @@ public class VirtualGroup extends FederatedGroup {
     public void copyFrom(Group objToCopy) {
         super.copyFrom(objToCopy);
 
-        FederatedGroup imp = (FederatedGroup)objToCopy;
-        setSamlEmailPattern((String)imp.getGroupBean().getProperties().get(PROP_SAML_EMAIL_PATTERN));
-        setX509SubjectDnPattern((String)imp.getGroupBean().getProperties().get(PROP_X509_DN_PATTERN));
+        VirtualGroup imp = (VirtualGroup) objToCopy;
+        setSamlEmailPattern(imp.getProperties().get(PROP_SAML_EMAIL_PATTERN));
+        setX509SubjectDnPattern(imp.getProperties().get(PROP_X509_DN_PATTERN));
     }
 
 
