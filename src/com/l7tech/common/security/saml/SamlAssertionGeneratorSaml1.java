@@ -170,7 +170,10 @@ class SamlAssertionGeneratorSaml1 {
         Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        //calendar.add(Calendar.MILLISECOND, (-1 * offset)); bzilla #3616
+        int offset = 2;
+        String tmp = System.getProperty(SamlAssertionGenerator.BEFORE_OFFSET_SYSTEM_PROPERTY);
+        if (tmp != null) offset = Integer.parseInt(tmp);
+        calendar.add(Calendar.MINUTE, (-1 * offset)); //bzilla #3616
         ct.setNotBefore(calendar);
         Calendar c2 = (Calendar)calendar.clone();
         c2.add(Calendar.MINUTE, expiryMinutes);

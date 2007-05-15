@@ -326,7 +326,17 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             options.setVersion(SamlAssertionGenerator.Options.VERSION_2);
         }
         SignerInfo signerInfo = new SignerInfo(serverPrivateKey, new X509Certificate[] { serverCert });
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds,
+                                                                                           SubjectStatement.HOLDER_OF_KEY,
+                                                                                           useThumbprintForSubject);
+        
+        // [Bugzilla #3616] the reason we are using this system property mechanism to pass this information is because
+        // the saml generator is common code and can be also used in the bridge which does not have access to the
+        // cluster config. doing this enables us to support this functionality in both the SSG and the bridge
+        ServerConfig sg = (ServerConfig)getApplicationContext().getBean("serverConfig");
+        int beforeoffset = sg.getIntProperty("samlBeforeOffsetMinute", 2);
+        System.setProperty(SamlAssertionGenerator.BEFORE_OFFSET_SYSTEM_PROPERTY, Integer.toString(beforeoffset));
+        
         SamlAssertionGenerator generator = new SamlAssertionGenerator(signerInfo);
         Document signedAssertionDoc = generator.createAssertion(subjectStatement, options);
 

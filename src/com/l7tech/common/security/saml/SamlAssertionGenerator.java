@@ -30,6 +30,8 @@ import java.util.TimeZone;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class SamlAssertionGenerator {
+    public static final String BEFORE_OFFSET_SYSTEM_PROPERTY = "saml.before.minute.offset.l7tech.com";
+
     static final TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
     private static final SecureRandom random = new SecureRandom();
     private final SignerInfo assertionSigner;
