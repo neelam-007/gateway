@@ -8,6 +8,7 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.table.TrustedCertTableSorter;
+import com.l7tech.server.security.keystore.SsgKeyEntry;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -15,9 +16,8 @@ import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.util.ArrayList;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.rmi.RemoteException;
@@ -107,15 +107,18 @@ public class PrivateKeyManagerWindow extends JDialog {
     private void loadCerts() throws RemoteException {
         java.util.List<TrustedCert> certList = new ArrayList<TrustedCert>();
         try {
-            TrustedCert rootCertHolder = new TrustedCert();
-            rootCertHolder.setName("CA");
-            rootCertHolder.setCertificate(getTrustedCertAdmin().getSSGRootCert());
-            certList.add(rootCertHolder);
+            List<TrustedCertAdmin.KeystoreInfo> keystores = getTrustedCertAdmin().findAllKeystores();
 
-            TrustedCert sslCertHolder = new TrustedCert();
-            sslCertHolder.setName("SSL");
-            sslCertHolder.setCertificate(getTrustedCertAdmin().getSSGSslCert());
-            certList.add(sslCertHolder);
+            for (TrustedCertAdmin.KeystoreInfo keystore : keystores) {
+                List<SsgKeyEntry> entries = getTrustedCertAdmin().findAllKeys(keystore.id);
+                for (SsgKeyEntry entry : entries) {
+                    // TODO create new table model and sorter with fields appropriate for private keys
+                    TrustedCert holder = new TrustedCert();
+                    holder.setName(entry.getAlias());
+                    holder.setCertificate(entry.getCertificateChain()[0]);
+                    certList.add(holder);
+                }
+            }
 
             certTable.getTableSorter().setData(certList);
             certTable.getTableSorter().getRealModel().setRowCount(certList.size());

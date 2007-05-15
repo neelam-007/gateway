@@ -4,16 +4,20 @@
 package com.l7tech.common.security;
 
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
+import static com.l7tech.common.security.rbac.EntityType.SSG_KEY_ENTRY;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.security.keystore.SsgKeyEntry;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.KeyStoreException;
 import java.util.List;
 
 /**
@@ -125,4 +129,46 @@ public interface TrustedCertAdmin  {
      */
     @Transactional(propagation=Propagation.SUPPORTS)
     public X509Certificate getSSGSslCert() throws IOException, CertificateException, RemoteException;
+
+    /**
+     * Represents general information about a Keystore instance available on this Gateway.
+     */
+    public static class KeystoreInfo implements Serializable {
+        private static final long serialVersionUID = 2340872398471981L;
+        public final long id;
+        public final String name;
+        public final String type;
+        public final boolean readonly;
+
+        public KeystoreInfo(long id, String name, String type, boolean readonly) {
+            this.id = id;
+            this.name = name;
+            this.type = type;
+            this.readonly = readonly;
+        }
+    }
+
+    /**
+     * Find all keystore instances available on this Gateway.
+     *
+     * @return a List of KeystoreInfo.  Always contains at least one keystore, although it may be read-only.
+     * @throws IOException if there is a problem reading necessary keystore data
+     * @throws RemoteException on remote communication error
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype=FIND_ENTITIES)
+    public List<KeystoreInfo> findAllKeystores() throws IOException, FindException, KeyStoreException;
+
+    /**
+     * Retrieves all SsgKeyEntry instances available on this Gateway node.
+     *
+     * @param keystoreId the key store in which to find the key entries.
+     * @return a List of SsgKeyEntry.  May be empty but never null.
+     * @throws IOException if there is a problem reading necessary keystore data
+     * @throws CertificateException if the keystore contents are corrupt
+     * @throws RemoteException on remote communication error
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
+    public List<SsgKeyEntry> findAllKeys(long keystoreId) throws IOException, CertificateException, FindException;
 }

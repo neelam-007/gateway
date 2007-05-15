@@ -14,12 +14,13 @@ import java.util.logging.Logger;
  */
 public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     protected static final Logger logger = Logger.getLogger(ScaSsgKeyStore.class.getName());
+    private static final String DB_FORMAT = "hsm.sca.targz";
 
-    private final int id;
+    private final long id;
     private final String name;
     private final KeyStore keystore;
 
-    public ScaSsgKeyStore(int id, String name) throws KeyStoreException {
+    public ScaSsgKeyStore(long id, String name) throws KeyStoreException {
         if (!(JceProvider.PKCS11_ENGINE.equals(JceProvider.getEngineClass())))
             throw new KeyStoreException("Can only create ScaSsgKeyStore if current JceProvider is " + JceProvider.PKCS11_ENGINE);
         this.id = id;
@@ -27,7 +28,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
         keystore = KeyStore.getInstance("PKCS11");
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
@@ -41,6 +42,10 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
 
     protected KeyStore keyStore() throws KeyStoreException {
         return keystore;
+    }
+
+    protected String getFormat() {
+        return DB_FORMAT;
     }
 
     protected Logger getLogger() {

@@ -3,6 +3,7 @@ package com.l7tech.server.security.keystore.software;
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
@@ -11,6 +12,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyEntry;
 import com.l7tech.server.security.keystore.SsgKeyStore;
+import com.l7tech.server.security.keystore.KeystoreFileManager;
 
 import javax.naming.ldap.LdapName;
 import java.io.ByteArrayInputStream;
@@ -26,23 +28,28 @@ import java.util.logging.Logger;
 public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     protected static final Logger logger = Logger.getLogger(DatabasePkcs12SsgKeyStore.class.getName());
     private static final long refreshTime = 5 * 60 * 1000;
+    private static final String DB_FORMAT = "sdb.pkcs12";
 
-    private final int id;
+    private final long id;
     private final String name;
     private final ClusterPropertyManager cpm;
+    private final KeystoreFileManager kem;
     private final char[] password;
 
     private KeyStore cachedKeystore = null;
     private long lastLoaded = 0;
 
-    public DatabasePkcs12SsgKeyStore(int id, String name, ClusterPropertyManager cpm, char[] password) {
+    public DatabasePkcs12SsgKeyStore(long id, String name, ClusterPropertyManager cpm, KeystoreFileManager kem, char[] password) {
         this.id = id;
         this.name = name;
         this.cpm = cpm;
+        this.kem = kem;
         this.password = password;
+        if (kem == null || cpm == null)
+            throw new IllegalArgumentException("ClusterPropertyManager and KeystoreFileManager must be provided");
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
@@ -62,17 +69,24 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         return cachedKeystore;
     }
 
+    protected String getFormat() {
+        return DB_FORMAT;
+    }
+
     protected Logger getLogger() {
         return logger;
     }
 
     private KeyStore loadFromDatabase() throws KeyStoreException {
         try {
+            ByteArrayInputStream inputStream = null;
             String b64 = cpm.getProperty(getClusterPropertyName());
-            byte[] bytes = HexUtils.decodeBase64(b64);
-            InputStream inputStream = new ByteArrayInputStream(bytes);
+            if (b64 != null && b64.length() > 0) {
+                byte[] bytes = HexUtils.decodeBase64(b64);
+                inputStream = new ByteArrayInputStream(bytes);
+            }
             KeyStore keystore = KeyStore.getInstance("PKCS12");
-            keystore.load(inputStream, password);
+            keystore.load(inputStream, password); // If no existing data, null inputStream causes new keystore to be created
             return keystore;
         } catch (FindException e) {
             throw new KeyStoreException("Unable to load software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);

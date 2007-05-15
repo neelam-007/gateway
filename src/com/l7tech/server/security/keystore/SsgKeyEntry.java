@@ -6,31 +6,42 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.util.Arrays;
+import java.io.Serializable;
 
 /**
  * Represents a private key entry in a Gateway key store, including information about a cert chain and
  * RSA private key.
  */
-public class SsgKeyEntry implements Entity {
+public class SsgKeyEntry implements Entity, Serializable {
+    private static final long serialVersionUID = 23272983482973429L;
+
+    private final long keystoreId;
     private final String alias;
     private final X509Certificate[] certificateChain;
-    private final RSAPrivateKey rsaPrivateKey;
+    private final transient RSAPrivateKey rsaPrivateKey;
+
 
     /**
      * Create an SsgKeyEntry.
      *
+     * @param keystoreId        ID of the keystore to which this entry belongs
      * @param alias  the alias for this SsgKeyEntry, or null if it doesn't (yet?) have one
      * @param certificateChain  the certificate chain for this entry.  Must contain at least one certificate.
      * @param rsaPrivateKey     the private key for this entry, or null if the private key is not available
      *                          (perhaps because it is stored in an HSM and cannot be exported/serialized, and this
      *                          code is currently running on the client).
      */
-    public SsgKeyEntry(String alias, X509Certificate[] certificateChain, RSAPrivateKey rsaPrivateKey) {
+    public SsgKeyEntry(long keystoreId,
+                       String alias,
+                       X509Certificate[] certificateChain,
+                       RSAPrivateKey rsaPrivateKey)
+    {
         if (certificateChain == null || certificateChain.length < 1 || certificateChain[0] == null)
             throw new IllegalArgumentException("certificateChain must contain at least one certificate");
+        this.keystoreId = keystoreId;
         this.alias = alias;
         this.certificateChain = certificateChain;
-        this.rsaPrivateKey = rsaPrivateKey;        
+        this.rsaPrivateKey = rsaPrivateKey;
     }
 
     /** @return the ID of this entry, or null if it's not yet assigned.  This is a synonym for getAlias. */
@@ -62,8 +73,9 @@ public class SsgKeyEntry implements Entity {
     /**
      * @return the private key for this certificate entry.  Corresponds to the public key in the zeroth certificate
      *         in the certificate chain.  Never null.
-     * @throws UnrecoverableKeyException  if the private key is not available, perhaps because it is inside the HSM
-     *                                    and this code is running on the client.
+     * @throws UnrecoverableKeyException  if the private key is not available.  Note that the private key
+     *                                    is never sent outside the Gateway (and in any case may just be a handle
+     *                                    to a secure PKCS#11 object).
      */
     public RSAPrivateKey getRSAPrivateKey() throws UnrecoverableKeyException {
         if (rsaPrivateKey == null)
@@ -78,19 +90,18 @@ public class SsgKeyEntry implements Entity {
 
         SsgKeyEntry that = (SsgKeyEntry)o;
 
+        if (keystoreId != that.keystoreId) return false;
         if (alias != null ? !alias.equals(that.alias) : that.alias != null) return false;
         if (!Arrays.equals(certificateChain, that.certificateChain)) return false;
-        if (rsaPrivateKey != null ? !rsaPrivateKey.equals(that.rsaPrivateKey) : that.rsaPrivateKey != null)
-            return false;
 
         return true;
     }
 
     public int hashCode() {
         int result;
-        result = (alias != null ? alias.hashCode() : 0);
+        result = (int)(keystoreId ^ (keystoreId >>> 32));
+        result = 31 * result + (alias != null ? alias.hashCode() : 0);
         result = 31 * result + (certificateChain != null ? Arrays.hashCode(certificateChain) : 0);
-        result = 31 * result + (rsaPrivateKey != null ? rsaPrivateKey.hashCode() : 0);
         return result;
     }
 }

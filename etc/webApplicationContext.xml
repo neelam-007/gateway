@@ -904,4 +904,19 @@
             <ref local="serviceDocumentManager"/>
         </constructor-arg>
     </bean>
+
+    <bean id="keystoreFileManager" class="com.l7tech.server.security.keystore.KeystoreFileManagerImpl">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+    </bean>
+
+    <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl">
+        <constructor-arg ref="clusterPropertyManager"/>
+        <constructor-arg ref="keystoreFileManager"/>
+        <constructor-arg ref="keystore"/>
+    </bean>
 </beans>

@@ -5,11 +5,14 @@ package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.security.keystore.SsgKeyEntry;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.security.keystore.SsgKeyFinder;
 
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -18,6 +21,7 @@ import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -29,11 +33,13 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
     private final X509Certificate rootCertificate;
     private final X509Certificate sslCertificate;
     private final LicenseManager licenseManager;
+    private final SsgKeyStoreManager ssgKeyStoreManager;
 
     public TrustedCertAdminImpl(TrustedCertManager trustedCertManager,
                                 X509Certificate rootCertificate,
                                 X509Certificate sslCertificate,
-                                LicenseManager licenseManager)
+                                LicenseManager licenseManager,
+                                SsgKeyStoreManager ssgKeyStoreManager)
     {
         this.trustedCertManager = trustedCertManager;
         if (trustedCertManager == null) {
@@ -50,6 +56,9 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         this.licenseManager = licenseManager;
         if (licenseManager == null)
             throw new IllegalArgumentException("License manager is required");
+        this.ssgKeyStoreManager = ssgKeyStoreManager;
+        if (ssgKeyStoreManager == null)
+            throw new IllegalArgumentException("SsgKeyStoreManager is required");
     }
 
     private void checkLicense() throws RemoteException {
@@ -194,6 +203,36 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
     public X509Certificate getSSGSslCert() throws IOException, CertificateException, RemoteException {
         checkLicense();
         return sslCertificate;
+    }
+
+    public List<KeystoreInfo> findAllKeystores() throws IOException, FindException, KeyStoreException {
+        List<SsgKeyFinder> finders = ssgKeyStoreManager.findAll();
+        List<KeystoreInfo> list = new ArrayList<KeystoreInfo>();
+        for (SsgKeyFinder finder : finders) {
+            long id = finder.getId();
+            String name = finder.getName();
+            SsgKeyFinder.SsgKeyStoreType type = finder.getType();
+            boolean readonly = !finder.isMutable();
+            list.add(new KeystoreInfo(id, name, type.toString(), readonly));
+        }
+        return list;
+    }
+
+    public List<SsgKeyEntry> findAllKeys(long keystoreId) throws IOException, CertificateException, FindException {
+        try {
+            SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+
+            List<SsgKeyEntry> list = new ArrayList<SsgKeyEntry>();
+            List<String> aliases = keyFinder.getAliases();
+            for (String alias : aliases) {
+                SsgKeyEntry entry = keyFinder.getCertificateChain(alias);
+                list.add(entry);
+            }
+
+            return list;
+        } catch (KeyStoreException e) {
+            throw new CertificateException(e);
+        }
     }
 
     private TrustedCertManager getManager() {

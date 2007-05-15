@@ -285,6 +285,7 @@
         <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
+        <constructor-arg ref="ssgKeyStoreManager"/>
     </bean>
 
     <!-- custom assertions admin servant -->

@@ -6,36 +6,94 @@ import com.l7tech.server.security.keystore.software.TomcatSsgKeyFinder;
 import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.cluster.ClusterPropertyManager;
+import com.l7tech.objectmodel.FindException;
 
 import java.util.*;
+import java.util.logging.Logger;
 import java.security.KeyStoreException;
 
 /**
- *
+ * Manages all SsgKeyFinder (and SsgKeyStore) instances that will be available on this Gateway node.
+ * Key finders will be instantiated based on the content of the keystore_file table in the DB and
+ * whether or not an HSM is available on this Gateway node.
+ * <p/>
+ * Currently there is no way to add or remove key finders -- the table is populated during DB creation (or upgrade)
+ * and rows are never added or removed (although they do change: the databytes and version columns will change as
+ * individual key entries are CRUDded).
  */
 public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
-    private final List<SsgKeyFinder> keystores;
-    private char[] softwareKeystorePasssword = "asdfhwkje".toCharArray(); // TODO use secure cluster shared key
+    protected static final Logger logger = Logger.getLogger(SsgKeyStoreManagerImpl.class.getName());
+    private static final char[] softwareKeystorePasssword = "asdfhwkje".toCharArray(); // TODO use secure cluster shared key
 
-    public SsgKeyStoreManagerImpl(ClusterPropertyManager cpm, KeystoreUtils keystoreUtils) throws KeyStoreException {
-        // TODO maybe offer software keystores even if HSM is available?
-        if (isHsmAvailable()) {
-            List<SsgKeyFinder> list = new ArrayList<SsgKeyFinder>();
-            list.add(new ScaSsgKeyStore(1, "HSM"));
-            keystores = Collections.unmodifiableList(list);
-        } else {
-            List<SsgKeyFinder> list = new ArrayList<SsgKeyFinder>();
-            list.add(new TomcatSsgKeyFinder(0, "Software Static", keystoreUtils));
-            list.add(new DatabasePkcs12SsgKeyStore(2, "Software DB", cpm, softwareKeystorePasssword));
-            keystores = Collections.unmodifiableList(list);
+    private final ClusterPropertyManager clusterPropertyManager;
+    private final KeystoreFileManager keystoreFileManager;
+    private final KeystoreUtils keystoreUtils;
+
+    private List<SsgKeyFinder> keystores = null;
+
+    public SsgKeyStoreManagerImpl(ClusterPropertyManager cpm, KeystoreFileManager kem, KeystoreUtils keystoreUtils) throws KeyStoreException {
+        this.clusterPropertyManager = cpm;
+        this.keystoreFileManager = kem;
+        this.keystoreUtils = keystoreUtils;
+    }
+
+    private synchronized void init() throws KeyStoreException, FindException {
+        if (keystores != null)
+            return;
+
+        List<SsgKeyFinder> list = new ArrayList<SsgKeyFinder>();
+        Collection<KeystoreFile> dbFiles = keystoreFileManager.findAll();
+        boolean haveHsm = isHsmAvailable();
+        boolean createdHsmFinder = false;
+        for (KeystoreFile dbFile : dbFiles) {
+            long id = Long.parseLong(dbFile.getId());
+            String name = dbFile.getName();
+            String format = dbFile.getFormat();
+            if (format == null)
+                throw new KeyStoreException("Database contains keystore_file with no format objectid=" + id);
+            if (format.startsWith("hsm.")) {
+                if (!haveHsm) {
+                    logger.info("Ignoring keystore_file row with a format of hsm because this Gateway node does not appear to have an HSM installed");
+                } else {
+                    if (createdHsmFinder)
+                        throw new KeyStoreException("Database contains more than one keystore_file row with a format of hsm");
+                    list.add(new ScaSsgKeyStore(id, name));
+                    createdHsmFinder = true;
+                }
+            } else if (format.equals("ss")) {
+                if (haveHsm)
+                    logger.info("Ignoring keystore_file row with a format of ss because this Gateway node is using an HSM instead");
+                else
+                    list.add(new TomcatSsgKeyFinder(id, name, keystoreUtils));
+            } else if (format.startsWith("sdb.")) {
+                if (haveHsm)
+                    logger.info("Ignoring keystore_file row with a format of sdb because this Gateway node is using an HSM instead");
+                else
+                    list.add(new DatabasePkcs12SsgKeyStore(id, name, clusterPropertyManager, keystoreFileManager,  softwareKeystorePasssword));
+            }
         }
+
+        // TODO maybe offer software keystores even if HSM is available?
+        // TODO support multiple software keystores?
+        // TODO remove keystoreUtils entirely, eliminating special privileges for SSL and CA keys?
+        keystores = Collections.unmodifiableList(list);
     }
 
     public boolean isHsmAvailable() {
         return JceProvider.PKCS11_ENGINE.equals(JceProvider.getEngineClass());
     }
 
-    public List<SsgKeyFinder> findAll() {
+    public List<SsgKeyFinder> findAll() throws FindException, KeyStoreException {
+        init();
         return keystores;
+    }
+
+    public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException {
+        init();
+        for (SsgKeyFinder keystore : keystores) {
+            if (keystore.getId() == id)
+                return keystore;
+        }
+        throw new FindException("No SsgKeyFinder available on this node with id=" + id);
     }
 }

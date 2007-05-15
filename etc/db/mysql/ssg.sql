@@ -541,6 +541,27 @@ CREATE TABLE service_documents (
   FOREIGN KEY (service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+
+--
+-- Table structure for table 'keystore_file'
+--
+
+DROP TABLE IF EXISTS keystore_file;
+CREATE TABLE keystore_file (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  format varchar(128) NOT NULL,
+  databytes mediumblob,
+  PRIMARY KEY (objectid),
+  UNIQUE(name)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+insert into keystore_file values (0, 0, "Software Static", "ss", null);     -- placeholder, never loaded or saved
+insert into keystore_file values (1, 0, "HSM", "hsm.sca.targz", null);      -- tar.gz of items in sca 6000 keydata directory
+insert into keystore_file values (2, 0, "Software DB", "sdb.pkcs12", null); -- bytes of a PKCS#12 keystore
+
+
 --
 -- Table structure for table rbac_role
 --

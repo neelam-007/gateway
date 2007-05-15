@@ -15,8 +15,8 @@ public interface SsgKeyFinder {
         PKCS11_HARDWARE
     }
 
-    /** @return ID of this key store.  Only unique on a particular SSG node. */
-    int getId();
+    /** @return ID of this key store.  Only guaranteed unique on a particular SSG node. */
+    long getId();
 
     /** @return the display name of this key store.  Not necessarily unique.  Never null. */
     String getName();

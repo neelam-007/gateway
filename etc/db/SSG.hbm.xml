@@ -307,6 +307,15 @@
         <property name="value" column="propvalue" type="string"/>
     </class>
 
+    <class name="com.l7tech.server.security.keystore.KeystoreFile" table="keystore_file" lazy="false">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <version name="version"/>
+        <property name="format" column="format" type="string"/>
+        <property name="databytes" column="databytes" type="binary"/>
+    </class>
+
     <class name="com.l7tech.service.SampleMessage" table="sample_messages" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
