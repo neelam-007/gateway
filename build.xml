@@ -1993,6 +1993,7 @@
                 <include name="com/l7tech/server/config/beans/SsgDatabaseConfigBean*"/>
                 <include name="com/l7tech/server/config/beans/BaseConfigurationBean*"/>
                 <include name="com/l7tech/server/config/db/DBActions*"/>
+                <include name="com/l7tech/server/config/db/DBInformation*"/>
                 <include name="com/l7tech/server/config/db/DbVersion*"/>
                 <include name="com/l7tech/server/config/db/CheckSSGDatabase*"/>
                 <include name="com/l7tech/server/config/exceptions/UnsupportedOsException*"/>
