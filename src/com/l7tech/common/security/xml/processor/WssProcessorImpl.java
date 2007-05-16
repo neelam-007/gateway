@@ -817,18 +817,11 @@ public class WssProcessorImpl implements WssProcessor {
                 final String alguri = encryptionMethod.getAlgorithm();
                 algorithm.add(alguri);
                 try {
-                    if (EncryptionMethod.TRIPLEDES_CBC.equals(alguri))
-                        flexKey.setAlgorithm(FlexKey.TRIPLEDES);
-                    else if (EncryptionMethod.AES128_CBC.equals(alguri))
-                        flexKey.setAlgorithm(FlexKey.AES128);
-                    else if (EncryptionMethod.AES192_CBC.equals(alguri))
-                        flexKey.setAlgorithm(FlexKey.AES192);
-                    else if (EncryptionMethod.AES256_CBC.equals(alguri))
-                        flexKey.setAlgorithm(FlexKey.AES256);
-                    return super.getEncryptionEngine(encryptionMethod);
+                    flexKey.setAlgorithm(XencUtil.getFlexKeyAlg(alguri));
                 } catch (KeyException e) {
                     throw new NoSuchAlgorithmException("Unable to use algorithm " + alguri + " with provided key material", e);
                 }
+                return super.getEncryptionEngine(encryptionMethod);
             }
         };
 
