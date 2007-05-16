@@ -457,8 +457,8 @@ public class WssRoundTripTest extends TestCase {
                 SecurityContextToken sct = (SecurityContextToken)signer;
                 assertTrue("SecurityContextToken was supposed to have proven possession", sct.isPossessionProved());
                 assertEquals("WS-Security session ID was supposed to match", sct.getContextIdentifier(), SESSION_ID);
-                assertTrue(Arrays.equals(sct.getSecurityContext().getSharedSecret().getEncoded(),
-                                         td.secureConversationKey.getEncoded()));
+                assertTrue(Arrays.equals(sct.getSecurityContext().getSharedSecret(),
+                                         td.secureConversationKey));
             } else if (signer instanceof EncryptedKey) {
                 EncryptedKey ek = (EncryptedKey)signer;
                 if (ekOut != null && ekOut.length > 0) ekOut[0] = ek;
@@ -492,7 +492,7 @@ public class WssRoundTripTest extends TestCase {
         if (td.secureConversationKey != null) {
             reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                 public String getId() { return SESSION_ID; }
-                public byte[] getSecretKey() { return td.secureConversationKey.getEncoded(); }
+                public byte[] getSecretKey() { return td.secureConversationKey; }
                 public String getSCNamespace() {
                         return SoapUtil.WSSC_NAMESPACE;
                     }
@@ -514,12 +514,12 @@ public class WssRoundTripTest extends TestCase {
         return reqs;
     }
 
-    private SecurityContextFinder makeSecurityContextFinder(final SecretKey secureConversationKey) {
+    private SecurityContextFinder makeSecurityContextFinder(final byte[] secureConversationKey) {
         if (secureConversationKey == null) return null;
         return new SecurityContextFinder() {
             public SecurityContext getSecurityContext(String securityContextIdentifier) {
                 return new SecurityContext() {
-                    public SecretKey getSharedSecret() {
+                    public byte[] getSharedSecret() {
                         return secureConversationKey;
                     }
                 };

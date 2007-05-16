@@ -4,8 +4,6 @@ import com.l7tech.common.security.xml.processor.SecurityContext;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
-import javax.crypto.SecretKey;
-
 /**
  * A secure conversation session used between a client and the ssg.
  * <p/>
@@ -24,11 +22,11 @@ public class SecureConversationSession implements SecurityContext {
         this.identifier = identifier;
     }
 
-    public SecretKey getSharedSecret() {
+    public byte[] getSharedSecret() {
         return sharedSecret;
     }
 
-    public void setSharedSecret(SecretKey sharedSecret) {
+    public void setSharedSecret(byte[] sharedSecret) {
         this.sharedSecret = sharedSecret;
     }
 
@@ -85,7 +83,7 @@ public class SecureConversationSession implements SecurityContext {
     }
 
     private String identifier;
-    private SecretKey sharedSecret;
+    private byte[] sharedSecret;
     private long expiration;
     private long creation;
     private User usedBy;

@@ -7,8 +7,8 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.FlexKey;
 import com.l7tech.common.security.kerberos.KerberosConfigException;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosUtils;
@@ -23,7 +23,7 @@ import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.*;
@@ -534,8 +534,7 @@ public class WssProcessorImpl implements WssProcessor {
     private DerivedKeyToken deriveKeyFromEncryptedKey(Element derivedKeyEl, EncryptedKey ek) throws InvalidDocumentFormatException, GeneralSecurityException {
         try {
             SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
-            final SecretKey resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
-                                                           ek.getSecretKey().getEncoded());
+            final byte[] resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl, ek.getSecretKey());
             // remember this symmetric key so it can later be used to process the signature
             // or the encryption
             return new DerivedKeyTokenImpl(derivedKeyEl, resultingKey, ek);
@@ -555,7 +554,7 @@ public class WssProcessorImpl implements WssProcessor {
         assert cntx != null;
         try {
             SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
-            final SecretKey resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
+            final byte[] resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
                                                                            kst.getTicket().getServiceTicket().getKey());
             return new DerivedKeyTokenImpl(derivedKeyEl, resultingKey, kst);
         } catch (NoSuchAlgorithmException e) {
@@ -567,8 +566,8 @@ public class WssProcessorImpl implements WssProcessor {
     private DerivedKeyToken deriveKeyFromSecurityContext(Element derivedKeyEl, SecurityContextToken sct) throws InvalidDocumentFormatException {
         try {
             SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
-            final SecretKey resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
-                                                           sct.getSecurityContext().getSharedSecret().getEncoded());
+            final byte[] resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
+                                                           sct.getSecurityContext().getSharedSecret());
             // remember this symmetric key so it can later be used to process the signature
             // or the encryption
             return new DerivedKeyTokenImpl(derivedKeyEl, resultingKey, sct);
@@ -726,7 +725,7 @@ public class WssProcessorImpl implements WssProcessor {
      * @throws InvalidDocumentFormatException  if there is a problem decrypting an element due to message format
      * @throws ProcessorException  if an encrypted data element cannot be resolved
      */
-    private void decryptReferencedElements(Key key, Element refList, ProcessingStatusHolder cntx)
+    private void decryptReferencedElements(byte[] key, Element refList, ProcessingStatusHolder cntx)
             throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
             ProcessorException, InvalidDocumentFormatException
     {
@@ -752,7 +751,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private void decryptElement(Element encryptedDataElement, Key key, ProcessingStatusHolder cntx)
+    private void decryptElement(Element encryptedDataElement, byte[] key, ProcessingStatusHolder cntx)
             throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
             ProcessorException, InvalidDocumentFormatException
     {
@@ -809,24 +808,27 @@ public class WssProcessorImpl implements WssProcessor {
         final Collection algorithm = new ArrayList();
 
         // Support "flexible" answers to getAlgorithm() query when using 3des with HSM (Bug #3705)
-        final String[] overrideAlg = { null };
-        byte[] keyBytes = key.getEncoded();
-        final Key wrappedKey = new AesKey(keyBytes, keyBytes.length * 8) {
-            public String getAlgorithm() {
-                if (overrideAlg[0] != null)
-                    return overrideAlg[0];
-                return super.getAlgorithm();
-            }
-        };
+        final FlexKey flexKey = new FlexKey(key);
 
         // override getEncryptionEngine to collect the encryptionmethod algorithm
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn() {
             public EncryptionEngine getEncryptionEngine(EncryptionMethod encryptionMethod)
                     throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException  {
-                algorithm.add(encryptionMethod.getAlgorithm());
-                if (EncryptionMethod.TRIPLEDES_CBC.equals(encryptionMethod.getAlgorithm()))
-                    overrideAlg[0] = "DESede"; // Bug #3705
-                return super.getEncryptionEngine(encryptionMethod);
+                final String alguri = encryptionMethod.getAlgorithm();
+                algorithm.add(alguri);
+                try {
+                    if (EncryptionMethod.TRIPLEDES_CBC.equals(alguri))
+                        flexKey.setAlgorithm(FlexKey.TRIPLEDES);
+                    else if (EncryptionMethod.AES128_CBC.equals(alguri))
+                        flexKey.setAlgorithm(FlexKey.AES128);
+                    else if (EncryptionMethod.AES192_CBC.equals(alguri))
+                        flexKey.setAlgorithm(FlexKey.AES192);
+                    else if (EncryptionMethod.AES256_CBC.equals(alguri))
+                        flexKey.setAlgorithm(FlexKey.AES256);
+                    return super.getEncryptionEngine(encryptionMethod);
+                } catch (KeyException e) {
+                    throw new NoSuchAlgorithmException("Unable to use algorithm " + alguri + " with provided key material", e);
+                }
             }
         };
 
@@ -834,7 +836,7 @@ public class WssProcessorImpl implements WssProcessor {
         dc.setAlgorithmFactory(af);
         dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT,
                             null, null);
-        dc.setKey(wrappedKey);
+        dc.setKey(flexKey);
         NodeList dataList;
         try {
             // do the actual decryption
@@ -1203,7 +1205,7 @@ public class WssProcessorImpl implements WssProcessor {
         //    this EncryptedKeySHA1, we'll create a new virtual EncryptedKey and add it to this request.
 
         SecurityTokenResolver resolver = cntx.securityTokenResolver;
-        SecretKey cachedSecretKey = resolver == null ? null : resolver.getSecretKeyByEncryptedKeySha1(eksha1);
+        byte[] cachedSecretKey = resolver == null ? null : resolver.getSecretKeyByEncryptedKeySha1(eksha1);
         EncryptedKey found = findEncryptedKey(cntx.securityTokens, eksha1);
 
         if (found == null && cachedSecretKey == null) {
@@ -1346,11 +1348,11 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         if (signingCert == null && dkt != null) {
-            signingKey = dkt.getComputedDerivedKey();
+            signingKey = new SecretKeySpec(dkt.getComputedDerivedKey(), "SHA1");
         } else if (signingCert != null) {
             signingKey = signingCert.getPublicKey();
         } else if (signingToken instanceof EncryptedKey) {
-            signingKey = ((EncryptedKey)signingToken).getSecretKey();
+            signingKey = new SecretKeySpec(((EncryptedKey)signingToken).getSecretKey(), "SHA1");
         }
 
         if (signingKey == null) {
@@ -1800,11 +1802,11 @@ public class WssProcessorImpl implements WssProcessor {
     private static final XmlSecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new XmlSecurityToken[0];
 
     private static class DerivedKeyTokenImpl extends ParsedElementImpl implements DerivedKeyToken {
-        private final SecretKey finalKey;
+        private final byte[] finalKey;
         private final XmlSecurityToken sourceToken;
         private final String elementWsuId;
 
-        public DerivedKeyTokenImpl(Element dktel, SecretKey finalKey, XmlSecurityToken sourceToken) {
+        public DerivedKeyTokenImpl(Element dktel, byte[] finalKey, XmlSecurityToken sourceToken) {
             super(dktel);
             this.finalKey = finalKey;
             this.sourceToken = sourceToken;
@@ -1819,7 +1821,7 @@ public class WssProcessorImpl implements WssProcessor {
             return elementWsuId;
         }
 
-        Key getComputedDerivedKey() {
+        byte[] getComputedDerivedKey() {
             return finalKey;
         }
 
@@ -1831,7 +1833,7 @@ public class WssProcessorImpl implements WssProcessor {
             return "DerivedKeyToken: " + finalKey.toString();
         }
 
-        public SecretKey getSecretKey() {
+        public byte[] getSecretKey() {
             return finalKey;
         }
     }
@@ -1841,7 +1843,7 @@ public class WssProcessorImpl implements WssProcessor {
         private final byte[] encryptedKeyBytes;
         private SecurityTokenResolver tokenResolver;
         private String encryptedKeySHA1 = null;
-        private SecretKey secretKey = null;
+        private byte[] secretKeyBytes = null;
         private PrivateKey recipientKey = null;
 
         // Constructor that supports lazily-unwrapping the key
@@ -1868,44 +1870,43 @@ public class WssProcessorImpl implements WssProcessor {
         public String toString() {
             StringBuffer sb = new StringBuffer("EncryptedKey: wsuId=");
             sb.append(elementWsuId).append(" unwrapped=").append(isUnwrapped());
-            if (secretKey != null) sb.append(" keylength=").append(secretKey.getEncoded().length);
+            if (secretKeyBytes != null) sb.append(" keylength=").append(secretKeyBytes.length);
             if (encryptedKeySHA1 != null) sb.append(" encryptedKeySha1=").append(encryptedKeySHA1);
             return sb.toString();
         }
 
         private void unwrapKey() throws InvalidDocumentFormatException, GeneralSecurityException {
             getEncryptedKeySHA1();
-            if (secretKey != null) return;
+            if (secretKeyBytes != null) return;
 
             // Extract the encrypted key
             Element encMethod = XmlUtil.findOnlyOneChildElementByName(asElement(),
                                                                       SoapUtil.XMLENC_NS,
                                                                       "EncryptionMethod");
-            final byte[] unencryptedKey = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepBytes(encMethod), recipientKey);
-            secretKey = new AesKey(unencryptedKey, unencryptedKey.length * 8);
+            secretKeyBytes = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepBytes(encMethod), recipientKey);
 
             // Since we've just done the expensive work, ensure that it gets saved for future reuse
             maybePublish();
         }
 
-        public SecretKey getSecretKey() throws InvalidDocumentFormatException, GeneralSecurityException {
-            if (secretKey == null)
+        public byte[] getSecretKey() throws InvalidDocumentFormatException, GeneralSecurityException {
+            if (secretKeyBytes == null)
                 unwrapKey();
-            return secretKey;
+            return secretKeyBytes;
         }
 
         public boolean isUnwrapped() {
-            return secretKey != null;
+            return secretKeyBytes != null;
         }
 
-        void setSecretKey(SecretKey secretKey) {
-            this.secretKey = secretKey;
+        void setSecretKey(byte[] secretKeyBytes) {
+            this.secretKeyBytes = secretKeyBytes;
             maybePublish();
         }
 
         private void maybePublish() {
-            if (tokenResolver != null && encryptedKeySHA1 != null && secretKey != null) {
-                tokenResolver.putSecretKeyByEncryptedKeySha1(encryptedKeySHA1, secretKey);
+            if (tokenResolver != null && encryptedKeySHA1 != null && secretKeyBytes != null) {
+                tokenResolver.putSecretKeyByEncryptedKeySha1(encryptedKeySHA1, secretKeyBytes);
                 tokenResolver = null;
             }
         }
@@ -1914,9 +1915,9 @@ public class WssProcessorImpl implements WssProcessor {
             if (encryptedKeySHA1 != null)
                 return encryptedKeySHA1;
             encryptedKeySHA1 = XencUtil.computeEncryptedKeySha1(encryptedKeyBytes);
-            if (secretKey == null && tokenResolver != null) {
+            if (secretKeyBytes == null && tokenResolver != null) {
                 // Save us a step unwrapping
-                secretKey = tokenResolver.getSecretKeyByEncryptedKeySha1(encryptedKeySHA1);
+                secretKeyBytes = tokenResolver.getSecretKeyByEncryptedKeySha1(encryptedKeySHA1);
             } else
                 maybePublish();
             return encryptedKeySHA1;

@@ -147,7 +147,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
             SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
             final String sessionIdentifier = KerberosUtils.getSessionIdentifier(kerberosTicket);
             try {
-                sccm.createContextForUser(sessionIdentifier, kerberosServiceTicket.getExpiry(), null, loginCreds, new SecretKeySpec(kerberosServiceTicket.getKey(), "l7 shared secret"));
+                sccm.createContextForUser(sessionIdentifier, kerberosServiceTicket.getExpiry(), null, loginCreds, kerberosServiceTicket.getKey());
             }
             catch(DuplicateSessionException dse) {
                 //can't happen since duplicate tickets are detected by kerberos.

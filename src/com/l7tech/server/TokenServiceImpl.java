@@ -449,16 +449,15 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return response;
     }
 
-    private String produceBinarySecretXml(SecretKey sharedSecret, String trustns) {
+    private String produceBinarySecretXml(byte[] sharedSecret, String trustns) {
         StringBuffer output = new StringBuffer();
         output.append("<wst:BinarySecret Type=\"").append(trustns).append("/SymmetricKey" + "\">");
-        byte[] actualkey = sharedSecret.getEncoded();
-        output.append(HexUtils.encodeBase64(actualkey, true));
+        output.append(HexUtils.encodeBase64(sharedSecret, true));
         output.append("</wst:BinarySecret>");
         return output.toString();
     }
 
-    private String produceEncryptedKeyXml(SecretKey sharedSecret, X509Certificate requestorCert) throws GeneralSecurityException {
+    private String produceEncryptedKeyXml(byte[] sharedSecret, X509Certificate requestorCert) throws GeneralSecurityException {
         StringBuffer encryptedKeyXml = new StringBuffer();
         // Key info and all
         encryptedKeyXml.append("<xenc:EncryptedKey wsu:Id=\"newProof\" xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\">" +
@@ -483,7 +482,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         }
         encryptedKeyXml.append("<xenc:CipherData>" +
                                 "<xenc:CipherValue>");
-        String encryptedKeyValue = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(sharedSecret.getEncoded(),
+        String encryptedKeyValue = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(sharedSecret,
                                                                     requestorCert.getPublicKey(),
                                                                     rand),
                                                          true);

@@ -13,5 +13,5 @@ import javax.crypto.SecretKey;
  * never create an instance of this.
  */
 public interface SecurityContext {
-    SecretKey getSharedSecret();
+    byte[] getSharedSecret();
 }

@@ -90,7 +90,7 @@ public class WssInteropTestMessage extends TestCase {
         byte[] keyBytes = HexUtils.unHexDump(KEY_HEX);
         new Random().nextBytes(keyBytes);
         final AesKey aesKey = new AesKey(keyBytes, 256);
-        XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(XencUtil.AES_256_CBC, aesKey);
+        XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(XencUtil.AES_256_CBC, keyBytes);
 
         // Get the certs we're gonna use for the recipient
         //KeystoreUtils ksu = (KeystoreUtils)ApplicationContexts.getProdApplicationContext().getBean("keystore");
@@ -252,8 +252,8 @@ public class WssInteropTestMessage extends TestCase {
 
 
         SecurityTokenResolver resolver = new SimpleSecurityTokenResolver() {
-            public SecretKey getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
-                return aesKey;
+            public byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
+                return aesKey.getEncoded();
             }
         };
         ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, null, null, resolver);

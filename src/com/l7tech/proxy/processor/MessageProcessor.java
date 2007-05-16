@@ -837,8 +837,8 @@ public class MessageProcessor {
                 scf = new SecurityContextFinder() {
                     public SecurityContext getSecurityContext(String securityContextIdentifier) {
                         return new SecurityContext() {
-                            public SecretKey getSharedSecret() {
-                                return new AesKey(sessionKey, sessionKey.length * 8);
+                            public byte[] getSharedSecret() {
+                                return sessionKey;
                             }
                         };
                     }
@@ -852,12 +852,12 @@ public class MessageProcessor {
                         new SimpleSecurityTokenResolver(new X509Certificate[] { ssg.getClientCertificate(),
                                 ssg.getServerCertificate() })
                         {
-                            public SecretKey getSecretKeyByEncryptedKeySha1(String value) {
+                            public byte[] getSecretKeyByEncryptedKeySha1(String value) {
                                 final SecretKey encryptedKeySecretKey = context.getEncryptedKeySecretKey();
                                 final String encryptedKeySha1 = context.getEncryptedKeySha1();
                                 if (encryptedKeySecretKey == null || encryptedKeySha1 == null) return null;
                                 if (!(encryptedKeySha1.equals(value))) return null;
-                                return encryptedKeySecretKey;
+                                return encryptedKeySecretKey.getEncoded();
                             }
 
                             public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {

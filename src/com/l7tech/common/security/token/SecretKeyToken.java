@@ -17,9 +17,9 @@ public interface SecretKeyToken extends XmlSecurityToken {
     /**
      * Get the secret key from this token.
      *
-     * @return  the secret key from this token.  Never null.
+     * @return  the secret key bytes from this token.  Never null.
      * @throws InvalidDocumentFormatException   if there was a problem lazily unwrapping this key
      * @throws GeneralSecurityException   if there was a problem lazily unwrapping this key
      */
-    SecretKey getSecretKey() throws InvalidDocumentFormatException, GeneralSecurityException;
+    byte[] getSecretKey() throws InvalidDocumentFormatException, GeneralSecurityException;
 }

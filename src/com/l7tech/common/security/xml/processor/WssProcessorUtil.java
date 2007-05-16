@@ -5,19 +5,18 @@
 
 package com.l7tech.common.security.xml.processor;
 
-import com.l7tech.common.security.token.EncryptedKey;
-import com.l7tech.common.security.token.SecurityTokenType;
-import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
+import com.l7tech.common.security.token.EncryptedKey;
+import com.l7tech.common.security.token.KerberosSecurityToken;
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import org.w3c.dom.Element;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
-import javax.crypto.SecretKey;
-import java.util.Random;
 import java.security.SecureRandom;
+import java.util.Random;
 
 /**
  * Holds utility methods of interest to users of WssProcessor.
@@ -30,11 +29,11 @@ public class WssProcessorUtil {
      * by the specified EncryptedKeySHA1 identifier.
      *
      * @param factory    DOM factory to use to create the DOM for the token, if it is eventually requested
-     * @param key             The SecretKey that was encoded into the original EncryptedKey
+     * @param key             The SecretKey bytes that were encoded into the original EncryptedKey
      * @param encryptedKeySha1 the EncryptedKeySHA1 identifier that refers to the original EncryptedKey
      * @return a virtual EncryptedKey instance containing the specified key and sha1.
      */
-    public static EncryptedKey makeEncryptedKey(final Document factory, final SecretKey key, final String encryptedKeySha1) {
+    public static EncryptedKey makeEncryptedKey(final Document factory, final byte[] key, final String encryptedKeySha1) {
         byte[] rand = new byte[16];
         random.nextBytes(rand);
         String id = "VirtualEncryptedKey-1-" + HexUtils.hexDump(rand);
@@ -59,11 +58,11 @@ public class WssProcessorUtil {
      */
     private static class VirtualEncryptedKey extends SigningSecurityTokenImpl implements EncryptedKey {
         private final String encryptedKeySha1;
-        private final SecretKey key;
+        private final byte[] key;
         private final String id;
         private final Document factory;
 
-        public VirtualEncryptedKey(String id, Document factory, String encryptedKeySha1, SecretKey key) {
+        public VirtualEncryptedKey(String id, Document factory, String encryptedKeySha1, byte[] key) {
             super();
             this.encryptedKeySha1 = encryptedKeySha1;
             this.key = key;
@@ -87,7 +86,7 @@ public class WssProcessorUtil {
             return encryptedKeySha1;
         }
 
-        public SecretKey getSecretKey() {
+        public byte[] getSecretKey() {
             return key;
         }
 
@@ -100,7 +99,7 @@ public class WssProcessorUtil {
         }
 
         public String toString() {
-            return "VirtualEncryptedKey: " + key.getEncoded().length + " byte key";
+            return "VirtualEncryptedKey: " + key.length + " byte key";
         }
     }
 }

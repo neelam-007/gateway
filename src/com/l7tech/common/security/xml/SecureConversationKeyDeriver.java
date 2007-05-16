@@ -7,7 +7,6 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Element;
 
 import javax.crypto.Mac;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -32,8 +31,10 @@ public class SecureConversationKeyDeriver {
      * @param derivedKeyToken the DerivedKeyToken xml element
      * @param secret the secret associated with the session
      * @return the resulting derived key
+     * @throws java.security.NoSuchAlgorithmException   if the algorithm specified in the derived key token is not available
+     * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if the derived key token cannot be parsed
      */
-    public SecretKey derivedKeyTokenToKey(Element derivedKeyToken, byte[] secret)
+    public byte[] derivedKeyTokenToKey(Element derivedKeyToken, byte[] secret)
                                     throws NoSuchAlgorithmException, InvalidDocumentFormatException {
 
         String namespaceURI = derivedKeyToken.getNamespaceURI();
@@ -62,7 +63,7 @@ public class SecureConversationKeyDeriver {
 
         String lengthVal = null;
         String label = null;
-        String nonce = null;
+        final String nonce;
         int generation = 0;
         // get generation
         Element genNode = (Element)((XmlUtil.findChildElementsByName(derivedKeyToken, namespaceURI,  "Generation")).get(0));
@@ -100,7 +101,7 @@ public class SecureConversationKeyDeriver {
             throw new InvalidDocumentFormatException("DerivedKeyToken has no Nonce");
         nonce = XmlUtil.getTextValue(nonceNode);
 
-        byte[] nonceA = new byte[1];
+        final byte[] nonceA;
         try {
             nonceA = HexUtils.decodeBase64(nonce);
         } catch (IOException e) {
@@ -120,8 +121,7 @@ public class SecureConversationKeyDeriver {
             byte[] generated = pSHA1(secret, seed, offset+length);
             byte[] key = new byte[length];
             System.arraycopy(generated, offset, key, 0, length);
-            SecretKey dk = new SecretKeySpec(key, "SHA1");
-            return dk;
+            return key;
         } catch (InvalidKeyException e) {
             throw new InvalidDocumentFormatException(e);
         }

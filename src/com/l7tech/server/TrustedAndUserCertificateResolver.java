@@ -8,16 +8,14 @@ package com.l7tech.server;
 import com.l7tech.common.security.X509Entity;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
+import com.l7tech.common.util.Background;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.WhirlycacheFactory;
-import com.l7tech.common.util.Background;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.whirlycott.cache.Cache;
 
-import javax.crypto.SecretKey;
-import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -160,12 +158,12 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
         return null;
     }
 
-    public SecretKey getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
+    public byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
         if (!encryptedKeyCacheEnabled.get()) return null;
-        return (SecretKey)encryptedKeyCache.retrieve(encryptedKeySha1);
+        return (byte[])encryptedKeyCache.retrieve(encryptedKeySha1);
     }
 
-    public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, SecretKey secretKey) {
+    public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey) {
         if (encryptedKeyCacheEnabled.get()) encryptedKeyCache.store(encryptedKeySha1, secretKey);
     }
 

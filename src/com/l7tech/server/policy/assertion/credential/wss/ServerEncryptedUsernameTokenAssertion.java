@@ -137,7 +137,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractServerAsserti
 
     private void addDeferredAssertion(PolicyEnforcementContext context,
                                       final String encryptedKeySha1,
-                                      final SecretKey secretKey) {
+                                      final byte[] secretKey) {
         context.addDeferredAssertion(this, new AbstractServerAssertion(data) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException

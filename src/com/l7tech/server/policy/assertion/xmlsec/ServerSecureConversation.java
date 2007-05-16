@@ -130,7 +130,7 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
                         return session.getIdentifier();
                     }
                     public byte[] getSecretKey() {
-                        return session.getSharedSecret().getEncoded();
+                        return session.getSharedSecret();
                     }
                     public String getSCNamespace() {
                         return session.getSecConvNamespaceUsed();

@@ -235,12 +235,10 @@ public class DecorationRequirements {
      * If {@link #getEncryptedKeySha1()} returns null, no EncryptedKeySHA1 references will be generated.  However,
      * if a new EncryptedKey is generated anyway, it will prefer to use this secret key, if it is non-null,
      *  rather than generating a new one.
-     * <p/> 
-     * See {@link com.l7tech.common.security.AesKey} for a possible implementation.
      *
      * @param encryptedKey  symmetric key for signing and encryption, or null to disable use of #EncryptedKeySHA1.
      */
-    public void setEncryptedKey(SecretKey encryptedKey) {
+    public void setEncryptedKey(byte[] encryptedKey) {
         this.encryptedKey = encryptedKey;
     }
 
@@ -249,7 +247,7 @@ public class DecorationRequirements {
      * @see #setEncryptedKey
      * @see #setEncryptedKeySha1
      */
-    public SecretKey getEncryptedKey() {
+    public byte[] getEncryptedKey() {
         return encryptedKey;
     }
 
@@ -538,7 +536,7 @@ public class DecorationRequirements {
     private String securityHeaderActor = SecurityActor.L7ACTOR.getValue();
     private boolean includeSamlTokenInSignature = false;
     private boolean suppressBst = false;
-    private SecretKey encryptedKey = null;
+    private byte[] encryptedKey = null;
     private String encryptedKeySha1 = null;
     private String signatureConfirmation = null;
     private KerberosServiceTicket kerberosTicket = null;

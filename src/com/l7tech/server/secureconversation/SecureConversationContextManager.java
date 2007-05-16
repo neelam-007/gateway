@@ -96,17 +96,7 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         session.setIdentifier(newSessionIdentifier);
         session.setCredentials(credentials);
         session.setSecConvNamespaceUsed(namespace);
-        session.setSharedSecret(new SecretKey() {
-            public byte[] getEncoded() {
-                return sharedSecret;
-            }
-            public String getAlgorithm() {
-                return "l7 shared secret";
-            }
-            public String getFormat() {
-                return "l7 shared secret";
-            }
-        });
+        session.setSharedSecret(sharedSecret);
         session.setUsedBy(sessionOwner);
         saveSession(session);
         return session;
@@ -122,7 +112,7 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      * @param sharedKey the key for the session
      * @return the newly created session
      */
-    public SecureConversationSession createContextForUser(String sessionId, long expiryTime, User sessionOwner, LoginCredentials credentials, SecretKey sharedKey) throws DuplicateSessionException {
+    public SecureConversationSession createContextForUser(String sessionId, long expiryTime, User sessionOwner, LoginCredentials credentials, byte[] sharedKey) throws DuplicateSessionException {
         long expires = expiryTime > 0 ? expiryTime : System.currentTimeMillis() + DEFAULT_SESSION_DURATION;
         SecureConversationSession session = new SecureConversationSession();
         session.setCreation(System.currentTimeMillis());

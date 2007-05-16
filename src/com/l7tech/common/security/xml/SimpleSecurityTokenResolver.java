@@ -8,7 +8,6 @@ package com.l7tech.common.security.xml;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.util.CertUtils;
 
-import javax.crypto.SecretKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
@@ -24,8 +23,8 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     private static final Logger logger = Logger.getLogger(SimpleSecurityTokenResolver.class.getName());
 
     private final Cert[] certs;
-    private Map encryptedKeys = new HashMap();
-    private Map kerberosTokens = new HashMap();
+    private Map<String, byte[]> encryptedKeys = new HashMap<String, byte[]>();
+    private Map<String, KerberosSecurityToken> kerberosTokens = new HashMap<String, KerberosSecurityToken>();
 
     private static class Cert {
         private final X509Certificate cert;
@@ -66,6 +65,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     /**
      * Create a thumbprint resolver that will recognize any cert in the specified list.
      * For convenience, the certs array may contain nulls which will be ignored.
+     * @param certs certs to resolve
      */
     public SimpleSecurityTokenResolver(X509Certificate[] certs) {
         if (certs != null) {
@@ -82,8 +82,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     }
 
     public X509Certificate lookup(String thumbprint) {
-        for (int i = 0; i < certs.length; i++) {
-            Cert cert = certs[i];
+        for (Cert cert : certs) {
             String thumb = cert.getThumb();
             if (thumb != null && thumb.equals(thumbprint))
                 return cert.cert;
@@ -92,8 +91,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     }
 
     public X509Certificate lookupBySki(String targetSki) {
-        for (int i = 0; i < certs.length; i++) {
-            Cert cert = certs[i];
+        for (Cert cert : certs) {
             String ski = cert.getSki();
             if (ski != null && ski.equals(targetSki))
                 return cert.cert;
@@ -102,8 +100,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     }
 
     public X509Certificate lookupByKeyName(final String keyName) {
-        for (int i = 0; i < certs.length; i++) {
-            final Cert cert = certs[i];
+        for (final Cert cert : certs) {
             final String name = cert.cert.getSubjectDN().getName();
             if (name != null && name.equals(keyName))
                 return cert.cert;
@@ -115,7 +112,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         return encryptedKeys;
     }
 
-    public void setEncryptedKeys(Map encryptedKeys) {
+    public void setEncryptedKeys(Map<String, byte[]> encryptedKeys) {
         if (encryptedKeys == null) throw new NullPointerException();
         this.encryptedKeys = encryptedKeys;
     }
@@ -124,20 +121,20 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         return kerberosTokens;
     }
 
-    public void setKerberosTokens(Map kerberosTokens) {
+    public void setKerberosTokens(Map<String, KerberosSecurityToken> kerberosTokens) {
         if (kerberosTokens == null) throw new NullPointerException();
         this.kerberosTokens = kerberosTokens;
     }
 
-    public SecretKey getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
-        return (SecretKey)encryptedKeys.get(encryptedKeySha1);
+    public byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
+        return encryptedKeys.get(encryptedKeySha1);
     }
 
-    public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, SecretKey secretKey) {
+    public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey) {
         encryptedKeys.put(encryptedKeySha1, secretKey);
     }
 
     public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
-        return (KerberosSecurityToken)kerberosTokens.get(kerberosSha1);
+        return kerberosTokens.get(kerberosSha1);
     }
 }

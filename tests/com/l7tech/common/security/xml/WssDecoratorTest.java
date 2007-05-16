@@ -7,12 +7,11 @@ package com.l7tech.common.security.xml;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.MimeBodyTest;
-import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
-import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.token.UsernameToken;
+import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -31,22 +30,21 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.logging.Logger;
 import java.util.Date;
-import java.util.regex.Pattern;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author mike
+ * @noinspection RedundantCast
  */
 public class WssDecoratorTest extends TestCase {
     private static Logger log = Logger.getLogger(WssDecoratorTest.class.getName());
-    private static final String ACTOR_DEFAULT = null;
     private static final String ACTOR_NONE = "";
 
     static {
@@ -115,7 +113,7 @@ public class WssDecoratorTest extends TestCase {
         public X509Certificate recipientCert;
         public PrivateKey recipientKey;
         public boolean signTimestamp;
-        public SecretKey secureConversationKey;   // may be used instead of a sender cert + sender key if using WS-SC
+        public byte[] secureConversationKey;   // may be used instead of a sender cert + sender key if using WS-SC
         public Element[] elementsToEncrypt = new Element[0];
         public Element[] elementsToSign = new Element[0];
         public boolean signSamlToken = false; // if true, SAML token should be signed
@@ -145,7 +143,7 @@ public class WssDecoratorTest extends TestCase {
                             boolean signTimestamp,
                             Element[] elementsToEncrypt,
                             Element[] elementsToSign,
-                            SecretKey secureConversationKey,
+                            byte[] secureConversationKey,
                             boolean signSamlToken,
                             boolean suppressBst) {
             this(c, senderSamlAssertion, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
@@ -159,7 +157,7 @@ public class WssDecoratorTest extends TestCase {
                             boolean signTimestamp,
                             Element[] elementsToEncrypt, String encryptionAlgorithm,
                             Element[] elementsToSign,
-                            SecretKey secureConversationKey,
+                            byte[] secureConversationKey,
                             boolean signSamlToken,
                             boolean suppressBst,
                             boolean encryptUsernameToken,
@@ -226,7 +224,7 @@ public class WssDecoratorTest extends TestCase {
                 reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                     public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
 
-                    public byte[] getSecretKey() { return d.secureConversationKey.getEncoded(); }
+                    public byte[] getSecretKey() { return d.secureConversationKey; }
                     public String getSCNamespace() {
                         return SoapUtil.WSSC_NAMESPACE;
                     }
@@ -239,16 +237,18 @@ public class WssDecoratorTest extends TestCase {
             }
         }
         if (d.elementsToEncrypt != null) {
-            for (int i = 0; i < d.elementsToEncrypt.length; i++) {
-                reqs.getElementsToEncrypt().add(d.elementsToEncrypt[i]);
+            for (Element anElementsToEncrypt : d.elementsToEncrypt) {
+                //noinspection unchecked
+                reqs.getElementsToEncrypt().add(anElementsToEncrypt);
             }
         }
         if (d.encryptionAlgorithm != null) {
             reqs.setEncryptionAlgorithm(d.encryptionAlgorithm);
         }
         if (d.elementsToSign != null) {
-            for (int i = 0; i < d.elementsToSign.length; i++) {
-                reqs.getElementsToSign().add(d.elementsToSign[i]);
+            for (Element anElementsToSign : d.elementsToSign) {
+                //noinspection unchecked
+                reqs.getElementsToSign().add(anElementsToSign);
             }
         }
         return reqs;
@@ -356,6 +356,7 @@ public class WssDecoratorTest extends TestCase {
         for (int i = 0; i < 10; ++i) {
             final Document doc = XmlUtil.stringToDocument(XmlUtil.nodeToString(td.c.message));
             dreq.getElementsToSign().clear();
+            //noinspection unchecked
             dreq.getElementsToSign().add(SoapUtil.getBodyElement(doc));
             decorator.decorateMessage(doc,
                                       dreq);
@@ -864,7 +865,7 @@ public class WssDecoratorTest extends TestCase {
                                  new Element[]{c.body},
                                  (String)null,
                                  new Element[]{c.body},
-                                 new AesKey(keyBytes, 256),
+                                 keyBytes,
                                  false,
                                  false,
                                  false, "abc11EncryptedKeySHA1Value11blahblahblah11==",

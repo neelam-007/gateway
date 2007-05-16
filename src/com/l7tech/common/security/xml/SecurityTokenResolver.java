@@ -46,7 +46,7 @@ public interface SecurityTokenResolver {
      * @return the matching EncryptedKey token, or null if no match was found.  The returned token is unmodifiable.
      * @see com.l7tech.common.security.xml.processor.WssProcessorUtil#makeEncryptedKey
      */
-    SecretKey getSecretKeyByEncryptedKeySha1(String encryptedKeySha1);
+    byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1);
 
     /**
      * Report that an EncryptedKey was decrypted, so it can be saved for later reuse by its EncryptedKeySHA1.
@@ -55,7 +55,7 @@ public interface SecurityTokenResolver {
      *                         encoded ciphertext of the secret key.  Must not be null or empty.
      * @param secretKey  the unwrapped SecretKey that came from the EncryptedKey with the specified EncryptedKeySha1.
      */
-    void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, SecretKey secretKey);
+    void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey);
 
     /**
      * Look up a Kerberos token using a Kerberosv5APREQSHA1 reference.

@@ -14,6 +14,7 @@ import com.ibm.xml.enc.type.CipherValue;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.FlexKey;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -26,15 +27,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Random;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -83,6 +80,7 @@ public class XencUtil {
      *
      * @param paddedKey the decrpted but still padded key
      * @return the unpadded decrypted key
+     * @throws IllegalArgumentException  if padded key has wrong format
      */
     public static byte[] unPadRSADecryptedSymmetricKey(byte[] paddedKey) throws IllegalArgumentException {
         int pos = 0;
@@ -116,11 +114,13 @@ public class XencUtil {
     /**
      * Encrypt the specified element.  Returns the new EncryptedData element.
      *
-     * @param element
+     * @param element  the element to encrypt.  Required.
      * @param encKey  with the algorithm and the key
      *                The encryption algorithm is one of (http://www.w3.org/2001/04/xmlenc#aes128-cbc,
      *                http://www.w3.org/2001/04/xmlenc#tripledes-cbc, etc)
      * @return the EncryptedData element that replaces the specified element.
+     * @throws java.security.GeneralSecurityException if there is a problem encrypting the element
+     * @throws com.l7tech.common.security.xml.XencUtil.XencException if there is a problem encrypting the element
      */
     public static Element encryptElement(Element element, XmlEncKey encKey)
       throws XencException, GeneralSecurityException
@@ -132,12 +132,12 @@ public class XencUtil {
         cipherData.setCipherValue(new CipherValue());
 
         EncryptionMethod encMethod = new EncryptionMethod();
-        encMethod.setAlgorithm(encKey.algorithm);
+        encMethod.setAlgorithm(encKey.algorithmUri);
         EncryptedData encData = new EncryptedData();
         encData.setCipherData(cipherData);
         encData.setEncryptionMethod(encMethod);
         encData.setType(EncryptedData.CONTENT);
-        Element encDataElement = null;
+        final Element encDataElement;
         try {
             encDataElement = encData.createElement(soapMsg, true);
         } catch (StructureException e) {
@@ -152,8 +152,7 @@ public class XencUtil {
         ec.setEncryptedType(encDataElement, EncryptedData.CONTENT, null, null);
 
         ec.setData(element);
-
-        ec.setKey(encKey.secretKey);
+        ec.setKey(encKey.getSecretKey());
 
         try {
             ec.encrypt();
@@ -472,23 +471,68 @@ public class XencUtil {
     }
 
     /**
+     * Get the FlexKey algorithm corresponding to the specified WSS algorithm URI.
+     * This works for AES 128, AES 192, AES 256, and Triple-DES.
+     *
+     * @param algorithmUri the WSS algorithm URI.  Required.
+     * @return the FlexKey algorithm corresponding to the specified WSS algorithm URI.  Never null.
+     * @throws NoSuchAlgorithmException if the specified algorithm URI is unrecognized.
+     */
+    public static FlexKey.Alg getFlexKeyAlg(String algorithmUri) throws NoSuchAlgorithmException {
+        if (EncryptionMethod.TRIPLEDES_CBC.equals(algorithmUri))
+            return(FlexKey.TRIPLEDES);
+        else if (EncryptionMethod.AES128_CBC.equals(algorithmUri))
+            return(FlexKey.AES128);
+        else if (EncryptionMethod.AES192_CBC.equals(algorithmUri))
+            return(FlexKey.AES192);
+        else if (EncryptionMethod.AES256_CBC.equals(algorithmUri))
+            return(FlexKey.AES256);
+        throw new NoSuchAlgorithmException("Unsupported WSS algorithm URI " + algorithmUri);
+    }
+
+    /**
+     * Create a FlexKey already configured to use the specified key material and WSS algorithm URI.
+     *
+     * @param bytes  the key bytes.  Must meet minimum length for specified algorithm (ie, 16 bytes for AES 128).
+     * @param algorithmUri  the WSS algorithm URI to use.  Required.
+     * @return a FlexKey instance already configured to use the specified WSS algorithm.
+     * @throws NoSuchAlgorithmException if there are not enough bytes for the specified algorithm, or the the algorithm
+     *                                  is not recognized.
+     */
+    public static FlexKey makeFlexKey(byte[] bytes, String algorithmUri) throws NoSuchAlgorithmException {
+        try {
+            FlexKey flexKey = new FlexKey(bytes);
+            flexKey.setAlgorithm(getFlexKeyAlg(algorithmUri));
+            return flexKey;
+        } catch (KeyException e) {
+            throw new NoSuchAlgorithmException("Not enough key material to use algorithm " + algorithmUri, e);
+        }
+    }
+
+    /**
      * Holds the secret key and the xml enc algorithm name
      */
     public static class XmlEncKey {
-        final SecretKey secretKey;
-        final String algorithm;
+        final byte[] keyBytes;
+        final String algorithmUri;
+        private SecretKey sk;
 
-        public XmlEncKey(String encryptionAlgorithm, SecretKey secretKey) {
-            this.algorithm = encryptionAlgorithm;
-            this.secretKey = secretKey;
+        public XmlEncKey(String encryptionAlgorithm, byte[] secretKey) {
+            this.algorithmUri = encryptionAlgorithm;
+            this.keyBytes = secretKey;
         }
 
-        public SecretKey getSecretKey() {
-            return secretKey;
+        public byte[] getSecretKeyBytes() {
+            return keyBytes;
+        }
+
+        public synchronized SecretKey getSecretKey() throws NoSuchAlgorithmException {
+            if (sk != null) return sk;
+            return sk = makeFlexKey(keyBytes, algorithmUri);
         }
 
         public String getAlgorithm() {
-            return algorithm;
+            return algorithmUri;
         }
     }
 

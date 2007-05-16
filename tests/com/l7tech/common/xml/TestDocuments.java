@@ -353,17 +353,11 @@ public final class TestDocuments {
     }
 
     /** @return the SecretKey used in the .NET WS-SC derived key token examples. */
-    public static SecretKey getDotNetSecureConversationSharedSecret() {
-        return new SecretKey() {
-            public String getAlgorithm() { return "ANY"; }
-            public String getFormat() { return "RAW"; }
-            public byte[] getEncoded() {
-                return new byte[] {5,2,4,5,
-                                   8,7,9,6,
-                                   32,4,1,55,
-                                   8,7,77,7};
-            }
-        };
+    public static byte[] getDotNetSecureConversationSharedSecret() {
+        return new byte[] {5,2,4,5,
+                           8,7,9,6,
+                           32,4,1,55,
+                           8,7,77,7};
     }
 
 

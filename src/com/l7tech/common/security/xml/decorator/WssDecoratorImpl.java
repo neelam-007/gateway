@@ -26,6 +26,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
@@ -232,9 +233,9 @@ public class WssDecoratorImpl implements WssDecorator {
                                                null,
                                                KeyInfoDetails.makeEncryptedKeySha1Ref(dreq.getEncryptedKeySha1()),
                                                getKeyLengthInBytesForAlgorithm(dreq.getEncryptionAlgorithm()),
-                                               dreq.getEncryptedKey().getEncoded(),
+                                               dreq.getEncryptedKey(),
                                                "DerivedKey");
-                    senderSigningKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
+                    senderSigningKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
                     String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                     if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
                         signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY2);
@@ -242,8 +243,8 @@ public class WssDecoratorImpl implements WssDecorator {
                         signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY);
                     }
                 } else {
-                    // Use the implicit ephermeral key directly
-                    senderSigningKey = dreq.getEncryptedKey();
+                    // Use the implicit ephemeral key directly
+                    senderSigningKey = new SecretKeySpec(dreq.getEncryptedKey(), "SHA1");
                     signatureKeyInfo = KeyInfoDetails.makeEncryptedKeySha1Ref(dreq.getEncryptedKeySha1());
                 }
             } else if (addedKerberosBst != null) {
@@ -260,7 +261,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                                            getKeyLengthInBytesForAlgorithm(dreq.getEncryptionAlgorithm()),
                                                                            dreq.getKerberosTicket().getKey(),
                                                                            "DerivedKey");
-                senderSigningKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
+                senderSigningKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                 signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY2);
             } else if (dreq.getKerberosTicket() != null) {
@@ -275,7 +276,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                                            getKeyLengthInBytesForAlgorithm(dreq.getEncryptionAlgorithm()),
                                                                            dreq.getKerberosTicket().getKey(),
                                                                            "DerivedKey");
-                senderSigningKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
+                senderSigningKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                 signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY2);
             } else if (senderCertKeyInfo != null) {
@@ -304,8 +305,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
                 // If we've been given a secret key to use, use it instead of making a new one
                 if (dreq.getEncryptedKey() != null) {
-                    addedEncKeyXmlEncKey = new XencUtil.XmlEncKey(encryptionAlgorithm,
-                                                                  dreq.getEncryptedKey());
+                    addedEncKeyXmlEncKey = new XencUtil.XmlEncKey(encryptionAlgorithm, dreq.getEncryptedKey());
                 } else {
                     addedEncKeyXmlEncKey = generateXmlEncKey(encryptionAlgorithm, c);
                 }
@@ -329,7 +329,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                getKeyLengthInBytesForAlgorithm(dreq.getEncryptionAlgorithm()),
                                                addedEncKeyXmlEncKey.getSecretKey().getEncoded(),
                                                "DerivedKey");
-                    senderSigningKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
+                    senderSigningKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
                     String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                     if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
                         signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY2);
@@ -361,9 +361,9 @@ public class WssDecoratorImpl implements WssDecorator {
                 DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, xencDesiredNextSibling, session, sct);
                 XencUtil.XmlEncKey encKey = null;
                 if (derivedKeyToken.derivedKey.length == 32) {
-                    encKey = new XencUtil.XmlEncKey(XencUtil.AES_256_CBC, new AesKey(derivedKeyToken.derivedKey, 256));
+                    encKey = new XencUtil.XmlEncKey(XencUtil.AES_256_CBC, derivedKeyToken.derivedKey);
                 } else if (derivedKeyToken.derivedKey.length == 16) {
-                    encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
+                    encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, derivedKeyToken.derivedKey);
                 } else {
                     throw new DecoratorException("unexpected key length");
                 }
@@ -395,8 +395,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                              addedEncKeyXmlEncKey.getSecretKey().getEncoded(),
                                                              "DerivedKey");
                     String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
-                    XencUtil.XmlEncKey dktEncKey = generateXmlEncKey(addedEncKeyXmlEncKey.getAlgorithm(),
-                                                                     dkt.derivedKey);
+                    XencUtil.XmlEncKey dktEncKey = new XencUtil.XmlEncKey(addedEncKeyXmlEncKey.getAlgorithm(), dkt.derivedKey);
                     if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
                         addEncryptedReferenceList(c,
                                                   securityHeader,
@@ -426,7 +425,7 @@ public class WssDecoratorImpl implements WssDecorator {
                        dreq.getEncryptedKey() != null)
             {
                 final String eksha = dreq.getEncryptedKeySha1();
-                final SecretKey ekkey = dreq.getEncryptedKey();
+                final byte[] ekkey = dreq.getEncryptedKey();
 
                 // Encrypt using a reference to an implicit EncryptedKey that the recipient is assumed
                 // already to possess (perhaps because we got it from them originally)
@@ -437,10 +436,10 @@ public class WssDecoratorImpl implements WssDecorator {
                                                              xencDesiredNextSibling,
                                                              KeyInfoDetails.makeEncryptedKeySha1Ref(eksha),
                                                              getKeyLengthInBytesForAlgorithm(dreq.getEncryptionAlgorithm()),
-                                                             ekkey.getEncoded(),
+                                                             ekkey,
                                                              "DerivedKey");
                     String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
-                    XencUtil.XmlEncKey dktEncKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(), dkt.derivedKey);
+                    XencUtil.XmlEncKey dktEncKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), dkt.derivedKey);
                     if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
                         addEncryptedReferenceList(c,
                                                   securityHeader,
@@ -484,8 +483,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                          dreq.getKerberosTicket().getKey(),
                                                          "DerivedKey");
                 String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
-                XencUtil.XmlEncKey dktEncKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(),
-                                                                 dkt.derivedKey);
+                XencUtil.XmlEncKey dktEncKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), dkt.derivedKey);
                 addEncryptedReferenceList(c,
                                           securityHeader,
                                           xencDesiredNextSibling,
@@ -505,8 +503,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                          dreq.getKerberosTicket().getKey(),
                                                          "DerivedKey");
                 String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
-                XencUtil.XmlEncKey dktEncKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(),
-                                                                 dkt.derivedKey);
+                XencUtil.XmlEncKey dktEncKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), dkt.derivedKey);
                 addEncryptedReferenceList(c,
                                           securityHeader,
                                           xencDesiredNextSibling,
@@ -1190,49 +1187,16 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param xEncAlgorithm the algorithm name such as http://www.w3.org/2001/04/xmlenc#tripledes-cbc
      * @param c             the context fro random generatir source
      * @return the encription key instance holding the secret key and the algorithm name
-     * @throws IllegalArgumentException if the algorithm URI is not recognized
-     * @throws IllegalArgumentException if the provided keyBytes is too short for the specified algorithm
+     * @throws NoSuchAlgorithmException if the algorithm URI is not recognized, or
+     *                                  if the provided keyBytes is too short for the specified algorithm
      */
-    private XencUtil.XmlEncKey generateXmlEncKey(String xEncAlgorithm, Context c) {
+    private XencUtil.XmlEncKey generateXmlEncKey(String xEncAlgorithm, Context c) throws NoSuchAlgorithmException {
         byte[] keyBytes = new byte[32]; // (max for aes 256)
         c.rand.nextBytes(keyBytes);
-        return generateXmlEncKey(xEncAlgorithm, keyBytes);
-    }
-
-    /**
-     * Create the EncryptionKey based on the algorithm name and the specified key material.
-     *
-     * @param xEncAlgorithm  the algorithm URI to use.  Must not be null or unrecognized.
-     * @param keyBytes       a byte array with sufficient raw key material for the requested algorithm.  Must not be null.
-     * @return the encryption key instance holding the SecretKey and the algorithm name.  Never null.
-     * @throws IllegalArgumentException if the algorithm URI is not recognized
-     * @throws IllegalArgumentException if the provided keyBytes is too short for the specified algorithm
-     */
-    private XencUtil.XmlEncKey generateXmlEncKey(String xEncAlgorithm, byte[] keyBytes) {
-        return new XencUtil.XmlEncKey(xEncAlgorithm, generateSecretKey(xEncAlgorithm, keyBytes));
-    }
-
-    /**
-     * Create a SecretKey with the appropriate algorithm and length for the given algorithm URI, and using
-     * keyBytes as the raw key material.
-     *
-     * @param xEncAlgorithm  the algorithm URI to use.  Must not be null or unrecognized.
-     * @param keyBytes       a byte array with sufficient raw key material for the requested algorithm.  Must not be null.
-     * @return a SecretKey with appropriate type and key length for this algorithm URI.  Never null.
-     * @throws IllegalArgumentException if the algorithm URI is not recognized
-     * @throws IllegalArgumentException if the provided keyBytes is too short for the specified algorithm
-     */
-    private SecretKey generateSecretKey(String xEncAlgorithm, byte[] keyBytes) {
-        if (XencUtil.TRIPLE_DES_CBC.equals(xEncAlgorithm)) {
-            return new DesKey(keyBytes, getKeyLengthInBytesForAlgorithm(xEncAlgorithm)*8);
-        } else if (XencUtil.AES_128_CBC.equals(xEncAlgorithm)) {
-            return new AesKey(keyBytes, getKeyLengthInBytesForAlgorithm(xEncAlgorithm)*8);
-        } else if (XencUtil.AES_192_CBC.equals(xEncAlgorithm)) {
-            return new AesKey(keyBytes, getKeyLengthInBytesForAlgorithm(xEncAlgorithm)*8);
-        } else if (XencUtil.AES_256_CBC.equals(xEncAlgorithm)) {
-            return new AesKey(keyBytes, getKeyLengthInBytesForAlgorithm(xEncAlgorithm)*8);
-        }
-        throw new IllegalArgumentException("Unknown algorithm " + xEncAlgorithm);
+        XencUtil.XmlEncKey xek = new XencUtil.XmlEncKey(xEncAlgorithm, keyBytes);
+        // Ensure algorithm and length are valid
+        xek.getSecretKey();
+        return xek;
     }
 
     private int getKeyLengthInBytesForAlgorithm(String xEncAlgorithm) {
