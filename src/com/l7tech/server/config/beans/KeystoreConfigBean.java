@@ -1,7 +1,7 @@
 package com.l7tech.server.config.beans;
 
-import com.l7tech.server.config.ClusteringType;
 import com.l7tech.server.config.KeystoreType;
+import com.l7tech.server.config.SharedWizardInfo;
 
 /**
  * User: megery
@@ -23,9 +23,9 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private String lunaJspPath;
     private String lunaInstallationPath;
     private boolean doKeystoreConfig;
-    private ClusteringType clusteringType;
     private KeystoreType keyStoreType;
     private boolean initializeHSM;
+    private SharedWizardInfo sharedWizardInfo;
 
 
     public KeystoreType getKeyStoreType() {
@@ -34,6 +34,7 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
 
     public void setKeyStoreType(KeystoreType keyStoreType) {
         this.keyStoreType = keyStoreType;
+        sharedWizardInfo.setKeystoreType(keyStoreType);
     }
 
     public KeystoreConfigBean() {
@@ -43,6 +44,7 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
 
     private void init() {
         ELEMENT_KEY = this.getClass().getName();
+        sharedWizardInfo = SharedWizardInfo.getInstance();
     }
 
     public void reset() {
@@ -127,13 +129,13 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
         return doKeystoreConfig;
     }
 
-    public void setClusterType(ClusteringType theClusteringType) {
-        this.clusteringType = theClusteringType;
-    }
+//    public void setClusterType(ClusteringType theClusteringType) {
+//        this.clusteringType = theClusteringType;
+//    }
 
-    public ClusteringType getClusteringType() {
-        return clusteringType;
-    }
+//    private ClusteringType getClusteringType() {
+//        return sharedWizardInfo.getClusterType();
+//    }
 
     public void setInitializeHSM(boolean shouldInitialise) {
         initializeHSM = shouldInitialise;

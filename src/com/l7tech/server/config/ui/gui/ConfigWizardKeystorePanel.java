@@ -53,7 +53,6 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
 
     protected void updateModel() {
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
-        ksBean.setClusterType(getParentWizard().getClusteringType());
         if (dontDoKsConfig.isSelected()) {
             ksBean.doKeystoreConfig(false);
             getParentWizard().setKeystoreType(KeystoreType.NO_KEYSTORE);

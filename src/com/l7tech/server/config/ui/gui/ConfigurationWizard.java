@@ -14,6 +14,7 @@ import com.l7tech.server.config.commands.AppServerConfigCommand;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.commands.RmiConfigCommand;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 
@@ -50,7 +51,6 @@ public class ConfigurationWizard extends Wizard {
     static Logger log = Logger.getLogger(ConfigurationWizard.class.getName());
 
     private boolean isNewInstall;
-//    private OSSpecificFunctions osFunctions;
     private String hostname;
 
     public static final String RESOURCE_PATH = "com/l7tech/server/config/resources";
@@ -60,7 +60,7 @@ public class ConfigurationWizard extends Wizard {
 
     private Set<ConfigurationCommand> additionalCommands;
     private ManualStepsManager manualSteps;
-    private ClusteringType clusteringType;
+    SharedWizardInfo sharedWizardInfo;
 
     static {
         currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
@@ -91,6 +91,7 @@ public class ConfigurationWizard extends Wizard {
         setEscKeyStrokeDisposes(this);
         wizardInput = new LinkedHashSet<ConfigurationCommand>();
         manualSteps = new ManualStepsManager();
+        sharedWizardInfo = SharedWizardInfo.getInstance();
 
         setupAdditionalCommands();
 
@@ -275,16 +276,23 @@ public class ConfigurationWizard extends Wizard {
     }
 
     public ClusteringType getClusteringType() {
-        return clusteringType;
+        return sharedWizardInfo.getClusterType();
     }
 
     public void setClusteringType(ClusteringType clusteringType) {
-        this.clusteringType = clusteringType;
-        manualSteps.setClusteringType(clusteringType);
+        sharedWizardInfo.setClusterType(clusteringType);
     }
 
     public void setKeystoreType(KeystoreType ksType) {
-        manualSteps.setKeystoreType(ksType);
+        sharedWizardInfo.setKeystoreType(ksType);
+    }
+
+    public DBInformation getDbInfo() {
+        return sharedWizardInfo.getDbinfo();
+    }
+
+    public void setDbInfo(DBInformation dbInfo) {
+        sharedWizardInfo.setDbinfo(dbInfo);
     }
 
     public java.util.List<String> getManualSteps() {

@@ -31,7 +31,7 @@ public class ConfigurationWizard {
     private Set<ConfigurationCommand> additionalCommands;
     private boolean hadFailures;
     String currentVersion = null;
-    private String hostname;
+
     private static final String COMMONS_LOGGING_PROP = "org.apache.commons.logging.Log";
     private static final String COMMONS_LOGGING_JDK14_LOGGER = "org.apache.commons.logging.impl.Jdk14Logger";
     private static final String L7TECH_CLASSNAME = "com.l7tech";
@@ -40,6 +40,7 @@ public class ConfigurationWizard {
     ConsoleWizardUtils wizardUtils = null;
 
     private ManualStepsManager manualStepsManager;
+    private SharedWizardInfo sharedWizardInfo;
 
     public ConfigurationWizard(InputStream in, PrintStream out) {
         init(in, out);
@@ -63,6 +64,7 @@ public class ConfigurationWizard {
         wizardUtils = ConsoleWizardUtils.getInstance(in, out);
         commands = new LinkedHashSet<ConfigurationCommand>();
         manualStepsManager = new ManualStepsManager();
+        sharedWizardInfo = SharedWizardInfo.getInstance();
     }
 
     private void initLogging() {
@@ -146,19 +148,19 @@ public class ConfigurationWizard {
     }
 
     public void setKeystoreType(KeystoreType ksType) {
-        manualStepsManager.setKeystoreType(ksType);
+        sharedWizardInfo.setKeystoreType(ksType);
     }
 
     public void setClusteringType(ClusteringType clusteringType) {
-        manualStepsManager.setClusteringType(clusteringType);
+        sharedWizardInfo.setClusterType(clusteringType);
     }
 
     public void setHostname(String hostname) {
-        this.hostname = hostname;
+        sharedWizardInfo.setHostname(hostname);
     }
 
     public String getHostname() {
-        return hostname;
+        return sharedWizardInfo.getHostname();
     }
 
     public List<String[]> getCommandDescriptions() {

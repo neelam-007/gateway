@@ -1,22 +1,26 @@
 package com.l7tech.server.config.commands;
 
 import com.l7tech.common.security.prov.luna.LunaCmu;
-import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.*;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
+import com.l7tech.server.config.db.DBActions;
+import com.l7tech.server.config.db.DBInformation;
+import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.server.security.keystore.sca.ScaException;
+import com.l7tech.server.security.keystore.sca.ScaManager;
 import com.l7tech.server.util.MakeLunaCerts;
 import com.l7tech.server.util.SetKeys;
-import com.l7tech.server.partition.PartitionManager;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -29,6 +33,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.security.cert.CertificateException;
+import java.sql.*;
+import java.text.MessageFormat;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,14 +92,17 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 "com.sun.net.ssl.internal.ssl.Provider",
                 "com.sun.crypto.provider.SunJCE"
             };
+    private KeystoreConfigBean ksBean;
+    private SharedWizardInfo sharedWizardInfo;
 
     public KeystoreConfigCommand(ConfigurationBean bean) {
         super(bean);
+        ksBean = (KeystoreConfigBean) configBean;
+        sharedWizardInfo = SharedWizardInfo.getInstance();
     }
 
     public boolean execute() {
         boolean success = true;
-        KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         if (ksBean.isDoKeystoreConfig()) {
             KeystoreType ksType = ksBean.getKeyStoreType();
             try {
@@ -161,8 +170,14 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         if (ksBean.isInitializeHSM()) {
             logger.info("Initializing HSM");
             try {
-                startSCA();
-                initializeSCA();
+
+                checkSCA();
+                DBInformation dbinfo = sharedWizardInfo.getDbinfo();
+                if (dbinfo == null) {
+                } else {
+                    logger.info(MessageFormat.format("database info: {0}:{1}@{2}/{3}", dbinfo.getUsername(), dbinfo.getPassword(), dbinfo.getHostname(), dbinfo.getDbName()));
+                    initializeSCA(dbinfo);
+                }
 
 //                prepareJvm(KeystoreType.SCA6000_KEYSTORE_NAME);
 //                updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
@@ -178,16 +193,89 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             }
         } else {
             logger.info("Restoring HSM Backup");
+            checkGDDCDongle();
         }
     }
 
-    private void initializeSCA() {
+    private ScaManager checkSCA() throws ScaException {
+        return new ScaManager();
+    }
+
+    private void checkGDDCDongle() {
+
+    }
+
+    private void insertKeystoreIntoDatabase(DBInformation dbinfo, byte[] keyData) throws SQLException, ClassNotFoundException {
+        int originalVersion = -1;
+        ByteArrayInputStream is = new ByteArrayInputStream(keyData);
+
+        DBActions dba = new DBActions();
+
+        Statement stmt = null;
+        PreparedStatement preparedStmt = null;
+        Connection connection = null;
+        try {
+            connection = dba.getConnection(dbinfo);
+            stmt = connection.createStatement();
+            String getVersionSql = new String("Select version from keystore_file where objectid=1 and name=\"HSM\"");
+            ResultSet rs = null;
+            try {
+                rs = stmt.executeQuery(getVersionSql);
+                while(rs.next()) {
+                    originalVersion = rs.getInt("version");
+                }
+                if (originalVersion == -1) {
+                    logger.warning("Could not find an existing version for the HSM keystore in the database. Defaulting to 0");
+                    originalVersion = 0;
+                } else {
+                    logger.info("Found an existing version for the HSM keystore in the database [" + originalVersion + "]");
+                }
+
+                try {
+                    preparedStmt = connection.prepareStatement("update keystore_file set version=?, databytes=? where objectid=1 and name=\"HSM\"");
+                    preparedStmt.setInt(1, originalVersion+1);
+                    preparedStmt.setBinaryStream(2, is, keyData.length);
+                    preparedStmt.addBatch();
+                    preparedStmt.executeBatch();
+                    logger.info("inserted the HSM keystore information into the database.");
+                } catch (SQLException e) {
+                    logger.severe("Could not perform the keystore update: " + e.getMessage());
+                }
+            } catch (SQLException e) {
+                logger.severe("Could not determine the current version of the HSM keystore in the database: " + e.getMessage());
+            }
+        } finally {
+            if (stmt != null) stmt.close();
+            if (preparedStmt != null) preparedStmt.close();
+            if (connection != null) connection.close();
+        }
+    }
+
+    private void exportCertsFromHSM() {
+
+    }
+
+    private void initializeSCA(DBInformation dbinfo) {
         if (getOsFunctions().isUnix()) {
+            startSCA();
             String zeroHSM = "scadiag -z mca0";
             logger.info("Execute \"" + zeroHSM + "\"");
 
             String initializeScript = getOsFunctions().getSsgInstallRoot() + "bin/" + "initialize-hsm.expect <keystorepassword>";
             logger.info("Execute \"" + initializeScript + "\"");
+            exportCertsFromHSM();
+
+            try {
+                ScaManager scaManager = new ScaManager();
+                byte[] keyData = scaManager.loadKeydata();
+                insertKeystoreIntoDatabase(dbinfo, keyData);
+            } catch (ScaException e) {
+                logger.severe("Could not initialize the ScaManager: " + e.getMessage());
+            } catch (SQLException e) {
+                logger.severe("Could not perform the keystore update: " + e.getMessage());
+            } catch (ClassNotFoundException e) {
+                logger.severe("Could not connect to the database for keystore update: " + e.getMessage());
+            }
         }
     }
 
@@ -410,7 +498,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         String hostname = ksBean.getHostname();
         boolean exportOnly = false;
         try {
-            exportOnly = (ksBean.getClusteringType() == ClusteringType.CLUSTER_JOIN);
+            exportOnly = (sharedWizardInfo.getClusterType() == ClusteringType.CLUSTER_JOIN);
             MakeLunaCerts.makeCerts(hostname, true, exportOnly, caCertFile, sslCertFile);
             success = true;
         } catch (LunaCmu.LunaCmuException e) {

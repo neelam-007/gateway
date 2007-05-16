@@ -64,6 +64,7 @@ public class DBActions {
     private OSSpecificFunctions osFunctions;
 
     private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
+        new DbVersion40Checker(),
         new DbVersion37Checker(),
         new DbVersion365Checker(),
         new DbVersion36Checker(),
@@ -414,7 +415,7 @@ public class DBActions {
         return isOk;
     }
 
-    private boolean checkLicense(DBActionsListener ui, String currentVersion, DBActions.DBInformation dbInfo) {
+    private boolean checkLicense(DBActionsListener ui, String currentVersion, DBInformation dbInfo) {
         logger.info("Now Checking SSG License validity");
         Connection conn = null;
         try {
@@ -438,17 +439,17 @@ public class DBActions {
         return true;
     }
 
-    private Connection getConnection(DBInformation dbInfo) throws SQLException {
+    public Connection getConnection(DBInformation dbInfo) throws SQLException {
         return getConnection(dbInfo.getHostname(), dbInfo.getDbName(), dbInfo.getUsername(),dbInfo.getPassword());
+    }
+
+    public Connection getConnection(String hostname, String dbName, String username, String password) throws SQLException {
+        return DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
     }
 
 //
 // PRIVATE METHODS
 //
-
-    private Connection getConnection(String hostname, String dbName, String username, String password) throws SQLException {
-        return DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
-    }
 
     private void dropDatabase(Statement stmt, String dbName, boolean isInfo) throws SQLException {
         stmt.executeUpdate(SQL_DROP_DB + dbName);
@@ -942,72 +943,6 @@ public class DBActions {
 
         public void setErrorMessage(String errorMessage) {
             this.errorMessage = errorMessage;
-        }
-    }
-    
-    public class DBInformation {
-        private String hostname;
-        private String dbName;
-        private String username;
-        private String password;
-        private String privUsername;
-        private String privPassword;
-
-        public DBInformation(String hostname, String dbName, String username, String password, String privUsername, String privPassword) {
-            this.hostname = hostname;
-            this.dbName = dbName;
-            this.username = username;
-            this.password = password;
-            this.privUsername = privUsername;
-            this.privPassword = privPassword;
-        }
-
-        public String getHostname() {
-            return hostname;
-        }
-
-        public void setHostname(String hostname) {
-            this.hostname = hostname;
-        }
-
-        public String getDbName() {
-            return dbName;
-        }
-
-        public void setDbName(String dbName) {
-            this.dbName = dbName;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
-        public String getPrivUsername() {
-            return privUsername;
-        }
-
-        public void setPrivUsername(String privUsername) {
-            this.privUsername = privUsername;
-        }
-
-        public String getPrivPassword() {
-            return privPassword;
-        }
-
-        public void setPrivPassword(String privPassword) {
-            this.privPassword = privPassword;
         }
     }
 }

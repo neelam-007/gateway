@@ -9,6 +9,7 @@ import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBActionsListener;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.lang.StringUtils;
 
@@ -169,6 +170,9 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         dbConfigBean.setDbUsername(dbUsername.getText());
         dbConfigBean.setDbPassword(new String(dbPassword.getPassword()));
         dbConfigBean.setDbName(dbName.getText());
+
+        DBInformation dbInfo = new DBInformation(dbConfigBean.getDbHostname(), dbConfigBean.getDbName(), dbConfigBean.getDbUsername(), dbConfigBean.getDbPassword(), null, null);
+        getParentWizard().setDbInfo(dbInfo);
     }
 
     public boolean isValidated() {

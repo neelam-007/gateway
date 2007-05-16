@@ -79,11 +79,10 @@ public class ManualStepsManager {
             "<p>Please ensure time is synchronized among all SSG nodes within the cluster" + eol +
         "</li>" + eol;
 
-    private KeystoreType keystoreType = KeystoreType.UNDEFINED;
-    private ClusteringType clusteringType = ClusteringType.UNDEFINED;
-
+    private SharedWizardInfo sharedWizardInfo;
 
     public ManualStepsManager() {
+        sharedWizardInfo = SharedWizardInfo.getInstance();
     }
 
     private OSSpecificFunctions getOsFunctions() {
@@ -143,19 +142,19 @@ public class ManualStepsManager {
         return steps;
     }
 
-    public void setKeystoreType(KeystoreType keystoreType) {
-        this.keystoreType = keystoreType;
-    }
+//    public void setKeystoreType(KeystoreType keystoreType) {
+//        this.keystoreType = keystoreType;
+//    }
 
-    public void setClusteringType(ClusteringType clusteringType) {
-        this.clusteringType = clusteringType;
-    }
+//    public void setClusteringType(ClusteringType clusteringType) {
+//        this.clusteringType = clusteringType;
+//    }
 
     private ClusteringType getClusteringType() {
-        return clusteringType;
+        return sharedWizardInfo.getClusterType();
     }
 
     private KeystoreType getKeystoreType() {
-        return keystoreType;
+        return sharedWizardInfo.getKeystoreType();
     }
 }
