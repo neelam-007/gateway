@@ -1045,7 +1045,7 @@
     -->
     <target name="make_installers"
             description="Create the SSG WAR file and SSXVC/SSM Win32 installers (was make_installers.pl -b)."
-            depends="makensis-unsafe, package.installclient.work, package.installmanager.work, package.installgateway.work">
+            depends="makerpm, makensis-unsafe, package.installclient.work, package.installmanager.work, package.installgateway.work">
     </target>
 
     <!--
