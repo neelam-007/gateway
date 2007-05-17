@@ -1,0 +1,23 @@
+#       This is the default standard profile provided to a user.
+#       They are expected to edit it to meet their own needs.
+export MAIL=/usr/mail/${LOGNAME:?}
+export PATH=/usr/local/bin:/usr/local/sbin:${PATH}
+export SSG_HOME=/ssg
+export TOMCAT_HOME=/ssg/tomcat
+export JAVA_HOME=/usr/jdk/instances/jdk1.5.0
+export JAVA_OPTS='-server \
+        -d32 \
+        -Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxConnectionsPerHost=750 \  
+        -Djava.net.preferIPv4Stack=true  \
+        -Dsun.rmi.dgc.server.gcInterval=3600000 \
+        -Dsun.rmi.dgc.client.gcInterval=3600000 \
+        -Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxTotalConnections=7500 \
+        -Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl \
+        -Dfile.encoding=UTF-8 \
+        -Dsun.net.inetaddr.ttl=30 \
+        -Dnetworkaddress.cache.ttl=30 \
+        -Djava.awt.headless=true \
+        -XX:CompileThreshold=1500 \
+        -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger \
+        -Xmx2370352k \
+        -Xss256k'

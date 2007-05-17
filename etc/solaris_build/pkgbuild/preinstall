@@ -1,0 +1,24 @@
+#!/bin/bash
+
+if [ `grep ^ssg: /etc/group` ]; then
+	echo "group ssg already exists"
+else
+	echo "adding ssg group"
+	groupadd ssg
+fi
+
+if [ `grep ^gateway: /etc/passwd` ]; then
+	echo "user gatewat already exists"
+else
+	echo "adding gateway user"
+	useradd -G ssg -d /export/home/gateway -s /usr/bin/bash gateway
+fi
+
+if [ `grep ^ssgconfig: /etc/passwd` ]; then
+	echo "user ssgconfig already exists"
+else
+	echo "adding ssgconfig user, useradd will whine, this is safe to ignore"
+	useradd -G ssg -d /export/home/ssgconfig -s /usr/bin/bash ssgconfig
+fi
+
+exit 0
