@@ -313,7 +313,8 @@
         </id>
         <version name="version"/>
         <property name="format" column="format" type="string"/>
-        <property name="databytes" column="databytes" type="binary"/>
+        <property name="updatingnodeid" column="updatingnodeid" type="string"/>
+        <property name="databytes" column="databytes" type="binary" lazy="true"/>
     </class>
 
     <class name="com.l7tech.service.SampleMessage" table="sample_messages" lazy="false">

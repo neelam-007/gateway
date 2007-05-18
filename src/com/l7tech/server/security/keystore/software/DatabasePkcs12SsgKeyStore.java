@@ -1,25 +1,23 @@
 package com.l7tech.server.security.keystore.software;
 
-import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import com.l7tech.common.io.EmptyInputStream;
-import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.Functions;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
-import com.l7tech.server.security.keystore.SsgKeyEntry;
-import com.l7tech.server.security.keystore.SsgKeyStore;
+import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.KeystoreFileManager;
+import com.l7tech.server.security.keystore.SsgKeyStore;
 
-import javax.naming.ldap.LdapName;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.security.*;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -32,13 +30,23 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
 
     private final long id;
     private final String name;
-    private final ClusterPropertyManager cpm;
+    private final ClusterPropertyManager cpm; // TODO extract cluster shared key from this
     private final KeystoreFileManager kem;
     private final char[] password;
 
     private KeyStore cachedKeystore = null;
     private long lastLoaded = 0;
 
+    /**
+     * Create an SsgKeyStore that uses a PKCS#12 file in a KeystoreFile in the database as its backing store.
+     *
+     * @param id       the ID of this SsgKeyStore.  This will also be the ID of the KeystoreFile instance we use
+     *                 as our backing store.
+     * @param name     The name of this SsgKeyStore.  Required.
+     * @param cpm      ClusterPropertyManager.  Required.
+     * @param kem      KeystoreFileManager.  Required.
+     * @param password the password to use to encrypt the PKCS#12 data bytes.  Required.
+     */
     public DatabasePkcs12SsgKeyStore(long id, String name, ClusterPropertyManager cpm, KeystoreFileManager kem, char[] password) {
         this.id = id;
         this.name = name;
@@ -63,8 +71,13 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
 
     protected synchronized KeyStore keyStore() throws KeyStoreException {
         if (cachedKeystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
-            cachedKeystore = loadFromDatabase();
-            lastLoaded = System.currentTimeMillis();
+            try {
+                KeystoreFile keystoreFile = kem.findByPrimaryKey(getId());
+                cachedKeystore = bytesToKeyStore(keystoreFile.getDatabytes());
+                lastLoaded = System.currentTimeMillis();
+            } catch (FindException e) {
+                throw new KeyStoreException("Unable to load software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
+            }
         }
         return cachedKeystore;
     }
@@ -77,18 +90,20 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         return logger;
     }
 
-    private KeyStore loadFromDatabase() throws KeyStoreException {
+    private KeyStore bytesToKeyStore(byte[] bytes) throws KeyStoreException {
         try {
             ByteArrayInputStream inputStream = null;
-            String b64 = cpm.getProperty(getClusterPropertyName());
-            if (b64 != null && b64.length() > 0) {
-                byte[] bytes = HexUtils.decodeBase64(b64);
+            if (bytes != null && bytes.length > 0) {
+                if (logger.isLoggable(Level.FINE)) logger.fine("Loading existing PKCS#12 data for keystore id " + getId());
                 inputStream = new ByteArrayInputStream(bytes);
+            } else {
+                if (logger.isLoggable(Level.INFO)) logger.info("Creating new empty PKCS#12 file for keystore id " + getId());
             }
+
             KeyStore keystore = KeyStore.getInstance("PKCS12");
             keystore.load(inputStream, password); // If no existing data, null inputStream causes new keystore to be created
             return keystore;
-        } catch (FindException e) {
+        } catch (KeyStoreException e) {
             throw new KeyStoreException("Unable to load software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
         } catch (IOException e) {
             throw new KeyStoreException("Unable to load software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
@@ -99,40 +114,50 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         }
     }
 
-    private String getClusterPropertyName() {
-        return "keystore.pkcs12." + getName();
-    }
-
-    private void storeToDatabase(KeyStore keystore) throws KeyStoreException {
+    private byte[] keyStoreToBytes(KeyStore keystore) throws KeyStoreException {
         BufferPoolByteArrayOutputStream outputStream = new BufferPoolByteArrayOutputStream();
         try {
             keystore.store(outputStream, password);
-            String b64 = HexUtils.encodeBase64(outputStream.toByteArray());
-            cpm.save(new ClusterProperty(getClusterPropertyName(), b64));
-        } catch (IOException e) {
-            throw new KeyStoreException("Unable to save software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
+            return outputStream.toByteArray();
         } catch (NoSuchAlgorithmException e) {
             throw new KeyStoreException("Unable to save software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
-        } catch (CertificateException e) {
+        } catch (IOException e) {
             throw new KeyStoreException("Unable to save software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
-        } catch (SaveException e) {
+        } catch (CertificateException e) {
             throw new KeyStoreException("Unable to save software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
         } finally {
             outputStream.close();
         }
     }
 
-
-    public synchronized void storePrivateKeyEntry(SsgKeyEntry entry) throws KeyStoreException {
-        super.storePrivateKeyEntry(entry);
-        storeToDatabase(cachedKeystore);
-    }
-
-    public synchronized KeyPair generateRsaKeyPair(int keyBits) throws InvalidAlgorithmParameterException {
-        return super.generateRsaKeyPair(keyBits);
-    }
-
-    public synchronized CertificateRequest makeCsr(LdapName dn, KeyPair keyPair) throws InvalidKeyException, SignatureException {
-        return super.makeCsr(dn, keyPair);
+    /**
+     * Load the keystore from the database, mutate it, and save it back, all atomically.
+     *
+     * @param mutator  a Runnable that will mutate the current {@link #cachedKeystore}, which will be guaranteed
+     *                 to be up-to-date and non-null when the runnable is invoked.
+     * @throws KeyStoreException if the runnable throws a RuntimeException or if any other problem occurs during
+     *                           the process
+     * @return the value returned by the mutator
+     */
+    protected synchronized <OUT> OUT mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
+        final Object[] out = new Object[] { null };
+        try {
+            kem.updateDataBytes(getId(), new Functions.Unary<byte[], byte[]>() {
+                public byte[] call(byte[] bytes) {
+                    try {
+                        cachedKeystore = bytesToKeyStore(bytes);
+                        lastLoaded = System.currentTimeMillis();
+                        out[0] = mutator.call();
+                        return keyStoreToBytes(cachedKeystore);
+                    } catch (KeyStoreException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        } catch (UpdateException e) {
+            throw new KeyStoreException(e);
+        }
+        //noinspection unchecked
+        return (OUT)out[0];
     }
 }

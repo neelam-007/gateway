@@ -4,6 +4,7 @@ import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.table.TrustedCertsTable;
@@ -91,8 +92,27 @@ public class PrivateKeyManagerWindow extends JDialog {
             }
         });
 
+        createButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                final NewPrivateKeyDialog dlg = new NewPrivateKeyDialog(PrivateKeyManagerWindow.this);
+                dlg.setModal(true);
+                dlg.pack();
+                Utilities.centerOnScreen(dlg);
+                DialogDisplayer.display(dlg, new Runnable() {
+                    public void run() {
+                        if (dlg.isConfirmed()) {
+                            try {
+                                loadCerts();
+                            } catch (RemoteException e1) {
+                                throw new RuntimeException(e1);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
         // TODO other buttons
-        createButton.setEnabled(false);
         importButton.setEnabled(false);
         removeButton.setEnabled(false);
 

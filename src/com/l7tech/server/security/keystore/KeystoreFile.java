@@ -18,6 +18,7 @@ public class KeystoreFile extends NamedEntityImp {
 
     private String format;
     private byte[] databytes;
+    private String updatingnodeid;
 
 
     public String getFormat() {
@@ -34,6 +35,14 @@ public class KeystoreFile extends NamedEntityImp {
 
     public void setDatabytes(byte[] databytes) {
         this.databytes = databytes;
+    }
+
+    public String getUpdatingnodeid() {
+        return updatingnodeid;
+    }
+
+    public void setUpdatingnodeid(String updatingnodeid) {
+        this.updatingnodeid = updatingnodeid;
     }
 
     public boolean equals(Object o) {

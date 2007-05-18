@@ -29,7 +29,7 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * @return a new RSA key pair, whose private key may be locked within the hardware if this is a hardware key store.
      * @throws InvalidAlgorithmParameterException if there is a problem generating a new RSA key pair with this key size.
      */
-    KeyPair generateRsaKeyPair(int keyBits) throws InvalidAlgorithmParameterException;
+    KeyPair generateRsaKeyPair(int keyBits) throws InvalidAlgorithmParameterException, KeyStoreException;
 
     /**
      * Generate a new PKCS#10 certificate request for the specified key pair, using a certificate with a DN
@@ -41,5 +41,5 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * @throws InvalidKeyException  if the key cannot be used for this purpose
      * @throws SignatureException   if there was a problem signing the CSR
      */
-    CertificateRequest makeCsr(LdapName dn, KeyPair keyPair) throws InvalidKeyException, SignatureException;
+    CertificateRequest makeCsr(LdapName dn, KeyPair keyPair) throws InvalidKeyException, SignatureException, KeyStoreException;
 }

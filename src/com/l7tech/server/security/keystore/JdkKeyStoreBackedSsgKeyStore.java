@@ -3,6 +3,7 @@ package com.l7tech.server.security.keystore;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
 
 import javax.naming.ldap.LdapName;
 import java.security.*;
@@ -88,7 +89,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
      */
     protected abstract Logger getLogger();
 
-    public void storePrivateKeyEntry(SsgKeyEntry entry) throws KeyStoreException {
+    private void storePrivateKeyEntryImpl(SsgKeyEntry entry) throws KeyStoreException {
         final String alias = entry.getAlias();
         if (alias == null || alias.trim().length() > 0)
             throw new KeyStoreException("Unable to store private key entry with null or empty alias");
@@ -110,12 +111,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         keystore.setKeyEntry(alias, key, null, chain);
     }
 
-    public KeyPair generateRsaKeyPair(int keyBits) throws InvalidAlgorithmParameterException {
-        // Requires that current crypto engine already by the correct one for this keystore type
-        return JceProvider.generateRsaKeyPair(keyBits);
-    }
-
-    public CertificateRequest makeCsr(LdapName dn, KeyPair keyPair) throws InvalidKeyException, SignatureException {
+    public CertificateRequest makeCsr(LdapName dn, KeyPair keyPair) throws InvalidKeyException, SignatureException, KeyStoreException {
         // Requires that current crypto engine already by the correct one for this keystore type
         return JceProvider.makeCsr(dn.toString(), keyPair);
     }
@@ -127,4 +123,38 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     public SsgKeyStore getKeyStore() {
         return this;
     }
+
+    public synchronized void storePrivateKeyEntry(final SsgKeyEntry entry) throws KeyStoreException {
+        mutateKeystore(new Functions.Nullary<Object>() {
+            public Object call() {
+                try {
+                    storePrivateKeyEntryImpl(entry);
+                    return null;
+                } catch (KeyStoreException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+    }
+
+    public synchronized KeyPair generateRsaKeyPair(final int keyBits) throws InvalidAlgorithmParameterException, KeyStoreException {
+        return mutateKeystore(new Functions.Nullary<KeyPair>() {
+            public KeyPair call() {
+                // Requires that current crypto engine already by the correct one for this keystore type
+                return JceProvider.generateRsaKeyPair(keyBits);
+            }
+        });
+    }
+
+
+    /**
+     * Load the keystore from the database, mutate it, and save it back, all atomically.
+     *
+     * @param mutator  a Runnable that will mutate the current keystore, which will be guaranteed
+     *                 to be up-to-date and non-null when the runnable is invoked.
+     * @throws java.security.KeyStoreException if the runnable throws a RuntimeException or if any other problem occurs during
+     *                           the process
+     * @return the value returned by the mutator
+     */
+    protected abstract <OUT> OUT mutateKeystore(Functions.Nullary<OUT> mutator) throws KeyStoreException;
 }

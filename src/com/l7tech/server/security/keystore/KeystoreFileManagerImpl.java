@@ -1,12 +1,19 @@
 package com.l7tech.server.security.keystore;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.HibernateEntityManager;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.*;
+import com.l7tech.common.util.Functions;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
 
 import java.util.logging.Logger;
+import java.sql.SQLException;
 
 /**
  * Hibernate manager for read/write access to the keystore table.
@@ -40,5 +47,28 @@ public class KeystoreFileManagerImpl
 
     public EntityType getEntityType() {
         return EntityType.PRIVATE_KEY;
+    }
+
+    public void updateDataBytes(final long id, final Functions.Unary<byte[], byte[]> mutator) throws UpdateException {
+        try {
+            getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    try {
+                        KeystoreFile keystoreFile = findByPrimaryKey(id);
+                        byte[] bytesBefore = keystoreFile.getDatabytes();
+                        byte[] bytesAfter = mutator.call(bytesBefore);
+                        keystoreFile.setDatabytes(bytesAfter);
+                        save(keystoreFile);
+                        return null;
+                    } catch (FindException e) {
+                        throw new HibernateException(e);
+                    } catch (SaveException e) {
+                        throw new HibernateException(e);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            throw new UpdateException(e);
+        }
     }
 }
