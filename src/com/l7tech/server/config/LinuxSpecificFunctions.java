@@ -20,10 +20,6 @@ public class LinuxSpecificFunctions extends UnixSpecificFunctions {
     }
 
     void doSpecialSetup() {
-        KeystoreInfo lunaInfo = new KeystoreInfo(KeystoreType.LUNA_KEYSTORE_NAME);
-        lunaInfo.addMetaInfo("INSTALL_DIR", "/usr/lunasa");
-        lunaInfo.addMetaInfo("JSP_DIR", "/usr/lunasa/jsp");
-        lunaInfo.addMetaInfo("CMU_PATH", "bin/cmu");
 
         networkConfigDir = "/etc/sysconfig/network-scripts";
         upgradeFileNewExt = "rpmnew";
@@ -31,9 +27,16 @@ public class LinuxSpecificFunctions extends UnixSpecificFunctions {
 
         List<KeystoreInfo> infos = new ArrayList<KeystoreInfo>();
         infos.add(new KeystoreInfo(KeystoreType.DEFAULT_KEYSTORE_NAME));
-        infos.add(lunaInfo);
-        if (KeystoreInfo.isHSMEnabled()) {
 
+        if (KeystoreInfo.isLunaEnabled()) {
+            KeystoreInfo lunaInfo = new KeystoreInfo(KeystoreType.LUNA_KEYSTORE_NAME);
+            lunaInfo.addMetaInfo("INSTALL_DIR", "/usr/lunasa");
+            lunaInfo.addMetaInfo("JSP_DIR", "/usr/lunasa/jsp");
+            lunaInfo.addMetaInfo("CMU_PATH", "bin/cmu");
+            infos.add(lunaInfo);
+        }
+        
+        if (KeystoreInfo.isHSMEnabled()) {
             KeystoreInfo hsmInfo = new KeystoreInfo(KeystoreType.SCA6000_KEYSTORE_NAME);
             hsmInfo.addMetaInfo("KEYSTORE_DATA_DIR", "/var/opt/sun/sca6000/keydata/");
             infos.add(hsmInfo);

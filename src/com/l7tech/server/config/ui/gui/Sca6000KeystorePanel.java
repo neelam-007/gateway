@@ -80,4 +80,8 @@ public class Sca6000KeystorePanel extends KeystorePanel{
     public boolean isInitializeHSM() {
         return initializeKeystore.isSelected();
     }
+
+    public void setKsPassword(char[] ksPassword) {
+        pwPanel.setPassword(ksPassword);
+    }
 }

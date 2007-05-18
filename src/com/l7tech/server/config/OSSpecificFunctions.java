@@ -287,7 +287,8 @@ public abstract class OSSpecificFunctions {
     public static class KeystoreInfo {
         KeystoreType type;
         Map<String, String> metaInfo;
-        private static final String ENABLE_HSM ="com.l7tech.server.keystore.enablehsm";
+        private static final String ENABLE_HSM = "com.l7tech.server.keystore.enablehsm";
+        private static final String ENABLE_LUNA = "com.l7tech.server.keystore.enableluna";
 
         public KeystoreInfo(KeystoreType type) {
             this.type = type;
@@ -317,5 +318,11 @@ public abstract class OSSpecificFunctions {
         public static boolean isHSMEnabled() {
             return Boolean.getBoolean(ENABLE_HSM) ;
         }
+
+        public static boolean isLunaEnabled() {
+            return Boolean.getBoolean(ENABLE_LUNA) ;
+        }
+
+
     }
 }

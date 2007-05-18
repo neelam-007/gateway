@@ -1,13 +1,10 @@
 package com.l7tech.server.config.commands;
 
-import com.l7tech.common.security.prov.luna.LunaCmu;
-import com.l7tech.common.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.RsaSignerEngine;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.security.prov.bc.BouncyCastleRsaSignerEngine;
+import com.l7tech.common.security.prov.luna.LunaCmu;
+import com.l7tech.common.util.*;
 import com.l7tech.server.config.*;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
@@ -32,14 +29,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.*;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.cert.*;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -77,7 +76,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private static final String PROPKEY_SECURITY_PROVIDER = "security.provider";
     private static final String PROPKEY_JCEPROVIDER = "com.l7tech.common.security.jceProviderEngine";
-    private static final String PROPERTY_LUNA_JCEPROVIDER_VALUE = "com.l7tech.common.security.prov.luna.LunaJceProviderEngine";
+//    private static final String PROPERTY_LUNA_JCEPROVIDER_VALUE = "com.l7tech.common.security.prov.luna.LunaJceProviderEngine";
+//    private static final String PROPERTY_PKCS11_JCEPROVIDER_VALUE = "com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine";
 
     private static final String[] LUNA_SECURITY_PROVIDERS =
             {
@@ -97,7 +97,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 "com.sun.security.sasl.Provider"
             };
 
-    private static final String PKCS11_CFG_FILE = "pkcs11.cfg;";
+    private static final String PKCS11_CFG_FILE = "/ssg/etc/conf/pkcs11.cfg";
     private static final String[] HSM_SECURITY_PROVIDERS =
             {
                 "sun.security.pkcs11.SunPKCS11 " + PKCS11_CFG_FILE,
@@ -107,6 +107,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             };
     private KeystoreConfigBean ksBean;
     private SharedWizardInfo sharedWizardInfo;
+    private static final String HSM_SETUP_SCRIPT = "bin/hsm_setup.sh";
 
 
     public KeystoreConfigCommand(ConfigurationBean bean) {
@@ -183,13 +184,13 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         try {
             prepareJvmForNewKeystoreType(KeystoreType.DEFAULT_KEYSTORE_NAME);
             makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
-            updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile,DEFAULT_SECURITY_PROVIDERS );
+            updateJavaSecurity(javaSecFile, newJavaSecFile,DEFAULT_SECURITY_PROVIDERS );
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
             updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
             updateSystemPropertiesFile(ksBean, systemPropertiesFile);
         } catch (Exception e) {
-            logger.severe("problem generating keys or keystore - skipping keystore configuration");
-            logger.severe(e.getMessage());
+            String mess = "problem generating keys or keystore - skipping keystore configuration: ";
+            logger.log(Level.SEVERE, mess + e.getMessage(), e);
             throw e;
         }
     }
@@ -233,7 +234,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             copyLunaJars(ksBean);
             prepareJvmForNewKeystoreType(KeystoreType.LUNA_KEYSTORE_NAME);
             makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
-            updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile, LUNA_SECURITY_PROVIDERS);
+            updateJavaSecurity(javaSecFile, newJavaSecFile, LUNA_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
             updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
             updateSystemPropertiesFile(ksBean, systemPropertiesFile);
@@ -245,7 +246,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
     
     private void doHSMConfig(KeystoreConfigBean ksBean) throws Exception {
-        char[] ksPassword = ksBean.getKsPassword();
+        char[] passwd = ksBean.getKsPassword();
+        char[] ksPassword = new char["gateway:".toCharArray().length + passwd.length];
         String ksDir = getOsFunctions().getKeystoreDir();
         File keystoreDir = new File(ksDir);
         if (!keystoreDir.exists() && !keystoreDir.mkdir()) {
@@ -263,13 +265,11 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
         File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
 
-        File pkcs11ConfigFile = new File(getOsFunctions().getSsgInstallRoot() + PKCS11_CFG_FILE);
         File newJavaSecFile  = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
 
         File[] files = new File[]
         {
             javaSecFile,
-            pkcs11ConfigFile,
             keystorePropertiesFile,
             tomcatServerConfigFile,
             caKeyStoreFile,
@@ -283,13 +283,13 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         if (ksBean.isInitializeHSM()) {
             logger.info("Initializing HSM");
             try {
-
                 //HSM Specific setup
                 ScaManager scaManager = getScaManager();
                 checkGDDCDongle();
-                initializeSCA(scaManager);
-                writePKCS11Config(pkcs11ConfigFile);
-                createNewKeystoreOnHsm(javaSecFile, newJavaSecFile, ksDir, ksPassword);
+                initializeSCA(ksPassword);
+                prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
+                updateJavaSecurity(javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
+                makeHSMKeys(new File(ksDir), ksPassword);
                 insertKeystoreIntoDatabase(scaManager);
 
                 //General Keystore Setup
@@ -300,8 +300,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
                 throw e;
             } catch (Exception e) {
-                logger.severe("problem initializing the HSM - skipping HSM configuration");
-                logger.severe(e.getMessage());
+                String mess = "Problem initializing the HSM - skipping HSM configuration: ";
+                logger.log(Level.SEVERE, mess + e.getMessage(), e);
                 throw e;
             }
         } else {
@@ -318,33 +318,19 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         //TODO get some GDDC and find some way to check for a reacharound
     }
 
-    private void initializeSCA(ScaManager scaManager) {
+    private void initializeSCA(char[] keystorePassword) throws IOException {
+        boolean success = false;
         if (getOsFunctions().isUnix()) {
-            startSCA();
-            zeroHsm();
-            emptyHsmKeydataDir(scaManager);
-            String initializeScript = getOsFunctions().getSsgInstallRoot() + "bin/" + "initialize-hsm.expect <keystorepassword>";
-            logger.info("Execute \"" + initializeScript + "\"");
+            String initializeScript = getOsFunctions().getSsgInstallRoot() + HSM_SETUP_SCRIPT;
+            try {
+                logger.info("Executing \"" + initializeScript + "\"");
+                ProcResult result = ProcUtils.exec(null, new File(initializeScript), ProcUtils.args("init", keystorePassword), null, false);
+                logger.info("Successfully initialized the HSM: " + new String(result.getOutput()));
+            } catch (IOException e) {
+                logger.warning("There was an error trying to initialize the HSM: " + e.getMessage());
+                throw e;
+            }
         }
-    }
-
-    private void writePKCS11Config(File pkcs11ConfigFile) {
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(pkcs11ConfigFile);
-            pw.println("name=SCA6000");
-            pw.println("library=/usr/local/lib/pkcs11/PKCS11_API.so64");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            ResourceUtils.closeQuietly(pw);
-        }
-    }
-
-    private void createNewKeystoreOnHsm(File javaSecFile, File newJavaSecFile, String ksDir, char[] hsmPassword) throws IllegalAccessException, IOException, ClassNotFoundException, InstantiationException, NoSuchAlgorithmException, SignatureException, CertificateException, InvalidKeyException, KeyStoreException {
-        prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
-        updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
-        makeHSMKeys(new File(ksDir), hsmPassword);
     }
 
     private void insertKeystoreIntoDatabase(ScaManager scaManager) throws ScaException, ClassNotFoundException, SQLException {
@@ -361,7 +347,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.severe("Could not connect to the database for keystore update: " + e.getMessage());
             throw e;
         }
-
 
         int originalVersion = -1;
         DBInformation dbinfo = sharedWizardInfo.getDbinfo();
@@ -429,11 +414,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return originalVersion;
     }
 
-    private void makeHSMKeys(File keystoreDir, char[] ksPassword) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, SignatureException, InvalidKeyException {
+    private void makeHSMKeys(File keystoreDir, char[] keystoreAccessPassword) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, SignatureException, InvalidKeyException {
         if ( !keystoreDir.exists() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' does not exist" );
         if ( !keystoreDir.isDirectory() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' is not a directory" );
         String kstype = "PKCS11";
-        char[] keystoreAccessPassword = ("gateway:"+new String(ksPassword)).toCharArray();
 
         //TODO try to refactor SetKeys to understand HSM-speak instead of just PKCS12 and then there's no need to reinvent things here.
         X509Certificate caCert = null;
@@ -621,125 +605,95 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void emptyHsmKeydataDir(ScaManager scaManager) {
-        stopSca();
-        logger.info("Deleting the " + scaManager.getKeydataDir() + " directory");
-        //empty dir
-        startSCA();
-    }
-
-    private void stopSca() {
-        if (getOsFunctions().isUnix()) {
-            String stopScaCommand = null;
-
-            if (OSDetector.isLinux()) {
-                stopScaCommand = "service sca stop";
-            } else {
-                stopScaCommand = "scvadmin stop sca";
-            }
-            logger.info("Stopping the SCA.");
-            logger.info("Execute \"" + stopScaCommand + "\"");
-        }
-    }
-
-    private void zeroHsm() {
-        String zeroHSM = "scadiag -z mca0";
-        logger.info("Execute \"" + zeroHSM + "\"");
-    }
-
-    private void startSCA() {
-        if (getOsFunctions().isUnix()) {
-            String startScaCommand = null;
-
-            if (OSDetector.isLinux()) {
-                startScaCommand = "service sca start";
-            } else {
-                startScaCommand = "scvadmin start sca";
-            }
-            logger.info("Starting the SCA.");
-            logger.info("Execute \"" + startScaCommand + "\"");
-        }
-    }
-
-
     private void prepareJvmForNewKeystoreType(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException {
         Provider[] currentProviders = Security.getProviders();
         for (Provider provider : currentProviders) {
             Security.removeProvider(provider.getName());
         }
 
-        String[] whichProviders = null;
-        if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME || ksType == KeystoreType.SCA6000_KEYSTORE_NAME) {
-            if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME)
-                whichProviders = DEFAULT_SECURITY_PROVIDERS;
-            else
-                whichProviders = HSM_SECURITY_PROVIDERS;
+       switch (ksType) {
+            case DEFAULT_KEYSTORE_NAME:
+                prepareProviders(DEFAULT_SECURITY_PROVIDERS);
+                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
+                break;
+            case SCA6000_KEYSTORE_NAME:
+                prepareProviders(HSM_SECURITY_PROVIDERS);
+                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.PKCS11_ENGINE);
+                break;
+            case LUNA_KEYSTORE_NAME:
+                prepareLunaProviders();
+                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.LUNA_ENGINE);
+                break;
+        }
+    }
 
-            for (String providerName : whichProviders) {
-                try {
-                    Security.addProvider((Provider) Class.forName(providerName).newInstance());
-                } catch (ClassNotFoundException e) {
-                    logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
-                    throw e;
-                }
+    private void prepareProviders(String[] securityProviders) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+        for (String providerName : securityProviders) {
+            try {
+                Security.addProvider((Provider) Class.forName(providerName).newInstance());
+            } catch (ClassNotFoundException e) {
+                logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
+                throw e;
             }
-        } else if (ksType == KeystoreType.LUNA_KEYSTORE_NAME) {
-            File classDir = new File(getOsFunctions().getPathToJreLibExt());
-            if (!classDir.exists()) {
-                throw new FileNotFoundException("Could not locate the directory: \"" + classDir + "\"");
+        }
+    }
+
+    private void prepareLunaProviders() throws FileNotFoundException, IllegalAccessException, InstantiationException {
+        File classDir = new File(getOsFunctions().getPathToJreLibExt());
+        if (!classDir.exists()) {
+            throw new FileNotFoundException("Could not locate the directory: \"" + classDir + "\"");
+        }
+
+        File[] lunaJars = classDir.listFiles(new FilenameFilter() {
+            public boolean accept(File file, String s) {
+                return  s.toUpperCase().startsWith("LUNA") &&
+                        s.toUpperCase().endsWith(".JAR");
             }
+        });
 
-            File[] lunaJars = classDir.listFiles(new FilenameFilter() {
-                public boolean accept(File file, String s) {
-                    return  s.toUpperCase().startsWith("LUNA") &&
-                            s.toUpperCase().endsWith(".JAR");
-                }
-            });
+        if (lunaJars == null) {
+            throw new FileNotFoundException("Could not locate the Luna jar files in the specified directory: \"" + classDir + "\"");
+        }
 
-            if (lunaJars == null) {
-                throw new FileNotFoundException("Could not locate the Luna jar files in the specified directory: \"" + classDir + "\"");
+        URLClassLoader sysloader = (URLClassLoader)ClassLoader.getSystemClassLoader();
+        Class sysclass = URLClassLoader.class;
+        //this is a necessary hack to be able to hotplug some jars into the classloaders classpath.
+        // On linux, this happens already, but  not on windows
+
+        try {
+            Class[] parameters = new Class[]{URL.class};
+            Method method = sysclass.getDeclaredMethod("addURL", parameters);
+            method.setAccessible(true);
+            for (File lunaJar : lunaJars) {
+                URL url = lunaJar.toURI().toURL();
+                method.invoke(sysloader, new Object[]{url});
             }
-
-            URLClassLoader sysloader = (URLClassLoader)ClassLoader.getSystemClassLoader();
-            Class sysclass = URLClassLoader.class;
-            //this is a necessary hack to be able to hotplug some jars into the classloaders classpath.
-            // On linux, this happens already, but  not on windows
+            Class lunaJCAClass;
+            String lunaJCAClassName = "com.chrysalisits.crypto.LunaJCAProvider";
+            Class lunaJCEClass;
+            String lunaJCEClassName = "com.chrysalisits.cryptox.LunaJCEProvider";
 
             try {
-                Class[] parameters = new Class[]{URL.class};
-                Method method = sysclass.getDeclaredMethod("addURL", parameters);
-                method.setAccessible(true);
-                for (File lunaJar : lunaJars) {
-                    URL url = lunaJar.toURI().toURL();
-                    method.invoke(sysloader, new Object[]{url});
-                }
-                Class lunaJCAClass;
-                String lunaJCAClassName = "com.chrysalisits.crypto.LunaJCAProvider";
-                Class lunaJCEClass;
-                String lunaJCEClassName = "com.chrysalisits.cryptox.LunaJCEProvider";
+                lunaJCAClass = sysloader.loadClass(lunaJCAClassName);
+                Object lunaJCA = lunaJCAClass.newInstance();
+                Security.addProvider((Provider) lunaJCA);
 
-                try {
-                    lunaJCAClass = sysloader.loadClass(lunaJCAClassName);
-                    Object lunaJCA = lunaJCAClass.newInstance();
-                    Security.addProvider((Provider) lunaJCA);
+                lunaJCEClass = sysloader.loadClass(lunaJCEClassName);
+                Object lunaJCE = lunaJCEClass.newInstance();
+                Security.addProvider((Provider) lunaJCE);
 
-                    lunaJCEClass = sysloader.loadClass(lunaJCEClassName);
-                    Object lunaJCE = lunaJCEClass.newInstance();
-                    Security.addProvider((Provider) lunaJCE);
-
-                } catch (ClassNotFoundException cnfe) {
-                    cnfe.printStackTrace();
-                }
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
+            } catch (ClassNotFoundException cnfe) {
+                cnfe.printStackTrace();
             }
-            Security.addProvider(new sun.security.provider.Sun());
-            Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
         }
+        Security.addProvider(new sun.security.provider.Sun());
+        Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
     }
 
     private boolean makeLunaKeys(KeystoreConfigBean ksBean, File caCertFile, File sslCertFile, File caKeyStoreFile, File sslKeyStoreFile) throws Exception {
@@ -791,13 +745,14 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         BufferedReader reader = null;
         PrintWriter writer = null;
-        File newFile = new File(getOsFunctions().getSsgSystemPropertiesFile() + ".confignew");
 
         try {
             if (!systemPropertiesFile.exists()) {
                 systemPropertiesFile.createNewFile();
             }
             reader = new BufferedReader(new FileReader(systemPropertiesFile));
+
+            File newFile = new File(getOsFunctions().getSsgSystemPropertiesFile() + ".confignew");
             writer = new PrintWriter(newFile);
             String line = null;
             boolean jceProviderFound = false;
@@ -805,26 +760,27 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             while ((line = reader.readLine()) != null) {
                 if (!line.startsWith("#") && line.startsWith(PROPKEY_JCEPROVIDER)) {
                     jceProviderFound = true;
-                    if (ksBean.getKeyStoreType() == KeystoreType.LUNA_KEYSTORE_NAME) {
-                        line = PROPKEY_JCEPROVIDER + "=" + PROPERTY_LUNA_JCEPROVIDER_VALUE;
-                    }
-                    else {
-                        continue;
+                    switch (ksBean.getKeyStoreType()) {
+                        case LUNA_KEYSTORE_NAME:
+                            line = PROPKEY_JCEPROVIDER + "=" + JceProvider.LUNA_ENGINE;
+                            break;
+                        case SCA6000_KEYSTORE_NAME:
+                            line = PROPKEY_JCEPROVIDER + "=" + JceProvider.PKCS11_ENGINE;
+                            break;
+                        case DEFAULT_KEYSTORE_NAME:
+                            line = PROPKEY_JCEPROVIDER + "=" + JceProvider.BC_ENGINE;
+                            break;
                     }
                 }
                 writer.println(line);
             }
             if (ksBean.getKeyStoreType() == KeystoreType.LUNA_KEYSTORE_NAME) {
-                String lunaPropLine = PROPKEY_JCEPROVIDER + "=" + PROPERTY_LUNA_JCEPROVIDER_VALUE;
+                String lunaPropLine = PROPKEY_JCEPROVIDER + "=" + JceProvider.LUNA_ENGINE;
                 if (!jceProviderFound) {
                     writer.println(lunaPropLine);
                 }
                 logger.info("Writing " + lunaPropLine + " to system.properties file");
             }
-            reader.close();
-            reader = null;
-            writer.close();
-            writer = null;
 
             logger.info("Updating the system.properties file");
             renameFile(newFile, systemPropertiesFile);
@@ -838,18 +794,12 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.severe(e.getMessage());
             throw e;
         } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {}
-            }
-            if (writer != null) {
-                writer.close();
-            }
+            ResourceUtils.closeQuietly(reader);
+            ResourceUtils.closeQuietly(writer);
         }
     }
 
-    private void updateJavaSecurity(KeystoreConfigBean ksBean, File javaSecFile, File newJavaSecFile, String[] providersList) throws IOException {
+    private void updateJavaSecurity(File javaSecFile, File newJavaSecFile, String[] providersList) throws IOException {
         BufferedReader reader = null;
         PrintWriter writer = null;
         try {
@@ -879,10 +829,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                     writer.println(line);
                 }
             }
-            reader.close();
-            reader = null;
-            writer.close();
-            writer = null;
 
             logger.info("Updating the java.security file");
             renameFile(newJavaSecFile, javaSecFile);
@@ -896,15 +842,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.severe(e.getMessage());
             throw e;
         } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {}
-            }
-
-            if (writer != null) {
-                writer.close();
-            }
+            ResourceUtils.closeQuietly(reader);
+            ResourceUtils.closeQuietly(writer);
         }
     }
 
@@ -1112,12 +1051,13 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private String getKsType() {
         KeystoreType ksTypeFromBean = ((KeystoreConfigBean)configBean).getKeyStoreType();
-        if (ksTypeFromBean == KeystoreType.LUNA_KEYSTORE_NAME) {
-            return "Luna";
-        } else if (ksTypeFromBean == KeystoreType.DEFAULT_KEYSTORE_NAME) {
-                return "PKCS12";
-        } else {
-            return "PKCS11";
-        }
+        return ksTypeFromBean.shortTypeName();
+//        if (ksTypeFromBean == KeystoreType.LUNA_KEYSTORE_NAME) {
+//            return "Luna";
+//        } else if (ksTypeFromBean == KeystoreType.DEFAULT_KEYSTORE_NAME) {
+//                return "PKCS12";
+//        } else {
+//            return "PKCS11";
+//        }
     }
 }

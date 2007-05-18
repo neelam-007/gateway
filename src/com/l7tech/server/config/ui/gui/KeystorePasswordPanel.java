@@ -104,4 +104,8 @@ public class KeystorePasswordPanel extends JPanel {
 
         return goodInput;
     }
+
+    public void setPassword(char[] password) {
+        ksPassword. setText(new String(password));
+    }
 }

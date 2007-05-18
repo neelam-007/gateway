@@ -46,6 +46,10 @@ public class DefaultKeystorePanel extends KeystorePanel{
         return pwPanel.getPassword();
     }
 
+    public void setKsPassword(char[] password) {
+        pwPanel.setPassword(password);
+    }
+
     public boolean doBothKeys() {
         return bothKeys.isSelected();
     }

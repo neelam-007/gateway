@@ -87,30 +87,30 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     protected void updateView() {
         if (osFunctions == null) init();
 
-        boolean isLunaOk = true;
-        String[] keystores = getKeystores(isLunaOk);
+        String[] keystores = getKeystores();
         KeystoreConfigBean ksConfigBean = (KeystoreConfigBean) configBean;
 
         KeystoreType ksType = ksConfigBean.getKeyStoreType();
-        keystoreType.setSelectedItem(ksType == null?keystores[0]:ksType);
-    }
-
-    private String[] getKeystores(boolean lunaOk) {
-        if (lunaOk) {
-            return getKeystores();
-        }
-        else {
-            String[] fullList = getKeystores();
-            ArrayList<String> newKeystoreList = new ArrayList<String>();
-            for (int i = 0; i < fullList.length; i++) {
-                String s = new String(fullList[i]);
-                if (!s.equalsIgnoreCase(KeystoreType.LUNA_KEYSTORE_NAME.toString())) {
-                    newKeystoreList.add(s);
-                }
+        if (ksType == null) {
+            //set the HSM one
+            keystoreType.setSelectedItem(OSSpecificFunctions.KeystoreInfo.isHSMEnabled()?KeystoreType.SCA6000_KEYSTORE_NAME:keystores[0]);
+        } else {
+            keystoreType.setSelectedItem(ksType);
+            switch (ksType) {
+                case DEFAULT_KEYSTORE_NAME:
+                    DefaultKeystorePanel defaultpanel = (DefaultKeystorePanel) whichKeystorePanel;
+                    defaultpanel.setKsPassword(ksConfigBean.getKsPassword());
+                    break;
+                case LUNA_KEYSTORE_NAME:
+                    break;
+                case SCA6000_KEYSTORE_NAME:
+                    Sca6000KeystorePanel scapanel = (Sca6000KeystorePanel) whichKeystorePanel;
+                    scapanel.setKsPassword(ksConfigBean.getKsPassword());
+                    break;
+                default:
+                    break;
             }
-            return newKeystoreList.toArray(new String[newKeystoreList.size()]);
         }
-
     }
 
     private void init() {
