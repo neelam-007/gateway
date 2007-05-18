@@ -33,8 +33,24 @@ public class FtpCommands {
             // reset state variables
             session.resetState();
 
-            out.write(new DefaultFtpReply(FtpReply.REPLY_211_SYSTEM_STATUS_REPLY,
-                    "Extensions supported\n SIZE\n MDTM\n REST STREAM\n LANG en\n MLST Size;Modify;Type;Perm\n AUTH SSL\n AUTH TLS\n MODE Z\n UTF8\n TVFS\nEnd"));
+            out.write(new FtpReply(){
+                public int getCode() {
+                    return FtpReply.REPLY_211_SYSTEM_STATUS_REPLY;
+                }
+
+                public String getMessage() {
+                    /**
+                     * Add this to the supported extensions if/when explicit FTPS is needed:
+                     *
+                     *   \n AUTH SSL\n AUTH TLS
+                     */
+                    return "211-Extensions supported\n SIZE\n MDTM\n REST STREAM\n LANG en\n MLST Size;Modify;Type;Perm\n MODE Z\n UTF8\n TVFS\n211 End\r\n";
+                }
+
+                public String toString() {
+                    return getMessage();
+                }
+            });
         }
     }
 
