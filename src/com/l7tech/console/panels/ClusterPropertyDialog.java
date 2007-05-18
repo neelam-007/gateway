@@ -154,6 +154,14 @@ public class ClusterPropertyDialog extends JDialog {
         });
         setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
+        Utilities.equalizeButtonSizes(new JButton[] {
+                addButton,
+                editButton,
+                removeButton,
+                helpButton,
+                closeButton
+        });
+
         populate();
         enableRemoveBasedOnSelection();
     }
