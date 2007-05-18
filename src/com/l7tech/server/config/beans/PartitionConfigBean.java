@@ -28,17 +28,20 @@ public class PartitionConfigBean extends BaseConfigurationBean{
     protected void populateExplanations() {
         explanations.add(getName() + " - " + getDescription());
         String partName = partitionInfo.getPartitionId();
-        List<PartitionInformation.HttpEndpointHolder> httpEndpoints = partitionInfo.getHttpEndpoints();
-        List<PartitionInformation.OtherEndpointHolder> otherEndpoints = partitionInfo.getOtherEndpoints();
+        List<PartitionInformation.EndpointHolder> endpoints = partitionInfo.getEndpoints();
 
         explanations.add(insertTab + (isNewPartition?"Creating new partition \"" + partName + "\"":"Updating \"" + partName + "\" partition"));
 
-        for (PartitionInformation.HttpEndpointHolder endpoint : httpEndpoints) {
-            explanations.add(insertTab + "    " + endpoint);
-        }
+        for (PartitionInformation.EndpointHolder endpoint : endpoints) {
+            if (!endpoint.isEnabled())
+                continue;
 
-        for (PartitionInformation.OtherEndpointHolder otherEndpoint : otherEndpoints) {
-            explanations.add(insertTab + "    " + otherEndpoint.endpointType.getName() + "=" + otherEndpoint.getPort());
+            if (endpoint instanceof PartitionInformation.OtherEndpointHolder) {
+                PartitionInformation.OtherEndpointHolder otherEndpoint = (PartitionInformation.OtherEndpointHolder) endpoint;
+                explanations.add(insertTab + "    " + otherEndpoint.endpointType.getName() + "=" + otherEndpoint.getPort());
+            } else {
+                explanations.add(insertTab + "    " + endpoint);
+            }
         }
     }
 

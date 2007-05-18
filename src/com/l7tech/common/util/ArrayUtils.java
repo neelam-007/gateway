@@ -48,15 +48,27 @@ public class ArrayUtils {
         return ret;
     }
 
-    /** @return true if the target string is contained in the list. */
-    public static boolean contains(String[] list, String target) {
+    /** @return true if the target Object is contained in the list. */
+    public static boolean contains(Object[] list, Object target) {
         for (int i = 0; i < list.length; i++) {
-            String s = list[i];
+            Object s = list[i];
             if (s == null) {
                 if (target == null)
                     return true;
             } else {
                 if (s.equals(target))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /** @return true if any of the target Objects are contained in the list. */
+    public static boolean containsAny(Object[] list, Object[] targets) {
+        if (list != null && targets != null) {
+            for (int i = 0; i < targets.length; i++) {
+                Object t = targets[i];
+                if (contains(list, t))
                     return true;
             }
         }

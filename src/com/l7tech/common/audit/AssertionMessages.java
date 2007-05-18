@@ -280,6 +280,12 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #{0}");
     public static final M JMS_ROUTING_NO_SAML_SIGNER                  = m(6020, Level.WARNING, "JmsRoutingAssertion cannot access SAML signing information");
 
+    // ServerFtpRoutingAssertion
+    public static final M FTP_ROUTING_FAILED_UPLOAD = m(6050, Level.WARNING, "Failed to upload request to {0}: {1}");
+    public static final M FTP_ROUTING_SSL_NO_CERT = m(6051, Level.WARNING, "FTP server ({0}) did not identify itself properly: {1}");
+    public static final M FTP_ROUTING_SSL_NOT_X509 = m(6052, Level.WARNING, "Cannot handle non-X.509 certifcates from FTP server ({0}).");
+    public static final M FTP_ROUTING_SSL_UNTRUSTED = m(6053, Level.WARNING, "Cannot establish trust of SSL certificate from FTP server ({0}): {1}");
+
     // ServerRequestWssSaml
     public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate SAML Statement");
     public static final M SAML_AUTHN_STMT_NO_TOKENS_PROCESSED                  = m(6101, Level.INFO, "No tokens were processed from this request. Returning AUTH_REQUIRED.");
@@ -497,4 +503,8 @@ public class AssertionMessages extends Messages {
     public static final M WSDLOPERATION_CANNOTIDENTIFY        = m(8101, Level.INFO, "Cannot identify any WSDL operation from request.");
 
     public static final M HTTPNEGOTIATE_WARNING               = m(8200, Level.WARNING, "Could not process kerberos token (Negotiate), error is ''{0}''.");
+
+    public static final M FTP_CREDENTIAL_NOT_FTP              = m(8300, Level.INFO, "Request not FTP; unable to extract FTP credentials.");
+    public static final M FTP_CREDENTIAL_NO_AUTH              = m(8301, Level.FINE, "Not authenticated.");
+    public static final M FTP_CREDENTIAL_AUTH_USER            = m(8302, Level.FINE, "Found credentials for user ''{0}''.");
 }

@@ -33,6 +33,11 @@
         <property name="serviceInterface" value="com.l7tech.common.xml.schema.SchemaAdmin"/>
     </bean>
 
+    <bean name="/FtpAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+        <property name="service" ref="ftpAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.transport.ftp.FtpAdmin"/>
+    </bean>
+
     <bean name="/JmsAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
         <property name="service" ref="jmsAdmin"/>
         <property name="serviceInterface" value="com.l7tech.common.transport.jms.JmsAdmin"/>

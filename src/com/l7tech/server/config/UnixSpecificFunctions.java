@@ -44,5 +44,7 @@ public abstract class UnixSpecificFunctions extends OSSpecificFunctions {
     public abstract String getFirewallRulesForPartition(PartitionInformation.HttpEndpointHolder basicEndpoint,
                                                         PartitionInformation.HttpEndpointHolder sslEndpoint,
                                                         PartitionInformation.HttpEndpointHolder noAuthSslEndpoint,
+                                                        PartitionInformation.FtpEndpointHolder basicFtpEndpoint,
+                                                        PartitionInformation.FtpEndpointHolder sslFtpEndpoint,
                                                         PartitionInformation.OtherEndpointHolder rmiEndpoint);
 }

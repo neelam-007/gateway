@@ -27,6 +27,7 @@ public abstract class OSSpecificFunctions {
     protected String databaseConfig;
     protected String keyStorePropertiesFile;
     protected String tomcatServerConfig;
+    protected String ftpServerConfig;
     protected String keystoreDir;
 
     protected String pathToJdk;
@@ -100,6 +101,7 @@ public abstract class OSSpecificFunctions {
         ssgSystemPropertiesFile = "system.properties";
 
         tomcatServerConfig = "server.xml";
+        ftpServerConfig = "ftpserver.properties";
         pathToJreLibExt = "jre/lib/ext/";
         pathToJavaLibPath = "lib/";
         pathToJavaSecurityFile = "jre/lib/security/java.security";
@@ -187,6 +189,13 @@ public abstract class OSSpecificFunctions {
             return getSsgInstallRoot() + "tomcat/conf/server.xml";
         }                                                        
         return getConfigurationBase() + tomcatServerConfig;
+    }
+
+    public String getFtpServerConfig() {
+        if (!hasPartitions) {
+            return getSsgInstallRoot() + "etc/conf/" + ftpServerConfig;
+        }
+        return getConfigurationBase() + ftpServerConfig;
     }
 
     public String getKeystoreDir() {

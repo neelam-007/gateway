@@ -1,6 +1,7 @@
 package com.l7tech.server.partition;
 
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
@@ -20,7 +21,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Arrays;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * User: megery
@@ -49,17 +52,25 @@ public class PartitionInformation{
     private boolean shouldDisable = false;
     
     List<HttpEndpointHolder> httpEndpointsList;
+    List<FtpEndpointHolder> ftpEndpointsList;
     List<OtherEndpointHolder> otherEndpointsList;
     OSSpecificFunctions osf;
     Document originalDom;
     public static final int MIN_PORT = 1024;
     public static final int MAX_PORT = 65535;
 
-    private static String DEFAULT_HTTP_PORT = "8080";
-    private static String DEFAULT_SSL_PORT = "8443";
-    private static String DEFAULT_NOAUTH_PORT = "9443";
-    private static String DEFAULT_RMI_PORT = "2124";
-    private static String DEFAULT_SHUTDOWN_PORT = "8005";
+    private static int DEFAULT_HTTP_PORT = 8080;
+    private static int DEFAULT_SSL_PORT = 8443;
+    private static boolean DEFAULT_FTP_ENABLED = false;
+    private static int DEFAULT_FTP_PORT = 2121;
+    private static int DEFAULT_FTP_PORT_PASSIVESTART = 13100;
+    private static int DEFAULT_FTP_PORT_PASSIVECOUNT = 10;
+    private static int DEFAULT_FTP_SSL_PORT = 2990;
+    private static int DEFAULT_FTP_SSL_PORT_PASSIVESTART = 13900;
+    private static int DEFAULT_FTP_SSL_PORT_PASSIVECOUNT = 10;
+    private static int DEFAULT_NOAUTH_PORT = 9443;
+    private static int DEFAULT_RMI_PORT = 2124;
+    private static int DEFAULT_SHUTDOWN_PORT = 8005;
 
 
     public static final String ALLOWED_PARTITION_NAME_PATTERN = "[^\\p{Punct}\\s]{1,128}";
@@ -89,12 +100,25 @@ public class PartitionInformation{
         public String toString() {return endpointName;}
     }
 
+    public enum FtpEndpointType {
+        BASIC_FTP("Basic FTP Endpoint"),
+        SSL_FTP_NOCLIENTCERT("SSL FTP Endpoint"),
+        ;
+
+        private String endpointName;
+
+        FtpEndpointType(String endpointName) {this.endpointName = endpointName;}
+        public String getName() {return endpointName;}
+        public String toString() {return endpointName;}
+    }
+
     public PartitionInformation(String partitionName) {
         this.partitionId = partitionName;
         isNewPartition = true;
         httpEndpointsList = new ArrayList<HttpEndpointHolder>();
+        ftpEndpointsList = new ArrayList<FtpEndpointHolder>();
         otherEndpointsList = new ArrayList<OtherEndpointHolder>();
-        makeDefaultEndpoints(httpEndpointsList, otherEndpointsList);
+        makeDefaultEndpoints(httpEndpointsList, ftpEndpointsList, otherEndpointsList);
 
         //since this is a new partitionm, try to make sure the ports don't conflict
         PartitionActions.validateAllPartitionEndpoints(this, true);
@@ -104,11 +128,13 @@ public class PartitionInformation{
         this.partitionId = partitionId;
         isNewPartition = isNew;
         httpEndpointsList = new ArrayList<HttpEndpointHolder>();
+        ftpEndpointsList = new ArrayList<FtpEndpointHolder>();
         otherEndpointsList = new ArrayList<OtherEndpointHolder>();
-        makeDefaultEndpoints(httpEndpointsList, otherEndpointsList);
+        makeDefaultEndpoints(httpEndpointsList, ftpEndpointsList, otherEndpointsList);
         //pass false to isNew since, if we have a doc then it's not a new partition.
         //now navigate the doc to get the Connector/port information
         parseDomForEndpoints(doc);
+        parseFtpEndpoints();
         parseOtherEndpoints();
     }
 
@@ -119,21 +145,81 @@ public class PartitionInformation{
         theCopy.setOriginalDom(this.getOriginalDom());
         theCopy.setShouldDisable(this.shouldDisable());
         theCopy.setHttpEndpointsList(this.getHttpEndpoints());
+        theCopy.setFtpEndpointsList(this.getFtpEndpoints());
         theCopy.setOtherEndpointsList(this.getOtherEndpoints());
         return theCopy;
+    }
+
+    private void parseFtpEndpoints() {
+        File ftpServerProps = new File(OSDetector.getOSSpecificFunctions(partitionId).getFtpServerConfig());
+        FileInputStream fis = null;
+        try {
+            Properties props = new Properties();
+            fis = new FileInputStream(ftpServerProps);
+            props.load(fis);
+
+
+            FtpEndpointHolder ftpBasicEndpointHolder =
+                    (FtpEndpointHolder) getFtpEndPointByType(FtpEndpointType.BASIC_FTP);
+            updateFtpEndpoint(ftpBasicEndpointHolder, props, "default");
+
+            FtpEndpointHolder ftpSecureEndpointHolder =
+                    (FtpEndpointHolder) getFtpEndPointByType(FtpEndpointType.SSL_FTP_NOCLIENTCERT);
+            updateFtpEndpoint(ftpSecureEndpointHolder, props, "secure");
+
+        } catch (FileNotFoundException e) {
+            logger.warning("no FTP server properties file found for partition: " + partitionId);
+        } catch (IOException e) {
+            logger.warning("Error while reading the FTP server properties file for partition: " + partitionId);
+            logger.warning(e.getMessage());
+        } finally {
+            ResourceUtils.closeQuietly(fis);
+        }
+    }
+
+    private void updateFtpEndpoint(FtpEndpointHolder ftpEndpointHolder, Properties props, String name) {
+        String prefix = "ssgftp." + name + ".";
+        Boolean enabledVal = parseBoolean(props.getProperty(prefix + "enabled"), "Invalid enabled flag");
+        String addressVal = props.getProperty(prefix + "address");
+        Integer controlPortVal = parseInteger(props.getProperty(prefix + "controlPort"), "Invalid FTP server control port ''{0}''.");
+        Integer passiveStartVal = parseInteger(props.getProperty(prefix + "passivePortStart"), "Invalid FTP server passive start port ''{0}''.");
+        Integer passiveEndVal = parseInteger(props.getProperty(prefix + "passivePortEnd"), "Invalid FTP server passive end port ''{0}''.");
+
+        if (enabledVal != null)
+            ftpEndpointHolder.setEnabled(enabledVal.booleanValue());
+
+        if (addressVal != null) {
+            if ("0.0.0.0".equals(addressVal))
+                ftpEndpointHolder.setIpAddress("*");
+            else
+                ftpEndpointHolder.setIpAddress(addressVal);
+        }
+
+        if (controlPortVal != null)
+            ftpEndpointHolder.setPort(controlPortVal);
+
+        if (passiveStartVal != null && passiveEndVal != null) {
+            ftpEndpointHolder.setPassivePortStart(passiveStartVal);
+            ftpEndpointHolder.setPassivePortCount(Integer.valueOf((passiveEndVal.intValue() - passiveStartVal.intValue()) + 1));
+        }
     }
 
     private void parseOtherEndpoints() {
         File sysProps = new File(OSDetector.getOSSpecificFunctions(partitionId).getSsgSystemPropertiesFile());
         FileInputStream fis = null;
+        String rmiPort = null;
         try {
             Properties props = new Properties();
             fis = new FileInputStream(sysProps);
             props.load(fis);
-            String rmiPort = props.getProperty(PartitionInformation.SYSTEM_PROP_RMIPORT);
-            getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).setPort(StringUtils.isNotEmpty(rmiPort)?rmiPort:"2124");
+            rmiPort = props.getProperty(PartitionInformation.SYSTEM_PROP_RMIPORT);
+            if (rmiPort != null)
+                getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).setPort(Integer.valueOf(rmiPort));
         } catch (FileNotFoundException e) {
             logger.warning("no system properties file found for partition: " + partitionId);
+        } catch (NumberFormatException nfe) {
+            logger.warning("Error while reading the system properties file for partition: " + partitionId);
+            logger.warning("Invalid rmi port value '"+rmiPort+"'.");
         } catch (IOException e) {
             logger.warning("Error while reading the system properties file for partition: " + partitionId);
             logger.warning(e.getMessage());
@@ -143,12 +229,13 @@ public class PartitionInformation{
 
     }
 
-    private void makeDefaultEndpoints(List<HttpEndpointHolder> httpEndpointsList, List<OtherEndpointHolder> otherEndpointsList) {
+    private void makeDefaultEndpoints(List<HttpEndpointHolder> httpEndpointsList, List<FtpEndpointHolder> ftpEndpointsList, List<OtherEndpointHolder> otherEndpointsList) {
         HttpEndpointHolder.populateDefaultEndpoints(httpEndpointsList);
+        FtpEndpointHolder.populateDefaultEndpoints(ftpEndpointsList);
         OtherEndpointHolder.populateDefaultEndpoints(otherEndpointsList);
         if (partitionId.equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
-            getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).setPort("2124");
-            getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).setPort("8005");
+            getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).setPort(Integer.valueOf(2124));
+            getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).setPort(Integer.valueOf(8005));
         }
     }
 
@@ -162,8 +249,18 @@ public class PartitionInformation{
             boolean isSecure = connectorNode.hasAttribute("secure") && connectorNode.getAttribute("secure").equals("true");
             boolean wantClientCert = isSecure && connectorNode.hasAttribute("clientAuth") && !connectorNode.getAttribute("clientAuth").equals("false");
 
-            String portNumber = connectorNode.hasAttribute("port")?connectorNode.getAttribute("port"):"";
-            String ipAddress = connectorNode.hasAttribute("address")?connectorNode.getAttribute("address"):"*";
+            Integer portNumber = null;
+            if ( connectorNode.hasAttribute("port") ) {
+                String portValue = null;
+                try {
+                    portValue = connectorNode.getAttribute("port");
+                    portNumber = Integer.valueOf(portValue);
+                }
+                catch (NumberFormatException nfe) {
+                    logger.warning("Invalid port number '"+portValue+"'.");
+                }
+            }
+            String ipAddress = connectorNode.hasAttribute("address") ? connectorNode.getAttribute("address") : "*";
 
             updateEndpoint(ipAddress, portNumber, isSecure, wantClientCert);
         }
@@ -172,12 +269,21 @@ public class PartitionInformation{
 
         if ((nodes != null && nodes.getLength() == 1)) {
             Element serverElement = (Element) nodes.item(0);
-            if (serverElement != null && serverElement.hasAttribute("port"))
-                getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).setPort(serverElement.getAttribute("port"));
+            if (serverElement != null && serverElement.hasAttribute("port")) {
+                String portValue = null;
+                try {
+                    portValue = serverElement.getAttribute("port");
+                    getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).setPort(Integer.valueOf(portValue));
+                }
+                catch (NumberFormatException nfe) {
+                    logger.warning("Invalid tomcat control port number '"+portValue+"'.");
+                }
+
+            }
         }
     }
 
-    private void updateEndpoint(String ip, String portNumber, boolean isSecure, boolean isClientCertWanted) {
+    private void updateEndpoint(String ip, Integer portNumber, boolean isSecure, boolean isClientCertWanted) {
 
         HttpEndpointHolder holder;
         if (!isSecure) holder = getHttpEndPointByType(HttpEndpointType.BASIC_HTTP);
@@ -194,6 +300,15 @@ public class PartitionInformation{
 
     private OtherEndpointHolder getOtherEndPointByType(OtherEndpointType endpointType) {
         for (OtherEndpointHolder endpointHolder : otherEndpointsList) {
+            if (endpointHolder.endpointType == endpointType) {
+                return endpointHolder;
+            }
+        }
+        return null;
+    }
+
+    private FtpEndpointHolder getFtpEndPointByType(FtpEndpointType endpointType) {
+        for (FtpEndpointHolder endpointHolder : ftpEndpointsList) {
             if (endpointHolder.endpointType == endpointType) {
                 return endpointHolder;
             }
@@ -254,17 +369,44 @@ public class PartitionInformation{
         this.shouldDisable = shouldDisable;
     }
 
+    public List<EndpointHolder> getEndpoints() {
+        List<PartitionInformation.EndpointHolder> allHolders = new ArrayList<PartitionInformation.EndpointHolder>();
+        allHolders.addAll(getHttpEndpoints());
+        allHolders.addAll(getFtpEndpoints());
+        allHolders.addAll(getOtherEndpoints());
+        return allHolders;
+    }
+    
     public List<HttpEndpointHolder> getHttpEndpoints() {
         return httpEndpointsList;
+    }
+
+    public List<FtpEndpointHolder> getFtpEndpoints() {
+        return getFtpEndpoints(false);
+    }
+
+    public List<FtpEndpointHolder> getFtpEndpoints(boolean activeOnly) {
+        List<FtpEndpointHolder> endpoints = new ArrayList();
+
+        for (FtpEndpointHolder ftpEndpointHolder : ftpEndpointsList) {
+            if (!activeOnly || ftpEndpointHolder.isEnabled()) {
+                endpoints.add(ftpEndpointHolder);
+            }
+        }
+
+        return endpoints;
     }
 
     public List<OtherEndpointHolder> getOtherEndpoints() {
         return otherEndpointsList;
     }
 
-
     public void setHttpEndpointsList(List<HttpEndpointHolder> httpEndpointsList) {
         this.httpEndpointsList = httpEndpointsList;
+    }
+
+    public void setFtpEndpointsList(List<FtpEndpointHolder> ftpEndpointsList) {
+        this.ftpEndpointsList = ftpEndpointsList;
     }
 
     public void setOtherEndpointsList(List<OtherEndpointHolder> otherEndpointsList) {
@@ -277,7 +419,6 @@ public class PartitionInformation{
 
         return partitionId;
     }
-
 
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -294,6 +435,39 @@ public class PartitionInformation{
         return (partitionId != null ? partitionId.hashCode() : 0);
     }
 
+    private Boolean parseBoolean(String booleanValue, String warningMessage) {
+        Boolean result = null;
+
+        if (booleanValue != null) {
+            if ("true".equalsIgnoreCase(booleanValue)) {
+                result = Boolean.TRUE;
+            }
+            else if ("false".equalsIgnoreCase(booleanValue)) {
+                result = Boolean.FALSE;
+            }
+            else {
+                logger.log(Level.WARNING, warningMessage, booleanValue);
+            }
+        }
+
+        return result;
+    }
+
+    private Integer parseInteger(String intValue, String warningMessage) {
+        Integer result = null;
+
+        if (intValue != null) {
+            try {
+                result = new Integer(intValue);
+            }
+            catch(NumberFormatException nfe) {
+                logger.log(Level.WARNING, warningMessage, intValue);
+            }
+        }
+
+        return result;
+    }
+
     public Document getOriginalDom() {
         return originalDom;
     }
@@ -304,11 +478,15 @@ public class PartitionInformation{
 
     public static abstract class EndpointHolder {
         private String ipAddress = "";
-        private String port;
+        private Integer port;
         private String validationMessaqe;
 
         public String toString() {
             return describe();
+        }
+
+        public boolean isEnabled() {
+            return true;
         }
 
         public String getIpAddress() {
@@ -319,12 +497,16 @@ public class PartitionInformation{
             this.ipAddress = ipAddress;
         }
 
-        public String getPort() {
+        public Integer getPort() {
             return port;
         }
 
-        public void setPort(String port) {
+        public void setPort(Integer port) {
             this.port = port;
+        }
+
+        public Integer[] getPorts() {
+            return new Integer[]{port};
         }
 
         public String getValidationMessaqe() {
@@ -337,6 +519,22 @@ public class PartitionInformation{
 
         public boolean equals(Object o) {
             return isEquals(o);
+        }
+
+        public void avoidPorts(Integer[] ports) {
+            Integer port = getPort();
+
+            while (ArrayUtils.contains(ports, port)) {
+                int value = port.intValue();
+                if (value < MAX_PORT) {
+                    port = Integer.valueOf(value + 1);
+                }
+                else {
+                    break;
+                }
+            }
+
+            setPort(port);
         }
 
         abstract boolean isEquals(Object o);
@@ -358,7 +556,7 @@ public class PartitionInformation{
             this.endpointType = endpointType;
         }
 
-        public OtherEndpointHolder(String port, OtherEndpointType endpointType) {
+        public OtherEndpointHolder(Integer port, OtherEndpointType endpointType) {
             this.setPort(port);
             this.endpointType = endpointType;
         }
@@ -399,7 +597,7 @@ public class PartitionInformation{
                 case 0:
                     break;
                 case 1:
-                    this.setPort(String.valueOf(aValue));
+                    this.setPort(Integer.parseInt(String.valueOf(aValue)));
                     break;
             }
         }
@@ -451,7 +649,7 @@ public class PartitionInformation{
 
 
         public String describe() {
-            if (StringUtils.isEmpty(getIpAddress()) || StringUtils.isEmpty(getPort())) {
+            if (StringUtils.isEmpty(getIpAddress()) || getPort()==null) {
                 return "";
             }
             StringBuilder sb = new StringBuilder();
@@ -486,7 +684,7 @@ public class PartitionInformation{
                     this.setIpAddress(String.valueOf(aValue));
                     break;
                 case 2:
-                    this.setPort(String.valueOf(aValue));
+                    this.setPort(Integer.parseInt(String.valueOf(aValue)));
                     break;
             }
         }
@@ -519,6 +717,210 @@ public class PartitionInformation{
         }
     }
 
+    public static class FtpEndpointHolder extends EndpointHolder {
+        private static String[] headings = new String[] {
+            "Endpoint Type",
+            "Enabled",
+            "IP Address",
+            "Port",
+            "Passive Port Start",
+            "Passive Port Count",
+        };
+
+        private final FtpEndpointType endpointType;
+        private boolean enabled;
+        private Integer passivePortStart;
+        private Integer passivePortCount;
+
+        public FtpEndpointHolder(FtpEndpointType type) {
+            this.endpointType = type;
+            setIpAddress("*");
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public Integer[] getPorts() {
+            Integer[] ports = new Integer[passivePortCount.intValue()+1];
+            ports[0] = getPort().intValue();
+            for (int i=0; i<ports.length-1; i++) {
+                ports[i+1] = passivePortStart.intValue() + i;                               
+            }
+            return ports;
+        }
+
+        public Integer[] getPassivePorts() {
+            Integer[] ports = new Integer[passivePortCount.intValue()];
+            for (int i=0; i<ports.length; i++) {
+                ports[i] = passivePortStart.intValue() + i;
+            }
+            return ports;
+        }
+
+        public void avoidPorts(Integer[] ports) {
+            while (ArrayUtils.contains(ports, getPort())) {
+                int value = getPort().intValue();
+                if (value < MAX_PORT) {
+                    setPort(Integer.valueOf(value + 1));
+                }
+                else {
+                    break;
+                }
+            }
+
+            while (ArrayUtils.containsAny(ports, getPassivePorts())) {
+                int value = passivePortStart.intValue() + (passivePortCount.intValue()-1);
+                if (value < MAX_PORT) {
+                    passivePortStart = Integer.valueOf(passivePortStart.intValue() + 1);
+                }
+                else {
+                    break;
+                }
+            }
+        }
+
+        public FtpEndpointType getEndpointType() {
+            return endpointType;
+        }
+
+        public Integer getPassivePortStart() {
+            return passivePortStart;
+        }
+
+        public void setPassivePortStart(Integer passivePortStart) {
+            this.passivePortStart = passivePortStart;
+        }
+
+        public Integer getPassivePortCount() {
+            return passivePortCount;
+        }
+
+        public void setPassivePortCount(Integer passivePortCount) {
+            this.passivePortCount = passivePortCount;
+        }
+
+        public boolean isEquals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            FtpEndpointHolder that = (FtpEndpointHolder) o;
+
+            if (getIpAddress() != null ? !getIpAddress().equals(that.getIpAddress()) : that.getIpAddress() != null) return false;
+            if (getPort() != null ? !getPort().equals(that.getPort()) : that.getPort() != null) return false;
+            if (getPassivePortStart() != null ? !getPassivePortStart().equals(that.getPassivePortStart()) : that.getPassivePortStart() != null) return false;
+            if (getPassivePortCount() != null ? !getPassivePortCount().equals(that.getPassivePortCount()) : that.getPassivePortCount() != null) return false;
+
+            return true;
+        }
+
+        public int getHashCode() {
+            int result;
+            result = (getIpAddress() != null ? getIpAddress().hashCode() : 0);
+            result = 31 * result + (getPort() != null ? getPort().hashCode() : 0);
+            return result;
+        }
+
+        public String describe() {
+            if (StringUtils.isEmpty(getIpAddress()) || getPort()==null) {
+                return "";
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append(endpointType.getName()).append(" = ");
+            sb.append(getIpAddress().equals("*")?"* (all interfaces)":getIpAddress()).append(", ");
+            sb.append(getPort());
+            sb.append(",");
+            sb.append(getPassivePortStart());
+            sb.append("-");
+            sb.append((getPassivePortStart().intValue() + getPassivePortCount().intValue() -1));
+            return sb.toString();
+        }
+
+        public static String[] getHeadings() {
+            return headings;
+        }
+
+        public Object getValue(int columnIndex) {
+            switch (columnIndex) {
+                case 0:
+                    return endpointType.getName();
+                case 1:
+                    return Boolean.valueOf(isEnabled());
+                case 2:
+                    return getIpAddress();
+                case 3:
+                    return getPort();
+                case 4:
+                    return getPassivePortStart();
+                case 5:
+                    return getPassivePortCount();
+                default:
+                    return null;
+            }
+        }
+
+        public void setValueAt(int columnIndex, Object aValue) {
+            switch(columnIndex) {
+                case 0:
+                    break;
+                case 1:
+                    this.setEnabled(Boolean.valueOf(String.valueOf(aValue)));
+                    break;
+                case 2:
+                    this.setIpAddress(String.valueOf(aValue));
+                    break;
+                case 3:
+                    this.setPort(Integer.parseInt(String.valueOf(aValue)));
+                    break;
+                case 4:
+                    this.setPassivePortStart(Integer.parseInt(String.valueOf(aValue)));
+                    break;
+                case 5:
+                    this.setPassivePortCount(Integer.parseInt(String.valueOf(aValue)));
+                    break;
+            }
+        }
+
+        public static Class<?> getClassAt(int columnIndex) {
+            switch(columnIndex) {
+                case 0:
+                    return FtpEndpointType.class;
+                case 1:
+                    return Boolean.class;
+                case 2:
+                    return String.class;
+                case 3:
+                    return Integer.class;
+                case 4:
+                    return Integer.class;
+                case 5:
+                    return Integer.class;
+                default:
+                    return String.class;
+            }
+        }
+
+        public static void populateDefaultEndpoints(List<FtpEndpointHolder> endpoints) {
+            FtpEndpointHolder holder = new FtpEndpointHolder(FtpEndpointType.BASIC_FTP);
+            holder.setEnabled(DEFAULT_FTP_ENABLED);
+            holder.setPort(DEFAULT_FTP_PORT);
+            holder.setPassivePortStart(DEFAULT_FTP_PORT_PASSIVESTART);
+            holder.setPassivePortCount(DEFAULT_FTP_PORT_PASSIVECOUNT);
+            endpoints.add(holder);
+
+            holder = new PartitionInformation.FtpEndpointHolder(PartitionInformation.FtpEndpointType.SSL_FTP_NOCLIENTCERT);
+            holder.setEnabled(DEFAULT_FTP_ENABLED);
+            holder.setPort(DEFAULT_FTP_SSL_PORT);
+            holder.setPassivePortStart(DEFAULT_FTP_SSL_PORT_PASSIVESTART);
+            holder.setPassivePortCount(DEFAULT_FTP_SSL_PORT_PASSIVECOUNT);
+            endpoints.add(holder);
+        }
+    }
+
     public static class IpPortPair {
         private EndpointHolder endpointHolder;
 
@@ -527,42 +929,51 @@ public class PartitionInformation{
         }
 
         public String getIpAddress() {
-            return StringUtils.isEmpty(endpointHolder.ipAddress)?"":endpointHolder.ipAddress;
+            return StringUtils.isEmpty(endpointHolder.getIpAddress())?"*":endpointHolder.getIpAddress();
         }
 
         public void setIpAddress(String ipAddress) {
-            endpointHolder.ipAddress = ipAddress;
+            if (endpointHolder != null) {
+                endpointHolder.ipAddress = ipAddress;
+            }
         }
 
-        public String getPort() {
-            return StringUtils.isEmpty(endpointHolder.port)?"":endpointHolder.port;
+        public Integer[] getPorts() {
+            Integer[] ports = new Integer[0];
+
+            if (endpointHolder != null) {
+                ports = endpointHolder.getPorts();
+            }
+
+            return ports;
         }
 
-        public void setPort(String port) {
-            endpointHolder.port = port;
-        }
-
-
-        public boolean equals(Object o) {
+        public boolean conflictsWith(IpPortPair o, String[] messageHolder) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
             IpPortPair that = (IpPortPair) o;
 
             if (endpointHolder != null) {
-                if (StringUtils.equals(getIpAddress(), "*")) {
-                    if (getPort().equals(that.getPort())) {
-                        return true;
-                    }
-                } else if (StringUtils.equals(that.getIpAddress(), "*")) {
-                    if (StringUtils.equals(getPort(), that.getPort())) {
-                        return true;
+                if (StringUtils.equals(getIpAddress(), "*") ||
+                     StringUtils.equals(that.getIpAddress(), "*") ||
+                     StringUtils.equals(that.getIpAddress(), getIpAddress())) {
+
+                    Integer[] ports1 = endpointHolder.getPorts();
+                    Integer[] ports2 = that.endpointHolder.getPorts();
+
+                    for (Integer port : ports2) {
+                        if (ArrayUtils.contains(ports1, port)) {
+                            if (messageHolder!=null)
+                                messageHolder[0] = that.getIpAddress() + ":" + port;
+                            return true;
+                        }
                     }
                 }
             }
 
             if (endpointHolder != null ? !endpointHolder.equals(that.endpointHolder) : that.endpointHolder != null)
-                return false;
+                 return false;
 
             return true;
         }
@@ -576,7 +987,14 @@ public class PartitionInformation{
             if (StringUtils.isNotEmpty(getIpAddress())) {
                 sb.append(getIpAddress()).append(":");
             }
-            sb.append(getPort());
+            if (endpointHolder != null) {
+                if(endpointHolder.getPorts().length == 1) {
+                    sb.append(endpointHolder.getPort());
+                } else {
+                    sb.append(Arrays.asList(endpointHolder.getPorts()));
+                }
+            }
+
             return sb.toString();
         }
     }

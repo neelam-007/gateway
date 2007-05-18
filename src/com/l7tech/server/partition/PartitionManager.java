@@ -359,15 +359,14 @@ public class PartitionManager {
         }
     }
 
-    public Map<String, List<PartitionInformation.IpPortPair>> getAllPartitionPorts() {
+    public Map<String, List<PartitionInformation.IpPortPair>> getAllPartitionPorts(boolean includeDisabled) {
         Map<String, List<PartitionInformation.IpPortPair>> portMap = new HashMap<String, List<PartitionInformation.IpPortPair>>();
         for (Map.Entry<String,PartitionInformation> which : partitions.entrySet()) {
             List<PartitionInformation.IpPortPair> theseEndpoints = new ArrayList<PartitionInformation.IpPortPair>();
-            for (PartitionInformation.HttpEndpointHolder httpEndpointHolder : which.getValue().getHttpEndpoints()) {
-                theseEndpoints.add(new PartitionInformation.IpPortPair(httpEndpointHolder));
-            }
-            for (PartitionInformation.OtherEndpointHolder otherEndpointHolder : which.getValue().getOtherEndpoints()) {
-                theseEndpoints.add(new PartitionInformation.IpPortPair(otherEndpointHolder));
+
+            for (PartitionInformation.EndpointHolder endpointHolder : which.getValue().getEndpoints()) {
+                if (includeDisabled || endpointHolder.isEnabled())
+                    theseEndpoints.add(new PartitionInformation.IpPortPair(endpointHolder));
             }
 
             portMap.put(which.getKey(), theseEndpoints);

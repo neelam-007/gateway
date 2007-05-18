@@ -4,12 +4,15 @@ import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -192,14 +195,17 @@ public class PartitionActions {
         return renamed;
     }
 
-    public static void updateSystemProperties(PartitionInformation pInfo) throws IOException {
+    public static void updateSystemProperties(PartitionInformation pInfo, boolean logError) throws IOException {
         File systemPropertiesFile = new File(pInfo.getOSSpecificFunctions().getSsgSystemPropertiesFile());
-        if (!systemPropertiesFile.exists()) systemPropertiesFile.createNewFile();
+
+        logger.info("Updating system properties file: " + systemPropertiesFile.getAbsolutePath());
 
         FileInputStream fis = null;
         FileOutputStream fos = null;
 
         try {
+            if (!systemPropertiesFile.exists()) systemPropertiesFile.createNewFile();
+
             fis = new FileInputStream(systemPropertiesFile);
             Properties prop = new Properties();
             prop.load(fis);
@@ -208,19 +214,24 @@ public class PartitionActions {
             List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
 
             PartitionInformation.HttpEndpointHolder httpEndpoint = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
-            prop.setProperty(PartitionInformation.SYSTEM_PROP_HTTPPORT, httpEndpoint.getPort());
+            prop.setProperty(PartitionInformation.SYSTEM_PROP_HTTPPORT, httpEndpoint.getPort().toString());
 
             PartitionInformation.HttpEndpointHolder sslEndpoint = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
-            prop.setProperty(PartitionInformation.SYSTEM_PROP_SSLPORT, sslEndpoint.getPort());
+            prop.setProperty(PartitionInformation.SYSTEM_PROP_SSLPORT, sslEndpoint.getPort().toString());
 
             PartitionInformation.OtherEndpointHolder rmiEndpoint = PartitionActions.getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
-            if (StringUtils.isNotEmpty(rmiEndpoint.getPort()))
-                prop.setProperty(PartitionInformation.SYSTEM_PROP_RMIPORT, rmiEndpoint.getPort());
+            if (rmiEndpoint.getPort() != null)
+                prop.setProperty(PartitionInformation.SYSTEM_PROP_RMIPORT, rmiEndpoint.getPort().toString());
 
             prop.setProperty(PartitionInformation.SYSTEM_PROP_PARTITIONNAME, pInfo.getPartitionId());
 
             fos = new FileOutputStream(systemPropertiesFile);
             prop.store(fos, "");
+        } catch (IOException ioe) {
+            if (logError) {
+                logger.warning("Error while updating system properties. [" + ioe.getMessage() + "]");                
+            }
+            throw ioe;
         } finally {
             ResourceUtils.closeQuietly(fis);
             ResourceUtils.closeQuietly(fos);
@@ -273,48 +284,68 @@ public class PartitionActions {
         }
     }
 
-    public static void updatePartitionEndpoints(PartitionInformation pInfo) throws IOException, SAXException {
-        updateHttpEndpoints(pInfo);
-        updateOtherEndpoints(pInfo);
+    public static void updatePartitionEndpoints(PartitionInformation pInfo, boolean logErrors) throws IOException, SAXException {
+        updateHttpEndpoints(pInfo, logErrors);
+        updateFtpEndpoints(pInfo, logErrors);
+        updateOtherEndpoints(pInfo, logErrors);
     }
 
-    private static void updateOtherEndpoints(PartitionInformation pInfo) throws IOException, SAXException {
+    private static void updateOtherEndpoints(PartitionInformation pInfo, boolean logErrors) throws IOException, SAXException {
         List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
-        PartitionInformation.OtherEndpointHolder shutdownEndpoint = PartitionActions.getOtherEndpointByType(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT, otherEndpoints);
 
-        Document serverConfigDom = pInfo.getOriginalDom();
-        if (serverConfigDom == null) {
-            serverConfigDom = getDomFromServerConfig(pInfo);
-        }
-        NodeList serverNodes = serverConfigDom.getElementsByTagName("Server");
-        for (int i = 0; i < serverNodes.getLength(); i++) {
-            Element serverNode = (Element) serverNodes.item(i);
-            serverNode.setAttribute("port", shutdownEndpoint.getPort());
-        }
         FileOutputStream fos = null;
         try {
+            PartitionInformation.OtherEndpointHolder shutdownEndpoint = PartitionActions.getOtherEndpointByType(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT, otherEndpoints);
+
+            Document serverConfigDom = pInfo.getOriginalDom();
+            if (serverConfigDom == null) {
+                serverConfigDom = getDomFromServerConfig(pInfo);
+            }
+            NodeList serverNodes = serverConfigDom.getElementsByTagName("Server");
+            for (int i = 0; i < serverNodes.getLength(); i++) {
+                Element serverNode = (Element) serverNodes.item(i);
+                serverNode.setAttribute("port", shutdownEndpoint.getPort().toString());
+            }
+
             OSSpecificFunctions foo = pInfo.getOSSpecificFunctions();
             fos = new FileOutputStream(foo.getTomcatServerConfig());
             XmlUtil.nodeToOutputStream(serverConfigDom, fos);
-        }finally {
+        } catch (IOException ioe) {
+            if (logErrors) {
+                logger.warning("Error while updating other endpoints. [" + ioe.getMessage() + "]");
+            }
+        } catch (SAXException se) {
+            if (logErrors) {
+                logger.warning("Error while updating other endpoints. [" + se.getMessage() + "]");                
+            }
+        } finally {
             ResourceUtils.closeQuietly(fos);
         }
     }
 
-    private static void updateHttpEndpoints(PartitionInformation pInfo) throws IOException, SAXException {
-        List<PartitionInformation.HttpEndpointHolder> newHttpEndpoints = pInfo.getHttpEndpoints();
-        Document serverConfigDom = pInfo.getOriginalDom();
-        if (serverConfigDom == null) {
-            serverConfigDom = getDomFromServerConfig(pInfo);
-        }
-        doEndpointTypeAwareUpdates(pInfo, newHttpEndpoints, serverConfigDom);
+    private static void updateHttpEndpoints(PartitionInformation pInfo, boolean logErrors) throws IOException, SAXException {
         FileOutputStream fos = null;
         try {
+            List<PartitionInformation.HttpEndpointHolder> newHttpEndpoints = pInfo.getHttpEndpoints();
+            Document serverConfigDom = pInfo.getOriginalDom();
+            if (serverConfigDom == null) {
+                serverConfigDom = getDomFromServerConfig(pInfo);
+            }
+            doEndpointTypeAwareUpdates(pInfo, newHttpEndpoints, serverConfigDom);
+
             OSSpecificFunctions foo = pInfo.getOSSpecificFunctions();
             fos = new FileOutputStream(foo.getTomcatServerConfig());
             XmlUtil.format(serverConfigDom, true);
             XmlUtil.nodeToOutputStream(serverConfigDom, fos);
-        }finally {
+        } catch (IOException ioe) {
+            if (logErrors) {
+                logger.warning("Error while updating http endpoints. [" + ioe.getMessage() + "]");
+            }
+        } catch (SAXException se) {
+            if (logErrors) {
+                logger.warning("Error while updating http endpoints. [" + se.getMessage() + "]");                
+            }
+        } finally {
             ResourceUtils.closeQuietly(fos);
         }
     }
@@ -330,7 +361,7 @@ public class PartitionActions {
         for (PartitionInformation.HttpEndpointHolder endpoint : endpoints) {
             PartitionInformation.HttpEndpointType type = endpoint.endpointType;
             if (type == PartitionInformation.HttpEndpointType.SSL_HTTP) {
-                redirectPort = endpoint.getPort();
+                redirectPort = endpoint.getPort().toString();
                 Element secureConnector = existingConnectors.get(PartitionInformation.HttpEndpointType.SSL_HTTP);
                 if (secureConnector != null) {
                     if (secureConnector.hasAttribute("keystorePass")) {
@@ -347,7 +378,7 @@ public class PartitionActions {
                 connector = existingConnectors.get(type);
             }
             connector.setAttribute("address", endpoint.getIpAddress());
-            connector.setAttribute("port", endpoint.getPort());
+            connector.setAttribute("port", endpoint.getPort().toString());
         }
         existingConnectors.get(PartitionInformation.HttpEndpointType.BASIC_HTTP).setAttribute("redirectPort", redirectPort);
         if (StringUtils.isNotEmpty(seenKeystorePass))
@@ -374,7 +405,7 @@ public class PartitionActions {
         } else {
             holder = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, endpoints);
         }
-        return StringUtils.isNotEmpty(holder.getIpAddress()) && StringUtils.isNotEmpty(holder.getPort());
+        return StringUtils.isNotEmpty(holder.getIpAddress()) && holder.getPort()!=null;
     }
 
     private static Document getDomFromServerConfig(PartitionInformation pInfo) throws IOException, SAXException {
@@ -402,6 +433,70 @@ public class PartitionActions {
         return doc;
     }
 
+    private static void updateFtpEndpoints(PartitionInformation pInfo, boolean logErrors) throws IOException {
+        List<PartitionInformation.FtpEndpointHolder> newFtpEndpoints = pInfo.getFtpEndpoints();
+
+        File ftpServerPropertiesFile = new File(pInfo.getOSSpecificFunctions().getFtpServerConfig());
+        if (!ftpServerPropertiesFile.exists()) ftpServerPropertiesFile.createNewFile();
+
+        FileInputStream fis = null;
+        FileOutputStream fos = null;
+
+        try {
+            PropertiesConfiguration ftpServerProps = new PropertiesConfiguration();
+            ftpServerProps.setAutoSave(false);
+            ftpServerProps.setListDelimiter((char)0);
+
+            fis = new FileInputStream(ftpServerPropertiesFile);
+            ftpServerProps.load(fis);
+            fis.close();
+            fis = null;
+
+            for (PartitionInformation.FtpEndpointHolder endpoint : newFtpEndpoints) {
+                // property name for type
+                String typeName = endpoint.getEndpointType()== PartitionInformation.FtpEndpointType.BASIC_FTP ?
+                        "default" :
+                        "secure";
+
+                // enabled
+                ftpServerProps.setProperty("ssgftp." + typeName + ".enabled", Boolean.toString(endpoint.isEnabled()));
+
+                // bind address
+                if ( "*".equals(endpoint.getIpAddress()) )
+                    ftpServerProps.setProperty("ssgftp." + typeName + ".address", "0.0.0.0");
+                else
+                    ftpServerProps.setProperty("ssgftp." + typeName + ".address", endpoint.getIpAddress());
+
+                // control port
+                ftpServerProps.setProperty("ssgftp." + typeName + ".controlPort", endpoint.getPort().toString());
+
+                // passive ports
+                Integer[] passivePorts = endpoint.getPassivePorts();
+                ftpServerProps.setProperty("ssgftp." + typeName + ".passivePortStart", passivePorts[0].toString());
+                ftpServerProps.setProperty("ssgftp." + typeName + ".passivePortEnd", passivePorts[passivePorts.length-1].toString());
+            }
+
+            fos = new FileOutputStream(ftpServerPropertiesFile);
+            ftpServerProps.setHeader("FtpServer local configuration");
+            ftpServerProps.save(fos, "iso-8859-1");
+        } catch(IOException ioe) {
+            if (logErrors) {
+                logger.warning("Error while updating ftp endpoints. [" + ioe.getMessage() + "]");
+            }
+            throw ioe;
+        } catch(ConfigurationException ce) {
+            if (logErrors) {
+                logger.warning("Error while updating ftp endpoints. [" + ce.getMessage() + "]");
+            }
+            throw new CausedIOException(ce);
+        } finally {
+            ResourceUtils.closeQuietly(fis);
+            ResourceUtils.closeQuietly(fos);
+        }
+
+    }
+
+
     public static void prepareNewpartition(PartitionInformation newPartition) throws IOException, SAXException {
         if (newPartition == null) {
             return;
@@ -409,9 +504,9 @@ public class PartitionActions {
 
         //edit the system.properties file so the name is correct
         try {
-            updatePartitionEndpoints(newPartition);
+            updatePartitionEndpoints(newPartition, false);
             fixKeystorePaths(new File(newPartition.getOSSpecificFunctions().getPartitionBase() + newPartition.getPartitionId()));
-            updateSystemProperties(newPartition);
+            updateSystemProperties(newPartition, false);
         } catch (FileNotFoundException e) {
             logger.warning("Error while preparing the \"" + newPartition.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
             throw e;
@@ -753,41 +848,44 @@ public class PartitionActions {
 
         List<PartitionInformation.IpPortPair> seenPairs = new ArrayList<PartitionInformation.IpPortPair>();
 
-        List<PartitionInformation.EndpointHolder> allHolders = new ArrayList<PartitionInformation.EndpointHolder>();
-        allHolders.addAll(pinfo.getHttpEndpoints());
-        allHolders.addAll(pinfo.getOtherEndpoints());
+        List<PartitionInformation.EndpointHolder> allHolders =
+                new ArrayList<PartitionInformation.EndpointHolder>(pinfo.getEndpoints());
 
         for (PartitionInformation.EndpointHolder holder : allHolders) {
-            int intPort;
-            try {
-                intPort = Integer.parseInt(holder.getPort());
-            } catch (NumberFormatException e) {
-                intPort = 0;
-                holder.setPort("");
+
+            Integer[] ports = holder.getPorts();
+            for (Integer intPort : ports) {
+                if ( intPort < 1024) {
+                    holder.setValidationMessaqe("The SecureSpan Gateway cannot use ports less than 1024");
+                    hadErrors = true;
+                } else if (intPort > 65535) {
+                    holder.setValidationMessaqe("The maximum port allowed is 65535");
+                    hadErrors = true;
+                }
             }
 
-            if ( intPort < 1024) {
-                holder.setValidationMessaqe("The SecureSpan Gateway cannot use ports less than 1024");
-                hadErrors = true;
-            } else if (intPort > 65535) {
-                holder.setValidationMessaqe("The maximum port allowed is 65535");
-                hadErrors = true;
-            } else {
-                PartitionInformation.IpPortPair pair = new PartitionInformation.IpPortPair(holder);
-                boolean foundMatch = false;
-                for (PartitionInformation.IpPortPair seenPair : seenPairs) {
-                    if (seenPair.equals(pair)) {
-                        foundMatch = true;
-                        break;
-                    }
-                }
+            if (!hadErrors) {
+                String[] message = new String[1];
+                if (holder.isEnabled()) {
+                    PartitionInformation.IpPortPair pair = new PartitionInformation.IpPortPair(holder);
+                    boolean foundMatch = false;
 
-                if (!foundMatch) {
-                    holder.setValidationMessaqe("");
-                    seenPairs.add(pair);
+                    for (PartitionInformation.IpPortPair seenPair : seenPairs) {
+                        if (pair.conflictsWith(seenPair, message)) {
+                            foundMatch = true;
+                            break;
+                        }
+                    }
+
+                    if (!foundMatch) {
+                        holder.setValidationMessaqe("");
+                        seenPairs.add(pair);
+                    } else {
+                        holder.setValidationMessaqe(message[0] + " is already in use in this partition.");
+                        hadErrors = true;
+                    }
                 } else {
-                    holder.setValidationMessaqe(pair.toString() + " is already in use in this partition.");
-                    hadErrors = true;
+                    holder.setValidationMessaqe("");
                 }
             }
         }
@@ -799,11 +897,10 @@ public class PartitionActions {
         boolean isOK = validateSinglePartitionEndpoints(currentPartition);
 
         if (isOK) {
-            List<PartitionInformation.EndpointHolder> currentEndpoints = new ArrayList<PartitionInformation.EndpointHolder>();
-            currentEndpoints.addAll(currentPartition.getHttpEndpoints());
-            currentEndpoints.addAll(currentPartition.getOtherEndpoints());
+            List<PartitionInformation.EndpointHolder> currentEndpoints =
+                    new ArrayList<PartitionInformation.EndpointHolder>(currentPartition.getEndpoints());
 
-            Map<String, List<PartitionInformation.IpPortPair>> portMap = PartitionManager.getInstance().getAllPartitionPorts();
+            Map<String, List<PartitionInformation.IpPortPair>> portMap = PartitionManager.getInstance().getAllPartitionPorts(incrementEndpoints);
             //don't compare against the current partition
             portMap.remove(currentPartition.getPartitionId());
 
@@ -831,19 +928,15 @@ public class PartitionActions {
     }
 
     private static void incrementPartitionEndpoint(PartitionInformation.EndpointHolder currentEndpoint, Map<String, List<PartitionInformation.IpPortPair>> portMap) {
-        List<PartitionInformation.IpPortPair> allPairs = new ArrayList<PartitionInformation.IpPortPair>();
+        List<Integer> allPorts = new ArrayList<Integer>(1000);
         for (String partitionName : portMap.keySet()) {
             List<PartitionInformation.IpPortPair> onePartitionsPairs = portMap.get(partitionName);
-            if (onePartitionsPairs != null) {
-                allPairs.addAll(onePartitionsPairs);
+            for (PartitionInformation.IpPortPair ipPortPair : onePartitionsPairs) {
+                allPorts.addAll(Arrays.asList(ipPortPair.getPorts()));
             }
         }
 
-        PartitionInformation.IpPortPair currentPair = new PartitionInformation.IpPortPair(currentEndpoint);
-        int x = Integer.parseInt(currentPair.getPort());
-        do {
-            currentPair.setPort(String.valueOf(++x));
-        } while(x <= PartitionInformation.MAX_PORT && allPairs.contains(currentPair));
+        currentEndpoint.avoidPorts(allPorts.toArray(new Integer[0]));
     }
 
     private static List<String> findMatchingEndpoints(PartitionInformation.EndpointHolder currentEndpoint,
@@ -852,8 +945,11 @@ public class PartitionActions {
         for (Map.Entry<String, List<PartitionInformation.IpPortPair>> partitionEntry : portMap.entrySet()) {
             List<PartitionInformation.IpPortPair> pairs = partitionEntry.getValue();
             PartitionInformation.IpPortPair currentPair = new PartitionInformation.IpPortPair(currentEndpoint);
-            if (pairs.contains(currentPair)) {
-                matches.add(partitionEntry.getKey());
+
+            for (PartitionInformation.IpPortPair pair : pairs) {
+                if (pair.conflictsWith(currentPair, null)) {
+                    matches.add(partitionEntry.getKey());
+                }
             }
         }
 
@@ -867,14 +963,19 @@ public class PartitionActions {
         } else {
             UnixSpecificFunctions unixSpecificFunctions = (UnixSpecificFunctions) osFunctions;
             List<PartitionInformation.HttpEndpointHolder> httpEndpoints = pInfo.getHttpEndpoints();
+            List<PartitionInformation.FtpEndpointHolder> ftpEndpoints = pInfo.getFtpEndpoints();
             List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
 
             PartitionInformation.HttpEndpointHolder basicEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
             PartitionInformation.HttpEndpointHolder sslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
             PartitionInformation.HttpEndpointHolder noAuthSslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, httpEndpoints);
+
+            PartitionInformation.FtpEndpointHolder basicFtpEndpoint = getFtpEndpointByType(PartitionInformation.FtpEndpointType.BASIC_FTP, ftpEndpoints);
+            PartitionInformation.FtpEndpointHolder sslFtpEndpoint = getFtpEndpointByType(PartitionInformation.FtpEndpointType.SSL_FTP_NOCLIENTCERT, ftpEndpoints);
+
             PartitionInformation.OtherEndpointHolder rmiEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
 
-            String rules = unixSpecificFunctions.getFirewallRulesForPartition(basicEndpoint, sslEndpoint, noAuthSslEndpoint, rmiEndpoint);
+            String rules = unixSpecificFunctions.getFirewallRulesForPartition(basicEndpoint, sslEndpoint, noAuthSslEndpoint, basicFtpEndpoint, sslFtpEndpoint, rmiEndpoint);
 
             FileOutputStream fos = null;
             String fileName = pInfo.getOSSpecificFunctions().getPartitionBase() + pInfo.getPartitionId() + "/" + "firewall_rules";
@@ -902,6 +1003,14 @@ public class PartitionActions {
         for (PartitionInformation.HttpEndpointHolder endpoint : endpoints) {
             if (endpoint.endpointType == type) return endpoint;
         }
+        return null;
+    }
+
+    public static PartitionInformation.FtpEndpointHolder getFtpEndpointByType(PartitionInformation.FtpEndpointType type,
+                                                                    List<PartitionInformation.FtpEndpointHolder> endpoints) {
+        for (PartitionInformation.FtpEndpointHolder endpoint : endpoints) {
+            if (endpoint.getEndpointType() == type) return endpoint;
+        }        
         return null;
     }
 

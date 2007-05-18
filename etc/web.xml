@@ -400,7 +400,7 @@
         <env-entry-value>
             com.l7tech.server.service.resolution.SoapActionResolver
             com.l7tech.server.service.resolution.UrnResolver
-            com.l7tech.server.service.resolution.HttpUriResolver
+            com.l7tech.server.service.resolution.UriResolver
         </env-entry-value>
         <env-entry-type>java.lang.String</env-entry-type>
     </env-entry>

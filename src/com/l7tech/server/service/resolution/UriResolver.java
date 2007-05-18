@@ -6,6 +6,7 @@ package com.l7tech.server.service.resolution;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.message.FtpRequestKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
@@ -23,7 +24,7 @@ import java.util.regex.Pattern;
 
 /**
  * <p>
- * Resolves services based on the HTTP URI from which the incoming message came in through. Different services
+ * Resolves services based on the HTTP/FTP URI from which the incoming message came in through. Different services
  * can be assigned a resolution URI. By default, a service is not assigned a resolution URI. For resolution purposes
  * this special case is assigned the value of "". Requests coming in the ssg at a URI starting with
  * SecureSpanConstants.SSG_RESERVEDURI_PREFIX are considered as URIs of "".
@@ -46,8 +47,8 @@ import java.util.regex.Pattern;
  *
  * @author franco
  */
-public class HttpUriResolver extends ServiceResolver<String> {
-    public HttpUriResolver(ApplicationContext spring) {
+public class UriResolver extends ServiceResolver<String> {
+    public UriResolver(ApplicationContext spring) {
         super(spring);
     }
 
@@ -60,7 +61,8 @@ public class HttpUriResolver extends ServiceResolver<String> {
         try {
             // since this only applies to http messages, we dont want to narrow down subset if msg is not http
             boolean notHttp = (request.getKnob(HttpRequestKnob.class) == null);
-            if (notHttp) {
+            boolean notFtp = (request.getKnob(FtpRequestKnob.class) == null);
+            if (notHttp && notFtp) {
                 return Result.NOT_APPLICABLE;
             } else {
                 String requestValue = getRequestValue(request);
@@ -241,7 +243,14 @@ public class HttpUriResolver extends ServiceResolver<String> {
 
     private String getRequestValue(Message request) throws ServiceResolutionException {
         HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
-        if (httpReqKnob == null) return null;
+        if (httpReqKnob == null) {
+            FtpRequestKnob ftpReqKnob = (FtpRequestKnob)request.getKnob(FtpRequestKnob.class);
+            if (ftpReqKnob == null) return null;
+            String uri = ftpReqKnob.getRequestUri();
+            if (uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
+            auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_REAL_URI, uri);
+            return uri;
+        }
         String originalUrl;
         try {
             originalUrl = httpReqKnob.getHeaderSingleValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL);

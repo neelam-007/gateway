@@ -120,7 +120,7 @@ public class ServiceCache
 
         activeResolvers = new ServiceResolver[] {
             new OriginalUrlServiceOidResolver(spring),
-            new HttpUriResolver(spring),
+            new UriResolver(spring),
             new SoapActionResolver(spring), 
             new UrnResolver(spring),
         };

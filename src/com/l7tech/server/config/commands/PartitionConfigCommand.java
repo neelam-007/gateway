@@ -25,8 +25,8 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         boolean success = true;
         PartitionInformation pInfo = partitionBean.getPartitionInfo();
         try {
-            PartitionActions.updatePartitionEndpoints(pInfo);
-            PartitionActions.updateSystemProperties(pInfo);
+            PartitionActions.updatePartitionEndpoints(pInfo, true);
+            PartitionActions.updateSystemProperties(pInfo, true);
             updateStartupScripts(pInfo);
             updateFirewallRules(pInfo);
             enablePartitionForStartup(pInfo);

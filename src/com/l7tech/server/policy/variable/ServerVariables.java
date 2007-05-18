@@ -182,6 +182,30 @@ public class ServerVariables {
                 return hrk == null ? null : hrk.getQueryString();
             }
         }),
+        new Variable("request.ftp.path", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                FtpRequestKnob frk = (FtpRequestKnob)context.getRequest().getKnob(FtpRequestKnob.class);
+                return frk == null ? null : frk.getPath();
+            }
+        }),
+        new Variable("request.ftp.file", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                FtpRequestKnob frk = (FtpRequestKnob)context.getRequest().getKnob(FtpRequestKnob.class);
+                return frk == null ? null : frk.getFile();
+            }
+        }),
+        new Variable("request.ftp.unique", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                FtpRequestKnob frk = (FtpRequestKnob)context.getRequest().getKnob(FtpRequestKnob.class);
+                return frk == null ? null : String.valueOf(frk.isUnique());
+            }
+        }),
+        new Variable("request.ftp.secure", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                FtpRequestKnob frk = (FtpRequestKnob)context.getRequest().getKnob(FtpRequestKnob.class);
+                return frk == null ? null : String.valueOf(frk.isSecure());
+            }
+        }),
         new Variable("request.elapsedTime", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 return Long.toString(System.currentTimeMillis() - context.getStartTime());

@@ -7,6 +7,7 @@ import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.security.SecurityProvider;
@@ -43,6 +44,7 @@ public final class RegistryImpl extends Registry
     private IdentityAdmin identityAdmin;
     private ServiceAdmin serviceAdmin;
     private JmsAdmin jmsAdmin;
+    private FtpAdmin ftpAdmin;
     private TrustedCertAdmin trustedCertAdmin;
     private SchemaAdmin schemaAdmin;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
@@ -111,6 +113,22 @@ public final class RegistryImpl extends Registry
         try {
             jmsAdmin = adminContext.getJmsAdmin();
             return jmsAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * @return the FTP manager
+     */
+    public synchronized FtpAdmin getFtpManager() {
+        checkAdminContext();
+        if (ftpAdmin != null) {
+            return ftpAdmin;
+        }
+        try {
+            ftpAdmin = adminContext.getFtpAdmin();
+            return ftpAdmin;
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -270,6 +288,7 @@ public final class RegistryImpl extends Registry
         identityAdmin = null;
         serviceAdmin = null;
         jmsAdmin = null;
+        ftpAdmin = null;
         trustedCertAdmin = null;
         schemaAdmin = null;
         customAssertionsRegistrar = null;

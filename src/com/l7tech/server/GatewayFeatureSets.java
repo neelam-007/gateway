@@ -7,7 +7,6 @@ package com.l7tech.server;
 
 import com.l7tech.common.License;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -25,6 +24,7 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
@@ -60,6 +60,7 @@ public class GatewayFeatureSets {
 
     // Constants for service names
     public static final String SERVICE_MESSAGEPROCESSOR = "service:MessageProcessor";
+    public static final String SERVICE_FTP_MESSAGE_INPUT = "service:FtpMessageInput";
     public static final String SERVICE_HTTP_MESSAGE_INPUT = "service:HttpMessageInput";
     public static final String SERVICE_JMS_MESSAGE_INPUT = "service:JmsMessageInput";
     public static final String SERVICE_ADMIN = "service:Admin";
@@ -120,6 +121,11 @@ public class GatewayFeatureSets {
         GatewayFeatureSet httpBack =
         fsr("set:http:back", "Allow outgoing HTTP messages",
             ass(HttpRoutingAssertion.class));
+
+        GatewayFeatureSet ftpFront =
+        fsr("set:ftp:front", "Allow incoming FTP messages",
+            srv(SERVICE_FTP_MESSAGE_INPUT, "Accept incoming messages over FTP"),
+            mass("assertion:FtpCredential"));
 
         GatewayFeatureSet srvJms = misc(SERVICE_JMS_MESSAGE_INPUT, "Accept incoming messages over JMS", null);
         GatewayFeatureSet jmsFront =
@@ -307,11 +313,13 @@ public class GatewayFeatureSets {
 
         GatewayFeatureSet routingGateway =
         fsr("set:Routing:Gateway", "SecureSpan Gateway message routing",
-            "Adds BRA and JMS routing.",
+            "Adds BRA, JMS and FTP routing.",
             fs(routingFw),
+            fs(ftpFront),
             fs(jmsFront),
             fs(jmsBack),
-            ass(BridgeRoutingAssertion.class));
+            ass(BridgeRoutingAssertion.class),
+            mass("assertion:FtpRouting"));
 
         // Service availability
         GatewayFeatureSet availabilityAccel =

@@ -43,6 +43,11 @@
         <property name="proxyInterfaces" value="com.l7tech.common.transport.jms.JmsAdmin"/>
     </bean>
 
+    <bean id="ftpAdmin" parent="rbacIntercepted">
+        <property name="target" ref="ftpAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.common.transport.ftp.FtpAdmin"/>
+    </bean>
+
     <bean id="rbacAdmin" parent="rbacIntercepted">
         <property name="target" ref="rbacAdmin_UNSECURED"/>
         <property name="proxyInterfaces" value="com.l7tech.common.security.rbac.RbacAdmin"/>

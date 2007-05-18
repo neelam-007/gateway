@@ -6,13 +6,10 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class LinuxSpecificFunctions extends UnixSpecificFunctions {
-    private static final String BASIC_IP_MARKER = "<HTTP_BASIC_IP>";
-    private static final String BASIC_PORT_MARKER = "<HTTP_BASIC_PORT>";
-    private static final String SSL_IP_MARKER = "<SSL_IP>";
-    private static final String SSL_PORT_MARKER = "<SSL_PORT>";
-    private static final String NOAUTH_SSL_IP_MARKER = "<SSL_NOAUTH_IP>";
-    private static final String NOAUTH_SSL_PORT_MARKER = "<SSL_NOAUTH_PORT>";
-    private static final String RMI_PORT_MARKER = "<RMI_PORT>";
+    private static final String IP_MARKER = "<IP>";
+    private static final String PORT_MARKER = "<PORT>";
+    private static final String TEMPLATE_IP_PORT = "[0:0] -I INPUT $Rule_Insert_Point -d " + IP_MARKER + " -p tcp -m tcp --dport " + PORT_MARKER + " -j ACCEPT\n";
+    private static final String TEMPLATE_PORT = "[0:0] -I INPUT $Rule_Insert_Point -p tcp -m tcp --dport " + PORT_MARKER + " -j ACCEPT\n";
 
     public LinuxSpecificFunctions(String osname) {
         this(osname, null);
@@ -50,34 +47,63 @@ public class LinuxSpecificFunctions extends UnixSpecificFunctions {
         return true;
     }
 
-    public String getFirewallRulesForPartition(PartitionInformation.HttpEndpointHolder basicEndpoint, PartitionInformation.HttpEndpointHolder sslEndpoint, PartitionInformation.HttpEndpointHolder noAuthSslEndpoint, PartitionInformation.OtherEndpointHolder rmiEndpoint) {
-        String firewallRules = new String(
-            "[0:0] -I INPUT $Rule_Insert_Point -d "+ BASIC_IP_MARKER +" -p tcp -m tcp --dport " + BASIC_PORT_MARKER +" -j ACCEPT\n" +
-            "[0:0] -I INPUT $Rule_Insert_Point -d " + SSL_IP_MARKER +" -p tcp -m tcp --dport " + SSL_PORT_MARKER + " -j ACCEPT\n" +
-            "[0:0] -I INPUT $Rule_Insert_Point -d " + NOAUTH_SSL_IP_MARKER + " -p tcp -m tcp --dport " + NOAUTH_SSL_PORT_MARKER + " -j ACCEPT\n" +
-            "[0:0] -I INPUT $Rule_Insert_Point -p tcp -m tcp --dport " + RMI_PORT_MARKER + " -j ACCEPT\n"
-        );
+    private String buildIPPortRule(String ipAddress, String port) {
+        String rule = TEMPLATE_IP_PORT;
 
-        if (basicEndpoint.getIpAddress().equals("*"))
-            firewallRules= firewallRules.replaceAll("-d " + BASIC_IP_MARKER, "");
+        if (ipAddress.equals("*"))
+            rule= rule.replaceAll("-d " + IP_MARKER, "");
         else
-            firewallRules = firewallRules.replaceAll(BASIC_IP_MARKER, basicEndpoint.getIpAddress());
-        firewallRules = firewallRules.replaceAll(BASIC_PORT_MARKER, basicEndpoint.getPort());
+            rule = rule.replaceAll(IP_MARKER, ipAddress);
 
-        if (sslEndpoint.getIpAddress().equals("*"))
-            firewallRules = firewallRules.replaceAll("-d " + SSL_IP_MARKER, "");
-        else
-            firewallRules = firewallRules.replaceAll(SSL_IP_MARKER, sslEndpoint.getIpAddress());
-        firewallRules = firewallRules.replaceAll(SSL_PORT_MARKER, sslEndpoint.getPort());
+        rule = rule.replaceAll(PORT_MARKER, port);
 
-        if (noAuthSslEndpoint.getIpAddress().equals("*"))
-            firewallRules = firewallRules.replaceAll("-d " + NOAUTH_SSL_IP_MARKER, "");
-        else
-            firewallRules = firewallRules.replaceAll(NOAUTH_SSL_IP_MARKER, noAuthSslEndpoint.getIpAddress());
-        firewallRules = firewallRules.replaceAll(NOAUTH_SSL_PORT_MARKER, noAuthSslEndpoint.getPort());
+        return rule;
+    }
 
-        firewallRules = firewallRules.replaceAll(RMI_PORT_MARKER, rmiEndpoint.getPort());
+    public String getFirewallRulesForPartition(PartitionInformation.HttpEndpointHolder basicEndpoint,
+                                               PartitionInformation.HttpEndpointHolder sslEndpoint,
+                                               PartitionInformation.HttpEndpointHolder noAuthSslEndpoint,
+                                               PartitionInformation.FtpEndpointHolder basicFtpEndpoint,
+                                               PartitionInformation.FtpEndpointHolder sslFtpEndpoint,
+                                               PartitionInformation.OtherEndpointHolder rmiEndpoint) {
+        StringBuffer firewallRules = new StringBuffer();
 
-        return firewallRules;
+        // HTTP Basic
+        if (basicEndpoint.isEnabled()) {
+            firewallRules.append(buildIPPortRule(basicEndpoint.getIpAddress(), basicEndpoint.getPort().toString()));
+        }
+
+        // HTTP SSL
+        if (sslEndpoint.isEnabled()) {
+            firewallRules.append(buildIPPortRule(sslEndpoint.getIpAddress(), sslEndpoint.getPort().toString()));
+        }
+
+        // HTTP SSL (no client cert)
+        if (noAuthSslEndpoint.isEnabled()) {
+            firewallRules.append(buildIPPortRule(noAuthSslEndpoint.getIpAddress(), noAuthSslEndpoint.getPort().toString()));
+        }
+
+        // FTP Basic
+        if (basicFtpEndpoint.isEnabled()) {
+            firewallRules.append(buildIPPortRule(basicFtpEndpoint.getIpAddress(), basicFtpEndpoint.getPort().toString()));
+            firewallRules.append(buildIPPortRule(basicFtpEndpoint.getIpAddress(),
+                    basicFtpEndpoint.getPassivePortStart() + ":" +
+                    (basicFtpEndpoint.getPassivePortStart().intValue() + (basicFtpEndpoint.getPassivePortCount().intValue()-1))));
+        }
+
+        // FTP SSL
+        if (sslFtpEndpoint.isEnabled()) {
+            firewallRules.append(buildIPPortRule(sslFtpEndpoint.getIpAddress(), sslFtpEndpoint.getPort().toString()));
+            firewallRules.append(buildIPPortRule(sslFtpEndpoint.getIpAddress(),
+                    sslFtpEndpoint.getPassivePortStart() + ":" +
+                    (sslFtpEndpoint.getPassivePortStart().intValue() + (sslFtpEndpoint.getPassivePortCount().intValue()-1))));
+        }
+
+        // RMI
+        if (rmiEndpoint.isEnabled()) {
+            firewallRules.append(TEMPLATE_PORT.replaceAll(PORT_MARKER, rmiEndpoint.getPort().toString()));
+        }
+
+        return firewallRules.toString();
     }
 }

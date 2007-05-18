@@ -371,6 +371,20 @@ public final class Message {
     }
 
     /**
+     * Configure this Message as an FTP Message.  This attaches an FTP STOR command to this
+     * Message.  A Message may have at most one FTP knob.
+     *
+     * @param ftpRequestKnob source of FTP data.  May not be null.
+     * @throws IllegalStateException if this Message is already configured as an FTP Message
+     */
+    public void attachFtpKnob(FtpRequestKnob ftpRequestKnob) throws IllegalStateException {
+        if (getKnob(FtpRequestKnob.class) != null)
+            throw new IllegalStateException("This Message is already configured as an FTP Message");
+        rootFacet = new FtpFacet(this, rootFacet, ftpRequestKnob);
+        invalidateCachedKnobs();
+    }
+
+    /**
      * Obtain the source for HTTP request transport metadata.  This assumes that this Message has already been
      * configured as an HTTP request by calling {@link #attachHttpRequestKnob}.
      *

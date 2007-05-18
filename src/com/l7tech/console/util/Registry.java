@@ -3,8 +3,9 @@ package com.l7tech.console.util;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
+import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.security.SecurityProvider;
@@ -79,6 +80,8 @@ public abstract class Registry {
      */
     abstract public JmsAdmin getJmsManager();
 
+    abstract public FtpAdmin getFtpManager();
+
     abstract public TrustedCertAdmin getTrustedCertManager();
 
     abstract public SchemaAdmin getSchemaAdmin();
@@ -143,6 +146,10 @@ public abstract class Registry {
         }
 
         public JmsAdmin getJmsManager() {
+            return null;
+        }
+
+        public FtpAdmin getFtpManager() {
             return null;
         }
 

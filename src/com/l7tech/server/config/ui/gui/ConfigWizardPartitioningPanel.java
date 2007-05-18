@@ -47,14 +47,17 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
     private JPanel propertiesPanel;
     private JTextField partitionName;
     private JTable httpEndpointsTable;
+    private JTable ftpEndpointsTable;
     private JTable otherEndpointsTable;
     private JLabel errorMessageLabel;
     private JButton renamePartitionButton;
+    private JTabbedPane tabbedPane;
     private PartitionListModel partitionListModel;
 
     PartitionConfigBean partitionBean;
 
     private HttpEndpointTableModel httpEndpointTableModel;
+    private FtpEndpointTableModel ftpEndpointTableModel;
     private OtherEndpointTableModel otherEndpointTableModel;
 
     public static String pathSeparator = File.separator;
@@ -90,19 +93,55 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
 
         httpEndpointTableModel = new HttpEndpointTableModel();
         httpEndpointsTable.setModel(httpEndpointTableModel);
+        httpEndpointsTable.getTableHeader().setReorderingAllowed(false);
+
+        TableColumn httpEndpointsNameColumn = httpEndpointsTable.getColumnModel().getColumn(0);
+        httpEndpointsNameColumn.setPreferredWidth(200);
 
         TableColumn httpEndpointsIpColumn = httpEndpointsTable.getColumnModel().getColumn(1);
+        httpEndpointsIpColumn.setPreferredWidth(100);
         httpEndpointsIpColumn.setCellEditor(new DefaultCellEditor(new JComboBox(new DefaultComboBoxModel(PartitionActions.getAvailableIpAddresses()))));
 
         TableColumn httpEndpointsPortColumn = httpEndpointsTable.getColumnModel().getColumn(2);
-        httpEndpointsPortColumn.setCellEditor(new DefaultCellEditor(new JTextField(new NumberField(5), null, 0)));
+        httpEndpointsPortColumn.setPreferredWidth(100);
+        httpEndpointsPortColumn.setCellEditor(new DefaultCellEditor(buildIntegerEditComponent(5)));
         httpEndpointsPortColumn.setCellRenderer(new PortNumberRenderer(httpEndpointTableModel));
+
+        ftpEndpointTableModel = new FtpEndpointTableModel();
+        ftpEndpointsTable.setModel(ftpEndpointTableModel);
+        ftpEndpointsTable.getTableHeader().setReorderingAllowed(false);
+
+        TableColumn ftpEndpointsNameColumn = ftpEndpointsTable.getColumnModel().getColumn(0);
+        ftpEndpointsNameColumn.setPreferredWidth(80);
+
+        TableColumn ftpEndpointsEnabledColumn = ftpEndpointsTable.getColumnModel().getColumn(1);
+        ftpEndpointsEnabledColumn.setPreferredWidth(25);
+
+        TableColumn ftpEndpointsIpColumn = ftpEndpointsTable.getColumnModel().getColumn(2);
+        ftpEndpointsIpColumn.setPreferredWidth(60);
+        ftpEndpointsIpColumn.setCellEditor(new DefaultCellEditor(new JComboBox(new DefaultComboBoxModel(PartitionActions.getAvailableIpAddresses()))));
+
+        TableColumn ftpEndpointsPortColumn = ftpEndpointsTable.getColumnModel().getColumn(3);
+        ftpEndpointsPortColumn.setPreferredWidth(20);
+        ftpEndpointsPortColumn.setCellEditor(new DefaultCellEditor(buildIntegerEditComponent(5)));
+        ftpEndpointsPortColumn.setCellRenderer(new PortNumberRenderer(ftpEndpointTableModel));
+
+        TableColumn ftpEndpointsPassiveStartPortColumn = ftpEndpointsTable.getColumnModel().getColumn(4);
+        ftpEndpointsPassiveStartPortColumn.setPreferredWidth(45);
+        ftpEndpointsPassiveStartPortColumn.setCellEditor(new DefaultCellEditor(buildIntegerEditComponent(5)));
+        ftpEndpointsPassiveStartPortColumn.setCellRenderer(new PortNumberRenderer(ftpEndpointTableModel));
+
+        TableColumn ftpEndpointsPassiveCountColumn = ftpEndpointsTable.getColumnModel().getColumn(5);
+        ftpEndpointsPassiveCountColumn.setPreferredWidth(45);
+        ftpEndpointsPassiveCountColumn.setCellEditor(new DefaultCellEditor(buildIntegerEditComponent(3)));
+        ftpEndpointsPassiveCountColumn.setCellRenderer(new PortNumberRenderer(ftpEndpointTableModel));
 
         otherEndpointTableModel = new OtherEndpointTableModel();
         otherEndpointsTable.setModel(otherEndpointTableModel);
+        otherEndpointsTable.getTableHeader().setReorderingAllowed(false);
 
         TableColumn otherEndpointsPortColumn = otherEndpointsTable.getColumnModel().getColumn(1);
-        otherEndpointsPortColumn.setCellEditor(new DefaultCellEditor(new JTextField(new NumberField(5), null, 0)));
+        otherEndpointsPortColumn.setCellEditor(new DefaultCellEditor(buildIntegerEditComponent(5)));
         otherEndpointsPortColumn.setCellRenderer(new PortNumberRenderer(otherEndpointTableModel));
 
         initListeners();
@@ -112,6 +151,18 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
         errorMessageLabel.setVisible(false);
         setupPartitions();
         enableProperties(false);
+    }
+
+    private void fireDataChange() {
+        httpEndpointTableModel.notifyChanged();
+        ftpEndpointTableModel.notifyChanged();
+        otherEndpointTableModel.notifyChanged();
+    }
+
+    private JTextField buildIntegerEditComponent(int maxDigits) {
+        JTextField editor = new JTextField(new NumberField(maxDigits), null, 0);
+        editor.setHorizontalAlignment(JTextField.RIGHT);
+        return editor;
     }
 
     private void setupPartitions() {
@@ -390,6 +441,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
             PartitionInformation pi = (PartitionInformation) o;
             partitionName.setText(pi.getPartitionId());
             httpEndpointTableModel.addEndpoints(pi.getHttpEndpoints());
+            ftpEndpointTableModel.addEndpoints(pi.getFtpEndpoints());
             otherEndpointTableModel.addEndpoints(pi.getOtherEndpoints());
         }
         enableButtons();
@@ -406,6 +458,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
         if (pi != null) {
             pi.setPartitionId(partitionName.getText());
             pi.setHttpEndpointsList(httpEndpointTableModel.getEndpoints());
+            pi.setFtpEndpointsList(ftpEndpointTableModel.getEndpoints());
             pi.setOtherEndpointsList(otherEndpointTableModel.getEndpoints());
 
             PartitionConfigBean partBean = (PartitionConfigBean) configBean;
@@ -446,6 +499,23 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
         } else {
             isValid = false;
         }
+
+        if (!isValid) {
+            // select the table with the errors
+            for(PartitionInformation.EndpointHolder endpointHolder : pInfo.getEndpoints()) {
+                if( StringUtils.isNotEmpty(endpointHolder.getValidationMessaqe()) ) {
+                    if (pInfo.getHttpEndpoints().contains(endpointHolder)) {
+                        tabbedPane.setSelectedIndex(0);
+                    } else if (pInfo.getFtpEndpoints().contains(endpointHolder)) {
+                        tabbedPane.setSelectedIndex(1);
+                    } else {
+                        tabbedPane.setSelectedIndex(2);                        
+                    }
+                    break;
+                }
+            }
+        }
+
         errorMessageLabel.setVisible(!isValid);
         updateProperties();
         return isValid;
@@ -580,9 +650,16 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
             PartitionInformation.EndpointHolder holder = getEndpointAt(rowIndex);
             holder.setValueAt(columnIndex, aValue);
             doAfterSetValue();
+            fireDataChange();
         }
 
-        protected abstract void doAfterSetValue();
+        protected void doAfterSetValue() {
+            PartitionActions.validateSinglePartitionEndpoints(getSelectedPartition());
+        }
+
+        protected void notifyChanged() {
+            fireTableDataChanged(); // ensure redraw on valid/invalid
+        }
 
         public abstract PartitionInformation.EndpointHolder getEndpointAt(int row);
     }
@@ -620,10 +697,6 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
             return true;
         }
 
-        protected void doAfterSetValue() {
-            PartitionActions.validateSinglePartitionEndpoints(getSelectedPartition());
-        }
-
         public int getSize() {
             return httpEndpoints.size();
         }
@@ -648,6 +721,67 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
 
         public void addEndpoints(List<PartitionInformation.HttpEndpointHolder> ehList) {
             httpEndpoints = ehList;
+            fireTableDataChanged();
+        }
+    }
+
+    private class FtpEndpointTableModel extends EndpointTableModel {
+
+        private List<PartitionInformation.FtpEndpointHolder> ftpEndpoints;
+
+        public FtpEndpointTableModel() {
+            ftpEndpoints = new ArrayList<PartitionInformation.FtpEndpointHolder>();
+        }
+
+        public int getRowCount() {
+            return (ftpEndpoints == null ? 0 : ftpEndpoints.size());
+        }
+
+        public int getColumnCount() {
+            return PartitionInformation.FtpEndpointHolder.getHeadings().length;
+        }
+
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            PartitionInformation.FtpEndpointHolder holder = getEndpointAt(rowIndex);
+            return holder.getValue(columnIndex);
+        }
+
+        public Class<?> getColumnClass(int columnIndex) {
+             return PartitionInformation.FtpEndpointHolder.getClassAt(columnIndex);
+        }
+
+        public String getColumnName(int column) {
+            return PartitionInformation.FtpEndpointHolder.getHeadings()[column];
+        }
+        
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return true;
+        }
+
+        public int getSize() {
+            return ftpEndpoints.size();
+        }
+
+        public PartitionInformation.FtpEndpointHolder getEndpointAt(int selectedRow) {
+            if (selectedRow >=0 && selectedRow < ftpEndpoints.size())
+                    return ftpEndpoints.get(selectedRow);
+            return null;
+        }
+
+        public List<PartitionInformation.FtpEndpointHolder> getEndpointsAt(int[] selectedRows) {
+            List<PartitionInformation.FtpEndpointHolder> selectedOnes = new ArrayList<PartitionInformation.FtpEndpointHolder>();
+            for (int selectedRow : selectedRows) {
+                selectedOnes.add(getEndpointAt(selectedRow));
+            }
+            return selectedOnes;
+        }
+
+        List<PartitionInformation.FtpEndpointHolder> getEndpoints() {
+            return ftpEndpoints;
+        }
+
+        public void addEndpoints(List<PartitionInformation.FtpEndpointHolder> ehList) {
+            ftpEndpoints = ehList;
             fireTableDataChanged();
         }
     }
@@ -697,10 +831,6 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
 
         public int getSize() {
             return otherEndpoints.size();
-        }
-
-        protected void doAfterSetValue() {
-            PartitionActions.validateSinglePartitionEndpoints(getSelectedPartition());
         }
 
         public PartitionInformation.OtherEndpointHolder getEndpointAt(int selectedRow) {

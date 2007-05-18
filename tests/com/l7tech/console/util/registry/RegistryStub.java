@@ -2,37 +2,32 @@ package com.l7tech.console.util.registry;
 
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.ClusterStatusAdminStub;
+import com.l7tech.common.TestLicenseManager;
+import com.l7tech.common.VersionException;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditAdminStub;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.rbac.*;
-import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.*;
+import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
-import com.l7tech.common.TestLicenseManager;
-import com.l7tech.common.VersionException;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ConsoleLicenseManager;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarStub;
 import com.l7tech.policy.validator.DefaultPolicyValidator;
-import com.l7tech.service.JmsAdminStub;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.service.ServiceAdminStub;
-import com.l7tech.service.ServiceManagerStub;
-import com.l7tech.objectmodel.*;
+import com.l7tech.service.*;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Arrays;
-
-import org.springframework.transaction.annotation.Transactional;
+import java.util.Collection;
 
 
 /**
@@ -80,6 +75,13 @@ public class RegistryStub extends Registry {
      */
     public JmsAdmin getJmsManager() {
         return jmsAdmin;
+    }
+
+    /**
+     * @return the FTP manager
+     */
+    public FtpAdmin getFtpManager() {
+        return ftpAdmin;
     }
 
     public TrustedCertAdmin getTrustedCertManager() {
@@ -180,6 +182,7 @@ public class RegistryStub extends Registry {
     private IdentityAdmin identityAdmin = new IdentityAdminStub();
     private ServiceAdminStub serviceAdmin = new ServiceAdminStub();
     private JmsAdmin jmsAdmin = new JmsAdminStub();
+    private FtpAdmin ftpAdmin = new FtpAdminStub();
     private CustomAssertionsRegistrar customAssertionsRegistrar = new CustomAssertionsRegistrarStub();
     private AuditAdmin auditAdmin = new AuditAdminStub();
     private ClusterStatusAdmin clusterStatusAdmin = new ClusterStatusAdminStub();

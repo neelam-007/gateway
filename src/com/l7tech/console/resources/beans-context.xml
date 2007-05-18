@@ -43,6 +43,11 @@
         <property name="serviceInterface" value="com.l7tech.common.transport.jms.JmsAdmin"/>
     </bean>
 
+    <bean id="ftpAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/FtpAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.transport.ftp.FtpAdmin"/>
+    </bean>
+
     <bean id="trustedCertAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/TrustedCertAdmin"/>
         <property name="serviceInterface" value="com.l7tech.common.security.TrustedCertAdmin"/>

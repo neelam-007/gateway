@@ -33,6 +33,7 @@ public class Component {
     public static final Component     GW_ADMINWS          = new Component(  60000, "Admin Web Service", GW_SERVER);
     public static final Component     GW_JMSRECV          = new Component(  70000, "JMS Receiver", GW_SERVER);
     public static final Component     GW_ADMINAPPLET      = new Component(  80000, "Admin Applet", GW_SERVER, true);
+    public static final Component     GW_FTPSERVER        = new Component(  90000, "FTP Server", GW_SERVER);
     public static final Component   GW_CLUSTER            = new Component( 300000, "Cluster", GATEWAY);
     public static final Component   GW_DATABASE           = new Component( 400000, "Database", GATEWAY);
 

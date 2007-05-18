@@ -11,6 +11,7 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.message.FtpRequestKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -41,11 +42,12 @@ public class ServerSslAssertion extends AbstractServerAssertion implements Serve
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
         final HttpServletRequestKnob hsRequestKnob = (HttpServletRequestKnob)context.getRequest().getKnob(HttpServletRequestKnob.class);
         final HttpServletRequest httpServletRequest = hsRequestKnob == null ? null : hsRequestKnob.getHttpServletRequest();
-        if (httpServletRequest == null) {
-            logger.info("Request not received over HTTP; don't know how to check for SSL");
+        final FtpRequestKnob ftpRequestKnob = hsRequestKnob != null ? null : (FtpRequestKnob)context.getRequest().getKnob(FtpRequestKnob.class);
+        if (httpServletRequest == null && ftpRequestKnob == null) {
+            logger.info("Request not received over FTP or HTTP; don't know how to check for SSL");
             return AssertionStatus.BAD_REQUEST;
         }
-        boolean ssl = httpServletRequest.isSecure();
+        boolean ssl = httpServletRequest!=null ? httpServletRequest.isSecure() : ftpRequestKnob.isSecure();
         AssertionStatus status;
 
         SslAssertion.Option option = _data.getOption();
@@ -54,8 +56,10 @@ public class ServerSslAssertion extends AbstractServerAssertion implements Serve
             if (ssl) {
                 status = AssertionStatus.NONE;
                 auditor.logAndAudit(AssertionMessages.SSL_REQUIRED_PRESENT);
-                if (_data.isCredentialSource()) {
+                if (_data.isCredentialSource() && httpServletRequest!=null) {
                     status = processAsCredentialSourceAssertion(context, auditor);
+                } else if (_data.isCredentialSource()) {
+                    status = AssertionStatus.FALSIFIED;
                 }
             } else {
                 if (_data.isCredentialSource()) {

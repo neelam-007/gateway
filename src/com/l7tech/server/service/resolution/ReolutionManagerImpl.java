@@ -45,7 +45,7 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
 
     private SoapActionResolver soapresolver;
     private UrnResolver urnresolver;
-    private HttpUriResolver uriresolver;
+    private UriResolver uriresolver;
 
     public ReolutionManagerImpl(Collection<Decorator<PublishedService>> decorators) {
         this.decorators = decorators;
@@ -54,7 +54,7 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         soapresolver = new SoapActionResolver(applicationContext);
         urnresolver = new UrnResolver(applicationContext);
-        uriresolver = new HttpUriResolver(applicationContext);
+        uriresolver = new UriResolver(applicationContext);
     }
 
     /**

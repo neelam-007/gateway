@@ -5,6 +5,7 @@ import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.identity.IdentityAdmin;
@@ -31,6 +32,7 @@ public class AdminContextBean implements AdminContext, Serializable {
     private final AuditAdmin auditAdmin;
     private final ServiceAdmin serviceAdmin;
     private final JmsAdmin jmsAdmin;
+    private final FtpAdmin ftpAdmin;
     private final TrustedCertAdmin trustedCertAdmin;
     private final SchemaAdmin schemaAdmin;
     private final CustomAssertionsRegistrar customAssertionsRegistrar;
@@ -44,6 +46,7 @@ public class AdminContextBean implements AdminContext, Serializable {
                             AuditAdmin auditAdmin,
                             ServiceAdmin serviceAdmin,
                             JmsAdmin jmsAdmin,
+                            FtpAdmin ftpAdmin,
                             TrustedCertAdmin trustedCertAdmin,
                             CustomAssertionsRegistrar customAssertionsRegistrar,
                             ClusterStatusAdmin clusterStatusAdmin,
@@ -56,6 +59,7 @@ public class AdminContextBean implements AdminContext, Serializable {
         this.auditAdmin = auditAdmin;
         this.serviceAdmin = serviceAdmin;
         this.jmsAdmin = jmsAdmin;
+        this.ftpAdmin = ftpAdmin;
         this.trustedCertAdmin = trustedCertAdmin;
         this.customAssertionsRegistrar = customAssertionsRegistrar;
         this.clusterStatusAdmin = clusterStatusAdmin;
@@ -89,6 +93,10 @@ public class AdminContextBean implements AdminContext, Serializable {
 
     public JmsAdmin getJmsAdmin() throws SecurityException {
         return jmsAdmin;
+    }
+
+    public FtpAdmin getFtpAdmin() throws SecurityException {
+        return ftpAdmin;
     }
 
     public TrustedCertAdmin getTrustedCertAdmin() throws SecurityException {

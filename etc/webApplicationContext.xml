@@ -445,33 +445,6 @@
         </constructor-arg>
     </bean>
 
-    <bean id="sslKeystoreType" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject">
-            <ref local='keystore'/>
-        </property>
-        <property name="targetMethod">
-            <value>getKeyStoreType</value>
-        </property>
-    </bean>
-
-    <bean id="sslKeystorePassword" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject">
-            <ref local='keystore'/>
-        </property>
-        <property name="targetMethod">
-            <value>getSslKeystorePasswd</value>
-        </property>
-    </bean>
-
-    <bean id="sslKeystoreFile" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject">
-            <ref local='keystore'/>
-        </property>
-        <property name="targetMethod">
-            <value>getSslKeystorePath</value>
-        </property>
-    </bean>
-
     <bean id="sslKeystoreCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
             <ref local='keystore'/>
@@ -505,6 +478,21 @@
         </property>
         <property name="targetMethod">
             <value>getRootCert</value>
+        </property>
+    </bean>
+
+    <!--
+      Allow use of keystore.properties keys in bean values (e.g "${sslkstorename}")
+      Allow use of ftpserver.properties keys in bean values (e.g "${ssgftp.default.controlPort}")
+    -->
+    <bean id="ssgPropertyPlaceholderConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" depends-on="serverConfig">
+        <property name="ignoreResourceNotFound" value="true"/>
+        <property name="locations">
+            <list>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}keystore.properties</value>
+                <value>classpath:com/l7tech/server/transport/ftp/ftpserver.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}ftpserver.properties</value>
+            </list>
         </property>
     </bean>
 
@@ -918,5 +906,57 @@
         <constructor-arg ref="clusterPropertyManager"/>
         <constructor-arg ref="keystoreFileManager"/>
         <constructor-arg ref="keystore"/>
+    </bean>
+
+    <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
+        <constructor-arg>
+            <ref local="auditContext"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref local="clusterPropertyManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref local="messageProcessor"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref local="soapFaultManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref local="stashManagerFactory"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref local="licenseManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <bean class="org.springframework.beans.factory.config.PropertiesFactoryBean"
+                  depends-on="serverConfig">
+                <property name="ignoreResourceNotFound" value="true"/>
+                <property name="localOverride" value="true"/>
+                <property name="properties">
+                    <props>
+                        <!-- ports -->
+                        <prop key="config.listeners.default.server-address">${ssgftp.default.address}</prop>
+                        <prop key="config.listeners.default.port">${ssgftp.default.controlPort}</prop>
+                        <prop key="config.listeners.default.data-connection.passive.ports">${ssgftp.default.passivePortStart}-${ssgftp.default.passivePortEnd}</prop>
+                        <prop key="config.listeners.secure.server-address">${ssgftp.secure.address}</prop>
+                        <prop key="config.listeners.secure.port">${ssgftp.secure.controlPort}</prop>
+                        <prop key="config.listeners.secure.data-connection.passive.ports">${ssgftp.secure.passivePortStart}-${ssgftp.secure.passivePortEnd}</prop>
+                        <!-- keys -->
+                        <prop key="config.listeners.secure.ssl.keystore-file">${keystoredir}${file.separator}${sslkstorename}</prop>
+                        <prop key="config.listeners.secure.ssl.keystore-password">${sslkspasswd}</prop>
+                        <prop key="config.listeners.secure.ssl.key-password">${sslkspasswd}</prop>
+                        <prop key="config.listeners.secure.data-connection.ssl.keystore-file">${keystoredir}${file.separator}${sslkstorename}</prop>
+                        <prop key="config.listeners.secure.data-connection.ssl.keystore-password">${sslkspasswd}</prop>
+                        <prop key="config.listeners.secure.data-connection.ssl.key-password">${sslkspasswd}</prop>
+                    </props>
+                </property>
+                <property name="locations">
+                    <list>
+                        <value>classpath:com/l7tech/server/transport/ftp/ftpserver.properties</value>
+                        <value>file:${com.l7tech.server.configDirectory}${file.separator}ftpserver.properties</value>
+                    </list>
+                </property>
+            </bean>
+        </constructor-arg>
     </bean>
 </beans>

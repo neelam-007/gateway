@@ -107,6 +107,9 @@ public class SecurityTokenType implements Serializable {
     public static final SecurityTokenType HTTP_KERBEROS =
             new SecurityTokenType(n++, "Windows Integrated", null, null, null, KerberosSecurityToken.class);
 
+    public static final SecurityTokenType FTP_CREDENTIAL =
+            new SecurityTokenType(n++, "FTP Credentials", null, null, null, UsernameToken.class);
+
     /**
      * NOTE: Order MUST equal declaration order above (see readResolve/getByNum)
      *       DO NOT reorder, these numbers must be the same between releases.
@@ -126,6 +129,7 @@ public class SecurityTokenType implements Serializable {
         SAML2_ASSERTION,
         XPATH_CREDENTIALS,
         HTTP_KERBEROS,
+        FTP_CREDENTIAL,
     };
 
     private SecurityTokenType(int num, String name, String tokenTypeUri, String prototypeElementNs, String prototypeElementName, Class interfaceClass) {

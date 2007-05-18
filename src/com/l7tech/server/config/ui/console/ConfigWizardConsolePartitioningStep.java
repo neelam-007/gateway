@@ -283,9 +283,8 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
 
     private void doConfigureEndpointsPrompts(PartitionInformation pinfo) throws IOException, WizardNavigationException {
 
-        List<PartitionInformation.EndpointHolder> holders = new ArrayList<PartitionInformation.EndpointHolder>();
-        holders.addAll(pinfo.getHttpEndpoints());
-        holders.addAll(pinfo.getOtherEndpoints());
+        List<PartitionInformation.EndpointHolder> holders =
+                new ArrayList<PartitionInformation.EndpointHolder>(pinfo.getEndpoints());
 
         List<String> promptList = new ArrayList<String>();
         boolean finishedEndpointConfig;
@@ -332,6 +331,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
         String input;
         List<String> prompts;
         Pattern portPattern = Pattern.compile("\\d{1,5}+");
+        Pattern portCountPattern = Pattern.compile("\\d{1,3}+");
         if (holder instanceof PartitionInformation.HttpEndpointHolder) {
             PartitionInformation.HttpEndpointHolder httpHolder = (PartitionInformation.HttpEndpointHolder) holder;
             String[] availableIpAddress = PartitionActions.getAvailableIpAddresses().toArray(new String[0]);
@@ -357,9 +357,63 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
 
             prompts = new ArrayList<String>();
             prompts.add("Please enter the port for the \"" + httpHolder.endpointType + "\" endpoint: [" + httpHolder.getPort() + "]");
-            input = getData(prompts.toArray(new String[0]), httpHolder.getPort(), portPattern, "The port you have entered is invalid. Please re-enter");
+            input = getData(prompts.toArray(new String[0]), httpHolder.getPort().toString(), portPattern, "The port you have entered is invalid. Please re-enter");
 
-            httpHolder.setPort(input);
+            httpHolder.setPort(Integer.parseInt(input));
+            holder.setValidationMessaqe("");
+
+        } else if (holder instanceof PartitionInformation.FtpEndpointHolder) {
+            PartitionInformation.FtpEndpointHolder ftpHolder = (PartitionInformation.FtpEndpointHolder) holder;
+
+            prompts = new ArrayList<String>();
+            prompts.add("Enable the \"" + ftpHolder.getEndpointType() + "\" endpoint" + getEolChar());
+            prompts.add("1) Enable"  + getEolChar());
+            prompts.add("2) Disable"  + getEolChar());
+            prompts.add("Please make a selection: [2]");
+            input = getData(prompts, "2", new String[] {"1","2"});
+            if (StringUtils.equals(input, "2")) {
+                ftpHolder.setEnabled(false);
+            }
+            else {
+                ftpHolder.setEnabled(true);
+
+                String[] availableIpAddress = PartitionActions.getAvailableIpAddresses().toArray(new String[0]);
+
+                List<String> ipAddressOptions = new ArrayList<String>();
+                int index = 1;
+                for (String availableIpAddres : availableIpAddress) {
+                    ipAddressOptions.add(String.valueOf(index++) + ") " + availableIpAddres + getEolChar());
+                }
+
+                String[] allowedEntries = new String[availableIpAddress.length];
+                for (int i = 0; i < allowedEntries.length; i++) {
+                    allowedEntries[i] = String.valueOf(i + 1);
+                }
+
+                prompts = new ArrayList<String>();
+                prompts.add("Please enter the IP Address for the \"" + ftpHolder.getEndpointType() + "\" endpoint" + getEolChar());
+                prompts.addAll(ipAddressOptions);
+                prompts.add("Please make a selection: [1]");
+                input = getData(prompts, "1", allowedEntries);
+                int ipIndex = Integer.parseInt(input) - 1;
+                ftpHolder.setIpAddress(availableIpAddress[ipIndex]);
+
+                prompts = new ArrayList<String>();
+                prompts.add("Please enter the port for the \"" + ftpHolder.getEndpointType() + "\" endpoint: [" + ftpHolder.getPort() + "]");
+                input = getData(prompts.toArray(new String[0]), ftpHolder.getPort().toString(), portPattern, "The port you have entered is invalid. Please re-enter");
+                ftpHolder.setPort(Integer.parseInt(input));
+
+                prompts = new ArrayList<String>();
+                prompts.add("Please enter the start passive port for the \"" + ftpHolder.getEndpointType() + "\" endpoint: [" + ftpHolder.getPassivePortStart() + "]");
+                input = getData(prompts.toArray(new String[0]), ftpHolder.getPassivePortStart().toString(), portPattern, "The port you have entered is invalid. Please re-enter");
+                ftpHolder.setPassivePortStart(Integer.parseInt(input));
+
+                prompts = new ArrayList<String>();
+                prompts.add("Please enter the passive port count for the \"" + ftpHolder.getEndpointType() + "\" endpoint: [" + ftpHolder.getPassivePortCount() + "]");
+                input = getData(prompts.toArray(new String[0]), ftpHolder.getPassivePortCount().toString(), portCountPattern, "The value you have entered is invalid. Please re-enter");
+                ftpHolder.setPassivePortCount(Integer.parseInt(input));
+            }
+            
             holder.setValidationMessaqe("");
 
         } else if (holder instanceof PartitionInformation.OtherEndpointHolder) {
@@ -367,8 +421,8 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
 
             input = getData(new String[] {
                 "Please enter the port for the \"" + otherHolder.endpointType + "\" endpoint: [" + otherHolder.getPort() + "] ",
-            }, otherHolder.getPort(), portPattern);
-            otherHolder.setPort(input);
+            }, otherHolder.getPort().toString(), portPattern);
+            otherHolder.setPort(Integer.parseInt(input));
         }
     }
 

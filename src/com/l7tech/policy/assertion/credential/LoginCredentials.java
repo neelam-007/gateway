@@ -60,16 +60,22 @@ public class LoginCredentials implements SecurityToken {
     }
 
     public LoginCredentials(String login, char[] credentials, CredentialFormat format,
-                            Class credentialSource, String realm, Object payload) {
+                            Class credentialSource, String realm, Object payload, SecurityTokenType type) {
         this.login = login;
         this.credentials = credentials;
         this.realm = realm;
         this.format = format;
         this.credentialSourceAssertion = credentialSource;
         this.payload = payload;
+        this.type = type;
 
         if (format.isClientCert() && !(payload instanceof X509Certificate))
             throw new IllegalArgumentException("Must provide a certificate when creating client cert credentials");
+    }
+
+    public LoginCredentials(String login, char[] credentials, CredentialFormat format,
+                            Class credentialSource, String realm, Object payload) {
+        this(login, credentials, format, credentialSource, realm, payload, null);
     }
 
     public LoginCredentials(String login, char[] credentials, CredentialFormat format, Class credentialSource, String realm) {
@@ -171,9 +177,14 @@ public class LoginCredentials implements SecurityToken {
     }
 
     public SecurityTokenType getType() {
+        // Use given type if available
+        SecurityTokenType securityTokenType = type;
+
         // Check for specific type based on source assertion
-        SecurityTokenType securityTokenType =
-                (SecurityTokenType) CREDENTIAL_SOURCE_TO_TOKEN_TYPE.get(credentialSourceAssertion);
+        if (securityTokenType == null) {
+            securityTokenType =
+                    (SecurityTokenType) CREDENTIAL_SOURCE_TO_TOKEN_TYPE.get(credentialSourceAssertion);
+        }
 
         // Else use default type for format
         if (securityTokenType == null) {
@@ -278,6 +289,7 @@ public class LoginCredentials implements SecurityToken {
     private final String realm;
     private final CredentialFormat format;
     private final Object payload;
+    private final SecurityTokenType type;
 
     private long authInstant;
 

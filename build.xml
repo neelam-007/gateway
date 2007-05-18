@@ -1245,6 +1245,7 @@
                 <include name="concurrent-1.3.4.jar"/>
                 <include name="qname.jar"/>
                 <include name="log4j-1.2.14.jar"/>
+                <include name="slf4j-*.jar"/>
 
                 <include name="systinet-*.jar" if="include.systinet"/>
                 <include name="jaxrpc.jar" unless="include.systinet"/>
@@ -1260,6 +1261,9 @@
                 <include name="xbean-saml2_0.jar"/>
                 <include name="xercesImpl.jar"/>
                 <include name="xss4j.jar"/>
+
+                <include name="ftp*-1.0-*.jar"/>
+                <include name="mina*-1.1.0.jar"/>
 
                 <!-- Include OpenJMS on dev builds -->
                 <include name="openjms-client-0.7.6.jar" if="include.jms.openjms"/>
@@ -2583,6 +2587,7 @@
                 <include name="gateway/cluster/*.jar"/>
                 <include name="gateway/adminws/*.jar"/>
                 <include name="gateway/config/*.jar"/>
+                <include name="gateway/ftp/*.jar"/>
 
                 <exclude name="**/CVS/*"/>
                 <exclude name="**/ant.jar"/>
@@ -2882,6 +2887,7 @@
         <replace file="${install.src.hibernate.properties}" token="DB_DRIVER" value="${database.driver}"/>
         <replace file="${install.src.hibernate.properties}" token="DB_PINGSTMT" value="${database.pingstmt}"/>
 
+        <copy file="${src.root}/etc/ftpserver.properties" todir="${install.src.conf}"/>
         <copy file="${src.root}/etc/system.properties" todir="${install.src.conf}"/>
 
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}"/>
@@ -3084,6 +3090,8 @@
             <fileset dir="${src.root}/modules/assertions/ComparisonAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/SnmpTrapAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/EchoRoutingAssertion/build" includes="*.aar"/>
+            <fileset dir="${src.root}/modules/assertions/FtpRoutingAssertion/build" includes="*.aar"/>
+            <fileset dir="${src.root}/modules/assertions/FtpCredentialAssertion/build" includes="*.aar"/>
         </copy>
 
         <!-- Copy LDAP templates -->

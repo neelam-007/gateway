@@ -13,6 +13,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
@@ -21,9 +22,9 @@ import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
-import com.l7tech.identity.AuthenticationException;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
@@ -211,6 +212,7 @@ public class SecurityProviderImpl extends SecurityProvider
                         (AuditAdmin) applicationContext.getBean("auditAdmin"),
                         (ServiceAdmin) applicationContext.getBean("serviceAdmin"),
                         (JmsAdmin) applicationContext.getBean("jmsAdmin"),
+                        (FtpAdmin) applicationContext.getBean("ftpAdmin"),
                         (TrustedCertAdmin) applicationContext.getBean("trustedCertAdmin"),
                         (CustomAssertionsRegistrar) applicationContext.getBean("customAssertionsRegistrar"),
                         (ClusterStatusAdmin) applicationContext.getBean("clusterStatusAdmin"),

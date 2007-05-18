@@ -7,14 +7,15 @@ package com.l7tech.admin.rmi;
 
 import com.l7tech.admin.AdminContext;
 import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
+import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
-import com.l7tech.common.BuildInfo;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -36,6 +37,7 @@ public class AdminContextImpl
     private final AuditAdmin auditAdmin;
     private final ServiceAdmin serviceAdmin;
     private final JmsAdmin jmsAdmin;
+    private final FtpAdmin ftpAdmin;
     private final TrustedCertAdmin trustedCertAdmin;
     private final SchemaAdmin schemaAdmin;
     private final CustomAssertionsRegistrar customAssertionsRegistrar;
@@ -47,6 +49,7 @@ public class AdminContextImpl
                             AuditAdmin auditAdmin,
                             ServiceAdmin serviceAdmin,
                             JmsAdmin jmsAdmin,
+                            FtpAdmin ftpAdmin,
                             TrustedCertAdmin trustedCertAdmin,
                             CustomAssertionsRegistrar customAssertionsRegistrar,
                             ClusterStatusAdmin clusterStatusAdmin,
@@ -57,6 +60,7 @@ public class AdminContextImpl
         this.auditAdmin = auditAdmin;
         this.serviceAdmin = serviceAdmin;
         this.jmsAdmin = jmsAdmin;
+        this.ftpAdmin = ftpAdmin;
         this.trustedCertAdmin = trustedCertAdmin;
         this.customAssertionsRegistrar = customAssertionsRegistrar;
         this.clusterStatusAdmin = clusterStatusAdmin;
@@ -91,6 +95,10 @@ public class AdminContextImpl
 
     public JmsAdmin getJmsAdmin() throws RemoteException, SecurityException {
         return jmsAdmin;
+    }
+
+    public FtpAdmin getFtpAdmin() throws RemoteException, SecurityException {
+        return ftpAdmin;
     }
 
     public TrustedCertAdmin getTrustedCertAdmin() throws RemoteException, SecurityException {
@@ -143,6 +151,10 @@ public class AdminContextImpl
 
         if (jmsAdmin == null) {
             throw new IllegalArgumentException("Jms Admin is required");
+        }
+
+        if (ftpAdmin == null) {
+            throw new IllegalArgumentException("FTP Admin is required");
         }
 
         if (trustedCertAdmin == null) {

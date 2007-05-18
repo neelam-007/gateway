@@ -38,7 +38,12 @@ public class SolarisSpecificFunctions extends UnixSpecificFunctions {
         timeZonesDir = null;
     }
 
-    public String getFirewallRulesForPartition(PartitionInformation.HttpEndpointHolder basicEndpoint, PartitionInformation.HttpEndpointHolder sslEndpoint, PartitionInformation.HttpEndpointHolder noAuthSslEndpoint, PartitionInformation.OtherEndpointHolder rmiEndpoint) {
+    public String getFirewallRulesForPartition(PartitionInformation.HttpEndpointHolder basicEndpoint,
+                                               PartitionInformation.HttpEndpointHolder sslEndpoint,
+                                               PartitionInformation.HttpEndpointHolder noAuthSslEndpoint,
+                                               PartitionInformation.FtpEndpointHolder basicFtpEndpoint,
+                                               PartitionInformation.FtpEndpointHolder sslFtpEndpoint,
+                                               PartitionInformation.OtherEndpointHolder rmiEndpoint) {
         return "!!! No Rules for IPF yet !!!";
     }
 }
