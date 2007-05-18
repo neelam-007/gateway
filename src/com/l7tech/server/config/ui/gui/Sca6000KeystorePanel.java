@@ -16,7 +16,7 @@ public class Sca6000KeystorePanel extends KeystorePanel{
     private JPanel mainPanel;
     private JPanel passwordPanel;
     private JRadioButton initializeKeystore;
-    private JRadioButton restoreKeystoreBackup;
+    private JRadioButton importExistingKeystore;
 
     KeystorePasswordPanel pwPanel;
 
@@ -30,7 +30,7 @@ public class Sca6000KeystorePanel extends KeystorePanel{
         ButtonGroup bg = new ButtonGroup();
 
         bg.add(initializeKeystore);
-        bg.add(restoreKeystoreBackup);
+        bg.add(importExistingKeystore);
 
         initializeKeystore.setSelected(true);
 
@@ -40,7 +40,7 @@ public class Sca6000KeystorePanel extends KeystorePanel{
             }
         });
 
-        restoreKeystoreBackup.addActionListener(new ActionListener() {
+        importExistingKeystore.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 setPasswordFieldsVisible();
             }

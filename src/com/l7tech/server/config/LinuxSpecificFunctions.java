@@ -35,9 +35,12 @@ public class LinuxSpecificFunctions extends UnixSpecificFunctions {
         List<KeystoreInfo> infos = new ArrayList<KeystoreInfo>();
         infos.add(new KeystoreInfo(KeystoreType.DEFAULT_KEYSTORE_NAME));
         infos.add(lunaInfo);
-        if (KeystoreInfo.isHSMEnabled())
-            infos.add(new KeystoreInfo(KeystoreType.SCA6000_KEYSTORE_NAME));
+        if (KeystoreInfo.isHSMEnabled()) {
 
+            KeystoreInfo hsmInfo = new KeystoreInfo(KeystoreType.SCA6000_KEYSTORE_NAME);
+            hsmInfo.addMetaInfo("KEYSTORE_DATA_DIR", "/var/opt/sun/sca6000/keydata/");
+            infos.add(hsmInfo);
+        }
         keystoreInfos = infos.toArray(new KeystoreInfo[0]);
 
         timeZonesDir = "/usr/share/zoneinfo/";

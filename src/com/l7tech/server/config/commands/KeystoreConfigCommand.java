@@ -1,6 +1,9 @@
 package com.l7tech.server.config.commands;
 
 import com.l7tech.common.security.prov.luna.LunaCmu;
+import com.l7tech.common.security.prov.bc.BouncyCastleRsaSignerEngine;
+import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.RsaSignerEngine;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.ResourceUtils;
@@ -28,14 +31,15 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.Security;
-import java.security.cert.CertificateException;
+import java.security.*;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.cert.*;
+import java.security.cert.Certificate;
 import java.sql.*;
-import java.text.MessageFormat;
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,6 +56,15 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private static final String SSL_KEYSTORE_FILE = "ssl.ks";
     private static final String CA_CERT_FILE = "ca.cer";
     private static final String SSL_CERT_FILE = "ssl.cer";
+
+
+    public static final String CA_ALIAS = "ssgroot";
+    public static final String CA_DN_PREFIX = "cn=root.";
+    public static final int CA_VALIDITY_DAYS = 5 * 365;
+
+    public static final String SSL_ALIAS = "tomcat";
+    public static final String SSL_DN_PREFIX = "cn=";
+    public static final int SSL_VALIDITY_DAYS = 2 * 365;
 
     private static final String PROPERTY_COMMENT = "This file was updated by the SSG configuration utility";
 
@@ -84,7 +97,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 "com.sun.security.sasl.Provider"
             };
 
-    private static final String PKCS11_CFG_FILE = "/ssg/pkcs11.cfg;";
+    private static final String PKCS11_CFG_FILE = "pkcs11.cfg;";
     private static final String[] HSM_SECURITY_PROVIDERS =
             {
                 "sun.security.pkcs11.SunPKCS11 " + PKCS11_CFG_FILE,
@@ -94,6 +107,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             };
     private KeystoreConfigBean ksBean;
     private SharedWizardInfo sharedWizardInfo;
+
 
     public KeystoreConfigCommand(ConfigurationBean bean) {
         super(bean);
@@ -129,6 +143,107 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return success;
     }
 
+    private void doDefaultKeyConfig(KeystoreConfigBean ksBean) throws Exception {
+        char[] ksPassword = ksBean.getKsPassword();
+        boolean doBothKeys = ksBean.isDoBothKeys();
+
+        String ksDir = getOsFunctions().getKeystoreDir();
+        File keystoreDir = new File(ksDir);
+        if (!keystoreDir.exists() && !keystoreDir.mkdir()) {
+            String msg = "Could not create the directory: \"" + ksDir + "\". Cannot generate keystores";
+            logger.severe(msg);
+            throw new IOException(msg);
+        }
+
+        File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
+        File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
+        File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
+        File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
+        File caCertFile = new File(ksDir + CA_CERT_FILE);
+        File sslCertFile = new File(ksDir + SSL_CERT_FILE);
+        File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
+        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
+
+        File newJavaSecFile  = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
+
+        File[] files = new File[]
+        {
+            javaSecFile,
+            keystorePropertiesFile,
+            tomcatServerConfigFile,
+            caKeyStoreFile,
+            sslKeyStoreFile,
+            caCertFile,
+            sslCertFile,
+            systemPropertiesFile
+        };
+
+        backupFiles(files, BACKUP_FILE_NAME);
+
+        try {
+            prepareJvmForNewKeystoreType(KeystoreType.DEFAULT_KEYSTORE_NAME);
+            makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
+            updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile,DEFAULT_SECURITY_PROVIDERS );
+            updateKeystoreProperties(keystorePropertiesFile, ksPassword);
+            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
+            updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+        } catch (Exception e) {
+            logger.severe("problem generating keys or keystore - skipping keystore configuration");
+            logger.severe(e.getMessage());
+            throw e;
+        }
+    }
+
+    private void doLunaKeyConfig(KeystoreConfigBean ksBean) throws Exception {
+        char[] ksPassword = ksBean.getKsPassword();
+        //we don't actually care what the password is for Luna, so make it obvious.
+        ksPassword = "ignoredbyluna".toCharArray();
+
+        String ksDir = getOsFunctions().getKeystoreDir();
+
+        File newJavaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
+
+        File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
+        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
+        File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
+        File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
+        File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
+        File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
+        File caCertFile = new File(ksDir + CA_CERT_FILE);
+        File sslCertFile = new File(ksDir + SSL_CERT_FILE);
+
+        File[] files = new File[]
+        {
+            javaSecFile,
+            systemPropertiesFile,
+            keystorePropertiesFile,
+            tomcatServerConfigFile,
+            caKeyStoreFile,
+            sslKeyStoreFile,
+            caCertFile,
+            sslCertFile
+        };
+
+        backupFiles(files, BACKUP_FILE_NAME);
+
+
+        try {
+            //prepare the JDK and the Luna environment before generating keys
+            setLunaSystemProps(ksBean);
+            copyLunaJars(ksBean);
+            prepareJvmForNewKeystoreType(KeystoreType.LUNA_KEYSTORE_NAME);
+            makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
+            updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile, LUNA_SECURITY_PROVIDERS);
+            updateKeystoreProperties(keystorePropertiesFile, ksPassword);
+            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
+            updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+        } catch (Exception e) {
+            String mess = "problem generating keys or keystore - skipping keystore configuration: ";
+            logger.log(Level.SEVERE, mess + e.getMessage(), e);
+            throw e;
+        }
+    }
+    
     private void doHSMConfig(KeystoreConfigBean ksBean) throws Exception {
         char[] ksPassword = ksBean.getKsPassword();
         String ksDir = getOsFunctions().getKeystoreDir();
@@ -148,9 +263,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
         File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
 
-        //TODO make this location independant in case the ssg isn't installed at /ssg
-        File pkcs11ConfigFile = new File(PKCS11_CFG_FILE);
-
+        File pkcs11ConfigFile = new File(getOsFunctions().getSsgInstallRoot() + PKCS11_CFG_FILE);
         File newJavaSecFile  = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
 
         File[] files = new File[]
@@ -171,21 +284,21 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.info("Initializing HSM");
             try {
 
-                checkSCA();
-                DBInformation dbinfo = sharedWizardInfo.getDbinfo();
-                if (dbinfo == null) {
-                } else {
-                    logger.info(MessageFormat.format("database info: {0}:{1}@{2}/{3}", dbinfo.getUsername(), dbinfo.getPassword(), dbinfo.getHostname(), dbinfo.getDbName()));
-                    initializeSCA(dbinfo);
-                }
+                //HSM Specific setup
+                ScaManager scaManager = getScaManager();
+                checkGDDCDongle();
+                initializeSCA(scaManager);
+                writePKCS11Config(pkcs11ConfigFile);
+                createNewKeystoreOnHsm(javaSecFile, newJavaSecFile, ksDir, ksPassword);
+                insertKeystoreIntoDatabase(scaManager);
 
-//                prepareJvm(KeystoreType.SCA6000_KEYSTORE_NAME);
-//                updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
-//                writePKCS11Config(pkcs11ConfigFile);
-//                makeHSMKeys(ksBean, ksDir, ksPassword);
-//                updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-//                updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
-//                updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+                //General Keystore Setup
+                updateKeystoreProperties(keystorePropertiesFile, ksPassword);
+                updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
+                updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+            } catch (ScaException e) {
+                logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
+                throw e;
             } catch (Exception e) {
                 logger.severe("problem initializing the HSM - skipping HSM configuration");
                 logger.severe(e.getMessage());
@@ -197,86 +310,341 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private ScaManager checkSCA() throws ScaException {
+    private ScaManager getScaManager() throws ScaException {
         return new ScaManager();
     }
 
     private void checkGDDCDongle() {
-
+        //TODO get some GDDC and find some way to check for a reacharound
     }
 
-    private void insertKeystoreIntoDatabase(DBInformation dbinfo, byte[] keyData) throws SQLException, ClassNotFoundException {
+    private void initializeSCA(ScaManager scaManager) {
+        if (getOsFunctions().isUnix()) {
+            startSCA();
+            zeroHsm();
+            emptyHsmKeydataDir(scaManager);
+            String initializeScript = getOsFunctions().getSsgInstallRoot() + "bin/" + "initialize-hsm.expect <keystorepassword>";
+            logger.info("Execute \"" + initializeScript + "\"");
+        }
+    }
+
+    private void writePKCS11Config(File pkcs11ConfigFile) {
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(pkcs11ConfigFile);
+            pw.println("name=SCA6000");
+            pw.println("library=/usr/local/lib/pkcs11/PKCS11_API.so64");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            ResourceUtils.closeQuietly(pw);
+        }
+    }
+
+    private void createNewKeystoreOnHsm(File javaSecFile, File newJavaSecFile, String ksDir, char[] hsmPassword) throws IllegalAccessException, IOException, ClassNotFoundException, InstantiationException, NoSuchAlgorithmException, SignatureException, CertificateException, InvalidKeyException, KeyStoreException {
+        prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
+        updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
+        makeHSMKeys(new File(ksDir), hsmPassword);
+    }
+
+    private void insertKeystoreIntoDatabase(ScaManager scaManager) throws ScaException, ClassNotFoundException, SQLException {
+        DBActions dba = null;
+        byte[] keyData = null;
+
+        try {
+            dba = new DBActions();
+            keyData = scaManager.loadKeydata();
+        } catch (ClassNotFoundException e) {
+            logger.severe("Could not connect to the database for keystore update: " + e.getMessage());
+            throw e;
+        } catch (ScaException e) {
+            logger.severe("Could not connect to the database for keystore update: " + e.getMessage());
+            throw e;
+        }
+
+
         int originalVersion = -1;
-        ByteArrayInputStream is = new ByteArrayInputStream(keyData);
+        DBInformation dbinfo = sharedWizardInfo.getDbinfo();
 
-        DBActions dba = new DBActions();
-
-        Statement stmt = null;
-        PreparedStatement preparedStmt = null;
         Connection connection = null;
         try {
             connection = dba.getConnection(dbinfo);
-            stmt = connection.createStatement();
-            String getVersionSql = new String("Select version from keystore_file where objectid=1 and name=\"HSM\"");
-            ResultSet rs = null;
             try {
-                rs = stmt.executeQuery(getVersionSql);
-                while(rs.next()) {
-                    originalVersion = rs.getInt("version");
-                }
-                if (originalVersion == -1) {
-                    logger.warning("Could not find an existing version for the HSM keystore in the database. Defaulting to 0");
-                    originalVersion = 0;
-                } else {
-                    logger.info("Found an existing version for the HSM keystore in the database [" + originalVersion + "]");
-                }
-
-                try {
-                    preparedStmt = connection.prepareStatement("update keystore_file set version=?, databytes=? where objectid=1 and name=\"HSM\"");
-                    preparedStmt.setInt(1, originalVersion+1);
-                    preparedStmt.setBinaryStream(2, is, keyData.length);
-                    preparedStmt.addBatch();
-                    preparedStmt.executeBatch();
-                    logger.info("inserted the HSM keystore information into the database.");
-                } catch (SQLException e) {
-                    logger.severe("Could not perform the keystore update: " + e.getMessage());
-                }
+                originalVersion = getOriginalVersion(connection);
             } catch (SQLException e) {
                 logger.severe("Could not determine the current version of the HSM keystore in the database: " + e.getMessage());
+                throw e;
             }
-        } finally {
-            if (stmt != null) stmt.close();
-            if (preparedStmt != null) preparedStmt.close();
-            if (connection != null) connection.close();
-        }
-    }
-
-    private void exportCertsFromHSM() {
-
-    }
-
-    private void initializeSCA(DBInformation dbinfo) {
-        if (getOsFunctions().isUnix()) {
-            startSCA();
-            String zeroHSM = "scadiag -z mca0";
-            logger.info("Execute \"" + zeroHSM + "\"");
-
-            String initializeScript = getOsFunctions().getSsgInstallRoot() + "bin/" + "initialize-hsm.expect <keystorepassword>";
-            logger.info("Execute \"" + initializeScript + "\"");
-            exportCertsFromHSM();
 
             try {
-                ScaManager scaManager = new ScaManager();
-                byte[] keyData = scaManager.loadKeydata();
-                insertKeystoreIntoDatabase(dbinfo, keyData);
-            } catch (ScaException e) {
-                logger.severe("Could not initialize the ScaManager: " + e.getMessage());
+                putKeydataInDatabase(connection, keyData, originalVersion);
             } catch (SQLException e) {
                 logger.severe("Could not perform the keystore update: " + e.getMessage());
-            } catch (ClassNotFoundException e) {
-                logger.severe("Could not connect to the database for keystore update: " + e.getMessage());
+                throw e;
+            }
+        } catch (SQLException e) {
+            logger.severe("Could not connect to the database to update the keystore: " + e.getMessage());
+            throw e;
+        } finally {
+            if (connection != null) try {connection.close();} catch (SQLException e) {}
+        }
+    }
+
+    private void putKeydataInDatabase(Connection connection, byte[] keyData, int originalVersion) throws SQLException {
+        ByteArrayInputStream is = new ByteArrayInputStream(keyData);
+
+        PreparedStatement preparedStmt = null;
+        try {
+            preparedStmt = connection.prepareStatement("update keystore_file set version=?, databytes=? where objectid=1 and name=\"HSM\"");
+            preparedStmt.setInt(1, originalVersion+1);
+            preparedStmt.setBinaryStream(2, is, keyData.length);
+            preparedStmt.addBatch();
+            preparedStmt.executeBatch();
+            logger.info("inserted the HSM keystore information into the database.");
+        } finally {
+            if (preparedStmt != null) try {preparedStmt.close();} catch (SQLException e) {}
+        }
+    }
+
+    private int getOriginalVersion(Connection connection) throws SQLException {
+        int originalVersion = -1;
+        String getVersionSql = new String("Select version from keystore_file where objectid=1 and name=\"HSM\"");
+
+        Statement stmt = null;
+        try {
+            stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery(getVersionSql);
+            while(rs.next()) {
+                originalVersion = rs.getInt("version");
+            }
+        } finally {
+            if (stmt != null) try {stmt.close();} catch (SQLException e) {}
+            if (originalVersion == -1) {
+                logger.warning("Could not find an existing version for the HSM keystore in the database. Defaulting to 0");
+                originalVersion = 0;
+            } else {
+                logger.info("Found an existing version for the HSM keystore in the database [" + originalVersion + "]");
             }
         }
+        return originalVersion;
+    }
+
+    private void makeHSMKeys(File keystoreDir, char[] ksPassword) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, SignatureException, InvalidKeyException {
+        if ( !keystoreDir.exists() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' does not exist" );
+        if ( !keystoreDir.isDirectory() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' is not a directory" );
+        String kstype = "PKCS11";
+        char[] keystoreAccessPassword = ("gateway:"+new String(ksPassword)).toCharArray();
+
+        //TODO try to refactor SetKeys to understand HSM-speak instead of just PKCS12 and then there's no need to reinvent things here.
+        X509Certificate caCert = null;
+        X509Certificate sslCert = null;
+        PrivateKey caPrivateKey;
+
+        KeyStore theHsmKeystore = KeyStore.getInstance(kstype);
+        logger.info("Connecting to " + kstype + " keystore");
+        theHsmKeystore.load(null,keystoreAccessPassword);
+
+
+        logger.info("Generating RSA keypair for CA cert");
+        KeyPair cakp = JceProvider.generateRsaKeyPair();
+        caPrivateKey = cakp.getPrivate();
+
+        logger.info("Generating self-signed CA cert");
+        caCert = BouncyCastleRsaSignerEngine.makeSelfSignedRootCertificate(CA_DN_PREFIX + sharedWizardInfo.getHostname(), CA_VALIDITY_DAYS, cakp);
+
+        logger.info("Storing CA cert in HSM");
+        theHsmKeystore.setKeyEntry(CA_ALIAS, caPrivateKey, keystoreAccessPassword, new X509Certificate[] { caCert } );
+
+        logger.info("Generating RSA keypair for SSL cert" );
+        KeyPair sslkp = JceProvider.generateRsaKeyPair();
+
+        logger.info("Generating SSL cert");
+        sslCert = BouncyCastleRsaSignerEngine.makeSignedCertificate( SSL_DN_PREFIX + sharedWizardInfo.getHostname(),
+                                                                       SSL_VALIDITY_DAYS,
+                                                                       sslkp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
+
+        logger.info("Storing SSL cert in HSM");
+        theHsmKeystore.setKeyEntry(SSL_ALIAS, sslkp.getPrivate(), keystoreAccessPassword, new X509Certificate[] { sslCert, caCert } );
+
+        File caCertFile = new File(keystoreDir,CA_CERT_FILE);
+        File sslCertFile = new File(keystoreDir,SSL_CERT_FILE);
+
+        createDummyKeystorse(keystoreDir);
+        exportCerts(caCert, caCertFile, sslCert, sslCertFile);
+    }
+
+    private void createDummyKeystorse(File keystoreDir) throws IOException {
+        File dummmyCaKeystore = new File(keystoreDir, CA_KEYSTORE_FILE);
+        File summySslKeystore = new File(keystoreDir, SSL_KEYSTORE_FILE);
+        
+        dummmyCaKeystore.createNewFile();
+        summySslKeystore.createNewFile();
+    }
+
+    public void importExistingKeystoreToHsm(File existingCaKeystore, File existingSslKeystore,
+                                            String existingCaPassword, String existingCaAlias,
+                                            String existingSslPassword, String existingSslAlias,
+                                            String hsmPassword) throws KeyStoreException {
+        //load old keystore
+
+        KeyStore oldCaKeystore = KeyStore.getInstance("PKCS12");
+        FileInputStream caFis = null;
+        boolean caKsOk = false;
+        try {
+            caFis = new FileInputStream(existingCaKeystore);
+            logger.info("Loading PCKS12 keystore from " + existingCaKeystore.getAbsolutePath());
+            oldCaKeystore.load(caFis, existingCaPassword.toCharArray());
+            caKsOk = true;
+        } catch (FileNotFoundException e) {
+            logger.severe("Could not load the existing CA keystore: " + existingCaKeystore.getAbsolutePath());
+        } catch (NoSuchAlgorithmException e) {
+            logger.severe("Could not load the existing CA keystore: " + existingCaKeystore.getAbsolutePath());
+        } catch (IOException e) {
+            logger.severe("Could not load the existing CA keystore: " + existingCaKeystore.getAbsolutePath());
+        } catch (CertificateException e) {
+            logger.severe("Could not load the existing CA keystore: " + existingCaKeystore.getAbsolutePath());
+        } finally{
+            ResourceUtils.closeQuietly(caFis);
+        }
+
+        KeyStore oldSslKeystore = KeyStore.getInstance("PKCS12");
+        FileInputStream sslFis = null;
+        boolean sslKsOk = false;
+        try {
+            sslFis = new FileInputStream(existingSslKeystore);
+            logger.info("Loading PCKS12 keystore from " + existingSslKeystore.getAbsolutePath());
+            oldSslKeystore.load(sslFis, existingSslPassword.toCharArray());
+            sslKsOk = true;
+        } catch (FileNotFoundException e) {
+            logger.severe("Could not load the existing SSL keystore: " + existingCaKeystore.getAbsolutePath());
+        } catch (NoSuchAlgorithmException e) {
+            logger.severe("Could not load the existing SSL keystore: " + existingCaKeystore.getAbsolutePath());
+        } catch (IOException e) {
+            logger.severe("Could not load the existing SSL keystore: " + existingCaKeystore.getAbsolutePath());
+        } catch (CertificateException e) {
+            logger.severe("Could not load the existing SSL keystore: " + existingCaKeystore.getAbsolutePath());
+        } finally {
+            ResourceUtils.closeQuietly(sslFis);
+        }
+
+
+        //now get contents of existing keystores and import into the HSM
+        if (!caKsOk || !sslKsOk) {
+            logger.severe("One of the existing keystores could not be loaded. Cannot proceed with the import into the HSM");
+        } else {
+            KeyStore newKeystore = KeyStore.getInstance("PKCS11");
+            try {
+                newKeystore.load(null, hsmPassword.toCharArray());
+                try {
+                    List<String> keyList = getCandidateKeys(oldCaKeystore, existingCaPassword);
+                    if (keyList.isEmpty()) {
+                        logger.warning("No candidate keys in the existing CA keystore [" + existingCaKeystore.getAbsolutePath() + "] for import into the HSM.");
+                    } else {
+                        copyKeys(keyList, oldCaKeystore, existingCaPassword, newKeystore);
+                        keyList.clear();
+                        keyList = getCandidateKeys(oldSslKeystore, existingSslPassword);
+                        if (keyList.isEmpty()) {
+                            logger.warning("No candidate keys in the existing CA keystore [" + existingCaKeystore.getAbsolutePath() + "] for import into the HSM.");
+                        } else {
+                            copyKeys(keyList, oldCaKeystore, existingCaPassword, newKeystore);
+                        }
+                    }
+                } catch (UnrecoverableKeyException e) {
+                    logger.warning("Error while retrieving contents of existing keystore [" + existingCaKeystore.getAbsolutePath() + "]: " + e.getMessage());
+                }
+            } catch (IOException e) {
+                logger.severe("Could not connect to the HSM keystore: " + e.getMessage());
+            } catch (NoSuchAlgorithmException e) {
+                logger.severe("Could not connect to the HSM keystore: " + e.getMessage());
+            } catch (CertificateException e) {
+                logger.severe("Could not connect to the HSM keystore: " + e.getMessage());
+            }
+        }
+    }
+
+    private void copyKeys(List<String> keyList, KeyStore oldCaKeystore, String existingCaPassword, KeyStore hsmKeystore) throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
+        for (String keyAlias : keyList) {
+            PrivateKey pkey = (PrivateKey) oldCaKeystore.getKey(keyAlias, existingCaPassword.toCharArray());
+            Certificate[] certChain = oldCaKeystore.getCertificateChain(keyAlias);
+            hsmKeystore.setKeyEntry(keyAlias, pkey, existingCaPassword.toCharArray(), certChain);
+        }
+    }
+
+    private List<String> getCandidateKeys(KeyStore keystore, String password) throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
+        List<String> candidateKeys = new ArrayList<String>();
+        Enumeration<String> aliases = keystore.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = aliases.nextElement();
+            if (keystore.isKeyEntry(alias)) {
+                Object obj = keystore.getKey(alias, password.toCharArray());
+                if (obj instanceof RSAPrivateKey) {
+                    candidateKeys.add(alias);
+                }
+            }
+        }
+        return candidateKeys;
+    }
+
+    private void exportCerts(X509Certificate caCert, File caCertFile, X509Certificate sslCert, File sslCertFile) throws CertificateEncodingException {
+        logger.info("Exporting DER-encoded CA certificate");
+        byte[] caCertBytes = caCert.getEncoded();
+        FileOutputStream caFos = null;
+        boolean caCertOk = false;
+        try {
+            caFos = new FileOutputStream(caCertFile);
+            caFos.write(caCertBytes);
+            logger.info("Saved DER-encoded X.509 certificate to <" + caCertFile.getAbsolutePath() + ">" );
+            caCertOk = true;
+        } catch (FileNotFoundException e) {
+            logger.severe("Could not export CA cert: " + e.getMessage());
+        } catch (IOException e) {
+            logger.severe("Could not export CA cert: " + e.getMessage());
+        } finally {
+            ResourceUtils.closeQuietly(caFos);
+        }
+
+        if (caCertOk) {
+            logger.info("Exporting DER-encoded SSL certificate");
+            byte[] sslCertBytes = sslCert.getEncoded();
+            FileOutputStream sslFos = null;
+            try {
+                sslFos = new FileOutputStream(sslCertFile);
+                sslFos.write(sslCertBytes);
+                logger.info("Saved DER-encoded X.509 certificate to <" + sslCertFile.getAbsolutePath() +">");
+            } catch (FileNotFoundException e) {
+                logger.severe("Could not export SSL cert: " + e.getMessage());
+            } catch (IOException e) {
+                logger.severe("Could not export SSL cert: " + e.getMessage());
+            } finally {
+                ResourceUtils.closeQuietly(sslFos);
+            }
+        }
+    }
+
+    private void emptyHsmKeydataDir(ScaManager scaManager) {
+        stopSca();
+        logger.info("Deleting the " + scaManager.getKeydataDir() + " directory");
+        //empty dir
+        startSCA();
+    }
+
+    private void stopSca() {
+        if (getOsFunctions().isUnix()) {
+            String stopScaCommand = null;
+
+            if (OSDetector.isLinux()) {
+                stopScaCommand = "service sca stop";
+            } else {
+                stopScaCommand = "scvadmin stop sca";
+            }
+            logger.info("Stopping the SCA.");
+            logger.info("Execute \"" + stopScaCommand + "\"");
+        }
+    }
+
+    private void zeroHsm() {
+        String zeroHSM = "scadiag -z mca0";
+        logger.info("Execute \"" + zeroHSM + "\"");
     }
 
     private void startSCA() {
@@ -293,33 +661,15 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void makeHSMKeys(KeystoreConfigBean ksBean, String ksDir, char[] ksPassword) {
-    }
 
-    private void writePKCS11Config(File pkcs11ConfigFile) {
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(pkcs11ConfigFile);
-            pw.println("name=SCA6000");
-            pw.println("library=/usr/local/lib/pkcs11/PKCS11_API.so64");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            ResourceUtils.closeQuietly(pw);
-        }
-    }
-
-    private void prepareJvm(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException {
+    private void prepareJvmForNewKeystoreType(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException {
         Provider[] currentProviders = Security.getProviders();
         for (Provider provider : currentProviders) {
             Security.removeProvider(provider.getName());
         }
 
-        if(ksType == KeystoreType.SCA6000_KEYSTORE_NAME) {
-
-
-        } else if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME || ksType == KeystoreType.SCA6000_KEYSTORE_NAME) {
-            String[] whichProviders = null;
+        String[] whichProviders = null;
+        if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME || ksType == KeystoreType.SCA6000_KEYSTORE_NAME) {
             if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME)
                 whichProviders = DEFAULT_SECURITY_PROVIDERS;
             else
@@ -389,107 +739,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             }
             Security.addProvider(new sun.security.provider.Sun());
             Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
-        }
-    }
-
-    private void doDefaultKeyConfig(KeystoreConfigBean ksBean) throws Exception {
-        char[] ksPassword = ksBean.getKsPassword();
-        boolean doBothKeys = ksBean.isDoBothKeys();
-
-        String ksDir = getOsFunctions().getKeystoreDir();
-        File keystoreDir = new File(ksDir);
-        if (!keystoreDir.exists() && !keystoreDir.mkdir()) {
-            String msg = "Could not create the directory: \"" + ksDir + "\". Cannot generate keystores";
-            logger.severe(msg);
-            throw new IOException(msg);
-        }
-
-        File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
-        File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
-        File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
-        File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
-        File caCertFile = new File(ksDir + CA_CERT_FILE);
-        File sslCertFile = new File(ksDir + SSL_CERT_FILE);
-        File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
-        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
-
-        File newJavaSecFile  = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
-
-        File[] files = new File[]
-        {
-            javaSecFile,
-            keystorePropertiesFile,
-            tomcatServerConfigFile,
-            caKeyStoreFile,
-            sslKeyStoreFile,
-            caCertFile,
-            sslCertFile,
-            systemPropertiesFile
-        };
-
-        backupFiles(files, BACKUP_FILE_NAME);
-
-        try {
-            prepareJvm(KeystoreType.DEFAULT_KEYSTORE_NAME);
-            makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
-            updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile,DEFAULT_SECURITY_PROVIDERS );
-            updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
-            updateSystemPropertiesFile(ksBean, systemPropertiesFile);
-        } catch (Exception e) {
-            logger.severe("problem generating keys or keystore - skipping keystore configuration");
-            logger.severe(e.getMessage());
-            throw e;
-        }
-    }
-
-    private void doLunaKeyConfig(KeystoreConfigBean ksBean) throws Exception {
-        char[] ksPassword = ksBean.getKsPassword();
-        //we don't actually care what the password is for Luna, so make it obvious.
-        ksPassword = "ignoredbyluna".toCharArray();
-
-        String ksDir = getOsFunctions().getKeystoreDir();
-
-        File newJavaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
-
-        File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
-        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
-        File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
-        File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
-        File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
-        File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
-        File caCertFile = new File(ksDir + CA_CERT_FILE);
-        File sslCertFile = new File(ksDir + SSL_CERT_FILE);
-
-        File[] files = new File[]
-        {
-            javaSecFile,
-            systemPropertiesFile,
-            keystorePropertiesFile,
-            tomcatServerConfigFile,
-            caKeyStoreFile,
-            sslKeyStoreFile,
-            caCertFile,
-            sslCertFile
-        };
-
-        backupFiles(files, BACKUP_FILE_NAME);
-
-
-        try {
-            //prepare the JDK and the Luna environment before generating keys
-            setLunaSystemProps(ksBean);
-            copyLunaJars(ksBean);
-            prepareJvm(KeystoreType.LUNA_KEYSTORE_NAME);
-            makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
-            updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile, LUNA_SECURITY_PROVIDERS);
-            updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
-            updateSystemPropertiesFile(ksBean, systemPropertiesFile);
-        } catch (Exception e) {
-            String mess = "problem generating keys or keystore - skipping keystore configuration: ";
-            logger.log(Level.SEVERE, mess + e.getMessage(), e);
-            throw e;
         }
     }
 

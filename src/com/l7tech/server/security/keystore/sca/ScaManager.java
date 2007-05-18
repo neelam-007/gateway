@@ -43,6 +43,11 @@ public class ScaManager {
         keydataDir = findFile("keydata directory", PROPERTY_KEYDATA_DIR, DEFAULT_KEYDATA_DIR, false, true, true, true);
     }
 
+
+    public File getKeydataDir() {
+        return keydataDir;
+    }
+
     private File findFile(String thing, String sysprop, String defaultValue,
                           boolean mustBeFile, boolean mustBeDirectory, boolean mustBeReadable, boolean mustBeWritable)
             throws ScaException
