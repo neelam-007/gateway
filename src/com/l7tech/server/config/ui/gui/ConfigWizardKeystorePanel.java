@@ -219,12 +219,12 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     public boolean isValidated() {
         PartitionInformation pinfo = getParentWizard().getActivePartition();
 
-        boolean isValid = true;
+        boolean panelIsValid = true;
         boolean shouldDisable = true;
         if (!dontDoKsConfig.isSelected()) {
-            shouldDisable = false;
+            pinfo.setShouldDisable(false);
             KeystorePanel ksPanel = (KeystorePanel) whichKeystorePanel;
-            isValid = ksPanel.validateInput();
+            return ksPanel.validateInput();
         } else {
             if (pinfo != null) {
                 if (PartitionManager.getInstance().getActivePartition().isNewPartition()) {
@@ -238,9 +238,16 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
                     shouldDisable = false;
                 }
             }
+            pinfo.setShouldDisable(shouldDisable);
         }
-        pinfo.setShouldDisable(shouldDisable);
-        return isValid;
+
+        return panelIsValid && collectExistingKeystore();
+    }
+
+    private boolean collectExistingKeystore() {
+        //check if there are existing keystores, and then get the info from the user needed to access them so we can
+        //decrypt the cluster_shared_key, save it, and reencrypt it when the keys change
+        return true;
     }
 
 

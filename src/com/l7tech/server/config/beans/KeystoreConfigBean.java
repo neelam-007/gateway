@@ -27,6 +27,7 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private boolean initializeHSM;
     private SharedWizardInfo sharedWizardInfo;
 
+    private byte[] clusterSharedKey;
 
     public KeystoreType getKeyStoreType() {
         return keyStoreType;
@@ -129,19 +130,19 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
         return doKeystoreConfig;
     }
 
-//    public void setClusterType(ClusteringType theClusteringType) {
-//        this.clusteringType = theClusteringType;
-//    }
-
-//    private ClusteringType getClusteringType() {
-//        return sharedWizardInfo.getClusterType();
-//    }
-
     public void setInitializeHSM(boolean shouldInitialise) {
         initializeHSM = shouldInitialise;
     }
 
     public boolean isInitializeHSM() {
         return initializeHSM;
+    }
+
+    public byte[] getClusterSharedKey() {
+        return clusterSharedKey;
+    }
+
+    public void setClusterSharedKey(byte[] clusterSharedKey) {
+        this.clusterSharedKey = clusterSharedKey;
     }
 }

@@ -51,20 +51,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private static final String BACKUP_FILE_NAME = "keystore_config_backups";
 
-    private static final String CA_KEYSTORE_FILE = "ca.ks";
-    private static final String SSL_KEYSTORE_FILE = "ssl.ks";
-    private static final String CA_CERT_FILE = "ca.cer";
-    private static final String SSL_CERT_FILE = "ssl.cer";
-
-
-    public static final String CA_ALIAS = "ssgroot";
-    public static final String CA_DN_PREFIX = "cn=root.";
-    public static final int CA_VALIDITY_DAYS = 5 * 365;
-
-    public static final String SSL_ALIAS = "tomcat";
-    public static final String SSL_DN_PREFIX = "cn=";
-    public static final int SSL_VALIDITY_DAYS = 2 * 365;
-
     private static final String PROPERTY_COMMENT = "This file was updated by the SSG configuration utility";
 
     private static final String XML_KSFILE = "keystoreFile";
@@ -76,8 +62,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private static final String PROPKEY_SECURITY_PROVIDER = "security.provider";
     private static final String PROPKEY_JCEPROVIDER = "com.l7tech.common.security.jceProviderEngine";
-//    private static final String PROPERTY_LUNA_JCEPROVIDER_VALUE = "com.l7tech.common.security.prov.luna.LunaJceProviderEngine";
-//    private static final String PROPERTY_PKCS11_JCEPROVIDER_VALUE = "com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine";
 
     private static final String[] LUNA_SECURITY_PROVIDERS =
             {
@@ -158,10 +142,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
         File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
-        File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
-        File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
-        File caCertFile = new File(ksDir + CA_CERT_FILE);
-        File sslCertFile = new File(ksDir + SSL_CERT_FILE);
+        File caKeyStoreFile = new File( ksDir + OSSpecificFunctions.KeystoreInfo.CA_KEYSTORE_FILE);
+        File sslKeyStoreFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_KEYSTORE_FILE);
+        File caCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.CA_CERT_FILE);
+        File sslCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_CERT_FILE);
         File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
         File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
 
@@ -208,10 +192,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
         File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
         File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
-        File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
-        File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
-        File caCertFile = new File(ksDir + CA_CERT_FILE);
-        File sslCertFile = new File(ksDir + SSL_CERT_FILE);
+        File caKeyStoreFile = new File( ksDir + OSSpecificFunctions.KeystoreInfo.CA_KEYSTORE_FILE);
+        File sslKeyStoreFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_KEYSTORE_FILE);
+        File caCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.CA_CERT_FILE);
+        File sslCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_CERT_FILE);
 
         File[] files = new File[]
         {
@@ -258,10 +242,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
         File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
-        File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
-        File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
-        File caCertFile = new File(ksDir + CA_CERT_FILE);
-        File sslCertFile = new File(ksDir + SSL_CERT_FILE);
+        File caKeyStoreFile = new File( ksDir + OSSpecificFunctions.KeystoreInfo.CA_KEYSTORE_FILE);
+        File sslKeyStoreFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_KEYSTORE_FILE);
+        File caCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.CA_CERT_FILE);
+        File sslCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_CERT_FILE);
         File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
         File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
 
@@ -319,7 +303,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void initializeSCA(char[] keystorePassword) throws IOException {
-        boolean success = false;
         if (getOsFunctions().isUnix()) {
             String initializeScript = getOsFunctions().getSsgInstallRoot() + HSM_SETUP_SCRIPT;
             try {
@@ -434,32 +417,34 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         caPrivateKey = cakp.getPrivate();
 
         logger.info("Generating self-signed CA cert");
-        caCert = BouncyCastleRsaSignerEngine.makeSelfSignedRootCertificate(CA_DN_PREFIX + sharedWizardInfo.getHostname(), CA_VALIDITY_DAYS, cakp);
+        caCert = BouncyCastleRsaSignerEngine.makeSelfSignedRootCertificate(
+                OSSpecificFunctions.KeystoreInfo.CA_DN_PREFIX + sharedWizardInfo.getHostname(),
+                OSSpecificFunctions.KeystoreInfo.CA_VALIDITY_DAYS, cakp);
 
         logger.info("Storing CA cert in HSM");
-        theHsmKeystore.setKeyEntry(CA_ALIAS, caPrivateKey, keystoreAccessPassword, new X509Certificate[] { caCert } );
+        theHsmKeystore.setKeyEntry(OSSpecificFunctions.KeystoreInfo.CA_ALIAS, caPrivateKey, keystoreAccessPassword, new X509Certificate[] { caCert } );
 
         logger.info("Generating RSA keypair for SSL cert" );
         KeyPair sslkp = JceProvider.generateRsaKeyPair();
 
         logger.info("Generating SSL cert");
-        sslCert = BouncyCastleRsaSignerEngine.makeSignedCertificate( SSL_DN_PREFIX + sharedWizardInfo.getHostname(),
-                                                                       SSL_VALIDITY_DAYS,
+        sslCert = BouncyCastleRsaSignerEngine.makeSignedCertificate(OSSpecificFunctions.KeystoreInfo.SSL_DN_PREFIX + sharedWizardInfo.getHostname(),
+                                                                       OSSpecificFunctions.KeystoreInfo.SSL_VALIDITY_DAYS,
                                                                        sslkp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
 
         logger.info("Storing SSL cert in HSM");
-        theHsmKeystore.setKeyEntry(SSL_ALIAS, sslkp.getPrivate(), keystoreAccessPassword, new X509Certificate[] { sslCert, caCert } );
+        theHsmKeystore.setKeyEntry(OSSpecificFunctions.KeystoreInfo.SSL_ALIAS, sslkp.getPrivate(), keystoreAccessPassword, new X509Certificate[] { sslCert, caCert } );
 
-        File caCertFile = new File(keystoreDir,CA_CERT_FILE);
-        File sslCertFile = new File(keystoreDir,SSL_CERT_FILE);
+        File caCertFile = new File(keystoreDir,OSSpecificFunctions.KeystoreInfo.CA_CERT_FILE);
+        File sslCertFile = new File(keystoreDir,OSSpecificFunctions.KeystoreInfo.SSL_CERT_FILE);
 
         createDummyKeystorse(keystoreDir);
         exportCerts(caCert, caCertFile, sslCert, sslCertFile);
     }
 
     private void createDummyKeystorse(File keystoreDir) throws IOException {
-        File dummmyCaKeystore = new File(keystoreDir, CA_KEYSTORE_FILE);
-        File summySslKeystore = new File(keystoreDir, SSL_KEYSTORE_FILE);
+        File dummmyCaKeystore = new File(keystoreDir, OSSpecificFunctions.KeystoreInfo.CA_KEYSTORE_FILE);
+        File summySslKeystore = new File(keystoreDir, OSSpecificFunctions.KeystoreInfo.SSL_KEYSTORE_FILE);
         
         dummmyCaKeystore.createNewFile();
         summySslKeystore.createNewFile();
