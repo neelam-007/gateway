@@ -23,3 +23,8 @@ insert into keystore_file values (0, 0, "Software Static", "ss", null, null);   
 insert into keystore_file values (1, 0, "HSM", "hsm.sca.targz", null, null);      -- tar.gz of items in sca 6000 keydata directory
 insert into keystore_file values (2, 0, "Software DB", "sdb.pkcs12", null, null); -- bytes of a PKCS#12 keystore
 
+CREATE TABLE shared_keys (
+  keyname varchar(32) NOT NULL,
+  b64edval varchar(256) NOT NULL,
+  primary key(keyname)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
