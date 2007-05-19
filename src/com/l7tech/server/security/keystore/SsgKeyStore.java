@@ -12,6 +12,31 @@ import java.security.cert.X509Certificate;
  */
 public interface SsgKeyStore extends SsgKeyFinder {
     /**
+     * Generate a new RSA key pair and self-signed certificate within this keystore.
+     *
+     * @param alias   the alias for the new key entry.  Required.  Must not collide with any existing alias.
+     * @param dn      the DN for the new self-signed certificate.  Required.
+     * @param keybits the number of bits the new RSA key should contain, ie 512, 768, 1024 or 2048.  Required.
+     * @param expiryDays  the number of days before the new self-signed certificate will expire.  Required.
+     * @return the new self-signed certificate, already added to this key store.  Never null.
+     * @throws GeneralSecurityException if there is a problem generating, signing, or saving the new certificate or key pair
+     */
+    public X509Certificate generateKeyPair(String alias, LdapName dn, int keybits, int expiryDays) throws GeneralSecurityException;
+
+    /**
+     * Replace the certificate for the specified alias with a new certificate based on the same key pair.
+     * This could be used to replace a placeholder self-signed certificate with the real cartel certificate
+     * once it comes back from the CA.
+     *
+     * @param alias   the alias whose certificate to replace.  Required.   There must be a key pair at this alias.
+     * @param certificate  the certificate to use instead.  Required.  The public key must match the public key of
+     *                     the existing key pair.
+     * @throws InvalidKeyException if the public key does not match the public key of the existing key pair
+     * @throws KeyStoreException  if there is a problem reading or writing the keystore
+     */
+    void replaceCertificate(String alias, X509Certificate certificate) throws InvalidKeyException, KeyStoreException;
+
+    /**
      * Add an entry to this key store.  Any previous entry with this alias will be overwritten.  However, due to
      * key caching, callers should not count on this taking effect immediately.  Instead, it is recommended to
      * save changed keys under a new alias.
@@ -22,24 +47,15 @@ public interface SsgKeyStore extends SsgKeyFinder {
     void storePrivateKeyEntry(SsgKeyEntry entry) throws KeyStoreException;
 
     /**
-     * Generate a new RSA KeyPair whose PrivateKey will be suitable for storage into this key store
-     * using storePrivateKeyEntry.
-     *
-     * @param keyBits  number of bits, or zero to default to 1024 bit RSA.
-     * @return a new RSA key pair, whose private key may be locked within the hardware if this is a hardware key store.
-     * @throws InvalidAlgorithmParameterException if there is a problem generating a new RSA key pair with this key size.
-     */
-    KeyPair generateRsaKeyPair(int keyBits) throws InvalidAlgorithmParameterException, KeyStoreException;
-
-    /**
-     * Generate a new PKCS#10 certificate request for the specified key pair, using a certificate with a DN
+     * Generate a new PKCS#10 certificate request for the key pair specified by its alias, using a certificate with a DN
      * in the form "CN=username".
      *
+     * @param alias thye alias of the key pair whose public key to embed in the CSR and whose private key to use to sign it.  Required.
      * @param dn  DN to use in the CSR.  Must contain valid X.509 fields.  Required.
-     * @param keyPair key pair whose public key to embed in the CSR and whose private key to use to sign it.  Required.
      * @return a CertificateRequest that can be exported as bytes and sent to a CA service.  Never null.
      * @throws InvalidKeyException  if the key cannot be used for this purpose
      * @throws SignatureException   if there was a problem signing the CSR
+     * @throws java.security.KeyStoreException  if there is a problem reading the key store
      */
-    CertificateRequest makeCsr(LdapName dn, KeyPair keyPair) throws InvalidKeyException, SignatureException, KeyStoreException;
+    CertificateRequest makeCertificateSigningRequest(String alias, LdapName dn) throws InvalidKeyException, SignatureException, KeyStoreException;
 }

@@ -18,6 +18,8 @@ import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.KeyStoreException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.GeneralSecurityException;
 import java.util.List;
 
 /**
@@ -154,6 +156,8 @@ public interface TrustedCertAdmin  {
      * @return a List of KeystoreInfo.  Always contains at least one keystore, although it may be read-only.
      * @throws IOException if there is a problem reading necessary keystore data
      * @throws RemoteException on remote communication error
+     * @throws FindException if there is a problem getting info from the database
+     * @throws java.security.KeyStoreException if a keystore is corrupt
      */
     @Transactional(propagation=Propagation.SUPPORTS)
     @Secured(stereotype=FIND_ENTITIES)
@@ -167,8 +171,26 @@ public interface TrustedCertAdmin  {
      * @throws IOException if there is a problem reading necessary keystore data
      * @throws CertificateException if the keystore contents are corrupt
      * @throws RemoteException on remote communication error
+     * @throws FindException if there is a problem getting info from the database
      */
     @Transactional(propagation=Propagation.SUPPORTS)
     @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
     public List<SsgKeyEntry> findAllKeys(long keystoreId) throws IOException, CertificateException, FindException;
+
+    /**
+     * Generate a new RSA key pair and self-signed certificate in the specified keystore with the specified
+     * settings.
+     *
+     * @param keystoreId the key store in which to create the new key pair and self-signed cert.
+     * @param alias the alias to use when saving the new key pair and self-signed cert.  Required.
+     * @param dn the DN to use in the new self-signed cert.  Required.
+     * @param keybits number of bits for the new RSA key, ie 512, 768, 1024 or 2048.  Required.
+     * @param expiryDays number of days the self-signed cert should be valid.  Required.
+     * @return the new self-signed certificate, with a public key corresponding to the new private key.  Never null.
+     * @throws RemoteException on remote communication error
+     * @throws FindException if there is a problem getting info from the database
+     * @throws java.security.GeneralSecurityException if there is a problem generating or signing the cert
+     * @throws IllegalArgumentException if the keybits or dn are improperly specified
+     */
+    public X509Certificate generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException;
 }

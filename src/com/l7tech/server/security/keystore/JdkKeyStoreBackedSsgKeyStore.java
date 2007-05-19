@@ -2,6 +2,7 @@ package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.BouncyCastleCertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
 
@@ -9,12 +10,15 @@ import javax.naming.ldap.LdapName;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.math.BigInteger;
 
 /**
  * Base class for SsgKeyStore implementations that are based on a JDK KeyStore instance.
@@ -67,7 +71,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         // Get the private key, if we can access it
         RSAPrivateKey rsaPrivateKey = null;
         try {
-            Key key = keystore.getKey(alias, null);
+            Key key = keystore.getKey(alias, getEntryPassword());
             if (key instanceof RSAPrivateKey)
                 rsaPrivateKey = (RSAPrivateKey)key;
         } catch (NoSuchAlgorithmException e) {
@@ -108,13 +112,16 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         }
 
         KeyStore keystore = keyStore();
-        keystore.setKeyEntry(alias, key, null, chain);
+        keystore.setKeyEntry(alias, key, getEntryPassword(), chain);
     }
 
-    public CertificateRequest makeCsr(LdapName dn, KeyPair keyPair) throws InvalidKeyException, SignatureException, KeyStoreException {
-        // Requires that current crypto engine already by the correct one for this keystore type
-        return JceProvider.makeCsr(dn.toString(), keyPair);
-    }
+    /**
+     * Get a password that will be used to protect each key entry set, and
+     * to decrypt each key entry read.
+     *
+     * @return a non-null (but possibly empty) character array
+     */
+    protected abstract char[] getEntryPassword();
 
     public boolean isMutable() {
         return true;
@@ -137,15 +144,115 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
-    public synchronized KeyPair generateRsaKeyPair(final int keyBits) throws InvalidAlgorithmParameterException, KeyStoreException {
-        return mutateKeystore(new Functions.Nullary<KeyPair>() {
-            public KeyPair call() {
-                // Requires that current crypto engine already by the correct one for this keystore type
-                return JceProvider.generateRsaKeyPair(keyBits);
+    public synchronized X509Certificate generateKeyPair(final String alias, final LdapName dn, final int keybits, final int expiryDays) throws GeneralSecurityException {
+        return mutateKeystore(new Functions.Nullary<X509Certificate>() {
+            public X509Certificate call() {
+                try {
+                    KeyStore keystore = keyStore();
+                    if (keystore.containsAlias(alias))
+                        throw new RuntimeException("Keystore already contains alias " + alias);
+
+                    // Requires that current crypto engine already by the correct one for this keystore type
+                    KeyPair keyPair = JceProvider.generateRsaKeyPair(keybits);
+                    X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair);
+
+                    keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
+
+                    return cert;
+                } catch (CertificateEncodingException e) {
+                    throw new RuntimeException(e);
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                } catch (SignatureException e) {
+                    throw new RuntimeException(e);
+                } catch (InvalidKeyException e) {
+                    throw new RuntimeException(e);
+                } catch (KeyStoreException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
     }
 
+    public synchronized void replaceCertificate(final String alias, final X509Certificate certificate) throws InvalidKeyException, KeyStoreException {
+        mutateKeystore(new Functions.Nullary<Object>() {
+            public Object call() {
+                try {
+                    KeyStore keystore = keyStore();
+                    if (!keystore.isKeyEntry(alias))
+                        throw new RuntimeException("Keystore does not contain a key with alias " + alias);
+                    Key key = keystore.getKey(alias, null);
+                    Certificate[] oldChain = keystore.getCertificateChain(alias);
+                    if (oldChain == null || oldChain.length < 1)
+                        throw new RuntimeException("Existing certificate chain for alias " + alias + " is empty");
+                    if (!(oldChain[0] instanceof X509Certificate))
+                        throw new RuntimeException("Existing certificate for alias " + alias + " is not an X.509 certificate");
+                    X509Certificate oldCert = (X509Certificate)oldChain[0];
+                    PublicKey oldPublicKey = oldCert.getPublicKey();
+                    if (!(oldPublicKey instanceof RSAPublicKey))
+                        throw new RuntimeException("Existing certificate public key is not an RSA public key");
+                    RSAPublicKey oldRsaPublicKey = (RSAPublicKey)oldPublicKey;
+                    if (!(key instanceof RSAPrivateKey))
+                        throw new RuntimeException("Keystore contains a key with alias " + alias + " but it is not an RSA private key");
+
+                    PublicKey newPublicKey = certificate.getPublicKey();
+                    if (!(newPublicKey instanceof RSAPublicKey)) {
+                        throw new RuntimeException("New certificate public key is not an RSA public key");
+                    }
+                    RSAPublicKey newRsaPublicKey = (RSAPublicKey)newPublicKey;
+
+                    BigInteger newModulus = newRsaPublicKey.getModulus();
+                    BigInteger oldModulus = oldRsaPublicKey.getModulus();
+                    BigInteger newExponent = newRsaPublicKey.getPublicExponent();
+                    BigInteger oldExponent = oldRsaPublicKey.getPublicExponent();
+
+                    if (!newExponent.equals(oldExponent))
+                        throw new RuntimeException("New certificate public key's RSA public exponent is not the same as the old certificate's public key");
+
+                    if (!newModulus.equals(oldModulus))
+                        throw new RuntimeException("New certificate public key's RSA modulus is not the same as the old certificate's public key");
+
+                    keystore.setKeyEntry(alias, key, getEntryPassword(), new Certificate[] { certificate });
+
+                    return null;
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                } catch (KeyStoreException e) {
+                    throw new RuntimeException(e);
+                } catch (UnrecoverableKeyException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+    }
+
+    public synchronized CertificateRequest makeCertificateSigningRequest(String alias, LdapName dn) throws InvalidKeyException, SignatureException, KeyStoreException {
+        try {
+            KeyStore keystore = keyStore();
+            Key key = keystore.getKey(alias, null);
+            if (!(key instanceof RSAPrivateKey))
+                throw new InvalidKeyException("The key with alias " + alias + " is not an RSA private key");
+            RSAPrivateKey rsaPrivate = (RSAPrivateKey)key;
+            Certificate[] chain = keystore.getCertificateChain(alias);
+            if (chain == null || chain.length < 1)
+                throw new RuntimeException("Existing certificate chain for alias " + alias + " is empty");
+            if (!(chain[0] instanceof X509Certificate))
+                throw new RuntimeException("Existing certificate for alias " + alias + " is not an X.509 certificate");
+            X509Certificate cert = (X509Certificate)chain[0];
+            PublicKey publicKey = cert.getPublicKey();
+            if (!(publicKey instanceof RSAPublicKey))
+                throw new RuntimeException("Existing certificate public key is not an RSA public key");
+            RSAPublicKey rsaPublic = (RSAPublicKey)publicKey;
+            KeyPair keyPair = new KeyPair(rsaPublic, rsaPrivate);
+            return BouncyCastleCertUtils.makeCertificateRequest(dn, keyPair);
+        } catch (NoSuchAlgorithmException e) {
+            throw new InvalidKeyException("Keystore contains no key with alias " + alias, e);
+        } catch (UnrecoverableKeyException e) {
+            throw new KeyStoreException(e);
+        } catch (NoSuchProviderException e) {
+            throw new KeyStoreException(e);
+        }
+    }
 
     /**
      * Load the keystore from the database, mutate it, and save it back, all atomically.

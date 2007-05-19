@@ -90,6 +90,10 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         return logger;
     }
 
+    protected char[] getEntryPassword() {
+        return password;
+    }
+
     private KeyStore bytesToKeyStore(byte[] bytes) throws KeyStoreException {
         try {
             ByteArrayInputStream inputStream = null;

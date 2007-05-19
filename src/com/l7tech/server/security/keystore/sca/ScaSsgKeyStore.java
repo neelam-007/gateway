@@ -126,6 +126,10 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
         return logger;
     }
 
+    protected char[] getEntryPassword() {
+        return new char[0];  // unused by PKCS#11
+    }
+
     /**
      * Load the keystore from the database, mutate it, and save it back, all atomically.
      *

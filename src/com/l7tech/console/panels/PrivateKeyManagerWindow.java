@@ -10,6 +10,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.server.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -22,6 +23,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.rmi.RemoteException;
+import java.io.IOException;
+import java.security.KeyStoreException;
 
 /**
  * Window for managing private key entries (certificate chains with private keys) in the Gateway.
@@ -39,6 +42,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private final PermissionFlags flags;
+    private final TrustedCertAdmin.KeystoreInfo mutableKeystore;
     private TrustedCertsTable certTable = null;
 
 
@@ -54,6 +58,12 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         initialize();
         loadCerts();
+        mutableKeystore = findMutableKeystore();
+        if (mutableKeystore == null) {
+            createButton.setEnabled(false);
+            importButton.setEnabled(false);
+            removeButton.setEnabled(false);
+        }
     }
 
     private void initialize() {
@@ -94,7 +104,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         createButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                final NewPrivateKeyDialog dlg = new NewPrivateKeyDialog(PrivateKeyManagerWindow.this);
+                final NewPrivateKeyDialog dlg = new NewPrivateKeyDialog(PrivateKeyManagerWindow.this, mutableKeystore);
                 dlg.setModal(true);
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
@@ -150,6 +160,32 @@ public class PrivateKeyManagerWindow extends JDialog {
                                           resources.getString("load.error.title"),
                                           JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    /** @return the first keystore on this Gateway that isn't read-only, or null */
+    private TrustedCertAdmin.KeystoreInfo findMutableKeystore() {
+        TrustedCertAdmin.KeystoreInfo keystore = null;
+
+        // TODO for now, always create in the first mutable keystore in the list
+        // Someday, when there can be more than one mutable keystore, we may support choosing the keystore to create in
+        List<TrustedCertAdmin.KeystoreInfo> keystores = null;
+        try {
+            keystores = getTrustedCertAdmin().findAllKeystores();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        } catch (KeyStoreException e) {
+            throw new RuntimeException(e);
+        }
+        for (TrustedCertAdmin.KeystoreInfo k : keystores) {
+            if (!k.readonly) {
+                keystore = k;
+                break;
+            }
+        }
+
+        return keystore;
     }
 
     /**
