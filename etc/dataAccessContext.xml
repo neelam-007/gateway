@@ -97,6 +97,7 @@
                 <idref bean="securityTokenMappingManager"/>
                 <idref bean="roleManager"/>
                 <idref bean="schemaEntryManager"/>
+                <idref bean="sharedKeyManager"/>
             </list>
         </property>
     </bean>

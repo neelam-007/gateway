@@ -959,4 +959,15 @@
             </bean>
         </constructor-arg>
     </bean>
+
+    <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+
+        <property name="keystore">
+            <ref local='keystore'/>
+        </property>
+    </bean>
+
 </beans>
