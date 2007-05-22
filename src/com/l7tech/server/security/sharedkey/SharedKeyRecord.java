@@ -12,21 +12,28 @@ import java.io.Serializable;
  * Date: May 18, 2007<br/>
  */
 public class SharedKeyRecord implements Serializable {
-    public static final String GENERIC_KEY_NAME = "GenSharedSSGSymmKey";
-    private String name;
+    private String encodingID;
     private String b64edKey;
 
 
+    /**
+     * A unique ID for the public key used to encrypt this shared key
+     * @see com.l7tech.common.util.EncryptionUtil
+     * @return the id
+     */
+    public String getEncodingID() {
+        return encodingID;
+    }
+
+    /**
+     * A unique ID for the public key used to encrypt this shared key
+     * @param encodingID the id
+     */
+    public void setEncodingID(String encodingID) {
+        this.encodingID = encodingID;
+    }
+
     public SharedKeyRecord() {
-        name = GENERIC_KEY_NAME;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getB64edKey() {

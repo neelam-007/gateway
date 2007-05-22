@@ -369,7 +369,7 @@
     </class>
 
     <class name="com.l7tech.server.security.sharedkey.SharedKeyRecord" table="shared_keys">
-        <id name="name" column="keyname" type="string" unsaved-value="null"/>
+        <id name="encodingID" column="encodingid" type="string" unsaved-value="null"/>
         <property name="b64edKey" column="b64edval" type="string"/>
     </class>
 

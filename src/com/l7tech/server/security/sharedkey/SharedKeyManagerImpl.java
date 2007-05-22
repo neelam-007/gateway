@@ -19,6 +19,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.interfaces.RSAPublicKey;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.logging.Level;
@@ -68,14 +69,19 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
      * @throws com.l7tech.objectmodel.FindException if there was a problem finding or creating the key
      */
     public byte[] getSharedKey() throws FindException {
-        // todo, maybe we should avoid getting from db all the time since it will never change (cache the key in memory)?
-
+        final String currentSSLPubID;
+        try {
+            currentSSLPubID = getCurrentSSLPubID();
+        } catch (IOException e) {
+            throw new FindException("could not get current SSL key id", e);
+        }
         // try to get record from the database
-        final String query = " from shared_keys in class " + SharedKeyRecord.class.getName() + " where shared_keys.name = ?";
+        final String query = " from shared_keys in class " + SharedKeyRecord.class.getName() +
+                             " where shared_keys.encodingID = ?";
         Collection res = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Query q = session.createQuery(query);
-                q.setString(0, SharedKeyRecord.GENERIC_KEY_NAME);
+                q.setString(0, currentSSLPubID);
                 return q.list();
             }});
 
@@ -94,6 +100,7 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
             byte[] theKey = initializeKeyFirstTime();
 
             try {
+                sharedKeyToSave.setEncodingID(currentSSLPubID);
                 sharedKeyToSave.setB64edKey(encryptKey(theKey));
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Could not encrypt new shared key", e);
@@ -106,6 +113,10 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
             logger.info("new shared key saved, returning it");
             return theKey;
         }
+    }
+
+    private String getCurrentSSLPubID() throws IOException {
+        return EncryptionUtil.computeCustomRSAPubKeyID((RSAPublicKey)(keystore.getSslSignerInfo().getPublic()));
     }
 
     private String encryptKey(byte[] toEncrypt) throws NoSuchAlgorithmException, NoSuchPaddingException,
