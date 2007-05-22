@@ -9,6 +9,7 @@ import java.nio.charset.CharsetDecoder;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Key;
+import java.security.interfaces.RSAPublicKey;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -168,6 +169,20 @@ public class EncryptionUtil {
         Cipher cipher = Cipher.getInstance(RSACIPHER);
         cipher.init(Cipher.DECRYPT_MODE, key);
         return cipher.doFinal(tmp);
+    }
+
+    /**
+     * @param key the key for which to generate an id
+     * @return a string of length 28 to be used to uniquely identify this public key
+     */
+    public static String computeCustomRSAPubKeyID(RSAPublicKey key) {
+        String keyIDNotHashed = key.getPublicExponent().toString() + key.getModulus().toString();
+        try {
+            return HexUtils.encodeBase64(HexUtils.getSha1Digest(keyIDNotHashed.getBytes(DEFAULT_ENCODING)));
+        } catch (UnsupportedEncodingException e) {
+            // wont happen
+            throw new RuntimeException(e);
+        }
     }
 
     //- PRIVATE
