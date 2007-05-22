@@ -24,7 +24,7 @@ insert into keystore_file values (1, 0, "HSM", "hsm.sca.targz", null, null);    
 insert into keystore_file values (2, 0, "Software DB", "sdb.pkcs12", null, null); -- bytes of a PKCS#12 keystore
 
 CREATE TABLE shared_keys (
-  keyname varchar(32) NOT NULL,
+  encodingid varchar(32) NOT NULL,
   b64edval varchar(256) NOT NULL,
-  primary key(keyname)
+  primary key(encodingid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
