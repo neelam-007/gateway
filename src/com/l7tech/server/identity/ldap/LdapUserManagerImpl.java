@@ -202,7 +202,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
         throw new UnsupportedOperationException();
     }
 
-`    public Class<LdapUser> getImpClass() {
+    public Class<LdapUser> getImpClass() {
         return LdapUser.class;
     }
 
