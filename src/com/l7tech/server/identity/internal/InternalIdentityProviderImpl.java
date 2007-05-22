@@ -106,7 +106,7 @@ public class InternalIdentityProviderImpl
         CredentialFormat format = pc.getFormat();
         String login = dbUser.getLogin();
         char[] credentials = pc.getCredentials();
-        String dbPassHash = dbUser.getPassword();
+        String dbPassHash = dbUser.getHashedPassword();
         String authPassHash;
 
         if (format == CredentialFormat.CLEARTEXT) {

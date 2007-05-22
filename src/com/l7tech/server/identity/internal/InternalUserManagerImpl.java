@@ -54,11 +54,7 @@ public class InternalUserManagerImpl
         iu.setLastName(bean.getLastName());
         iu.setName(bean.getName());
         iu.setOid(bean.getId() == null ? InternalUser.DEFAULT_OID : Long.valueOf(bean.getId()));
-        try {
-            iu.setPassword(bean.getPassword());
-        } catch (InvalidPasswordException e) {
-            throw new RuntimeException(e); // Can't happen?
-        }
+        iu.setHashedPassword(bean.getHashedPassword());
         iu.setSubjectDn(bean.getSubjectDn());
         return iu;
     }
@@ -72,7 +68,7 @@ public class InternalUserManagerImpl
         return iu;
     }
 
-    public Class getImpClass() {
+    public Class<? extends User> getImpClass() {
         return InternalUser.class;
     }
 
@@ -97,8 +93,8 @@ public class InternalUserManagerImpl
     protected void checkUpdate(InternalUser originalUser,
                                InternalUser updatedUser) throws ObjectModelException {
         // checks whether the updatedUser changed his password
-        String originalPasswd = originalUser.getPassword();
-        String newPasswd = updatedUser.getPassword();
+        String originalPasswd = originalUser.getHashedPassword();
+        String newPasswd = updatedUser.getHashedPassword();
 
         // if password has changed, any cert should be revoked
         if (!originalPasswd.equals(newPasswd)) {

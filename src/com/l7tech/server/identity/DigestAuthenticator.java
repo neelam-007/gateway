@@ -6,6 +6,8 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
+import com.l7tech.identity.ldap.LdapUser;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.common.util.HexUtils;
@@ -24,7 +26,18 @@ public class DigestAuthenticator {
             throws MissingCredentialsException, BadCredentialsException 
     {
         Object payload = pc.getPayload();
-        String dbPassHash = user.getPassword();
+        String hashedPass;
+        if (user instanceof InternalUser) {
+            hashedPass = ((InternalUser) user).getHashedPassword();
+        } else if (user instanceof LdapUser) {
+            // Unlikely to work... most LDAPs have passwords that are either invisible to us, or hashed using some
+            // algorithm other than ours.
+            LdapUser ldapUser = (LdapUser) user;
+            hashedPass = HexUtils.encodePasswd(ldapUser.getLogin(), ldapUser.getPassword());
+        } else {
+            throw new BadCredentialsException("User does not have a usable password for digest authentication");
+        }
+
         char[] credentials = pc.getCredentials();
         Map authParams = (Map)payload;
         if (authParams == null) {
@@ -44,12 +57,12 @@ public class DigestAuthenticator {
 
         String serverDigestValue;
         if (!HttpDigest.QOP_AUTH.equals(qop))
-            serverDigestValue = dbPassHash + ":" + nonce + ":" + ha2;
+            serverDigestValue = hashedPass + ":" + nonce + ":" + ha2;
         else {
             String nc = (String)authParams.get(HttpDigest.PARAM_NC);
             String cnonce = (String)authParams.get(HttpDigest.PARAM_CNONCE);
 
-            serverDigestValue = dbPassHash + ":" + nonce + ":" + nc + ":"
+            serverDigestValue = hashedPass + ":" + nonce + ":" + nc + ":"
               + cnonce + ":" + qop + ":" + ha2;
         }
 

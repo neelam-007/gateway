@@ -299,7 +299,7 @@ public class PasswordDialog extends JDialog {
             return false;
         }
 
-        if (user.getPassword().equals(HexUtils.encodePasswd(user.getLogin(), new String(newPass), HttpDigest.REALM))) {
+        if (user.getHashedPassword().equals(HexUtils.encodePasswd(user.getLogin(), new String(newPass), HttpDigest.REALM))) {
             JOptionPane.showMessageDialog(
                     this,
                     resources.getString("sameOldPassord.question"),
@@ -331,7 +331,7 @@ public class PasswordDialog extends JDialog {
                 }
             }
 
-            user.setPassword(new String(newPass), true);
+            user.setCleartextPassword(new String(newPass));
             Registry.getDefault().getIdentityAdmin().saveUser(
                     IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, user, null); // TODO make sure passing null here won't clear group memberships
             dispose();

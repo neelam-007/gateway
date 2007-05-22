@@ -4,6 +4,8 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 
 import java.io.Serializable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * User from an LDAP directory.
@@ -14,7 +16,9 @@ import java.io.Serializable;
  * Date: Jun 24, 2003
  */
 public class LdapUser extends LdapIdentityBase implements User, Serializable {
-    public static final String[] HASH_PREFIXES = {
+    private static final Logger logger = Logger.getLogger(LdapUser.class.getName());
+
+    private static final String[] HASH_PREFIXES = {
         "{md5}", "{md4}", "{smd5}",
         "{sha}", "{sha1}", "{ssha}",
         "{crypt}",
@@ -37,10 +41,6 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
 
     public String getLogin() {
         return login;
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     public String getFirstName() {
@@ -71,20 +71,23 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
      * set the login before setting the password.
      * if the password is not encoded, this will encode it.
      */
-    public void setPassword(String password) throws  IllegalStateException {
-        if ( password != null && !isAlreadyEncoded(password)) {
+    public void setPassword(String pass) throws IllegalStateException {
+        if (pass != null) {
             // Check for LDAP hashed passwords
-            String lcpass = password.toLowerCase();
+            String lcpass = pass.toLowerCase();
             for (String prefix : HASH_PREFIXES) {
                 if (lcpass.startsWith(prefix)) {
+                    logger.log(Level.FINE, "LDAP password is hashed with {0}; ignoring", prefix);
                     this.password = null;
                     return;
                 }
             }
         }
-        String login = getLogin();
-        if ( login == null) throw new IllegalStateException("login must be set prior to encoding the password");
-        this.password = password;
+        this.password = pass;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public void setFirstName(String firstName) {
@@ -155,22 +158,5 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
         setLastName(imp.getLastName());
         setPassword(imp.getPassword());
         setAttributes(imp.getAttributes());
-    }
-
-
-    // ************************************************
-    // PRIVATES
-    // ************************************************
-
-    private boolean isAlreadyEncoded(String arg) {
-        if (arg == null || arg.length() != 32) return false;
-        String hexmembers = "0123456789abcdef";
-        for (int i = 0; i < arg.length(); i++) {
-            char toto = arg.charAt(i);
-            if (hexmembers.indexOf(toto) == -1) {
-                return false;
-            }
-        }
-        return true;
     }
 }

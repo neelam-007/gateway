@@ -13,14 +13,13 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * @version $Revision$
  */
 public abstract class PersistentUser extends NamedEntityImp implements User {
-    private String login;
-    private long providerOid;
-    private String subjectDn;
-    private String firstName;
-    private String lastName;
-    private String email;
-    private String department;
-    protected String password;
+    protected String login;
+    protected long providerOid;
+    protected String subjectDn;
+    protected String firstName;
+    protected String lastName;
+    protected String email;
+    protected String department;
 
     protected PersistentUser(long providerOid, String login) {
         this.providerOid = providerOid;
@@ -43,10 +42,6 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         this.subjectDn = subjectDn;
     }
 
-    /**
-     * set the login before setting the password.
-     * if the password is not encoded, this will encode it.
-     */
     public void setLogin(String login) {
         this.login = login;
     }
@@ -60,10 +55,6 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
 
     public String getLogin() {
         return login;
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     public String getFirstName() {
@@ -126,7 +117,6 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         if (firstName != null ? !firstName.equals(that.firstName) : that.firstName != null) return false;
         if (lastName != null ? !lastName.equals(that.lastName) : that.lastName != null) return false;
         if (login != null ? !login.equals(that.login) : that.login != null) return false;
-        if (password != null ? !password.equals(that.password) : that.password != null) return false;
         if (subjectDn != null ? !subjectDn.equals(that.subjectDn) : that.subjectDn != null) return false;
 
         return true;
@@ -141,7 +131,6 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
         result = 31 * result + (email != null ? email.hashCode() : 0);
         result = 31 * result + (department != null ? department.hashCode() : 0);
-        result = 31 * result + (password != null ? password.hashCode() : 0);
         return result;
     }
 }

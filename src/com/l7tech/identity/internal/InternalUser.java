@@ -19,6 +19,9 @@ import com.l7tech.objectmodel.InvalidPasswordException;
  *
  */
 public class InternalUser extends PersistentUser {
+    private long expiration = -1;
+    protected String hashedPassword;
+
     public InternalUser() {
         this(null);
     }
@@ -41,34 +44,16 @@ public class InternalUser extends PersistentUser {
         setFirstName(imp.getFirstName());
         setLastName(imp.getLastName());
         setExpiration(imp.getExpiration());
-        try {
-            setPassword(imp.getPassword());
-        } catch (InvalidPasswordException e) {
-            throw new RuntimeException(e); // cannot happen
-        }
+        setHashedPassword(imp.getHashedPassword());
         setSubjectDn( imp.getSubjectDn() );
     }
 
-    public void setPassword(String password) throws InvalidPasswordException {
-        setPassword(password, false);
+    public void setHashedPassword(String password) {
+        this.hashedPassword = password;
     }
 
-    /**
-     * Set the password for this user
-     * 
-     * @param password the password (clear or encoded)
-     * @param hintIsClear true if you want to communicate that the password is in clear text
-     * @throws InvalidPasswordException
-     */
-    public void setPassword(String password, boolean hintIsClear) throws InvalidPasswordException {
-        if (password == null) throw new InvalidPasswordException("Empty password is not valid");
-        if (hintIsClear || !HexUtils.containsOnlyHex(password)) {
-            if (password.length() < 6) throw new InvalidPasswordException("Password must be at least 6 " +
-                                                                          "characters long");
-            if (password.length() > 32) throw new InvalidPasswordException("Password must be no longer " +
-                                                                           "than 32 characters long");
-        }
-        this.password = password;
+    public String getHashedPassword() {
+        return hashedPassword;
     }
 
     /**
@@ -95,15 +80,25 @@ public class InternalUser extends PersistentUser {
         InternalUser that = (InternalUser) o;
 
         if (expiration != that.expiration) return false;
+        if (hashedPassword != null ? !hashedPassword.equals(that.hashedPassword) : that.hashedPassword != null)
+            return false;
 
         return true;
     }
 
     public int hashCode() {
         int result = super.hashCode();
+        result = 31 * result + (hashedPassword != null ? hashedPassword.hashCode() : 0);
         result = 31 * result + (int) (expiration ^ (expiration >>> 32));
         return result;
     }
 
-    private long expiration = -1;
+    public void setCleartextPassword(String newPassword) throws InvalidPasswordException {
+        if (newPassword == null) throw new InvalidPasswordException("Empty password is not valid");
+        if (newPassword.length() < 6) throw new InvalidPasswordException("Password must be no shorter than 6 characters");
+        if (newPassword.length() > 32) throw new InvalidPasswordException("Password must be no longer than 32 characters");
+
+        if (login == null) throw new IllegalStateException("login must be set prior to encoding the password");
+        this.hashedPassword = HexUtils.encodePasswd(login, newPassword);
+    }
 }

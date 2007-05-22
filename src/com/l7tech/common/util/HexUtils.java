@@ -543,18 +543,6 @@ public class HexUtils {
         return sha1;
     }
 
-    public static boolean containsOnlyHex(String arg) {
-        if (arg == null || arg.length() != 32) return false;
-        String hexmembers = "0123456789abcdef";
-        for (int i = 0; i < arg.length(); i++) {
-            char toto = arg.charAt(i);
-            if (hexmembers.indexOf(toto) == -1) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public static String encodePasswd(String login, String passwd) {
         String toEncode = login + ":" + HttpDigest.REALM + ":" + passwd;
         try {

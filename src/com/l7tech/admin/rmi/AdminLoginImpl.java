@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.admin.rmi;
 
@@ -25,6 +25,7 @@ import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.spring.remoting.RemoteUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -172,20 +173,19 @@ public class AdminLoginImpl
             for (IdentityProvider provider : providers) {
                 try {
                     AuthenticationResult authResult = provider.authenticate(creds);
-                    User authdUser = authResult == null ? null : authResult.getUser();
-                    if (authdUser != null) {
-                        checkPerms(authdUser);
-                        user = authdUser;
+                    User authenticatedUser = authResult == null ? null : authResult.getUser();
+                    if (authenticatedUser != null) {
+                        checkPerms(authenticatedUser);
+                        user = authenticatedUser;
                         logger.info("Authenticated on " + provider.getConfig().getName() + " (changing password)");
 
-                        if (authdUser instanceof InternalUser) {
-                            ((InternalUser)user).setPassword(newPassword, true);
+                        if (authenticatedUser instanceof InternalUser) {
+                            ((InternalUser)user).setCleartextPassword(newPassword);
                             provider.getUserManager().update(user);
+                            break;
                         } else {
                             throw new IllegalStateException("Cannot change password for user.");
                         }
-
-                        break;
                     }
                 } catch (AuthenticationException e) {
                     logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
@@ -262,8 +262,8 @@ public class AdminLoginImpl
 
             if (username != null) {
                 try {
-                    User user = getInternalIdentityProvider().getUserManager().findByLogin(username);
-                    if (user != null) digestWith = user.getPassword(); 
+                    InternalUser user = getInternalIdentityProvider().getUserManager().findByLogin(username);
+                    if (user != null) digestWith = user.getHashedPassword(); 
                 } catch (FindException e) {
                     // catch here so there is no difference to the client for one username vs another.
                     logger.log(Level.WARNING, "Authentication provider error", e);
@@ -287,13 +287,13 @@ public class AdminLoginImpl
         }
     }
 
-    private IdentityProvider getInternalIdentityProvider() throws FindException, InvalidIdProviderCfgException {
+    private InternalIdentityProvider getInternalIdentityProvider() throws FindException, InvalidIdProviderCfgException {
         IdentityProviderConfig cfg = identityProviderConfigManager.findByPrimaryKey(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         if (cfg == null) {
             throw new IllegalStateException("Could not find the internal identity manager!");
         }
 
-        return identityProviderFactory.makeProvider(cfg);
+        return (InternalIdentityProvider) identityProviderFactory.makeProvider(cfg);
     }
 
 

@@ -10,6 +10,8 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.internal.InternalIdentityProvider;
+import com.l7tech.server.identity.internal.InternalUserManager;
 import sun.misc.BASE64Decoder;
 
 import javax.servlet.ServletConfig;
@@ -99,16 +101,21 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             return;
         }
         // make sure it's different from current one
-        UserBean tmpUser = new UserBean();
-        tmpUser.setLogin(internalUser.getLogin());
+        InternalUser tempUser;
         try {
-            tmpUser.setPassword(str_newpasswd, true);
+            tempUser = new InternalUser(internalUser.getLogin());
+            tempUser.setCleartextPassword(str_newpasswd);
         } catch (IllegalStateException e) {
             logger.log(Level.SEVERE, "could not compare password", e);
             sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             return;
+        } catch (InvalidPasswordException e) {
+            logger.log(Level.WARNING, "new password not valid", e);
+            sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+            return;
         }
-        if (tmpUser.getPassword().equals(internalUser.getPassword())) {
+
+        if (tempUser.getHashedPassword().equals(internalUser.getHashedPassword())) {
             logger.warning("New password same as old one, returning 400.");
             sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, "Please provide new password (different from old one)");
             return;
@@ -118,10 +125,11 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             InternalUser newInternalUser = new InternalUser();
             newInternalUser.copyFrom(internalUser);
             newInternalUser.setVersion(internalUser.getVersion());
-            newInternalUser.setPassword(str_newpasswd, true);
+            newInternalUser.setCleartextPassword(str_newpasswd);
+
             IdentityProviderFactory ipf = (IdentityProviderFactory)getApplicationContext().getBean("identityProviderFactory");
-            IdentityProvider provider = ipf.getProvider(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
-            UserManager userManager = provider.getUserManager();
+            InternalIdentityProvider provider = (InternalIdentityProvider) ipf.getProvider(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
+            InternalUserManager userManager = provider.getUserManager();
             userManager.update(newInternalUser);
             logger.fine("Password changed for user " + internalUser.getLogin());
             // end transaction

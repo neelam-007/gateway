@@ -19,6 +19,7 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -399,7 +400,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             try {
                 User user = provider.getUserManager().findByLogin(trimmedUsername);
                 if (user != null) {
-                    String password = user.getPassword();
+                    String password = user instanceof InternalUser ? ((InternalUser)user).getHashedPassword() : null;
                     String oid = Long.toString(provider.getConfig().getOid());
                     String realm = provider.getAuthRealm();
                     checkInfos.add(new CertificateCheckInfo(certBytes, trimmedUsername, password, nonce, oid, realm));

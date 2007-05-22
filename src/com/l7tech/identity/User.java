@@ -21,12 +21,6 @@ public interface User extends Identity {
     String getLogin();
 
     /**
-     * Gets the User's password
-     * @return the User's password. May be null.
-     */
-    String getPassword();
-
-    /**
      * Gets the User's first name.
      * @return the User's first name. May be null.
      */

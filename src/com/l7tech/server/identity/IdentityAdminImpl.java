@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Server side implementation of the IdentityAdmin interface.
@@ -360,24 +361,30 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
             if (IdentityProviderType.INTERNAL.equals(provider.getConfig().type())) {
                 logger.finest("Cert revoked - invalidating user's password.");
+
+                InternalUser iuser = (InternalUser) user;
+
                 // must change the password now
                 UserManager userManager = provider.getUserManager();
-                InternalUser dbuser = (InternalUser)userManager.findByLogin(user.getLogin());
+                InternalUser dbuser = (InternalUser)userManager.findByLogin(iuser.getLogin());
                 // maybe a new password is already provided?
                 String newPasswd;
-                if (!dbuser.getPassword().equals(user.getPassword())) {
-                    newPasswd = user.getPassword();
+                if (!dbuser.getHashedPassword().equals(iuser.getHashedPassword())) {
+                    newPasswd = iuser.getHashedPassword();
                 } else {
+                    // Set a random password (effectively disables password-based authentication as this user)
                     byte[] randomPasswd = new byte[32];
                     getSecureRandom().nextBytes(randomPasswd);
-                    newPasswd = new String(randomPasswd);
+                    try {
+                        newPasswd = HexUtils.encodePasswd(iuser.getLogin(), new String(randomPasswd, "ISO8859-1"));
+                    } catch (UnsupportedEncodingException e) {
+                        throw new RuntimeException(e); // Can't happen
+                    }
                 }
-                dbuser.setPassword(newPasswd);
+                dbuser.setHashedPassword(newPasswd);
                 userManager.update(dbuser);
             }
         } catch (FindException e) {
-            throw new UpdateException("error resetting user's password", e);
-        } catch (InvalidPasswordException e) {
             throw new UpdateException("error resetting user's password", e);
         }
     }

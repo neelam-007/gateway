@@ -41,8 +41,8 @@ public class UserBean implements User, Serializable {
         return login;
     }
 
-    public String getPassword() {
-        return password;
+    public String getHashedPassword() {
+        return hashedPassword;
     }
 
     public String getFirstName() {
@@ -73,22 +73,22 @@ public class UserBean implements User, Serializable {
         this.providerId = providerId;
     }
 
-    public void setPassword(String password) throws IllegalStateException {
-        setPassword(password, false);
+    public void setHashedPassword(String password) throws IllegalStateException {
+        this.hashedPassword = password;
     }
 
     /**
      * Set the password for this user
      *
      * @param password the password (clear or encoded)
-     * @param hintIsClear true if you want to communicate that the password is in clear text
      */
-    public void setPassword(String password, boolean hintIsClear) throws IllegalStateException {
-        if (password != null && (hintIsClear || !HexUtils.containsOnlyHex(password))) {
+    public void setCleartextPassword(String password) throws IllegalStateException {
+        if (password != null) {
             if (login == null) throw new IllegalStateException("login must be set prior to encoding the password");
-            this.password = HexUtils.encodePasswd(login, password);
+            this.hashedPassword = HexUtils.encodePasswd(login, password);
+        } else {
+            this.hashedPassword = password;
         }
-        else this.password = password;
     }
 
     public void setFirstName(String firstName) {
@@ -181,7 +181,7 @@ public class UserBean implements User, Serializable {
     protected String uniqueId;
     protected String name;
     protected String login;
-    protected String password;
+    protected String hashedPassword;
     protected String firstName;
     protected String lastName;
     protected String email;

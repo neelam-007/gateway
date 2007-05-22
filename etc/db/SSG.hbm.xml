@@ -58,7 +58,7 @@
 
         <property name="name" type="string" column="name" />
         <property name="login" type="string" column="login" />
-        <property name="password" type="string"/>
+        <property name="hashedPassword" column="password" type="string"/>
         <property name="firstName" column="first_name"  type="string"/>
         <property name="lastName" column="last_name" type="string"/>
         <property name="email" type="string"/>
