@@ -1,0 +1,191 @@
+#!/bin/bash
+#
+# Startup script for the SecureSpan Gateway Server
+#
+# chkconfig: - 99 01
+# description: Layer 7 SecureSpan Gateway Daemon \
+#	       secures and provides access for SOAP services
+# processname: ssg
+
+# Source function library.
+#. /etc/rc.d/init.d/functions
+. ./rhstub.sh
+
+#. /etc/profile.d/ssgruntimedefs.sh
+. ./ssgruntimedefs.sh
+
+ORIGINAL_JAVA_OPTS="${JAVA_OPTS}"
+
+prog="SSG"
+tries=3
+count=0
+
+USER=$(/usr/bin/who am i | awk '{print $1}')
+PARTITION_BASE="$SSG_HOME/etc/conf/partitions/"
+PARTITION_CONTROL="$SSG_HOME/bin/partitionControl.sh"
+SINGLE_PARTITION=""
+
+# See how we were called.
+#if [ $USER != "root" ] ; then
+#    echo "Need to be root to run this script";
+#    exit
+#fi
+
+# This script redirects STDOUT and STDERR to /dev/null as well as closing STDIN (<&-) so it can be detached from a
+# terminal
+
+start() {
+    find_single_partition "$1"
+    if [ -n "${SINGLE_PARTITION}" ] ; then
+        start_ssg ${SINGLE_PARTITION}
+    else
+        RETVAL=1
+        STOPPED_PARTITIONS=""
+        for partition_dir in ${ALL_PARTITIONS}
+        do
+            status_ssg ${partition_dir} &>/dev/null
+            if [ ${?} -eq 1 ] ; then
+                STOPPED_PARTITIONS="${STOPPED_PARTITIONS} ${partition_dir}" 
+            fi
+        done
+
+        if [ -z "${STOPPED_PARTITIONS}" ] ; then
+            echo "All partitions are active."
+        else
+            for partition_dir in ${STOPPED_PARTITIONS}
+            do
+                start_ssg ${partition_dir}
+            done
+        fi
+
+#        echo -n $"$prog services started: "
+#        [ $RETVAL -eq 0 ] && success || failure
+#        echo
+
+        return $RETVAL
+    fi
+}
+
+stop() {
+    find_single_partition "$1"
+    if [ -n "${SINGLE_PARTITION}" ] ; then
+        stop_ssg ${SINGLE_PARTITION}
+    else
+        RETVAL=1
+        find_tomcat;
+        if [ -z "$pid" ] ; then
+            echo "No SSG Partitions are Currently Running"
+        else
+            for partition_dir in $ALL_PARTITIONS
+            do
+                stop_ssg ${partition_dir}
+            done
+        fi
+
+#        echo -n $"$prog services stopped: "
+#        [ $RETVAL -eq 0 ] && success || failure
+#        echo
+    fi
+    return $RETVAL
+}
+
+status() {
+    find_single_partition "$1"
+    if [ -n "${SINGLE_PARTITION}" ] ; then
+        status_ssg ${SINGLE_PARTITION}
+    else
+        for partition_dir in ${ALL_PARTITIONS}
+        do
+            status_ssg ${partition_dir}
+        done
+    fi
+}
+
+stop_ssg() {
+    which_partition="${1}"
+    if [ "${2}" != "silent" ] ; then
+        echo -n $"Stopping $prog $(basename "${which_partition}"): "
+    fi
+    (sh "${PARTITION_CONTROL}" "stop" "${which_partition}" &> /dev/null)
+    RETVAL=$?
+
+    if [ ${RETVAL} -eq 0 ] ; then
+        sleep 5;
+        (sh "${PARTITION_CONTROL}" "status" "${which_partition}" &> /dev/null)
+        if [ ${?} -eq 0 ] ; then
+            count=$((count + 1))
+            if [ "$count" -ge "$tries" ]; then
+                (sh "${PARTITION_CONTROL}" "stop -force" "${which_partition}" &> /dev/null)    
+                RETVAL=$?
+            else
+                stop_ssg "${which_partition}" silent
+            fi            
+        fi
+    fi
+
+# Redhat called, they'd like their [OK]/[FAILURE]s back now. kthxbai
+    if [ "${2}" != "silent" ] ; then
+        [ $RETVAL -eq 0 ] && success || failure
+        echo
+    fi
+}
+
+start_ssg() {
+    which_partition=$1
+    echo -n $"Starting $prog $(basename "${which_partition}"): "
+
+    (sh "${PARTITION_CONTROL}" "start" "${which_partition}" &> /dev/null)
+    RETVAL=$?
+
+    [ $RETVAL -eq 0 ] && success || failure
+    echo
+}
+
+status_ssg() {
+    which_partition="${1}"
+    (sh "${PARTITION_CONTROL}" "status" "${which_partition}")
+    return $?
+}
+
+
+find_tomcat() {
+	#This needs to be tested with multiple partitions running
+	pid=`cat /ssg/etc/conf/partitions/default_/ssg.pid`
+
+	#this doesn't work with path in Solaris... and there could be many Javas running
+	#pid=$(pidof "${JAVA_HOME}/bin/java")
+}
+
+find_single_partition() {
+    if [ -n "${1}" ] ; then
+        SINGLE_PARTITION=${1}
+        if [ ! -d "$PARTITION_BASE/${SINGLE_PARTITION}" ] ; then
+            echo "Could not find the partition named ${SINGLE_PARTITION}"
+            exit 1;
+        fi
+    fi
+}
+
+reallystop() {
+	echo "Killing $pid"
+	kill -9 $pid
+}
+
+case "$1" in
+  start)
+	start "$2"
+	;;
+  stop)
+	stop  "$2"
+	;;
+  restart)
+	stop "$2"
+        sleep 5
+	start "$2"
+	;;
+  status)
+        status "$2"
+        ;;
+esac
+
+exit $RETVAL
