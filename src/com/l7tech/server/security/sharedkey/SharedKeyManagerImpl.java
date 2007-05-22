@@ -1,26 +1,28 @@
 package com.l7tech.server.security.sharedkey;
 
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
-import org.hibernate.Session;
-import org.hibernate.HibernateException;
-import org.hibernate.Query;
+import com.l7tech.common.util.EncryptionUtil;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.objectmodel.FindException;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
-import java.security.*;
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Allow SSG access to a symmetric key shared throughout the cluster. This key is
@@ -106,35 +108,17 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
         }
     }
 
-    /*
-        table structure
-
-        CREATE TABLE shared_keys (
-          keyname varchar(32) NOT NULL,
-          b64edval varchar(128) NOT NULL,
-          primary key(keyname)
-        ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
-     */
-
     private String encryptKey(byte[] toEncrypt) throws NoSuchAlgorithmException, NoSuchPaddingException,
                                                        InvalidKeyException, BadPaddingException,
                                                        IllegalBlockSizeException, IOException {
-        Cipher cipher = Cipher.getInstance(CIPHER);
-        Key sslPubKey = keystore.getSslSignerInfo().getPublic();
-        cipher.init(Cipher.ENCRYPT_MODE, sslPubKey);
-        byte[] tmp = cipher.doFinal(toEncrypt);
-        return HexUtils.encodeBase64(tmp);
+        return EncryptionUtil.rsaEncAndB64(toEncrypt, keystore.getSslSignerInfo().getPublic());
     }
 
     private byte[] decryptKey(String b64edEncKey) throws IOException, KeyStoreException,
                                                          NoSuchAlgorithmException, NoSuchPaddingException,
                                                          InvalidKeyException, BadPaddingException,
                                                          IllegalBlockSizeException {
-        byte[] tmp = HexUtils.decodeBase64(b64edEncKey);
-        Key sslPrivateKey = keystore.getSSLPrivateKey();
-        Cipher cipher = Cipher.getInstance(CIPHER);
-        cipher.init(Cipher.DECRYPT_MODE, sslPrivateKey);
-        return cipher.doFinal(tmp);
+        return EncryptionUtil.deB64AndRsaDecrypt(b64edEncKey, keystore.getSSLPrivateKey());
     }
 
     private byte[] initializeKeyFirstTime() {

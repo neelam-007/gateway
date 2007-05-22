@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Key;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -124,6 +125,49 @@ public class EncryptionUtil {
      */
     public static byte[] decrypt(byte[] data, byte[] key) {
         return crypter(data, key, DEFAULT_ALGORITHM, Cipher.DECRYPT_MODE);
+    }
+
+    private static final String RSACIPHER = "RSA/ECB/PKCS1Padding";
+
+    /**
+     * RSA encrypts and base 64 data
+     * @param toEncrypt the data to encrypt
+     * @param key the key to encrypt with
+     * @return a base 64 encoded version of the encrypted data
+     * @throws NoSuchAlgorithmException on error
+     * @throws NoSuchPaddingException on error
+     * @throws InvalidKeyException on error
+     * @throws BadPaddingException on error
+     * @throws IllegalBlockSizeException on error
+     */
+    public static String rsaEncAndB64(byte[] toEncrypt, Key key) throws NoSuchAlgorithmException, NoSuchPaddingException,
+                                                                  InvalidKeyException, BadPaddingException,
+                                                                  IllegalBlockSizeException {
+        Cipher cipher = Cipher.getInstance(RSACIPHER);
+        cipher.init(Cipher.ENCRYPT_MODE, key);
+        byte[] tmp = cipher.doFinal(toEncrypt);
+        return HexUtils.encodeBase64(tmp);
+    }
+
+    /**
+     * Base 64 decode incoming data and decrypt using RSA
+     * @param b64edEncedData incoming data to process
+     * @param key the key used for decryption
+     * @return the decrypted key
+     * @throws IOException on error
+     * @throws NoSuchAlgorithmException on error
+     * @throws NoSuchPaddingException on error
+     * @throws InvalidKeyException on error
+     * @throws BadPaddingException on error
+     * @throws IllegalBlockSizeException on error
+     */
+    public static byte[] deB64AndRsaDecrypt(String b64edEncedData, Key key) throws IOException, NoSuchAlgorithmException,
+                                                                      NoSuchPaddingException, InvalidKeyException,
+                                                                      BadPaddingException, IllegalBlockSizeException {
+        byte[] tmp = HexUtils.decodeBase64(b64edEncedData);
+        Cipher cipher = Cipher.getInstance(RSACIPHER);
+        cipher.init(Cipher.DECRYPT_MODE, key);
+        return cipher.doFinal(tmp);
     }
 
     //- PRIVATE
