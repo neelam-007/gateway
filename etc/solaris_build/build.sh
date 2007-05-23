@@ -16,12 +16,19 @@ chmod 755 *install
 cd ..
 
 rm -f ssg.tar
+rm -f solaris_ssg_bin.tar
+
 echo Decompressing...
 gunzip ssg.tar.gz 
+gunzip solaris_ssg_bin.tar.gz
 
 cd pkgroot/
+echo "Unpacking standard tarball"
 tar -xf ../ssg.tar 
 rm ../ssg.tar
+echo "Unpacking Solaris replacement files"
+tar -xf ../solaris_ssg_bin.tar
+rm ../solaris_ssg_bin.tar
 
 mkdir -p etc/rc2.d
 mkdir -p export/home/gateway
