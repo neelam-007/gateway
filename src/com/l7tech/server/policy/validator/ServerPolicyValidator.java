@@ -33,6 +33,8 @@ import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.service.PublishedService;
 import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
@@ -92,6 +94,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
     private SchemaEntryManager schemaEntryManager;
     private ClientCertManager clientCertManager;
     private EntityFinder entityFinder;
+    private SsgKeyStoreManager ssgKeyStoreManager;
 
     public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
         Assertion[] ass = ap.getPath();
@@ -321,6 +324,10 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
             }
 
         }
+
+        if (a instanceof PrivateKeyable) {
+            checkPrivateKey((PrivateKeyable)a, ap, r);
+        }
     }
 
     private void validateSchemaValidation(Assertion a, AssertionPath ap, StaticResourceInfo sri, PolicyValidatorResult r) {
@@ -369,6 +376,32 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                                                        "This schema validation assertion does not appear " +
                                                                "to contain a well-formed xml schema.",
                                                        null));
+        }
+    }
+
+    protected void checkPrivateKey(PrivateKeyable a, AssertionPath ap, PolicyValidatorResult r) {
+        if (!a.isUsesDefaultKeyStore()) {
+            try {
+                SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(a.getNonDefaultKeystoreId());
+                List<String> aliases = keyFinder.getAliases();
+
+                boolean found = false;
+                for (String alias : aliases) {
+                    if (a.getKeyId().equals(alias)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    r.addError(new PolicyValidatorResult.Error((Assertion)a, ap,
+                                                               "This assertion refers to a Private Key which cannot " +
+                                                               "be found on this SecureSpan Gateway",
+                                                               null));
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "error looking for private key", e);
+            }
+
         }
     }
 
@@ -467,6 +500,10 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
 
     public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
         this.identityProviderFactory = identityProviderFactory;
+    }
+
+    public void setSsgKeyStoreManager(SsgKeyStoreManager ssgKeyStoreManager) {
+        this.ssgKeyStoreManager = ssgKeyStoreManager;
     }
 
     public void setSchemaEntryManager(SchemaEntryManager schemaManager) {
