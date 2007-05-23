@@ -4,10 +4,13 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.AssertionKeyAliasEditor;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.PrivateKeyable;
 
+import javax.swing.*;
 import java.awt.*;
+import java.util.logging.Level;
 
 /**
  * Action for editing the keypair property of assertions.
@@ -44,7 +47,15 @@ public class EditKeyAliasForAssertion extends NodeAction {
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
-                // post dlg code if necessary
+                if (dlg.hasAssertionChanged()) {
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
             }
         });
     }

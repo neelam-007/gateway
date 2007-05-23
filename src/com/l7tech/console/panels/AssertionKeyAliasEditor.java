@@ -37,6 +37,7 @@ public class AssertionKeyAliasEditor extends JDialog {
     private JComboBox aliasCombo;
     private JButton manageCustomKeysButton;
     private JPanel customFrame;
+    private boolean wasOKed = false;
 
     public AssertionKeyAliasEditor(Frame owner, PrivateKeyable assertion) {
         super(owner, true);
@@ -122,6 +123,10 @@ public class AssertionKeyAliasEditor extends JDialog {
         return Registry.getDefault().getTrustedCertManager();
     }
 
+    public boolean hasAssertionChanged() {
+        return wasOKed;
+    }
+
     class ComboEntry {
         public ComboEntry(long keystoreid, String keyid, String alias) {
             this.keystoreid = keystoreid;
@@ -185,6 +190,7 @@ public class AssertionKeyAliasEditor extends JDialog {
             assertion.setKeyId(comboentry.keyid);
             assertion.setNonDefaultKeystoreId(comboentry.keystoreid);
         }
+        wasOKed = true;
         cancel();
     }
 
