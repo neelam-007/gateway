@@ -356,6 +356,7 @@
         <property name="schemaEntryManager" ref='schemaEntryManager'/>
         <property name="clientCertManager" ref='clientCertManager'/>
         <property name="entityFinder" ref="entityFinder"/>
+        <property name="ssgKeyStoreManager" ref="ssgKeyStoreManager"/>
     </bean>
 
     <!-- server side policy filter manager  -->

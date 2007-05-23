@@ -128,17 +128,17 @@ public class AssertionKeyAliasEditor extends JDialog {
     }
 
     class ComboEntry {
-        public ComboEntry(long keystoreid, String keyid, String alias) {
+        public ComboEntry(long keystoreid, String keystorename, String alias) {
             this.keystoreid = keystoreid;
-            this.keyid = keyid;
+            this.keystorename = keystorename;
             this.alias = alias;
         }
 
         public long keystoreid;
-        public String keyid;
+        public String keystorename;
         public String alias;
         public String toString() {
-            return alias;
+            return "'" + alias + "'" + " in " + keystorename;
         }
     }
 
@@ -156,7 +156,7 @@ public class AssertionKeyAliasEditor extends JDialog {
                 int tosel = 0;
                 for (TrustedCertAdmin.KeystoreInfo ksi : keystores) {
                     for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(ksi.id)) {
-                        existingAlias[i] = new ComboEntry(ksi.id, entry.getId(), entry.getAlias());
+                        existingAlias[i] = new ComboEntry(ksi.id, ksi.name, entry.getAlias());
                         if (assertion.getNonDefaultKeystoreId() == ksi.id) {
                             if (entry.getId().equals(assertion.getKeyId())) {
                                 tosel = i;
@@ -187,7 +187,7 @@ public class AssertionKeyAliasEditor extends JDialog {
         } else {
             assertion.setUsesDefaultKeystore(false);
             ComboEntry comboentry = (ComboEntry)aliasCombo.getSelectedItem();
-            assertion.setKeyId(comboentry.keyid);
+            assertion.setKeyId(comboentry.alias);
             assertion.setNonDefaultKeystoreId(comboentry.keystoreid);
         }
         wasOKed = true;
