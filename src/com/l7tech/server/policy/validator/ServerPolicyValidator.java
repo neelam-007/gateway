@@ -387,7 +387,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
 
                 boolean found = false;
                 for (String alias : aliases) {
-                    if (a.getKeyId().equals(alias)) {
+                    if (a.getKeyAlias().equals(alias)) {
                         found = true;
                         break;
                     }

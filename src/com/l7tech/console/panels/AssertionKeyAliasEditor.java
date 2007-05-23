@@ -158,7 +158,7 @@ public class AssertionKeyAliasEditor extends JDialog {
                     for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(ksi.id)) {
                         existingAlias[i] = new ComboEntry(ksi.id, ksi.name, entry.getAlias());
                         if (assertion.getNonDefaultKeystoreId() == ksi.id) {
-                            if (entry.getId().equals(assertion.getKeyId())) {
+                            if (entry.getId().equals(assertion.getKeyAlias())) {
                                 tosel = i;
                             }
                         }
@@ -187,7 +187,7 @@ public class AssertionKeyAliasEditor extends JDialog {
         } else {
             assertion.setUsesDefaultKeystore(false);
             ComboEntry comboentry = (ComboEntry)aliasCombo.getSelectedItem();
-            assertion.setKeyId(comboentry.alias);
+            assertion.setKeyAlias(comboentry.alias);
             assertion.setNonDefaultKeystoreId(comboentry.keystoreid);
         }
         wasOKed = true;

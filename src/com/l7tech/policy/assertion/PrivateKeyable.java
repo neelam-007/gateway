@@ -14,6 +14,6 @@ public interface PrivateKeyable {
     void setUsesDefaultKeystore(boolean usesDefault);
     long getNonDefaultKeystoreId();
     void setNonDefaultKeystoreId(long nonDefaultId);
-    String getKeyId();
-    void setKeyId(String keyid);
+    String getKeyAlias();
+    void setKeyAlias(String keyid);
 }

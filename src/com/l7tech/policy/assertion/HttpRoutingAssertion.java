@@ -326,11 +326,11 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.nonDefaultKeystoreId = nonDefaultId;
     }
 
-    public String getKeyId() {
+    public String getKeyAlias() {
         return keyId;
     }
 
-    public void setKeyId(String keyid) {
+    public void setKeyAlias(String keyid) {
         this.keyId = keyid;
     }
 }
