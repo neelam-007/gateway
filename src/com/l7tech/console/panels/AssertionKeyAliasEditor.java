@@ -46,7 +46,7 @@ public class AssertionKeyAliasEditor extends JDialog {
 
     private void initialize() {
         setContentPane(mainPanel);
-        setTitle("Set Assertion Keypair Alias");
+        setTitle("Set Private Key Alias");
         ActionListener modecheck = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 enableValueFieldAsAppropriate();
@@ -87,6 +87,17 @@ public class AssertionKeyAliasEditor extends JDialog {
         }
 
         enableValueFieldAsAppropriate();
+
+        Utilities.setEnterAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                ok();
+            }
+        });
+        Utilities.setEscAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                cancel();
+            }
+        });
     }
 
     private void manageCustomKeys() {

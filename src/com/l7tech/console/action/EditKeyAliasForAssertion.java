@@ -31,7 +31,7 @@ public class EditKeyAliasForAssertion extends NodeAction {
     }
 
     public String getName() {
-        return "Set Keypair Alias";
+        return "Set Private Key Alias";
     }
 
     public String getDescription() {
