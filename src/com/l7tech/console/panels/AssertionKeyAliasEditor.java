@@ -47,7 +47,7 @@ public class AssertionKeyAliasEditor extends JDialog {
 
     private void initialize() {
         setContentPane(mainPanel);
-        setTitle("Set Private Key Alias");
+        setTitle("Private Key Alias");
         ActionListener modecheck = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 enableValueFieldAsAppropriate();

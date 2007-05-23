@@ -94,6 +94,7 @@ public class ServiceCache
     private Auditor auditor;
     private boolean hasCatchAllService = false;
     private SoapOperationResolver soapOperationResolver;
+    private ServiceManager serviceManager;
 
 
     /**
@@ -112,6 +113,14 @@ public class ServiceCache
         else
             this.decorators = decorators;
         this.checker = timer;
+    }
+
+    public synchronized void setServiceManager(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
+    }
+
+    private synchronized ServiceManager getServiceManager() {
+        return serviceManager;
     }
 
     @Override
@@ -545,6 +554,11 @@ public class ServiceCache
     }
 
     private void checkIntegrity() {
+        ServiceManager serviceManager = getServiceManager();
+        if (serviceManager == null)
+            // Still initializing the application context
+            return;
+
         Lock ciReadLock = rwlock.readLock();
         ciReadLock.lock();
         try {
@@ -553,7 +567,6 @@ public class ServiceCache
 
             // get db versions
             try {
-                ServiceManager serviceManager = (ServiceManager)getApplicationContext().getBean("serviceManager");
                 dbversions = serviceManager.findVersionMap();
             } catch (FindException e) {
                 logger.log(Level.SEVERE, "error getting versions. " +
@@ -603,7 +616,6 @@ public class ServiceCache
                     for (Long svcid : updatesAndAdditions) {
                         PublishedService toUpdateOrAdd;
                         try {
-                            ServiceManager serviceManager = (ServiceManager) getApplicationContext().getBean("serviceManager");
                             toUpdateOrAdd = serviceManager.findByPrimaryKey(svcid);
                         } catch (FindException e) {
                             toUpdateOrAdd = null;

@@ -1,9 +1,11 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
 import com.l7tech.server.security.keystore.software.TomcatSsgKeyFinder;
 import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
+import com.l7tech.server.security.sharedkey.SharedKeyManager;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.objectmodel.FindException;
@@ -23,7 +25,7 @@ import java.security.KeyStoreException;
  */
 public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     protected static final Logger logger = Logger.getLogger(SsgKeyStoreManagerImpl.class.getName());
-    private static final char[] softwareKeystorePasssword = "asdfhwkje".toCharArray(); // TODO use secure cluster shared key
+    private final char[] softwareKeystorePasssword;
 
     private final ClusterPropertyManager clusterPropertyManager;
     private final KeystoreFileManager keystoreFileManager;
@@ -31,10 +33,20 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
 
     private List<SsgKeyFinder> keystores = null;
 
-    public SsgKeyStoreManagerImpl(ClusterPropertyManager cpm, KeystoreFileManager kem, KeystoreUtils keystoreUtils) throws KeyStoreException {
+    public SsgKeyStoreManagerImpl(ClusterPropertyManager cpm, SharedKeyManager skm, KeystoreFileManager kem, KeystoreUtils keystoreUtils) throws KeyStoreException, FindException {
         this.clusterPropertyManager = cpm;
         this.keystoreFileManager = kem;
         this.keystoreUtils = keystoreUtils;
+        this.softwareKeystorePasssword = toPassphrase(skm.getSharedKey());
+    }
+
+    private char[] toPassphrase(byte[] b) {
+        char[] ret = new char[b.length];
+        String passchars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()-_=+[]{};:'\\|\"/?.,<>`~";
+        int nc = passchars.length();
+        for (int i = 0; i < b.length; ++i)
+            ret[i] = passchars.charAt((128 + b[i]) % nc);
+        return ret;
     }
 
     private synchronized void init() throws KeyStoreException, FindException {

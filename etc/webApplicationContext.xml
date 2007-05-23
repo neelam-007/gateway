@@ -226,6 +226,7 @@
                 <constructor-arg value="Service cache refresh"/>
             </bean>
         </constructor-arg>
+        <property name="serviceManager" ref="serviceManager"/>
     </bean>
     <!-- server side HTTP routing client trust manager -->
     <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
@@ -905,6 +906,7 @@
 
     <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl">
         <constructor-arg ref="clusterPropertyManager"/>
+        <constructor-arg ref="sharedKeyManager"/>
         <constructor-arg ref="keystoreFileManager"/>
         <constructor-arg ref="keystore"/>
     </bean>
