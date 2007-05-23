@@ -15,10 +15,21 @@ myke@MacPwn:~/Desktop/L7$ du -ah build
 myke@MacPwn:~/Desktop/L7$ 
 
 Instructions for use:
--> Place a ssg.tar.gz in the build/ directory
--> cd build; ./build.sh
-...
--> Profit.
+* Make overlay tarball: 
+
+In this dir, sh make_overlay_tarball.sh
+
+This produces solaris_ssg_bin.tar.gz in this dir, containing replacements for the linux startup scripts. 
+
+* Make ssg tarball from standard build.
+
+* Place a ssg.tar.gz and the above created solaris_ssb_bin.tar.gz  in the build/ directory
+* cd build; ./build.sh
+Build script unpacks the main tarball and then the other tarball, replacing the startup scripts.
+Then build runs and creates a package
+
+This creates a 200 megabyte pkg. This can be gzipped down to the same approximate size as the rpm. Solaris packages are uncompressed, for some reason.
+
 
 Basically, the script extracts the ssg tarball into pkgroot, moves some files around then creates listings for use with pkgmk.
 This will produce a Sun package file in build/pkgbuild/L7TECHssg.pkg, this file is suitable for using with pkgadd.
