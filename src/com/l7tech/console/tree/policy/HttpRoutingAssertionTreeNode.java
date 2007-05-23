@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.console.action.HttpRoutingAssertionPropertiesAction;
+import com.l7tech.console.action.EditKeyAliasForAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 
@@ -41,6 +42,7 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
         java.util.List list = new ArrayList();
         Action a = new HttpRoutingAssertionPropertiesAction(this);
         list.add(a);
+        list.add(new EditKeyAliasForAssertion(this));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }

@@ -14,9 +14,7 @@ import org.apache.commons.lang.StringUtils;
  * @author mike
  * @version 1.0
  */
-public class HttpRoutingAssertion
-        extends RoutingAssertion
-        implements UsesVariables, SetsVariables
+public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariables, SetsVariables, PrivateKeyable
 {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = -1;
     public static final String VAR_ROUTING_LATENCY = "httpRouting.latency";
@@ -306,5 +304,33 @@ public class HttpRoutingAssertion
 
     public void setNtlmHost(String ntlmHost) {
         this.ntlmHost = ntlmHost;
+    }
+
+    private boolean usesDefaultKeyStore = true;
+    private long nonDefaultKeystoreId;
+    private String keyId;
+
+    public boolean isUsesDefaultKeyStore() {
+        return usesDefaultKeyStore;
+    }
+
+    public void setUsesDefaultKeystore(boolean usesDefault) {
+        this.usesDefaultKeyStore = usesDefault;
+    }
+
+    public long getNonDefaultKeystoreId() {
+        return nonDefaultKeystoreId;
+    }
+
+    public void setNonDefaultKeystoreId(long nonDefaultId) {
+        this.nonDefaultKeystoreId = nonDefaultId;
+    }
+
+    public String getKeyId() {
+        return keyId;
+    }
+
+    public void setKeyId(String keyid) {
+        this.keyId = keyid;
     }
 }

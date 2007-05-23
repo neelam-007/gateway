@@ -3,8 +3,10 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.XpathBasedAssertionPropertiesAction;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
+import com.l7tech.console.action.EditKeyAliasForAssertion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 
 import javax.swing.*;
@@ -40,6 +42,9 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode 
         java.util.List list = new ArrayList();
         Action a = XpathBasedAssertionPropertiesAction.actionForNode(this);
         list.add(a);
+        if (assertion instanceof PrivateKeyable) {
+            list.add(new EditKeyAliasForAssertion(this));
+        }
         if (assertion instanceof SecurityHeaderAddressable) {
             list.add(new EditXmlSecurityRecipientContextAction(this));
         }

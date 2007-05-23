@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.policy.assertion.PrivateKeyable;
 
 /**
  * Enforces the XML security on the message elements or entire message
@@ -9,7 +10,7 @@ import com.l7tech.common.security.xml.XencUtil;
  * @author flascell<br/>
  * @version Aug 27, 2003<br/>
  */
-public class RequestWssConfidentiality extends XmlSecurityAssertionBase {
+public class RequestWssConfidentiality extends XmlSecurityAssertionBase implements PrivateKeyable {
     public RequestWssConfidentiality() {
         setXpathExpression(XpathExpression.soapBodyXpathValue());
     }
@@ -46,5 +47,32 @@ public class RequestWssConfidentiality extends XmlSecurityAssertionBase {
     }
 
     private String xEncAlgorithm = XencUtil.AES_128_CBC;
-    private String xencKeyAlgorithm = null;    
+    private String xencKeyAlgorithm = null;
+    private boolean usesDefaultKeyStore = true;
+    private long nonDefaultKeystoreId;
+    private String keyId;
+
+    public boolean isUsesDefaultKeyStore() {
+        return usesDefaultKeyStore;
+    }
+
+    public void setUsesDefaultKeystore(boolean usesDefault) {
+        this.usesDefaultKeyStore = usesDefault;
+    }
+
+    public long getNonDefaultKeystoreId() {
+        return nonDefaultKeystoreId;
+    }
+
+    public void setNonDefaultKeystoreId(long nonDefaultId) {
+        this.nonDefaultKeystoreId = nonDefaultId;
+    }
+
+    public String getKeyId() {
+        return keyId;
+    }
+
+    public void setKeyId(String keyid) {
+        this.keyId = keyid;
+    }
 }

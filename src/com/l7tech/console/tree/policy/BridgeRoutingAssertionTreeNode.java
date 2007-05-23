@@ -8,6 +8,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.BridgeRoutingAssertionPropertiesAction;
 import com.l7tech.console.action.HttpRoutingAssertionPropertiesAction;
+import com.l7tech.console.action.EditKeyAliasForAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
@@ -41,6 +42,7 @@ public class BridgeRoutingAssertionTreeNode extends HttpRoutingAssertionTreeNode
             }
         }
         list.add(0, getPreferredAction());
+        list.add(new EditKeyAliasForAssertion(this));
         return (Action[])list.toArray(new Action[]{});
     }
 }
