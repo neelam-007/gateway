@@ -9,12 +9,10 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SignedSamlTest;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.processor.*;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -26,6 +24,7 @@ import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author mike
@@ -213,6 +212,29 @@ public class WssProcessorTest extends TestCase {
             fail("Expected MessageNotSoapException was not thrown");
         } catch (MessageNotSoapException e) {
             // Ok
+        }
+    }
+
+    public void testBug3736StrTransform() throws Exception {
+        TestDocument result;
+        try {
+            Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3736_STR_TRANSFORM_REQUEST);
+
+            result = new TestDocument("Bug3736StrTransform", d,
+                                                null,
+                                                null,
+                                                null,
+                                                null,
+                                                null);
+        } catch (Exception e) {
+            throw e;
+        }
+
+        try {
+            doTest(result);            
+        } catch (InvalidDocumentFormatException e) {
+            // Expected failure
+            log.log(Level.WARNING, "Expected failure due to as-yet-unfixed Bug #3736: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
