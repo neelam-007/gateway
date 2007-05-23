@@ -53,14 +53,22 @@ public class PrivateKeyManagerWindow extends JDialog {
     private JButton removeButton;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
-    private final PermissionFlags flags;
-    private final TrustedCertAdmin.KeystoreInfo mutableKeystore;
+    private PermissionFlags flags;
+    private TrustedCertAdmin.KeystoreInfo mutableKeystore;
     private KeyTable keyTable = null;
 
 
+    public PrivateKeyManagerWindow(JDialog owner) throws RemoteException {
+        super(owner, resources.getString("keydialog.title"), true);
+        initialize();
+    }
+
     public PrivateKeyManagerWindow(Frame owner) throws RemoteException {
         super(owner, resources.getString("keydialog.title"), true);
+        initialize();
+    }
 
+    private void initialize() throws RemoteException {
         flags = PermissionFlags.get(EntityType.SSG_KEY_ENTRY);
 
         final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
@@ -68,17 +76,6 @@ public class PrivateKeyManagerWindow extends JDialog {
             throw new IllegalStateException("Could not instantiate security provider");
         }
 
-        initialize();
-        loadPrivateKeys();
-        mutableKeystore = findMutableKeystore();
-        if (mutableKeystore == null) {
-            createButton.setEnabled(false);
-            importButton.setEnabled(false);
-            removeButton.setEnabled(false);
-        }
-    }
-
-    private void initialize() {
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
@@ -126,6 +123,14 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         pack();
         enableOrDisableButtons();
+
+        loadPrivateKeys();
+        mutableKeystore = findMutableKeystore();
+        if (mutableKeystore == null) {
+            createButton.setEnabled(false);
+            importButton.setEnabled(false);
+            removeButton.setEnabled(false);
+        }
     }
 
     private void doRemove() {
