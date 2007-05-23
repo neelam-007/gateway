@@ -7,6 +7,7 @@ import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
 import static com.l7tech.common.security.rbac.EntityType.SSG_KEY_ENTRY;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.keystore.SsgKeyEntry;
 import org.springframework.transaction.annotation.Propagation;
@@ -184,7 +185,7 @@ public interface TrustedCertAdmin  {
      * @param keystoreId  the keystore in which to destroy an entry.  Required.
      * @param keyAlias    the alias of hte entry which is to be destroyed.  Required.
      */
-    @Transactional(propagation=Propagation.SUPPORTS)
+    @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
     void deleteKey(long keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException;
 
@@ -203,5 +204,7 @@ public interface TrustedCertAdmin  {
      * @throws java.security.GeneralSecurityException if there is a problem generating or signing the cert
      * @throws IllegalArgumentException if the keybits or dn are improperly specified
      */
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
     public X509Certificate generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException;
 }

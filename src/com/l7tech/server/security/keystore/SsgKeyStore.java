@@ -6,10 +6,14 @@ import javax.naming.ldap.LdapName;
 import java.security.*;
 import java.security.cert.X509Certificate;
 
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+
 /**
  * Interface implemented by SSG components that own and manage certificates with private keys on a particular
  * SSG node.
  */
+@Transactional(propagation= Propagation.SUPPORTS, rollbackFor=Throwable.class)
 public interface SsgKeyStore extends SsgKeyFinder {
     /**
      * Generate a new RSA key pair and self-signed certificate within this keystore.
@@ -21,6 +25,7 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * @return the new self-signed certificate, already added to this key store.  Never null.
      * @throws GeneralSecurityException if there is a problem generating, signing, or saving the new certificate or key pair
      */
+    @Transactional(propagation=Propagation.REQUIRED)
     public X509Certificate generateKeyPair(String alias, LdapName dn, int keybits, int expiryDays) throws GeneralSecurityException;
 
     /**
@@ -34,6 +39,7 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * @throws InvalidKeyException if the public key does not match the public key of the existing key pair
      * @throws KeyStoreException  if there is a problem reading or writing the keystore
      */
+    @Transactional(propagation=Propagation.REQUIRED)
     void replaceCertificate(String alias, X509Certificate certificate) throws InvalidKeyException, KeyStoreException;
 
     /**
@@ -44,6 +50,7 @@ public interface SsgKeyStore extends SsgKeyFinder {
      *                          the alias of any existing entry.  Must also contain the private key.
      * @throws KeyStoreException  if there is a problem storing this entry
      */
+    @Transactional(propagation=Propagation.REQUIRED)
     void storePrivateKeyEntry(SsgKeyEntry entry) throws KeyStoreException;
 
     /**
@@ -52,6 +59,7 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * @param keyAlias   the alias of the entry to delete.  Required.
      * @throws KeyStoreException  if there is a problem deleting this entry
      */
+    @Transactional(propagation=Propagation.REQUIRED)
     void deletePrivateKeyEntry(String keyAlias) throws KeyStoreException;
 
     /**
@@ -65,5 +73,6 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * @throws SignatureException   if there was a problem signing the CSR
      * @throws java.security.KeyStoreException  if there is a problem reading the key store
      */
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     CertificateRequest makeCertificateSigningRequest(String alias, LdapName dn) throws InvalidKeyException, SignatureException, KeyStoreException;
 }

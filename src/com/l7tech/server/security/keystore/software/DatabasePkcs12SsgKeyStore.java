@@ -134,15 +134,6 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         }
     }
 
-    /**
-     * Load the keystore from the database, mutate it, and save it back, all atomically.
-     *
-     * @param mutator  a Runnable that will mutate the current {@link #cachedKeystore}, which will be guaranteed
-     *                 to be up-to-date and non-null when the runnable is invoked.
-     * @throws KeyStoreException if the runnable throws a RuntimeException or if any other problem occurs during
-     *                           the process
-     * @return the value returned by the mutator
-     */
     protected synchronized <OUT> OUT mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
         final Object[] out = new Object[] { null };
         try {

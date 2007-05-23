@@ -170,6 +170,11 @@ public class PrivateKeyManagerWindow extends JDialog {
                         } catch (DeleteException e) {
                             showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
                         }
+                        try {
+                            loadPrivateKeys();
+                        } catch (RemoteException e) {
+                            showErrorMessage("Refresh Failed", "Unable to load key list: " + ExceptionUtils.getMessage(e), e);
+                        }
                     }
                 }
         );

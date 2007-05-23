@@ -6,9 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.security.KeyStoreException;
 
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+
 /**
  * Interface implemented by central bean that manages keystores on the Gateway node.
  */
+@Transactional(propagation= Propagation.SUPPORTS, rollbackFor=Throwable.class)
 public interface SsgKeyStoreManager {
     /**
      * Finds all SsgKeyFinder instances available on this Gateway node.
@@ -19,6 +23,7 @@ public interface SsgKeyStoreManager {
      * @throws com.l7tech.objectmodel.FindException if there is a problem getting keystore data or metadata from the database
      * @throws java.security.KeyStoreException if there is a problem with the format of some keystore data
      */
+    @Transactional(readOnly=true)
     List<SsgKeyFinder> findAll() throws FindException, KeyStoreException;
 
     /**
@@ -29,5 +34,6 @@ public interface SsgKeyStoreManager {
      * @throws FindException if the requested ID could not be found or is not available on this system
      * @throws java.security.KeyStoreException if there is a problem with the format of some keystore data
      */
+    @Transactional(readOnly=true)
     SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException;
 }

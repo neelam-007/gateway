@@ -58,11 +58,11 @@ public class KeystoreFileManagerImpl
                         byte[] bytesBefore = keystoreFile.getDatabytes();
                         byte[] bytesAfter = mutator.call(bytesBefore);
                         keystoreFile.setDatabytes(bytesAfter);
-                        save(keystoreFile);
+                        update(keystoreFile);
                         return null;
                     } catch (FindException e) {
                         throw new HibernateException(e);
-                    } catch (SaveException e) {
+                    } catch (UpdateException e) {
                         throw new HibernateException(e);
                     }
                 }
