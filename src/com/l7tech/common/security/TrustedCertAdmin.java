@@ -177,6 +177,17 @@ public interface TrustedCertAdmin  {
     @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
     public List<SsgKeyEntry> findAllKeys(long keystoreId) throws IOException, CertificateException, FindException;
 
+
+    /**
+     * Destroys an SsgKeyEntry identified by its keystore ID and entry alias.
+     *
+     * @param keystoreId  the keystore in which to destroy an entry.  Required.
+     * @param keyAlias    the alias of hte entry which is to be destroyed.  Required.
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
+    void deleteKey(long keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException;
+
     /**
      * Generate a new RSA key pair and self-signed certificate in the specified keystore with the specified
      * settings.

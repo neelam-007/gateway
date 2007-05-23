@@ -144,6 +144,19 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
+    public synchronized void deletePrivateKeyEntry(final String keyAlias) throws KeyStoreException {
+        mutateKeystore(new Functions.Nullary<Object>() {
+            public Object call() {
+                try {
+                    keyStore().deleteEntry(keyAlias);
+                    return null;
+                } catch (KeyStoreException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+    }
+
     public synchronized X509Certificate generateKeyPair(final String alias, final LdapName dn, final int keybits, final int expiryDays) throws GeneralSecurityException {
         return mutateKeystore(new Functions.Nullary<X509Certificate>() {
             public X509Certificate call() {

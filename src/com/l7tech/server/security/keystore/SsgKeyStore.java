@@ -47,6 +47,14 @@ public interface SsgKeyStore extends SsgKeyFinder {
     void storePrivateKeyEntry(SsgKeyEntry entry) throws KeyStoreException;
 
     /**
+     * Delete an entry from this key store.
+     *
+     * @param keyAlias   the alias of the entry to delete.  Required.
+     * @throws KeyStoreException  if there is a problem deleting this entry
+     */
+    void deletePrivateKeyEntry(String keyAlias) throws KeyStoreException;
+
+    /**
      * Generate a new PKCS#10 certificate request for the key pair specified by its alias, using a certificate with a DN
      * in the form "CN=username".
      *

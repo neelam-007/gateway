@@ -83,7 +83,27 @@ public class SsgKeyEntry implements Entity, Serializable {
         return rsaPrivateKey;
     }
 
+    /**
+     * Convenience method that returns the Subject DN of the first cert in the cert chain.
+     * Equivalent to getCertificate().getSubjectDN().toString().
+     *
+     * @return the Subject DN of the first cert in the cert chain.
+     */
+    public String getSubjectDN() {
+        return getCertificateChain()[0].getSubjectDN().toString();
+    }
 
+    /**
+     * Convenience metho that returns the first cert in the cert chain.
+     * Equivalent to getCertificateChain[0].
+     *
+     * @return the certificate for this private key.  Never null.
+     */
+    public X509Certificate getCertificate() {
+        return getCertificateChain()[0];
+    }
+
+    /** @noinspection RedundantIfStatement*/
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

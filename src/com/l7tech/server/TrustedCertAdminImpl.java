@@ -8,6 +8,7 @@ import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.BouncyCastleCertUtils;
+import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
@@ -30,6 +31,9 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 public class TrustedCertAdminImpl implements TrustedCertAdmin {
     private final X509Certificate rootCertificate;
@@ -234,6 +238,21 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
             return list;
         } catch (KeyStoreException e) {
             throw new CertificateException(e);
+        }
+    }
+
+    public void deleteKey(long keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException {
+        try {
+            SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+            SsgKeyStore store = keyFinder.getKeyStore();
+            if (store == null)
+                throw new DeleteException("Unable to delete key: keystore id " + keystoreId + " is read-only");
+            store.deletePrivateKeyEntry(keyAlias);
+
+        } catch (KeyStoreException e) {
+            throw new CertificateException(e);
+        } catch (FindException e) {
+            throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
