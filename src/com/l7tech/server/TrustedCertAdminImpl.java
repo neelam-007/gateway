@@ -8,6 +8,7 @@ import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.BouncyCastleCertUtils;
+import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
@@ -270,6 +271,29 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
             return keystore.generateKeyPair(alias, new LdapName(dn), keybits, expiryDays);
         } catch (InvalidNameException e) {
             throw new IllegalArgumentException("Invalid DN: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    public CertificateRequest generateCSR(long keystoreId, String alias, LdapName dn) throws FindException {
+        SsgKeyFinder keyFinder;
+        try {
+            keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+        } catch (KeyStoreException e) {
+            logger.log(Level.WARNING, "error getting keystore", e);
+            throw new FindException("error getting keystore", e);
+        }
+        SsgKeyStore keystore;
+        if (keyFinder != null) {
+            keystore = keyFinder.getKeyStore();
+        } else {
+            logger.log(Level.WARNING, "error getting keystore");
+            throw new FindException("cannot find keystore");
+        }
+        try {
+            return keystore.makeCertificateSigningRequest(alias, dn);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "error getting keystore", e);
+            throw new FindException("error making CSR", e);
         }
     }
 
