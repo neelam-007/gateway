@@ -203,10 +203,10 @@ public class PrivateKeyManagerWindow extends JDialog {
     }
 
     private void doProperties() {
-        TrustedCert certHolder = asTrustedCert(getSelectedObject());
-        // TODO refactor cert properties window to show key info while reusing much code
-        CertPropertiesWindow cpw = new CertPropertiesWindow(this, certHolder, false, false);
-        DialogDisplayer.display(cpw);
+        PrivateKeyPropertiesDialog dlg = new PrivateKeyPropertiesDialog(this, getSelectedObject());
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg);
     }
 
     /** @return the currently selected row or null */
@@ -302,7 +302,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     }
 
     /** Represents a row in the Manage Private Keys table. */
-    private static class KeyTableRow {
+    public static class KeyTableRow {
         private final TrustedCertAdmin.KeystoreInfo keystoreInfo;
         private final SsgKeyEntry keyEntry;
         private String keyType = null;
