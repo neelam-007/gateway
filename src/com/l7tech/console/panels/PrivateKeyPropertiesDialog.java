@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.util.CertUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -10,6 +11,10 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -27,6 +32,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private JTextField typeField;
     private PrivateKeyManagerWindow.KeyTableRow subject;
 
+    private Logger logger = Logger.getLogger(PrivateKeyPropertiesDialog.class.getName());
     private boolean deleted = false;
 
     public PrivateKeyPropertiesDialog(JDialog owner, PrivateKeyManagerWindow.KeyTableRow subject) {
@@ -108,6 +114,11 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             this.cert = cert;
         }
         public X509Certificate cert;
+
+        public X509Certificate getCert() {
+            return cert;
+        }
+
         public String toString() {
             return cert.getSubjectDN().getName();
         }
@@ -123,7 +134,23 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void viewCert() {
-        // todo
+        ListEntry seled = (ListEntry)certList.getSelectedValue();
+        if (seled != null) {
+            ArrayList props;
+            try {
+                props = CertUtils.getCertProperties(seled.getCert());
+            } catch (CertificateEncodingException e) {
+                logger.log(Level.WARNING, "problem reading cert", e);
+                return;
+            }
+            StringBuffer sbuf = new StringBuffer();
+            for (Object prop : props) {
+                String[] pair = (String[]) prop;
+                sbuf.append(pair[0]).append(" : ").append(pair[1]).append("\n");
+            }
+            JOptionPane.showMessageDialog(viewCertificateButton, sbuf, "Certificate", JOptionPane.INFORMATION_MESSAGE);
+        }
+
     }
 
     private void getCSR() {
