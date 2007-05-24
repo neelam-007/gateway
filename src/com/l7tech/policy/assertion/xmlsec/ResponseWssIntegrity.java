@@ -39,7 +39,7 @@ public class ResponseWssIntegrity extends XmlSecurityAssertionBase implements Re
         return usesDefaultKeyStore;
     }
 
-    public void setUsesDefaultKeystore(boolean usesDefault) {
+    public void setUsesDefaultKeyStore(boolean usesDefault) {
         this.usesDefaultKeyStore = usesDefault;
     }
 

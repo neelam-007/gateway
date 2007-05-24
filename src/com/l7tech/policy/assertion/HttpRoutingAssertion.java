@@ -306,15 +306,15 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.ntlmHost = ntlmHost;
     }
 
-    private boolean usesDefaultKeyStore = true;
-    private long nonDefaultKeystoreId;
-    private String keyId;
+    protected boolean usesDefaultKeyStore = true;
+    protected long nonDefaultKeystoreId;
+    protected String keyId;
 
     public boolean isUsesDefaultKeyStore() {
         return usesDefaultKeyStore;
     }
 
-    public void setUsesDefaultKeystore(boolean usesDefault) {
+    public void setUsesDefaultKeyStore(boolean usesDefault) {
         this.usesDefaultKeyStore = usesDefault;
     }
 

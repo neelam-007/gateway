@@ -11,7 +11,7 @@ package com.l7tech.policy.assertion;
  */
 public interface PrivateKeyable {
     boolean isUsesDefaultKeyStore();
-    void setUsesDefaultKeystore(boolean usesDefault);
+    void setUsesDefaultKeyStore(boolean usesDefault);
     long getNonDefaultKeystoreId();
     void setNonDefaultKeystoreId(long nonDefaultId);
     String getKeyAlias();

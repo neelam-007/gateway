@@ -183,9 +183,9 @@ public class AssertionKeyAliasEditor extends JDialog {
 
     private void ok() {
         if (useDefaultKeypairRadioButton.isSelected()) {
-            assertion.setUsesDefaultKeystore(true);
+            assertion.setUsesDefaultKeyStore(true);
         } else {
-            assertion.setUsesDefaultKeystore(false);
+            assertion.setUsesDefaultKeyStore(false);
             ComboEntry comboentry = (ComboEntry)aliasCombo.getSelectedItem();
             assertion.setKeyAlias(comboentry.alias);
             assertion.setNonDefaultKeystoreId(comboentry.keystoreid);
