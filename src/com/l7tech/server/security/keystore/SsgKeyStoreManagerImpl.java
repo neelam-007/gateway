@@ -1,7 +1,6 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
 import com.l7tech.server.security.keystore.software.TomcatSsgKeyFinder;
 import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
@@ -25,6 +24,8 @@ import java.security.KeyStoreException;
  */
 public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     protected static final Logger logger = Logger.getLogger(SsgKeyStoreManagerImpl.class.getName());
+    /** Characters for converting shared key bytes into pass phrase.  Do not change this, ever! */
+    private static final String PASSPHRASE_MAP = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()-_=+[]{};:'\\|\"/?.,<>`~";
     private final char[] softwareKeystorePasssword;
 
     private final ClusterPropertyManager clusterPropertyManager;
@@ -42,10 +43,9 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
 
     private char[] toPassphrase(byte[] b) {
         char[] ret = new char[b.length];
-        String passchars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()-_=+[]{};:'\\|\"/?.,<>`~";
-        int nc = passchars.length();
+        int nc = PASSPHRASE_MAP.length();
         for (int i = 0; i < b.length; ++i)
-            ret[i] = passchars.charAt((128 + b[i]) % nc);
+            ret[i] = PASSPHRASE_MAP.charAt((128 + b[i]) % nc);
         return ret;
     }
 
