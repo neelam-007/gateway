@@ -50,7 +50,6 @@ public class PrivateKeyManagerWindow extends JDialog {
     private JButton closeButton;
     private JButton createButton;
     private JButton importButton;
-    private JButton removeButton;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private PermissionFlags flags;
@@ -114,13 +113,6 @@ public class PrivateKeyManagerWindow extends JDialog {
             }
         });
 
-        removeButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                doRemove();
-            }
-        });
-
-
         pack();
         enableOrDisableButtons();
 
@@ -129,55 +121,26 @@ public class PrivateKeyManagerWindow extends JDialog {
         if (mutableKeystore == null) {
             createButton.setEnabled(false);
             importButton.setEnabled(false);
-            removeButton.setEnabled(false);
         }
     }
 
-    private void doRemove() {
-        final KeyTableRow certHolder = getSelectedObject();
-        if (certHolder == null)
-            return;
-
+    private void doRemove(KeyTableRow certHolder) {
         final TrustedCertAdmin.KeystoreInfo keystore = certHolder.getKeystore();
-        if (keystore.readonly) {
-            JOptionPane.showMessageDialog(this, "This keystore is read-only.", "Unable to Remove Key", JOptionPane.INFORMATION_MESSAGE);
-            return;
+        String alias = certHolder.getAlias();
+        try {
+            getTrustedCertAdmin().deleteKey(keystore.id, alias);
+        } catch (IOException e) {
+            showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
+        } catch (CertificateException e) {
+            showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
+        } catch (DeleteException e) {
+            showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
         }
-
-        String cancel = "Cancel";
-        DialogDisplayer.showOptionDialog(
-                this,
-                "Really delete private key " + certHolder.getAlias() + " (" + certHolder.getKeyEntry().getSubjectDN() + ")?\n\n" +
-                "This will irrevocably destory this key, and cannot be undone.",
-                "Confirm deletion",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.WARNING_MESSAGE,
-                null,
-                new Object[] { "Destroy Private Key", cancel},
-                cancel,
-                new DialogDisplayer.OptionListener() {
-                    public void reportResult(int option) {
-                        if (option != 0)
-                            return;
-
-                        String alias = certHolder.getAlias();
-                        try {
-                            getTrustedCertAdmin().deleteKey(keystore.id, alias);
-                        } catch (IOException e) {
-                            showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
-                        } catch (CertificateException e) {
-                            showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
-                        } catch (DeleteException e) {
-                            showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
-                        }
-                        try {
-                            loadPrivateKeys();
-                        } catch (RemoteException e) {
-                            showErrorMessage("Refresh Failed", "Unable to load key list: " + ExceptionUtils.getMessage(e), e);
-                        }
-                    }
-                }
-        );
+        try {
+            loadPrivateKeys();
+        } catch (RemoteException e) {
+            showErrorMessage("Refresh Failed", "Unable to load key list: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     private void showErrorMessage(String title, String msg, Throwable e) {
@@ -203,10 +166,17 @@ public class PrivateKeyManagerWindow extends JDialog {
     }
 
     private void doProperties() {
-        PrivateKeyPropertiesDialog dlg = new PrivateKeyPropertiesDialog(this, getSelectedObject());
+        final KeyTableRow data = getSelectedObject();
+        final PrivateKeyPropertiesDialog dlg = new PrivateKeyPropertiesDialog(this, data);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        DialogDisplayer.display(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.isDeleted()) {
+                    doRemove(data);
+                }
+            }
+        });
     }
 
     /** @return the currently selected row or null */
@@ -288,7 +258,6 @@ public class PrivateKeyManagerWindow extends JDialog {
     private void enableOrDisableButtons() {
         KeyTableRow row = getSelectedObject();
         propertiesButton.setEnabled(row != null);
-        removeButton.setEnabled(row != null && !row.getKeystore().readonly);
     }
 
     /**

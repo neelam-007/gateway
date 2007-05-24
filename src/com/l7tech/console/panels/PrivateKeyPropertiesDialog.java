@@ -1,12 +1,14 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.TrustedCertAdmin;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
-import java.awt.event.ActionListener;
+import javax.swing.event.ListSelectionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.security.cert.X509Certificate;
 
 /**
@@ -24,6 +26,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private JTextField aliasField;
     private JTextField typeField;
     private PrivateKeyManagerWindow.KeyTableRow subject;
+
+    private boolean deleted = false;
 
     public PrivateKeyPropertiesDialog(JDialog owner, PrivateKeyManagerWindow.KeyTableRow subject) {
         super(owner, true);
@@ -91,6 +95,12 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             }
         });
         viewCertificateButton.setEnabled(false);
+
+        TrustedCertAdmin.KeystoreInfo keystore = subject.getKeystore();
+        if (keystore.readonly) {
+            destroyPrivateKeyButton.setEnabled(false);
+            replaceCertificateChainButton.setEnabled(false);
+        }
     }
 
     class ListEntry {
@@ -129,8 +139,36 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void delete() {
-        // todo, delete
-        dispose();
+
+        final TrustedCertAdmin.KeystoreInfo keystore = subject.getKeystore();
+        if (keystore.readonly) {
+            JOptionPane.showMessageDialog(this, "This keystore is read-only.", "Unable to Remove Key", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        String cancel = "Cancel";
+        DialogDisplayer.showOptionDialog(
+                this,
+                "Really delete private key " + subject.getAlias() + " (" + subject.getKeyEntry().getSubjectDN() + ")?\n\n" +
+                "This will irrevocably destory this key, and cannot be undone.",
+                "Confirm deletion",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                new Object[] { "Destroy Private Key", cancel},
+                cancel,
+                new DialogDisplayer.OptionListener() {
+                    public void reportResult(int option) {
+                        if (option != 0)
+                            return;
+                        deleted = true;
+                        dispose();
+                    }
+                }
+        );
     }
 
+
+    public boolean isDeleted() {
+        return deleted;
+    }
 }
