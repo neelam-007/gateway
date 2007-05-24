@@ -1,25 +1,30 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.server.config.KeystoreActions;
+import com.l7tech.server.config.KeystoreActionsListener;
 import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
-import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
  * User: megery
  * The main panel for the Config Wizard (GUI) keystore step. At runtime, subsititutes a
  * KeystorePanel for whatever keystore type we are configuring.
  */
-public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
+public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements KeystoreActionsListener {
+    private static final Logger logger = Logger.getLogger(ConfigWizardKeystorePanel.class.getName());
+
     private JPanel mainPanel;
     private JComboBox keystoreType;
     private JPanel ksDataPanel;
@@ -45,10 +50,13 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     private JPanel ksConfigPanel;
     private JRadioButton doKsConfig;
     private JRadioButton dontDoKsConfig;
+    private JLabel errorMessage;
 
     public ConfigWizardKeystorePanel(WizardStepPanel next) {
         super(next);
         stepLabel = "Set Up the SSG Keystore";
+        errorMessage.setForeground(Color.RED);
+        errorMessage.setVisible(false);
     }
 
     protected void updateModel() {
@@ -219,12 +227,23 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     public boolean isValidated() {
         PartitionInformation pinfo = getParentWizard().getActivePartition();
 
-        boolean panelIsValid = true;
         boolean shouldDisable = true;
         if (!dontDoKsConfig.isSelected()) {
             pinfo.setShouldDisable(false);
             KeystorePanel ksPanel = (KeystorePanel) whichKeystorePanel;
-            return ksPanel.validateInput();
+            if (ksPanel.validateInput()) {
+                KeystoreActions ka = new KeystoreActions(osFunctions);
+                try {
+                    byte[] existingSharedKey = ka.getSharedKey(this);
+                    if (existingSharedKey != null) {
+                        ((KeystoreConfigBean)configBean).setSharedKeyBytes(existingSharedKey);
+                    }
+                    shouldDisable = false;
+                } catch (KeystoreActions.KeystoreActionsException e) {
+                    shouldDisable = true;
+                    showErrorMessage("Error while updating the cluster shared key.\n There is an existing keystore on this gateway but there was an error while trying to extract keys from it. ");
+                }
+            }
         } else {
             if (pinfo != null) {
                 if (PartitionManager.getInstance().getActivePartition().isNewPartition()) {
@@ -240,15 +259,25 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
             }
             pinfo.setShouldDisable(shouldDisable);
         }
-
-        return panelIsValid && collectExistingKeystore();
+        return !shouldDisable;
     }
 
-    private boolean collectExistingKeystore() {
-        //check if there are existing keystores, and then get the info from the user needed to access them so we can
-        //decrypt the cluster_shared_key, save it, and reencrypt it when the keys change
-        return true;
+    private void showErrorMessage(String s) {
+        errorMessage.setText(s);
+        errorMessage.setVisible(true);
+    }
+
+    private void hideErrorMessage() {
+        errorMessage.setVisible(false);
     }
 
 
+    public char[] promptForKeystorePassword(String message) {
+        GenericPasswordPanel pwdPanel = new GenericPasswordPanel(message);
+        JOptionPane.showConfirmDialog(null, pwdPanel,
+                "Enter Keystore Password",
+                JOptionPane.OK_CANCEL_OPTION);
+
+        return pwdPanel.getPassword();
+    }
 }

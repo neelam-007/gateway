@@ -7,6 +7,7 @@ import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBActionsListener;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import org.apache.commons.lang.StringUtils;
 
@@ -143,6 +144,8 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         doDBUsernamePrompts(defaultDbUsername);
         //don't pass in a default password so a user can enter a blank one if so desired
         doDBPasswordPrompts("");
+        DBInformation dbInfo = new DBInformation(databaseBean.getDbHostname(), databaseBean.getDbName(), databaseBean.getDbUsername(), databaseBean.getDbPassword(), null, null);
+        getParentWizard().setDbInfo(dbInfo);
     }
 
     private String doGetRootPasswordPrompt(String defaultPassword) throws IOException, WizardNavigationException {

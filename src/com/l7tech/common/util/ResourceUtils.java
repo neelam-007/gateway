@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Connection;
 
 /**
  * Utility class for working with resources.
@@ -63,6 +64,27 @@ public final class ResourceUtils {
             }
             catch(Exception e) {
                 logger.log(Level.WARNING, "Unexpected error when closing statement.", e);
+            }
+        }
+    }
+
+    /**
+     * Close a SQL connection withouth throwing any exceptions.
+     *
+     * <p>Note that the exception may still be logged.</p>
+     *
+     * @param connection the Connection to close (may be null)
+     */
+     public static void closeQuietly(final Connection connection) {
+        if(connection!=null) {
+            try {
+                connection.close();
+            }
+            catch(SQLException se) {
+                logger.log(Level.INFO, "SQL error when closing connection.", se);
+            }
+            catch(Exception e) {
+                logger.log(Level.WARNING, "Unexpected error when closing connection.", e);
             }
         }
     }

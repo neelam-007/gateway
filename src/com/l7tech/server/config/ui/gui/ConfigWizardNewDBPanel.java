@@ -243,12 +243,12 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         theLabel.setForeground(Color.RED);
     }
 
-    private char[] showGetPasswordDialog(String s) {
+    private char[] showGetPasswordDialog(String msg) {
 
         JPasswordField pwdFld = new JPasswordField();
         JPanel msgPanel = new JPanel();
         msgPanel.setLayout(new BoxLayout(msgPanel, BoxLayout.Y_AXIS));
-        msgPanel.add(new JLabel(s));
+        msgPanel.add(new JLabel(msg));
         msgPanel.add(pwdFld);
         JOptionPane.showConfirmDialog(null, msgPanel,
                 "Enter Password",

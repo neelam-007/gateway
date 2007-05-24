@@ -22,6 +22,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -34,7 +37,9 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.sql.*;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -105,16 +110,18 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         if (ksBean.isDoKeystoreConfig()) {
             KeystoreType ksType = ksBean.getKeyStoreType();
             try {
-                 if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME) {
-                    doDefaultKeyConfig(ksBean);
-                    success = true;
-                } else if (ksType == KeystoreType.LUNA_KEYSTORE_NAME) {
-                    doLunaKeyConfig(ksBean);
-                    success = true;
-                } else if (ksType == KeystoreType.SCA6000_KEYSTORE_NAME) {
-                     doHSMConfig(ksBean);
-                     success = true;
-                 }
+                switch(ksType) {
+                    case DEFAULT_KEYSTORE_NAME:
+                        doDefaultKeyConfig(ksBean);
+                        break;
+                    case LUNA_KEYSTORE_NAME:
+                        doLunaKeyConfig(ksBean);
+                        break;
+                    case SCA6000_KEYSTORE_NAME:
+                        doHSMConfig(ksBean);
+                        break;
+                }
+                updateSharedKey(ksBean);
             } catch (Exception e) {
                 success = false;
             }
@@ -126,6 +133,64 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             }
         }
         return success;
+    }
+
+    private void updateSharedKey(KeystoreConfigBean ksBean) throws Exception {
+        byte[] sharedKeyData = ksBean.getSharedKeyData();
+        logger.info("Updating the shared key if necessary");
+        if (sharedKeyData == null || sharedKeyData.length == 0) {
+            logger.info("No shared key found. No need to update it.");
+        } else {
+            //get the new keystore
+            KeystoreActions ka = new KeystoreActions(getOsFunctions());
+            KeyStore ks = ka.loadKeyStore(
+                    ksBean.getKsPassword(),
+                    ksBean.getKeyStoreType().shortTypeName(),
+                    new File(getOsFunctions().getKeystoreDir()+KeyStoreConstants.SSL_KEYSTORE_FILE),
+                    false,
+                    null);
+
+            Certificate[] chain = ks.getCertificateChain(KeyStoreConstants.SSL_ALIAS);
+            Key newKey = chain[0].getPublicKey();
+
+            DBInformation dbInfo = sharedWizardInfo.getDbinfo();
+            try {
+                DBActions dba = new DBActions();
+                Connection conn = null;
+                Statement stmt = null;
+                try {
+                    conn = dba.getConnection(dbInfo);
+                    stmt = conn.createStatement();
+                    String pubKeyId = EncryptionUtil.computeCustomRSAPubKeyID((RSAPublicKey) newKey);
+                    String encryptedSharedData = EncryptionUtil.rsaEncAndB64(sharedKeyData, newKey);
+                    stmt.executeQuery(MessageFormat.format("insert into shared_keys (encodingid, b64edval) values {0},{1}",pubKeyId, encryptedSharedData));
+                } catch (SQLException e) {
+                    logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
+                    throw e;
+                } catch (BadPaddingException e) {
+                    logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
+                    throw e;
+                } catch (NoSuchAlgorithmException e) {
+                    logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
+                    throw e;
+                } catch (IllegalBlockSizeException e) {
+                    logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
+                    throw e;
+                } catch (InvalidKeyException e) {
+                    logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
+                    throw e;
+                } catch (NoSuchPaddingException e) {
+                    logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
+                    throw e;
+                } finally {
+                    ResourceUtils.closeQuietly(stmt);
+                    ResourceUtils.closeQuietly(conn);
+                }
+            } catch (ClassNotFoundException e) {
+                logger.warning(MessageFormat.format("Could not initialize the connection to the database for updating the shared key. {0}",e.getMessage()));
+                throw e;
+            }
+        }
     }
 
     private void doDefaultKeyConfig(KeystoreConfigBean ksBean) throws Exception {
@@ -142,10 +207,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
         File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
-        File caKeyStoreFile = new File( ksDir + OSSpecificFunctions.KeystoreInfo.CA_KEYSTORE_FILE);
-        File sslKeyStoreFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_KEYSTORE_FILE);
-        File caCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.CA_CERT_FILE);
-        File sslCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_CERT_FILE);
+        File caKeyStoreFile = new File( ksDir + KeyStoreConstants.CA_KEYSTORE_FILE);
+        File sslKeyStoreFile = new File(ksDir + KeyStoreConstants.SSL_KEYSTORE_FILE);
+        File caCertFile = new File(ksDir + KeyStoreConstants.CA_CERT_FILE);
+        File sslCertFile = new File(ksDir + KeyStoreConstants.SSL_CERT_FILE);
         File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
         File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
 
@@ -192,10 +257,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
         File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
         File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
-        File caKeyStoreFile = new File( ksDir + OSSpecificFunctions.KeystoreInfo.CA_KEYSTORE_FILE);
-        File sslKeyStoreFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_KEYSTORE_FILE);
-        File caCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.CA_CERT_FILE);
-        File sslCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_CERT_FILE);
+        File caKeyStoreFile = new File( ksDir + KeyStoreConstants.CA_KEYSTORE_FILE);
+        File sslKeyStoreFile = new File(ksDir + KeyStoreConstants.SSL_KEYSTORE_FILE);
+        File caCertFile = new File(ksDir + KeyStoreConstants.CA_CERT_FILE);
+        File sslCertFile = new File(ksDir + KeyStoreConstants.SSL_CERT_FILE);
 
         File[] files = new File[]
         {
@@ -242,10 +307,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
         File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
-        File caKeyStoreFile = new File( ksDir + OSSpecificFunctions.KeystoreInfo.CA_KEYSTORE_FILE);
-        File sslKeyStoreFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_KEYSTORE_FILE);
-        File caCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.CA_CERT_FILE);
-        File sslCertFile = new File(ksDir + OSSpecificFunctions.KeystoreInfo.SSL_CERT_FILE);
+        File caKeyStoreFile = new File( ksDir + KeyStoreConstants.CA_KEYSTORE_FILE);
+        File sslKeyStoreFile = new File(ksDir + KeyStoreConstants.SSL_KEYSTORE_FILE);
+        File caCertFile = new File(ksDir + KeyStoreConstants.CA_CERT_FILE);
+        File sslCertFile = new File(ksDir + KeyStoreConstants.SSL_CERT_FILE);
         File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
         File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
 
@@ -269,17 +334,21 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             try {
                 //HSM Specific setup
                 ScaManager scaManager = getScaManager();
-                checkGDDCDongle();
-                initializeSCA(ksPassword);
-                prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
-                updateJavaSecurity(javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
-                makeHSMKeys(new File(ksDir), ksPassword);
-                insertKeystoreIntoDatabase(scaManager);
+                if (checkGDDCDongle()) {
+                    initializeSCA(ksPassword);
+                    prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
+                    updateJavaSecurity(javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
+                    makeHSMKeys(new File(ksDir), ksPassword);
+                    insertKeystoreIntoDatabase(scaManager);
 
-                //General Keystore Setup
-                updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-                updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
-                updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+                    //General Keystore Setup
+                    updateKeystoreProperties(keystorePropertiesFile, ksPassword);
+                    updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
+                    updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+                    backupHsmKeydata();
+                } else {
+                    throw new Exception("The GDCC is not present. Proceeding with configuration could result in data loss. Skipping HSM configuration");
+                }
             } catch (ScaException e) {
                 logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
                 throw e;
@@ -290,7 +359,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             }
         } else {
             logger.info("Restoring HSM Backup");
-            checkGDDCDongle();
+            if (checkGDDCDongle()) {
+                //TODO do the restore steps
+            }
         }
     }
 
@@ -298,8 +369,13 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return new ScaManager();
     }
 
-    private void checkGDDCDongle() {
+    private boolean checkGDDCDongle() {
         //TODO get some GDDC and find some way to check for a reacharound
+        return true;
+    }
+
+    private void backupHsmKeydata() {
+        //TODO backup the keydata via the GDCC to the fob
     }
 
     private void initializeSCA(char[] keystorePassword) throws IOException {
@@ -354,7 +430,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.severe("Could not connect to the database to update the keystore: " + e.getMessage());
             throw e;
         } finally {
-            if (connection != null) try {connection.close();} catch (SQLException e) {}
+            ResourceUtils.closeQuietly(connection);
         }
     }
 
@@ -370,7 +446,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             preparedStmt.executeBatch();
             logger.info("inserted the HSM keystore information into the database.");
         } finally {
-            if (preparedStmt != null) try {preparedStmt.close();} catch (SQLException e) {}
+            ResourceUtils.closeQuietly(preparedStmt);
         }
     }
 
@@ -386,7 +462,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 originalVersion = rs.getInt("version");
             }
         } finally {
-            if (stmt != null) try {stmt.close();} catch (SQLException e) {}
+            ResourceUtils.closeQuietly(stmt);
             if (originalVersion == -1) {
                 logger.warning("Could not find an existing version for the HSM keystore in the database. Defaulting to 0");
                 originalVersion = 0;
@@ -418,33 +494,33 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         logger.info("Generating self-signed CA cert");
         caCert = BouncyCastleRsaSignerEngine.makeSelfSignedRootCertificate(
-                OSSpecificFunctions.KeystoreInfo.CA_DN_PREFIX + sharedWizardInfo.getHostname(),
-                OSSpecificFunctions.KeystoreInfo.CA_VALIDITY_DAYS, cakp);
+                KeyStoreConstants.CA_DN_PREFIX + sharedWizardInfo.getHostname(),
+                KeyStoreConstants.CA_VALIDITY_DAYS, cakp);
 
         logger.info("Storing CA cert in HSM");
-        theHsmKeystore.setKeyEntry(OSSpecificFunctions.KeystoreInfo.CA_ALIAS, caPrivateKey, keystoreAccessPassword, new X509Certificate[] { caCert } );
+        theHsmKeystore.setKeyEntry(KeyStoreConstants.CA_ALIAS, caPrivateKey, keystoreAccessPassword, new X509Certificate[] { caCert } );
 
         logger.info("Generating RSA keypair for SSL cert" );
         KeyPair sslkp = JceProvider.generateRsaKeyPair();
 
         logger.info("Generating SSL cert");
-        sslCert = BouncyCastleRsaSignerEngine.makeSignedCertificate(OSSpecificFunctions.KeystoreInfo.SSL_DN_PREFIX + sharedWizardInfo.getHostname(),
-                                                                       OSSpecificFunctions.KeystoreInfo.SSL_VALIDITY_DAYS,
+        sslCert = BouncyCastleRsaSignerEngine.makeSignedCertificate(KeyStoreConstants.SSL_DN_PREFIX + sharedWizardInfo.getHostname(),
+                                                                       KeyStoreConstants.SSL_VALIDITY_DAYS,
                                                                        sslkp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
 
         logger.info("Storing SSL cert in HSM");
-        theHsmKeystore.setKeyEntry(OSSpecificFunctions.KeystoreInfo.SSL_ALIAS, sslkp.getPrivate(), keystoreAccessPassword, new X509Certificate[] { sslCert, caCert } );
+        theHsmKeystore.setKeyEntry(KeyStoreConstants.SSL_ALIAS, sslkp.getPrivate(), keystoreAccessPassword, new X509Certificate[] { sslCert, caCert } );
 
-        File caCertFile = new File(keystoreDir,OSSpecificFunctions.KeystoreInfo.CA_CERT_FILE);
-        File sslCertFile = new File(keystoreDir,OSSpecificFunctions.KeystoreInfo.SSL_CERT_FILE);
+        File caCertFile = new File(keystoreDir,KeyStoreConstants.CA_CERT_FILE);
+        File sslCertFile = new File(keystoreDir,KeyStoreConstants.SSL_CERT_FILE);
 
         createDummyKeystorse(keystoreDir);
         exportCerts(caCert, caCertFile, sslCert, sslCertFile);
     }
 
     private void createDummyKeystorse(File keystoreDir) throws IOException {
-        File dummmyCaKeystore = new File(keystoreDir, OSSpecificFunctions.KeystoreInfo.CA_KEYSTORE_FILE);
-        File summySslKeystore = new File(keystoreDir, OSSpecificFunctions.KeystoreInfo.SSL_KEYSTORE_FILE);
+        File dummmyCaKeystore = new File(keystoreDir, KeyStoreConstants.CA_KEYSTORE_FILE);
+        File summySslKeystore = new File(keystoreDir, KeyStoreConstants.SSL_KEYSTORE_FILE);
         
         dummmyCaKeystore.createNewFile();
         summySslKeystore.createNewFile();

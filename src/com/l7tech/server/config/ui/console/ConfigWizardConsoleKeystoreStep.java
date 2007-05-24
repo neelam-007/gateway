@@ -1,9 +1,6 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.KeyStoreConstants;
-import com.l7tech.server.config.KeystoreType;
-import com.l7tech.server.config.WizardInputValidator;
-import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.*;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
@@ -13,14 +10,17 @@ import com.l7tech.server.partition.PartitionManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * User: megery
  * Date: Feb 20, 2006
  * Time: 9:59:35 AM
  */
-public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
+public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements KeystoreActionsListener {
 
+    private static final Logger logger = Logger.getLogger(ConfigWizardConsoleKeystoreStep.class.getName());
+    
     private static final String STEP_INFO = "This step will help you configure your SSG keystore";
     private static final String KEYSTORE_TYPE_HEADER = "-- Select Keystore Type --\n";
     private static final String NO_KEYSTORE_PROMPT = "1) I already have a keystore configured and don't want to do anything here\n";
@@ -124,6 +124,8 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
         doKeystorePasswordPrompts("Set the HSM Password",
                                   "Enter the HSM password: ",
                                   keystoreBean.isInitializeHSM()?"Confirm the HSM password: ":null);
+
+        getData(new String[]{getEolChar(), "Please ensure that the GDDC is attached to the gateway before proceeding", getEolChar()}, "");
     }
 
     private void askLunaKeystoreQuestions() throws IOException, WizardNavigationException {
@@ -244,7 +246,33 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
     }
 
     public boolean validateStep() {
-        return true;
+        boolean ok = false;
+        KeystoreActions ka = new KeystoreActions(osFunctions);
+        try {
+            byte[] existingSharedKey = ka.getSharedKey(this);
+            if (existingSharedKey != null) {
+                ((KeystoreConfigBean)configBean).setSharedKeyBytes(existingSharedKey);
+            }
+            ok = true;
+        } catch (KeystoreActions.KeystoreActionsException e) {
+            ok = false;
+            printText("*** Error while updating the cluster shared key.\n There is an existing keystore on this gateway but there was an error while trying to extract keys from it. ***");
+        }
+        return ok;
     }
 
+    public char[] promptForKeystorePassword(String message) {
+        String[] prompts = new String[] {
+            message,
+        };
+        String passwd = null;
+        try {
+            passwd = getData(prompts, "");
+        } catch (IOException e) {
+            logger.severe(e.getMessage());
+        } catch (WizardNavigationException e) {
+            return null;
+        }
+        return passwd.toCharArray();
+    }
 }

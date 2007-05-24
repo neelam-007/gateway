@@ -74,7 +74,13 @@ public class Sca6000KeystorePanel extends KeystorePanel{
     }
 
     public boolean validateInput() {
-        return pwPanel.validateInput(initializeKeystore.isSelected());
+        if (pwPanel.validateInput(initializeKeystore.isSelected())) {
+            //prompt for the GDDC
+            JOptionPane.showMessageDialog(this.getTopLevelAncestor(), "Please ensure that the GDDC is attached to the gateway before proceeding");
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean isInitializeHSM() {

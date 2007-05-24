@@ -153,11 +153,8 @@ public class DBActions {
             logger.warning("Could not create database. An exception occurred");
             logger.warning(e.getMessage());
         } finally {
-            if (conn != null)
-                try { conn.close(); } catch (SQLException e) {}
-
-            if (stmt != null)
-                try { stmt.close(); } catch (SQLException e) {}
+            ResourceUtils.closeQuietly(conn);           
+            ResourceUtils.closeQuietly(stmt);
         }
 
         return result;
@@ -205,11 +202,8 @@ public class DBActions {
             result.setStatus(determineErrorStatus(e.getSQLState()));
             result.setErrorMessage(e.getMessage());
         } finally {
-            if (stmt != null)
-                try { stmt.close(); } catch (SQLException e) {}
-
-            if (conn != null)
-                try { conn.close(); } catch (SQLException e) {}
+            ResourceUtils.closeQuietly(stmt);
+            ResourceUtils.closeQuietly(conn);
         }
 
         return result;
@@ -480,11 +474,8 @@ public class DBActions {
             } catch (SQLException e) {
                 logger.severe("Failure while dropping the database: " + e.getMessage());
             } finally {
-                if (stmt != null)
-                    try { stmt.close(); } catch (SQLException e) {}
-
-                if (conn != null)
-                    try { conn.close(); } catch (SQLException e) {}
+                ResourceUtils.closeQuietly(stmt);
+                ResourceUtils.closeQuietly(conn);
             }
         }
     }
@@ -505,8 +496,7 @@ public class DBActions {
             logger.warning("Could not login to the database using " + dbInfo.getUsername() + ":" + dbInfo.getPassword() + "@" + dbInfo.getHostname() + "/" + dbInfo.getDbName());
             logger.warning(e.getMessage());
         } finally {
-            if (conn != null)
-                try { conn.close(); } catch (SQLException e) {}
+            ResourceUtils.closeQuietly(conn);
         }
         return result;
     }
@@ -707,8 +697,7 @@ public class DBActions {
             Pattern splitPattern = Pattern.compile(";");
             stmts = splitPattern.split(sb.toString());
         } finally{
-            if (reader != null)
-                if (reader != null) reader.close();
+            ResourceUtils.closeQuietly(reader);
         }
         return stmts;
     }
@@ -739,9 +728,9 @@ public class DBActions {
                 }
             }
         } finally {
-            if (conn != null) try { conn.close(); } catch (SQLException ex){}
-            if (showTablesStmt != null) try { showTablesStmt.close(); } catch (SQLException ex){}
-            if (getCreateTablesStmt != null) try { getCreateTablesStmt.close(); } catch (SQLException ex){}
+            ResourceUtils.closeQuietly(conn);
+            ResourceUtils.closeQuietly(showTablesStmt);
+            ResourceUtils.closeQuietly(getCreateTablesStmt);
         }
 
         return list.toArray(new String[0]);
@@ -880,8 +869,8 @@ public class DBActions {
             conn.commit();
             conn.setAutoCommit(true);
         } finally {
-            if (conn != null) try {conn.close(); } catch (SQLException ex) {}
-            if (stmt != null) try {stmt.close(); } catch (SQLException ex) {}
+            ResourceUtils.closeQuietly(conn);
+            ResourceUtils.closeQuietly(stmt);
         }
 
     }

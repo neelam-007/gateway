@@ -28,6 +28,7 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private SharedWizardInfo sharedWizardInfo;
 
     private byte[] clusterSharedKey;
+    private byte[] sharedKeyData;
 
     public KeystoreType getKeyStoreType() {
         return keyStoreType;
@@ -144,5 +145,13 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
 
     public void setClusterSharedKey(byte[] clusterSharedKey) {
         this.clusterSharedKey = clusterSharedKey;
+    }
+
+    public void setSharedKeyBytes(byte[] sharedKeyData) {
+        this.sharedKeyData = sharedKeyData;
+    }
+
+    public byte[] getSharedKeyData() {
+        return sharedKeyData;
     }
 }

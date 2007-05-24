@@ -3,6 +3,7 @@ package com.l7tech.server.config.ui.console;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.server.config.*;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.partition.PartitionInformation;
@@ -178,7 +179,6 @@ public class ConfigurationWizard {
         addSteps(stepsList);
     }
 
-
     public ConsoleWizardUtils getWizardUtils() {
         return wizardUtils;
     }
@@ -198,5 +198,9 @@ public class ConfigurationWizard {
 
     public void setPartitionName(PartitionInformation partition) {
         PartitionManager.getInstance().setActivePartition(partition);
+    }
+
+    public void setDbInfo(DBInformation dbInfo) {
+        sharedWizardInfo.setDbinfo(dbInfo);
     }
 }
