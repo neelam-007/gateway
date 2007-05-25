@@ -231,10 +231,35 @@ public class WssProcessorTest extends TestCase {
         }
 
         try {
-            doTest(result);            
+            doTest(result);
         } catch (InvalidDocumentFormatException e) {
             // Expected failure
+            // TODO fix this bug
             log.log(Level.WARNING, "Expected failure due to as-yet-unfixed Bug #3736: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    public void testBug3747DsigXpath() throws Exception {
+        TestDocument result;
+        try {
+            Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3747_DSIG_XPATH);
+
+            result = new TestDocument("Bug3747DsigXpath", d,
+                                                null,
+                                                null,
+                                                null,
+                                                null,
+                                                null);
+        } catch (Exception e) {
+            throw e;
+        }
+
+        try {
+            doTest(result);
+        } catch (NoSuchMethodError e) {
+            // Expected failure
+            // TODO fix this bug
+            log.log(Level.WARNING, "Expected failure due to as-yet-unfixed Bug #3747: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
