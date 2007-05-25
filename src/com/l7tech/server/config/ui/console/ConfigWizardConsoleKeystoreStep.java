@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements KeystoreActionsListener {
 
     private static final Logger logger = Logger.getLogger(ConfigWizardConsoleKeystoreStep.class.getName());
-    
+
     private static final String STEP_INFO = "This step will help you configure your SSG keystore";
     private static final String KEYSTORE_TYPE_HEADER = "-- Select Keystore Type --\n";
     private static final String NO_KEYSTORE_PROMPT = "1) I already have a keystore configured and don't want to do anything here\n";
@@ -65,7 +65,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
     private void doKeystoreTypePrompts() throws IOException, WizardNavigationException {
         ksTypeMap.clear();
-        
+
         OSSpecificFunctions.KeystoreInfo[] keystores = osFunctions.getAvailableKeystores();
         int x = 1;
         for (OSSpecificFunctions.KeystoreInfo keystore : keystores) {
@@ -74,7 +74,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         }
         Set<Map.Entry<String,KeystoreType>> entries = ksTypeMap.entrySet();
         List<String> prompts = new ArrayList<String>();
-                      
+
         prompts.add(KEYSTORE_TYPE_HEADER);
 
         for (Map.Entry<String, KeystoreType> entry : entries) {
@@ -247,17 +247,22 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
     public boolean validateStep() {
         boolean ok = false;
-        KeystoreActions ka = new KeystoreActions(osFunctions);
-        try {
-            byte[] existingSharedKey = ka.getSharedKey(this);
-            if (existingSharedKey != null) {
-                ((KeystoreConfigBean)configBean).setSharedKeyBytes(existingSharedKey);
+        KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
+        if (ksBean.isDoKeystoreConfig()) {
+            KeystoreActions ka = new KeystoreActions(osFunctions);
+            try {
+                byte[] existingSharedKey = ka.getSharedKey(this);
+                if (existingSharedKey != null) {
+                    ((KeystoreConfigBean)configBean).setSharedKeyBytes(existingSharedKey);
+                }
+                ok = true;
+            } catch (KeystoreActions.KeystoreActionsException e) {
+                ok = false;
+                printText("*** Error while updating the cluster shared key.\n There is an existing keystore on this gateway but there was an error while trying to extract keys from it. ***");
             }
-            ok = true;
-        } catch (KeystoreActions.KeystoreActionsException e) {
-            ok = false;
-            printText("*** Error while updating the cluster shared key.\n There is an existing keystore on this gateway but there was an error while trying to extract keys from it. ***");
-        }
+        } else
+            ok = true;       
+
         return ok;
     }
 

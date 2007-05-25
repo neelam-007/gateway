@@ -131,6 +131,9 @@ public class KeystoreActions {
         byte[] sharedKey = null;
         Key privateKey = existingKeystore.getKey(KeyStoreConstants.SSL_ALIAS, ksPassword);
         java.security.cert.Certificate[] chain = existingKeystore.getCertificateChain(KeyStoreConstants.SSL_ALIAS);
+        if (chain == null || chain.length ==0) {
+            throw new KeystoreActionsException(MessageFormat.format("Attempt to fetch the certificate from the keystore failed. No {0} alias could be found", KeyStoreConstants.SSL_ALIAS));
+        }
         PublicKey publicKey = chain[0].getPublicKey();
         String pubKeyId = EncryptionUtil.computeCustomRSAPubKeyID((RSAPublicKey) publicKey);
         Connection conn = null;
