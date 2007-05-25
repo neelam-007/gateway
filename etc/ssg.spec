@@ -188,6 +188,8 @@ if [ `grep ^ssgconfig: /etc/passwd` ]; then
 else
   adduser -g gateway ssgconfig
   echo "7layer" | passwd ssgconfig --stdin >/dev/null
+  chage -M 365 ssgconfig
+  chage -d 0   ssgconfig
 fi
 
 SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
