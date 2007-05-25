@@ -3,7 +3,6 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.EntityType;
@@ -191,7 +190,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             // todo, error message
             return;
         }
-        CertificateRequest csr;
+        byte[] csr;
         try {
             csr = admin.generateCSR(subject.getKeystore().id, subject.getAlias(), dn);
         } catch (FindException e) {
@@ -201,7 +200,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         }
 
         // todo, show the resulting csr, provide option to save to file
-        System.out.println(csr.getEncoded());
+        // System.out.println(new String(csr));
 
         JOptionPane.showMessageDialog(this, "Generate Certificate Signing Request goes here");
     }

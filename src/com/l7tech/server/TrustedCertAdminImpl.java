@@ -7,9 +7,7 @@ import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.BouncyCastleCertUtils;
 import com.l7tech.common.security.CertificateRequest;
-import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
@@ -26,15 +24,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.security.*;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
 
 public class TrustedCertAdminImpl implements TrustedCertAdmin {
     private final X509Certificate rootCertificate;
@@ -274,7 +268,7 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         }
     }
 
-    public CertificateRequest generateCSR(long keystoreId, String alias, LdapName dn) throws FindException {
+    public byte[] generateCSR(long keystoreId, String alias, LdapName dn) throws FindException {
         SsgKeyFinder keyFinder;
         try {
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
@@ -290,7 +284,8 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
             throw new FindException("cannot find keystore");
         }
         try {
-            return keystore.makeCertificateSigningRequest(alias, dn);
+            CertificateRequest res = keystore.makeCertificateSigningRequest(alias, dn);
+            return res.getEncoded();
         } catch (Exception e) {
             logger.log(Level.WARNING, "error getting keystore", e);
             throw new FindException("error making CSR", e);
