@@ -207,31 +207,36 @@ public class PartitionActions {
             if (!systemPropertiesFile.exists()) systemPropertiesFile.createNewFile();
 
             fis = new FileInputStream(systemPropertiesFile);
-            Properties prop = new Properties();
-            prop.load(fis);
+            PropertiesConfiguration props = new PropertiesConfiguration();
+            props.load(fis);
 
             List<PartitionInformation.HttpEndpointHolder> httpEndpoints = pInfo.getHttpEndpoints();
             List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
 
             PartitionInformation.HttpEndpointHolder httpEndpoint = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
-            prop.setProperty(PartitionInformation.SYSTEM_PROP_HTTPPORT, httpEndpoint.getPort().toString());
+            props.setProperty(PartitionInformation.SYSTEM_PROP_HTTPPORT, httpEndpoint.getPort().toString());
 
             PartitionInformation.HttpEndpointHolder sslEndpoint = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
-            prop.setProperty(PartitionInformation.SYSTEM_PROP_SSLPORT, sslEndpoint.getPort().toString());
+            props.setProperty(PartitionInformation.SYSTEM_PROP_SSLPORT, sslEndpoint.getPort().toString());
 
             PartitionInformation.OtherEndpointHolder rmiEndpoint = PartitionActions.getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
             if (rmiEndpoint.getPort() != null)
-                prop.setProperty(PartitionInformation.SYSTEM_PROP_RMIPORT, rmiEndpoint.getPort().toString());
+                props.setProperty(PartitionInformation.SYSTEM_PROP_RMIPORT, rmiEndpoint.getPort().toString());
 
-            prop.setProperty(PartitionInformation.SYSTEM_PROP_PARTITIONNAME, pInfo.getPartitionId());
+            props.setProperty(PartitionInformation.SYSTEM_PROP_PARTITIONNAME, pInfo.getPartitionId());
 
             fos = new FileOutputStream(systemPropertiesFile);
-            prop.store(fos, "");
+            props.save(fos, "iso-8859-1");
         } catch (IOException ioe) {
             if (logError) {
                 logger.warning("Error while updating system properties. [" + ioe.getMessage() + "]");                
             }
             throw ioe;
+        } catch (ConfigurationException ce) {
+            if (logError) {
+                logger.warning("Error while updating system properties. [" + ce.getMessage() + "]");
+            }
+            throw new CausedIOException(ce);
         } finally {
             ResourceUtils.closeQuietly(fis);
             ResourceUtils.closeQuietly(fos);

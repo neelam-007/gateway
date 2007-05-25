@@ -803,60 +803,44 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void updateSystemPropertiesFile(KeystoreConfigBean ksBean, File systemPropertiesFile) throws IOException {
-
-        BufferedReader reader = null;
-        PrintWriter writer = null;
-
+        PropertiesConfiguration systemProps = new PropertiesConfiguration();
+        InputStream is = null;
+        OutputStream os = null;
         try {
-            if (!systemPropertiesFile.exists()) {
-                systemPropertiesFile.createNewFile();
-            }
-            reader = new BufferedReader(new FileReader(systemPropertiesFile));
+            is = new FileInputStream(systemPropertiesFile);
+            systemProps.load(is);
+            is.close();
+            is = null;
 
-            File newFile = new File(getOsFunctions().getSsgSystemPropertiesFile() + ".confignew");
-            writer = new PrintWriter(newFile);
-            String line = null;
-            boolean jceProviderFound = false;
-
-            while ((line = reader.readLine()) != null) {
-                if (!line.startsWith("#") && line.startsWith(PROPKEY_JCEPROVIDER)) {
-                    jceProviderFound = true;
-                    switch (ksBean.getKeyStoreType()) {
-                        case LUNA_KEYSTORE_NAME:
-                            line = PROPKEY_JCEPROVIDER + "=" + JceProvider.LUNA_ENGINE;
-                            break;
-                        case SCA6000_KEYSTORE_NAME:
-                            line = PROPKEY_JCEPROVIDER + "=" + JceProvider.PKCS11_ENGINE;
-                            break;
-                        case DEFAULT_KEYSTORE_NAME:
-                            line = PROPKEY_JCEPROVIDER + "=" + JceProvider.BC_ENGINE;
-                            break;
-                    }
-                }
-                writer.println(line);
-            }
-            if (ksBean.getKeyStoreType() == KeystoreType.LUNA_KEYSTORE_NAME) {
-                String lunaPropLine = PROPKEY_JCEPROVIDER + "=" + JceProvider.LUNA_ENGINE;
-                if (!jceProviderFound) {
-                    writer.println(lunaPropLine);
-                }
-                logger.info("Writing " + lunaPropLine + " to system.properties file");
+            switch (ksBean.getKeyStoreType()) {
+                case LUNA_KEYSTORE_NAME:
+                    systemProps.setProperty(PROPKEY_JCEPROVIDER, JceProvider.LUNA_ENGINE);
+                    break;
+                case SCA6000_KEYSTORE_NAME:
+                    systemProps.setProperty(PROPKEY_JCEPROVIDER, JceProvider.PKCS11_ENGINE);
+                    break;
+                case DEFAULT_KEYSTORE_NAME:
+                    systemProps.setProperty(PROPKEY_JCEPROVIDER, JceProvider.BC_ENGINE);
+                    break;
             }
 
             logger.info("Updating the system.properties file");
+            File newFile = new File(getOsFunctions().getSsgSystemPropertiesFile() + ".confignew");
+            os = new FileOutputStream(newFile);
+            systemProps.save(os, "iso-8859-1");
             renameFile(newFile, systemPropertiesFile);
-
         } catch (FileNotFoundException e) {
-            logger.severe("Error while updating the file: " + systemPropertiesFile.getAbsolutePath());
-            logger.severe(e.getMessage());
+            logger.severe(MessageFormat.format("Error while updating the file: {0}. ({1})", systemPropertiesFile.getAbsolutePath(), e.getMessage()));
             throw e;
         } catch (IOException e) {
-            logger.severe("Error while updating the file: " + systemPropertiesFile.getAbsolutePath());
-            logger.severe(e.getMessage());
+            logger.severe(MessageFormat.format("Error while updating the file: {0}. ({1})", systemPropertiesFile.getAbsolutePath(), e.getMessage()));
             throw e;
+        } catch (ConfigurationException e) {
+            logger.severe(MessageFormat.format("Error while updating the file: {0}. ({1})", systemPropertiesFile.getAbsolutePath(), e.getMessage()));
+            throw new CausedIOException(e);            
         } finally {
-            ResourceUtils.closeQuietly(reader);
-            ResourceUtils.closeQuietly(writer);
+            ResourceUtils.closeQuietly(is);
+            ResourceUtils.closeQuietly(os);
         }
     }
 
@@ -890,8 +874,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                     writer.println(line);
                 }
             }
-
             logger.info("Updating the java.security file");
+            writer.flush();
+            writer.close();
             renameFile(newJavaSecFile, javaSecFile);
 
         } catch (FileNotFoundException e) {
@@ -1072,7 +1057,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void updateKeystoreProperties(File keystorePropertiesFile, char[] ksPassword) throws IOException {
-
         FileOutputStream fos = null;
         try {
             PropertiesConfiguration keystoreProps = PropertyHelper.mergeProperties(
@@ -1113,12 +1097,5 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private String getKsType() {
         KeystoreType ksTypeFromBean = ((KeystoreConfigBean)configBean).getKeyStoreType();
         return ksTypeFromBean.shortTypeName();
-//        if (ksTypeFromBean == KeystoreType.LUNA_KEYSTORE_NAME) {
-//            return "Luna";
-//        } else if (ksTypeFromBean == KeystoreType.DEFAULT_KEYSTORE_NAME) {
-//                return "PKCS12";
-//        } else {
-//            return "PKCS11";
-//        }
     }
 }
