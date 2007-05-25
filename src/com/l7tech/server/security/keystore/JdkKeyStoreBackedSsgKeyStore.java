@@ -194,7 +194,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                     KeyStore keystore = keyStore();
                     if (!keystore.isKeyEntry(alias))
                         throw new RuntimeException("Keystore does not contain a key with alias " + alias);
-                    Key key = keystore.getKey(alias, null);
+                    Key key = keystore.getKey(alias, getEntryPassword());
                     Certificate[] oldChain = keystore.getCertificateChain(alias);
                     if (oldChain == null || oldChain.length < 1)
                         throw new RuntimeException("Existing certificate chain for alias " + alias + " is empty");
@@ -242,7 +242,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     public synchronized CertificateRequest makeCertificateSigningRequest(String alias, LdapName dn) throws InvalidKeyException, SignatureException, KeyStoreException {
         try {
             KeyStore keystore = keyStore();
-            Key key = keystore.getKey(alias, null);
+            Key key = keystore.getKey(alias, getEntryPassword());
             if (!(key instanceof RSAPrivateKey))
                 throw new InvalidKeyException("The key with alias " + alias + " is not an RSA private key");
             RSAPrivateKey rsaPrivate = (RSAPrivateKey)key;
