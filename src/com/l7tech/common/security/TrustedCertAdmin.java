@@ -210,6 +210,5 @@ public interface TrustedCertAdmin  {
     public X509Certificate generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException;
 
     @Transactional(readOnly=true)
-    @Secured(stereotype=GET_PROPERTY_BY_ID, types=SSG_KEY_ENTRY)
     CertificateRequest generateCSR(long keystoreId, String alias, LdapName dn) throws FindException;
 }

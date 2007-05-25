@@ -3,15 +3,20 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.console.action.SecureAction;
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.naming.ldap.LdapName;
+import javax.naming.InvalidNameException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.security.cert.CertificateEncodingException;
@@ -151,8 +156,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     private void viewCert() {
         ListEntry seled = (ListEntry)certList.getSelectedValue();
-        if (seled == null)
+        if (seled == null) {
             return;
+        }
         try {
             X509Certificate cert = seled.getCert();
             TrustedCert tc = new TrustedCert();
@@ -169,8 +175,33 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         }
     }
 
+    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
+        return Registry.getDefault().getTrustedCertManager();
+    }
+
     private void getCSR() {
-        // todo
+        TrustedCertAdmin admin = getTrustedCertAdmin();
+        // todo, ask user for a dn instead
+        LdapName dn;
+        try {
+            dn = new LdapName("cn=franco,ou=macusers,o=L7");
+        } catch (InvalidNameException e) {
+            logger.log(Level.INFO, "not a valid ldap name", e);
+            // todo, error message
+            return;
+        }
+        CertificateRequest csr;
+        try {
+            csr = admin.generateCSR(subject.getKeystore().id, subject.getAlias(), dn);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "cannot get csr from ssg", e);
+            // todo, error message
+            return;
+        }
+
+        // todo, show the resulting csr, provide option to save to file
+        System.out.println(csr.getEncoded());
+
         JOptionPane.showMessageDialog(this, "Generate Certificate Signing Request goes here");
     }
 
