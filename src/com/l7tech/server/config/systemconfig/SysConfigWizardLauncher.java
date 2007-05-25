@@ -15,6 +15,7 @@ import java.util.List;
  * Time: 11:04:51 AM
  */
 public class SysConfigWizardLauncher {
+    private static final String ARG_PRINT_CONFIG = "-printConfig";
 
     public static void main(String[] args) {
         launch(args);
@@ -26,9 +27,15 @@ public class SysConfigWizardLauncher {
 
         SystemConfigurationWizard sysWizard = new SystemConfigurationWizard(wizardInput, wizardOutput);
 
-        sysWizard.setSteps(getSteps(sysWizard));
-
-        sysWizard.startWizard();
+        if (args.length != 0) {
+            String launchType = args[0];
+            if (launchType.equalsIgnoreCase(ARG_PRINT_CONFIG)) {
+                sysWizard.printConfigOnly();
+            }
+        } else {
+            sysWizard.setSteps(getSteps(sysWizard));
+            sysWizard.startWizard();
+        }
     }
 
     private static List<ConfigWizardConsoleStep> getSteps(SystemConfigurationWizard sysWizard) {
