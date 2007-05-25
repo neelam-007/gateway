@@ -111,8 +111,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         enableOrDisableButtons();
 
         if (flags.canReadAll()) {
-            List<KeyTableRow> keystores = loadPrivateKeys();
-            mutableKeystore = findMutableKeystore(keystores);
+            loadPrivateKeys();
         } else {
             keyTable.setData(Collections.<KeyTableRow>emptyList());
             mutableKeystore = null;
@@ -214,9 +213,12 @@ public class PrivateKeyManagerWindow extends JDialog {
     private List<KeyTableRow> loadPrivateKeys() throws RemoteException {
         try {
             java.util.List<KeyTableRow> keyList = new ArrayList<KeyTableRow>();
-            for (TrustedCertAdmin.KeystoreInfo keystore : getTrustedCertAdmin().findAllKeystores())
-                for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.id))
+            for (TrustedCertAdmin.KeystoreInfo keystore : getTrustedCertAdmin().findAllKeystores()) {
+                if (mutableKeystore == null && !keystore.readonly) mutableKeystore = keystore;
+                for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.id)) {
                     keyList.add(new KeyTableRow(keystore, entry));
+                }
+            }
 
             keyTable.setData(keyList);
             return keyList;
@@ -229,25 +231,6 @@ public class PrivateKeyManagerWindow extends JDialog {
                                           JOptionPane.ERROR_MESSAGE);
             return Collections.emptyList();
         }
-    }
-
-    /**
-     * @param keystores list of keystore to search
-     * @return the first keystore on this Gateway that isn't read-only, or null
-     */
-    private TrustedCertAdmin.KeystoreInfo findMutableKeystore(List<KeyTableRow> keystores) {
-        TrustedCertAdmin.KeystoreInfo keystore = null;
-
-        // TODO for now, always create in the first mutable keystore in the list
-        // Someday, when there can be more than one mutable keystore, we may support choosing the keystore to create in
-        for (KeyTableRow k : keystores) {
-            if (!k.getKeystore().readonly) {
-                keystore = k.getKeystore();
-                break;
-            }
-        }
-
-        return keystore;
     }
 
     /**
