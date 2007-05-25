@@ -194,7 +194,9 @@ public abstract class BaseAction extends AbstractAction {
     /**
      * subclasses override this method specifying the resource name
      */
-    protected abstract String iconResource();
+    protected String iconResource() {
+        return null;
+    }
 
 
     /**

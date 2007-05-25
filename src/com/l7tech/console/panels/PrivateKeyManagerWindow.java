@@ -8,33 +8,27 @@ import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.security.keystore.SsgKeyEntry;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableColumnModel;
-import javax.swing.table.TableColumn;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.security.KeyStoreException;
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
-import java.text.MessageFormat;
 import java.text.DateFormat;
-import java.util.ArrayList;
+import java.text.MessageFormat;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -116,12 +110,21 @@ public class PrivateKeyManagerWindow extends JDialog {
         pack();
         enableOrDisableButtons();
 
-        loadPrivateKeys();
-        mutableKeystore = findMutableKeystore();
+        if (flags.canReadAll()) {
+            List<KeyTableRow> keystores = loadPrivateKeys();
+            mutableKeystore = findMutableKeystore(keystores);
+        } else {
+            keyTable.setData(Collections.<KeyTableRow>emptyList());
+            mutableKeystore = null;
+        }
+
         if (mutableKeystore == null) {
             createButton.setEnabled(false);
             importButton.setEnabled(false);
         }
+
+        if (!flags.canCreateSome())
+            createButton.setEnabled(false);
     }
 
     private void doRemove(KeyTableRow certHolder) {
@@ -167,7 +170,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
     private void doProperties() {
         final KeyTableRow data = getSelectedObject();
-        final PrivateKeyPropertiesDialog dlg = new PrivateKeyPropertiesDialog(this, data);
+        final PrivateKeyPropertiesDialog dlg = new PrivateKeyPropertiesDialog(this, data, flags);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -208,7 +211,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     /*
      * Load the certs from the SSG
      */
-    private void loadPrivateKeys() throws RemoteException {
+    private List<KeyTableRow> loadPrivateKeys() throws RemoteException {
         try {
             java.util.List<KeyTableRow> keyList = new ArrayList<KeyTableRow>();
             for (TrustedCertAdmin.KeystoreInfo keystore : getTrustedCertAdmin().findAllKeystores())
@@ -216,6 +219,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                     keyList.add(new KeyTableRow(keystore, entry));
 
             keyTable.setData(keyList);
+            return keyList;
 
         } catch (Exception e) {
             String msg = resources.getString("cert.find.error");
@@ -223,28 +227,22 @@ public class PrivateKeyManagerWindow extends JDialog {
             JOptionPane.showMessageDialog(PrivateKeyManagerWindow.this, msg,
                                           resources.getString("load.error.title"),
                                           JOptionPane.ERROR_MESSAGE);
+            return Collections.emptyList();
         }
     }
 
-    /** @return the first keystore on this Gateway that isn't read-only, or null */
-    private TrustedCertAdmin.KeystoreInfo findMutableKeystore() {
+    /**
+     * @param keystores list of keystore to search
+     * @return the first keystore on this Gateway that isn't read-only, or null
+     */
+    private TrustedCertAdmin.KeystoreInfo findMutableKeystore(List<KeyTableRow> keystores) {
         TrustedCertAdmin.KeystoreInfo keystore = null;
 
         // TODO for now, always create in the first mutable keystore in the list
         // Someday, when there can be more than one mutable keystore, we may support choosing the keystore to create in
-        final List<TrustedCertAdmin.KeystoreInfo> keystores;
-        try {
-            keystores = getTrustedCertAdmin().findAllKeystores();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (FindException e) {
-            throw new RuntimeException(e);
-        } catch (KeyStoreException e) {
-            throw new RuntimeException(e);
-        }
-        for (TrustedCertAdmin.KeystoreInfo k : keystores) {
-            if (!k.readonly) {
-                keystore = k;
+        for (KeyTableRow k : keystores) {
+            if (!k.getKeystore().readonly) {
+                keystore = k.getKeystore();
                 break;
             }
         }

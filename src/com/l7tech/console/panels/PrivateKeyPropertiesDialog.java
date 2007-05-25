@@ -1,18 +1,21 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
+import com.l7tech.common.security.rbac.AttemptedOperation;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.console.action.SecureAction;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
-import java.util.ArrayList;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,10 +37,12 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     private Logger logger = Logger.getLogger(PrivateKeyPropertiesDialog.class.getName());
     private boolean deleted = false;
+    private final PermissionFlags flags;
 
-    public PrivateKeyPropertiesDialog(JDialog owner, PrivateKeyManagerWindow.KeyTableRow subject) {
+    public PrivateKeyPropertiesDialog(JDialog owner, PrivateKeyManagerWindow.KeyTableRow subject, PermissionFlags flags) {
         super(owner, true);
         this.subject = subject;
+        this.flags = flags;
         initialize();
     }
 
@@ -45,20 +50,23 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         setContentPane(mainPanel);
         setTitle("Private Key Properties");
 
+        AttemptedOperation deleteOperation = new AttemptedDeleteSpecific(EntityType.SSG_KEY_ENTRY, subject.getKeyEntry());
+        AttemptedOperation updateOperation = new AttemptedUpdate(EntityType.SSG_KEY_ENTRY, subject.getKeyEntry());
+
         closeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
                 close();
             }
         });
 
-        destroyPrivateKeyButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
+        destroyPrivateKeyButton.addActionListener(new SecureAction(deleteOperation) {
+            protected void performAction() {
                 delete();
             }
         });
 
-        replaceCertificateChainButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
+        replaceCertificateChainButton.addActionListener(new SecureAction(updateOperation) {
+            public void performAction() {
                 assignCert();
             }
         });
@@ -86,7 +94,10 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             }
         });
         aliasField.setText(subject.getAlias());
-        locationField.setText(subject.getKeystore().name);
+        String location = subject.getKeystore().name;
+        if (subject.getKeystore().readonly)
+            location = location + "  (Read-Only)";
+        locationField.setText(location);
         typeField.setText(subject.getKeyType().toString());
         populateList();
 
@@ -100,13 +111,18 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 }
             }
         });
-        viewCertificateButton.setEnabled(false);
+        certList.setSelectedIndex(0);
+        viewCertificateButton.setEnabled(true);
 
         TrustedCertAdmin.KeystoreInfo keystore = subject.getKeystore();
         if (keystore.readonly) {
             destroyPrivateKeyButton.setEnabled(false);
             replaceCertificateChainButton.setEnabled(false);
         }
+        if (!flags.canDeleteSome())
+            destroyPrivateKeyButton.setEnabled(false);
+        if (!flags.canUpdateSome())
+            replaceCertificateChainButton.setEnabled(false);
     }
 
     class ListEntry {
@@ -135,30 +151,32 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     private void viewCert() {
         ListEntry seled = (ListEntry)certList.getSelectedValue();
-        if (seled != null) {
-            ArrayList props;
-            try {
-                props = CertUtils.getCertProperties(seled.getCert());
-            } catch (CertificateEncodingException e) {
-                logger.log(Level.WARNING, "problem reading cert", e);
-                return;
-            }
-            StringBuffer sbuf = new StringBuffer();
-            for (Object prop : props) {
-                String[] pair = (String[]) prop;
-                sbuf.append(pair[0]).append(" : ").append(pair[1]).append("\n");
-            }
-            JOptionPane.showMessageDialog(viewCertificateButton, sbuf, "Certificate", JOptionPane.INFORMATION_MESSAGE);
+        if (seled == null)
+            return;
+        try {
+            X509Certificate cert = seled.getCert();
+            TrustedCert tc = new TrustedCert();
+            tc.setCertificate(cert);
+            tc.setName(cert.getSubjectDN().toString());
+            tc.setSubjectDn(cert.getSubjectDN().toString());
+            CertPropertiesWindow dlg = new CertPropertiesWindow(this, tc, false, false);
+            dlg.setModal(true);
+            dlg.setTitle("Certificate Properties");
+            Utilities.centerOnParentWindow(dlg);
+            dlg.setVisible(true);
+        } catch (CertificateEncodingException e) {
+            logger.log(Level.WARNING, "problem reading cert", e);
         }
-
     }
 
     private void getCSR() {
         // todo
+        JOptionPane.showMessageDialog(this, "Generate Certificate Signing Request goes here");
     }
 
     private void assignCert() {
         // todo
+        JOptionPane.showMessageDialog(this, "Replace certificate chain goes here");
     }
 
     private void close() {
@@ -172,8 +190,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "This keystore is read-only.", "Unable to Remove Key", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        String cancel = "Cancel";
-        DialogDisplayer.showOptionDialog(
+        final String cancel = "Cancel";
+        int option = JOptionPane.showOptionDialog(
                 this,
                 "Really delete private key " + subject.getAlias() + " (" + subject.getKeyEntry().getSubjectDN() + ")?\n\n" +
                 "This will irrevocably destory this key, and cannot be undone.",
@@ -181,17 +199,12 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 null,
-                new Object[] { "Destroy Private Key", cancel},
-                cancel,
-                new DialogDisplayer.OptionListener() {
-                    public void reportResult(int option) {
-                        if (option != 0)
-                            return;
-                        deleted = true;
-                        dispose();
-                    }
-                }
-        );
+                new Object[] { "Destroy Private Key", cancel },
+                cancel);
+        if (option != 0)
+            return;
+        deleted = true;
+        dispose();
     }
 
 

@@ -142,6 +142,7 @@ public class CertPropertiesWindow extends JDialog {
         // disable the options tab if not required
         if (!options) {
             tabPane.setEnabledAt(2, false);
+            tabPane.remove(2);
             saveButton.setVisible(false);
         }
 

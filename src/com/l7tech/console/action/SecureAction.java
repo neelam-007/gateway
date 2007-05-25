@@ -51,6 +51,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
 
     private final Set<String> featureSetNames = new HashSet<String>();
     private final AttemptedOperation attemptedOperation;
+    private String name = "Secure Action";
 
     /**
      * Create a SecureAction which may only be enabled if the user meets the admin requirement,
@@ -58,6 +59,18 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      */
     protected SecureAction(AttemptedOperation attemptedOperation) {
         this.attemptedOperation = attemptedOperation;
+    }
+
+    /**
+     * Create a SecureAction with a name, which may only be enabled if hte user meets the admin requirement,
+     * and which does not depend on any licensing feature to be enabled.
+     *
+     * @param name  the name to return from getName().
+     * @param attemptedOperation  the operation that needs to be enabled to allow this action
+     */
+    protected SecureAction(String name, AttemptedOperation attemptedOperation) {
+        this.attemptedOperation = attemptedOperation;
+        this.name = name;
     }
 
     /**
@@ -141,6 +154,10 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
         if (ao == null) return true;
         if (!Registry.getDefault().isAdminContextPresent()) return false;
         return getSecurityProvider().hasPermission(ao);
+    }
+
+    public String getName() {
+        return name;
     }
 
     /**
