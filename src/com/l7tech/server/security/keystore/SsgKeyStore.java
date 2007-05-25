@@ -61,18 +61,4 @@ public interface SsgKeyStore extends SsgKeyFinder {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     void deletePrivateKeyEntry(String keyAlias) throws KeyStoreException;
-
-    /**
-     * Generate a new PKCS#10 certificate request for the key pair specified by its alias, using a certificate with a DN
-     * in the form "CN=username".
-     *
-     * @param alias thye alias of the key pair whose public key to embed in the CSR and whose private key to use to sign it.  Required.
-     * @param dn  DN to use in the CSR.  Must contain valid X.509 fields.  Required.
-     * @return a CertificateRequest that can be exported as bytes and sent to a CA service.  Never null.
-     * @throws InvalidKeyException  if the key cannot be used for this purpose
-     * @throws SignatureException   if there was a problem signing the CSR
-     * @throws java.security.KeyStoreException  if there is a problem reading the key store
-     */
-    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    CertificateRequest makeCertificateSigningRequest(String alias, LdapName dn) throws InvalidKeyException, SignatureException, KeyStoreException;
 }

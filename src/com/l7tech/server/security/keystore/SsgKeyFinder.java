@@ -4,9 +4,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
 
 import java.security.KeyStoreException;
+import java.security.InvalidKeyException;
+import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.List;
+
+import com.l7tech.common.security.CertificateRequest;
+
+import javax.naming.ldap.LdapName;
 
 /**
  * KeyStore-like interface implemented by SSG components that provide access to certificates with private keys.
@@ -58,4 +64,19 @@ public interface SsgKeyFinder {
      */
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     SsgKeyEntry getCertificateChain(String alias) throws KeyStoreException;
+
+    /**
+     * Generate a new PKCS#10 certificate request for the key pair specified by its alias, using a certificate with a DN
+     * in the form "CN=username".  The contents of the keystore are not changed in any way by this operation --
+     * it just makes and signs a new CSR with the private key, and returns the CSR.
+     *
+     * @param alias thye alias of the key pair whose public key to embed in the CSR and whose private key to use to sign it.  Required.
+     * @param dn  DN to use in the CSR.  Must contain valid X.509 fields.  Required.
+     * @return a CertificateRequest that can be exported as bytes and sent to a CA service.  Never null.
+     * @throws java.security.InvalidKeyException  if the key cannot be used for this purpose
+     * @throws java.security.SignatureException   if there was a problem signing the CSR
+     * @throws java.security.KeyStoreException  if there is a problem reading the key store
+     */
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
+    CertificateRequest makeCertificateSigningRequest(String alias, LdapName dn) throws InvalidKeyException, SignatureException, KeyStoreException;
 }

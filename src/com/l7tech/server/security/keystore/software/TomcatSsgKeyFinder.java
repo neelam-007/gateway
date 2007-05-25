@@ -1,13 +1,18 @@
 package com.l7tech.server.security.keystore.software;
 
+import com.l7tech.common.security.BouncyCastleCertUtils;
+import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.security.keystore.SsgKeyEntry;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.naming.ldap.LdapName;
 import java.io.IOException;
-import java.security.KeyStoreException;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
@@ -73,6 +78,32 @@ public class TomcatSsgKeyFinder implements SsgKeyFinder {
             throw new KeyStoreException("Unable to access certificate chain with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
         } catch (CertificateException e) {
             throw new KeyStoreException("Unable to access certificate chain with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+    public CertificateRequest makeCertificateSigningRequest(String alias, LdapName dn) throws InvalidKeyException, SignatureException, KeyStoreException {
+        try {
+            final PublicKey rsaPublic;
+            final PrivateKey rsaPrivate;
+            if ("SSL".equals(alias)) {
+                rsaPublic = keystoreUtils.getSslCert().getPublicKey();
+                rsaPrivate = keystoreUtils.getSSLPrivateKey();
+            } else if ("CA".equals(alias)) {
+                // TODO should we move the logic for handling ca cert removal/insertion into keystoreUtils?
+                throw new InvalidKeyException("Unable to generate CSR using the CA root cert");
+            } else
+                throw new KeyStoreException("No certificate chain available in static keystore with alias " + alias);
+            KeyPair keyPair = new KeyPair(rsaPublic, rsaPrivate);
+            return BouncyCastleCertUtils.makeCertificateRequest(dn, keyPair);
+        } catch (NoSuchProviderException e) {
+            throw new KeyStoreException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new KeyStoreException(e);
+        } catch (IOException e) {
+            throw new KeyStoreException(e);
+        } catch (CertificateException e) {
+            throw new KeyStoreException(e);
         }
     }
 }
