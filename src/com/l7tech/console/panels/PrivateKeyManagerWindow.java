@@ -155,18 +155,6 @@ public class PrivateKeyManagerWindow extends JDialog {
         JOptionPane.showMessageDialog(this, "Import from local PKCS#12 file goes here");
     }
 
-    private TrustedCert asTrustedCert(KeyTableRow row) {
-        TrustedCert certHolder = new TrustedCert();
-        certHolder.setName(row.getAlias());
-        certHolder.setSubjectDn(row.getSubjectDN());
-        try {
-            certHolder.setCertificate(row.getCertificate());
-        } catch (CertificateEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        return certHolder;
-    }
-
     private void doProperties() {
         final KeyTableRow data = getSelectedObject();
         final PrivateKeyPropertiesDialog dlg = new PrivateKeyPropertiesDialog(this, data, flags);
