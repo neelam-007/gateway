@@ -292,11 +292,31 @@ public class PartitionManager {
                 System.out.println("the default partition does not need to be migrated");
             }
             removeOriginalConfigurations(deletableOriginalFiles);
+            copyNewFiles(templatePartitionDir, partitionsBaseDir);
 
         } catch (PartitionException pe) {
             System.out.println(pe.getMessage());
             System.exit(1);
+        } catch (IOException e) {
+            System.out.println("Error while copying new files into the destination partitions");
+            System.out.println(e.getMessage());
+            System.exit(1);
         }
+    }
+
+    private static void copyNewFiles(final File templatePartitionDir, final File partitionsBaseDir) throws IOException {
+        //TODO make sure this doesn't clobber anything that's already there.
+//        File[] listOfPartitions = partitionsBaseDir.listFiles(new FileFilter() {
+//            public boolean accept(File pathname) {
+//                return pathname.isDirectory() && pathname.getName() != templatePartitionDir.getName();
+//            }
+//        });
+//
+//        File[] files = templatePartitionDir.listFiles();
+//        List<File> sourceFiles = Arrays.asList(files);
+//        for (File destinationPartition: listOfPartitions) {
+//            copyConfigurations(sourceFiles, destinationPartition);
+//        }
     }
 
     private static void renameUpgradeFiles(File directory, final String pattern) {
