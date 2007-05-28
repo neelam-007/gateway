@@ -69,9 +69,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             throw new IllegalStateException("Could not instantiate security provider");
         }
 
-        Container p = getContentPane();
-        p.setLayout(new BorderLayout());
-        p.add(mainPanel, BorderLayout.CENTER);
+        setContentPane(mainPanel);
 
         keyTable = new KeyTable();
         keyTableScrollPane.setViewportView(keyTable);
