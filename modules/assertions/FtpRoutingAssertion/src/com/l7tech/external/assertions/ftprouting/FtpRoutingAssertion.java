@@ -4,6 +4,7 @@
 
 package com.l7tech.external.assertions.ftprouting;
 
+import com.l7tech.common.util.Functions;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
@@ -165,8 +166,20 @@ public class FtpRoutingAssertion extends RoutingAssertion {
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "routing" });
 
-        meta.put(POLICY_NODE_NAME, "Route request to FTP server");
+        meta.put(POLICY_NODE_NAME, "Route request to FTP(S) server");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, FtpRoutingAssertion>() {
+            public String call(FtpRoutingAssertion assertion) {
+                final StringBuilder sb = new StringBuilder("Route request to FTP");
+                if (assertion.getSecurity() == FtpSecurity.FTPS_EXPLICIT ||
+                    assertion.getSecurity() == FtpSecurity.FTPS_IMPLICIT) {
+                    sb.append("S");
+                }
+                sb.append(" server ");
+                sb.append(assertion.getHostName());
+                return sb.toString();
+            }
+        });
 
         meta.put(WSP_EXTERNAL_NAME, "FtpRoutingAssertion");
         final TypeMapping typeMapping = (TypeMapping)meta.get(WSP_TYPE_MAPPING_INSTANCE);
