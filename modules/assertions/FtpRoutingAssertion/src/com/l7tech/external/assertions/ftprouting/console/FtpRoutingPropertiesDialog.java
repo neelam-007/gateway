@@ -17,6 +17,7 @@ import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
 import com.l7tech.external.assertions.ftprouting.FtpSecurity;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
@@ -56,6 +57,8 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
     private JButton _testButton;
     private JButton _okButton;
     private JButton _cancelButton;
+    private JRadioButton wssRemoveRadioButton;
+    private JRadioButton wssLeaveRadioButton;
 
     public static final int DEFAULT_PORT_FTP = 21;
     public static final int DEFAULT_PORT_FTPS_IMPLICIT = 990;
@@ -71,7 +74,7 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
      */
     public FtpRoutingPropertiesDialog(Frame owner, FtpRoutingAssertion a) {
         super(owner, true);
-        setTitle("FTP Routing Properties");
+        setTitle("FTP(S) Routing Properties");
         _assertion = a;
         initComponents();
         initFormData();
@@ -244,6 +247,12 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
         }
 
         _timeoutTextField.setText(Integer.toString(_assertion.getTimeout() / 1000));
+
+        if (_assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER) {
+            wssRemoveRadioButton.setSelected(true);
+        } else if (_assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS) {
+            wssLeaveRadioButton.setSelected(true);
+        }
     }
 
     private void setDefaultPortNumber() {
@@ -327,6 +336,12 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
             _timeoutTextField.setText(Integer.toString(FtpRoutingAssertion.DEFAULT_TIMEOUT / 1000));
         }
         assertion.setTimeout(Integer.parseInt(_timeoutTextField.getText()) * 1000);
+
+        if (wssRemoveRadioButton.isSelected()) {
+            assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER);
+        } else if (wssLeaveRadioButton.isSelected()) {
+            assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
+        }
 
         return assertion;
     }

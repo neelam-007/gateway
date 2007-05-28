@@ -158,10 +158,10 @@ public class FtpRoutingAssertion extends RoutingAssertion {
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(SHORT_NAME, "FTP Routing Assertion");
+        meta.put(SHORT_NAME, "FTP(S) Routing Assertion");
         meta.put(LONG_NAME, "Route request to FTP server");
 
-        meta.put(PALETTE_NODE_NAME, "FTP Routing Assertion");
+        meta.put(PALETTE_NODE_NAME, "FTP(S) Routing Assertion");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "routing" });
 
