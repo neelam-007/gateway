@@ -306,17 +306,17 @@ public class PartitionManager {
 
     private static void copyNewFiles(final File templatePartitionDir, final File partitionsBaseDir) throws IOException {
         //TODO make sure this doesn't clobber anything that's already there.
-//        File[] listOfPartitions = partitionsBaseDir.listFiles(new FileFilter() {
-//            public boolean accept(File pathname) {
-//                return pathname.isDirectory() && pathname.getName() != templatePartitionDir.getName();
-//            }
-//        });
-//
-//        File[] files = templatePartitionDir.listFiles();
-//        List<File> sourceFiles = Arrays.asList(files);
-//        for (File destinationPartition: listOfPartitions) {
-//            copyConfigurations(sourceFiles, destinationPartition);
-//        }
+        File[] listOfPartitions = partitionsBaseDir.listFiles(new FileFilter() {
+            public boolean accept(File pathname) {
+                return pathname.isDirectory() && !pathname.getName().equalsIgnoreCase(PartitionInformation.TEMPLATE_PARTITION_NAME);
+            }
+        });
+
+        File[] files = templatePartitionDir.listFiles();
+        List<File> sourceFiles = Arrays.asList(files);
+        for (File destinationPartition: listOfPartitions) {
+            copyConfigurations(sourceFiles, destinationPartition);
+        }
     }
 
     private static void renameUpgradeFiles(File directory, final String pattern) {
@@ -354,11 +354,15 @@ public class PartitionManager {
                 File newFile = new File(destinationDir, currentFile.getName());
 
                 // backup existing file if required
-                if (newFile.exists() && backupExtn != null) {
-                    File targetFile = new File(destinationDir, currentFile.getName());
-                    File backupFile = new File(destinationDir, currentFile.getName() + "." + backupExtn);
-                    if (!targetFile.renameTo(backupFile))
-                        System.out.println("Could not create backup for file '"+newFile.getAbsolutePath()+"'.");
+                if (newFile.exists()) {
+                    if (backupExtn != null) {
+                        File targetFile = new File(destinationDir, currentFile.getName());
+                        File backupFile = new File(destinationDir, currentFile.getName() + "." + backupExtn);
+                        if (!targetFile.renameTo(backupFile))
+                            System.out.println("Could not create backup for file '"+newFile.getAbsolutePath()+"'.");
+                    } else {
+                        continue;
+                    }
                 }
 
                 if (currentFile.exists())
