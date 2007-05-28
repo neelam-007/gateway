@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
@@ -9,9 +10,11 @@ import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.naming.ldap.LdapName;
@@ -22,6 +25,9 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  *
@@ -180,29 +186,64 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void getCSR() {
-        TrustedCertAdmin admin = getTrustedCertAdmin();
-        // todo, ask user for a dn instead
-        LdapName dn;
-        try {
-            dn = new LdapName("cn=franco,ou=macusers,o=L7");
-        } catch (InvalidNameException e) {
-            logger.log(Level.INFO, "not a valid ldap name", e);
-            // todo, error message
-            return;
-        }
-        byte[] csr;
-        try {
-            csr = admin.generateCSR(subject.getKeystore().id, subject.getAlias(), dn);
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "cannot get csr from ssg", e);
-            // todo, error message
-            return;
-        }
+        final TrustedCertAdmin admin = getTrustedCertAdmin();
+        DialogDisplayer.InputListener listener = new DialogDisplayer.InputListener() {
+            public void reportResult(Object option) {
+                String dnres = option.toString();
+                LdapName dn;
+                try {
+                    dn = new LdapName(dnres);
+                } catch (InvalidNameException e) {
+                    logger.log(Level.INFO, "not a valid ldap name", e);
+                    DialogDisplayer.showMessageDialog(generateCSRButton, dnres + " is not a valid DN",
+                                                      "Invalid Subject", JOptionPane.ERROR_MESSAGE, null);
+                    return;
+                }
+                byte[] csr;
+                try {
+                    csr = admin.generateCSR(subject.getKeystore().id, subject.getAlias(), dn);
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "cannot get csr from ssg", e);
+                    DialogDisplayer.showMessageDialog(generateCSRButton, "Error getting CSR " + e.getMessage(),
+                                                      "CSR Error", JOptionPane.ERROR_MESSAGE, null);
+                    return;
+                }
+                // save CSR to file
+                JFileChooser chooser = new JFileChooser();
+                chooser.setDialogTitle("Save CSR to File");
+                chooser.setMultiSelectionEnabled(false);
+                chooser.setFileFilter(new FileFilter() {
+                    public boolean accept(File f) {
+                        return f.getAbsolutePath().endsWith(".p10") || f.getAbsolutePath().endsWith(".P10") || f.isDirectory();
+                    }
+                    public String getDescription() {
+                        return "PKCS #10 Files";
+                    }
+                });
 
-        // todo, show the resulting csr, provide option to save to file
-        // System.out.println(new String(csr));
-
-        JOptionPane.showMessageDialog(this, "Generate Certificate Signing Request goes here");
+                int ret = chooser.showSaveDialog(TopComponents.getInstance().getTopParent());
+                if (JFileChooser.APPROVE_OPTION == ret) {
+                    String name = chooser.getSelectedFile().getPath();
+                    // add extension if not present
+                    if (!name.endsWith(".p10") && !name.endsWith(".P10")) {
+                        name = name + ".p10";
+                    }
+                    // save the file
+                    try {
+                        FileOutputStream fos = new FileOutputStream(name);
+                        fos.write(csr);
+                        fos.close();
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "error saving CSR", e);
+                        DialogDisplayer.showMessageDialog(generateCSRButton, "Error Saving CSR " + e.getMessage(),
+                                                      "Error", JOptionPane.ERROR_MESSAGE, null);
+                    }
+                }
+            }
+        };
+        DialogDisplayer.showInputDialog(generateCSRButton, "CSR Subject (DN):",
+                                        "Please provide DN subject for CSR", JOptionPane.QUESTION_MESSAGE,
+                                        null, null, subject.getSubjectDN(), listener);
     }
 
     private void assignCert() {
