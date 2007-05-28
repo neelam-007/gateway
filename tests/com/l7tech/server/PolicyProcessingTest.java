@@ -40,10 +40,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -538,6 +535,10 @@ public class PolicyProcessingTest extends TestCase {
             request.attachJmsKnob(new JmsKnob() {
                 public boolean isBytesMessage() {
                     return true;
+                }
+                public Map<String, Object> getJmsMsgPropMap() {
+                    //noinspection unchecked
+                    return Collections.EMPTY_MAP;
                 }
             });
         } catch(NoSuchPartException nspe) {

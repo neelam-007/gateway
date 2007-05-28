@@ -637,7 +637,7 @@
       Run a single JUnit test
     -->
     <target name="test-one"
-            description="Run an individual unit test. (e.g. ./build.sh testcase -Dtest=com.l7tech.MyTest.class)"
+            description="Run an individual unit test. (e.g. ./build.sh test-one -Dtest=com.l7tech.MyTest)"
             depends="clean.test, dev, summary"
             if="test">
         <junit printsummary="yes" haltonfailure="yes" fork="off">

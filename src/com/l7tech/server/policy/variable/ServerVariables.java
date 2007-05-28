@@ -17,13 +17,13 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 
 import javax.wsdl.Operation;
 import javax.xml.namespace.QName;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * @author alex
@@ -316,6 +316,35 @@ public class ServerVariables {
                 }
             }
         }),
+
+        new Variable(BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP, new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                final JmsKnob jmsKnob = (JmsKnob)context.getRequest().getKnob(JmsKnob.class);
+                if (jmsKnob == null) return null;
+                final String prefix = BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP + ".";
+                if (!name.startsWith(prefix)) {
+                    logger.warning("Context variable for request JMS message property does not start with the correct prefix (" + prefix + "): " + name);
+                    return null;
+                }
+                final String propName = name.substring(prefix.length());
+                return jmsKnob.getJmsMsgPropMap().get(propName);
+            }
+        }),
+
+        new Variable(BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP, new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                final JmsKnob jmsKnob = (JmsKnob)context.getResponse().getKnob(JmsKnob.class);
+                if (jmsKnob == null) return null;
+                final String prefix = BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP + ".";
+                if (!name.startsWith(prefix)) {
+                    logger.warning("Context variable for response JMS message property does not start with the correct prefix (" + prefix + "): " + name);
+                    return null;
+                }
+                final String propName = name.substring(prefix.length());
+                return jmsKnob.getJmsMsgPropMap().get(propName);
+            }
+        }),
+
         new Variable(BuiltinVariables.PREFIX_SERVICE_URL, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 return getUrlValue(BuiltinVariables.PREFIX_SERVICE_URL, name, context.getRoutedServiceUrl());

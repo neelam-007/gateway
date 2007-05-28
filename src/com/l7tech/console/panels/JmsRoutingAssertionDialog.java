@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.event.PolicyEvent;
@@ -10,19 +10,24 @@ import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.JmsMessagePropertyRule;
+import com.l7tech.policy.assertion.JmsMessagePropertyRuleSet;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
-import javax.swing.event.EventListenerList;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
+import javax.swing.event.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.util.EventListener;
-import java.util.logging.Logger;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -113,6 +118,8 @@ public class JmsRoutingAssertionDialog extends JDialog {
     private JComboBox samlVersionComboBox;
     private JSpinner samlExpiryInMinutesSpinner;
     private JPanel samlPanel;
+    private JmsMessagePropertiesPanel requestMsgPropsPanel;
+    private JmsMessagePropertiesPanel responseMsgPropsPanel;
 
     /**
      * notfy the listeners
@@ -138,6 +145,14 @@ public class JmsRoutingAssertionDialog extends JDialog {
           });
     }
 
+    /**
+     * Called by IntelliJ IDEA's UI initialization method to initialize
+     * custom palette items.
+     */
+    public void createUIComponents() {
+        requestMsgPropsPanel = new JmsMessagePropertiesPanel();
+        responseMsgPropsPanel = new JmsMessagePropertiesPanel();
+    }
 
     /**
      * This method is called from within the static factory to
@@ -216,6 +231,10 @@ public class JmsRoutingAssertionDialog extends JDialog {
                     assertion.setSamlAssertionVersion(1);
                     assertion.setSamlAssertionExpiry(5);
                 }
+
+                assertion.setRequestJmsMessagePropertyRuleSet(requestMsgPropsPanel.getData());
+                assertion.setResponseJmsMessagePropertyRuleSet(responseMsgPropsPanel.getData());
+
                 fireEventAssertionChanged(assertion);
                 wasOkButtonPressed = true;
                 newlyCreatedConnection = null; // prevent disposal from deleting our new serviceQueue
@@ -270,6 +289,247 @@ public class JmsRoutingAssertionDialog extends JDialog {
             JmsUtilities.selectEndpoint(getQueueComboBox(), serviceEndpoint);
         } catch (Exception e) {
             throw new RuntimeException("Unable to look up JMS Queue for this routing assertion", e);
+        }
+
+        requestMsgPropsPanel.setData(assertion.getRequestJmsMessagePropertyRuleSet());
+        responseMsgPropsPanel.setData(assertion.getResponseJmsMessagePropertyRuleSet());
+    }
+
+    /**
+     * A subpanel to configure JMS message property propagation in either request
+     * or response routing.
+     *
+     * @since SecureSpan 4.0
+     * @author rmak
+     */
+    public class JmsMessagePropertiesPanel extends JPanel {
+        public static final String PASS_THRU = "<original value>";
+
+        private JPanel mainPanel;       // Not used but required by IntelliJ IDEA.
+        private JRadioButton passThruAllRadioButton;
+        private JRadioButton customizeRadioButton;
+        private JPanel customPanel;
+        private JTable customTable;
+        private JButton addButton;
+        private JButton removeButton;
+        private JButton editButton;
+
+        private DefaultTableModel customTableModel;
+
+        public JmsMessagePropertiesPanel() {
+            passThruAllRadioButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    Utilities.setEnabled(customPanel, false);
+                    customTable.clearSelection();
+                }
+            });
+
+            customizeRadioButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    Utilities.setEnabled(customPanel, true);
+                    removeButton.setEnabled(false);
+                    editButton.setEnabled(false);
+                }
+            });
+
+            final String[] columnNames = new String[]{"Name", "Value"};
+            customTableModel = new DefaultTableModel(columnNames, 0) {
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            };
+            customTable.setModel(customTableModel);
+            customTable.getTableHeader().setReorderingAllowed(false);
+            customTable.setColumnSelectionAllowed(false);
+            customTable.setRowSelectionAllowed(true);
+            customTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
+            customTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+                public void valueChanged(ListSelectionEvent e) {
+                    final int numSelected = customTable.getSelectedRows().length;
+                    removeButton.setEnabled(numSelected >= 1);
+                    editButton.setEnabled(numSelected == 1);
+                }
+            });
+
+            customTable.addKeyListener(new KeyListener() {
+                public void keyPressed(KeyEvent e) {
+                    if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                        editSelectedRow();
+                    }
+                }
+                public void keyTyped(KeyEvent e) {}
+                public void keyReleased(KeyEvent e) {}
+            });
+
+            customTable.addMouseListener(new MouseAdapter() {
+                public void mouseClicked(MouseEvent e) {
+                    if (e.getClickCount() == 2)
+                        editSelectedRow();
+                }
+            });
+
+            // Provides sorting of the custom table by property name.
+            final JTableHeader hdr = customTable.getTableHeader();
+            hdr.addMouseListener(new MouseAdapter(){
+                public void mouseClicked(MouseEvent event) {
+                    final TableColumnModel tcm = customTable.getColumnModel();
+                    final int viewColumnIndex = tcm.getColumnIndexAtX(event.getX());
+                    final int modelColumnIndex = customTable.convertColumnIndexToModel(viewColumnIndex);
+                    if (modelColumnIndex == 0) {
+                        sortTable();
+                    }
+                }
+            });
+
+            addButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent actionEvent) {
+                    JmsMessagePropertyDialog editor = new JmsMessagePropertyDialog(JmsRoutingAssertionDialog.this, getExistingNames(), null);
+                    editor.pack();
+                    Utilities.centerOnScreen(editor);
+                    editor.setVisible(true);
+                    if (editor.isOKed()) {
+                        JmsMessagePropertyRule newRule = editor.getData();
+                        customTableModel.addRow(dataToRow(newRule));
+                    }
+                }
+            });
+
+            removeButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent actionEvent) {
+                    int[] selectedrows = customTable.getSelectedRows();
+                    if (selectedrows != null && selectedrows.length > 0) {
+                        for (int i = selectedrows.length - 1; i >= 0; --i) {
+                            customTableModel.removeRow(selectedrows[i]);
+                        }
+                    }
+                }
+            });
+
+            editButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent actionEvent) {
+                    editSelectedRow();
+                }
+            });
+        }
+
+        /**
+         * Initialize the view with the given data.
+         *
+         * @param ruleSet   the JMS message property rule set
+         */
+        public void setData(JmsMessagePropertyRuleSet ruleSet) {
+            if (ruleSet == null || ruleSet.isPassThruAll()) {
+                passThruAllRadioButton.doClick();
+            } else {
+                customizeRadioButton.doClick();
+                for (JmsMessagePropertyRule rule : ruleSet.getRules()) {
+                    customTableModel.addRow(dataToRow(rule));
+                }
+                customTable.getSelectionModel().clearSelection();
+            }
+        }
+
+        /**
+         * @return data from the view
+         */
+        public JmsMessagePropertyRuleSet getData() {
+            final int numRows = customTable.getRowCount();
+            final JmsMessagePropertyRule[] rules = new JmsMessagePropertyRule[numRows];
+            for (int row = 0; row < numRows; ++ row) {
+                rules[row] = rowToData(row);
+            }
+            return new JmsMessagePropertyRuleSet(passThruAllRadioButton.isSelected(), rules);
+        }
+
+        private void editSelectedRow() {
+            final int row = customTable.getSelectedRow();
+            if (row != -1) {
+                final JmsMessagePropertyRule rule = rowToData(row);
+                final JmsMessagePropertyDialog editor = new JmsMessagePropertyDialog(JmsRoutingAssertionDialog.this, getExistingNames(), rule);
+                Utilities.centerOnScreen(editor);
+                editor.pack();
+                editor.setVisible(true);
+                if (editor.isOKed()) {
+                    final Object[] cells = dataToRow(rule);
+                    customTable.setValueAt(cells[0], row, 0);
+                    customTable.setValueAt(cells[1], row, 1);
+                }
+            }
+        }
+
+        private Object[] dataToRow(JmsMessagePropertyRule rule) {
+            final String name = rule.getName();
+            String value;
+            if (rule.isPassThru()) {
+                value = PASS_THRU;
+            } else {
+                value = rule.getCustomPattern();
+            }
+            return new Object[]{ name, value };
+        }
+
+        private JmsMessagePropertyRule rowToData(int row) {
+            final TableModel model = customTable.getModel();
+            final String name = (String)model.getValueAt(row, 0);
+            final String value = (String)model.getValueAt(row, 1);
+            boolean passThru;
+            String pattern;
+            if (PASS_THRU.equals(value)) {
+                passThru = true;
+                pattern = null;
+            } else {
+                passThru = false;
+                pattern = value;
+            }
+            return new JmsMessagePropertyRule(name, passThru, pattern);
+        }
+
+        private Set<String> getExistingNames() {
+            final Set<String> existingNames = new HashSet<String>(customTable.getRowCount());
+            for (int i = 0; i < customTable.getRowCount(); ++ i) {
+                existingNames.add((String)customTable.getValueAt(i, 0));
+            }
+            return existingNames;
+        }
+
+        private boolean tableAscending = false;
+
+        /**
+         * Sort the rows of the custom table by property name in toggled order. 
+         */
+        private void sortTable() {
+            final int rowCount = customTableModel.getRowCount();
+            for (int i = 0; i < rowCount; ++ i) {
+                for (int j = i + 1; j < rowCount; ++ j) {
+                    final String name_i = customTable.getValueAt(i, 0).toString();
+                    final String name_j = customTable.getValueAt(j, 0).toString();
+                    if (tableAscending) {
+                        if (name_i.compareTo(name_j) < 0) {
+                            swapRows(i, j);
+                        }
+                    } else {
+                        if (name_i.compareTo(name_j) > 0) {
+                            swapRows(i, j);
+                        }
+                    }
+                }
+            }
+            tableAscending = !tableAscending;
+        }
+
+        /**
+         * Swaps the cell contents of two rows in the custom table.
+         * @param row1  index of row 1
+         * @param row2  index of row 2
+         */
+        private void swapRows(final int row1, final int row2) {
+            for (int column = 0; column < customTable.getColumnCount(); ++ column) {
+                final Object value_1 = customTable.getValueAt(row1, column);
+                final Object value_2 = customTable.getValueAt(row2, column);
+                customTable.setValueAt(value_2, row1, column);
+                customTable.setValueAt(value_1, row2, column);
+            }
         }
     }
 }

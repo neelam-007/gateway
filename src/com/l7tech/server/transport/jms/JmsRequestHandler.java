@@ -6,6 +6,7 @@
 
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.JmsKnob;
@@ -19,11 +20,10 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
-import com.l7tech.cluster.ClusterPropertyManager;
+import com.l7tech.server.util.SoapFaultManager;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -31,6 +31,10 @@ import javax.jms.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -90,11 +94,23 @@ class JmsRequestHandler {
                 throw new JmsRuntimeException( msg );
             }
 
+            // Copies the request JMS message properties into the request JmsKnob.
+            final Map<String, Object> msgProps = new HashMap<String, Object>();
+            for (Enumeration e = jmsRequest.getPropertyNames(); e.hasMoreElements() ;) {
+                final String name = (String)e.nextElement();
+                final Object value = jmsRequest.getObjectProperty(name);
+                msgProps.put(name, value);
+            }
+            final Map<String, Object> reqJmsMsgProps = Collections.unmodifiableMap(msgProps);
+
             com.l7tech.common.message.Message request = new com.l7tech.common.message.Message();
             request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream );
             request.attachJmsKnob(new JmsKnob() {
                 public boolean isBytesMessage() {
                     return jmsRequest instanceof BytesMessage;
+                }
+                public Map<String, Object> getJmsMsgPropMap() {
+                    return reqJmsMsgProps;
                 }
             });
 
@@ -194,6 +210,16 @@ class JmsRequestHandler {
                     } else {
                         throw new JmsRuntimeException( "Can't send a " + jmsResponse.getClass().getName() +
                                                        ". Only BytesMessage and TextMessage are supported" );
+                    }
+
+                    // Copies the JMS message properties from the response JmsKnob to the response JMS message.
+                    // Propagation rules has already been enforced in the knob by the JMS routing assertion.
+                    final JmsKnob jmsResponseKnob = (JmsKnob)context.getResponse().getKnob(JmsKnob.class);
+                    if (jmsResponseKnob != null) {
+                        final Map<String, Object> respJmsMsgProps = jmsResponseKnob.getJmsMsgPropMap();
+                        for (String name : respJmsMsgProps.keySet()) {
+                            jmsResponse.setObjectProperty(name, respJmsMsgProps.get(name));
+                        }
                     }
 
                     sendResponse( jmsRequest, jmsResponse, bag, receiver, status );

@@ -13,36 +13,37 @@ import com.l7tech.common.message.JmsKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.JmsRoutingAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.StashManagerFactory;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.server.KeystoreUtils;
-import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.jms.*;
-
+import com.l7tech.server.util.ApplicationEventProxy;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
-import java.util.logging.Logger;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -154,6 +155,18 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                 selector = "JMSCorrelationID = '" + escape( corrId ) + "'";
             }
 
+            // Enforces rules on propagation of request JMS message properties.
+            Map<String, Object> inboundRequestProps = null;
+            final JmsKnob jmsInboundKnob = (JmsKnob)context.getRequest().getKnob(JmsKnob.class);
+            if (jmsInboundKnob != null) {
+                inboundRequestProps = jmsInboundKnob.getJmsMsgPropMap();
+            }
+            final Map<String, Object> outboundRequestProps = new HashMap<String, Object>();
+            enforceJmsMessagePropertyRuleSet(context, data.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps);
+            for (String name : outboundRequestProps.keySet()) {
+                jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
+            }
+
             boolean inbound = context.isReplyExpected()
                               && jmsInboundDest != null;
 
@@ -197,11 +210,33 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         return AssertionStatus.FAILED;
                     }
                     auditor.logAndAudit(AssertionMessages.JMS_ROUTING_GOT_RESPONSE);
+
+                    // Copies the response JMS message properties into the response JmsKnob.
+                    // Do this before enforcing the propagation rules so that they will
+                    // be available as context variables.
+                    final Map<String, Object> inResJmsMsgProps = new HashMap<String, Object>();
+                    for (Enumeration e = jmsResponse.getPropertyNames(); e.hasMoreElements() ;) {
+                        final String name = (String)e.nextElement();
+                        final Object value = jmsResponse.getObjectProperty(name);
+                        inResJmsMsgProps.put(name, value);
+                    }
+
                     context.getResponse().attachJmsKnob(new JmsKnob() {
                         public boolean isBytesMessage() {
                             return (jmsResponse instanceof BytesMessage);
                         }
+                        public Map<String, Object> getJmsMsgPropMap() {
+                            return inResJmsMsgProps;
+                        }
                     });
+
+                    final Map<String, Object> outResJmsMsgProps = new HashMap<String, Object>();
+                    enforceJmsMessagePropertyRuleSet(context, data.getResponseJmsMessagePropertyRuleSet(), inResJmsMsgProps, outResJmsMsgProps);
+                    // After enforcing propagation rules, replace the JMS message properties
+                    // in the response JmsKnob with enforced/expanded values.
+                    context.getResponse().getJmsKnob().getJmsMsgPropMap().clear();
+                    context.getResponse().getJmsKnob().getJmsMsgPropMap().putAll(outResJmsMsgProps);
+
                     context.setRoutingStatus( RoutingStatus.ROUTED );
                 }
             } else {
@@ -443,6 +478,44 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             bag.getConnection().start();
         }
         return bag;
+    }
+
+    private void enforceJmsMessagePropertyRuleSet(PolicyEnforcementContext context, JmsMessagePropertyRuleSet ruleSet, Map<String, Object> src,  Map<String, Object> dst) {
+        if (ruleSet.isPassThruAll()) {
+            dst.putAll(src);
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest("Propagating all JMS message properties with pass through.");
+            }
+        } else {
+            // For efficiency, obtain all context variables used in the rule set once.
+            final StringBuilder sb = new StringBuilder();
+            for (JmsMessagePropertyRule rule : ruleSet.getRules()) {
+                if (! rule.isPassThru()) {
+                    sb.append(rule.getCustomPattern());
+                }
+            }
+            final String[] variablesUsed = ExpandVariables.getReferencedNames(sb.toString());
+            final VariableMap vars = context.getVariableMap(variablesUsed, auditor);
+
+            for (JmsMessagePropertyRule rule : ruleSet.getRules()) {
+                final String name = rule.getName();
+                if (rule.isPassThru()) {
+                    if (src.containsKey(name)) {
+                        dst.put(name, src.get(name));
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.finest("Propagating a JMS message property with pass through. (name=" + name + ", value=" + src.get(name) + ")");
+                        }
+                    }
+                } else {
+                    final String pattern = rule.getCustomPattern();
+                    final String value = ExpandVariables.process(pattern, vars);
+                    dst.put(name, value);
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.finest("Propagating a JMS message property with custom pattern (name=" + name + ", pattern=" + pattern + ", value=" + value + ")");
+                    }
+                }
+            }
+        }
     }
 
     /**

@@ -66,6 +66,40 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
         this.responseTimeout = responseTimeout;
     }
 
+    /**
+     * @return set of rules for propagating request JMS message properties
+     * @since SecureSpan 4.0
+     */
+    public JmsMessagePropertyRuleSet getRequestJmsMessagePropertyRuleSet() {
+        return requestJmsMessagePropertyRuleSet;
+    }
+
+    /**
+     * Set the rules for propagating request JMS message properties.
+     * @param ruleSet   rules for propagating request JMS message properties
+     * @since SecureSpan 4.0
+     */
+    public void setRequestJmsMessagePropertyRuleSet(JmsMessagePropertyRuleSet ruleSet) {
+        requestJmsMessagePropertyRuleSet = ruleSet;
+    }
+
+    /**
+     * @return set of rules for propagating response JMS message properties
+     * @since SecureSpan 4.0
+     */
+    public JmsMessagePropertyRuleSet getResponseJmsMessagePropertyRuleSet() {
+        return responseJmsMessagePropertyRuleSet;
+    }
+
+    /**
+     * Set the rules for propagating response JMS message properties.
+     * @param ruleSet   rules for propagating response JMS message properties
+     * @since SecureSpan 4.0
+     */
+    public void setResponseJmsMessagePropertyRuleSet(JmsMessagePropertyRuleSet ruleSet) {
+        responseJmsMessagePropertyRuleSet = ruleSet;
+    }
+
     public EntityHeader[] getEntitiesUsed() {
         return new EntityHeader[] { new EntityHeader(this.endpointOid.toString(), EntityType.JMS_ENDPOINT, endpointName, null)};
     }
@@ -73,4 +107,6 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     private Long endpointOid = null;
     private String endpointName = null;
     private int responseTimeout = DEFAULT_TIMEOUT;
+    private JmsMessagePropertyRuleSet requestJmsMessagePropertyRuleSet;
+    private JmsMessagePropertyRuleSet responseJmsMessagePropertyRuleSet;
 }
