@@ -6,8 +6,14 @@
 
 SSGBINROOT="/ssg/bin"
 EXPECT="/usr/bin/expect"
-INITIALIZE_HSM="${EXPECT} ${SSGBINROOT}/initialize-hsm.expect"
+HSM_SETUP_SCRIPT="${SSGBINROOT}/initialize-hsm.expect"
+INITIALIZE_HSM_COMMAND="${EXPECT} ${HSM_SETUP_SCRIPT}"
 RESTORE_HSM=""
+
+SCA_CONTROL="/etc/init.d/sca"
+SCA_DIAG="scadiag"
+SCA_DIAG_ZERO_HSM="${SCA_DIAG} -z mca0"
+KEYDATA_DIR="/var/opt/sun/sca6000/keydata"
 
 what_to_do=${1}
 password=${2}
@@ -30,21 +36,38 @@ if [ -z "${what_to_do}" ] ; then
 fi
 
 do_hsm_init() {
-    echo "Starting the SCA."
-    /etc/init.d/sca start
+    #check to make sure the script is present before doing anything else
+    if [ ! -s "$HSM_SETUP_SCRIPT" ] ; then
+        echo "${HSM_SETUP_SCRIPT} doesn't exist. Cannot initialize the hsm. Exiting."
+        exit 1;
+    fi
 
-    scadiag -z mca0
+    if [ ! -s "$SCA_CONTROL" ] ; then
+        echo "${SCA_CONTROL} doesn't exist. Cannot initialize the hsm. Exiting."
+        exit 1;
+    fi
+
+    echo "Starting the SCA."
+    (${SCA_CONTROL} start)
+
+    (${SCA_DIAG_ZERO_HSM})
+
+    if [ $? -ne 0 ] ; then
+        echo "${SCA_DIAG_ZERO_HSM} failed. Failed to initialize the HSM. Exiting."
+        exit 1;
+    fi
 
     echo "Stopping the SCA."
-    /etc/init.d/sca stop
+    (${SCA_CONTROL} stop)
     
     echo "Emptying the keydata directory"
-    rm -rf /var/opt/sun/sca6000/keydata/*
+    rm -rf ${KEYDATA_DIR}/*
 
     echo "Starting the SCA."
-    /etc/init.d/sca start
+    (${SCA_CONTROL} start)
 
-    (${INITIALIZE_HSM})
+    (${INITIALIZE_HSM_COMMAND} $password)
+    echo "the return code was $?"
 }
 
 case "${what_to_do}" in

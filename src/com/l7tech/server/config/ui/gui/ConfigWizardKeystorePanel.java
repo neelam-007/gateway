@@ -241,7 +241,8 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
                     shouldDisable = false;
                 } catch (KeystoreActions.KeystoreActionsException e) {
                     shouldDisable = true;
-                    showErrorMessage("Error while updating the cluster shared key.\n There is an existing keystore on this gateway but there was an error while trying to extract keys from it. ");
+//                    showErrorMessage("Error while updating the cluster shared key.\n There is an existing keystore on this gateway but there was an error while trying to extract keys from it. ");
+                    showErrorMessage("Error while updating the cluster shared key\n" + e.getMessage());
                 }
             }
         } else {

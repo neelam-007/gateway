@@ -258,7 +258,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 ok = true;
             } catch (KeystoreActions.KeystoreActionsException e) {
                 ok = false;
-                printText("*** Error while updating the cluster shared key.\n There is an existing keystore on this gateway but there was an error while trying to extract keys from it. ***");
+                printText("Error while updating the cluster shared key\n" + e.getMessage());
             }
         } else
             ok = true;       

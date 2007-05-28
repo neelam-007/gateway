@@ -139,6 +139,7 @@ public class KeystoreActions {
         Connection conn = null;
         Statement stmt = null;
 
+        String errMsg = null;
         try {
             DBActions dba = new DBActions();
             conn = dba.getConnection(dbInfo);
@@ -155,29 +156,27 @@ public class KeystoreActions {
                 sharedKey = EncryptionUtil.deB64AndRsaDecrypt(keyData, privateKey);
             }
         } catch (ClassNotFoundException e) {
-            logger.severe(MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage()));
-            throw new KeystoreActionsException();
+            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
         } catch (SQLException e) {
-           logger.severe(MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage()));
-            throw new KeystoreActionsException();
+            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
         } catch (BadPaddingException e) {
-            logger.severe(MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage()));
-            throw new KeystoreActionsException();
+            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
         } catch (IOException e) {
-            logger.severe(MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage()));
-            throw new KeystoreActionsException();
+            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
         } catch (IllegalBlockSizeException e) {
-            logger.severe(MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage()));
-            throw new KeystoreActionsException();
+            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
         } catch (InvalidKeyException e) {
-            logger.severe(MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage()));
-            throw new KeystoreActionsException();
+            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
         } catch (NoSuchPaddingException e) {
-            logger.severe(MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage()));
-            throw new KeystoreActionsException();
+            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
         } finally{
             ResourceUtils.closeQuietly(conn);
             ResourceUtils.closeQuietly(stmt);
+        }
+
+        if (errMsg != null) {
+            logger.severe(errMsg);
+            throw new KeystoreActionsException(errMsg);
         }
         return sharedKey;
     }
@@ -192,10 +191,6 @@ public class KeystoreActions {
 
 
     public class KeystoreActionsException extends Exception {
-
-        public KeystoreActionsException() {
-        }
-
         public KeystoreActionsException(String message) {
             super(message);
         }
