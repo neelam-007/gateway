@@ -1,4 +1,4 @@
-package com.l7tech.server.security.keystore;
+package com.l7tech.common.security.keystore;
 
 import com.l7tech.objectmodel.Entity;
 

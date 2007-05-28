@@ -1,6 +1,6 @@
 package com.l7tech.server.security.keystore;
 
-import com.l7tech.common.security.CertificateRequest;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 
 import javax.naming.ldap.LdapName;
 import java.security.*;

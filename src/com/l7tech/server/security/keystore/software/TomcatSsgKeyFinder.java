@@ -4,7 +4,7 @@ import com.l7tech.common.security.BouncyCastleCertUtils;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.KeystoreUtils;
-import com.l7tech.server.security.keystore.SsgKeyEntry;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import org.springframework.transaction.annotation.Propagation;

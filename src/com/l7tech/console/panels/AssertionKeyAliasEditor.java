@@ -1,12 +1,12 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.PrivateKeyable;
-import com.l7tech.server.security.keystore.SsgKeyEntry;
 
 import javax.swing.*;
 import java.awt.*;

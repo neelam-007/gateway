@@ -3,6 +3,7 @@ package com.l7tech.server.security.keystore;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.BouncyCastleCertUtils;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
 

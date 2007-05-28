@@ -6,11 +6,10 @@ import org.springframework.transaction.annotation.Propagation;
 import java.security.KeyStoreException;
 import java.security.InvalidKeyException;
 import java.security.SignatureException;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.util.List;
 
 import com.l7tech.common.security.CertificateRequest;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 
 import javax.naming.ldap.LdapName;
 

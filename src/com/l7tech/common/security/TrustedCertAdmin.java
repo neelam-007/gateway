@@ -9,7 +9,7 @@ import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.security.keystore.SsgKeyEntry;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +20,6 @@ import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.KeyStoreException;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.GeneralSecurityException;
 import java.util.List;
 
