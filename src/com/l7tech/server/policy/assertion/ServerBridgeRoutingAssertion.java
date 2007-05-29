@@ -19,7 +19,6 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
@@ -41,9 +40,8 @@ import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.ssl.SslPeerHttpClient;
 import com.l7tech.proxy.ssl.SslPeerLazyDelegateSocketFactory;
 import com.l7tech.server.DefaultStashManagerFactory;
-import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.policy.assertion.xmlsec.ServerResponseWssSignature;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.service.PublishedService;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
@@ -65,7 +63,6 @@ import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -102,33 +99,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         trustedCertManager = (TrustedCertManager)applicationContext.getBean("trustedCertManager", TrustedCertManager.class);
         wspReader = (WspReader)applicationContext.getBean("wspReader", WspReader.class);
 
-        final SignerInfo signerInfo;
         try {
-            if (!assertion.isUsesDefaultKeyStore()) {
-                final long keystoreId = assertion.getNonDefaultKeystoreId();
-                final String keyAlias = assertion.getKeyAlias();
-                com.l7tech.server.security.keystore.SsgKeyStoreManager sksm = (com.l7tech.server.security.keystore.SsgKeyStoreManager)ctx.getBean("ssgKeyStoreManager", com.l7tech.server.security.keystore.SsgKeyStoreManager.class);
-                SsgKeyFinder keyFinder = sksm.findByPrimaryKey(keystoreId);
-                SsgKeyEntry keyEntry = keyFinder.getCertificateChain(keyAlias);
-                X509Certificate[] certChain = keyEntry.getCertificateChain();
-                RSAPrivateKey privateKey = keyEntry.getRSAPrivateKey();
-                signerInfo = new SignerInfo(privateKey, certChain);
-            } else {
-                final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
-                signerInfo = ku.getSslSignerInfo();
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException("Can't read the keystore for outbound message decoration", e);
-        } catch (FindException e) {
-            throw new RuntimeException("Can't read the keystore for outbound message decoration", e);
+            signerInfo = ServerResponseWssSignature.getSignerInfo(ctx, assertion);
         } catch (KeyStoreException e) {
-            throw new RuntimeException("Can't read the keystore for outbound message decoration", e);
-        } catch (UnrecoverableKeyException e) {
-            throw new RuntimeException("Can't read the keystore for outbound message decoration", e);
+            throw new RuntimeException("Unable to read private key for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
         }
 
-        this.signerInfo = signerInfo;
         varNames = assertion.getVariablesUsed();
 
         URL url;

@@ -24,12 +24,14 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.security.SingleCertX509KeyManager;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.policy.assertion.xmlsec.ServerResponseWssSignature;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.event.PostRoutingEvent;
@@ -49,6 +51,7 @@ import java.net.*;
 import java.security.SignatureException;
 import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.KeyStoreException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -103,23 +106,17 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
 
         try {
-            final KeyManager[] keyManagers;
             final SignerInfo signerInfo;
+            signerInfo = ServerResponseWssSignature.getSignerInfo(ctx, assertion);
 
+            final KeyManager[] keyManagers;
             if (!assertion.isUsesDefaultKeyStore()) {
-                final long keystoreId = assertion.getNonDefaultKeystoreId();
-                final String keyAlias = assertion.getKeyAlias();
-                SsgKeyStoreManager sksm = (SsgKeyStoreManager)ctx.getBean("ssgKeyStoreManager", SsgKeyStoreManager.class);
-                SsgKeyFinder keyFinder = sksm.findByPrimaryKey(keystoreId);
-                SsgKeyEntry keyEntry = keyFinder.getCertificateChain(keyAlias);
-                X509Certificate[] certChain = keyEntry.getCertificateChain();
-                RSAPrivateKey privateKey = keyEntry.getRSAPrivateKey();
-                keyManagers = new KeyManager[] { new SingleCertX509KeyManager(certChain, privateKey, "ks" + keystoreId + ":" + keyAlias ) };
-                signerInfo = new SignerInfo(privateKey, certChain);
+                X509Certificate[] certChain = signerInfo.getCertificateChain();
+                PrivateKey privateKey = signerInfo.getPrivate();
+                keyManagers = new KeyManager[] { new SingleCertX509KeyManager(certChain, privateKey) };
             } else {
                 final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
                 keyManagers = ku.getSSLKeyManagerFactory().getKeyManagers();
-                signerInfo = ku.getSslSignerInfo();
             }
             SSLContext sslContext = SSLContext.getInstance("SSL");
 
