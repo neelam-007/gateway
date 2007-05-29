@@ -146,7 +146,7 @@ public class KeyInfoElement implements ParsedElement {
     public static void checkKeyInfo(Element encryptedType, X509Certificate recipientCert)
             throws UnexpectedKeyInfoException, InvalidDocumentFormatException, GeneralSecurityException
     {
-        getTargetPrivateKeyForEncryptedType(encryptedType, new SimpleSecurityTokenResolver(recipientCert), null);
+        getTargetPrivateKeyForEncryptedType(encryptedType, new SimpleSecurityTokenResolver(recipientCert, null), null);
     }
 
     /**

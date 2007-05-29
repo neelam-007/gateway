@@ -16,14 +16,19 @@ import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
+import com.l7tech.common.security.xml.WrapSSTR;
+import com.l7tech.common.security.xml.processor.ProcessorException;
+import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.WsTrustRequestType;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.audit.AuditContextStub;
@@ -35,12 +40,14 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.beans.BeansException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.security.PrivateKey;
+import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
@@ -83,10 +90,21 @@ public class TokenServiceTest extends TestCase {
                                                                     null, null, null, null);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
+        SecurityTokenResolver testTokenResolver = (SecurityTokenResolver)applicationContext.getBean("securityTokenResolver");
+        SecurityTokenResolver str = new WrapSSTR(TestDocuments.getDotNetServerCertificate(),
+                                                 TestDocuments.getDotNetServerPrivateKey(),
+                                                 testTokenResolver);
+
         final TokenService service = new TokenServiceImpl(TestDocuments.getDotNetServerPrivateKey(),
                                                       TestDocuments.getDotNetServerCertificate(),
                                                       (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
-                                                      (SecurityTokenResolver)applicationContext.getBean("securityTokenResolver"));
+                                                      str)
+        {
+            public AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context, CredentialsAuthenticator authenticator, boolean useThumbprintForSamlSignature, boolean useThumbprintForSamlSubject) throws InvalidDocumentFormatException, TokenServiceException, ProcessorException, BadSecurityContextException, GeneralSecurityException, AuthenticationException {
+                setApplicationContext(TokenServiceTest.applicationContext);
+                return super.respondToSecurityTokenRequest(context, authenticator, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
+            }
+        };
 
         final TokenServiceImpl.CredentialsAuthenticator authenticator = new TokenServiceImpl.CredentialsAuthenticator() {
 
