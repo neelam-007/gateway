@@ -21,6 +21,8 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
+import com.l7tech.common.security.SingleCertX509KeyManager;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.*;
@@ -28,6 +30,8 @@ import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -43,7 +47,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
 import java.security.SignatureException;
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -92,16 +100,36 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             protectedServiceUrl = url;
         }
 
+
+
         try {
+            final KeyManager[] keyManagers;
+            final SignerInfo signerInfo;
+
+            if (!assertion.isUsesDefaultKeyStore()) {
+                final long keystoreId = assertion.getNonDefaultKeystoreId();
+                final String keyAlias = assertion.getKeyAlias();
+                SsgKeyStoreManager sksm = (SsgKeyStoreManager)ctx.getBean("ssgKeyStoreManager", SsgKeyStoreManager.class);
+                SsgKeyFinder keyFinder = sksm.findByPrimaryKey(keystoreId);
+                SsgKeyEntry keyEntry = keyFinder.getCertificateChain(keyAlias);
+                X509Certificate[] certChain = keyEntry.getCertificateChain();
+                RSAPrivateKey privateKey = keyEntry.getRSAPrivateKey();
+                keyManagers = new KeyManager[] { new SingleCertX509KeyManager(certChain, privateKey, "ks" + keystoreId + ":" + keyAlias ) };
+                signerInfo = new SignerInfo(privateKey, certChain);
+            } else {
+                final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
+                keyManagers = ku.getSSLKeyManagerFactory().getKeyManagers();
+                signerInfo = ku.getSslSignerInfo();
+            }
             SSLContext sslContext = SSLContext.getInstance("SSL");
+
             final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("trustManager");
             hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
-            final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
-            sslContext.init(ku.getSSLKeyManagerFactory().getKeyManagers(), new TrustManager[]{trustManager}, null);
+            sslContext.init(keyManagers, new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             socketFactory = sslContext.getSocketFactory();
-            senderVouchesSignerInfo = ku.getSslSignerInfo();
+            senderVouchesSignerInfo = signerInfo;
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
             throw new RuntimeException(e);

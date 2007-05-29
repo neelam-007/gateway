@@ -19,6 +19,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
@@ -42,6 +43,7 @@ import com.l7tech.proxy.ssl.SslPeerLazyDelegateSocketFactory;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.service.PublishedService;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
@@ -63,6 +65,7 @@ import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -98,13 +101,34 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
         trustedCertManager = (TrustedCertManager)applicationContext.getBean("trustedCertManager", TrustedCertManager.class);
         wspReader = (WspReader)applicationContext.getBean("wspReader", WspReader.class);
-        final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
+
+        final SignerInfo signerInfo;
         try {
-            signerInfo = ku.getSslSignerInfo();
+            if (!assertion.isUsesDefaultKeyStore()) {
+                final long keystoreId = assertion.getNonDefaultKeystoreId();
+                final String keyAlias = assertion.getKeyAlias();
+                com.l7tech.server.security.keystore.SsgKeyStoreManager sksm = (com.l7tech.server.security.keystore.SsgKeyStoreManager)ctx.getBean("ssgKeyStoreManager", com.l7tech.server.security.keystore.SsgKeyStoreManager.class);
+                SsgKeyFinder keyFinder = sksm.findByPrimaryKey(keystoreId);
+                SsgKeyEntry keyEntry = keyFinder.getCertificateChain(keyAlias);
+                X509Certificate[] certChain = keyEntry.getCertificateChain();
+                RSAPrivateKey privateKey = keyEntry.getRSAPrivateKey();
+                signerInfo = new SignerInfo(privateKey, certChain);
+            } else {
+                final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
+                signerInfo = ku.getSslSignerInfo();
+            }
+
         } catch (IOException e) {
-            throw new RuntimeException("Can't read the keystore for signing outbound SAML", e);
+            throw new RuntimeException("Can't read the keystore for outbound message decoration", e);
+        } catch (FindException e) {
+            throw new RuntimeException("Can't read the keystore for outbound message decoration", e);
+        } catch (KeyStoreException e) {
+            throw new RuntimeException("Can't read the keystore for outbound message decoration", e);
+        } catch (UnrecoverableKeyException e) {
+            throw new RuntimeException("Can't read the keystore for outbound message decoration", e);
         }
 
+        this.signerInfo = signerInfo;
         varNames = assertion.getVariablesUsed();
 
         URL url;
@@ -231,7 +255,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     if (status == HttpConstants.STATUS_OK)
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
                     else
-                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
+                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, url.getPath(), String.valueOf(status));
 
                     HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
                     if (httpResponseKnob != null) {
@@ -620,7 +644,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                             if(status!=HttpConstants.STATUS_OK && allowRerequest) {
                                 if(rrl.reroute(params.getTargetUrl(), status, res.getHeaders(), context)) {
-                                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, new String[]{params.getTargetUrl().getPath(), Integer.toString(status)});
+                                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, params.getTargetUrl().getPath(), Integer.toString(status));
 
                                     //TODO if we refactor the BRA we should clean this up (params changed by this SimpleHttpClient impl [HACK])
                                     params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(context.getCookies())));
