@@ -1152,7 +1152,7 @@ public class WssProcessorImpl implements WssProcessor {
                     } else {
                         X509Certificate foundCert = cntx.securityTokenResolver.lookupBySki(value);
                         if (foundCert == null) {
-                            logger.info("The KeyInfo referred to a SKI, but we were unable to locate a matching cert");
+                            logger.info("The KeyInfo referred to a SKI (" + value + "), but we were unable to locate a matching cert");
                         } else {
                             if(logger.isLoggable(Level.FINEST))
                                 logger.finest("The KeyInfo referred to a recognized X.509 certificate by its SKI: " + foundCert.getSubjectDN().getName());
