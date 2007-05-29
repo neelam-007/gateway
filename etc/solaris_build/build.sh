@@ -77,14 +77,14 @@ echo "i depend" >> ../pkgbuild/Prototype
 echo "i copyright" >> ../pkgbuild/Prototype 
 
 ### Export/home stuff!
-du -a ./export/home/gateway | awk '{print $2}' | pkgproto | sed -e "s/build staff/gateway gateway/" >> ../pkgbuild/Prototype
-du -a ./export/home/ssgconfig | awk '{print $2}' | pkgproto | sed -e "s/build staff/ssgconfig gateway/" >> ../pkgbuild/Prototype
+du -a ./export/home/gateway | awk '{print $2}' | pkgproto | sed -e "s/jay other/gateway gateway/" >> ../pkgbuild/Prototype
+du -a ./export/home/ssgconfig | awk '{print $2}' | pkgproto | sed -e "s/jay other/ssgconfig gateway/" >> ../pkgbuild/Prototype
 
 ### Main /ssg
-du -a ./ssg | awk '{print $2}' | pkgproto | sed -e "s/build staff/gateway gateway/" >> ../pkgbuild/Prototype
+du -a ./ssg | awk '{print $2}' | pkgproto | sed -e "s/jay other/gateway gateway/" >> ../pkgbuild/Prototype
 
 ### Startups
-du -a ./etc | awk '{print $2}' | pkgproto | sed -e "s/build staff/root sys/" >> ../pkgbuild/Prototype
+du -a ./etc | awk '{print $2}' | pkgproto | sed -e "s/jay other/root sys/" >> ../pkgbuild/Prototype
 
 echo Done
 echo
