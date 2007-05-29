@@ -2055,6 +2055,7 @@
             <root classname="com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine" />
             <root classname="com.l7tech.common.security.prov.luna.BouncyCastleToLunaProvider" />
             <root classname="com.l7tech.common.security.prov.luna.LunaJceProviderEngine" />
+            <root classname="com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine" />
             <root classname="com.l7tech.common.util.DnParserBc" />
             <root classname="com.l7tech.common.util.SingleLineLogFormatter" />
         </classfileset>
@@ -2430,7 +2431,7 @@
                    libfilesetref="configwizard.testpackage.fileset"
                    failpackages="com.l7tech.admin com.l7tech.cluster com.l7tech.internal com.l7tech.service com.l7tech.spring"
                    resultproperty="testpackage.configwizard.result"
-                   ignoreclasses="com.l7tech.common.security.prov.luna.BouncyCastleToLunaProvider com.l7tech.common.security.prov.luna.LunaJceProviderEngine"/>
+                   ignoreclasses="com.l7tech.common.security.prov.luna.BouncyCastleToLunaProvider com.l7tech.common.security.prov.luna.LunaJceProviderEngine com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine"/>
 
         <!-- This just stops idea complaining -->
         <property name="testpackage.configwizard.result" value=""/>

@@ -28,6 +28,7 @@ import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -296,7 +297,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     
     private void doHSMConfig(KeystoreConfigBean ksBean) throws Exception {
         char[] passwd = ksBean.getKsPassword();
-        char[] ksPassword = new char["gateway:".toCharArray().length + passwd.length];
+        char[] ksPassword = ("gateway:" + new String(passwd)).toCharArray();
+//                new char["gateway:".toCharArray().length + passwd.length];
         String ksDir = getOsFunctions().getKeystoreDir();
         File keystoreDir = new File(ksDir);
         if (!keystoreDir.exists() && !keystoreDir.mkdir()) {
@@ -335,10 +337,11 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 //HSM Specific setup
                 ScaManager scaManager = getScaManager();
                 if (checkGDDCDongle()) {
+                    logger.info("Using keystore password: " + String.valueOf(ksPassword));
                     initializeSCA(ksPassword);
                     prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
-                    updateJavaSecurity(javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
                     makeHSMKeys(new File(ksDir), ksPassword);
+                    updateJavaSecurity(javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
                     insertKeystoreIntoDatabase(scaManager);
 
                     //General Keystore Setup
@@ -383,8 +386,16 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             String initializeScript = getOsFunctions().getSsgInstallRoot() + HSM_SETUP_SCRIPT;
             try {
                 logger.info("Executing \"" + initializeScript + "\"");
-                ProcResult result = ProcUtils.exec(null, new File(initializeScript), ProcUtils.args("init", keystorePassword), null, false);
-                logger.info("Successfully initialized the HSM: " + new String(result.getOutput()));
+                ProcResult result = ProcUtils.exec(null, new File(initializeScript), ProcUtils.args("init", keystorePassword), null, true);
+                if (result.getExitStatus() != 0) {
+                    logger.warning(MessageFormat.format("{0} exited with a non zero return code: {1} ({2})",
+                            initializeScript,
+                            result.getExitStatus(),
+                            new String(result.getOutput()))
+                    );
+                } else {
+                    logger.info(MessageFormat.format("Successfully initialized the HSM: {0}", new String(result.getOutput())));
+                }
             } catch (IOException e) {
                 logger.warning("There was an error trying to initialize the HSM: " + e.getMessage());
                 throw e;
@@ -484,7 +495,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         PrivateKey caPrivateKey;
 
         KeyStore theHsmKeystore = KeyStore.getInstance(kstype);
-        logger.info("Connecting to " + kstype + " keystore");
+        logger.info("Connecting to " + kstype + " keystore using password: " + new String(keystoreAccessPassword));
         theHsmKeystore.load(null,keystoreAccessPassword);
 
 
@@ -520,10 +531,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private void createDummyKeystorse(File keystoreDir) throws IOException {
         File dummmyCaKeystore = new File(keystoreDir, KeyStoreConstants.CA_KEYSTORE_FILE);
-        File summySslKeystore = new File(keystoreDir, KeyStoreConstants.SSL_KEYSTORE_FILE);
+        File dummySslKeystore = new File(keystoreDir, KeyStoreConstants.SSL_KEYSTORE_FILE);
         
-        dummmyCaKeystore.createNewFile();
-        summySslKeystore.createNewFile();
+        truncateKeystores(dummmyCaKeystore, dummySslKeystore);
     }
 
     public void importExistingKeystoreToHsm(File existingCaKeystore, File existingSslKeystore,
@@ -666,9 +676,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void prepareJvmForNewKeystoreType(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException {
+    private void prepareJvmForNewKeystoreType(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException {
         Provider[] currentProviders = Security.getProviders();
         for (Provider provider : currentProviders) {
+            logger.info("Removing " + provider.getName());
             Security.removeProvider(provider.getName());
         }
 
@@ -688,11 +699,27 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void prepareProviders(String[] securityProviders) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+    private void prepareProviders(String[] securityProviders) throws IllegalAccessException, InstantiationException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
         for (String providerName : securityProviders) {
             try {
-                Security.addProvider((Provider) Class.forName(providerName).newInstance());
+                Provider p = null;
+                if (providerName.contains(" ")) {
+                    String[] splitz = providerName.split(" ");
+                    logger.info("Adding " + splitz[0]);
+                    Class providerClass = Class.forName(splitz[0]);
+                    Constructor ctor = providerClass.getConstructor(String.class);
+                    p = (Provider) ctor.newInstance(splitz[1]);
+                } else {
+                    p = (Provider) Class.forName(providerName).newInstance();
+                }
+                Security.addProvider(p);
             } catch (ClassNotFoundException e) {
+                logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
+                throw e;
+            } catch (NoSuchMethodException e) {
+                logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
+                throw e;
+            } catch (InvocationTargetException e) {
                 logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
                 throw e;
             }
@@ -980,7 +1007,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             emptySslFileStream.close();
             emptySslFileStream = null;
         } catch (FileNotFoundException e) {
+            logger.warning("Error while creating 0 byte keystore: " + e.getMessage());
         } catch (IOException e) {
+            logger.warning("Error while creating 0 byte keystore: " + e.getMessage());
         } finally {
             ResourceUtils.closeQuietly(emptyCaFileStream);
             ResourceUtils.closeQuietly(emptySslFileStream);
