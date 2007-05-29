@@ -281,4 +281,8 @@ class TarariElementCursor extends ElementCursor {
         // construct a non-Tarari CompiledXpath if you are able to construct Tarari cursors.
         throw new XPathExpressionException("Non-Tarari CompiledXpath passed to TarariElementCursor");
     }
+
+    public boolean isAtRoot() {
+        return c.getNodeType() == XmlCursor.ROOT;
+    }
 }

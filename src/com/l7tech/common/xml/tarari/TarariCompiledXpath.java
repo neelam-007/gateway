@@ -116,8 +116,8 @@ class TarariCompiledXpath extends CompiledXpath {
 
     public XpathResult getXpathResult(TarariElementCursor cursor, boolean requireCursor) throws XPathExpressionException {
         final TarariMessageContextImpl tmContext = cursor.getTarariMessageContext();
-        if (requireCursor || fastXpath == null || fastXpath.getExpression() == null)
-            return fallbackToDirectXPath(tmContext); // expression was too complex to simplify into TNF
+        if (requireCursor || fastXpath == null || fastXpath.getExpression() == null || !cursor.isAtRoot())
+            return fallbackToDirectXPath(tmContext); // expression was too complex to simplify into TNF or isn't matching against root
 
         final GlobalTarariContextImpl tarariContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
         final int index;
