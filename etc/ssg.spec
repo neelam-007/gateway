@@ -187,9 +187,6 @@ if [ `grep ^ssgconfig: /etc/passwd` ]; then
        #  echo "user ssgconfig already exists"
 else
   adduser -g gateway ssgconfig
-  echo "7layer" | passwd ssgconfig --stdin >/dev/null
-  chage -M 365 ssgconfig
-  chage -d 0   ssgconfig
 fi
 
 SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
@@ -252,6 +249,7 @@ fi
 
 
 %post
+# Change issue. This may move to a layer7-release file
 
 echo "Layer 7 SecureSpan(tm) Gateway v4.0" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
@@ -296,10 +294,21 @@ chmod -Rf 775 /ssg/migration
 #migrate the structure to the new partitioning scheme using the configuration wizard
 /ssg/configwizard/ssgconfig.sh -partitionMigrate &>/dev/null
 
+# After above item has executed, on first install only 
+# we need to set password for ssgconfig and pre-expire it
+# $1 equals what for first install?
+
+if [ "$1" = "1" ] ; then
+  # $1 is 1 on first install, not for upgrade
+  echo "7layer" | passwd ssgconfig --stdin >/dev/null
+  chage -M 365 ssgconfig
+  chage -d 0   ssgconfig
+fi
+
 %preun
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then
-	# last uninstall
+    # $1 is  on last uninstall, ie, package remove, not upgrade
     if [ `grep ^gateway: /etc/passwd` ]; then
         userdel -r gateway
     else
@@ -337,32 +346,12 @@ if [ "$1" = "0" ] ; then
 fi
 
 %changelog
-* Tue May 15 2007 CY
-- 4.0
-* Mon Jan 29 2007 CY
-- 3.7
+* Tue May 29 2007 JWT
+- Add password expiry, but this time in the right place
 * Wed Dec 20 2006 SMJ
 - add ssb-dbstatus service
 * Tue Nov 28 2006 MJE
 - added partition migration step to %post
-* Tue Nov 14 2006 MJE
-- 3.6.5
-* Mon Sep 25 2006 CY
-- 3.6rc4
-* Mon Aug 21 2006 CY
-- 3.6m4d-1
-* Mon Aug 14 2006 CY
-- 3.6m4b-1
-* Mon Jul 17 2006 CY
-- 3.6m3b-1
-* Fri Jul 14 2006 CY
-- 3.6m3a-2
-* Fri Jul 14 2006 CY
-- 3.6m3a-1
-* Fri Jun 30 2006 CY
-- 3.6m3-2
-* Thu Jun 29 2006 CY
-- 3.6m3
 * Tue Jan 31 2006 JWT
 - install.pl is gone, other changes to track version 4.0
 * Tue Aug 04 2005 JWT
