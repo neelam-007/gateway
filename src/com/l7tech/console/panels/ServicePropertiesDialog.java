@@ -236,7 +236,7 @@ public class ServicePropertiesDialog extends JDialog {
             public void focusLost(FocusEvent e) {
                 if (customURIRadio.isSelected()) {
                     String url = updateURL();
-                    if (!url.startsWith("/")) url = "/" + url;
+                    if (url != null && !url.startsWith("/")) url = "/" + url;
                     uriField.setText(url);
                 }
             }
