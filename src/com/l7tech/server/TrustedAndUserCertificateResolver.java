@@ -6,20 +6,29 @@
 package com.l7tech.server;
 
 import com.l7tech.common.security.X509Entity;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
+import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.whirlycott.cache.Cache;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.KeyStoreException;
+import java.security.UnrecoverableKeyException;
 import java.util.List;
 import java.util.TimerTask;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,6 +52,12 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
     private final Cache encryptedKeyCache;
     private final AtomicBoolean encryptedKeyCacheEnabled = new AtomicBoolean();
 
+    private final SsgKeyStoreManager keyStoreManager;
+
+    private SimpleSecurityTokenResolver keyCache = null;
+    private long keyCacheLastLoaded = 0;
+    private final long keyCacheMaxAge;
+
 
     /**
      * Construct the Gateway's security token resolver.
@@ -52,17 +67,20 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
      * @param sslKeystoreCertificate     the Gateway's SSL cert. required
      * @param rootCertificate           the Gateway's CA cert. required
      * @param serverConfig           required
+     * @param keyStoreManager     private key sources.  required
      */
     public TrustedAndUserCertificateResolver(ClientCertManager clientCertManager,
                                              TrustedCertManager trustedCertManager,
                                              X509Certificate sslKeystoreCertificate,
                                              X509Certificate rootCertificate,
-                                             final ServerConfig serverConfig)
+                                             final ServerConfig serverConfig,
+                                             SsgKeyStoreManager keyStoreManager)
     {
         this.trustedCertManager = trustedCertManager;
         this.clientCertManager = clientCertManager;
         this.sslKeystoreCertificate = sslKeystoreCertificate;
         this.rootCertificate = rootCertificate;
+        this.keyStoreManager = keyStoreManager;
 
         final int checkPeriod = 10181;
         final int defaultSize = 1000; // Size to use if not configured, or if not enabled at first (since we can't change the size if it's later enabled)
@@ -101,6 +119,8 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
         } catch (CertificateException e) {
             throw new RuntimeException("Invalid SSL or root certificate", e);
         }
+
+        keyCacheMaxAge = serverConfig.getLongProperty(ServerConfig.PARAM_PRIVATE_KEY_CACHE_MAX_AGE, 120000);
     }
 
     public X509Certificate lookup(String thumbprint) {
@@ -156,6 +176,67 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
     public X509Certificate lookupByKeyName(String keyName) {
         // TODO Implement this using a lookup by cert DN if we decide to bother supporting this feature here
         return null;
+    }
+
+    // TODO proper caching of SignerInfo by lookup keys, with LRU as well as expiry if they get "too stale"
+    // XXX possible invalidation upcalls from the keystores? addListener() on the keystores?
+    // For now we just do the stupidest thing that could possibly work -- load all keys and cert chains,
+    // and do a linear search.
+    private synchronized SecurityTokenResolver getKeyCache() {
+        if (keyCache == null || keyCacheLastLoaded + keyCacheMaxAge > System.currentTimeMillis()) {
+            List<SignerInfo> infos = new ArrayList<SignerInfo>();
+
+            final List<SsgKeyFinder> found;
+            try {
+                found = keyStoreManager.findAll();
+            } catch (FindException e) {
+                logger.log(Level.WARNING, "Unable to access key store: " + ExceptionUtils.getMessage(e), e);
+                return keyCache = null;
+            } catch (KeyStoreException e) {
+                logger.log(Level.WARNING, "Unable to access key store: " + ExceptionUtils.getMessage(e), e);
+                return keyCache = null;
+            }
+
+            for (SsgKeyFinder keyFinder : found) {
+                final List<String> aliases;
+                try {
+                    aliases = keyFinder.getAliases();
+                } catch (KeyStoreException e) {
+                    logger.log(Level.WARNING, "Unable to access key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                    continue;
+                }
+                for (String alias : aliases) {
+                    try {
+                        SsgKeyEntry entry = keyFinder.getCertificateChain(alias);
+                        infos.add(new SignerInfo(entry.getRSAPrivateKey(), entry.getCertificateChain()));
+                    } catch (KeyStoreException e) {
+                        logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                    } catch (UnrecoverableKeyException e) {
+                        logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                    }
+                }
+            }
+
+            keyCacheLastLoaded = System.currentTimeMillis();
+            keyCache = new SimpleSecurityTokenResolver(null, infos.toArray(new SignerInfo[0]));
+        }
+        return keyCache;
+    }
+
+    public SignerInfo lookupPrivateKeyByCert(X509Certificate cert) {
+        return getKeyCache().lookupPrivateKeyByCert(cert);
+    }
+
+    public SignerInfo lookupPrivateKeyByX509Thumbprint(String thumbprint) {
+        return getKeyCache().lookupPrivateKeyByX509Thumbprint(thumbprint);
+    }
+
+    public SignerInfo lookupPrivateKeyBySki(String ski) {
+        return getKeyCache().lookupPrivateKeyBySki(ski);
+    }
+
+    public SignerInfo lookupPrivateKeyByKeyName(String keyName) {
+        return getKeyCache().lookupPrivateKeyByKeyName(keyName);
     }
 
     public byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {

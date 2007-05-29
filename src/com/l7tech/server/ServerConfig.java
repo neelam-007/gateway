@@ -98,6 +98,7 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE = "schemaRecompileMaxAge";
 
     public static final String PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES = "ephemeralKeyMaxCacheEntries";
+    public static final String PARAM_PRIVATE_KEY_CACHE_MAX_AGE = "privateKeyCacheMaxAgeMillis";
 
     public static final String PARAM_SCHEMA_SOFTWARE_FALLBACK = "schemaSoftwareFallback";
 

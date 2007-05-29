@@ -734,6 +734,7 @@
         <constructor-arg ref="sslKeystoreCertificate"/>
         <constructor-arg ref="rootCertificate"/>
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="ssgKeyStoreManager"/>
     </bean>
 
     <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager" depends-on="systemAuditListener">
