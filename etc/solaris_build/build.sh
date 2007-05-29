@@ -66,7 +66,7 @@ chmod -f 775 ssg/sysconfigwizard/*.sh
 
 chmod -Rf 775 ssg/etc/conf
 chmod -Rf 775 ssg/tomcat/conf
-chmod -Rf 775 ssg/jdk/jre/lib/security/
+rm -rf ssg/jdk
 chmod -Rf 775 ssg/migration
 
 echo Creating Prototype...
