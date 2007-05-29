@@ -68,6 +68,11 @@ chmod -Rf 775 ssg/etc/conf
 chmod -Rf 775 ssg/tomcat/conf
 rm -rf ssg/jdk
 chmod -Rf 775 ssg/migration
+mv ssg/etc/conf/*.properties ssg/etc/conf/partitions/partitiontemplate_/
+mv ssg/etc/conf/cluster_hostname-dist ssg/etc/conf/partitions/partitiontemplate_/
+mv ssg/tomcat/conf/server.xml ssg/etc/conf/partitions/partitiontemplate_/
+
+
 
 echo Creating Prototype...
 echo "i pkginfo" > ../pkgbuild/Prototype 
