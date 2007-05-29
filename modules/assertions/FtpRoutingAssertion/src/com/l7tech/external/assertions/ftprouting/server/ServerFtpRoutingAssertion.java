@@ -308,7 +308,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         CertificateVerifier certificateVerifier = null;
         if (isVerifyServerCert) {
             certificateVerifier = new CertificateVerifier(trustedCertManager, hostName);
-            ftps.addFtpsCertificateVerifier(certificateVerifier);
+            ftps.setFtpsCertificateVerifier(certificateVerifier);
         }
 
         if (isExplicit) {
