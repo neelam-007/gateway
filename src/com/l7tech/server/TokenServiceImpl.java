@@ -148,8 +148,6 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 final SecurityKnob reqSec = context.getRequest().getSecurityKnob();
                 ProcessorResult wssOutput = trogdor.undecorateMessage(context.getRequest(),
                                                                       null,
-                                                                      serverCert,
-                                                                      serverPrivateKey,
                                                                       SecureConversationContextManager.getInstance(),
                                                                       securityTokenResolver);
                 reqSec.setProcessorResult(wssOutput);

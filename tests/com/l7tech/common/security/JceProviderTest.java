@@ -9,6 +9,7 @@ package com.l7tech.common.security;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.prov.bc.BouncyCastleCertificateRequest;
 import com.l7tech.common.security.xml.WssDecoratorTest;
+import com.l7tech.common.security.xml.WrapSSTR;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
@@ -176,11 +177,12 @@ public class JceProviderTest {
             new WssDecoratorImpl().decorateMessage(td.c.message, wssDecoratorTest.makeDecorationRequirements(td));
 
             log.info("pretest: checking XML message signature");
-            ProcessorResult processorResult = new WssProcessorImpl().undecorateMessage(new Message(td.c.message),
-                                                                                       null, TestDocuments.getDotNetServerCertificate(),
-                    TestDocuments.getDotNetServerPrivateKey(),
+            ProcessorResult processorResult = new WssProcessorImpl().undecorateMessage(
+                    new Message(td.c.message),
                     null,
-                    null);
+                    null,
+                    new WrapSSTR(TestDocuments.getDotNetServerCertificate(),
+                                 TestDocuments.getDotNetServerPrivateKey()));
             log.info("signature verified on " + processorResult.getElementsThatWereSigned().length + " elements");
         }
 
@@ -241,11 +243,12 @@ public class JceProviderTest {
         reportTime("Decrypt document and check signature", 200 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 Document blah = XmlUtil.stringToDocument(encryptedXml);
-                new WssProcessorImpl().undecorateMessage(new Message(blah),
-                                                         null, TestDocuments.getDotNetServerCertificate(),
-                        TestDocuments.getDotNetServerPrivateKey(),
+                new WssProcessorImpl().undecorateMessage(
+                        new Message(blah),
                         null,
-                        null);
+                        null,
+                        new WrapSSTR(TestDocuments.getDotNetServerCertificate(),
+                                     TestDocuments.getDotNetServerPrivateKey()));
             }
         });
     }

@@ -10,6 +10,7 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.KeyInfoElement;
 import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -463,10 +464,9 @@ public class TokenServiceClient {
         try {
             WssProcessor wssProcessor = new WssProcessorImpl();
             result = wssProcessor.undecorateMessage(new Message(response),
-                                                    null, clientCertificate,
-                                                    clientPrivateKey,
                                                     null,
-                                                    null);
+                                                    null,
+                                                    new SimpleSecurityTokenResolver(clientCertificate, clientPrivateKey));
         } catch (BadSecurityContextException e) {
             throw new InvalidDocumentFormatException("Response attempted to use a WS-SecureConversation SecurityContextToken, which we don't support when talking to the token server itself", e);
         } catch (IOException e) {

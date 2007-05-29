@@ -16,6 +16,7 @@ import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
@@ -184,7 +185,7 @@ public class PolicyServiceClient {
         WssProcessor wssProcessor = new WssProcessorImpl();
         ProcessorResult result;
         try {
-            result = wssProcessor.undecorateMessage(new Message(response), null, clientCert, clientKey, null, null);
+            result = wssProcessor.undecorateMessage(new Message(response), null, null, new SimpleSecurityTokenResolver(clientCert, clientKey));
         } catch (BadSecurityContextException e) {
             throw new ProcessorException(e); // can't happen
         } catch (IOException e) {

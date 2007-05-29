@@ -30,8 +30,6 @@ public interface WssProcessor {
      *
      * @param message the xml document containing the soap message. this document may be modified on exit.
      * @param senderCertificate    the sender's cert, if known, so that Signatures containing SKI KeyInfos can be matched up, or null to disable this feature.
-     * @param recipientCertificate the recipient's cert to which encrypted keys may be encoded for
-     * @param recipientPrivateKey the private key corresponding to the recipientCertificate used to decypher the encrypted keys
      * @param securityContextFinder a security context finder for looking up ws-sc sessions, or null to disable WS-SC support.
      * @param securityTokenResolver   a resolver for looking up certificates in various ways, or null disable certificate reference support.
      * @return a ProcessorResult object reffering to all the WSS related processing that happened.
@@ -47,8 +45,6 @@ public interface WssProcessor {
      */
     ProcessorResult undecorateMessage(Message message,
                                       X509Certificate senderCertificate,
-                                      X509Certificate recipientCertificate,
-                                      PrivateKey recipientPrivateKey,
                                       SecurityContextFinder securityContextFinder,
                                       SecurityTokenResolver securityTokenResolver)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException;

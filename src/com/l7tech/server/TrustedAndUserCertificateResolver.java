@@ -139,6 +139,9 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
             if (got != null && got.size() >= 1)
                 return ((X509Entity)got.get(0)).getCertificate();
 
+            SignerInfo si = lookupPrivateKeyByX509Thumbprint(thumbprint);
+            if (si != null) return si.getCertificateChain()[0];
+
             return null;
         } catch (FindException e) {
             throw new RuntimeException(e); // very bad place
@@ -164,6 +167,9 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
             if (got != null && got.size() >= 1)
                 return ((X509Entity)got.get(0)).getCertificate();
 
+            SignerInfo si = lookupPrivateKeyBySki(ski);
+            if (si != null) return si.getCertificateChain()[0];
+
             return null;
         } catch (FindException e) {
             throw new RuntimeException(e); // very bad place
@@ -175,6 +181,10 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
 
     public X509Certificate lookupByKeyName(String keyName) {
         // TODO Implement this using a lookup by cert DN if we decide to bother supporting this feature here
+
+        SignerInfo si = lookupPrivateKeyByKeyName(keyName);
+        if (si != null) return si.getCertificateChain()[0];
+        
         return null;
     }
 

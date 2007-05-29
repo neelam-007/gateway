@@ -56,10 +56,10 @@ public class WssProcessorTest extends TestCase {
         log.info("Original decorated message (reformatted): " + XmlUtil.nodeToFormattedString(request));
         ProcessorResult result = wssProcessor.undecorateMessage(new Message(request),
                                                                 testDocument.senderCeritifcate,
-                                                                recipientCertificate,
-                                                                recipientPrivateKey,
                                                                 testDocument.securityContextFinder,
-                                                                securityTokenResolver);
+                                                                new WrapSSTR(recipientCertificate,
+                                                                             recipientPrivateKey,
+                                                                             securityTokenResolver));
         checkProcessorResult(request, result);
     }
 
@@ -436,11 +436,11 @@ public class WssProcessorTest extends TestCase {
         WssProcessor p = new WssProcessorImpl();
 
         ProcessorResult got = p.undecorateMessage(new Message(d),
-                null,
-                aliceCert,
-                TestDocuments.getWssInteropAliceKey(),
-                null,
-                new SimpleSecurityTokenResolver(bobCert));
+                                                  null,
+                                                  null,
+                                                  new WrapSSTR(aliceCert,
+                                                               TestDocuments.getWssInteropAliceKey(),
+                                                               new SimpleSecurityTokenResolver(bobCert)));
 
         checkProcessorResult(d, got);
     }

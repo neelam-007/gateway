@@ -53,8 +53,6 @@ public class WssProcessorImpl implements WssProcessor {
 
     public ProcessorResult undecorateMessage(Message message,
                                              X509Certificate senderCertificate,
-                                             X509Certificate recipientCert,
-                                             PrivateKey recipientKey,
                                              SecurityContextFinder securityContextFinder,
                                              SecurityTokenResolver securityTokenResolver
     )
@@ -107,8 +105,7 @@ public class WssProcessorImpl implements WssProcessor {
                     // lyonsm: we now only remove the reference list, and only if we decrypted it.
                     //         The signature check will take care of removing any processed encrypted keys as well,
                     //         but only if needed to validate an enveloped signature.
-                    removeRefList = processEncryptedKey(securityChildToProcess, recipientKey,
-                                                      recipientCert, cntx);
+                    removeRefList = processEncryptedKey(securityChildToProcess, cntx);
                 } else {
                     logger.finer("Encountered EncryptedKey element but not of right namespace (" +
                             securityChildToProcess.getNamespaceURI() + ")");
@@ -635,8 +632,6 @@ public class WssProcessorImpl implements WssProcessor {
     //
     // If the encrypted key was addressed to us, it will have been added to the context ProcessedEncryptedKeys set.
     private Element processEncryptedKey(Element encryptedKeyElement,
-                                        PrivateKey recipientKey,
-                                        X509Certificate recipientCert,
                                         final ProcessingStatusHolder cntx)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
     {
@@ -645,17 +640,7 @@ public class WssProcessorImpl implements WssProcessor {
         // If there's a KeyIdentifier, log whether it's talking about our key
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
         try {
-            KeyInfoElement.checkKeyInfo(encryptedKeyElement, recipientCert, new Resolver<String,X509Certificate>(){
-                public X509Certificate resolve(String id) {
-                    X509Certificate resolved = null;
-                    Object token = cntx.x509TokensById.get(id);
-                    if (token instanceof X509BinarySecurityTokenImpl) {
-                        X509BinarySecurityTokenImpl bst = (X509BinarySecurityTokenImpl) token;
-                        resolved = bst.getCertificate(); 
-                    }
-                    return resolved;
-                }
-            });
+            KeyInfoElement.getTargetPrivateKeyForEncryptedType(encryptedKeyElement, cntx.securityTokenResolver, cntx.getMessageX509TokenResolver());
         } catch (UnexpectedKeyInfoException e) {
             if (cntx.secHeaderActor == SecurityActor.L7ACTOR) {
                 logger.warning("We do not appear to be the intended recipient for this EncryptedKey however the " +
@@ -680,7 +665,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         final EncryptedKeyImpl ekTok;
         try {
-            ekTok = new EncryptedKeyImpl(encryptedKeyElement, recipientKey, cntx.securityTokenResolver);
+            ekTok = new EncryptedKeyImpl(encryptedKeyElement, cntx.securityTokenResolver, cntx.getMessageX509TokenResolver());
             if (refList != null)
                 decryptReferencedElements(ekTok.getSecretKey(), refList, cntx);
         } catch (ParserConfigurationException e) {
@@ -1696,6 +1681,7 @@ public class WssProcessorImpl implements WssProcessor {
         boolean isWsse11Seen = false;
         boolean isDerivedKeySeen = false; // If we see any derived keys, we'll assume we can derive our own keys in reponse
         SecurityTokenResolver securityTokenResolver = null;
+        Resolver<String,X509Certificate> messageX509TokenResolver = null;
 
         public ProcessingStatusHolder(Message message, Document processedDocument) {
             this.message = message;
@@ -1730,6 +1716,26 @@ public class WssProcessorImpl implements WssProcessor {
             } catch (IOException e) {
                 throw new CausedIllegalStateException(e); // can't happen anymore
             }
+        }
+
+        /**
+         * Return a resolver that will find certs from already-seen X.509 tokens in this message by their wsu:Id.
+         * @return a Resolver<String,X509Certificate> that will find certs from already-seen X.509 BSTs in this message processing context
+         */
+        public Resolver<String,X509Certificate> getMessageX509TokenResolver() {
+            if (messageX509TokenResolver != null)
+                return messageX509TokenResolver;
+            return messageX509TokenResolver = new Resolver<String,X509Certificate>() {
+                public X509Certificate resolve(String id) {
+                    X509Certificate resolved = null;
+                    Object token = x509TokensById.get(id);
+                    if (token instanceof X509BinarySecurityTokenImpl) {
+                        X509BinarySecurityTokenImpl bst = (X509BinarySecurityTokenImpl) token;
+                        resolved = bst.getCertificate();
+                    }
+                    return resolved;
+                }
+            };
         }
     }
 
@@ -1834,20 +1840,19 @@ public class WssProcessorImpl implements WssProcessor {
     private static class EncryptedKeyImpl extends SigningSecurityTokenImpl implements EncryptedKey {
         private final String elementWsuId;
         private final byte[] encryptedKeyBytes;
+        private final SignerInfo signerInfo;
         private SecurityTokenResolver tokenResolver;
         private String encryptedKeySHA1 = null;
         private byte[] secretKeyBytes = null;
-        private PrivateKey recipientKey = null;
 
         // Constructor that supports lazily-unwrapping the key
-        EncryptedKeyImpl(Element encryptedKeyEl, PrivateKey recipientKey, SecurityTokenResolver tokenResolver)
-                throws InvalidDocumentFormatException, IOException
+        EncryptedKeyImpl(Element encryptedKeyEl, SecurityTokenResolver tokenResolver, Resolver<String,X509Certificate> x509Resolver)
+                throws InvalidDocumentFormatException, IOException, GeneralSecurityException
         {
             super(encryptedKeyEl);
             this.elementWsuId = SoapUtil.getElementWsuId(encryptedKeyEl);
-            this.recipientKey = recipientKey;
             this.tokenResolver = tokenResolver;
-
+            this.signerInfo = KeyInfoElement.getTargetPrivateKeyForEncryptedType(encryptedKeyEl, tokenResolver, x509Resolver);
             String cipherValueB64 = XencUtil.getEncryptedKeyCipherValue(encryptedKeyEl);
             this.encryptedKeyBytes = HexUtils.decodeBase64(cipherValueB64.trim());
         }
@@ -1876,7 +1881,7 @@ public class WssProcessorImpl implements WssProcessor {
             Element encMethod = XmlUtil.findOnlyOneChildElementByName(asElement(),
                                                                       SoapUtil.XMLENC_NS,
                                                                       "EncryptionMethod");
-            secretKeyBytes = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepBytes(encMethod), recipientKey);
+            secretKeyBytes = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepBytes(encMethod), signerInfo.getPrivate());
 
             // Since we've just done the expensive work, ensure that it gets saved for future reuse
             maybePublish();

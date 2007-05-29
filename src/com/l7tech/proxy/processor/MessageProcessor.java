@@ -19,6 +19,7 @@ import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -847,10 +848,14 @@ public class MessageProcessor {
 
             ProcessorResult processorResult = null;
             try {
+                // TODO optimize this -- a lot of these parameter objects could be saved and reused
                 final boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
-                SimpleSecurityTokenResolver thumbResolver =
+                final SignerInfo clientSignerInfo = haveKey ? new SignerInfo(ssg.getClientCertificatePrivateKey(),
+                                                                             new X509Certificate[] { ssg.getClientCertificate() })
+                                                    : null;
+                SimpleSecurityTokenResolver tokenResolver =
                         new SimpleSecurityTokenResolver(new X509Certificate[] { ssg.getClientCertificate(),
-                                ssg.getServerCertificate() })
+                                ssg.getServerCertificate() }, new SignerInfo[] { clientSignerInfo })
                         {
                             public byte[] getSecretKeyByEncryptedKeySha1(String value) {
                                 final SecretKey encryptedKeySecretKey = context.getEncryptedKeySecretKey();
@@ -872,10 +877,9 @@ public class MessageProcessor {
 
                 final ProcessorResult processorResultRaw =
                         wssProcessor.undecorateMessage(response,
-                                                       ssg.getServerCertificate(), haveKey ? ssg.getClientCertificate() : null,
-                                                       haveKey ? ssg.getClientCertificatePrivateKey() : null,
+                                                       ssg.getServerCertificate(),
                                                        scf,
-                                                       thumbResolver
+                                                       tokenResolver
                         );
                 // Translate timestamp in result from SSG time to local time
                 final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();

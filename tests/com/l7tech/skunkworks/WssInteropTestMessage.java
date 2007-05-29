@@ -256,7 +256,7 @@ public class WssInteropTestMessage extends TestCase {
                 return aesKey.getEncoded();
             }
         };
-        ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, null, null, resolver);
+        ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, resolver);
 
         log.info("The following elements had at least all their content encrypted:");
         EncryptedElement[] enc = wssResults.getElementsThatWereEncrypted();

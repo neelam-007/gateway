@@ -10,6 +10,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 
 import java.security.Principal;
+import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
@@ -111,6 +112,17 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     }
 
     /**
+     * Create a resolver that will recognize the specified private key (with corresponding cert).
+     *
+     * @param publicCert  the certificate that corresponds to privateKey.  Required.
+     * @param privateKey  the private key that corresponds to publicCert.  Required.
+     */
+    public SimpleSecurityTokenResolver(X509Certificate publicCert, PrivateKey privateKey) {
+        this(new X509Certificate[] { publicCert },
+             new SignerInfo[] { new SignerInfo(privateKey, new X509Certificate[] { publicCert } ) });
+    }
+
+    /**
      * Create a resolver that will recognize any cert or private key in the specified lists.
      * For convenience, the certs or keys arrays may contain nulls which will be ignored.
      *
@@ -135,7 +147,11 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     }
 
     public X509Certificate lookup(String thumbprint) {
-        return (X509Certificate)doLookupByX09Thumbprint(certs, thumbprint);
+        X509Certificate found = (X509Certificate)doLookupByX09Thumbprint(certs, thumbprint);
+        if (found != null) return found;
+        SignerInfo siFound = lookupPrivateKeyByX509Thumbprint(thumbprint);
+        if (siFound != null) return siFound.getCertificateChain()[0];
+        return null;
     }
 
     private <C extends Cert> Object doLookupByX09Thumbprint(C[] toSearch, String thumbprint) {
@@ -148,7 +164,11 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     }
 
     public X509Certificate lookupBySki(String targetSki) {
-        return (X509Certificate)doLookupBySki(certs, targetSki);
+        X509Certificate found = (X509Certificate)doLookupBySki(certs, targetSki);
+        if (found != null) return found;
+        SignerInfo siFound = lookupPrivateKeyBySki(targetSki);
+        if (siFound != null) return siFound.getCertificateChain()[0];
+        return null;
     }
 
     private <C extends Cert> Object doLookupBySki(C[] toSearch, String targetSki) {
@@ -161,7 +181,11 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     }
 
     public X509Certificate lookupByKeyName(final String keyName) {
-        return (X509Certificate)doLookupByKeyName(certs, keyName);
+        X509Certificate found = (X509Certificate)doLookupByKeyName(certs, keyName);
+        if (found != null) return found;
+        SignerInfo siFound = lookupPrivateKeyByKeyName(keyName);
+        if (siFound != null) return siFound.getCertificateChain()[0];
+        return null;
     }
 
     private <C extends Cert> Object doLookupByKeyName(C[] toSearch, String keyName) {

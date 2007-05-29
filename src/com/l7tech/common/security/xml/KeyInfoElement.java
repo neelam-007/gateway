@@ -20,8 +20,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.logging.Level;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -147,33 +146,45 @@ public class KeyInfoElement implements ParsedElement {
     public static void checkKeyInfo(Element encryptedType, X509Certificate recipientCert)
             throws UnexpectedKeyInfoException, InvalidDocumentFormatException, GeneralSecurityException
     {
-        checkKeyInfo(encryptedType, recipientCert, null);
+        getTargetPrivateKeyForEncryptedType(encryptedType, new SimpleSecurityTokenResolver(recipientCert), null);
     }
 
     /**
      * Checks if the specified EncryptedType's KeyInfo is addressed to the specified recipient certificate.
+     * An EncryptedType is an abstract type in the XML Encryption schema representing an element that can contain,
+     * among other things, zero or more KeyInfo subelements identifying possible recipients able to decrypt
+     * the EncryptedType.  Concrete examples are EncryptedKey and EncryptedData. 
+     *
      * @param encryptedType the EncryptedKey or EncryptedData element.  Must include a KeyInfo child.
-     * @param recipientCert
+     * @param securityTokenResolver resolver for private keys
      * @param certResolver resolver for certificates by identifier
+     * @return a SignerInfo containing the matching private key and certificate chain.  Never null.
      * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there was a problem with the encryptedType, or the KeyInfo didn't match.
-     * @throws com.l7tech.common.security.xml.UnexpectedKeyInfoException      if the keyinfo did not match the recipientCert
+     * @throws com.l7tech.common.security.xml.UnexpectedKeyInfoException      if the keyinfo did not match any known private key
      * @throws java.security.GeneralSecurityException        if there was a problem with the recipient certificate or a certificate
      *                                         embedded within the encryptedType.
      */
-    public static void checkKeyInfo(Element encryptedType, X509Certificate recipientCert, Resolver<String,X509Certificate> certResolver)
+    public static SignerInfo getTargetPrivateKeyForEncryptedType(Element encryptedType, SecurityTokenResolver securityTokenResolver, Resolver<String,X509Certificate> certResolver)
             throws UnexpectedKeyInfoException, InvalidDocumentFormatException, GeneralSecurityException
     {
         // bugzilla #1582
-        if (recipientCert == null) {
+        if (securityTokenResolver == null) {
             // if we dont have a recipient cert, then obviously, this is not meant for us. this would happen for example
             // when the agent is processing a response from the ssg that has an encryptedkey in it but the client account
             // does not have a client cert. (this is possible if the encryption is meant for upstream client)
-            throw new UnexpectedKeyInfoException("No recipient cert to compare with. This is obvioulsy not meant for us.");
+            throw new UnexpectedKeyInfoException("No securityTokenResolver available.  Unable to check if this KeyInfo is intended for us.");
         }
 
-        Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedType, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME);
-        if (kinfo == null) throw new InvalidDocumentFormatException(encryptedType.getLocalName() + " includes no KeyInfo element");
-        assertKeyInfoMatchesCertificate(kinfo, recipientCert, certResolver);
+        List<Element> keyInfos = XmlUtil.findChildElementsByName(encryptedType, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME);
+        if (keyInfos == null || keyInfos.size() < 1)
+            throw new InvalidDocumentFormatException(encryptedType.getLocalName() + " includes no KeyInfo element");
+        for (Element keyInfo : keyInfos) {
+            SignerInfo found = getTargetPrivateKeyForKeyInfo(keyInfo, securityTokenResolver, certResolver);
+            if (found != null)
+                return found;
+        }
+
+        throw new UnexpectedKeyInfoException("KeyInfo did not resolve to any local certificate with a known private key");
     }
 
     /**
@@ -188,21 +199,23 @@ public class KeyInfoElement implements ParsedElement {
     public static void assertKeyInfoMatchesCertificate(Element keyInfo, X509Certificate cert)
             throws InvalidDocumentFormatException, UnexpectedKeyInfoException, CertificateException
     {
-        assertKeyInfoMatchesCertificate(keyInfo, cert, null);
+        if (null == getTargetPrivateKeyForKeyInfo(keyInfo, new SimpleSecurityTokenResolver(cert), null))
+            throw new UnexpectedKeyInfoException("KeyInfo was not recognized referring to the expected certificate");
     }
 
     /**
-     * Make sure that the specified KeyInfo in fact is referring to the specified certificate.
+     * Try to look up a SignerInfo (private key and cert chain) corresponding to the specified KeyInfo element.
      *
      * @param keyInfo    the KeyInfo element to check.  Must not be null.
-     * @param cert       the X.509 certificate we expect it to be referring to.  Must not be null.
-     * @param certResolver resolver for certificates by identifier
+     * @param securityTokenResolver resolver for private keys.  required
+     * @param certResolver resolver for certificates by identifier, to resolve references to BSTs in the same message that are carrying certificate bytes,
+     *                     or null if no Reference URIs to BSTs within the same message should be followed
+     * @return the private key and cert chain for this private key, or null if we didn't recognize this KeyInfo.
      * @throws InvalidDocumentFormatException   If we can't figure out the KeyInfo format.
-     * @throws UnexpectedKeyInfoException       If we understood the KeyInfo, but it is not referring to our certificate.
      * @throws CertificateException             If we need the encoded form of the certificate but it is invalid.
      */
-    public static void assertKeyInfoMatchesCertificate(Element keyInfo, X509Certificate cert, Resolver<String,X509Certificate> certResolver)
-            throws InvalidDocumentFormatException, UnexpectedKeyInfoException, CertificateException
+    public static SignerInfo getTargetPrivateKeyForKeyInfo(Element keyInfo, SecurityTokenResolver securityTokenResolver, Resolver<String,X509Certificate> certResolver)
+            throws InvalidDocumentFormatException, CertificateException
     {
         Element str = XmlUtil.findOnlyOneChildElementByName(keyInfo,
                                                             SoapUtil.SECURITY_URIS_ARRAY,
@@ -230,84 +243,69 @@ public class KeyInfoElement implements ParsedElement {
                     throw new InvalidDocumentFormatException("Invalid security token reference '"+uriAttr+"' in KeyInfo");
                 }
                 X509Certificate referencedCert = certResolver.resolve(uriAttr);
-                if (CertUtils.certsAreEqual(cert, referencedCert)) {
+                SignerInfo found = securityTokenResolver.lookupPrivateKeyByCert(referencedCert);
+
+                if (found != null) {
                     logger.fine("The Key recipient cert is recognized");
-                    /* FALLTHROUGH */
+                    return found;
                 } else {
                     String msg = "This KeyInfo declares a specific cert, " +
                             "but our certificate does not match.";
                     logger.warning(msg);
-                    throw new UnexpectedKeyInfoException(msg);
+                    return null;
                 }
             }
         } else {
             String valueType = ki.getAttribute("ValueType");
             String keyIdentifierValue = XmlUtil.getTextValue(ki);
-            byte[] keyIdValueBytes;
-            try {
-                keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue, true);
-            } catch (IOException e) {
-                throw new InvalidDocumentFormatException("Unable to parse base64 Key Identifier", e);
-            }
-            if (keyIdValueBytes == null || keyIdValueBytes.length < 1) throw new InvalidDocumentFormatException("KeyIdentifier was empty");
             if (valueType == null || valueType.length() <= 0) {
                 logger.fine("The KeyId Value Type is not specified. We will therefore assume it is a Subject Key Identifier.");
                 valueType = SoapUtil.VALUETYPE_SKI;
             }
             if (valueType.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
-                // If not typed, assume it's a ski
-                byte[] ski = CertUtils.getSKIBytesFromCert(cert);
-                if (ski == null) {
-                    // TODO try making up both RFC 3280 SKIs and see if they match (Bug #1001)
-                    //throw new CertificateException("Unable to verify that KeyInfo is addressed to us -- " +
-                    //                               "our own certificate does not contain a Subject Key Identifier.");
-                    // TODO should reject the message until we implement fix as above
-                    logger.log(Level.INFO, "Unable to verify that KeyInfo is addressed to us; skipping SKI check");
-                    return;
+                SignerInfo found = securityTokenResolver.lookupPrivateKeyBySki(keyIdentifierValue);
+                if (found != null) {
+                    logger.fine("the Key SKI is recognized. This key is for us for sure!");
+                    return found;
                 } else {
-                    // trim if necessary
-                    byte[] ski2 = ski;
-                    if (ski.length > keyIdValueBytes.length) {
-                        ski2 = new byte[keyIdValueBytes.length];
-                        System.arraycopy(ski, ski.length-keyIdValueBytes.length,
-                                         ski2, 0, keyIdValueBytes.length);
-                    }
-                    if (Arrays.equals(keyIdValueBytes, ski2)) {
-                        logger.fine("the Key SKI is recognized. This key is for us for sure!");
-                        /* FALLTHROUGH */
-                    } else {
-                        String msg = "This KeyInfo declares a specific SKI, " +
-                                "but our certificate's SKI does not match.";
-                        logger.fine(msg);
-                        throw new UnexpectedKeyInfoException(msg);
-                    }
+                    String msg = "This KeyInfo declares a specific SKI, " +
+                            "but our certificate's SKI does not match.";
+                    logger.fine(msg);
+                    return null;
                 }
             } else if (valueType.endsWith(SoapUtil.VALUETYPE_X509_SUFFIX)) {
                 // It seems to be a complete certificate
+                byte[] keyIdValueBytes;
+                try {
+                    keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue, true);
+                } catch (IOException e) {
+                    throw new InvalidDocumentFormatException("Unable to parse base64 Key Identifier", e);
+                }
+                if (keyIdValueBytes == null || keyIdValueBytes.length < 1) throw new InvalidDocumentFormatException("KeyIdentifier was empty");
                 X509Certificate referencedCert = CertUtils.decodeCert(keyIdValueBytes);
-                if (CertUtils.certsAreEqual(cert, referencedCert)) {
+                SignerInfo found = securityTokenResolver.lookupPrivateKeyByCert(referencedCert);
+
+                if (found != null) {
                     logger.fine("The Key recipient cert is recognized");
-                    /* FALLTHROUGH */
+                    return found;
 
                 } else {
                     String msg = "This KeyInfo declares a specific cert, " +
                             "but our certificate does not match.";
                     logger.warning(msg);
-                    throw new UnexpectedKeyInfoException(msg);
+                    return null;
                 }
             } else if (valueType.endsWith(SoapUtil.VALUETYPE_X509_THUMB_SHA1_SUFFIX))
             {
-                // TODO replace this with a cert cache lookup by SHA1 thumbprint
-                byte[] certBytes = cert.getEncoded();
-                byte[] certSha1 = HexUtils.getSha1Digest(certBytes);
-                if (Arrays.equals(certSha1, keyIdValueBytes)) {
+                SignerInfo found = securityTokenResolver.lookupPrivateKeyByX509Thumbprint(keyIdentifierValue);
+                if (found != null) {
                     logger.fine("The cert SHA1 thumbprint was recognized.  The cert is ours for sure.");
-                    /* FALLTHROUGH */
+                    return found;
                 } else {
                     String msg = "This KeyInfo declares a specific cert SHA1 thumbprint, " +
                             "but our certificate's thumbprint does not match.";
                     logger.fine(msg);
-                    throw new UnexpectedKeyInfoException(msg);
+                    return null;
                 }
             } else if (valueType.endsWith(SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX)) {
                 // TODO - to support this, need to be able to look up a (long-)previously-processed EncryptedKey by its hash

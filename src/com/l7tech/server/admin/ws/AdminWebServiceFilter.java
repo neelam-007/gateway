@@ -292,8 +292,7 @@ public class AdminWebServiceFilter implements Filter {
             try {
                 final SecurityKnob reqSec = request.getSecurityKnob();
                 ProcessorResult wssOutput = trogdor.undecorateMessage(request,
-                                                      null, serverCertificate,
-                                                      serverPrivateKey,
+                                                      null,
                                                       SecureConversationContextManager.getInstance(),
                                                       securityTokenResolver);
                 reqSec.setProcessorResult(wssOutput);

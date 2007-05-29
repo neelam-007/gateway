@@ -113,11 +113,11 @@ public class WssRoundTripTest extends TestCase {
         log.info("SECOND decorated request *Pretty-Printed*: " + XmlUtil.nodeToFormattedString(doc));
 
         ProcessorResult r = new WssProcessorImpl().undecorateMessage(req,
-                                                                      ntd2.td.senderCert,
-                                                                      ntd2.td.recipientCert,
-                                                                      ntd2.td.recipientKey,
-                                                                      null,
-                                                                      ntd2.td.securityTokenResolver);
+                                                                     ntd2.td.senderCert,
+                                                                     null,
+                                                                     new WrapSSTR(ntd2.td.recipientCert,
+                                                                                  ntd2.td.recipientKey,
+                                                                                  ntd2.td.securityTokenResolver));
 
         UsernameToken usernameToken = findUsernameToken(r);
         WssDecoratorTest.TestDocument td = ntd2.td;
@@ -321,10 +321,10 @@ public class WssRoundTripTest extends TestCase {
 
         ProcessorResult r = trogdor.undecorateMessage(new Message(incomingMessage),
                                                       td.senderCert,
-                                                      td.recipientCert,
-                                                      td.recipientKey,
                                                       makeSecurityContextFinder(td.secureConversationKey),
-                                                      td.securityTokenResolver);
+                                                      new WrapSSTR(td.recipientCert,
+                                                                   td.recipientKey,
+                                                                   td.securityTokenResolver));
 
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(incomingMessage));
 
