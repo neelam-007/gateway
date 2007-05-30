@@ -718,7 +718,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 String entitydn;
                 SearchResult sr = (SearchResult)answer.next();
                 if (sr != null && sr.getName() != null && sr.getName().length() > 0) {
-                    entitydn = sr.getName() + "," + dn;
+                    entitydn = sr.getNameInNamespace();
+                    if (entitydn.equals(dn)) continue; // Avoid recursing this group
                     try {
                         LdapGroup subGroup = this.findByPrimaryKey(entitydn);
                         if (subGroup != null) {
