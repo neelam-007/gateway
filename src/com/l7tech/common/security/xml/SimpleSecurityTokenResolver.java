@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     private static final Logger logger = Logger.getLogger(SimpleSecurityTokenResolver.class.getName());
 
-    private final Cert[] certs;
+    private Cert[] certs;
     private final MyKey[] keys;
     private Map<String, byte[]> encryptedKeys = new HashMap<String, byte[]>();
     private Map<String, KerberosSecurityToken> kerberosTokens = new HashMap<String, KerberosSecurityToken>();
@@ -144,6 +144,21 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         } else {
             this.keys = new MyKey[0];
         }
+    }
+
+    public void addCerts(X509Certificate[] newcerts) {
+        int newSize = newcerts.length;
+        if (certs != null) newSize += certs.length;
+        Cert[] sum = new Cert[newSize];
+        int pos = 0;
+        if (certs != null) {
+            System.arraycopy(certs, 0, sum, 0, certs.length);
+            pos += certs.length;
+        }
+        for (int i = 0; i < newcerts.length; i++) {
+            sum[i+pos] = new Cert(newcerts[i]);
+        }
+        certs = sum;
     }
 
     public X509Certificate lookup(String thumbprint) {

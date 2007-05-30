@@ -25,13 +25,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.security.GeneralSecurityException;
+import java.security.cert.X509Certificate;
 
 /**
  * Decorate messages with WssDecorator and then send them through WssProcessor
@@ -112,12 +112,12 @@ public class WssRoundTripTest extends TestCase {
 
         log.info("SECOND decorated request *Pretty-Printed*: " + XmlUtil.nodeToFormattedString(doc));
 
+        WrapSSTR strr = new WrapSSTR(ntd2.td.recipientCert, ntd2.td.recipientKey, ntd2.td.securityTokenResolver);
+        strr.addCerts(new X509Certificate[]{ntd2.td.senderCert});
         ProcessorResult r = new WssProcessorImpl().undecorateMessage(req,
                                                                      ntd2.td.senderCert,
                                                                      null,
-                                                                     new WrapSSTR(ntd2.td.recipientCert,
-                                                                                  ntd2.td.recipientKey,
-                                                                                  ntd2.td.securityTokenResolver));
+                                                                     strr);
 
         UsernameToken usernameToken = findUsernameToken(r);
         WssDecoratorTest.TestDocument td = ntd2.td;
@@ -319,12 +319,12 @@ public class WssRoundTripTest extends TestCase {
         assertTrue("Serialization did not affect the integrity of the XML message",
                    XmlUtil.nodeToString(message).equals(XmlUtil.nodeToString(incomingMessage)));
 
+        WrapSSTR strr = new WrapSSTR(td.recipientCert, td.recipientKey, td.securityTokenResolver);
+        strr.addCerts(new X509Certificate[]{td.senderCert});
         ProcessorResult r = trogdor.undecorateMessage(new Message(incomingMessage),
                                                       td.senderCert,
                                                       makeSecurityContextFinder(td.secureConversationKey),
-                                                      new WrapSSTR(td.recipientCert,
-                                                                   td.recipientKey,
-                                                                   td.securityTokenResolver));
+                                                      strr);
 
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(incomingMessage));
 

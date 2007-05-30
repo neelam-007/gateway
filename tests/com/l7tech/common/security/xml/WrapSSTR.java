@@ -13,6 +13,10 @@ public class WrapSSTR extends DelegatingSecurityTokenResolver {
         : new SecurityTokenResolver[] { new SimpleSecurityTokenResolver(cert, key), rest });
     }
 
+    public void addCerts(X509Certificate[] newcerts) {
+        ((SimpleSecurityTokenResolver)getDelegates()[0]).addCerts(newcerts);;
+    }
+
     public WrapSSTR(X509Certificate cert, PrivateKey key) {
         super(new SimpleSecurityTokenResolver(cert, key));
     }

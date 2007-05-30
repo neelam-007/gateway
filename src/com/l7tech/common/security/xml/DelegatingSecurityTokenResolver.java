@@ -101,4 +101,9 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         }
         return null;
     }
+
+
+    protected SecurityTokenResolver[] getDelegates() {
+        return delegates;
+    }
 }
