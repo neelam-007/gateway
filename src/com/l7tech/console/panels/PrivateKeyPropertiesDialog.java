@@ -11,6 +11,8 @@ import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.event.WizardAdapter;
+import com.l7tech.console.event.WizardEvent;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
@@ -247,8 +249,37 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void assignCert() {
-        // todo
-        JOptionPane.showMessageDialog(this, "Replace certificate chain goes here");
+        CertImportMethodsPanel sp = new CertImportMethodsPanel(
+                            new CertDetailsPanel(null) {
+                                public boolean canFinish() {
+                                    return true;
+                                }
+                            }, false);
+
+        final Wizard w = new AddCertificateWizard(this, sp);
+        w.setTitle("Assign Cert to Private Key");
+        w.addWizardListener(new WizardAdapter() {
+            public void wizardFinished(WizardEvent we) {
+                Object o = w.getWizardInput();
+
+                if (o == null) return;
+                if (!(o instanceof TrustedCert)) {
+                    // shouldn't happen
+                    throw new IllegalStateException("Wizard returned a " + o.getClass().getName() + ", was expecting a " + TrustedCert.class.getName());
+                }
+
+                final TrustedCert tc = (TrustedCert)o;
+                // todo, plugin to the admin interface
+
+                JOptionPane.showMessageDialog(PrivateKeyPropertiesDialog.this, "Replace certificate chain goes here (todo)");
+            }
+        });
+
+        w.pack();
+        Utilities.centerOnScreen(w);
+        DialogDisplayer.display(w);
+
+
     }
 
     private void close() {
