@@ -78,6 +78,7 @@ echo Creating Prototype...
 echo "i pkginfo" > ../pkgbuild/Prototype 
 echo "i checkinstall" >> ../pkgbuild/Prototype 
 echo "i preinstall" >> ../pkgbuild/Prototype 
+echo "i postinstall" >> ../pkgbuild/Prototype
 echo "i depend" >> ../pkgbuild/Prototype 
 echo "i copyright" >> ../pkgbuild/Prototype 
 
