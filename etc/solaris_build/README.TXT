@@ -6,6 +6,7 @@ myke@MacPwn:~/Desktop/L7$ du -ah build
 4.0K    build/pkgbuild/depend			Pre-reqs
 4.0K    build/pkgbuild/pkginfo			Package Metadata
 4.0K    build/pkgbuild/preinstall		Creates users
+?	build/pkgbuild/postinstall		Runs partition migrate and overwrites /etc/issue
  20K    build/pkgbuild
   0B    build/pkgroot				Where the package is massaged
   0B    build/README.TXT			This file... likely > 0 bytes now
