@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.MessageFormat;
 import java.util.Map;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -35,15 +36,18 @@ public class KeystoreActions {
         this.osFunctions = osFunctions;
     }
 
-    public KeyStore loadKeyStore(char[] ksPassword, String ksType, File keystoreFile, boolean shouldTryAgain, KeystoreActionsListener listener) throws KeystoreActionsException {
+    public KeyStore loadExistingKeyStore(File keystoreFile, boolean shouldTryAgain, KeystoreActionsListener listener) throws KeystoreActionsException {
+        String ksPassword = null;
+        String ksType = null;
 
-        if (StringUtils.isEmpty(ksType)) {
-            ksType = "PKCS12";
-        }
-
-        if (ksPassword == null) {
-            if (listener != null) ksPassword = listener.promptForKeystorePassword("Please provide the password for the existing keystore.");
-            else throw new KeystoreActionsException("No password provided for opening the keystore");
+        if (listener != null) {
+            List<String> answers = listener.promptForKeystoreTypeAndPassword();
+            ksType = answers.get(1);
+            ksPassword = answers.get(0);
+            if (KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName().equals(ksType) && ksPassword != null) {
+                if (!ksPassword.contains(":"))
+                    ksPassword = "gateway:"+ksPassword;
+            }
         }
 
         KeyStore existingSslKeystore = null;
@@ -51,8 +55,12 @@ public class KeystoreActions {
             existingSslKeystore = KeyStore.getInstance(ksType);
             InputStream is = null;
             try {
-                is = new FileInputStream(keystoreFile);
-                existingSslKeystore.load(is, ksPassword);
+                if (KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
+                    is = null;
+                } else {
+                    is = new FileInputStream(keystoreFile);
+                }
+                existingSslKeystore.load(is, ksPassword.toCharArray());
             } catch (FileNotFoundException e) {
                 throw new KeystoreActionsException(MessageFormat.format("Could not find the file \"{0}\". Cannot open the keystore", keystoreFile.getAbsolutePath()), e);
             } catch (NoSuchAlgorithmException e) {
@@ -62,7 +70,7 @@ public class KeystoreActions {
                     logger.warning("Could not load the keystore. Possibly the wrong password.");
                     if (shouldTryAgain) {
                         if (listener != null) {
-                            existingSslKeystore = loadKeyStore(null, ksType, keystoreFile, false, listener);
+                            existingSslKeystore = loadExistingKeyStore(keystoreFile, false, listener);
                         } else {
                             throw new KeystoreActionsException("Could not load the keystore with the given password");
                         }
@@ -112,15 +120,18 @@ public class KeystoreActions {
         if (!existingKeystoreFile.exists()) {
             logger.info(MessageFormat.format("No existing keystore found. No need to backup shared key. (tried {0})", existingKeystoreFile.getAbsolutePath()));
         } else {
-            KeyStore existingKeystore = loadKeyStore(ksPassword, ksType, new File(ksDir, ksFilename), true, listener);
+            KeyStore existingKeystore = loadExistingKeyStore(new File(ksDir, ksFilename), true, listener);
             try {
                 sharedKey = fetchDecryptedSharedKeyFromDatabase(SharedWizardInfo.getInstance().getDbinfo(), existingKeystore, ksPassword);
             } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
+                logger.severe("Error loading existing keystore: " + e.getMessage());
+                throw new KeystoreActionsException("Error loading existing keystore: " + e.getMessage());
             } catch (UnrecoverableKeyException e) {
-                e.printStackTrace();
+                logger.severe("Error loading existing keystore: " + e.getMessage());
+                throw new KeystoreActionsException("Error loading existing keystore: " + e.getMessage());
             } catch (KeyStoreException e) {
-                e.printStackTrace();
+                logger.severe("Error loading existing keystore: " + e.getMessage());
+                throw new KeystoreActionsException("Error loading existing keystore: " + e.getMessage());
             }
         }
 

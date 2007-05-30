@@ -17,6 +17,7 @@ public class Sca6000KeystorePanel extends KeystorePanel{
     private JPanel passwordPanel;
     private JRadioButton initializeKeystore;
     private JRadioButton importExistingKeystore;
+    private JCheckBox shouldBackupMasterKey;
 
     KeystorePasswordPanel pwPanel;
 
@@ -36,12 +37,14 @@ public class Sca6000KeystorePanel extends KeystorePanel{
 
         initializeKeystore.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                setBackupMasterKeyEnabled();
                 setPasswordFieldsVisible();
             }
         });
 
         importExistingKeystore.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                setBackupMasterKeyEnabled();
                 setPasswordFieldsVisible();
             }
         });
@@ -61,6 +64,10 @@ public class Sca6000KeystorePanel extends KeystorePanel{
         add(mainPanel, BorderLayout.CENTER);
     }
 
+    private void setBackupMasterKeyEnabled() {
+        shouldBackupMasterKey.setEnabled(initializeKeystore.isSelected());
+    }
+
     private void setPasswordFieldsVisible() {
         if (initializeKeystore.isSelected()) {
             pwPanel.setPasswordPrompts("Select the HSM password", "Confirm the HSM password");
@@ -71,6 +78,10 @@ public class Sca6000KeystorePanel extends KeystorePanel{
 
     public char[] getPassword() {
         return pwPanel.getPassword();
+    }
+
+    public boolean shouldBackupMasterKey() {
+        return shouldBackupMasterKey.isSelected();
     }
 
     public boolean validateInput() {

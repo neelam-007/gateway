@@ -120,6 +120,8 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         };
         String input = getData(prompts, defaultValue, new String[] {"1", "2"});
         keystoreBean.setInitializeHSM((input != null && "1".equals(input)));
+        String shouldBackup = getData(new String[] {"Backup Master Key after initialization? [y]"}, "y");
+        keystoreBean.setShouldBackupMasterKey(isYes(shouldBackup));
 
         doKeystorePasswordPrompts("Set the HSM Password",
                                   "Enter the HSM password: ",
@@ -258,26 +260,47 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 ok = true;
             } catch (KeystoreActions.KeystoreActionsException e) {
                 ok = false;
-                printText("Error while updating the cluster shared key\n" + e.getMessage());
+                printText("Error while updating the cluster shared key\n" + e.getCause().getClass().getName() + "\n" + e.getMessage());
             }
-        } else
+        } else {
             ok = true;       
-
+        }
         return ok;
     }
 
-    public char[] promptForKeystorePassword(String message) {
-        String[] prompts = new String[] {
-            message,
+    public List<String> promptForKeystoreTypeAndPassword() {
+        String[] prompt = new String[] {
+            "Please provide the password for the existing keystore: ",
         };
+        List<String> answers = new ArrayList<String>();
         String passwd = null;
+        String type = null;
         try {
-            passwd = getData(prompts, "");
+            passwd = getData(prompt, "");
+            List<String> typePrompts = new ArrayList<String>();
+            typePrompts.add("Please provide the type for the existing keystore" + getEolChar());
+            typePrompts.add("1) " + KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName() + getEolChar());
+            typePrompts.add("2) " + KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName() + getEolChar());
+            typePrompts.add("3) " + KeystoreType.LUNA_KEYSTORE_NAME.shortTypeName() + getEolChar());
+            typePrompts.add("Please make a selection: [1]");
+            String which  = getData(typePrompts, "1", new String[] {"1","2","3"});
+            if ("1".equals(which))
+                type = KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName();
+            else if ("2".equals(which))
+                type = KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName();
+            else if ("3".equals(which))
+                type = KeystoreType.LUNA_KEYSTORE_NAME.shortTypeName();
+            else {
+                type = null;
+            }
         } catch (IOException e) {
             logger.severe(e.getMessage());
         } catch (WizardNavigationException e) {
             return null;
         }
-        return passwd.toCharArray();
+
+        answers.add(passwd);
+        answers.add(type);
+        return answers;
     }
 }

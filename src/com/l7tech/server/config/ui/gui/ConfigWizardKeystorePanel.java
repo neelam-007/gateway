@@ -9,6 +9,7 @@ import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;
@@ -50,7 +51,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
     private JPanel ksConfigPanel;
     private JRadioButton doKsConfig;
     private JRadioButton dontDoKsConfig;
-    private JLabel errorMessage;
+    private JTextPane errorMessage;
 
     public ConfigWizardKeystorePanel(WizardStepPanel next) {
         super(next);
@@ -82,6 +83,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
                     break;
                 case SCA6000_KEYSTORE_NAME:
                     ksBean.setKsPassword(((Sca6000KeystorePanel)whichKeystorePanel).getPassword());
+                    ksBean.setShouldBackupMasterKey(((Sca6000KeystorePanel)whichKeystorePanel).shouldBackupMasterKey());
                     ksBean.setInitializeHSM(((Sca6000KeystorePanel)whichKeystorePanel).isInitializeHSM());
                     break;
                 default:
@@ -241,7 +243,6 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
                     shouldDisable = false;
                 } catch (KeystoreActions.KeystoreActionsException e) {
                     shouldDisable = true;
-//                    showErrorMessage("Error while updating the cluster shared key.\n There is an existing keystore on this gateway but there was an error while trying to extract keys from it. ");
                     showErrorMessage("Error while updating the cluster shared key\n" + e.getMessage());
                 }
             }
@@ -273,12 +274,25 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
     }
 
 
-    public char[] promptForKeystorePassword(String message) {
-        GenericPasswordPanel pwdPanel = new GenericPasswordPanel(message);
-        JOptionPane.showConfirmDialog(null, pwdPanel,
-                "Enter Keystore Password",
-                JOptionPane.OK_CANCEL_OPTION);
+    public java.util.List<String> promptForKeystoreTypeAndPassword() {
+        java.util.List<String> answers = new ArrayList<String>();
+        String title = "Existing keystore information";
+        String passwordMessage = "Please provide the password for the existing keystore";
+        String typeMessage = "Please provide the type for the existing keystore";
+        String[] allowedTypes = new String[] {
+            KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName(),
+            KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName(),
+            KeystoreType.LUNA_KEYSTORE_NAME.shortTypeName(),
+        };
 
-        return pwdPanel.getPassword();
+        KeystoreInformationDialog kiDialog = new KeystoreInformationDialog(this.getParentWizard(), title, passwordMessage, typeMessage, allowedTypes);
+        Utilities.centerOnParentWindow(kiDialog);
+        kiDialog.setVisible(true);
+
+        char[] password = kiDialog.getPassword();
+        String ksType = kiDialog.getKeystoreType();
+        answers.add(new String(password));
+        answers.add(ksType);
+        return answers;
     }
 }

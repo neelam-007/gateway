@@ -144,9 +144,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         } else {
             //get the new keystore
             KeystoreActions ka = new KeystoreActions(getOsFunctions());
-            KeyStore ks = ka.loadKeyStore(
-                    ksBean.getKsPassword(),
-                    ksBean.getKeyStoreType().shortTypeName(),
+            KeyStore ks = ka.loadExistingKeyStore(
+//                    ksBean.getKsPassword(),
+//                    ksBean.getKeyStoreType().shortTypeName(),
                     new File(getOsFunctions().getKeystoreDir()+KeyStoreConstants.SSL_KEYSTORE_FILE),
                     false,
                     null);
@@ -298,7 +298,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private void doHSMConfig(KeystoreConfigBean ksBean) throws Exception {
         char[] passwd = ksBean.getKsPassword();
         char[] ksPassword = ("gateway:" + new String(passwd)).toCharArray();
-//                new char["gateway:".toCharArray().length + passwd.length];
         String ksDir = getOsFunctions().getKeystoreDir();
         File keystoreDir = new File(ksDir);
         if (!keystoreDir.exists() && !keystoreDir.mkdir()) {
@@ -362,9 +361,21 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             }
         } else {
             logger.info("Restoring HSM Backup");
-            if (checkGDDCDongle()) {
-                //TODO do the restore steps
+            try {
+                ScaManager scaManager = getScaManager();
+                if (checkGDDCDongle()) {
+                    //TODO do the restore steps
+                }
+            } catch (ScaException e) {
+                logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
+                throw e;
+            } catch (Exception e) {
+                String mess = "Problem restoring the keystore to the HSM - skipping HSM configuration: ";
+                logger.log(Level.SEVERE, mess + e.getMessage(), e);
+                throw e;
             }
+
+
         }
     }
 
@@ -679,7 +690,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private void prepareJvmForNewKeystoreType(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException {
         Provider[] currentProviders = Security.getProviders();
         for (Provider provider : currentProviders) {
-            logger.info("Removing " + provider.getName());
             Security.removeProvider(provider.getName());
         }
 
