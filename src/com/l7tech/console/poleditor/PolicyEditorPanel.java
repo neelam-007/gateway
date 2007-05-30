@@ -200,7 +200,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     protected static final Callable<PolicyValidatorResult> NO_VAL_CALLBACK = new Callable<PolicyValidatorResult>() {
         public PolicyValidatorResult call() throws Exception {
             PolicyValidatorResult output = new PolicyValidatorResult();
-            output.addWarning(new PolicyValidatorResult.Warning(0, 0, "Policy Validation Disabled", null));
+            output.addWarning(new PolicyValidatorResult.Warning(0, 0, "Policy validation feedback has " +
+                                                                      "been disabled in the Preferences", null));
             return output;
         }
     };
