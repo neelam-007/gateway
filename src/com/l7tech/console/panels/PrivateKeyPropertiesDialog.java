@@ -8,6 +8,7 @@ import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -269,17 +270,22 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 }
 
                 final TrustedCert tc = (TrustedCert)o;
-                // todo, plugin to the admin interface
-
-                JOptionPane.showMessageDialog(PrivateKeyPropertiesDialog.this, "Replace certificate chain goes here (todo)");
+                final TrustedCertAdmin admin = getTrustedCertAdmin();
+                try {
+                    admin.assignNewCert(subject.getKeystore().id, subject.getAlias(), HexUtils.encodeBase64(tc.getCertificate().getEncoded()));
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "error assigning cert", e);
+                    DialogDisplayer.showMessageDialog(generateCSRButton, "Error Assigning new Cert. Make sure the " +
+                                                                         "cert you choose is related to the public " +
+                                                                         "key it is being assigned for.",
+                                                      "Error", JOptionPane.ERROR_MESSAGE, null);
+                }
             }
         });
 
         w.pack();
         Utilities.centerOnScreen(w);
         DialogDisplayer.display(w);
-
-
     }
 
     private void close() {

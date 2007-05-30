@@ -10,6 +10,8 @@ import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -289,6 +291,30 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         } catch (Exception e) {
             logger.log(Level.WARNING, "error getting keystore", e);
             throw new FindException("error making CSR", e);
+        }
+    }
+
+    public void assignNewCert(long keystoreId, String alias, String b64edCert) throws FindException {
+        // todo CertUtils.decodeCert(HexUtils.decodeBase64(certBase64));
+        SsgKeyFinder keyFinder;
+        try {
+            keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+        } catch (KeyStoreException e) {
+            logger.log(Level.WARNING, "error getting keystore", e);
+            throw new FindException("error getting keystore", e);
+        }
+        SsgKeyStore keystore;
+        if (keyFinder != null) {
+            keystore = keyFinder.getKeyStore();
+        } else {
+            logger.log(Level.WARNING, "error getting keystore");
+            throw new FindException("cannot find keystore");
+        }
+        try {
+            keystore.replaceCertificate(alias, CertUtils.decodeCert(HexUtils.decodeBase64(b64edCert)));
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "error setting new cert", e);
+            throw new FindException("error setting new cert", e);
         }
     }
 

@@ -210,4 +210,8 @@ public interface TrustedCertAdmin  {
 
     @Transactional(readOnly=true)
     byte[] generateCSR(long keystoreId, String alias, LdapName dn) throws FindException;
+
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
+    void assignNewCert(long keystoreId, String alias, String b64edCert) throws FindException;
 }
