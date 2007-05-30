@@ -1,0 +1,4 @@
+echo "Layer 7 SecureSpan(tm) Gateway v4.0" >/etc/issue
+
+#migrate the structure to the new partitioning scheme using the configuration wizard
+/ssg/configwizard/ssgconfig.sh -partitionMigrate &>/dev/null
