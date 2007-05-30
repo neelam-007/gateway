@@ -14,6 +14,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.remoting.RemoteAccessException;
+
 /**
  * User: megery
  * Date: Nov 8, 2006
@@ -72,6 +74,9 @@ public class AuditAlertChecker {
             } else {
                 startTimer();
             }
+        } catch (RemoteAccessException e) {
+            // bzilla #3741, we may no longer be connected
+            logger.log(Level.WARNING, "Could not access SSG to update this. Perhaps the connection to the SSG timed out.", e);
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         } catch (FindException e) {
