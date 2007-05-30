@@ -14,6 +14,7 @@ import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
@@ -103,6 +104,16 @@ class JmsRequestHandler {
             }
             final Map<String, Object> reqJmsMsgProps = Collections.unmodifiableMap(msgProps);
 
+            // Gets the JMS message property to use as SOAPAction, if present.
+            String soapActionValue = null;
+            final String jmsMsgPropWithSoapAction = (String)receiver.getConnection().properties().get(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION);
+            if (jmsMsgPropWithSoapAction != null) {
+                soapActionValue = (String)reqJmsMsgProps.get(jmsMsgPropWithSoapAction);
+                if (_logger.isLoggable(Level.FINER))
+                _logger.finer("Found JMS message property to use as SOAPAction value: " + jmsMsgPropWithSoapAction + "=" + soapActionValue);
+            }
+            final String soapAction = soapActionValue;
+
             com.l7tech.common.message.Message request = new com.l7tech.common.message.Message();
             request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream );
             request.attachJmsKnob(new JmsKnob() {
@@ -111,6 +122,9 @@ class JmsRequestHandler {
                 }
                 public Map<String, Object> getJmsMsgPropMap() {
                     return reqJmsMsgProps;
+                }
+                public String getSoapAction() {
+                    return soapAction;
                 }
             });
 

@@ -228,6 +228,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         public Map<String, Object> getJmsMsgPropMap() {
                             return inResJmsMsgProps;
                         }
+                        public String getSoapAction() {
+                            return null;
+                        }
                     });
 
                     final Map<String, Object> outResJmsMsgProps = new HashMap<String, Object>();

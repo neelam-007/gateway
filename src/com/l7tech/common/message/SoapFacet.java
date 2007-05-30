@@ -60,12 +60,14 @@ class SoapFacet extends MessageFacet {
      * @throws NoSuchPartException if the Message first part has already been destructively read
      */
     static SoapInfo getSoapInfo(Message message) throws IOException, SAXException, NoSuchPartException {
-        XmlKnob xk = (XmlKnob) message.getKnob(XmlKnob.class);
+        HasSoapAction haver = (HasSoapAction) message.getKnob(HasSoapAction.class);
+        final String soapAction = haver == null ? null : haver.getSoapAction();
 
+        XmlKnob xk = (XmlKnob) message.getKnob(XmlKnob.class);
         if (xk != null && xk.isDomParsed() && !xk.isTarariWanted()) {
             // Performance hack... If this policy doesn't strongly prefer Tarari, use the DOM that's already present for
             // SOAP identification purposes
-            return getSoapInfoDom(message.getXmlKnob().getDocumentReadOnly());
+            return getSoapInfoDom(message.getXmlKnob().getDocumentReadOnly(), soapAction);
         }
 
         TarariMessageContextFactory mcfac = TarariLoader.getMessageContextFactory();
@@ -73,8 +75,7 @@ class SoapFacet extends MessageFacet {
             try {
                 InputStream inputStream = message.getMimeKnob().getFirstPart().getInputStream(false);
                 TarariMessageContext mc = mcfac.makeMessageContext(inputStream);
-                SoapInfo soapInfo = mc.getSoapInfo();
-
+                SoapInfo soapInfo = mc.getSoapInfo(soapAction);
                 TarariKnob tarariKnob = (TarariKnob)message.getKnob(TarariKnob.class);
                 if (tarariKnob == null) {
                     message.attachKnob(TarariKnob.class, new TarariKnob(message, mc, soapInfo));
@@ -88,27 +89,31 @@ class SoapFacet extends MessageFacet {
                 // fallthrough to software
             }
         }
-        return getSoapInfoDom(message.getXmlKnob().getDocumentReadOnly());
+        return getSoapInfoDom(message.getXmlKnob().getDocumentReadOnly(), soapAction);
     }
 
     /**
      * Software fallback version of getSoapInfo.  Requires DOM parsing have been done already.
      * @return a SoapInfo.  Never null.
+     * @param document the DOM for the request; must not be null.
+     * @param soapAction the SOAPAction value from the transport layer. May be null.
+     * @throws org.xml.sax.SAXException if the message cannot be parsed (likely a lazy DOM implementation)
      */
-    private static SoapInfo getSoapInfoDom(Document document) throws SAXException {
+    private static SoapInfo getSoapInfoDom(Document document, String soapAction) throws SAXException {
         boolean hasSecurityNode = false;
         final QName[] payloadNs;
         if (SoapUtil.isSoapMessage(document)) {
             try {
+                // if (soapAction == null) tryToGetSoapActionFromWsaHeader();
                 List els = SoapUtil.getSecurityElements(document);
                 if (els != null && !els.isEmpty()) hasSecurityNode = true;
                 payloadNs = SoapUtil.getPayloadNames(document);
-                return new SoapInfo(true, payloadNs, hasSecurityNode);
+                return new SoapInfo(true, soapAction, payloadNs, hasSecurityNode);
             } catch (InvalidDocumentFormatException e) {
                 throw new SAXException(e);
             }
         } else {
-            return new SoapInfo(false, null, false);
+            return new SoapInfo(false, soapAction, null, false);
         }
     }
 

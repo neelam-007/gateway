@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Information about a message that was received or will be sent via JMS.
  */
-public interface JmsKnob extends MessageKnob {
+public interface JmsKnob extends MessageKnob, HasSoapAction {
     boolean isBytesMessage();
 
     /**

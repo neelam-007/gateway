@@ -1,10 +1,10 @@
 package com.l7tech.common.message;
 
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.util.Closeable;
 import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
-import com.l7tech.common.util.Closeable;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -55,7 +55,8 @@ public class TarariKnob implements MessageKnob, Closeable {
             try {
                 logger.log(Level.FINE, "Passing message into Tarari hardware again");
                 context = mcfac.makeMessageContext(message.getMimeKnob().getFirstPart().getInputStream(false));
-                soapInfo = context.getSoapInfo();
+                // TODO is there any chance the SOAPAction could have changed?
+                soapInfo = context.getSoapInfo(soapInfo.getSoapAction());
             } catch (SoftwareFallbackException e) {
                 // TODO if this happens a lot for perfectly reasonable reasons, downgrade to something below INFO
                 logger.log(Level.INFO, "Falling back from hardware to software processing", e);

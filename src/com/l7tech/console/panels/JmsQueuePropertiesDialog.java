@@ -6,8 +6,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedCreate;
-import com.l7tech.common.security.rbac.PermissionDeniedException;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.PermissionDeniedException;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsProvider;
@@ -25,8 +25,8 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.rmi.RemoteException;
-import java.util.Properties;
 import java.text.MessageFormat;
+import java.util.Properties;
 
 /**
  * Dialog for configuring a JMS Queue (ie, a [JmsConnection, JmsEndpoint] pair).
@@ -53,6 +53,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JPasswordField queuePasswordField;
     private JPanel queueExtraPropertiesOuterPanel;   // For provider-specific settings.
     private JmsExtraPropertiesPanel queueExtraPropertiesPanel;
+    private JPanel inboundOptionsPanel;
+    private JCheckBox useJmsMsgPropAsSoapActionCheckBox;
+    private JLabel jmsMsgPropWithSoapActionLabel;
+    private JTextField jmsMsgPropWithSoapActionTextField;
     private JButton testButton;
     private JButton saveButton;
     private JButton cancelButton;
@@ -168,6 +172,13 @@ public class JmsQueuePropertiesDialog extends JDialog {
         inboundRadioButton.setEnabled(!isOutboundOnly());
         outboundRadioButton.setEnabled(!isOutboundOnly());
 
+        inboundRadioButton.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                enableOrDisableComponents();
+            }
+        });
+
+
         initProviderComboBox();
 
         useJndiCredentialsCheckBox.addItemListener(new ItemListener() {
@@ -222,6 +233,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 enableOrDisableComponents();
             }
         });
+
+        useJmsMsgPropAsSoapActionCheckBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                enableOrDisableComponents();
+            }
+        });
+        jmsMsgPropWithSoapActionTextField.getDocument().addDocumentListener(formPreener);
+        Utilities.enableGrayOnDisabled(jmsMsgPropWithSoapActionTextField);
 
         testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -424,6 +443,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (queueExtraPropertiesPanel != null) {
             properties.putAll(queueExtraPropertiesPanel.getProperties());
         }
+        if (useJmsMsgPropAsSoapActionCheckBox.isSelected()) {
+            properties.put(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION, jmsMsgPropWithSoapActionTextField.getText());
+        }
         conn.properties(properties);
 
         return conn;
@@ -527,16 +549,24 @@ public class JmsQueuePropertiesDialog extends JDialog {
             enableOrDisableQueueCredentials();
         }
 
+        useJmsMsgPropAsSoapActionCheckBox.setSelected(false);
+        jmsMsgPropWithSoapActionTextField.setText("");
         if (endpoint != null) {
             // Configure gui from endpoint
             queueNameTextField.setText(endpoint.getDestinationName());
             inboundRadioButton.setSelected(endpoint.isMessageSource());
+            if (connection != null) {
+                final String propName = (String)connection.properties().get(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION);
+                if (propName != null) {
+                    useJmsMsgPropAsSoapActionCheckBox.setSelected(true);
+                    jmsMsgPropWithSoapActionTextField.setText(propName);
+                }
+            }
         } else {
             // No endpoint is set
             queueNameTextField.setText("");
             inboundRadioButton.setSelected(false);
         }
-        outboundRadioButton.setSelected(!inboundRadioButton.isSelected());
     }
 
     /**
@@ -555,6 +585,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return false;
         if (queueExtraPropertiesPanel != null && !queueExtraPropertiesPanel.validatePanel())
             return false;
+        if (inboundRadioButton.isSelected() && useJmsMsgPropAsSoapActionCheckBox.isSelected() && jmsMsgPropWithSoapActionTextField.getText().length() == 0)
+            return false;
         return true;
     }
 
@@ -572,6 +604,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
      * Adjust components based on the state of the form.
      */
     private void enableOrDisableComponents() {
+        if (inboundRadioButton.isSelected()) {
+            Utilities.setEnabled(inboundOptionsPanel, true);
+            useJmsMsgPropAsSoapActionCheckBox.setEnabled(true);
+            jmsMsgPropWithSoapActionLabel.setEnabled(useJmsMsgPropAsSoapActionCheckBox.isSelected());
+            jmsMsgPropWithSoapActionTextField.setEnabled(useJmsMsgPropAsSoapActionCheckBox.isSelected());
+        } else {
+            Utilities.setEnabled(inboundOptionsPanel, false);
+        }
         final boolean valid = validateForm();
         saveButton.setEnabled(valid);
         testButton.setEnabled(valid);
@@ -593,6 +633,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 useQueueCredentialsCheckBox,
                 queueUsernameTextField,
                 queuePasswordField,
+                useJmsMsgPropAsSoapActionCheckBox,
+                jmsMsgPropWithSoapActionTextField,
         });
         securityFormAuthorizationPreparer.prepare(jndiExtraPropertiesOuterPanel);
         securityFormAuthorizationPreparer.prepare(queueExtraPropertiesOuterPanel);

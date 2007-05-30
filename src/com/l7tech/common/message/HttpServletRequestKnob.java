@@ -7,18 +7,19 @@ package com.l7tech.common.message;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.ParameterizedString;
-import com.l7tech.common.util.IteratorEnumeration;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.IteratorEnumeration;
+import com.l7tech.common.util.SoapUtil;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.cert.X509Certificate;
-import java.text.ParseException;
 import java.text.MessageFormat;
+import java.text.ParseException;
 import java.util.*;
 
 /**
@@ -264,5 +265,9 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     /** @return the raw HttpServletRequest instance. */
     public HttpServletRequest getHttpServletRequest() {
         return request;
+    }
+
+    public String getSoapAction() throws IOException {
+        return getHeaderSingleValue(SoapUtil.SOAPACTION);
     }
 }

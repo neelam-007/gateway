@@ -10,9 +10,9 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
-import java.io.Serializable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,6 +28,10 @@ import java.util.logging.Logger;
 public class JmsConnection extends NamedEntityImp implements Serializable {
     private static final Logger logger = Logger.getLogger(JmsConnection.class.getName());
     private static final String ENCODING = "UTF-8";
+
+    /** Name of String property (in returned value of {@link #properties()}) that
+        contains the name of JMS message property to be used as SOAPAction value. */
+    public static final String JMS_MSG_PROP_WITH_SOAPACTION = "com.l7tech.server.jms.soapAction.msgPropName";
 
     private String _initialContextFactoryClassname;
     private String _jndiUrl;

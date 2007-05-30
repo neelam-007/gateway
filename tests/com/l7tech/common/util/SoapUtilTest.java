@@ -1,23 +1,23 @@
 package com.l7tech.common.util;
 
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 
-import javax.wsdl.Operation;
 import javax.wsdl.BindingOperation;
-import java.net.URL;
-import java.text.ParseException;
+import javax.wsdl.Operation;
 import java.io.IOException;
+import java.net.URL;
 import java.security.cert.X509Certificate;
-import java.util.Map;
+import java.text.ParseException;
 import java.util.Enumeration;
+import java.util.Map;
 
 /**
  * For testing stuff in SoapUtil class
@@ -113,6 +113,10 @@ public class SoapUtilTest extends TestCase {
                 }
                 return null;
             }
+
+            public String getSoapAction() {
+                return saction;
+            }
             public HttpCookie[] getCookies() {return new HttpCookie[0];}
             public String getMethod() {return "POST";}
             public String getRequestUri() {return null;}
@@ -133,6 +137,7 @@ public class SoapUtilTest extends TestCase {
             public String getRemoteHost() {return null;}
             public int getLocalPort() {return 0;}
             public Object getConnectionIdentifier() {return new Object();};
+
         });
         return output;
     }

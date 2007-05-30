@@ -4,7 +4,7 @@
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.audit.MessageProcessingMessages;
-import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.HasSoapAction;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.util.SoapUtil;
@@ -33,12 +33,12 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
     }
 
     protected String getRequestValue(Message request) throws ServiceResolutionException {
-        HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
-        if (httpReqKnob == null)
+        HasSoapAction hsa = (HasSoapAction)request.getKnob(HasSoapAction.class);
+        if (hsa == null)
             return null;
         String soapAction;
         try {
-            soapAction = httpReqKnob.getHeaderSingleValue(SoapUtil.SOAPACTION);
+            soapAction = hsa.getSoapAction();
         } catch (IOException e) {
             throw new ServiceResolutionException("Found multiple " + SoapUtil.SOAPACTION + " headers"); // can't happen
         }
@@ -52,10 +52,15 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
     }
 
     public Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
-        // since this only applies to http messages, we dont want to narrow down subset if msg is not http
-        boolean notHttp = (request.getKnob(HttpRequestKnob.class) == null);
+        HasSoapAction hsa = (HasSoapAction)request.getKnob(HasSoapAction.class);
+        boolean noSoapActionAvailable = hsa == null;
+        try {
+            noSoapActionAvailable |= hsa.getSoapAction() == null;
+        } catch (IOException e) {
+            // let resolve() handle multivalue case
+        }
         boolean notSoap = (request.getKnob(SoapKnob.class) == null);
-        if (notHttp || notSoap) {
+        if (noSoapActionAvailable || notSoap) {
             auditor.logAndAudit(MessageProcessingMessages.SR_SOAPACTION_NOT_HTTP_OR_SOAP);
             return Result.NOT_APPLICABLE;
         } else {

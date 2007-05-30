@@ -540,6 +540,9 @@ public class PolicyProcessingTest extends TestCase {
                     //noinspection unchecked
                     return Collections.EMPTY_MAP;
                 }
+                public String getSoapAction() {
+                    return null;
+                }
             });
         } catch(NoSuchPartException nspe) {
             throw new CausedIOException("Mime init error", nspe);

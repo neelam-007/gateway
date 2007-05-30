@@ -71,7 +71,8 @@ public class TarariMessageContextImpl implements TarariMessageContext {
         return new TarariElementCursor(raxCursor, this);
     }
 
-    public SoapInfo getSoapInfo() throws SoftwareFallbackException {
+    // TODO is there some better place to stow the soapaction value?
+    public SoapInfo getSoapInfo(String soapAction) throws SoftwareFallbackException {
         List<QName> payloadNames = new ArrayList<QName>();
         boolean hasSecurityHeaders = false;
         XPathResult xpathResult = getXpathResult();
@@ -119,9 +120,9 @@ public class TarariMessageContextImpl implements TarariMessageContext {
                     }
                 }
             }
-            return new SoapInfo(true, payloadNames.toArray(EMPTY_QNAMES), hasSecurityHeaders);
+            return new SoapInfo(true, soapAction, payloadNames.toArray(EMPTY_QNAMES), hasSecurityHeaders);
         } else {
-            return new SoapInfo(false, EMPTY_QNAMES, false);
+            return new SoapInfo(false, soapAction, EMPTY_QNAMES, false);
         }
     }
 
