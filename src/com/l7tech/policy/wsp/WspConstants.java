@@ -318,9 +318,6 @@ public class WspConstants {
         WspUpgradeUtilFrom30.httpClientCertCompatibilityMapping,
         WspUpgradeUtilFrom30.samlSecurityCompatibilityMapping,
         WspUpgradeUtilFrom30.wssDigestCompatibilityMapping,
-
-        // TODO figure out where to put this
-        // EqualityRenamedToComparison.equalityCompatibilityMapping,
         StealthReplacedByFaultLevel.faultDropCompatibilityMapping
     };
 }
