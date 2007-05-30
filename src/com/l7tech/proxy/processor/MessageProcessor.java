@@ -855,7 +855,7 @@ public class MessageProcessor {
                                                     : null;
                 SimpleSecurityTokenResolver tokenResolver =
                         new SimpleSecurityTokenResolver(new X509Certificate[] { ssg.getClientCertificate(),
-                                ssg.getServerCertificate() }, new SignerInfo[] { clientSignerInfo })
+                                ssg.getServerCertificate() }, clientSignerInfo == null ? null : new SignerInfo[] { clientSignerInfo })
                         {
                             public byte[] getSecretKeyByEncryptedKeySha1(String value) {
                                 final SecretKey encryptedKeySecretKey = context.getEncryptedKeySecretKey();
