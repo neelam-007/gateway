@@ -9,7 +9,7 @@ set password [lindex $argv 0]
 set initializationTimeout 120
 set defaultTimeout 120
 
-spawn /opt/sun/sca6000/bin/scamgr create user $username
+spawn /opt/sun/sca6000/bin/scamgr
 
 
 exit -onexit { puts "\n\nTimed out waiting for an expected response from scamgr\n" ; exit 1 }
@@ -57,12 +57,29 @@ expect {
     "Security Officer Password: " { send "$soPassword\r" }
 }
 
+expect -re "scamgr.*> "
+send "create user $username\r"
+
 # Handle the prompts for the payload command ("CREATE USER $username")
 expect {
     "Enter new user password: " { send "$password\r" ; exp_continue }
     "Confirm password: " { send "$password\r" ; exp_continue }
     "Failed creating user " { exit -onexit { exit 5 } ; puts "\n\nUnable to create new HSM user $username\n" ; exit 5 }
-    -re "User .* created successfully." { exit -onexit { exit 0 } ; exit 0 }
-    -re "scamgr.*> " {send "quit\r" ; exit -onexit { exit 4 } ; puts "\n\nUnexpected scamgr state -- got command prompt\n" ; exit 4 }
+    -re "User .* created successfully."
 }
+
+# Handle prompts for setting up the UWKs
+expect -re "scamgr.*> "
+send "create so so2\r"
+
+expect {
+    "Enter new security officer password: " { send "$soPassword\r" ; exp_continue }
+    "Confirm password: " { send "$soPassword\r" ; exp_continue }
+    "Failed creating new Security Officer" { exit -onexit { exit 6 } ; puts "\n\nUnable to create new HSM security officer so2\n" ; exit 6 }
+    "Security Officer so2 created successfully."
+}
+
+exit -onexit { exit 0 }
+puts "\n\nKeystore initialization successful.\n"
+exit 0
 
