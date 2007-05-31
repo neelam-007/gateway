@@ -1098,6 +1098,16 @@ public class SoapUtil {
     }
 
     /**
+     * Test whether the valueType is one of the know X509v3 ValueType identifiers.
+     *
+     * @param valueType the value type to check
+     * @return true if valueType is for X509v3
+     */
+    public static boolean isValueTypeX509v3(String valueType) {
+        return VALUETYPE_X509.equals(valueType);
+    }
+
+    /**
      * Test whether the valueType is one of the know Saml ValueType identifiers.
      * @param valueType the saml valuetype
      * @return true if valueType matches one of known Saml valueType constants, false otherwise
