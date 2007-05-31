@@ -16,30 +16,54 @@ myke@MacPwn:~/Desktop/L7$ du -ah build
 myke@MacPwn:~/Desktop/L7$ 
 
 Instructions for use:
-* Make overlay tarball: 
+1. Linux side
+	a. prepare a standard linux tarball, output file is ssg-b????.tar.gz
+        b. prepare a tarball of the entire solaris_build dir:
+   		cd UneasyRooster/etc/
+   		tar -czvf solaris_build.tar.gz
+	c. copy both tarballs to the solaris build system
+		scp ssgb????.tar.gz user@solaris:
+		scp solaris_build.tar.gz user@solaris:
 
-In this dir, sh make_overlay_tarball.sh
+2. Solaris side
 
-This produces solaris_ssg_bin.tar.gz in this dir, containing replacements for the linux startup scripts. 
+* Must have gnu tar: package name is SUNWgtar on the dvd. Sun Tar mangles the filenames and the resulting file will not run
 
-* Make ssg tarball from standard build.
+* Create a working directory "working":
+	cd ~
+	mkdir working
+	*   On solaris this makes /export/home/username/working
+  
+	cd working
 
-* Place a ssg.tar.gz and the above created solaris_ssb_bin.tar.gz  in the build/ directory
-* cd build; ./build.sh
-Build script unpacks the main tarball and then the other tarball, replacing the startup scripts.
-Then build runs and creates a package
+* Unpack the solaris build kit:
+	gunzip ../solaris_build.tar.gz
+        tar -xf ../solaris_build.tar
+        cd solaris_build
+        cp ~/ssg-b????.tar.gz ssg.tar.gz
 
-This creates a 200 megabyte pkg. This can be gzipped down to the same approximate size as the rpm. Solaris packages are uncompressed, for some reason.
+* run the build script
+	./build.sh
+	
 
+3. Build script 
+	1. makes the overlay tarball
+	2. unpacks the main tarball 
+	3. unpacks the overlay tarball, replacing the startup scripts.
+	4. Then build runs and creates a package:
+		 solaris_build/pkgbuild/L7TECHssg.pkg
+	5. copy this file to repository
+	
 
-Basically, the script extracts the ssg tarball into pkgroot, moves some files around then creates listings for use with pkgmk.
-This will produce a Sun package file in build/pkgbuild/L7TECHssg.pkg, this file is suitable for using with pkgadd.
-You can install the package using 'pkgadd -d L7TECHssg.pkg', (the .pkg extension is not standard and is just used for developer's clairity)
+Theory of operation:
+
+The script extracts the ssg tarball into pkgroot, moves some files around then creates listings for use with pkgmk.
+
+This will produce a Sun package file in solaris_build/pkgbuild/L7TECHssg.pkg, this file is suitable for using with pkgadd.
+
+You can install the package using 'pkgadd -d L7TECHssg.pkg', (the .pkg extension is not standard and is just used for developer's clarity)
 
 Bugs:
 -> checkinstall script does not work properly (at all)
 -> depends on Java 1.5, not 1.6. This may or may not be a problem
--> Needs a proper copyright notice
--> This filename contains spaces: "ssg/tomcat/webapps/ROOT/ssg/webadmin/help/securespan manager help system.log"
--> When untarring ssg.tar.bz, one sees many messages like: tar: ././@LongLink: typeflag 'L' not recognized, converting to regular file
 
