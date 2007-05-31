@@ -1402,6 +1402,14 @@ public class WssProcessorImpl implements WssProcessor {
             }
         });
         sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
+           public Canonicalizer getCanonicalizer(String string) {
+                if (Transform.C14N_EXCLUSIVE.equals(string)) {
+                    // Fixed canonicalizer respects the PrefixList
+                    // See bug 3611
+                    return new FixedExclusiveC11r();
+                }
+                return super.getCanonicalizer(string);
+            }
             public Transform getTransform(String s) throws NoSuchAlgorithmException {
                 if (SoapUtil.TRANSFORM_STR.equals(s)) {
                     return new Transform() {
