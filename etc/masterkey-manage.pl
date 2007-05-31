@@ -55,7 +55,7 @@ END {
 }
 
 sub usage() {
-    die "Usage: $0 [probe|backup] <SOPASSWORD> <BACKUPFILE> <BACKUPPASS>\n";
+    die "Usage: $0 [probe|backup|restore|lock] <SOPASSWORD> <BACKUPFILE> <BACKUPPASS>\n";
 }
 
 sub fatal($$) {
