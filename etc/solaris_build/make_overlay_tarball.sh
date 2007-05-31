@@ -2,5 +2,6 @@
 rm -rf ssg
 mkdir -p ssg/bin
 cp startup/* ssg/bin
-tar -czvf solaris_ssg_bin.tar.gz ssg/bin/*
+tar -cvf solaris_ssg_bin.tar ssg/bin/*
+gzip solaris_ssg_bin.tar
 rm -rf ssg
