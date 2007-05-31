@@ -56,6 +56,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private static final Logger logger = Logger.getLogger(KeystoreConfigCommand.class.getName());
 
     private static final String BACKUP_FILE_NAME = "keystore_config_backups";
+    private  static final String MASTER_KEY_BACKUP_FILE_NAME="ssg_mkey.bak";
+
 
     private static final String PROPERTY_COMMENT = "This file was updated by the SSG configuration utility";
 
@@ -98,6 +100,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private KeystoreConfigBean ksBean;
     private SharedWizardInfo sharedWizardInfo;
     private static final String HSM_SETUP_SCRIPT = "bin/hsm_setup.sh";
+    private static final String SCADIAG = "scadiag";
 
 
     public KeystoreConfigCommand(ConfigurationBean bean) {
@@ -337,7 +340,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 ScaManager scaManager = getScaManager();
                 if (checkGDDCDongle()) {
                     logger.info("Using keystore password: " + String.valueOf(ksPassword));
-                    initializeSCA(ksPassword);
+                    initializeHSM(ksPassword);
                     prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
                     makeHSMKeys(new File(ksDir), ksPassword);
                     updateJavaSecurity(javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
@@ -347,7 +350,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                     updateKeystoreProperties(keystorePropertiesFile, ksPassword);
                     updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
                     updateSystemPropertiesFile(ksBean, systemPropertiesFile);
-                    backupHsmKeydata();
+                    backupHsmKeydata(ksBean.getKsPassword(), ksBean.getMasterKeyBackupPassword());
                 } else {
                     throw new Exception("The GDCC is not present. Proceeding with configuration could result in data loss. Skipping HSM configuration");
                 }
@@ -361,11 +364,22 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             }
         } else {
             logger.info("Restoring HSM Backup");
+            Connection conn = null;
             try {
+                DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
+                DBActions dba = null;
+                dba = new DBActions(getOsFunctions());
+                conn = dba.getConnection(dbinfo);
                 ScaManager scaManager = getScaManager();
-                if (checkGDDCDongle()) {
-                    //TODO do the restore steps
-                }
+                zeroHsm();
+                byte[] databytes = getKeydataFromDatabase(conn);
+                scaManager.saveKeydata(databytes);
+                restoreHSM(ksBean.getKsPassword(), ksBean.getMasterKeyBackupPassword());
+
+                    
+            } catch (ClassNotFoundException e) {
+                logger.severe("Error while getting keydata from the database: " + e.getMessage());
+                throw e;
             } catch (ScaException e) {
                 logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
                 throw e;
@@ -373,6 +387,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 String mess = "Problem restoring the keystore to the HSM - skipping HSM configuration: ";
                 logger.log(Level.SEVERE, mess + e.getMessage(), e);
                 throw e;
+            } finally{
+                ResourceUtils.closeQuietly(conn);
             }
 
 
@@ -388,16 +404,34 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return true;
     }
 
-    private void backupHsmKeydata() {
-        //TODO backup the keydata via the GDCC to the fob
+    private void backupHsmKeydata(char[] keystorePassword, char[] masterKeyBackupPassword) throws IOException {
+        if (getOsFunctions().isUnix()) {
+            String backupScript = getOsFunctions().getSsgInstallRoot() + HSM_SETUP_SCRIPT;
+            try {
+                logger.info("Executing \"" + backupScript + "\"");
+                ProcResult result = ProcUtils.exec(null, new File(backupScript), ProcUtils.args("backup", String.valueOf(keystorePassword), String.valueOf(masterKeyBackupPassword), MASTER_KEY_BACKUP_FILE_NAME), null, true);
+                if (result.getExitStatus() != 0) {
+                    logger.warning(MessageFormat.format("{0} exited with a non zero return code: {1} ({2})",
+                            backupScript,
+                            result.getExitStatus(),
+                            new String(result.getOutput()))
+                    );
+                } else {
+                    logger.info(MessageFormat.format("Successfully initialized the HSM: {0}", new String(result.getOutput())));
+                }
+            } catch (IOException e) {
+                logger.warning("There was an error trying to initialize the HSM: " + e.getMessage());
+                throw e;
+            }
+        }
     }
 
-    private void initializeSCA(char[] keystorePassword) throws IOException {
+    private void initializeHSM(char[] keystorePassword) throws IOException {
         if (getOsFunctions().isUnix()) {
             String initializeScript = getOsFunctions().getSsgInstallRoot() + HSM_SETUP_SCRIPT;
             try {
                 logger.info("Executing \"" + initializeScript + "\"");
-                ProcResult result = ProcUtils.exec(null, new File(initializeScript), ProcUtils.args("init", keystorePassword), null, true);
+                ProcResult result = ProcUtils.exec(null, new File(initializeScript), ProcUtils.args("init", String.valueOf(keystorePassword)), null, true);
                 if (result.getExitStatus() != 0) {
                     logger.warning(MessageFormat.format("{0} exited with a non zero return code: {1} ({2})",
                             initializeScript,
@@ -409,6 +443,42 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 }
             } catch (IOException e) {
                 logger.warning("There was an error trying to initialize the HSM: " + e.getMessage());
+                throw e;
+            }
+        }
+    }
+
+    private void restoreHSM(char[] keystorePassword, char[] backupPassword) throws IOException {
+        if (getOsFunctions().isUnix()) {
+            String restoreScript = getOsFunctions().getSsgInstallRoot() + HSM_SETUP_SCRIPT;
+            try {
+                logger.info("Executing \"" + restoreScript + "\"");
+                ProcResult result = ProcUtils.exec(null, new File(restoreScript), ProcUtils.args("restore", String.valueOf(keystorePassword), String.valueOf(backupPassword), MASTER_KEY_BACKUP_FILE_NAME, null, true));
+                if (result.getExitStatus() != 0) {
+                    logger.warning(MessageFormat.format("{0} exited with a non zero return code: {1} ({2})",
+                            restoreScript,
+                            result.getExitStatus(),
+                            new String(result.getOutput()))
+                    );
+                } else {
+                    logger.info(MessageFormat.format("Successfully initialized the HSM: {0}", new String(result.getOutput())));
+                }
+            } catch (IOException e) {
+                logger.warning("There was an error trying to initialize the HSM: " + e.getMessage());
+                throw e;
+            }
+        }
+    }
+
+    private void zeroHsm() throws IOException {
+        if (getOsFunctions().isUnix()) {
+            String scaCommand = "sudo " + SCADIAG;
+            try {
+                logger.info("Executing \"" + scaCommand + "\"");
+                ProcUtils.exec(null, new File(scaCommand), ProcUtils.args("-z", "mca0"), null, false);
+                logger.info("Successfully zeroed the HSM");
+            } catch (IOException e) {
+                logger.warning("There was an error trying to zero the HSM: " + e.getMessage());
                 throw e;
             }
         }
@@ -470,6 +540,26 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         } finally {
             ResourceUtils.closeQuietly(preparedStmt);
         }
+    }
+
+    private byte[] getKeydataFromDatabase(Connection connection) throws SQLException {
+        Statement stmt = null;
+
+        byte[] databytes = null;
+        ResultSet rs = null;
+        try {
+            stmt = connection.createStatement();
+            rs = stmt.executeQuery("select databytes from keystore_file where objectid=1 and name=\"HSM\"");
+            databytes = null;
+            while (rs.next()) {
+                databytes = rs.getBytes(1);
+                logger.info("Got the keystore info from the db: " + new String(databytes));
+            }
+        } finally {
+            ResourceUtils.closeQuietly(rs);
+            ResourceUtils.closeQuietly(stmt);
+        }
+        return databytes;
     }
 
     private int getOriginalVersion(Connection connection) throws SQLException {

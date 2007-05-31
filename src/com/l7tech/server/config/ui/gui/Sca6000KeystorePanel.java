@@ -1,23 +1,25 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.server.config.KeyStoreConstants;
+import com.l7tech.server.config.beans.KeystoreConfigBean;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * User: megery
  * Date: May 7, 2007
  * Time: 3:44:28 PM
  */
-public class Sca6000KeystorePanel extends KeystorePanel{
+public class Sca6000KeystorePanel extends KeystorePanel {
     private JPanel mainPanel;
     private JPanel passwordPanel;
     private JRadioButton initializeKeystore;
     private JRadioButton importExistingKeystore;
     private JCheckBox shouldBackupMasterKey;
+    private JPasswordField backupPassword;
 
     KeystorePasswordPanel pwPanel;
 
@@ -66,6 +68,7 @@ public class Sca6000KeystorePanel extends KeystorePanel{
 
     private void setBackupMasterKeyEnabled() {
         shouldBackupMasterKey.setEnabled(initializeKeystore.isSelected());
+        backupPassword.setEnabled(initializeKeystore.isSelected());
     }
 
     private void setPasswordFieldsVisible() {
@@ -80,18 +83,31 @@ public class Sca6000KeystorePanel extends KeystorePanel{
         return pwPanel.getPassword();
     }
 
-    public boolean shouldBackupMasterKey() {
+    public boolean isShouldBackupMasterKey() {
         return shouldBackupMasterKey.isSelected();
     }
 
-    public boolean validateInput() {
+    public boolean validateInput(KeystoreConfigBean ksBean) {
+        boolean ok = true;
         if (pwPanel.validateInput(initializeKeystore.isSelected())) {
-            //prompt for the GDDC
-            JOptionPane.showMessageDialog(this.getTopLevelAncestor(), "Please ensure that the GDDC is attached to the gateway before proceeding");
-            return true;
+            if(isShouldBackupMasterKey()) {
+                //prompt for masterkeybackup password
+                JPasswordField pFld = new JPasswordField();
+                String passwordMsg = "Enter a password to protect the master key backup";
+                int action = JOptionPane.showConfirmDialog(this, new Object[]{passwordMsg, pFld},"Enter Password", JOptionPane.OK_CANCEL_OPTION);
+                if (action >= 0) {
+                    ksBean.setMasterKeyBackupPassword(pFld.getPassword());
+                    //prompt for the GDDC
+                    JOptionPane.showMessageDialog(this.getTopLevelAncestor(), "Please ensure that the GDDC is attached to the gateway before proceeding");
+                    ok = true;
+                } else {
+                    ok = false;
+                }
+            }
         } else {
-            return false;
+            ok = false;
         }
+        return ok;
     }
 
     public boolean isInitializeHSM() {

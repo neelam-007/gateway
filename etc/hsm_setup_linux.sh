@@ -12,8 +12,8 @@ RESTORE_HSM=""
 
 SCA_CONTROL_FILE="/etc/init.d/sca"
 SCA_CONTROL="sudo ${SCA_CONTROL_FILE}"
-SCA_DIAG="sudo scadiag"
-SCA_DIAG_ZERO_HSM="${SCA_DIAG} -z mca0"
+SCA_DIAG="scadiag -z mca0"
+SCA_DIAG_ZERO_HSM="sudo ${SCA_DIAG}"
 KEYDATA_DIR="/var/opt/sun/sca6000/keydata"
 
 what_to_do=${1}
@@ -21,11 +21,12 @@ password=${2}
 
 usage() {
     echo
-    echo "Usage: hsm_setup.sh [init|restore|usage] hsmpassword"
+    echo "Usage: hsm_setup.sh [init|restore|usage] hsmpassword backuppassword"
     echo "  init - initialize the hsm. The HSM will be cleared and a new keystore will be created."
     echo "  restore - copy key data from a backup made with the same master key"
     echo "  usage - print these usage instructions"
-    echo "  password - the password for the hsm"
+    echo "  hsmpassword - the password for the hsm"
+    echo "  backuppassword - the password used to encrypt/decrypt the backup. Only needed in restore mode."
     echo
     exit 1;
 }
@@ -95,13 +96,17 @@ do_hsm_init() {
     echo "${INITIALIZE_HSM_COMMAND} exited with code ${RV}"
 }
 
+do_hsm_restore {
+    echo "this will run the keystore restore script"
+}
+
 case "${what_to_do}" in
   init)
     do_hsm_init;
     exit $?;
 	;;
   restore)
-	echo "no restore script yet"
+	do_hsm_restore;
 	exit "$?"
 	;;
   usage)

@@ -30,6 +30,7 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private byte[] clusterSharedKey;
     private byte[] sharedKeyData;
     private boolean shouldBackupMasterKey;
+    private char[] masterKeyBackupPassword;
 
     public KeystoreType getKeyStoreType() {
         return keyStoreType;
@@ -69,8 +70,9 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
             } else if (type == KeystoreType.SCA6000_KEYSTORE_NAME) {
                 if (isInitializeHSM()) {
                     explanations.add(insertTab + "Initialize " + getKeyStoreType());
-                    if (isShouldBackupMasterKey())
+                    if (isShouldBackupMasterKey()) {
                         explanations.add(insertTab + "Backup Master HSM Key");
+                    }
                 } else {
                     explanations.add(insertTab + "Restore " + getKeyStoreType());
                 }
@@ -165,5 +167,14 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
 
     public boolean isShouldBackupMasterKey() {
         return shouldBackupMasterKey;
+    }
+
+    public void setMasterKeyBackupPassword(char[] backupPassword) {
+        this.masterKeyBackupPassword = backupPassword;
+    }
+
+
+    public char[] getMasterKeyBackupPassword() {
+        return masterKeyBackupPassword;
     }
 }

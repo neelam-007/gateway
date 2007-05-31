@@ -1,6 +1,7 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.server.config.WizardInputValidator;
+import com.l7tech.server.config.beans.KeystoreConfigBean;
 
 import javax.swing.*;
 import java.awt.*;
@@ -58,7 +59,7 @@ final class LunaKeystorePanel extends KeystorePanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    public final boolean validateInput() {
+    public final boolean validateInput(KeystoreConfigBean ksBean) {
         WizardInputValidator validator = new WizardInputValidator() {
             public String[] validate(Map inputs) {
                 boolean lunaInstallDirExists = new File(lunaInstallPath.getText()).exists();

@@ -83,7 +83,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
                     break;
                 case SCA6000_KEYSTORE_NAME:
                     ksBean.setKsPassword(((Sca6000KeystorePanel)whichKeystorePanel).getPassword());
-                    ksBean.setShouldBackupMasterKey(((Sca6000KeystorePanel)whichKeystorePanel).shouldBackupMasterKey());
+                    ksBean.setShouldBackupMasterKey(((Sca6000KeystorePanel)whichKeystorePanel).isShouldBackupMasterKey());
                     ksBean.setInitializeHSM(((Sca6000KeystorePanel)whichKeystorePanel).isInitializeHSM());
                     break;
                 default:
@@ -230,15 +230,16 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
         PartitionInformation pinfo = getParentWizard().getActivePartition();
 
         boolean shouldDisable = true;
+        KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         if (!dontDoKsConfig.isSelected()) {
             pinfo.setShouldDisable(false);
             KeystorePanel ksPanel = (KeystorePanel) whichKeystorePanel;
-            if (ksPanel.validateInput()) {
+            if (ksPanel.validateInput(ksBean)) {
                 KeystoreActions ka = new KeystoreActions(osFunctions);
                 try {
                     byte[] existingSharedKey = ka.getSharedKey(this);
                     if (existingSharedKey != null) {
-                        ((KeystoreConfigBean)configBean).setSharedKeyBytes(existingSharedKey);
+                        ksBean.setSharedKeyBytes(existingSharedKey);
                     }
                     shouldDisable = false;
                 } catch (KeystoreActions.KeystoreActionsException e) {

@@ -1,5 +1,7 @@
 package com.l7tech.server.config.ui.gui;
 
+import com.l7tech.server.config.beans.KeystoreConfigBean;
+
 import javax.swing.*;
 
 /**
@@ -12,7 +14,7 @@ public class KeystorePanel extends JPanel {
         super();
     }
 
-    public boolean validateInput() {
+    public boolean validateInput(KeystoreConfigBean ksBean) {
         return true;
     }
 

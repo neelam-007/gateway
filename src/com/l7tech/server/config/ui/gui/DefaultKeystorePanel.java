@@ -1,6 +1,7 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.server.config.KeyStoreConstants;
+import com.l7tech.server.config.beans.KeystoreConfigBean;
 
 import javax.swing.*;
 import java.awt.*;
@@ -54,7 +55,7 @@ public class DefaultKeystorePanel extends KeystorePanel{
         return bothKeys.isSelected();
     }
 
-    public boolean validateInput() {
+    public boolean validateInput(KeystoreConfigBean ksBean) {
         return pwPanel.validateInput(true);
     }
 }

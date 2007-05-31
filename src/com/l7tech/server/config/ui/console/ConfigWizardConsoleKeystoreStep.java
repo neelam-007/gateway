@@ -121,7 +121,11 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         String input = getData(prompts, defaultValue, new String[] {"1", "2"});
         keystoreBean.setInitializeHSM((input != null && "1".equals(input)));
         String shouldBackup = getData(new String[] {"Backup Master Key after initialization? [y]"}, "y");
-        keystoreBean.setShouldBackupMasterKey(isYes(shouldBackup));
+        if (isYes(shouldBackup)) {
+            keystoreBean.setShouldBackupMasterKey(true);
+            String backupPassword = getMatchingPasswords("Enter the password to protect the master key backup:", "Confirm the password to protect the master key backup:", 6);
+            keystoreBean.setMasterKeyBackupPassword(backupPassword.toCharArray());
+        }
 
         doKeystorePasswordPrompts("Set the HSM Password",
                                   "Enter the HSM password: ",
