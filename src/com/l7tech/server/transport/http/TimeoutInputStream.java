@@ -9,9 +9,11 @@ import java.util.Queue;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import javax.servlet.ServletInputStream;
 
 import com.l7tech.common.util.ShutdownExceptionHandler;
+import com.l7tech.common.util.ResourceUtils;
 
 /**
  * An InputStream that will timeout if no data is read.
@@ -293,12 +295,23 @@ public class TimeoutInputStream extends ServletInputStream {
     private static final Queue<BlockerInfo> newBlockerQueue = new ConcurrentLinkedQueue();
 
     // Create and start the timer daemon
+    private static Object timerLock = new Object();
+    private static Exception diedWithException = null;
+    private static Thread timer = null;
     static {
-        Thread timer = new Thread(new Interrupter());
-        timer.setDaemon(true);
-        timer.setName("InputTimeoutThread");
-        timer.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
-        timer.start();
+        synchronized(timerLock) {
+            timer = new Thread(new Interrupter());
+            timer.setDaemon(true);
+            timer.setName("InputTimeoutThread");
+            timer.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
+            timer.start();
+        }
+
+        Thread timerWatcher = new Thread(new InterrupterWatcher());
+        timerWatcher.setDaemon(true);
+        timerWatcher.setName("InputTimeoutThreadWatchdog");
+        timerWatcher.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
+        timerWatcher.start();
     }
 
     /**
@@ -478,12 +491,52 @@ public class TimeoutInputStream extends ServletInputStream {
                     // we have enough data to make a rate check valid
                     int bytesPerSecond = (int)(bytesRead / activeTime);
                     if(bytesPerSecond < minDataRate) {
-                        flags[1] = true;
-                        flags[2] = cleared;
+                        flags[0] = true;
+                        flags[1] = cleared;
                     }
                 }
             }
 
+        }
+    }
+
+    /**
+     * Runnable that restarts the other runnable if it dies ...
+     */
+    private static class InterrupterWatcher implements Runnable {
+        public void run() {
+            try {
+                while (true) {
+                    Thread.sleep(50);
+
+                    Thread timerThread = null;
+                    Exception exception = null;
+                    synchronized(timerLock) {
+                        timerThread = timer;
+                        exception = diedWithException;
+                    }
+
+                    if (timerThread != null && !timerThread.isAlive()) {
+                        if (exception != null) {
+                            logger.log(Level.SEVERE, "Timeout input stream processing thread died unexpectedly.", exception);
+                        }
+
+                        logger.log(Level.INFO, "Restarting input stream processing thread ...");
+                        synchronized(timerLock) {
+                            diedWithException = null;
+                            timer = new Thread(new Interrupter());
+                            timer.setDaemon(true);
+                            timer.setName("InputTimeoutThread");
+                            timer.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
+                            timer.start();
+                        }
+                        logger.log(Level.INFO, "Restarted input stream processing thread.");
+                    }
+                }
+            }
+            catch(InterruptedException ie) {
+                // shutdown
+            }
         }
     }
 
@@ -495,11 +548,8 @@ public class TimeoutInputStream extends ServletInputStream {
 
         private void interrupt(BlockerInfo bi, boolean justFlag) {
             if(!justFlag) {
-                InputStream localIS = bi.inputStreamToClose;
-                if(localIS!=null) {
-                    // interrupt the thread and then close its input stream
-                    try{ localIS.close(); }catch(IOException ioe){}
-                }
+                // interrupt the thread and then close its input stream
+                ResourceUtils.closeQuietly(bi.inputStreamToClose);
             }
             bi.markTimedOut(); // mark timeOut after closing
         }
@@ -559,6 +609,14 @@ public class TimeoutInputStream extends ServletInputStream {
             }
             catch(InterruptedException ie) {
                 // shutdown
+                synchronized(timerLock) {
+                    timer = null;   
+                }
+            }
+            catch(Exception exception) {
+                synchronized(timerLock) {
+                    diedWithException = exception;
+                }
             }
             logger.info("InputStream timeout thread stopping.");
         }
