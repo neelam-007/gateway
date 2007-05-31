@@ -286,16 +286,19 @@ public class WssDecoratorImpl implements WssDecorator {
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with saml:Assertion, but senderPrivateKey is null");
-                String assId = saml.getAttribute("AssertionID");
-                if (assId == null || assId.length() < 1) {
-                    assId = saml.getAttribute("ID");
-                }
+
+                final boolean saml11 = SamlConstants.NS_SAML.equals(saml.getNamespaceURI());
+                final String assId = saml11 ?
+                        saml.getAttribute("AssertionID") :
+                        saml.getAttribute("ID");
                 if (assId == null || assId.length() < 1)
                     throw new InvalidDocumentFormatException("Unable to decorate: SAML Assertion has missing or empty AssertionID/ID");
-                if (!SamlConstants.NS_SAML.equals(saml.getNamespaceURI()))
-                    signatureKeyInfo = KeyInfoDetails.makeUriReference(assId, SoapUtil.VALUETYPE_SAML5);
-                else
-                    signatureKeyInfo = KeyInfoDetails.makeUriReference(assId, SoapUtil.VALUETYPE_SAML3);
+
+                String samlValueType = saml11 ?
+                    SoapUtil.VALUETYPE_SAML_ASSERTIONID2 :
+                    SoapUtil.VALUETYPE_SAML_ASSERTIONID3;
+
+                signatureKeyInfo = KeyInfoDetails.makeKeyId(assId, false, samlValueType);
             } else if (dreq.getRecipientCertificate() != null) {
                 // create a new EncryptedKey and sign with that
                 String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
@@ -753,7 +756,14 @@ public class WssDecoratorImpl implements WssDecorator {
         // make sure all elements already have an id
         String[] signedIds = new String[elementsToSign.length];
         for (int i = 0; i < elementsToSign.length; i++) {
-            signedIds[i] = getOrCreateWsuId(c, elementsToSign[i], null);
+            Element eleToSign = elementsToSign[i];
+            if ( "Assertion".equals(eleToSign.getLocalName()) &&
+                 (SamlConstants.NS_SAML2.equals(eleToSign.getNamespaceURI()) ||
+                  SamlConstants.NS_SAML.equals(eleToSign.getNamespaceURI()))) {
+                // use STR-Transform for SAML assertions
+                continue;
+            }
+            signedIds[i] = getOrCreateWsuId(c, eleToSign, null);
         }
 
         String signaturemethod;
@@ -779,18 +789,30 @@ public class WssDecoratorImpl implements WssDecorator {
             final String id = signedIds[i];
 
             final Reference ref;
-            if ("Assertion".equals(element.getLocalName()) && SamlConstants.NS_SAML.equals(element.getNamespaceURI())) {
+            boolean c14ExRequired = true;
+            if ( "Assertion".equals(element.getLocalName()) &&
+                 (SamlConstants.NS_SAML2.equals(element.getNamespaceURI()) || SamlConstants.NS_SAML.equals(element.getNamespaceURI()))) {
                 // Bug #1434 -- unable to refer to SAML assertion directly using its AssertionID -- need intermediate STR with wsu:Id
-                final String assId = element.getAttribute("AssertionID");
+                final boolean saml11 = SamlConstants.NS_SAML.equals(element.getNamespaceURI());
+                final String assId = saml11 ?
+                        element.getAttribute("AssertionID") :
+                        element.getAttribute("ID");
                 if (assId == null || assId.length() < 1)
-                    throw new InvalidDocumentFormatException("Unable to decorate: SAML Assertion has missing or empty AssertionID");
-                String samlValueType = SoapUtil.VALUETYPE_SAML_ASSERTIONID2;
-                if (!SamlConstants.NS_SAML.equals(element.getNamespaceURI()))
-                    samlValueType = SoapUtil.VALUETYPE_SAML_ASSERTIONID3;
+                    throw new InvalidDocumentFormatException("Unable to decorate: SAML Assertion has missing or empty AssertionID/ID");
+                String samlValueType = saml11 ?
+                    SoapUtil.VALUETYPE_SAML_ASSERTIONID2 :
+                    SoapUtil.VALUETYPE_SAML_ASSERTIONID3;
                 Element str = addSamlSecurityTokenReference(securityHeader, assId, samlValueType);
                 ref = template.createReference("#" + getOrCreateWsuId(c, str, "SamlSTR"));
-                ref.addTransform(SoapUtil.TRANSFORM_STR); // need SecurityTokenReference transform to go through indirection
+                // need SecurityTokenReference transform to go through indirection
+                Element strTransform = elementsToSign[0].getOwnerDocument().createElementNS(SoapUtil.DIGSIG_URI, "ds:Transform");
+                strTransform.setAttribute("Algorithm", SoapUtil.TRANSFORM_STR);
+                Element strParams = XmlUtil.createAndAppendElementNS(strTransform, "TransformationParameters", c.nsf.getWsseNs(), "wsse");
+                Element cannonParam = XmlUtil.createAndAppendElementNS(strParams, "CanonicalizationMethod", SoapUtil.DIGSIG_URI, "ds");
+                cannonParam.setAttribute("Algorithm", Transform.C14N_EXCLUSIVE);
+                ref.addTransform(strTransform);
                 strTransformsNodeToNode.put(str, element);
+                c14ExRequired = false;
             } else
                 ref = template.createReference("#" + id);
 
@@ -800,18 +822,14 @@ public class WssDecoratorImpl implements WssDecorator {
                 ref.addTransform(Transform.ENVELOPED);
             }
 
-            ref.addTransform(Transform.C14N_EXCLUSIVE);
+            if (c14ExRequired)
+                ref.addTransform(Transform.C14N_EXCLUSIVE);
             template.addReference(ref);
         }
         Element emptySignatureElement = template.getSignatureElement();
 
         // Ensure that CanonicalizationMethod has required c14n subelemen
         final Element signedInfoElement = template.getSignedInfoElement();
-        Element c14nMethod = XmlUtil.findFirstChildElementByName(signedInfoElement,
-                                                                 SoapUtil.DIGSIG_URI,
-                                                                 "CanonicalizationMethod");
-        DsigUtil.addInclusiveNamespacesToElement(c14nMethod);
-
         NodeList transforms = signedInfoElement.getElementsByTagNameNS(signedInfoElement.getNamespaceURI(), "Transform");
         for (int i = 0; i < transforms.getLength(); ++i)
             if (Transform.C14N_EXCLUSIVE.equals(((Element)transforms.item(i)).getAttribute("Algorithm")))

@@ -578,10 +578,20 @@ public class SoapUtil {
             if (id == null || id.length() < 1) {
                 id = node.getAttributeNS(SoapUtil.WSU_NAMESPACE3, ID_ATTRIBUTE_NAME);
                 if (id == null || id.length() < 1) {
+                    // This special handing for SAML is here for backwards compatibility.
+                    // Any references to a SAML token should use a KeyIdentifier, not a
+                    // Reference.
+                    // SSG/SSB 4.0 onwards use only KeyIdentifier references.
+
                     // Special handling for saml:Assertion
                     if (SamlConstants.NS_SAML.equals(node.getNamespaceURI()) &&
                         SamlConstants.ELEMENT_ASSERTION.equals(node.getLocalName())) {
                         id = node.getAttribute(SamlConstants.ATTR_ASSERTION_ID);
+                    }
+                    // Special handling for saml2:Assertion
+                    if (SamlConstants.NS_SAML2.equals(node.getNamespaceURI()) &&
+                        SamlConstants.ELEMENT_ASSERTION.equals(node.getLocalName())) {
+                        id = node.getAttribute(SamlConstants.ATTR_SAML2_ASSERTION_ID);
                     }
                     if (id == null || id.length() < 1)
                         id = node.getAttribute(ID_ATTRIBUTE_NAME);

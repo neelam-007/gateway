@@ -500,15 +500,16 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public void testSignedSamlHolderOfKeyRequest() throws Exception {
-        runTest(getSignedSamlHolderOfKeyRequestTestDocument());
+        runTest(getSignedSamlHolderOfKeyRequestTestDocument(1));
     }
 
-    public TestDocument getSignedSamlHolderOfKeyRequestTestDocument() throws Exception {
+    public TestDocument getSignedSamlHolderOfKeyRequestTestDocument(int version) throws Exception {
         final Context c = new Context();
         Element senderSamlToken = createSenderSamlToken(null,
                                                         TestDocuments.getEttkClientCertificate(),
                                                         TestDocuments.getDotNetServerCertificate(),
-                                                        TestDocuments.getDotNetServerPrivateKey());
+                                                        TestDocuments.getDotNetServerPrivateKey(),
+                                                        version);
         return new TestDocument(c,
                                 senderSamlToken,
                                 null,
@@ -522,15 +523,16 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public void testSignedSamlSenderVouchesRequest() throws Exception {
-        runTest(getSignedSamlSenderVouchesRequestTestDocument());
+        runTest(getSignedSamlSenderVouchesRequestTestDocument(1));
     }
 
-    public TestDocument getSignedSamlSenderVouchesRequestTestDocument() throws Exception {
+    public TestDocument getSignedSamlSenderVouchesRequestTestDocument(int version) throws Exception {
         final Context c = new Context();
         Element senderSamlToken = createSenderSamlToken("fbunky",
                                                         null,
                                                         TestDocuments.getDotNetServerCertificate(),
-                                                        TestDocuments.getDotNetServerPrivateKey());
+                                                        TestDocuments.getDotNetServerPrivateKey(),
+                                                        version);
         return new TestDocument(c,
                                 senderSamlToken,
                                 TestDocuments.getEttkServerCertificate(),
@@ -547,10 +549,12 @@ public class WssDecoratorTest extends TestCase {
     private Element createSenderSamlToken(String subjectNameIdentifierValue,
                                           X509Certificate subjectCert,
                                           X509Certificate issuerCert,
-                                          PrivateKey issuerPrivateKey)
+                                          PrivateKey issuerPrivateKey,
+                                          int version)
       throws Exception {
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddress.getLocalHost());
+        samlOptions.setVersion(version);
         SignerInfo si = new SignerInfo(issuerPrivateKey, new X509Certificate[]{issuerCert});
         LoginCredentials creds;
         SubjectStatement.Confirmation confirmationMethod;

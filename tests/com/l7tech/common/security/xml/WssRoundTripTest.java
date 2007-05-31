@@ -211,13 +211,25 @@ public class WssRoundTripTest extends TestCase {
 
     public void testSignedSamlHolderOfKeyRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSamlHolderOfKeyRequest",
-                                               wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument()),
+                                               wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument(1)),
                          false);
     }
 
     public void testSignedSamlSenderVouchesRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSamlSenderVouchesRequest",
-                                               wssDecoratorTest.getSignedSamlSenderVouchesRequestTestDocument()),
+                                               wssDecoratorTest.getSignedSamlSenderVouchesRequestTestDocument(1)),
+                         false);
+    }
+
+    public void testSignedSaml2HolderOfKeyRequest() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SignedSaml2HolderOfKeyRequest",
+                                               wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument(2)),
+                         false);
+    }
+
+    public void testSignedSaml2SenderVouchesRequest() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SignedSaml2SenderVouchesRequest",
+                                               wssDecoratorTest.getSignedSamlSenderVouchesRequestTestDocument(2)),
                          false);
     }
 

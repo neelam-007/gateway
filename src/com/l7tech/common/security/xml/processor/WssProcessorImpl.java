@@ -339,7 +339,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // Process KeyIdentifier or Reference
-        if (SoapUtil.isValueTypeX509v3(valueType)) {
+        if (SoapUtil.isValueTypeX509v3(valueType) && !isKeyIdentifier) {
             if(noId) {
                 logger.warning("Ignoring SecurityTokenReference with no wsu:Id");
                 return;
@@ -375,7 +375,8 @@ public class WssProcessorImpl implements WssProcessor {
             Element target = (Element)cntx.elementsByWsuId.get(value);
             if (target == null
                     || !target.getLocalName().equals("Assertion")
-                    || !target.getNamespaceURI().equals(SamlConstants.NS_SAML)) {
+                    || (!target.getNamespaceURI().equals(SamlConstants.NS_SAML) &&
+                        !target.getNamespaceURI().equals(SamlConstants.NS_SAML2))) {
                 String msg = "Rejecting SecurityTokenReference ID='" + id + "' with ValueType of '" + valueType +
                         "' because its target is either missing or not a SAML assertion";
                 logger.warning(msg); // TODO remove redundant logging after debugging complete
@@ -1196,6 +1197,13 @@ public class WssProcessorImpl implements WssProcessor {
                             return token;
                         }
                     }
+                } else if (valueType != null && ArrayUtils.contains(SoapUtil.VALUETYPE_SAML_ASSERTIONID_ARRAY, valueType)) {
+                    SigningSecurityToken token = (SigningSecurityToken) cntx.x509TokensById.get(value);
+                    if (!(token instanceof SamlAssertion)) {
+                        if(logger.isLoggable(Level.INFO))
+                            logger.log(Level.INFO, "The KeyInfo referred to an unknown SAML token ''{0}''.", value);
+                    }
+                    return token;
                 } else {
                     if(logger.isLoggable(Level.FINEST))
                         logger.finest("The KeyInfo used an unsupported KeyIdentifier ValueType: " + valueType);
