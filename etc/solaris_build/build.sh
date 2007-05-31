@@ -50,6 +50,7 @@ mv ssg/bin/sysconfigscript-initd etc/init.d/ssg
 
 cd etc/rc2.d
 ln ../init.d/ssg_tcp_tune.sh S71SSG_tcptune
+ln ../init.d/ssg S99SSG_ssg
 cd ../../
 
 echo Fixing permissions...
