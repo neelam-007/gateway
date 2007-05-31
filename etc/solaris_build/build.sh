@@ -40,7 +40,7 @@ mkdir -p etc/ipf
 mkdir -p etc/snmp/conf
 rmdir ssg/dist
 
-mv ssg/bin/my.cnf etc/my.cnf.ssg
+mv ssg/bin/my.cnf.ssg etc/my.cnf.ssg
 
 mv ssg/bin/configuser_bashrc export/home/ssgconfig/.profile
 chmod 755 export/home/ssgconfig/.profile
