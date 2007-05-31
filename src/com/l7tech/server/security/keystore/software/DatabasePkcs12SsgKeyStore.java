@@ -20,6 +20,8 @@ import java.security.cert.CertificateException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 /**
  * A KeyFinder that works with PKCS#12 files read from the database.
  */
@@ -104,7 +106,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
                 if (logger.isLoggable(Level.INFO)) logger.info("Creating new empty PKCS#12 file for keystore id " + getId());
             }
 
-            KeyStore keystore = KeyStore.getInstance("PKCS12");
+            KeyStore keystore = KeyStore.getInstance("PKCS12", new BouncyCastleProvider());
             keystore.load(inputStream, password); // If no existing data, null inputStream causes new keystore to be created
             return keystore;
         } catch (KeyStoreException e) {

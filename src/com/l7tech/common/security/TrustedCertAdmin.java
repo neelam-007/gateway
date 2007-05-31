@@ -13,7 +13,6 @@ import com.l7tech.common.security.keystore.SsgKeyEntry;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.naming.ldap.LdapName;
 import java.io.IOException;
 import java.io.Serializable;
 import java.rmi.RemoteException;
@@ -209,7 +208,7 @@ public interface TrustedCertAdmin  {
     public X509Certificate generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException;
 
     @Transactional(readOnly=true)
-    byte[] generateCSR(long keystoreId, String alias, LdapName dn) throws FindException;
+    byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException;
 
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)

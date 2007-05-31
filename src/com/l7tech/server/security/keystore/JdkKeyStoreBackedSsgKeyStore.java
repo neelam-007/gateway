@@ -7,7 +7,7 @@ import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
 
-import javax.naming.ldap.LdapName;
+import javax.security.auth.x500.X500Principal;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -158,7 +158,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
-    public synchronized X509Certificate generateKeyPair(final String alias, final LdapName dn, final int keybits, final int expiryDays) throws GeneralSecurityException {
+    public synchronized X509Certificate generateKeyPair(final String alias, final X500Principal dn, final int keybits, final int expiryDays) throws GeneralSecurityException {
+
+
+
         return mutateKeystore(new Functions.Nullary<X509Certificate>() {
             public X509Certificate call() {
                 try {
@@ -240,8 +243,9 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
-    public synchronized CertificateRequest makeCertificateSigningRequest(String alias, LdapName dn) throws InvalidKeyException, SignatureException, KeyStoreException {
+    public synchronized CertificateRequest makeCertificateSigningRequest(String alias, String dn) throws InvalidKeyException, SignatureException, KeyStoreException {
         try {
+            X500Principal dnObj = new X500Principal(dn);
             KeyStore keystore = keyStore();
             Key key = keystore.getKey(alias, getEntryPassword());
             if (!(key instanceof RSAPrivateKey))
@@ -258,7 +262,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                 throw new RuntimeException("Existing certificate public key is not an RSA public key");
             RSAPublicKey rsaPublic = (RSAPublicKey)publicKey;
             KeyPair keyPair = new KeyPair(rsaPublic, rsaPrivate);
-            return BouncyCastleCertUtils.makeCertificateRequest(dn, keyPair);
+            return BouncyCastleCertUtils.makeCertificateRequest(dnObj, keyPair);
         } catch (NoSuchAlgorithmException e) {
             throw new InvalidKeyException("Keystore contains no key with alias " + alias, e);
         } catch (UnrecoverableKeyException e) {

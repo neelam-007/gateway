@@ -11,7 +11,6 @@ import java.util.List;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 
-import javax.naming.ldap.LdapName;
 
 /**
  * KeyStore-like interface implemented by SSG components that provide access to certificates with private keys.
@@ -77,5 +76,5 @@ public interface SsgKeyFinder {
      * @throws java.security.KeyStoreException  if there is a problem reading the key store
      */
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    CertificateRequest makeCertificateSigningRequest(String alias, LdapName dn) throws InvalidKeyException, SignatureException, KeyStoreException;
+    CertificateRequest makeCertificateSigningRequest(String alias, String dn) throws InvalidKeyException, SignatureException, KeyStoreException;
 }

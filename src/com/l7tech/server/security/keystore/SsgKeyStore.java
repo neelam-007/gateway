@@ -2,7 +2,7 @@ package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 
-import javax.naming.ldap.LdapName;
+import javax.security.auth.x500.X500Principal;
 import java.security.*;
 import java.security.cert.X509Certificate;
 
@@ -26,7 +26,7 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * @throws GeneralSecurityException if there is a problem generating, signing, or saving the new certificate or key pair
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    public X509Certificate generateKeyPair(String alias, LdapName dn, int keybits, int expiryDays) throws GeneralSecurityException;
+    public X509Certificate generateKeyPair(String alias, X500Principal dn, int keybits, int expiryDays) throws GeneralSecurityException;
 
     /**
      * Replace the certificate for the specified alias with a new certificate based on the same key pair.

@@ -1,20 +1,18 @@
 package com.l7tech.common.security;
 
-import org.bouncycastle.x509.X509V1CertificateGenerator;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-
-import javax.naming.ldap.LdapName;
-import javax.security.auth.x500.X500Principal;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.*;
-import java.math.BigInteger;
-import java.util.Random;
-import java.util.Calendar;
-
 import com.l7tech.common.security.prov.bc.BouncyCastleCertificateRequest;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.x509.X509V1CertificateGenerator;
+
+import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.util.Calendar;
+import java.util.Random;
 
 /**
  * Certificate utility methods that require static imports of Bouncy Castle classes.
@@ -34,18 +32,17 @@ public class BouncyCastleCertUtils {
      * @throws SignatureException            if there is a problem signing the new cert
      * @throws InvalidKeyException           if there is a problem with the provided key pair           
      */
-    public static X509Certificate generateSelfSignedCertificate(LdapName dn, int expiryDays, KeyPair keyPair) throws CertificateEncodingException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        X500Principal dnName = new X500Principal(dn.toString());
+    public static X509Certificate generateSelfSignedCertificate(X500Principal dn, int expiryDays, KeyPair keyPair) throws CertificateEncodingException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
 
         X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
         certGen.setSerialNumber(BigInteger.valueOf(new Random().nextInt(2000000) + 1));
-        certGen.setIssuerDN(dnName);
+        certGen.setIssuerDN(dn);
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_MONTH, -1);
         certGen.setNotBefore(cal.getTime());
         cal.add(Calendar.DAY_OF_MONTH, expiryDays);
         certGen.setNotAfter(cal.getTime());
-        certGen.setSubjectDN(dnName);
+        certGen.setSubjectDN(dn);
         certGen.setPublicKey(keyPair.getPublic());
         certGen.setSignatureAlgorithm("SHA1withRSA");
 
@@ -64,14 +61,14 @@ public class BouncyCastleCertUtils {
      * @throws NoSuchProviderException   if the current asymmetric JCE provider is incorrect
      * @throws NoSuchAlgorithmException  if a required algorithm is not available in the current asymmetric JCE provider
      */
-    public static CertificateRequest makeCertificateRequest(LdapName dn, KeyPair keyPair) throws SignatureException, InvalidKeyException, NoSuchProviderException, NoSuchAlgorithmException {
-        X509Name subject = new X509Name(dn.toString());
+    public static CertificateRequest makeCertificateRequest(X500Principal dn, KeyPair keyPair) throws SignatureException, InvalidKeyException, NoSuchProviderException, NoSuchAlgorithmException {
+        X509Name subject = new X509Name(dn.getName());
         ASN1Set attrs = null;
         PublicKey publicKey = keyPair.getPublic();
         PrivateKey privateKey = keyPair.getPrivate();
 
         // Generate request
-        PKCS10CertificationRequest certReq = null;
+        final PKCS10CertificationRequest certReq;
         certReq = new PKCS10CertificationRequest("SHA1withRSA", subject, publicKey, attrs, privateKey);
         return new BouncyCastleCertificateRequest(certReq, JceProvider.getAsymmetricJceProvider().getName());
     }

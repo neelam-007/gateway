@@ -20,8 +20,8 @@ import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.naming.ldap.LdapName;
 import javax.naming.InvalidNameException;
+import javax.security.auth.x500.X500Principal;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.security.cert.CertificateEncodingException;
@@ -193,10 +193,10 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         DialogDisplayer.InputListener listener = new DialogDisplayer.InputListener() {
             public void reportResult(Object option) {
                 String dnres = option.toString();
-                LdapName dn;
+                X500Principal dn;
                 try {
-                    dn = new LdapName(dnres);
-                } catch (InvalidNameException e) {
+                    dn = new X500Principal(dnres);
+                } catch (IllegalArgumentException e) {
                     logger.log(Level.INFO, "not a valid ldap name", e);
                     DialogDisplayer.showMessageDialog(generateCSRButton, dnres + " is not a valid DN",
                                                       "Invalid Subject", JOptionPane.ERROR_MESSAGE, null);
@@ -204,7 +204,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 }
                 byte[] csr;
                 try {
-                    csr = admin.generateCSR(subject.getKeystore().id, subject.getAlias(), dn);
+                    csr = admin.generateCSR(subject.getKeystore().id, subject.getAlias(), dn.getName());
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "cannot get csr from ssg", e);
                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error getting CSR " + e.getMessage(),

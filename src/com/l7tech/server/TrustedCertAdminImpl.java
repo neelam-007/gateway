@@ -5,30 +5,33 @@ package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 
 import javax.net.ssl.*;
-import javax.naming.ldap.LdapName;
-import javax.naming.InvalidNameException;
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.rmi.RemoteException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -127,13 +130,13 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         getManager().delete(oid);
     }
 
-    public X509Certificate[] retrieveCertFromUrl(String purl) throws IOException, RemoteException, HostnameMismatchException {
+    public X509Certificate[] retrieveCertFromUrl(String purl) throws IOException, HostnameMismatchException {
         checkLicenseHeavy();
         return retrieveCertFromUrl(purl, false);
     }
 
     public X509Certificate[] retrieveCertFromUrl(String purl, boolean ignoreHostname)
-      throws IOException, RemoteException, HostnameMismatchException {
+      throws IOException, HostnameMismatchException {
         checkLicenseHeavy();
         if (!purl.startsWith("https://")) throw new IllegalArgumentException("Can't load certificate from non-https URLs");
         URL url = new URL(purl);
@@ -198,12 +201,12 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
             throw new IOException("URL resulted in a non-HTTPS connection");
     }
 
-    public X509Certificate getSSGRootCert() throws IOException, CertificateException, RemoteException {
+    public X509Certificate getSSGRootCert() throws IOException, CertificateException {
         checkLicense();
         return rootCertificate;
     }
 
-    public X509Certificate getSSGSslCert() throws IOException, CertificateException, RemoteException {
+    public X509Certificate getSSGSslCert() throws IOException, CertificateException {
         checkLicense();
         return sslCertificate;
     }
@@ -254,6 +257,14 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
     }
 
     public X509Certificate generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException {
+        if (alias == null) throw new NullPointerException("alias is null");
+        if (alias.length() < 1) throw new IllegalArgumentException("alias is empty");
+        if (dn == null) throw new NullPointerException("dn is null");
+        if (dn.length() < 1) throw new IllegalArgumentException("dn is empty");
+
+        // Ensure that Sun certificate parser will like this dn
+        new X500Principal(dn).getEncoded();
+
         SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
         SsgKeyStore keystore = null;
         if (keyFinder != null && keyFinder.isMutable())
@@ -263,14 +274,10 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         if (expiryDays < 1)
             throw new IllegalArgumentException("expiryDays must be positive");
 
-        try {
-            return keystore.generateKeyPair(alias, new LdapName(dn), keybits, expiryDays);
-        } catch (InvalidNameException e) {
-            throw new IllegalArgumentException("Invalid DN: " + ExceptionUtils.getMessage(e), e);
-        }
+        return keystore.generateKeyPair(alias, new X500Principal(dn), keybits, expiryDays);
     }
 
-    public byte[] generateCSR(long keystoreId, String alias, LdapName dn) throws FindException {
+    public byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException {
         SsgKeyFinder keyFinder;
         try {
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);

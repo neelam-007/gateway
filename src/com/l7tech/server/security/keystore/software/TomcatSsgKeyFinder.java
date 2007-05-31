@@ -10,7 +10,7 @@ import com.l7tech.server.security.keystore.SsgKeyStore;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.naming.ldap.LdapName;
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -82,8 +82,9 @@ public class TomcatSsgKeyFinder implements SsgKeyFinder {
     }
 
     @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-    public CertificateRequest makeCertificateSigningRequest(String alias, LdapName dn) throws InvalidKeyException, SignatureException, KeyStoreException {
+    public CertificateRequest makeCertificateSigningRequest(String alias, String dn) throws InvalidKeyException, SignatureException, KeyStoreException {
         try {
+            X500Principal dnObj = new X500Principal(dn);
             final PublicKey rsaPublic;
             final PrivateKey rsaPrivate;
             if ("SSL".equals(alias)) {
@@ -95,7 +96,7 @@ public class TomcatSsgKeyFinder implements SsgKeyFinder {
             } else
                 throw new KeyStoreException("No certificate chain available in static keystore with alias " + alias);
             KeyPair keyPair = new KeyPair(rsaPublic, rsaPrivate);
-            return BouncyCastleCertUtils.makeCertificateRequest(dn, keyPair);
+            return BouncyCastleCertUtils.makeCertificateRequest(dnObj, keyPair);
         } catch (NoSuchProviderException e) {
             throw new KeyStoreException(e);
         } catch (NoSuchAlgorithmException e) {

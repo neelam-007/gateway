@@ -37,7 +37,6 @@ public class NewPrivateKeyDialog extends JDialog {
 
     private JPanel rootPanel;
     private JTextField dnField;
-    private JButton editDnButton;
     private JComboBox cbKeyType;
     private JTextField aliasField;
     private JButton createButton;
@@ -83,13 +82,6 @@ public class NewPrivateKeyDialog extends JDialog {
         contentPane.add(rootPanel, BorderLayout.CENTER);
 
         confirmed = false;
-
-        editDnButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                // TODO DN editor
-                JOptionPane.showMessageDialog(NewPrivateKeyDialog.this, "DN editor dialog goes here");
-            }
-        });
 
         createButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -165,6 +157,7 @@ public class NewPrivateKeyDialog extends JDialog {
         final String dn = dnField.getText();
         final int expiryDays = Integer.parseInt(expiryDaysField.getText());
         int keybits = getKeyBits();
+        //noinspection UnusedAssignment
         Throwable ouch = null;
         try {
             getCertAdmin().generateKeyPair(keystoreInfo.id, alias, dn, keybits, expiryDays);
