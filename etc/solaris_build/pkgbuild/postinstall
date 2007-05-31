@@ -10,3 +10,8 @@ cd /ssg
 
 #migrate the structure to the new partitioning scheme using the configuration wizard
 /ssg/configwizard/ssgconfig.sh -partitionMigrate &>/dev/null
+
+# echo "7layer" | passwd ssgconfig --stdin >/dev/null
+# chage -M 365 ssgconfig
+# chage -d 0   ssgconfig
+
