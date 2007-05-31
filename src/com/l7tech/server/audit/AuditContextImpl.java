@@ -148,8 +148,8 @@ public class AuditContextImpl implements AuditContext {
                     }
                 } else if(!systemRecord.alwaysAudit()) {
                     if (highestLevelYetSeen.intValue() < Level.WARNING.intValue()) {
-                        if(logger.isLoggable(Level.FINE)) {
-                            logger.fine("SystemAuditRecord for optional audit generated with level " +
+                        if(logger.isLoggable(Level.FINEST)) {
+                            logger.finest("SystemAuditRecord for optional audit generated with level " +
                                     currentRecord.getLevel() +
                                     " will not be saved; threshold for optional system audits is WARNING");
                         }
