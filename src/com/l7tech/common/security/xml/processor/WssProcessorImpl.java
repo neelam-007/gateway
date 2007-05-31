@@ -2,6 +2,7 @@ package com.l7tech.common.security.xml.processor;
 
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.transform.ExclusiveC11r;
+import com.ibm.xml.dsig.transform.FixedExclusiveC11r;
 import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
