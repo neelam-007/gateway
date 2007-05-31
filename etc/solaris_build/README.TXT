@@ -1,20 +1,3 @@
-myke@MacPwn:~/Desktop/L7$ du -ah build
-4.0K    build/build.sh				build script
-4.0K    build/ipf.conf				Firewall (not in ssg tarball)
-4.0K    build/pkgbuild/checkinstall		Verifies OS version and arch
-4.0K    build/pkgbuild/copyright		Copyright notice
-4.0K    build/pkgbuild/depend			Pre-reqs
-4.0K    build/pkgbuild/pkginfo			Package Metadata
-4.0K    build/pkgbuild/preinstall		Creates users
-?	build/pkgbuild/postinstall		Runs partition migrate and overwrites /etc/issue
- 20K    build/pkgbuild
-  0B    build/pkgroot				Where the package is massaged
-  0B    build/README.TXT			This file... likely > 0 bytes now
-4.0K    build/gateway_DOTprofile		gateway user's .profile  (not in ssg tarball)
- 16K    build/tune_solaris_tcp_stack.sh		TCP tuning  (not in ssg tarball)
- 48K    build
-myke@MacPwn:~/Desktop/L7$ 
-
 Instructions to build & install package:
 1. Linux side
 	a. prepare a standard linux tarball, output file is ssg-b????.tar.gz
@@ -34,13 +17,11 @@ Instructions to build & install package:
 	mkdir working
 	*   On solaris this makes /export/home/username/working
   
-	cd working
-
 * Unpack the solaris build kit:
+	cd working
 	gunzip ../solaris_build.tar.gz
         tar -xf ../solaris_build.tar
-        cd solaris_build
-        cp ~/ssg-b????.tar.gz ssg.tar.gz
+        mv ~/ssg-bNNNN.tar.gz . ( Where nnnn is the build number)
 
 * update VERSION value
 	vi solaris_build/pkgbuild/pkginfo
