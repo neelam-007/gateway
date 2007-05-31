@@ -20,9 +20,9 @@ Instructions for use:
 	a. prepare a standard linux tarball, output file is ssg-b????.tar.gz
         b. prepare a tarball of the entire solaris_build dir:
    		cd UneasyRooster/etc/
-   		tar -czvf solaris_build.tar.gz
+   		tar -czvf solaris_build.tar.gz solaris_build
 	c. copy both tarballs to the solaris build system
-		scp ssgb????.tar.gz user@solaris:
+		scp ssg-b????.tar.gz user@solaris:
 		scp solaris_build.tar.gz user@solaris:
 
 2. Solaris side
