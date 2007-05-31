@@ -15,7 +15,7 @@
 
 # Source function library.
 #. /etc/rc.d/init.d/functions
-. ./rhstub.sh
+. /ssg/bin/rhstub.sh
 
 # If credentials are required to access MySQL then add them as a user config file.
 # /root/.my.cnf

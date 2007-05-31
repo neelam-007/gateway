@@ -5,7 +5,7 @@
 ##################################################################################
 
 #. /etc/profile.d/ssgruntimedefs.sh
-. ./ssgruntimedefs.sh
+. /ssg/bin/ssgruntimedefs.sh
 
 ORIGINAL_JAVA_OPTS=${JAVA_OPTS}
 

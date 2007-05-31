@@ -9,10 +9,10 @@
 
 # Source function library.
 #. /etc/rc.d/init.d/functions
-. ./rhstub.sh
+. /ssg/bin/rhstub.sh
 
 #. /etc/profile.d/ssgruntimedefs.sh
-. ./ssgruntimedefs.sh
+. /ssg/bin/ssgruntimedefs.sh
 
 ORIGINAL_JAVA_OPTS="${JAVA_OPTS}"
 
@@ -134,7 +134,7 @@ start_ssg() {
     which_partition=$1
     echo -n $"Starting $prog $(basename "${which_partition}"): "
 
-    (sh "${PARTITION_CONTROL}" "start" "${which_partition}" &> /dev/null)
+    (bash "${PARTITION_CONTROL}" "start" "${which_partition}" &> /dev/null)
     RETVAL=$?
 
     [ $RETVAL -eq 0 ] && success || failure
@@ -143,7 +143,7 @@ start_ssg() {
 
 status_ssg() {
     which_partition="${1}"
-    (sh "${PARTITION_CONTROL}" "status" "${which_partition}")
+    (bash "${PARTITION_CONTROL}" "status" "${which_partition}")
     return $?
 }
 
