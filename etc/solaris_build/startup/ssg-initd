@@ -24,7 +24,7 @@ PARTITION_BASE="$SSG_HOME/etc/conf/partitions/"
 PARTITION_CONTROL="$SSG_HOME/bin/partitionControl.sh"
 SINGLE_PARTITION=""
 
- See how we were called.
+# See how we were called.
 if [ $LOGUSER != "root" ] ; then
     echo "Need to be root to run this script";
     exit
