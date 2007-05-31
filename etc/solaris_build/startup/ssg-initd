@@ -20,16 +20,15 @@ prog="SSG"
 tries=3
 count=0
 
-USER=$(/usr/bin/who am i | awk '{print $1}')
 PARTITION_BASE="$SSG_HOME/etc/conf/partitions/"
 PARTITION_CONTROL="$SSG_HOME/bin/partitionControl.sh"
 SINGLE_PARTITION=""
 
-# See how we were called.
-#if [ $USER != "root" ] ; then
-#    echo "Need to be root to run this script";
-#    exit
-#fi
+ See how we were called.
+if [ $LOGUSER != "root" ] ; then
+    echo "Need to be root to run this script";
+    exit
+fi
 
 # This script redirects STDOUT and STDERR to /dev/null as well as closing STDIN (<&-) so it can be detached from a
 # terminal

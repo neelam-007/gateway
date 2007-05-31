@@ -13,7 +13,7 @@ ssgconfigutil="/usr/bin/perl ${SSGHOME}/sysconfigwizard/ssg_sys_config.pl"
 migrationdeamon="${SSGHOME}/migration/ssgmigration.sh cfgdeamon"
 
 MESSAGE="Applying Network (Re)Configuration"
-USER=`/usr/bin/who am i | awk '{print $1}'`
+USER=$LOGUSER
 
 # This script redirects STDOUT and STDERR to /dev/null as well as closing STDIN (<&-) so it can be detached from a
 # terminal

@@ -5,11 +5,11 @@
 ##################################################################################
 
 #. /etc/profile.d/ssgruntimedefs.sh
-. /ssg/bin/ssgruntimedefs.sh
+/ssg/bin/ssgruntimedefs.sh
 
 ORIGINAL_JAVA_OPTS=${JAVA_OPTS}
 
-USER=$(/usr/bin/who am i | awk '{print $1}')
+USER=$LOGUSER
 SSGUSER="gateway"
 
 echo $USER
