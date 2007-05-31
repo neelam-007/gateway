@@ -42,6 +42,9 @@ Instructions to build & install package:
         cd solaris_build
         cp ~/ssg-b????.tar.gz ssg.tar.gz
 
+* update VERSION value
+	vi solaris_build/pkgbuild/pkginfo
+        edit VERSION value with "release number" accordingly (eg. VERSION="4.0m1"), and save the file
 * run the build script
 	./build.sh
 	
