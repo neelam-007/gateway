@@ -43,15 +43,10 @@ mv ssg/bin/configuser_bashrc export/home/ssgconfig/.bashrc
 mv ssg/bin/snmpd.conf etc/snmp/conf/snmpd.conf
 mv ../ipf.conf etc/ipf/ipf.conf
 mv ../tune_solaris_tcp_stack.sh etc/init.d/ssg_tcp_tune.sh
-mv ../gateway_DOTprofile export/home/gateway/.profile
+mv ../gateway_DOTprofile export/home/gateway/.bashrc
 mv ssg/bin/ssg-dbstatus-initd etc/init.d/ssg-dbstatus
 mv ssg/bin/ssg-initd etc/init.d/ssg
-mv ssg/bin/sysconfigscript-initd etc/init.d/ssg
-
-cd etc/rc2.d
-ln ../init.d/ssg_tcp_tune.sh S71SSG_tcptune
-ln ../init.d/ssg S99SSG_ssg
-cd ../../
+mv ssg/bin/sysconfigscript-initd etc/init.d/ssg-sysconfig
 
 echo Fixing permissions...
 chmod -f 775 ssg/configwizard
@@ -73,8 +68,6 @@ chmod -Rf 775 ssg/migration
 mv ssg/etc/conf/*.properties ssg/etc/conf/partitions/partitiontemplate_/
 mv ssg/etc/conf/cluster_hostname-dist ssg/etc/conf/partitions/partitiontemplate_/
 mv ssg/tomcat/conf/server.xml ssg/etc/conf/partitions/partitiontemplate_/
-
-
 
 echo Creating Prototype...
 echo "i pkginfo" > ../pkgbuild/Prototype 

@@ -1,4 +1,12 @@
 echo "Layer 7 SecureSpan(tm) Gateway v4.0" >/etc/issue
 
+cd i/etc/rc2.d
+ln ../init.d/ssg_tcp_tune.sh S71SSG_tcptune
+ln ../init.d/ssg S99SSG_ssg
+ln ../init.d/ssg-sysconfig S01SSG_sysconfig
+
+#I don't know where the best place to sit in is, but it sure isn't in /etc 
+cd /ssg
+
 #migrate the structure to the new partitioning scheme using the configuration wizard
 /ssg/configwizard/ssgconfig.sh -partitionMigrate &>/dev/null
