@@ -239,6 +239,24 @@ public class WssProcessorTest extends TestCase {
         }
     }
 
+    public void testBug3611SignatureInclusiveNamespaces() throws Exception {
+        TestDocument result;
+        try {
+            Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3611_SIGNATURE_INCLUSIVE_NAMESPACES);
+
+            result = new TestDocument("Bug3611SignatureInclusiveNamespaces", d,
+                                                null,
+                                                null,
+                                                null,
+                                                null,
+                                                null);
+        } catch (Exception e) {
+            throw e;
+        }
+
+        doTest(result);
+    }
+
     public void testBug3747DsigXpath() throws Exception {
         TestDocument result;
         try {
