@@ -7,12 +7,13 @@
 SSG_HOME=/ssg
 
 TOMCAT_HOME=/ssg/tomcat
-
+mac=` /sbin/ifconfig \`/sbin/route -n get default | awk '/interface/ {print $2}'\` | awk '/ether/ {print $2}'`
+#mac="00:15:17:0b:78:d8"
 default_java_opts="-server -Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxConnectionsPerHost=750 -Djava.net.preferIPv4Stack=true "
 default_java_opts="$default_java_opts -Dsun.rmi.dgc.server.gcInterval=3600000 -Dsun.rmi.dgc.client.gcInterval=3600000 "
 default_java_opts="$default_java_opts -Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxTotalConnections=7500"
 default_java_opts="$default_java_opts -Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl"
-default_java_opts="$default_java_opts -Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 "
+default_java_opts="$default_java_opts -Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 -Dcom.l7tech.cluster.macAddress=$mac"
 default_java_opts="$default_java_opts -Djava.awt.headless=true -XX:CompileThreshold=1500 "
 default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger"
 
