@@ -8,6 +8,8 @@ import com.l7tech.server.config.SharedWizardInfo;
  * Date: Aug 17, 2005
  */
 public class KeystoreConfigBean extends BaseConfigurationBean {
+    public static final String MASTERKEY_MANAGE_SCRIPT = "bin/masterkey-manage.pl";
+
     private final static String NAME = "Keystore Configuration";
     private final static String DESCRIPTION = "Configures the keystore for the SSG";
 

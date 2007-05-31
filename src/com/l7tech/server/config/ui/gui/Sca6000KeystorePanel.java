@@ -1,6 +1,7 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.server.config.KeyStoreConstants;
+import com.l7tech.server.config.KeystoreActions;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 
 import javax.swing.*;
@@ -19,7 +20,6 @@ public class Sca6000KeystorePanel extends KeystorePanel {
     private JRadioButton initializeKeystore;
     private JRadioButton importExistingKeystore;
     private JCheckBox shouldBackupMasterKey;
-    private JPasswordField backupPassword;
 
     KeystorePasswordPanel pwPanel;
 
@@ -68,7 +68,6 @@ public class Sca6000KeystorePanel extends KeystorePanel {
 
     private void setBackupMasterKeyEnabled() {
         shouldBackupMasterKey.setEnabled(initializeKeystore.isSelected());
-        backupPassword.setEnabled(initializeKeystore.isSelected());
     }
 
     private void setPasswordFieldsVisible() {
@@ -88,7 +87,8 @@ public class Sca6000KeystorePanel extends KeystorePanel {
     }
 
     public boolean validateInput(KeystoreConfigBean ksBean) {
-        boolean ok = true;
+        boolean ok = false;
+        KeystoreActions ka = new KeystoreActions(ksBean.getOsFunctions());
         if (pwPanel.validateInput(initializeKeystore.isSelected())) {
             if(isShouldBackupMasterKey()) {
                 //prompt for masterkeybackup password
@@ -98,11 +98,15 @@ public class Sca6000KeystorePanel extends KeystorePanel {
                 if (action >= 0) {
                     ksBean.setMasterKeyBackupPassword(pFld.getPassword());
                     //prompt for the GDDC
-                    JOptionPane.showMessageDialog(this.getTopLevelAncestor(), "Please ensure that the GDDC is attached to the gateway before proceeding");
-                    ok = true;
-                } else {
-                    ok = false;
+                    try {
+                        ka.probeUSBBackupDevice();
+                        ok = true;
+                    } catch (KeystoreActions.KeystoreActionsException e) {
+                        JOptionPane.showMessageDialog(this.getTopLevelAncestor(), "Cannot backup key: " + e.getMessage());
+                    }
                 }
+            } else {
+                ok = true;
             }
         } else {
             ok = false;

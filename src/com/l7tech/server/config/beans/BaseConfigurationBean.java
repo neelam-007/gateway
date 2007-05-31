@@ -57,7 +57,7 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
     }
 
 
-    protected OSSpecificFunctions getOsFunctions() {
+    public OSSpecificFunctions getOsFunctions() {
         PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
         if (pi == null) {
             //SSG might not be migrated to partitioning yet so migrate it.

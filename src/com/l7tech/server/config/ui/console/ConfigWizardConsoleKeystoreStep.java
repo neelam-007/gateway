@@ -120,18 +120,33 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         };
         String input = getData(prompts, defaultValue, new String[] {"1", "2"});
         keystoreBean.setInitializeHSM((input != null && "1".equals(input)));
-        String shouldBackup = getData(new String[] {"Backup Master Key after initialization? [y]"}, "y");
-        if (isYes(shouldBackup)) {
-            keystoreBean.setShouldBackupMasterKey(true);
-            String backupPassword = getMatchingPasswords("Enter the password to protect the master key backup:", "Confirm the password to protect the master key backup:", 6);
-            keystoreBean.setMasterKeyBackupPassword(backupPassword.toCharArray());
-        }
+        boolean askAgain = true;
+        do {
+            String shouldBackup = getData(new String[] {"Backup Master Key after initialization? [y]"}, "y");
+            if (isYes(shouldBackup)) {
+                keystoreBean.setShouldBackupMasterKey(true);
+                String backupPassword = getMatchingPasswords("Enter the password to protect the master key backup:", "Confirm the password to protect the master key backup:", 6);
+                keystoreBean.setMasterKeyBackupPassword(backupPassword.toCharArray());
+                KeystoreActions ka = new KeystoreActions(osFunctions);
+                try {
+                    ka.probeUSBBackupDevice();
+                    askAgain = false;
+                } catch (KeystoreActions.KeystoreActionsException e) {
+                    printText("*** Cannot backup key: " + e.getMessage() + " ***" + getEolChar() + getEolChar());
+                    askAgain = true;
+                }
+            } else {
+                keystoreBean.setShouldBackupMasterKey(false);
+                keystoreBean.setMasterKeyBackupPassword(null);
+                askAgain = false;
+            }
+        } while (askAgain);
 
         doKeystorePasswordPrompts("Set the HSM Password",
                                   "Enter the HSM password: ",
                                   keystoreBean.isInitializeHSM()?"Confirm the HSM password: ":null);
 
-        getData(new String[]{getEolChar(), "Please ensure that the GDDC is attached to the gateway before proceeding", getEolChar()}, "");
+//        getData(new String[]{getEolChar(), "Please ensure that the GDDC is attached to the gateway before proceeding", getEolChar()}, "");
     }
 
     private void askLunaKeystoreQuestions() throws IOException, WizardNavigationException {

@@ -295,7 +295,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             String mess = "problem generating keys or keystore - skipping keystore configuration: ";
             logger.log(Level.SEVERE, mess + e.getMessage(), e);
             throw e;
-        }
+        }                                                                                                                           
     }
     
     private void doHSMConfig(KeystoreConfigBean ksBean) throws Exception {
@@ -400,7 +400,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private boolean checkGDDCDongle() {
-        //TODO get some GDDC and find some way to check for a reacharound
+        if (getOsFunctions().isUnix()) {
+            String prober = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
+            
+        }
         return true;
     }
 

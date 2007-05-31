@@ -2,8 +2,11 @@ package com.l7tech.server.config;
 
 import com.l7tech.common.util.EncryptionUtil;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.ProcResult;
+import com.l7tech.common.util.ProcUtils;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
+import com.l7tech.server.config.beans.KeystoreConfigBean;
 import org.apache.commons.lang.StringUtils;
 
 import javax.crypto.BadPaddingException;
@@ -199,7 +202,22 @@ public class KeystoreActions {
 
     }
 
-
+    public void probeUSBBackupDevice() throws KeystoreActionsException {
+        String prober = osFunctions.getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
+        try {
+            ProcResult result = ProcUtils.exec(null, new File(prober), ProcUtils.args("probe"), null, true);
+            if (result.getExitStatus() == 0) {
+                //all is well, USB stick is there
+                logger.info("Detected a supported backup storage device.");
+            } else {
+                String message = "A supported backup storage device was not found.";
+                logger.warning(MessageFormat.format(message + " Return code = {0}, Message={1}", result.getExitStatus(), new String(result.getOutput())));
+                throw new KeystoreActionsException(message);
+            }
+        } catch (IOException e) {
+            throw new KeystoreActionsException("An error occurred while attempting to find a supported backup storage device: " + e.getMessage());
+        }
+    }
 
     public class KeystoreActionsException extends Exception {
         public KeystoreActionsException(String message) {
