@@ -230,13 +230,7 @@ public class WssProcessorTest extends TestCase {
             throw e;
         }
 
-        try {
-            doTest(result);
-        } catch (InvalidDocumentFormatException e) {
-            // Expected failure
-            // TODO fix this bug
-            log.log(Level.WARNING, "Expected failure due to as-yet-unfixed Bug #3736: " + ExceptionUtils.getMessage(e), e);
-        }
+        doTest(result);
     }
 
     public void testBug3611SignatureInclusiveNamespaces() throws Exception {

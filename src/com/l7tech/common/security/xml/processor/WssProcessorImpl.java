@@ -1,12 +1,10 @@
 package com.l7tech.common.security.xml.processor;
 
 import com.ibm.xml.dsig.*;
-import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.dsig.transform.FixedExclusiveC11r;
 import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.FlexKey;
@@ -127,7 +125,7 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SIGNATURE_EL_NAME)) {
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.DIGSIG_URI)) {
-                    processSignature(securityChildToProcess, cntx);
+                    processSignature(securityChildToProcess, securityContextFinder, cntx);
                 } else {
                     logger.fine("Encountered Signature element but not of right namespace (" +
                             securityChildToProcess.getNamespaceURI() + ")");
@@ -324,6 +322,7 @@ public class WssProcessorImpl implements WssProcessor {
                 if (value != null && value.charAt(0) == '#') {
                     value = value.substring(1);
                 }
+                valueType = referenceElement.getAttribute("ValueType");
             }
         }
 
@@ -340,7 +339,30 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // Process KeyIdentifier or Reference
-        if (SoapUtil.isValueTypeSaml(valueType)) {
+        if (SoapUtil.isValueTypeX509v3(valueType)) {
+            if(noId) {
+                logger.warning("Ignoring SecurityTokenReference with no wsu:Id");
+                return;
+            }
+            if (encodingType != null && encodingType.length() > 0) {
+                logger.warning("Ignoring SecurityTokenReference ID='" + id
+                        + "' with non-empty KeyIdentifier/@EncodingType='" + encodingType + "'.");
+                return;
+            }
+            Element target = (Element)cntx.elementsByWsuId.get(value);
+            if (target == null
+                    || !target.getLocalName().equals("BinarySecurityToken")
+                    || !ArrayUtils.contains(SoapUtil.SECURITY_URIS_ARRAY, target.getNamespaceURI())
+                    || !SoapUtil.isValueTypeX509v3(target.getAttribute("ValueType"))) {
+                String msg = "Rejecting SecurityTokenReference ID='" + id + "' with ValueType of '" + valueType +
+                        "' because its target is either missing or not a BinarySecurityToken";
+                logger.warning(msg);
+                throw new InvalidDocumentFormatException(msg);
+            }
+            if(logger.isLoggable(Level.FINEST))
+                logger.finest("Remembering SecurityTokenReference ID=" + id + " pointing at X.509 BST " + value);
+            cntx.securityTokenReferenceElementToTargetElement.put(str, target);
+        } else if (SoapUtil.isValueTypeSaml(valueType)) {
             if(noId) {
                 logger.warning("Ignoring SecurityTokenReference with no wsu:Id");
                 return;
@@ -362,7 +384,7 @@ public class WssProcessorImpl implements WssProcessor {
             if(logger.isLoggable(Level.FINEST))
                 logger.finest("Remembering SecurityTokenReference ID=" + id + " pointing at SAML assertion " + value);
             cntx.securityTokenReferenceElementToTargetElement.put(str, target);
-        } if (SoapUtil.isValueTypeKerberos(valueType) && isKeyIdentifier) {
+        } else if (SoapUtil.isValueTypeKerberos(valueType) && isKeyIdentifier) {
             if (encodingType == null || !encodingType.equals(SoapUtil.ENCODINGTYPE_BASE64BINARY)) {
                 logger.warning("Ignoring SecurityTokenReference ID=" + id +
                         " with missing or invalid KeyIdentifier/@EncodingType=" + encodingType);
@@ -1298,7 +1320,9 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
-    private void processSignature(final Element sigElement, final ProcessingStatusHolder cntx)
+    private void processSignature(final Element sigElement,
+                                  final SecurityContextFinder securityContextFinder,
+                                  final ProcessingStatusHolder cntx)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException {
         if(logger.isLoggable(Level.FINEST)) logger.finest("Processing Signature");
 
@@ -1321,20 +1345,45 @@ public class WssProcessorImpl implements WssProcessor {
         if (signingCertToken != null) {
             signingCert = signingCertToken.getMessageSigningCertificate();
         }
-        if (signingCert == null) { //try to resolve it as embedded
-            signingCert = resolveEmbeddedCert(keyInfoElement);
-        }
+        // NOTE if we want to resolve embedded we need to set a signingCertToken as below
+        // if (signingCert == null) { //try to resolve it as embedded
+        //     signingCert = resolveEmbeddedCert(keyInfoElement);
+        // }
         if (signingCert == null) { // last chance: see if we happen to recognize a SKI, perhaps because it is ours or theirs
             signingCert = resolveCertBySkiRef(cntx, keyInfoElement);
             if (signingCert != null) {
+                // This dummy BST matches the required format for signing via an STR-Transform
+                // for STR-Transform the prefix must match the one on the STR
                 String wsseNs = cntx.releventSecurityHeader.getNamespaceURI();
-                String wssePrefix = cntx.releventSecurityHeader.getPrefix();
-                if (wssePrefix == null) wssePrefix = "";
-                if (wssePrefix.length() > 0) wssePrefix = wssePrefix + ":";
-                Element el = sigElement.getOwnerDocument().createElementNS(wsseNs, wssePrefix + "BinarySecurityToken");
-                signingCertToken = new X509BinarySecurityTokenImpl(signingCert, el);
+                Element strEle = XmlUtil.findOnlyOneChildElementByName(keyInfoElement,
+                                                            SoapUtil.SECURITY_URIS_ARRAY,
+                                                            SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
+                String wssePrefix = null;
+                if (strEle == null) {
+                    wssePrefix = cntx.releventSecurityHeader.getPrefix();
+                } else {
+                    wssePrefix = strEle.getPrefix();
+                }
+                Element bst = null;
+                if (wssePrefix == null) {
+                    bst = sigElement.getOwnerDocument().createElementNS(wsseNs, "BinarySecurityToken");
+                    bst.setAttribute("xmlns", wsseNs);
+                } else {
+                    bst = sigElement.getOwnerDocument().createElementNS(wsseNs, wssePrefix+":BinarySecurityToken");
+                    bst.setAttribute("xmlns:"+wssePrefix, wsseNs);
+                }
+                bst.setAttribute("ValueType", SoapUtil.VALUETYPE_X509);
+                XmlUtil.setTextContent(bst, HexUtils.encodeBase64(signingCert.getEncoded(), true));
+
+                signingCertToken = new X509BinarySecurityTokenImpl(signingCert, bst);
                 cntx.securityTokens.add(signingCertToken); // nasty, blah
             }
+        }
+
+        // Process any STR that is used within the signature
+        Element keyInfoStr = XmlUtil.findFirstChildElementByName(keyInfoElement, SoapUtil.SECURITY_URIS_ARRAY, "SecurityTokenReference");
+        if (keyInfoStr != null && SoapUtil.getElementWsuId(keyInfoStr)!=null) {
+            processSecurityTokenReference(keyInfoStr, securityContextFinder, cntx);
         }
 
         if (signingCert == null && dkt != null) {
@@ -1411,35 +1460,14 @@ public class WssProcessorImpl implements WssProcessor {
                 }
                 return super.getCanonicalizer(string);
             }
+
             public Transform getTransform(String s) throws NoSuchAlgorithmException {
                 if (SoapUtil.TRANSFORM_STR.equals(s)) {
-                    return new Transform() {
-                        public String getURI() {
-                            return SoapUtil.TRANSFORM_STR;
-                        }
-
-                        public void transform(TransformContext c) throws TransformException {
-                            Node source = c.getNode();
-                            if (source == null) throw new TransformException("Source node is null");
-                            final Node result = (Node)cntx.securityTokenReferenceElementToTargetElement.get(source);
-                            if (result == null) throw new TransformException("Unable to check signature of element signed indirectly through SecurityTokenReference transform: the referenced SecurityTokenReference has not yet been seen");
-                            ExclusiveC11r canon = new ExclusiveC11r();
-                            BufferPoolByteArrayOutputStream bo = new BufferPoolByteArrayOutputStream(4096);
-                            try {
-                                canon.canonicalize(result, bo);
-                                c.setContent(bo.toByteArray(), "UTF-8");
-                            } catch (IOException e) {
-                                throw (TransformException)new TransformException().initCause(e);
-                            } finally {
-                                bo.close();
-                            }
-                        }
-                    };
+                    return new STRTransform(cntx.securityTokenReferenceElementToTargetElement);
                 } else if (SoapUtil.TRANSFORM_XSLT.equals(s)) {
                     throw new NoSuchAlgorithmException(s);
-                } else {
-                    return super.getTransform(s);
                 }
+                return super.getTransform(s);
             }
 
             public SignatureMethod getSignatureMethod(String alg, Object param) throws NoSuchAlgorithmException, NoSuchProviderException {
@@ -1688,7 +1716,7 @@ public class WssProcessorImpl implements WssProcessor {
         Map x509TokensById = new HashMap();
         Map x509TokensByThumbprint = new HashMap();
         Map x509TokensBySki = new HashMap();
-        Map securityTokenReferenceElementToTargetElement = new HashMap();
+        Map<Node,Node> securityTokenReferenceElementToTargetElement = new HashMap();
         Map encryptedKeyById = new HashMap();
         private Set processedEncryptedKeys = null;
         SecurityActor secHeaderActor;

@@ -5,11 +5,8 @@
 package com.l7tech.common.security.xml.decorator;
 
 import com.ibm.xml.dsig.*;
-import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.security.AesKey;
-import com.l7tech.common.security.DesKey;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.common.security.saml.SamlConstants;
@@ -18,6 +15,7 @@ import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.KeyInfoDetails;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.security.xml.STRTransform;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Document;
@@ -27,7 +25,6 @@ import org.w3c.dom.NodeList;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -776,7 +773,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                            XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
         template.setIndentation(false);
         template.setPrefix("ds");
-        final Map strTransformsNodeToNode = new HashMap();
+        final Map<Node,Node> strTransformsNodeToNode = new HashMap();
         for (int i = 0; i < elementsToSign.length; i++) {
             final Element element = elementsToSign[i];
             final String id = signedIds[i];
@@ -835,29 +832,9 @@ public class WssDecoratorImpl implements WssDecorator {
         sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
             public Transform getTransform(String s) throws NoSuchAlgorithmException {
-                if (SoapUtil.TRANSFORM_STR.equals(s))
-                    return new Transform() {
-                        public String getURI() {
-                            return SoapUtil.TRANSFORM_STR;
-                        }
-
-                        public void transform(TransformContext c) throws TransformException {
-                            Node source = c.getNode();
-                            if (source == null) throw new TransformException("Source node is null");
-                            final Node result = (Node)strTransformsNodeToNode.get(source);
-                            if (result == null) throw new TransformException("Destination node is null");
-                            ExclusiveC11r canon = new ExclusiveC11r();
-                            BufferPoolByteArrayOutputStream bo = new BufferPoolByteArrayOutputStream(4096);
-                            try {
-                                canon.canonicalize(result, bo);
-                                c.setContent(bo.toByteArray(), "UTF-8");
-                            } catch (IOException e) {
-                                throw (TransformException)new TransformException().initCause(e);
-                            } finally {
-                                bo.close();
-                            }
-                        }
-                    };
+                if (SoapUtil.TRANSFORM_STR.equals(s)) {
+                    return new STRTransform(strTransformsNodeToNode);
+                }
                 return super.getTransform(s);
             }
         });
