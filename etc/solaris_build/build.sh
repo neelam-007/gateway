@@ -46,6 +46,7 @@ mv ssg/bin/snmpd.conf etc/snmp/conf/snmpd.conf
 mv ../ipf.conf etc/ipf/ipf.conf
 mv ../tune_solaris_tcp_stack.sh etc/init.d/ssg_tcp_tune.sh
 mv ../gateway_DOTprofile export/home/gateway/.bashrc
+chmod 755 export/home/gateway/.bashrc
 mv ssg/bin/ssg-dbstatus-initd etc/init.d/ssg-dbstatus
 mv ssg/bin/ssg-initd etc/init.d/ssg
 mv ssg/bin/sysconfigscript-initd etc/init.d/ssg-sysconfig

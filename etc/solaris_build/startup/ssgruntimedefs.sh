@@ -8,7 +8,6 @@ SSG_HOME=/ssg
 
 TOMCAT_HOME=/ssg/tomcat
 mac=` /sbin/ifconfig \`/sbin/route -n get default | awk '/interface/ {print $2}'\` | awk '/ether/ {print $2}'`
-#mac="00:15:17:0b:78:d8"
 default_java_opts="-server -Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxConnectionsPerHost=750 -Djava.net.preferIPv4Stack=true "
 default_java_opts="$default_java_opts -Dsun.rmi.dgc.server.gcInterval=3600000 -Dsun.rmi.dgc.client.gcInterval=3600000 "
 default_java_opts="$default_java_opts -Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxTotalConnections=7500"
@@ -21,9 +20,9 @@ default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apach
 if [ -e /ssg/etc/conf/JVM ]; then
 	# this means that if /ssg/etc/conf/JVM exists
 	JAVA_HOME=`cat /ssg/etc/conf/JVM`
-	# we use its contents to override the supplied JDK
+	# we use its contents to override the OS supplied JDK
 else
-	JAVA_HOME="/ssg/jdk"
+	JAVA_HOME="/usr/j2se/jre1.6.0_1"
 fi
 
 ulimit -s 2048

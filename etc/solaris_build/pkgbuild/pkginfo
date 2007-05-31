@@ -1,6 +1,6 @@
 PKG="L7TECHssg"
 NAME="SecureSpan(TM) XML Networking Gateway"
-DESC="Enforce advanced routing, translation, virtualization and SLA policies across transports and protocols."
+DESC="Placholder Description"
 VERSION="4.0"
 ARCH="x86_64"
 CLASSES="none"
