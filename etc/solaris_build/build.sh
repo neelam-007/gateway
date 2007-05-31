@@ -14,17 +14,19 @@ cd pkgbuild
 #pkgadd will run the scripts as user nobody
 chmod 755 *install
 cd ..
-
+echo "cleaning old files"
 rm -f ssg.tar
 rm -f solaris_ssg_bin.tar
-
+echo "making new ones"
+cp ../ssg*.tar.gz ssg.tar.gz
+sh make_overlay_tarball.sh
 echo Decompressing...
 gunzip ssg.tar.gz 
 gunzip solaris_ssg_bin.tar.gz
 
 cd pkgroot/
 echo "Unpacking standard tarball"
-tar -xf ../ssg.tar 
+/usr/sfw/bin/gtar -xf ../ssg.tar 
 rm ../ssg.tar
 echo "Unpacking Solaris replacement files"
 tar -xf ../solaris_ssg_bin.tar
