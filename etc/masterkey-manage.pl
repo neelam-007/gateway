@@ -5,21 +5,24 @@ use strict;
 use IO::File;
 use Expect;
 use Data::Dumper;
+use warnings;
 
-use constant OK                  => 0;
-use constant ERR_BOARD_IS_UNINIT => 5;
-use constant ERR_BOARD_IS_INIT   => 6;
-use constant ERR_WEAK_PASSWORD   => 7;
-use constant ERR_KEYSTORE_LOCKED => 8;
-use constant ERR_EXPECT_FAILED   => 10;
-use constant ERR_NO_MOUNTPOINT   => 11;
-use constant ERR_MOUNT_FAILED    => 12;
-use constant ERR_UMOUNT_FAILED   => 13;
-use constant ERR_WRITE_USB       => 14;
-use constant ERR_SWAPON          => 15;
-use constant ERR_SWAPOFF         => 16;
-use constant ERR_SCAMGR_SPAWN    => 17;
-use constant ERR_CLEANUP_FAILED  => 88;
+use constant OK                    => 0;
+use constant ERR_BOARD_IS_UNINIT   => 5;
+use constant ERR_BOARD_IS_INIT     => 6;
+use constant ERR_WEAK_PASSWORD     => 7;
+use constant ERR_KEYSTORE_LOCKED   => 8;
+use constant ERR_PASSWORD_TOO_WEAK => 9;
+use constant ERR_EXPECT_FAILED     => 10;
+use constant ERR_NO_MOUNTPOINT     => 11;
+use constant ERR_MOUNT_FAILED      => 12;
+use constant ERR_UMOUNT_FAILED     => 13;
+use constant ERR_WRITE_USB         => 14;
+use constant ERR_SWAPON            => 15;
+use constant ERR_SWAPOFF           => 16;
+use constant ERR_SCAMGR_SPAWN      => 17;
+use constant ERR_CREATING_USER     => 31; 
+use constant ERR_CLEANUP_FAILED    => 88;
 
 my $MOUNTPOINT = '/ssg/etc/conf/partitions/default_/var/mnt/usbdrive';
 my $USB_DEVICES = '/proc/bus/usb/devices';
@@ -55,7 +58,7 @@ END {
 }
 
 sub usage() {
-    die "Usage: $0 [probe|backup|restore|lock] <SOPASSWORD> <BACKUPFILE> <BACKUPPASS>\n";
+    die "Usage: $0 [probe|init|backup|restore|lock] <SOPASSWORD> <BACKUPFILE> <BACKUPPASS>\n";
 }
 
 sub fatal($$) {
@@ -80,7 +83,7 @@ sub slurpFile($) {
 
     my $content;
     my $fh = new IO::File();
-    $fh->open("<$path") && do {
+    $fh->open("<$path") and do {
         local $/ = undef;
         $content = <$fh>;
         undef $fh;
@@ -199,6 +202,7 @@ sub dialog($@) {
 
              my @newWant = map {
                  my ($re, $reply, $more) = @$_;
+                 $more ||= '';
                  [ $re => sub {
                      my $exp = shift;
                      if (ref($reply) eq 'CODE') {
@@ -241,6 +245,11 @@ sub spawnScamgr() {
     return $exp;
 }
 
+my @trustTheTrustedKey= (
+    [ qr/3. Trust the board for all future sessions.*> /s   => "3\n" => 'repeat' ],
+    [ qr/3. Replace the trusted key with the new key.*> /s  => "3\n" => 'repeat' ],
+);
+
 sub backupMasterKeyToPath($$$) {
     my $soPass = shift;
     my $backupPath = shift;
@@ -252,7 +261,7 @@ sub backupMasterKeyToPath($$$) {
     my $exp = spawnScamgr();
 
     dialog $exp,
-        [[qr/3. Replace the trusted key with the new key.*> /s   => "3\n" => 'repeat'],
+        [@trustTheTrustedKey,
 	 ["This board is uninitialized."                         => sub { fatal ERR_BOARD_IS_UNINIT, 
                                                                           "Unable to back up key -- board not initialized." } ],
 	 ["Security Officer Login: "                             => "$soUsername\n" ]],
@@ -275,7 +284,7 @@ sub restoreMasterKeyFromPath($$$) {
     my $exp = spawnScamgr();
 
     dialog $exp, 
-        [[qr/3. Replace the trusted key with the new key.*> /s   => "3\n" => 'repeat'],
+        [@trustTheTrustedKey,
          ["Security Officer Login: "  =>  sub { fatal ERR_BOARD_IS_INIT,
                                                       "Unable to restore key -- board already initialized." } ],
          [qr/2. Initialize the board to use an existing keystore.*> /s => "2\n" ]],
@@ -286,13 +295,51 @@ sub restoreMasterKeyFromPath($$$) {
         qr/The board is ready to be administered./               => "\n";
 }
 
+sub initializeKeystore($) { 
+    my $soPass = shift; 
+  
+    my $exp = spawnScamgr(); 
+ 
+    my $keystoreName = 'ssg';
+    my $soUsername   = 'so';
+    my $userUsername = 'gateway';
+    my $userPassword = $soPass;
+
+    dialog $exp,  
+        [@trustTheTrustedKey,
+         ["Security Officer Login: "                              =>  sub { fatal ERR_BOARD_IS_INIT,
+                                                                            "Unable to initialize -- board already initialized." }],
+         [qr/1. Initialize the board with a new keystore.*> /s     => "1\n" ]],
+        "Keystore Name:"                                          => "$keystoreName\n",
+        qr/Run in FIPS 140-2 mode.*: /                            => "y\n",
+        "Initial Security Officer Name: "                         => "$soUsername\n",
+        "Initial Security Officer Password: "                     => "$soPass\n",
+        [["Passwords must (be|have) at least"                     => sub { fatal ERR_PASSWORD_TOO_WEAK, 
+                                                                           "New HSM password too weak" }],
+         ["Confirm password: "                                    => "$soPass\n"]],
+        qr/Board initialization parameters.*Is this correct?.*: /s => "y\n",
+        '-timeout' => 45,
+        qr/new remote access key has been/;
+
+    # Restart dialog to reset timout to the default short one
+    dialog $exp,
+        "Security Officer Login: "                                => "$soUsername\n",
+        "Security Officer Password: "                             => "$soPass\n",
+        $prompt                                                   => "create user $userUsername\n",
+        "Enter new user password: "                               => "$userPassword\n",
+        "Confirm password: "                                      => "$userPassword\n",
+        [["Failed creating user "                                 => sub { fatal ERR_CREATING_USER,
+                                                                           "Unable to create new HSM user $userUsername" }],
+         [qr/User .* created successfully.*> /s                   => "quit\n" ]];
+} 
+
 sub lockKeystore($) {
     my $soPass = shift;
 
     my $exp = spawnScamgr();
 
     dialog $exp,
-        [[qr/3. Replace the trusted key with the new key.*> /s   => "3\n" => 'repeat'],
+        [@trustTheTrustedKey,
 	 ["This board is uninitialized."                         => sub { fatal ERR_BOARD_IS_UNINIT, 
                                                                           "Unable to lock keystore -- board not initialized." } ],
 	 ["Security Officer Login: "                             => "$soUsername\n" ]],
@@ -341,6 +388,11 @@ MAIN: {
                 print "USB drive appears to be installed as $blockDev\n";
                 exit 0;
             }
+        };
+    } elsif ($command eq 'init') {
+        usage() unless $soPass;
+        $commandProc = sub {
+            initializeKeystore($soPass);
         };
     } elsif ($command eq 'backup') {
         usage() unless $backupPass;
