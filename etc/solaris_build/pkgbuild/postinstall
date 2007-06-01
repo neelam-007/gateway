@@ -1,3 +1,4 @@
+#!/bin/sh -x 
 echo "Layer 7 SecureSpan(tm) Gateway v4.0" >/etc/issue
 
 cd /etc/rc2.d
@@ -9,7 +10,8 @@ ln ../init.d/ssg-sysconfig S01SSG_sysconfig
 cd /ssg
 
 #migrate the structure to the new partitioning scheme using the configuration wizard
-/ssg/configwizard/ssgconfig.sh -partitionMigrate &>/dev/null
+/ssg/configwizard/ssgconfig.sh -partitionMigrate 
+
 
 # echo "7layer" | passwd ssgconfig --stdin >/dev/null
 # chage -M 365 ssgconfig
