@@ -1624,6 +1624,7 @@
     -->
     <patternset id="gclient.libs">
         <include name="*.jar"/>
+        <include name="**/bcprov-jdk15-135.jar"/>        
     </patternset>
     <target name="package.gclient" depends="compile-test-forms">
         <mkdir dir="${build.dir}/gclient"/>
