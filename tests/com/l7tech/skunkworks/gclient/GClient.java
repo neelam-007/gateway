@@ -8,7 +8,6 @@ import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
-import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -47,11 +46,18 @@ import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPException;
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.XMLDecoder;
+import java.beans.XMLEncoder;
 import java.io.*;
+import java.math.BigInteger;
 import java.net.*;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPrivateKeySpec;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,6 +69,7 @@ import java.util.logging.Logger;
  *
  * @author $Author$
  * @version $Revision$
+ * @noinspection BoundFieldAssignment,JavaDoc
  */
 public class GClient {
     protected static final Logger logger = Logger.getLogger(GClient.class.getName());
@@ -71,8 +78,7 @@ public class GClient {
 
     public GClient() {
         Managers.getAssertionRegistry();
-        final JFrame frame = new JFrame("GClient v0.6");
-        this.mainFrame = frame;
+        frame = new JFrame("GClient v0.6");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -85,15 +91,18 @@ public class GClient {
         // do menus
         buildMenus(frame);
 
+    }
+
+    public static void main(String[] args) {
+        new GClient().show();
+    }
+
+    public void show() {
         // display
         frame.pack();
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         Utilities.centerOnScreen(frame);
         frame.setVisible(true);
-    }
-
-    public static void main(String[] args) {
-        new GClient();
     }
 
     //- PRIVATE
@@ -150,7 +159,7 @@ public class GClient {
     private X509Certificate clientCertificate;
     private PrivateKey clientPrivateKey;
     private String policyXml;
-    private JFrame mainFrame;
+    private JFrame frame;
     private X509Certificate serverCertificate;
 
 
@@ -248,8 +257,8 @@ public class GClient {
 
     private void buildControls() {
         contentTypeComboBox.setModel(new DefaultComboBoxModel(CONTENT_TYPES));
-        threadSpinner.setValue(new Integer(1));
-        requestSpinner.setValue(new Integer(1));
+        threadSpinner.setValue(1);
+        requestSpinner.setValue(1);
     }
 
     private void buildMenus(final JFrame frame) {
@@ -263,6 +272,16 @@ public class GClient {
         fileMenu.add(new AbstractAction("Open File ..."){
             public void actionPerformed(ActionEvent e) {
                 openFile(frame);
+            }
+        });
+        fileMenu.add(new AbstractAction("Open Configuration...") {
+            public void actionPerformed(ActionEvent e) {
+                openConfiguration(frame);
+            }
+        });
+        fileMenu.add(new AbstractAction("Save Configuration...") {
+            public void actionPerformed(ActionEvent e) {
+                saveConfiguration(frame);
             }
         });
         fileMenu.addSeparator();
@@ -297,8 +316,8 @@ public class GClient {
 
     private void updateView() {
         Collection services = wsdl.getServices();
-        for (Iterator iterator = services.iterator(); iterator.hasNext();) {
-            Service service = (Service) iterator.next();
+        for (Object service1 : services) {
+            Service service = (Service)service1;
             serviceComboBox.addItem(service.getQName().getLocalPart());
         }
 
@@ -313,17 +332,17 @@ public class GClient {
             String selected = (String) serviceComboBox.getSelectedItem();
 
             if(selected!=null) {
-                for (Iterator servIterator = services.iterator(); servIterator.hasNext();) {
-                    Service service = (Service) servIterator.next();
+                for (Object service1 : services) {
+                    Service service = (Service)service1;
                     String serviceName = service.getQName().getLocalPart();
 
-                    if(serviceName.equals(selected)) {
+                    if (serviceName.equals(selected)) {
                         this.service = service;
 
                         portComboBox.removeAllItems();
                         Set entries = service.getPorts().keySet();
-                        for (Iterator iterator = entries.iterator(); iterator.hasNext();) {
-                            String portName = (String) iterator.next();
+                        for (Object entry : entries) {
+                            String portName = (String)entry;
                             portComboBox.addItem(portName);
                         }
                     }
@@ -344,8 +363,8 @@ public class GClient {
 
                     operationComboBox.removeAllItems();
                     java.util.List ops = port.getBinding().getBindingOperations();
-                    for (Iterator iterator = ops.iterator(); iterator.hasNext();) {
-                        BindingOperation bo = (BindingOperation) iterator.next();
+                    for (Object op : ops) {
+                        BindingOperation bo = (BindingOperation)op;
                         operationComboBox.addItem(bo.getName());
                     }
                 }
@@ -359,9 +378,9 @@ public class GClient {
 
             if(selectedOperation!=null) {
                 java.util.List ops = port.getBinding().getBindingOperations();
-                for (Iterator iterator = ops.iterator(); iterator.hasNext();) {
-                    BindingOperation bo = (BindingOperation) iterator.next();
-                    if(selectedOperation.equals(bo.getName())) {
+                for (Object op : ops) {
+                    BindingOperation bo = (BindingOperation)op;
+                    if (selectedOperation.equals(bo.getName())) {
                         operation = bo;
                     }
                 }
@@ -372,7 +391,7 @@ public class GClient {
     }
 
     private void decorateMessage() {
-        GClientDecorationDialog dlg = new GClientDecorationDialog(mainFrame);
+        GClientDecorationDialog dlg = new GClientDecorationDialog(frame);
         dlg.setModal(true);
         dlg.setTitle("Decoration policy");
         if (policyXml != null)
@@ -386,7 +405,7 @@ public class GClient {
 
             this.policyXml = dlg.getPolicyXml();
 
-            Assertion assertion = null;
+            Assertion assertion;
             try {
                 assertion = WspReader.getDefault().parsePermissively(policyXml);
                 ClientAssertion clientAssertion = ClientPolicyFactory.getInstance().makeClientPolicy(assertion);
@@ -428,7 +447,7 @@ public class GClient {
 
                 DecorationRequirements wssReq = context.getDefaultWssRequirements();
                 Document document = request.getXmlKnob().getDocumentWritable();
-                WssDecorator.DecorationResult dr = new WssDecoratorImpl().decorateMessage(document, wssReq);
+                new WssDecoratorImpl().decorateMessage(document, wssReq);
 
                 requestTextArea.setText(XmlUtil.nodeToString(document));
 
@@ -439,6 +458,7 @@ public class GClient {
         }
     }
 
+    /** @noinspection ForLoopReplaceableByForEach*/
     private void updateRequestMessage() {
         if(operation!=null && requestMessages!=null) {
             for(int m=0; m<requestMessages.length; m++) {
@@ -479,7 +499,7 @@ public class GClient {
                         message.getSOAPMessage().writeTo(bos);
                         String messageText = bos.toString();
                         if (soap12Checkbox.isSelected()) {
-                            messageText = messageText.replaceAll("http://schemas.xmlsoap.org/soap/envelope/", "http://www.w3.org/2003/05/soap-envelope");    
+                            messageText = messageText.replaceAll("http://schemas.xmlsoap.org/soap/envelope/", "http://www.w3.org/2003/05/soap-envelope");
                         }
                         Document messageDoc = XmlUtil.stringToDocument(messageText);
                         requestTextArea.setText(XmlUtil.nodeToFormattedString(messageDoc));
@@ -558,6 +578,74 @@ public class GClient {
             }
             finally {
                 ResourceUtils.closeQuietly(is);
+            }
+        }
+    }
+
+    private void saveConfiguration(JFrame frame) {
+        JFileChooser fileChooser = new JFileChooser();
+
+        FileFilter filter = new FileFilter(){
+            public boolean accept(File f) {
+                return f.isDirectory() || f.getName().toLowerCase().endsWith(".gclient");
+            }
+
+            public String getDescription() {
+                return "GClient configuration files (*.gclient)";
+            }
+        };
+        fileChooser.setFileFilter(filter);
+        int returnVal = fileChooser.showSaveDialog(frame);
+        if(returnVal == JFileChooser.APPROVE_OPTION) {
+            File selected = fileChooser.getSelectedFile();
+
+            FileOutputStream fos = null;
+            try {
+                fos = new FileOutputStream(selected);
+                XMLEncoder enc = new XMLEncoder(fos);
+                enc.writeObject(GClient.this);
+                enc.close();
+            } catch (FileNotFoundException e) {
+                displayThrowable(e);
+            } finally {
+                ResourceUtils.closeQuietly(fos);
+            }
+        }
+    }
+
+    private void openConfiguration(JFrame frame) {
+        JFileChooser fileChooser = new JFileChooser();
+
+        FileFilter filter = new FileFilter(){
+            public boolean accept(File f) {
+                return f.isDirectory() || f.getName().toLowerCase().endsWith(".gclient");
+            }
+
+            public String getDescription() {
+                return "GClient configuration files (*.gclient)";
+            }
+        };
+        fileChooser.setFileFilter(filter);
+        int returnVal = fileChooser.showOpenDialog(frame);
+        if(returnVal == JFileChooser.APPROVE_OPTION) {
+            File selected = fileChooser.getSelectedFile();
+
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(selected);
+                XMLDecoder dec = new XMLDecoder(fis);
+                Object obj = dec.readObject();
+                if (obj instanceof GClient) {
+                    GClient gClient = (GClient)obj;
+                    gClient.show();
+                    GClient.this.frame.dispose();
+                }
+            }
+            catch(Exception e) {
+                displayThrowable(e);
+            }
+            finally {
+                ResourceUtils.closeQuietly(fis);
             }
         }
     }
@@ -684,7 +772,7 @@ public class GClient {
 
         try {
             boolean isFastInfoset = contentType.indexOf("fastinfoset") > 0;
-            byte[] requestBytes = null;
+            byte[] requestBytes;
             if(validateBeforeSend() || isFastInfoset) {
                 Document requestDocument = XmlUtil.stringToDocument(message);
 
@@ -704,8 +792,8 @@ public class GClient {
                 requestBytes = message.getBytes("UTF-8");
             }
 
-            int threads = ((Integer)threadSpinner.getValue()).intValue();
-            final int requests = ((Integer)requestSpinner.getValue()).intValue();
+            int threads = (Integer)threadSpinner.getValue();
+            final int requests = (Integer)requestSpinner.getValue();
 
             boolean isJms = targetUrl.startsWith("jms:/");
 
@@ -733,6 +821,7 @@ public class GClient {
                     }
                     else {
                         // reset
+                        //noinspection unchecked
                         clientLocal.set(null);
                     }
                 }
@@ -751,6 +840,7 @@ public class GClient {
                                 String[] responseData = doMessage(soapAction, targetUrl, null, requestData);
                                 if(responseData==null) {
                                     System.out.println("Request thread exiting after error!");
+                                    //noinspection unchecked
                                     clientLocal.set(null);
                                     break;
                                 }
@@ -761,9 +851,8 @@ public class GClient {
                 }
                 while(requestGroup.activeCount()>0) {
                     int liveCount = 0;
-                    for (int t = 0; t < requestThreads.length; t++) {
-                        Thread thread = requestThreads[t];
-                        if(thread.isAlive()) liveCount++;
+                    for (Thread thread : requestThreads) {
+                        if (thread.isAlive()) liveCount++;
                     }
                     if(liveCount==0) break;
                     Thread.sleep(50);
@@ -817,6 +906,7 @@ public class GClient {
         GenericHttpClient client = (GenericHttpClient) clientLocal.get();
         if(client==null) {
             client = new CommonsHttpClient(new SimpleHttpConnectionManager(), 30000, 30000);
+            //noinspection unchecked
             clientLocal.set(client);
         }
         GenericHttpRequest request = null;
@@ -847,6 +937,7 @@ public class GClient {
                 }
                 params.setContentType(ContentTypeHeader.parseValue(contentType));
             }
+            //noinspection unchecked
             Collection<GenericHttpHeader> headers = new ArrayList();
             if (cookies != null && cookies.trim().length() > 0) {
                 headers.add(new GenericHttpHeader("Cookie", cookies));
@@ -861,7 +952,7 @@ public class GClient {
                 params.setSslSocketFactory(getSSLSocketFactory());
             }
 
-            params.setContentLength(new Long(requestBytes.length));
+            params.setContentLength((long)requestBytes.length);
 
             request = client.createRequest(GenericHttpClient.POST, params);
             if (request instanceof RerunnableHttpRequest) {
@@ -895,8 +986,10 @@ public class GClient {
         }
         finally {
             ResourceUtils.closeQuietly(responseIn);
-            if(response!=null) try {response.close(); }catch(Exception e){}
-            if(request!=null) try {request.close(); }catch(Exception e){}
+            if(response!=null) //noinspection EmptyCatchBlock
+                try {response.close(); }catch(Exception e){}
+            if(request!=null) //noinspection EmptyCatchBlock
+                try {request.close(); }catch(Exception e){}
         }
 
         return null;
@@ -909,8 +1002,8 @@ public class GClient {
         StringBuffer cookieBuffer = new StringBuffer();
 
         Collection cookies = headers.getValues("Set-Cookie");
-        for (Iterator cookieIter=cookies.iterator(); cookieIter.hasNext();) {
-            String cookieStatement = (String) cookieIter.next();
+        for (Object cooky : cookies) {
+            String cookieStatement = (String)cooky;
             try {
                 HttpCookie cookie = new HttpCookie(url, cookieStatement);
                 cookieBuffer.append(cookie.getCookieName());
@@ -918,7 +1011,7 @@ public class GClient {
                 cookieBuffer.append(cookie.getCookieValue());
                 cookieBuffer.append(';');
             }
-            catch(HttpCookie.IllegalFormatException ife) {                
+            catch (HttpCookie.IllegalFormatException ife) {
                 ife.printStackTrace();
             }
         }
@@ -934,10 +1027,9 @@ public class GClient {
             public void handle(Callback[] callbacks) {
                 PasswordCallback passwordCallback = null;
 
-                for (int i = 0; i < callbacks.length; i++) {
-                    Callback callback = callbacks[i];
+                for (Callback callback : callbacks) {
                     if (callback instanceof PasswordCallback) {
-                        passwordCallback = (PasswordCallback) callback;
+                        passwordCallback = (PasswordCallback)callback;
                     }
                 }
 
@@ -953,7 +1045,7 @@ public class GClient {
                     dialog.setVisible(true);
                     dialog.dispose();
                     Object value = pane.getValue();
-                    if (value != null && ((Integer)value).intValue() == JOptionPane.OK_OPTION)
+                    if (value != null && (Integer)value == JOptionPane.OK_OPTION)
                         passwordCallback.setPassword(pwd.getPassword());
                 }
             }
@@ -1024,5 +1116,305 @@ public class GClient {
         public void importClientCertificate(File certFile, char[] pass, AliasPicker aliasPicker, char[] ssgPassword) throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException {
             throw new UnsupportedOperationException();
         }
+    }
+
+    // Properties that should be saved with a saved configuration
+
+    public String getFormattedResponse() {
+        return formattedResponse;
+    }
+
+    public void setFormattedResponse(String formattedResponse) {
+        this.formattedResponse = formattedResponse;
+    }
+
+    public String getRawResponse() {
+        return rawResponse;
+    }
+
+    public void setRawResponse(String rawResponse) {
+        this.rawResponse = rawResponse;
+    }
+
+    public String getServerCertificatePem() throws IOException, CertificateEncodingException {
+        return serverCertificate == null ? null : new String(CertUtils.encodeAsPEM(serverCertificate));
+    }
+
+    public void setServerCertificatePem(String b64) throws IOException, CertificateException {
+        this.serverCertificate = b64 == null ? null : CertUtils.decodeFromPEM(b64);
+    }
+
+    public String getClientCertificatePem() throws IOException, CertificateEncodingException {
+        return clientCertificate == null ? null : new String(CertUtils.encodeAsPEM(clientCertificate));
+    }
+
+    public void setClientCertificatePem(String b64) throws IOException, CertificateException {
+        this.clientCertificate = b64 == null ? null : CertUtils.decodeFromPEM(b64);
+    }
+
+    /** Similar to RSAPrivateKeySpec, but can be saved by java.beans.XMLEncoder */
+    public static class SaveableRsaPrivateKey {
+        protected BigInteger modulus;
+        protected BigInteger privateExponent;
+
+        public SaveableRsaPrivateKey() {
+        }
+
+        public SaveableRsaPrivateKey(BigInteger modulus, BigInteger privateExponent) {
+            this.modulus = modulus;
+            this.privateExponent = privateExponent;
+        }
+
+        public String getModulus() {
+            return modulus == null ? null : modulus.toString();
+        }
+
+        public void setModulus(String modulus) {
+            this.modulus = modulus == null ? null : new BigInteger(modulus);
+        }
+
+        public String getPrivateExponent() {
+            return privateExponent == null ? null : privateExponent.toString();
+        }
+
+        public void setPrivateExponent(String privateExponent) {
+            this.privateExponent = privateExponent == null ? null : new BigInteger(privateExponent);
+        }
+
+        public RSAPrivateKeySpec asRSAPrivateKeySpec() {
+            return new RSAPrivateKeySpec(modulus, privateExponent);
+        }
+    }
+
+    // TODO do we really want to be saving private keys these like this, even in a test tool?  Decisions, decisions
+    public SaveableRsaPrivateKey getClientPrivateKey() {
+        if (clientPrivateKey == null)
+            return null;
+        if (clientPrivateKey instanceof RSAPrivateKey) {
+            RSAPrivateKey rpk = (RSAPrivateKey)clientPrivateKey;
+            return new SaveableRsaPrivateKey(rpk.getModulus(), rpk.getPrivateExponent());
+        }
+        logger.info("Unable to save non-RSA private key: " + clientPrivateKey.getClass().getName());
+        return null;
+    }
+
+    public void setClientPrivateKey(SaveableRsaPrivateKey spec) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        this.clientPrivateKey = spec == null ? null : KeyFactory.getInstance("RSA").generatePrivate(spec.asRSAPrivateKeySpec());
+    }
+
+    public String getPolicyXml() {
+        return policyXml;
+    }
+
+    public void setPolicyXml(String policyXml) {
+        this.policyXml = policyXml;
+    }
+
+    public Port getPort() {
+        return port;
+    }
+
+    public void setPort(Port port) {
+        this.port = port;
+    }
+
+    public Service getService() {
+        return service;
+    }
+
+    public void setService(Service service) {
+        this.service = service;
+    }
+
+    public BindingOperation getOperation() {
+        return operation;
+    }
+
+    public void setOperation(BindingOperation operation) {
+        this.operation = operation;
+    }
+
+    public SoapMessageGenerator.Message[] getRequestMessages() {
+        return requestMessages;
+    }
+
+    public void setRequestMessages(SoapMessageGenerator.Message[] requestMessages) {
+        this.requestMessages = requestMessages;
+    }
+
+    public JCheckBox getReformatRequestMessageCheckbox() {
+        return reformatRequestMessageCheckbox;
+    }
+
+    public void setReformatRequestMessageCheckbox(JCheckBox reformatRequestMessageCheckbox) {
+        this.reformatRequestMessageCheckbox = reformatRequestMessageCheckbox;
+    }
+
+    public JCheckBox getReformatResponseMessageCheckBox() {
+        return reformatResponseMessageCheckBox;
+    }
+
+    public void setReformatResponseMessageCheckBox(JCheckBox reformatResponseMessageCheckBox) {
+        this.reformatResponseMessageCheckBox = reformatResponseMessageCheckBox;
+    }
+
+    public JCheckBox getValidateBeforeSendCheckBox() {
+        return validateBeforeSendCheckBox;
+    }
+
+    public void setValidateBeforeSendCheckBox(JCheckBox validateBeforeSendCheckBox) {
+        this.validateBeforeSendCheckBox = validateBeforeSendCheckBox;
+    }
+
+    public JCheckBox getSoap11Checkbox() {
+        return soap11Checkbox;
+    }
+
+    public void setSoap11Checkbox(JCheckBox soap11Checkbox) {
+        this.soap11Checkbox = soap11Checkbox;
+    }
+
+    public JCheckBox getSoap12Checkbox() {
+        return soap12Checkbox;
+    }
+
+    public void setSoap12Checkbox(JCheckBox soap12Checkbox) {
+        this.soap12Checkbox = soap12Checkbox;
+    }
+
+    public JComboBox getContentTypeComboBox() {
+        return contentTypeComboBox;
+    }
+
+    public void setContentTypeComboBox(JComboBox contentTypeComboBox) {
+        this.contentTypeComboBox = contentTypeComboBox;
+    }
+
+    public JLabel getServerCertLabel() {
+        return serverCertLabel;
+    }
+
+    public void setServerCertLabel(JLabel serverCertLabel) {
+        this.serverCertLabel = serverCertLabel;
+    }
+
+    public JLabel getClientCertLabel() {
+        return clientCertLabel;
+    }
+
+    public void setClientCertLabel(JLabel clientCertLabel) {
+        this.clientCertLabel = clientCertLabel;
+    }
+
+    public JTextField getNtlmHostField() {
+        return ntlmHostField;
+    }
+
+    public void setNtlmHostField(JTextField ntlmHostField) {
+        this.ntlmHostField = ntlmHostField;
+    }
+
+    public JTextField getNtlmDomainField() {
+        return ntlmDomainField;
+    }
+
+    public void setNtlmDomainField(JTextField ntlmDomainField) {
+        this.ntlmDomainField = ntlmDomainField;
+    }
+
+    public JPasswordField getPasswordField() {
+        return passwordField;
+    }
+
+    public void setPasswordField(JPasswordField passwordField) {
+        this.passwordField = passwordField;
+    }
+
+    public JTextField getLoginField() {
+        return loginField;
+    }
+
+    public void setLoginField(JTextField loginField) {
+        this.loginField = loginField;
+    }
+
+    public JTextArea getRequestTextArea() {
+        return requestTextArea;
+    }
+
+    public void setRequestTextArea(JTextArea requestTextArea) {
+        this.requestTextArea = requestTextArea;
+    }
+
+    public JTextArea getResponseTextArea() {
+        return responseTextArea;
+    }
+
+    public void setResponseTextArea(JTextArea responseTextArea) {
+        this.responseTextArea = responseTextArea;
+    }
+
+    public JTextField getUrlTextField() {
+        return urlTextField;
+    }
+
+    public void setUrlTextField(JTextField urlTextField) {
+        this.urlTextField = urlTextField;
+    }
+
+    public JTextField getSoapActionTextField() {
+        return soapActionTextField;
+    }
+
+    public void setSoapActionTextField(JTextField soapActionTextField) {
+        this.soapActionTextField = soapActionTextField;
+    }
+
+    public JComboBox getServiceComboBox() {
+        return serviceComboBox;
+    }
+
+    public void setServiceComboBox(JComboBox serviceComboBox) {
+        this.serviceComboBox = serviceComboBox;
+    }
+
+    public JComboBox getPortComboBox() {
+        return portComboBox;
+    }
+
+    public void setPortComboBox(JComboBox portComboBox) {
+        this.portComboBox = portComboBox;
+    }
+
+    public JComboBox getOperationComboBox() {
+        return operationComboBox;
+    }
+
+    public void setOperationComboBox(JComboBox operationComboBox) {
+        this.operationComboBox = operationComboBox;
+    }
+
+    public JSpinner getThreadSpinner() {
+        return threadSpinner;
+    }
+
+    public void setThreadSpinner(JSpinner threadSpinner) {
+        this.threadSpinner = threadSpinner;
+    }
+
+    public JSpinner getRequestSpinner() {
+        return requestSpinner;
+    }
+
+    public void setRequestSpinner(JSpinner requestSpinner) {
+        this.requestSpinner = requestSpinner;
+    }
+
+    public JTextField getCookiesTextField() {
+        return cookiesTextField;
+    }
+
+    public void setCookiesTextField(JTextField cookiesTextField) {
+        this.cookiesTextField = cookiesTextField;
     }
 }
