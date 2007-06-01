@@ -1,24 +1,36 @@
-#!/bin/bash
+#!/bin/sh
 
-if [ `grep ^gateway: /etc/group` ]; then
+if [ `grep \^gateway\: /etc/group` ]; then 
 	echo "group gateway already exists"
 else
 	echo "adding gateway group"
 	groupadd gateway
+        if [ ${?} -eq 1 ]; then
+                echo "Group gateway failed to add"
+                return 0;
+	fi
 fi
 
-if [ `grep ^gateway: /etc/passwd` ]; then
+if [ `grep \^gateway\: /etc/passwd` ]; then
 	echo "user gateway already exists"
 else
 	echo "adding gateway user"
 	useradd -G gateway -d /export/home/gateway -s /usr/bin/bash gateway
+        if [ ${?} -eq 1 ]; then
+                echo "User gateway failed to add"
+                return 0;
+	fi
 fi
 
-if [ `grep ^ssgconfig: /etc/passwd` ]; then
+if [ `grep \^ssgconfig\: /etc/passwd` ]; then
 	echo "user ssgconfig already exists"
 else
 	echo "adding ssgconfig user, useradd will whine, this is safe to ignore"
 	useradd -G gateway -d /export/home/ssgconfig -s /usr/bin/bash ssgconfig
+        if [ ${?} -eq 1 ]; then
+                echo "User ssgconfig failed to add"
+                return 0;
+	fi
 fi
 
 exit 0
