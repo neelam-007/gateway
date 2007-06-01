@@ -75,10 +75,11 @@ public class FtpServerManager extends LifecycleBean {
         if (properties != null) {
             final CommandFactory ftpCommandFactory = new FtpCommandFactory();
             final FileSystemManager ftpFileSystem = new VirtualFileSystemManager();
-            final UserManager ftpUserManager = new FtpUserManager();
+            final UserManager ftpUserManager = new FtpUserManager(this);
             final IpRestrictor ftpIpRestrictor = new FtpIpRestrictor();
             final Ftplet messageProcessingFtplet = new MessageProcessingFtplet(
                     getApplicationContext(),
+                    this,
                     messageProcessor,
                     auditContext,
                     soapFaultManager,

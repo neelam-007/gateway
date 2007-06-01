@@ -29,6 +29,10 @@ class FtpUserManager implements UserManager {
 
     //- PUBLIC
 
+    public FtpUserManager(FtpServerManager ftpServerManager) {
+        this.ftpServerManager = ftpServerManager;
+    }
+
     /**
      * Process anonymous or username/password authentication.
      *
@@ -38,6 +42,12 @@ class FtpUserManager implements UserManager {
      */
     public User authenticate(Authentication authentication) throws AuthenticationFailedException {
         User user;
+
+        if ( !ftpServerManager.isLicensed() ) {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "Failing authentication, FTP server not licensed.");
+            throw new AuthenticationFailedException("Authentication failed (FTP server not licensed).");                
+        }
 
         // check input
         if (authentication instanceof AnonymousAuthentication) {
@@ -129,6 +139,8 @@ class FtpUserManager implements UserManager {
     private static final Logger logger = Logger.getLogger(FtpUserManager.class.getName());
 
     private static final String USER_ANONYMOUS = "anonymous";
+
+    private final FtpServerManager ftpServerManager;
 
     /**
      * Create generic user permissions.

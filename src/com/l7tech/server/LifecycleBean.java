@@ -37,13 +37,30 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
         this.applicationContext = applicationContext;
     }
 
-    public final void start() throws LifecycleException {
+    public boolean isLicensed() {
+        boolean licensed = false;
+
         if ( licenseFeature == null ||
-             licenseManager.isFeatureEnabled(licenseFeature))
+             licenseManager.isFeatureEnabled(licenseFeature)) {
+            licensed = true;
+        }
+
+        return licensed;
+    }
+
+    public final void start() throws LifecycleException {
+        if ( isLicensed() ) {
             doStart();
+            synchronized (startLock) {
+                this.started = true;
+            }
+        }
     }
 
     public void stop() throws LifecycleException {
+        synchronized (startLock) {
+            this.started = false;
+        }
         doStop();
     }
 
@@ -61,7 +78,7 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
                         return;  //avoid cost of scheduling oneshot timertask if we have already started
                 }
 
-                if (licenseManager.isFeatureEnabled(licenseFeature)) {
+                if (isLicensed()) {
                     Background.scheduleOneShot(new TimerTask() {
                         public void run() {
                             try {
@@ -90,7 +107,9 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
         this.logger = logger;
         this.licenseFeature = licenseFeature;
         this.licenseManager = licenseManager;
-        this.started = false;
+        synchronized (startLock) {
+            this.started = false;
+        }
     }
 
     protected void init(){}

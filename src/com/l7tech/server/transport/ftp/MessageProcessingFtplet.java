@@ -56,12 +56,14 @@ class MessageProcessingFtplet extends DefaultFtplet {
      * Bean constructor
      */
     public MessageProcessingFtplet(final ApplicationContext applicationContext,
+                                   final FtpServerManager ftpServerManager,
                                    final MessageProcessor messageProcessor,
                                    final AuditContext auditContext,
                                    final SoapFaultManager soapFaultManager,
                                    final ClusterPropertyManager clusterPropertyManager,
                                    final StashManagerFactory stashManagerFactory) {
         this.applicationContext = applicationContext;
+        this.ftpServerManager = ftpServerManager;
         this.messageProcessor = messageProcessor;
         this.auditContext = auditContext;
         this.soapFaultManager = soapFaultManager;
@@ -100,6 +102,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private static final int STORE_RESULT_DROP = 2;
 
     private final ApplicationContext applicationContext;
+    private final FtpServerManager ftpServerManager;
     private final MessageProcessor messageProcessor;
     private final AuditContext auditContext;
     private final SoapFaultManager soapFaultManager;
@@ -116,53 +119,62 @@ class MessageProcessingFtplet extends DefaultFtplet {
         if (logger.isLoggable(Level.FINE))
             logger.log(Level.FINE, "Handling STOR for file ''{0}'' (unique:{1}).", new Object[]{fileName, Boolean.valueOf(unique)});
 
-        if (!ftpSession.getDataType().equals(DataType.BINARY)) {
+        if (!ftpServerManager.isLicensed()) {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "Failing STOR (FTP server not licensed).");
+
             ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN,
-                    "Type '"+ftpSession.getDataType().toString()+"' not supported for this action."));
+                    "Service not available (not licensed)."));
         }
         else {
-            // request data
-            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_150_FILE_STATUS_OKAY, "File status okay; about to open data connection."));
-            DataConnectionFactory dataConnectionFactory = null;
-            try {
-                dataConnectionFactory = ftpSession.getDataConnection();
-                DataConnection dataConnection = null;
-                try {
-                    dataConnection = dataConnectionFactory.openConnection();
-                }
-                catch(Exception ex) {
-                    ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_425_CANT_OPEN_DATA_CONNECTION, "Can't open data connection."));
-                }
-
-                if (dataConnection != null) {
-                    try {
-                        String[] message = {"Failed."};
-                        User user = ftpSession.getUser();
-                        String file = ftpRequest.getArgument();
-                        String path = ftpSession.getFileSystemView().getCurrentDirectory().getFullName();
-                        boolean secure = isSecure(dataConnectionFactory, ftpSession);
-
-                        if (unique) {
-                            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_250_REQUESTED_FILE_ACTION_OKAY, file + ": Transfer started."));
-                        }
-
-                        int storeResult = onStore(dataConnection, ftpSession.getClientAddress(), message, user, path, file, secure, unique);
-
-                        if ( storeResult == STORE_RESULT_DROP ) {
-                            result = FtpletEnum.RET_DISCONNECT;
-                        } else if ( storeResult == STORE_RESULT_FAULT ) {
-                            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, fileName + ": " + message[0]));
-                        } else {
-                            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_226_CLOSING_DATA_CONNECTION, "Transfer complete."));
-                        }
-                    }
-                    catch(IOException ioe) {
-                        ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_426_CONNECTION_CLOSED_TRANSFER_ABORTED, "Data connection error."));
-                    }
-                }
+            if (!ftpSession.getDataType().equals(DataType.BINARY)) {
+                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN,
+                        "Type '"+ftpSession.getDataType().toString()+"' not supported for this action."));
             }
-            finally {
-                if (dataConnectionFactory !=null) dataConnectionFactory.closeDataConnection();
+            else {
+                // request data
+                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_150_FILE_STATUS_OKAY, "File status okay; about to open data connection."));
+                DataConnectionFactory dataConnectionFactory = null;
+                try {
+                    dataConnectionFactory = ftpSession.getDataConnection();
+                    DataConnection dataConnection = null;
+                    try {
+                        dataConnection = dataConnectionFactory.openConnection();
+                    }
+                    catch(Exception ex) {
+                        ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_425_CANT_OPEN_DATA_CONNECTION, "Can't open data connection."));
+                    }
+
+                    if (dataConnection != null) {
+                        try {
+                            String[] message = {"Failed."};
+                            User user = ftpSession.getUser();
+                            String file = ftpRequest.getArgument();
+                            String path = ftpSession.getFileSystemView().getCurrentDirectory().getFullName();
+                            boolean secure = isSecure(dataConnectionFactory, ftpSession);
+
+                            if (unique) {
+                                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_250_REQUESTED_FILE_ACTION_OKAY, file + ": Transfer started."));
+                            }
+
+                            int storeResult = onStore(dataConnection, ftpSession.getClientAddress(), message, user, path, file, secure, unique);
+
+                            if ( storeResult == STORE_RESULT_DROP ) {
+                                result = FtpletEnum.RET_DISCONNECT;
+                            } else if ( storeResult == STORE_RESULT_FAULT ) {
+                                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, fileName + ": " + message[0]));
+                            } else {
+                                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_226_CLOSING_DATA_CONNECTION, "Transfer complete."));
+                            }
+                        }
+                        catch(IOException ioe) {
+                            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_426_CONNECTION_CLOSED_TRANSFER_ABORTED, "Data connection error."));
+                        }
+                    }
+                }
+                finally {
+                    if (dataConnectionFactory !=null) dataConnectionFactory.closeDataConnection();
+                }
             }
         }
 
