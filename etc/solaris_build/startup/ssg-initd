@@ -105,16 +105,16 @@ stop_ssg() {
     if [ "${2}" != "silent" ] ; then
         echo -n $"Stopping $prog $(basename "${which_partition}"): "
     fi
-    (sh "${PARTITION_CONTROL}" "stop" "${which_partition}" &> /dev/null)
+    (bash "${PARTITION_CONTROL}" "stop" "${which_partition}" &> /dev/null)
     RETVAL=$?
 
     if [ ${RETVAL} -eq 0 ] ; then
         sleep 5;
-        (sh "${PARTITION_CONTROL}" "status" "${which_partition}" &> /dev/null)
+        (bash "${PARTITION_CONTROL}" "status" "${which_partition}" &> /dev/null)
         if [ ${?} -eq 0 ] ; then
             count=$((count + 1))
             if [ "$count" -ge "$tries" ]; then
-                (sh "${PARTITION_CONTROL}" "stop -force" "${which_partition}" &> /dev/null)    
+                (bash "${PARTITION_CONTROL}" "stop -force" "${which_partition}" &> /dev/null)    
                 RETVAL=$?
             else
                 stop_ssg "${which_partition}" silent

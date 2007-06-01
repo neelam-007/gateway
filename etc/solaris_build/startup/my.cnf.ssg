@@ -4,7 +4,7 @@ default-character-set=utf8
 character-set-server=utf8
 
 datadir=/var/lib/mysql
-#socket=/var/lib/mysql/mysql.sock
+
 bulk_insert_buffer_size=0
 innodb_data_file_path=ibdata:1024M:autoextend
 innodb_additional_mem_pool_size=2M
@@ -63,10 +63,5 @@ slave-net-timeout=30
 # expire_logs_days=62
 
 [mysql.server]
-#bind-address=0.0.0.0
-#user=mysql
-#basedir=/var/lib
 
 [safe_mysqld]
-#err-log=/var/log/mysqld.log
-#pid-file=/var/run/mysqld/mysqld.pid
