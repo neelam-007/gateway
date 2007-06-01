@@ -71,12 +71,14 @@ mv ssg/bin/ssgconfig.sh ssg/configwizard/
 mv ssg/bin/systemconfig.sh ssg/sysconfigwizard/
 mv ssg/bin/ssgmigration.sh ssg/migration/
 
+echo "Touching supplementary ruleset."
+touch ssg/etc/ssg-ipf.conf
+
 echo "Moving properties to partition Template"
 
 mv ssg/etc/conf/*.properties ssg/etc/conf/partitions/partitiontemplate_/
 mv ssg/etc/conf/cluster_hostname-dist ssg/etc/conf/partitions/partitiontemplate_/
 mv ssg/tomcat/conf/server.xml ssg/etc/conf/partitions/partitiontemplate_/
-
 
 echo Fixing permissions...
 
