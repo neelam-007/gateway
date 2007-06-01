@@ -69,6 +69,7 @@ mv ssg/bin/ssg-initd etc/init.d/ssg
 mv ssg/bin/sysconfigscript-initd etc/init.d/ssg-sysconfig
 mv ssg/bin/ssgconfig.sh ssg/configwizard/
 mv ssg/bin/systemconfig.sh ssg/sysconfigwizard/
+mv ssg/bin/ssgmigration.sh ssg/migration/
 
 echo "Moving properties to partition Template"
 
@@ -95,6 +96,7 @@ chmod -Rf 775 ssg/tomcat/conf
 chmod -f 755 etc/init.d/*
 chmod -f 755 ssg/bin/*.sh
 chmod -Rf 775 ssg/migration
+chmod -f 755 ssg/migration/*.sh
 
 echo Creating Prototype...
 
