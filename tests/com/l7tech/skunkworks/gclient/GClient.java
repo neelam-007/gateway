@@ -744,7 +744,7 @@ public class GClient {
     }
 
     private void loadServerCert(JFrame frame) {
-        GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(frame, true, getCallbackHandler());
+        GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(frame, false, getCallbackHandler());
         if (data != null) {
             serverCertificate = data.getCertificate();
             serverCertLabel.setText(CertUtils.extractCommonNameFromClientCertificate(serverCertificate));

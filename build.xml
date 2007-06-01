@@ -1623,10 +1623,45 @@
       Package GClient (Always invoked by hand)
     -->
     <patternset id="gclient.libs">
-        <include name="*.jar"/>
-        <include name="**/bcprov-jdk15-135.jar"/>        
+        <include name="**/axis.jar"/>
+        <include name="**/0500-wsdl4j.jar"/>
+        <include name="**/activation.jar"/>
+        <include name="**/are.jar"/>
+        <include name="**/bcprov-jdk15-135.jar"/>
+        <include name="**/commons-codec-1.2.jar"/>
+        <include name="**/commons-collections-2.1.1.jar"/>
+        <include name="**/commons-discovery.jar"/>
+        <include name="**/commons-httpclient-3.0.1.jar"/>
+        <include name="**/commons-lang-1.0.1.jar"/>
+        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/concurrent-1.3.4.jar"/>
+        <include name="**/dom4j-1.6.1.jar"/>
+        <include name="**/FastInfoset.jar"/>
+        <include name="**/forms_rt-l7p1.jar"/>
+        <include name="**/jaxen-1.1-beta-10.jar"/>
+        <include name="**/jaxrpc.jar"/>
+        <include name="**/jms-1.1.jar"/>
+        <include name="**/log4j-1.2.14.jar"/>
+        <include name="**/mailapi-1.4.jar"/>
+        <include name="**/policy-1.0.jar"/>
+        <include name="**/qname.jar"/>
+        <include name="**/saaj.jar"/>
+        <include name="**/saaj-impl.jar"/>
+        <include name="**/saxpath.jar"/>
+        <include name="**/servlet-api.jar"/>
+        <include name="**/spring-beans.jar"/>
+        <include name="**/spring-context.jar"/>
+        <include name="**/spring-core.jar"/>
+        <include name="**/whirlycache-1.0.1.jar"/>
+        <include name="**/xbean.jar"/>
+        <include name="**/xbean-saml1_1.jar"/>
+        <include name="**/xbean-saml2_0.jar"/>
+        <include name="**/xbean-xenc-xmldsig.jar"/>
+        <include name="**/xercesImpl.jar"/>
+        <include name="**/xml4j.jar"/>
+        <include name="**/xss4j*.jar"/>
     </patternset>
-    <target name="package.gclient" depends="compile-test-forms">
+    <target name="package.gclient" depends="compile-test-forms, testpackage.init">
         <mkdir dir="${build.dir}/gclient"/>
         <mkdir dir="${build.dir}/gclient/lib"/>
 
@@ -1639,19 +1674,78 @@
             </fileset>
         </copy>
 
+        <echo level="info">Generating manifest for GClient.jar</echo>
         <generate-manifest propertyPrefix="gclient" filename="GClient.mf">
             <section>
                 <attribute name="Main-Class" value="com.l7tech.skunkworks.gclient.GClient"/>
             </section>
         </generate-manifest>
+        <echo level="info">Creating GClient.jar</echo>
         <jar jarfile="${build.dir}/gclient/GClient.jar" manifest="${build.etc}/GClient.mf">
             <fileset dir="${build.classes}">
-                <include name="com/l7tech/**/*"/>
+                <include name="com/l7tech/common/**/*"/>
+                <include name="com/l7tech/console/util/**/*"/>
+                <include name="com/l7tech/policy/**/*"/>
+                <include name="com/l7tech/proxy/**/*"/>
+
+                <exclude name="com/l7tech/common/Authorizer*.class"/>
+                <exclude name="com/l7tech/common/alert/**/*"/>
+                <exclude name="com/l7tech/common/audit/**/*"/>
+                <exclude name="com/l7tech/common/gui/util/HelpUtil*.class"/>
+                <exclude name="com/l7tech/common/security/TrustedCert*.class"/>
+                <exclude name="com/l7tech/common/security/X509Entity*.class"/>
+                <exclude name="com/l7tech/common/security/keystore/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/luna/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/rsa/**/*"/>
+                <exclude name="com/l7tech/common/security/rbac/**/*"/>
+                <exclude name="com/l7tech/common/transport/jms/**/*"/>
+                <exclude name="com/l7tech/common/xml/tarari/**/*"/>
+                <exclude name="com/l7tech/common/xml/schema/**/*"/>
+                <exclude name="com/l7tech/console/util/ClusterLogWorker*.class"/>
+                <exclude name="com/l7tech/console/util/ClusterStatusWorker*.class"/>
+                <exclude name="com/l7tech/console/util/IconManager*.class"/>
+                <exclude name="com/l7tech/console/util/TopComponents*.class"/>
+                <exclude name="com/l7tech/console/util/jfree/**/*"/>
+                <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
+                <exclude name="com/l7tech/policy/wssp/**/*"/>
+                <exclude name="com/l7tech/proxy/BridgeServlet*.class"/>
+                <exclude name="com/l7tech/proxy/ClientProxy*.class"/>
+                <exclude name="com/l7tech/proxy/RequestHandler*.class"/>
+                <exclude name="com/l7tech/proxy/gui/**/*"/>
+                <exclude name="com/l7tech/proxy/resources/**/*"/>
             </fileset>
             <fileset dir="${build.test.classes}">
                 <include name="com/l7tech/skunkworks/gclient/**/*"/>
             </fileset>
         </jar>
+
+        <echo level="info">Testpackaging GClient.jar</echo>
+        <fileset id="gclient.testpackage.fileset" dir="${build.dir}/gclient/lib">
+            <patternset refid="gclient.libs"/>
+        </fileset>
+        <checkdeps jarfile="build/gclient/GClient.jar"
+                   libfilesetref="gclient.testpackage.fileset"
+                   resultproperty="testpackage.gclient.result"
+                   ignoreclasses="com.l7tech.common.security.prov.luna.BouncyCastleToLunaProvider com.l7tech.common.security.prov.luna.LunaJceProviderEngine com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine"/>
+        <!-- This just stops idea complaining -->
+        <property name="testpackage.gclient.result" value=""/>
+        <condition property="testpackage.gclient.fail">
+            <not>
+                <equals arg1="0" arg2="${testpackage.gclient.result}"/>
+            </not>
+        </condition>
+        <fail if="testpackage.gclient.fail">GClient packaging test failed.</fail>        
+
+        <echo level="info">Obfuscating GClient.jar</echo>
+        <build-zkm propertyPrefix="gclient" libDir="build/gclient/lib"/>
+        <Zelix scriptFileName="build/etc/gclient.zkm"
+               logFileName="build/obfuscation/gclientobfuscation.log"
+               trimLogFileName="build/obfuscation/gclientobfuscation.log"
+               isParseOnly="false"
+               isVerbose="true"/>
+        <echo level="info">Done obfuscating GClient.jar</echo>
+        <copy tofile="build/gclient/GClient.jar" file="build/obfuscation/GClient.jar" overwrite="true"/>
     </target>
 
 
@@ -3487,7 +3581,7 @@
     -->
     <macrodef name="build-zkm">
         <attribute name="propertyPrefix"/>
-        <attribute name="filename"/>
+        <attribute name="filename"  default="@{propertyPrefix}.zkm"/>
         <attribute name="pathExtra" default=""/>
         <attribute name="libDir" default="lib"/>
         <sequential>
