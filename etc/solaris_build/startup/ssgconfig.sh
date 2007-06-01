@@ -22,7 +22,7 @@ launch_wizard(){
 	check_options
 	#check if we're root
 	if [ "$USER" != "ssgconfig" ]; then
-        	su -m ssgconfig -c "${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*"
+        	su ssgconfig -c "${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*"
     	else
         	${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
     	fi
