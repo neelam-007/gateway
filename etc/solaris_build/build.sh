@@ -31,13 +31,17 @@ echo "Unpacking Solaris replacement files"
 /usr/sfw/bin/gtar -xf ../solaris_ssg_bin.tar
 rm ../solaris_ssg_bin.tar
 
+#Minor cleanup, and removal of evil spaces....! DIE!
+rm -f ssg/tomcat/webapps/ROOT/ssg/webadmin/help/securespan\ manager\ help\ system.log
+rmdir ssg/dist
+rm -rf ssg/jdk
+
 mkdir -p etc/rc2.d
 mkdir -p export/home/gateway
 mkdir -p export/home/ssgconfig
 mkdir -p etc/init.d
 mkdir -p etc/ipf
 mkdir -p etc/snmp/conf
-rmdir ssg/dist
 
 mv ssg/bin/my.cnf.ssg etc/my.cnf.ssg
 
@@ -71,7 +75,6 @@ chmod -Rf 775 ssg/tomcat/conf
 chmod -f 755 etc/init.d/*
 chmod -f 755 ssg/bin/*.sh
 
-rm -rf ssg/jdk
 chmod -Rf 775 ssg/migration
 mv ssg/etc/conf/*.properties ssg/etc/conf/partitions/partitiontemplate_/
 mv ssg/etc/conf/cluster_hostname-dist ssg/etc/conf/partitions/partitiontemplate_/
