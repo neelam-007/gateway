@@ -1,10 +1,10 @@
 Instructions to build & install package:
 1. Linux side
-	a. prepare a standard linux tarball, output file is ssg-b????.tar.gz
+	a. prepare a standard linux tarball, output file is ssg-b????.tar.gz (please note that it should be a tarball from an obfuscated build)
         b. prepare a tarball of the entire solaris_build dir:
    		cd UneasyRooster/etc/
    		tar -czvf solaris_build.tar.gz solaris_build
-	c. copy both tarballs to the solaris build system
+	c. copy both tarballs to the solaris build system (if you can't scp at a build machine login session then scp at a solaris package machine login session)
 		scp ssg-b????.tar.gz user@solaris:
 		scp solaris_build.tar.gz user@solaris:
 
