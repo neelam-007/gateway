@@ -27,7 +27,7 @@ eg:
 [jay@jaysol working]$ ls -l
 total 245170
 drwxr-xr-x   6 jay      other        512 May 31 16:25 solaris_build
--rw-r--r--   1 jay      other    125448735 May 29 17:44 ssg-b3404.tar.gz
+-rw-r--r--   1 jay      other  125448735 May 29 17:44 ssg-b3404.tar.gz
 
 
 * update VERSION value
@@ -54,17 +54,8 @@ This will produce a Sun package file in solaris_build/pkgbuild/L7TECHssg.pkg, th
 You can install the package using 'pkgadd -d L7TECHssg.pkg', (the .pkg extension is not standard and is just used for developer's clarity)
 
 
-Instruction to remove installed L7TECHssg package:
-
-1. Remove User/Group
-	userdel gateway
-	userdel ssgconfig
-	groupdel gateway
-
-2. Remove installed L7TECHssg package
-	pkgrm L7TECHssg
+Instruction to remove installed L7TECHssg package: pkgrm L7TECHssg
 
 Bugs:
--> checkinstall script does not work properly (at all)
 -> depends on Java 1.5, not 1.6. This may or may not be a problem
-
+-> This filename contains spaces: "ssg/tomcat/webapps/ROOT/ssg/webadmin/help/securespan manager help system.log"
