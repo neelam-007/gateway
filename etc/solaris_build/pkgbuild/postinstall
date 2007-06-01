@@ -16,7 +16,8 @@ cd /ssg
 # echo "7layer" | passwd ssgconfig --stdin >/dev/null
 # chage -M 365 ssgconfig
 # chage -d 0   ssgconfig
-date '+%Y'`
+
+Y=`date '+%Y'`
 Y=`expr $Y + 1`
 MD=`date '+%m/%d'`
 usermod -e $MD/$Y ssgconfig
