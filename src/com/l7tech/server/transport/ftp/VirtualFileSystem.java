@@ -47,10 +47,6 @@ class VirtualFileSystem implements FileSystemView {
         return buildDirectoryFileObject(buildCurrentPath());
     }
 
-    public FileObject[] listFiles(String file) throws FtpException {
-        return new FileObject[0];
-    }
-
     public FileObject getFileObject(String file) throws FtpException {
         FileObject fileObject;
         if (file.equals(".") || file.equals("./")) {

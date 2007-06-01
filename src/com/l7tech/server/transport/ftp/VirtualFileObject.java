@@ -28,7 +28,7 @@ class VirtualFileObject implements FileObject {
     }
 
     public boolean delete() {
-        return false;
+        return true;
     }
 
     public boolean doesExist() {
@@ -70,7 +70,7 @@ class VirtualFileObject implements FileObject {
     }
 
     public boolean hasDeletePermission() {
-        return false;
+        return true;
     }
 
     public boolean hasReadPermission() {
@@ -78,11 +78,12 @@ class VirtualFileObject implements FileObject {
     }
 
     public boolean hasWritePermission() {
-        return !file;
+        return true;
     }
 
     public boolean isDirectory() {
-        return !file;
+        // Always return true to allow removal of directories
+        return true;
     }
 
     public boolean isFile() {
