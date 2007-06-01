@@ -1,62 +1,60 @@
 package com.l7tech.skunkworks.gclient;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.GuiCertUtil;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.http.*;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.console.util.SoapMessageGenerator;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.WssDecorator;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.util.*;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.console.util.SoapMessageGenerator;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.proxy.NullRequestInterceptor;
+import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
+import com.l7tech.proxy.policy.ClientPolicyFactory;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.net.ssl.*;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.PasswordCallback;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Port;
 import javax.wsdl.Service;
-import javax.wsdl.extensions.soap.SOAPAddress;
-import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.UnknownExtensibilityElement;
-import javax.xml.soap.SOAPException;
+import javax.wsdl.extensions.soap.SOAPAddress;
+import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.namespace.QName;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.X509KeyManager;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.PasswordCallback;
+import javax.xml.soap.SOAPException;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.*;
-import java.net.URL;
-import java.net.InetAddress;
-import java.net.PasswordAuthentication;
-import java.net.URI;
-import java.net.Socket;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.ArrayList;
+import java.net.*;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.PrivateKey;
-import java.security.Principal;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Generic Client for SOAP.
@@ -67,11 +65,14 @@ import java.security.Principal;
  * @version $Revision$
  */
 public class GClient {
+    protected static final Logger logger = Logger.getLogger(GClient.class.getName());
 
     //- PUBLIC
 
     public GClient() {
-        final JFrame frame = new JFrame("GClient v0.5");
+        Managers.getAssertionRegistry();
+        final JFrame frame = new JFrame("GClient v0.6");
+        this.mainFrame = frame;
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -129,6 +130,10 @@ public class GClient {
     private JTextField cookiesTextField;
     private JCheckBox soap11Checkbox;
     private JCheckBox soap12Checkbox;
+    private JButton decorationButton;
+    private JButton stripDecorationButton;
+    private JButton serverCertButton;
+    private JLabel serverCertLabel;
 
 
     //
@@ -144,6 +149,10 @@ public class GClient {
     private SSLSocketFactory sslSocketFactory;
     private X509Certificate clientCertificate;
     private PrivateKey clientPrivateKey;
+    private String policyXml;
+    private JFrame mainFrame;
+    private X509Certificate serverCertificate;
+
 
     private boolean formatRequest() {
         return reformatRequestMessageCheckbox.isSelected();
@@ -178,6 +187,11 @@ public class GClient {
                 loadCert(frame);
             }
         });
+        serverCertButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                loadServerCert(frame);
+            }
+        });
         sendButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
                 sendMessage();
@@ -198,6 +212,38 @@ public class GClient {
                 updateResponse();
             }
         });
+        decorationButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                decorateMessage();
+            }
+        });
+        stripDecorationButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                stripDecorations();
+            }
+        });
+    }
+
+    private void stripDecorations() {
+        try {
+            Document got = XmlUtil.stringToDocument(requestTextArea.getText());
+
+            Element sec = SoapUtil.getSecurityElement(got, "secure_span");
+            if (sec == null) return;
+            sec.getParentNode().removeChild(sec);
+
+            requestTextArea.setText(XmlUtil.nodeToString(got));
+
+        } catch (SAXException e1) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e1), e1);
+            throw new RuntimeException(e1);
+        } catch (InvalidDocumentFormatException e1) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e1), e1);
+            throw new RuntimeException(e1); // can't happen
+        } catch (IOException e1) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e1), e1);
+            throw new RuntimeException(e1); // can't happen
+        }
     }
 
     private void buildControls() {
@@ -322,6 +368,74 @@ public class GClient {
             }
 
             updateRequestMessage();
+        }
+    }
+
+    private void decorateMessage() {
+        GClientDecorationDialog dlg = new GClientDecorationDialog(mainFrame);
+        dlg.setModal(true);
+        dlg.setTitle("Decoration policy");
+        if (policyXml != null)
+            dlg.setPolicyXml(policyXml);
+        Utilities.centerOnScreen(dlg);
+        dlg.setVisible(true);
+
+        if (dlg.isConfirmed()) {
+            this.reformatRequestMessageCheckbox.setSelected(false);
+            this.validateBeforeSendCheckBox.setSelected(false);
+
+            this.policyXml = dlg.getPolicyXml();
+
+            Assertion assertion = null;
+            try {
+                assertion = WspReader.getDefault().parsePermissively(policyXml);
+                ClientAssertion clientAssertion = ClientPolicyFactory.getInstance().makeClientPolicy(assertion);
+
+                logger.info("Decorating with policy: \n" + assertion.toString());
+
+
+                Ssg ssg = new Ssg(new Random().nextLong());
+                ssg.getRuntime().setSsgKeyStoreManager(new MySsgKeyStoreManager());
+                ssg.getRuntime().setCredentialManager(new CredentialManagerImpl() {
+                    public PasswordAuthentication getCredentials(Ssg ssg) {
+                        return new PasswordAuthentication("username", passwordField.getPassword());
+                    }
+                });
+
+                Message request = new Message();
+                final String requestString = requestTextArea.getText();
+                if (requestString.trim().length() < 1)
+                    throw new IllegalArgumentException("Request xml is empty");
+                request.initialize(XmlUtil.stringToDocument(requestString.trim()));
+
+                Message response = new Message();
+                RequestInterceptor nri = NullRequestInterceptor.INSTANCE;
+                PolicyAttachmentKey pak = new PolicyAttachmentKey("/", "\"\"", "/");
+                URL origurl = new URL("http://localhost:7700/");
+                PolicyApplicationContext context = new PolicyApplicationContext(ssg, request, response, nri, pak, origurl);
+                AssertionStatus result = clientAssertion.decorateRequest(context);
+                if (result != null) {
+                    //noinspection unchecked
+                    Collection<ClientDecorator> deferred = context.getPendingDecorations().values();
+                    for (ClientDecorator clientDecorator : deferred) {
+                        result = clientDecorator.decorateRequest(context);
+                        if (!AssertionStatus.NONE.equals(result))
+                            break;
+                    }
+                }
+                if (!AssertionStatus.NONE.equals(result))
+                    throw new RuntimeException("Decoration failed: " + result.toString());
+
+                DecorationRequirements wssReq = context.getDefaultWssRequirements();
+                Document document = request.getXmlKnob().getDocumentWritable();
+                WssDecorator.DecorationResult dr = new WssDecoratorImpl().decorateMessage(document, wssReq);
+
+                requestTextArea.setText(XmlUtil.nodeToString(document));
+
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Decoration failed", e);
+                displayThrowable(e);
+            }
         }
     }
 
@@ -540,6 +654,18 @@ public class GClient {
             clientCertLabel.setText("");
         }
     }
+
+    private void loadServerCert(JFrame frame) {
+        GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(frame, true, getCallbackHandler());
+        if (data != null) {
+            serverCertificate = data.getCertificate();
+            serverCertLabel.setText(CertUtils.extractCommonNameFromClientCertificate(serverCertificate));
+        } else {
+            serverCertificate = null;
+            serverCertLabel.setText("");
+        }
+    }
+
 
     /**
      * Send the message text to the selected uri (if it parses)
@@ -832,5 +958,71 @@ public class GClient {
                 }
             }
         };
+    }
+
+    private class MySsgKeyStoreManager extends SsgKeyStoreManager {
+        public boolean isClientCertUnlocked() throws KeyStoreCorruptException {
+            return true;
+        }
+
+        public void deleteClientCert() throws IOException, KeyStoreException, KeyStoreCorruptException {
+            throw new UnsupportedOperationException();
+        }
+
+        public boolean isPasswordWorkedForPrivateKey() {
+            return true;
+        }
+
+        public boolean deleteStores() {
+            return false;
+        }
+
+        public void saveSsgCertificate(X509Certificate cert) throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException {
+            throw new UnsupportedOperationException();
+        }
+
+        public void saveClientCertificate(PrivateKey privateKey, X509Certificate cert, char[] privateKeyPassword) throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException {
+            throw new UnsupportedOperationException();
+        }
+
+        public void obtainClientCertificate(PasswordAuthentication credentials) throws BadCredentialsException, GeneralSecurityException, KeyStoreCorruptException, CertificateAlreadyIssuedException, IOException, ServerFeatureUnavailableException {
+            throw new UnsupportedOperationException("A client certificate must be configured to use this decoration policy.");
+        }
+
+        public String lookupClientCertUsername() {
+            return null;
+        }
+
+        protected X509Certificate getServerCert() throws KeyStoreCorruptException {
+            return serverCertificate;
+        }
+
+        protected X509Certificate getClientCert() throws KeyStoreCorruptException {
+            return clientCertificate;
+        }
+
+        public PrivateKey getClientCertPrivateKey(PasswordAuthentication passwordAuthentication) throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, HttpChallengeRequiredException {
+            return clientPrivateKey;
+        }
+
+        protected boolean isClientCertAvailabile() throws KeyStoreCorruptException {
+            return true;
+        }
+
+        protected KeyStore getKeyStore(char[] password) throws KeyStoreCorruptException {
+            throw new UnsupportedOperationException();
+        }
+
+        protected KeyStore getTrustStore() throws KeyStoreCorruptException {
+            throw new UnsupportedOperationException();
+        }
+
+        public void importServerCertificate(File file) throws IOException, CertificateException, KeyStoreCorruptException, KeyStoreException {
+            throw new UnsupportedOperationException();
+        }
+
+        public void importClientCertificate(File certFile, char[] pass, AliasPicker aliasPicker, char[] ssgPassword) throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException {
+            throw new UnsupportedOperationException();
+        }
     }
 }
