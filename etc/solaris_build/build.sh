@@ -95,6 +95,7 @@ chmod -Rf 775 ssg/etc/conf
 chmod -Rf 775 ssg/tomcat/conf
 chmod -f 755 etc/init.d/*
 chmod -f 755 ssg/bin/*.sh
+chmod -f 755 ssg/bin/*.pl
 chmod -Rf 775 ssg/migration
 chmod -f 755 ssg/migration/*.sh
 
