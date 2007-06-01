@@ -4,7 +4,6 @@
 rm -rf pkgroot
 #rm -rf pkgbuild
 mkdir pkgroot
-mkdir pkgbuild
 
 cd pkgbuild
 
