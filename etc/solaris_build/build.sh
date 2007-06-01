@@ -69,6 +69,9 @@ chmod -f 775 ssg/sysconfigwizard/*.sh
 
 chmod -Rf 775 ssg/etc/conf
 chmod -Rf 775 ssg/tomcat/conf
+chmod -f 755 etc/init.d/*
+chmod -f 755 ssg/bin/*.sh
+
 rm -rf ssg/jdk
 chmod -Rf 775 ssg/migration
 mv ssg/etc/conf/*.properties ssg/etc/conf/partitions/partitiontemplate_/

@@ -58,4 +58,3 @@ Instruction to remove installed L7TECHssg package: pkgrm L7TECHssg
 
 Bugs:
 -> depends on Java 1.5, not 1.6. This may or may not be a problem
--> This filename contains spaces: "ssg/tomcat/webapps/ROOT/ssg/webadmin/help/securespan manager help system.log"
