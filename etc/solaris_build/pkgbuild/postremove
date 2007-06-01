@@ -1,0 +1,9 @@
+#!/bin/sh
+
+rm -f /etc/rc2.d/S71SSG_tcptune
+rm -f /etc/rc2.d/S99SSG_ssg
+rm -f /etc/rc2.d/S01SSG_sysconfig
+
+userdel -r gateway
+userdel -r ssgconfig
+groupdel gateway
