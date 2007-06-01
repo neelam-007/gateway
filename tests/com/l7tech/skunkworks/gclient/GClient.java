@@ -77,7 +77,6 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        Managers.getAssertionRegistry();
         frame = new JFrame("GClient v0.6");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
@@ -405,26 +404,25 @@ public class GClient {
 
             this.policyXml = dlg.getPolicyXml();
 
-            Assertion assertion;
             try {
-                assertion = WspReader.getDefault().parsePermissively(policyXml);
-                ClientAssertion clientAssertion = ClientPolicyFactory.getInstance().makeClientPolicy(assertion);
+                final String requestString = requestTextArea.getText();
+                if (requestString.trim().length() < 1)
+                    throw new IllegalArgumentException("Request xml is empty");
 
+                Managers.getAssertionRegistry();
+                Assertion assertion = WspReader.getDefault().parsePermissively(policyXml);
                 logger.info("Decorating with policy: \n" + assertion.toString());
-
+                ClientAssertion clientAssertion = ClientPolicyFactory.getInstance().makeClientPolicy(assertion);
 
                 Ssg ssg = new Ssg(new Random().nextLong());
                 ssg.getRuntime().setSsgKeyStoreManager(new MySsgKeyStoreManager());
                 ssg.getRuntime().setCredentialManager(new CredentialManagerImpl() {
                     public PasswordAuthentication getCredentials(Ssg ssg) {
-                        return new PasswordAuthentication("username", passwordField.getPassword());
+                        return new PasswordAuthentication(loginField.getText(), passwordField.getPassword());
                     }
                 });
 
                 Message request = new Message();
-                final String requestString = requestTextArea.getText();
-                if (requestString.trim().length() < 1)
-                    throw new IllegalArgumentException("Request xml is empty");
                 request.initialize(XmlUtil.stringToDocument(requestString.trim()));
 
                 Message response = new Message();
@@ -450,6 +448,7 @@ public class GClient {
                 new WssDecoratorImpl().decorateMessage(document, wssReq);
 
                 requestTextArea.setText(XmlUtil.nodeToString(document));
+                clearThrowable();
 
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Decoration failed", e);
