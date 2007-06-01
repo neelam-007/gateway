@@ -6,16 +6,16 @@ ln -s ../init.d/ssg_tcp_tune.sh S71SSG_tcptune
 ln -s ../init.d/ssg S99SSG_ssg
 ln -s ../init.d/ssg-sysconfig S01SSG_sysconfig
 
-#I don't know where the best place to sit in is, but it sure isn't in /etc 
 cd /ssg
 
-#migrate the structure to the new partitioning scheme using the configuration wizard
+# migrate the structure to the new partitioning scheme using the configuration wizard
+# Set java in version, in case its needed
+JAVA_HOME=/usr/j2se/jre1.6.0_01
+export JAVA_HOME
+
 /ssg/configwizard/ssgconfig.sh -partitionMigrate 
 
-
-# echo "7layer" | passwd ssgconfig --stdin >/dev/null
-# chage -M 365 ssgconfig
-# chage -d 0   ssgconfig
+# Added user previously, pre-expire them
 
 Y=`date '+%Y'`
 Y=`expr $Y + 1`

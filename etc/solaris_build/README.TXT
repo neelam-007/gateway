@@ -29,28 +29,23 @@ total 245170
 drwxr-xr-x   6 jay      other        512 May 31 16:25 solaris_build
 -rw-r--r--   1 jay      other  125448735 May 29 17:44 ssg-b3404.tar.gz
 
-
-* update VERSION value
-	vi solaris_build/pkgbuild/pkginfo
-        edit VERSION value with "release number" accordingly (eg. VERSION="4.0m1"), and save the file
-* run the build script
+* run the build script, supplying build number: 
 	cd solaris_build
-	./build.sh
-	
+	./build.sh 4.0m1 
 
 3. Build script 
 	1. makes the overlay tarball
 	2. unpacks the main tarball 
 	3. unpacks the overlay tarball, replacing the startup scripts.
 	4. Then build runs and creates a package:
-		 solaris_build/pkgbuild/L7TECHssg.pkg
+		 solaris_build/L7TECHssg.pkg
 	5. copy this file to repository
 	
 Theory of operation:
 
 The script extracts the ssg tarball into pkgroot, moves some files around then creates listings for use with pkgmk.
 
-This will produce a Sun package file in solaris_build/pkgbuild/L7TECHssg.pkg, this file is suitable for using with pkgadd.
+This will produce a Sun package file in solaris_build/L7TECHssg.pkg, this file is suitable for using with pkgadd.
 
 You can install the package using 'pkgadd -d L7TECHssg.pkg', (the .pkg extension is not standard and is just used for developer's clarity)
 

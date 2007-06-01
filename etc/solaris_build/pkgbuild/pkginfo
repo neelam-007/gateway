@@ -1,12 +1,10 @@
 PKG="L7TECHssg"
 NAME="SecureSpan(TM) XML Networking Gateway"
 DESC="Placholder Description"
-VERSION="4.0"
-ARCH="x86_64"
+ARCH=all
 CLASSES="none"
 CATEGORY="JAVAAPPS,application,ssg"
 VENDOR="Layer 7 Technologies Inc."
-PSTAMP="20070507aa-jmwg-slow"
 EMAIL="support@layer7tech.com"
 HOTLINE="888.681.9377"
 ISTATES="S s 1 2 3"
