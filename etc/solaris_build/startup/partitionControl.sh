@@ -46,6 +46,9 @@ do_control() {
     . ${SSG_HOME}/bin/partition_defs.sh true "${PARTITION_COUNT}"
     (perl ${SSG_HOME}/bin/partition_firewall.pl ${FIREWALL_FILE} ${COMMAND})
 
+# `/usr/sbin/ipf -Fa -f /etc/ipf/ipf.conf`
+# `/usr/sbin/ipf -f /ssg/etc/ssg-ipf.conf`
+
     if [ -z "$TOMCAT_HOME" ] ; then
         TOMCAT_HOME="${SSG_HOME}/tomcat/"
     fi
