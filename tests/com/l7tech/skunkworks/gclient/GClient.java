@@ -241,16 +241,17 @@ public class GClient {
             sec.getParentNode().removeChild(sec);
 
             requestTextArea.setText(XmlUtil.nodeToString(got));
+            clearThrowable();
 
         } catch (SAXException e1) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e1), e1);
-            throw new RuntimeException(e1);
+            displayThrowable(e1);
         } catch (InvalidDocumentFormatException e1) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e1), e1);
-            throw new RuntimeException(e1); // can't happen
+            displayThrowable(e1);
         } catch (IOException e1) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e1), e1);
-            throw new RuntimeException(e1); // can't happen
+            displayThrowable(e1);
         }
     }
 
