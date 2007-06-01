@@ -34,6 +34,7 @@ drwxr-xr-x   6 jay      other        512 May 31 16:25 solaris_build
 	vi solaris_build/pkgbuild/pkginfo
         edit VERSION value with "release number" accordingly (eg. VERSION="4.0m1"), and save the file
 * run the build script
+	cd solaris_build
 	./build.sh
 	
 
