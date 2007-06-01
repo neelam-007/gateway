@@ -145,8 +145,6 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         doKeystorePasswordPrompts("Set the HSM Password",
                                   "Enter the HSM password: ",
                                   keystoreBean.isInitializeHSM()?"Confirm the HSM password: ":null);
-
-//        getData(new String[]{getEolChar(), "Please ensure that the GDDC is attached to the gateway before proceeding", getEolChar()}, "");
     }
 
     private void askLunaKeystoreQuestions() throws IOException, WizardNavigationException {
