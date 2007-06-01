@@ -23,6 +23,13 @@ Instructions to build & install package:
         tar -xf ../solaris_build.tar
         mv ~/ssg-bNNNN.tar.gz . ( Where nnnn is the build number)
 
+eg: 
+[jay@jaysol working]$ ls -l
+total 245170
+drwxr-xr-x   6 jay      other        512 May 31 16:25 solaris_build
+-rw-r--r--   1 jay      other    125448735 May 29 17:44 ssg-b3404.tar.gz
+
+
 * update VERSION value
 	vi solaris_build/pkgbuild/pkginfo
         edit VERSION value with "release number" accordingly (eg. VERSION="4.0m1"), and save the file
