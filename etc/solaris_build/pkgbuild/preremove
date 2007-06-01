@@ -1,0 +1,4 @@
+#!/bin/sh
+
+#Because I just don't care how nicely it dies, just that it's dead. Really dead.
+/etc/init.d/ssg reallystop

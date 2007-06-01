@@ -29,7 +29,7 @@ echo "Unpacking standard tarball"
 /usr/sfw/bin/gtar -xf ../ssg.tar 
 rm ../ssg.tar
 echo "Unpacking Solaris replacement files"
-tar -xf ../solaris_ssg_bin.tar
+/usr/sfw/bin/gtar -xf ../solaris_ssg_bin.tar
 rm ../solaris_ssg_bin.tar
 
 mkdir -p etc/rc2.d
@@ -80,6 +80,7 @@ echo "i pkginfo" > ../pkgbuild/Prototype
 echo "i checkinstall" >> ../pkgbuild/Prototype 
 echo "i preinstall" >> ../pkgbuild/Prototype 
 echo "i postinstall" >> ../pkgbuild/Prototype
+echo "i preremove" >> ../pkgbuild/Prototype
 echo "i postremove" >> ../pkgbuild/Prototype
 echo "i depend" >> ../pkgbuild/Prototype 
 echo "i copyright" >> ../pkgbuild/Prototype 
