@@ -46,8 +46,8 @@ mv ssg/bin/configuser_bashrc export/home/ssgconfig/.profile
 chmod 755 export/home/ssgconfig/.profile
 
 mv ssg/bin/snmpd.conf etc/snmp/conf/snmpd.conf
-mv ../ipf.conf etc/ipf/ipf.conf
-mv ../tune_solaris_tcp_stack.sh etc/init.d/ssg_tcp_tune.sh
+mv ssg/bin/ipf.conf etc/ipf/ipf.conf
+mv ssg/bin/tune_solaris_tcp_stack.sh etc/init.d/ssg_tcp_tune.sh
 
 mv ssg/bin/ssg-dbstatus-initd etc/init.d/ssg-dbstatus
 mv ssg/bin/ssg-initd etc/init.d/ssg
