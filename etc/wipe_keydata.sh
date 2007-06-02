@@ -6,4 +6,4 @@ if [ z$1z != zreallyForSurez ]; then
 fi
 
 cd /var/opt/sun/sca6000/keydata || exit 1
-tar xzf -
+rm -rf *
