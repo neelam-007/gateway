@@ -196,26 +196,33 @@ public class ProcUtils {
         System.arraycopy(args, 0, cmdArray, 1, args.length);
 
         if (logger.isLoggable(Level.FINEST)) logger.finest("Running program: " + program.getName());
-        Process proc = Runtime.getRuntime().exec(cmdArray, null, cwd);
+        Process proc = null;
+        try {
+            proc = Runtime.getRuntime().exec(cmdArray, null, cwd);
 
-        final OutputStream os = proc.getOutputStream();
-        if (stdin != null) {
-            if (logger.isLoggable(Level.FINEST)) logger.finest("Sending " + stdin.length + " bytes of input into program: " + program.getName());
-            os.write(stdin);
-            os.flush();
+            final OutputStream os = proc.getOutputStream();
+            if (stdin != null) {
+                if (logger.isLoggable(Level.FINEST)) logger.finest("Sending " + stdin.length + " bytes of input into program: " + program.getName());
+                os.write(stdin);
+                os.flush();
+            }
+            os.close();
+
+            if (logger.isLoggable(Level.FINEST)) logger.finest("Reading output from program: " + program.getName());
+            byte[] slurped = HexUtils.slurpStream(proc.getInputStream());
+            proc.getInputStream().close();
+            if (logger.isLoggable(Level.FINEST)) logger.finest("Read " + slurped.length + " bytes of output from program: " + program.getName());
+
+            int status = proc.waitFor();
+            proc = null;
+            if (logger.isLoggable(Level.FINEST)) logger.finest("Program " + program.getName() + " exited status code " + status);
+            if (!allowNonzeroExit && status != 0)
+                throw new IOException("Program " + program.getName() + " exited with nonzero status " + status + ".  Output: " + new String(slurped));
+
+            return new ProcResult(status, slurped);
+        } finally {
+            if (proc != null)
+                proc.destroy();
         }
-        os.close();
-
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Reading output from program: " + program.getName());
-        byte[] slurped = HexUtils.slurpStream(proc.getInputStream());
-        proc.getInputStream().close();
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Read " + slurped.length + " bytes of output from program: " + program.getName());
-
-        int status = proc.waitFor();
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Program " + program.getName() + " exited status code " + status);
-        if (!allowNonzeroExit && status != 0)
-            throw new IOException("Program " + program.getName() + " exited with nonzero status " + status + ".  Output: " + new String(slurped));
-
-        return new ProcResult(status, slurped);
     }
 }
