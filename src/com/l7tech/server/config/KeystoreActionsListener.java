@@ -9,4 +9,6 @@ import java.util.List;
  */
 public interface KeystoreActionsListener {
     List<String> promptForKeystoreTypeAndPassword();
+
+    void printKeystoreInfoMessage(String msg);
 }

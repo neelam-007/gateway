@@ -295,7 +295,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         try {
             passwd = getData(prompt, "");
             List<String> typePrompts = new ArrayList<String>();
-            typePrompts.add("Please provide the type for the existing keystore" + getEolChar());
+            typePrompts.add("-- Please provide the type for the existing keystore --" + getEolChar());
             typePrompts.add("1) " + KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName() + getEolChar());
             typePrompts.add("2) " + KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName() + getEolChar());
             typePrompts.add("3) " + KeystoreType.LUNA_KEYSTORE_NAME.shortTypeName() + getEolChar());
@@ -319,5 +319,9 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         answers.add(passwd);
         answers.add(type);
         return answers;
+    }
+
+    public void printKeystoreInfoMessage(String msg) {
+        printText(msg + getEolChar());
     }
 }

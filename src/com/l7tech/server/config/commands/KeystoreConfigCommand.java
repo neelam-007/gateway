@@ -99,8 +99,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             };
     private KeystoreConfigBean ksBean;
     private SharedWizardInfo sharedWizardInfo;
-    private static final String HSM_SETUP_SCRIPT = "bin/hsm_setup.sh";
-    private static final String SCADIAG = "scadiag";
+//    private static final String HSM_SETUP_SCRIPT = "bin/hsm_setup.sh";
+
+    private static final String SUDO_COMMAND = "sudo";
+    private static final String SCADIAG_COMMAND = "scadiag";
 
 
     public KeystoreConfigCommand(ConfigurationBean bean) {
@@ -299,26 +301,26 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
     
     private void doHSMConfig(KeystoreConfigBean ksBean) throws Exception {
-        char[] passwd = ksBean.getKsPassword();
-        char[] ksPassword = ("gateway:" + new String(passwd)).toCharArray();
-        String ksDir = getOsFunctions().getKeystoreDir();
-        File keystoreDir = new File(ksDir);
+        final char[] shortPasswd = ksBean.getKsPassword();
+        final char[] fullKsPassword = ("gateway:" + new String(shortPasswd)).toCharArray();
+        final String ksDir = getOsFunctions().getKeystoreDir();
+        final File keystoreDir = new File(ksDir);
         if (!keystoreDir.exists() && !keystoreDir.mkdir()) {
             String msg = "Could not create the directory: \"" + ksDir + "\". Cannot generate keystores";
             logger.severe(msg);
             throw new IOException(msg);
         }
 
-        File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
-        File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
-        File caKeyStoreFile = new File( ksDir + KeyStoreConstants.CA_KEYSTORE_FILE);
-        File sslKeyStoreFile = new File(ksDir + KeyStoreConstants.SSL_KEYSTORE_FILE);
-        File caCertFile = new File(ksDir + KeyStoreConstants.CA_CERT_FILE);
-        File sslCertFile = new File(ksDir + KeyStoreConstants.SSL_CERT_FILE);
-        File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
-        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
+        final File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
+        final File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
+        final File caKeyStoreFile = new File( ksDir + KeyStoreConstants.CA_KEYSTORE_FILE);
+        final File sslKeyStoreFile = new File(ksDir + KeyStoreConstants.SSL_KEYSTORE_FILE);
+        final File caCertFile = new File(ksDir + KeyStoreConstants.CA_CERT_FILE);
+        final File sslCertFile = new File(ksDir + KeyStoreConstants.SSL_CERT_FILE);
+        final File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
+        final File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
 
-        File newJavaSecFile  = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
+        final File newJavaSecFile  = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
 
         File[] files = new File[]
         {
@@ -334,49 +336,28 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         backupFiles(files, BACKUP_FILE_NAME);
         if (ksBean.isInitializeHSM()) {
-            doInitializeHsm(ksPassword, ksDir, javaSecFile, newJavaSecFile, keystorePropertiesFile, tomcatServerConfigFile, sslKeyStoreFile, ksBean, systemPropertiesFile);
+            doInitializeHsm(fullKsPassword, ksBean, ksDir, javaSecFile, newJavaSecFile, keystorePropertiesFile, tomcatServerConfigFile, sslKeyStoreFile, systemPropertiesFile);
         } else {
-            doRestoreHsm();
+            doRestoreHsm(fullKsPassword, ksBean, ksDir, javaSecFile, newJavaSecFile, keystorePropertiesFile, tomcatServerConfigFile, sslKeyStoreFile, systemPropertiesFile);
         }
     }
 
-    private void doRestoreHsm() throws Exception {
-        logger.info("Restoring HSM Backup");
-        Connection conn = null;
-        try {
-            DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
-            DBActions dba = null;
-            dba = new DBActions(getOsFunctions());
-            conn = dba.getConnection(dbinfo);
-            ScaManager scaManager = getScaManager();
-            zeroHsm();
-            byte[] databytes = getKeydataFromDatabase(conn);
-            scaManager.saveKeydata(databytes);
-            restoreHsmMasterkey(ksBean);
-
-        } catch (ClassNotFoundException e) {
-            logger.severe("Error while getting keydata from the database: " + e.getMessage());
-            throw e;
-        } catch (ScaException e) {
-            logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            String mess = "Problem restoring the keystore to the HSM - skipping HSM configuration: ";
-            logger.log(Level.SEVERE, mess + e.getMessage(), e);
-            throw e;
-        } finally{
-            ResourceUtils.closeQuietly(conn);
-        }
-    }
-
-    private void doInitializeHsm(char[] ksPassword, String ksDir, File javaSecFile, File newJavaSecFile, File keystorePropertiesFile, File tomcatServerConfigFile, File sslKeyStoreFile, KeystoreConfigBean ksBean, File systemPropertiesFile) throws Exception {
+    private void doInitializeHsm(char[] ksPassword, KeystoreConfigBean ksBean, String ksDir, File javaSecFile, File newJavaSecFile, File keystorePropertiesFile, File tomcatServerConfigFile, File sslKeyStoreFile, File systemPropertiesFile) throws Exception {
         logger.info("Initializing HSM");
         try {
             //HSM Specific setup
             ScaManager scaManager = getScaManager();
+
+            //TODO start kiod if it's not started
+            //zero the board
+            zeroHsm();
+            //TODO stop kiod
+            //empty the keydata dir
+            //TODO start kiod
             initializeHSM(ksPassword);
             prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
             makeHSMKeys(new File(ksDir), ksPassword);
+
             insertKeystoreIntoDatabase(scaManager);
             backupHsmMasterkey(ksBean);
             updateJavaSecurity(javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
@@ -396,6 +377,47 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
+    private void doRestoreHsm(char[] fullKsPassword, KeystoreConfigBean ksBean, String ksDir, File javaSecFile, File newJavaSecFile, File keystorePropertiesFile, File tomcatServerConfigFile, File sslKeyStoreFile, File systemPropertiesFile) throws Exception {
+        logger.info("Restoring HSM Backup");
+        try {
+            ScaManager scaManager = getScaManager();
+
+            //fetch from the db
+            DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
+            final byte[] databytes = getKeydataFromDatabase(dbinfo);
+
+            //zero the board
+            zeroHsm();
+
+            //TODO stop kiod
+            //replace keydata dir
+            scaManager.saveKeydata(databytes);
+            //TODO start kiod
+
+            //call masterkey_manage.pl restore
+            restoreHsmMasterkey(fullKsPassword, ksBean.getMasterKeyBackupPassword());
+
+            prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
+
+            updateJavaSecurity(javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
+
+            //General Keystore Setup
+            updateKeystoreProperties(keystorePropertiesFile, fullKsPassword);
+            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), fullKsPassword);
+            updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+        } catch (ScaException e) {
+            logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
+            throw e;
+        } catch (KeystoreActions.KeystoreActionsException e) {
+            logger.severe("Error while restoring a keystore to the HSM. Could not get the keydata from the database: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            String mess = "Problem restoring the keystore to the HSM - skipping HSM configuration: ";
+            logger.log(Level.SEVERE, mess + e.getMessage(), e);
+            throw e;
+        }
+    }
+
     private ScaManager getScaManager() throws ScaException {
         return new ScaManager();
     }
@@ -403,8 +425,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private void backupHsmMasterkey(KeystoreConfigBean ksBean) throws IOException, KeystoreActions.KeystoreActionsException {
         if (getOsFunctions().isUnix()) {
             if (ksBean.isShouldBackupMasterKey()) {
-                char[] keystorePassword = ksBean.getKsPassword();
-                char[] masterKeyBackupPassword = ksBean.getMasterKeyBackupPassword();
+                final char[] keystorePassword = ksBean.getKsPassword();
+                final char[] masterKeyBackupPassword = ksBean.getMasterKeyBackupPassword();
                 String masterKeyBackupScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
                 try {
                     logger.info("Executing \"" + masterKeyBackupScript + "\"");
@@ -428,7 +450,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private void initializeHSM(char[] keystorePassword) throws IOException {
         if (getOsFunctions().isUnix()) {
-            String initializeScript = getOsFunctions().getSsgInstallRoot() + HSM_SETUP_SCRIPT;
+            final String initializeScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
             try {
                 logger.info("Executing \"" + initializeScript + "\"");
                 ProcResult result = ProcUtils.exec(null, new File(initializeScript), ProcUtils.args("init", String.valueOf(keystorePassword)), null, true);
@@ -448,12 +470,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void restoreHsmMasterkey(KeystoreConfigBean ksBean) throws IOException {
+    private void restoreHsmMasterkey(final char[] keystorePassword, final char[] backupPassword) throws IOException {
         if (getOsFunctions().isUnix()) {
-            char[] keystorePassword = ksBean.getKsPassword();
-            char[] backupPassword = ksBean.getMasterKeyBackupPassword();
-
-            String restoreScript = getOsFunctions().getSsgInstallRoot() + MASTER_KEY_BACKUP_FILE_NAME;
+            final String restoreScript = getOsFunctions().getSsgInstallRoot() + MASTER_KEY_BACKUP_FILE_NAME;
             try {
                 logger.info("Executing \"" + restoreScript + "\"");
                 ProcResult result = ProcUtils.exec(null, new File(restoreScript), ProcUtils.args("restore", String.valueOf(keystorePassword), MASTER_KEY_BACKUP_FILE_NAME, String.valueOf(backupPassword)), null, true);
@@ -475,10 +494,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private void zeroHsm() throws IOException {
         if (getOsFunctions().isUnix()) {
-            String scaCommand = "sudo " + SCADIAG;
+            String sudoCommand = SUDO_COMMAND;
             try {
-                logger.info("Executing \"" + scaCommand + "\"");
-                ProcUtils.exec(null, new File(scaCommand), ProcUtils.args("-z", "mca0"), null, false);
+                logger.info("Executing \"" + SCADIAG_COMMAND + "\"");
+                ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(SCADIAG_COMMAND, "-z", "mca0"), null, false);
                 logger.info("Successfully zeroed the HSM");
             } catch (IOException e) {
                 logger.warning("There was an error trying to zero the HSM: " + e.getMessage());
@@ -487,105 +506,30 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void insertKeystoreIntoDatabase(ScaManager scaManager) throws ScaException, ClassNotFoundException, SQLException {
-        DBActions dba = null;
+    private void insertKeystoreIntoDatabase(ScaManager scaManager) throws ScaException, KeystoreActions.KeystoreActionsException {
         byte[] keyData = null;
-
         try {
-            dba = new DBActions();
             keyData = scaManager.loadKeydata();
-        } catch (ClassNotFoundException e) {
-            logger.severe("Could not connect to the database for keystore update: " + e.getMessage());
-            throw e;
+            DBInformation dbinfo = sharedWizardInfo.getDbinfo();
+            putKeydataInDatabase(dbinfo, keyData);
         } catch (ScaException e) {
-            logger.severe("Could not connect to the database for keystore update: " + e.getMessage());
+            logger.severe("Could not load the keystore information from the disk: " + e.getMessage());
+            throw e;
+        } catch (KeystoreActions.KeystoreActionsException e) {
+            logger.severe(e.getMessage());
             throw e;
         }
-
-        int originalVersion = -1;
-        DBInformation dbinfo = sharedWizardInfo.getDbinfo();
-
-        Connection connection = null;
-        try {
-            connection = dba.getConnection(dbinfo);
-            try {
-                originalVersion = getOriginalVersion(connection);
-            } catch (SQLException e) {
-                logger.severe("Could not determine the current version of the HSM keystore in the database: " + e.getMessage());
-                throw e;
-            }
-
-            try {
-                putKeydataInDatabase(connection, keyData, originalVersion);
-            } catch (SQLException e) {
-                logger.severe("Could not perform the keystore update: " + e.getMessage());
-                throw e;
-            }
-        } catch (SQLException e) {
-            logger.severe("Could not connect to the database to update the keystore: " + e.getMessage());
-            throw e;
-        } finally {
-            ResourceUtils.closeQuietly(connection);
-        }
     }
 
-    private void putKeydataInDatabase(Connection connection, byte[] keyData, int originalVersion) throws SQLException {
-        ByteArrayInputStream is = new ByteArrayInputStream(keyData);
-
-        PreparedStatement preparedStmt = null;
-        try {
-            preparedStmt = connection.prepareStatement("update keystore_file set version=?, databytes=? where objectid=1 and name=\"HSM\"");
-            preparedStmt.setInt(1, originalVersion+1);
-            preparedStmt.setBinaryStream(2, is, keyData.length);
-            preparedStmt.addBatch();
-            preparedStmt.executeBatch();
-            logger.info("inserted the HSM keystore information into the database.");
-        } finally {
-            ResourceUtils.closeQuietly(preparedStmt);
-        }
+    private void putKeydataInDatabase(DBInformation dbinfo, byte[] keyData) throws KeystoreActions.KeystoreActionsException {
+        KeystoreActions ka = new KeystoreActions(getOsFunctions());
+        ka.putKeydataInDatabase(dbinfo, keyData);
     }
 
-    private byte[] getKeydataFromDatabase(Connection connection) throws SQLException {
-        Statement stmt = null;
+    private byte[] getKeydataFromDatabase(DBInformation dbinfo) throws KeystoreActions.KeystoreActionsException {
+        KeystoreActions ka = new KeystoreActions(getOsFunctions());
+        return ka.getKeydataFromDatabase(dbinfo);
 
-        byte[] databytes = null;
-        ResultSet rs = null;
-        try {
-            stmt = connection.createStatement();
-            rs = stmt.executeQuery("select databytes from keystore_file where objectid=1 and name=\"HSM\"");
-            databytes = null;
-            while (rs.next()) {
-                databytes = rs.getBytes(1);
-                logger.info("Got the keystore info from the db: " + new String(databytes));
-            }
-        } finally {
-            ResourceUtils.closeQuietly(rs);
-            ResourceUtils.closeQuietly(stmt);
-        }
-        return databytes;
-    }
-
-    private int getOriginalVersion(Connection connection) throws SQLException {
-        int originalVersion = -1;
-        String getVersionSql = new String("Select version from keystore_file where objectid=1 and name=\"HSM\"");
-
-        Statement stmt = null;
-        try {
-            stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery(getVersionSql);
-            while(rs.next()) {
-                originalVersion = rs.getInt("version");
-            }
-        } finally {
-            ResourceUtils.closeQuietly(stmt);
-            if (originalVersion == -1) {
-                logger.warning("Could not find an existing version for the HSM keystore in the database. Defaulting to 0");
-                originalVersion = 0;
-            } else {
-                logger.info("Found an existing version for the HSM keystore in the database [" + originalVersion + "]");
-            }
-        }
-        return originalVersion;
     }
 
     private void makeHSMKeys(File keystoreDir, char[] keystoreAccessPassword) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, SignatureException, InvalidKeyException {

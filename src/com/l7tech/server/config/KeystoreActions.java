@@ -16,10 +16,7 @@ import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.interfaces.RSAPublicKey;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.List;
@@ -123,6 +120,9 @@ public class KeystoreActions {
         if (!existingKeystoreFile.exists()) {
             logger.info(MessageFormat.format("No existing keystore found. No need to backup shared key. (tried {0})", existingKeystoreFile.getAbsolutePath()));
         } else {
+            String msg = MessageFormat.format("An existing keystore was found at {0}. Attempting to back up shared key.", existingKeystoreFile.getAbsolutePath());
+            if (listener != null) listener.printKeystoreInfoMessage(msg);
+            logger.info(msg);
             KeyStore existingKeystore = loadExistingKeyStore(new File(ksDir, ksFilename), true, listener);
             try {
                 sharedKey = fetchDecryptedSharedKeyFromDatabase(SharedWizardInfo.getInstance().getDbinfo(), existingKeystore, ksPassword);
@@ -216,6 +216,91 @@ public class KeystoreActions {
             }
         } catch (IOException e) {
             throw new KeystoreActionsException("An error occurred while attempting to find a supported backup storage device: " + e.getMessage());
+        }
+    }
+
+    public byte[] getKeydataFromDatabase(DBInformation dbinfo) throws KeystoreActionsException {
+        Connection connection = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        byte[] databytes = null;
+        try {
+            DBActions dba = new DBActions(osFunctions);
+            connection = dba.getConnection(dbinfo);
+            stmt = connection.createStatement();
+            rs = stmt.executeQuery("select databytes from keystore_file where objectid=1 and name=\"HSM\"");
+            databytes = null;
+            while (rs.next()) {
+                databytes = rs.getBytes(1);
+            }
+            if (databytes == null)
+                throw new KeystoreActionsException("Could not fetch the keystore information from the database. No keydata was found in the database");
+            logger.info("Got the keystore info from the db: " + new String(databytes));
+        } catch (SQLException e) {
+            throw new KeystoreActionsException("Could not fetch the keystore information from the database. " + e.getMessage());
+        } catch (ClassNotFoundException e) {
+            throw new KeystoreActionsException("Could not fetch the keystore information from the database. " + e.getMessage());
+        } finally {
+            ResourceUtils.closeQuietly(rs);
+            ResourceUtils.closeQuietly(connection);
+            ResourceUtils.closeQuietly(stmt);
+        }
+        return databytes;
+    }
+
+    private int getOriginalVersion(Connection connection) throws SQLException {
+        int originalVersion = -1;
+        String getVersionSql = new String("Select version from keystore_file where objectid=1 and name=\"HSM\"");
+
+        Statement stmt = null;
+        try {
+            stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery(getVersionSql);
+            while(rs.next()) {
+                originalVersion = rs.getInt("version");
+            }
+        } finally {
+            ResourceUtils.closeQuietly(stmt);
+            if (originalVersion == -1) {
+                logger.warning("Could not find an existing version for the HSM keystore in the database. Defaulting to 0");
+                originalVersion = 0;
+            } else {
+                logger.info("Found an existing version for the HSM keystore in the database [" + originalVersion + "]");
+            }
+        }
+        return originalVersion;
+    }
+
+    public void putKeydataInDatabase(DBInformation dbInfo, byte[] keyData) throws KeystoreActionsException {
+
+        ByteArrayInputStream is = new ByteArrayInputStream(keyData);
+        Connection conn = null;
+        PreparedStatement preparedStmt = null;
+        int originalVersion = -1;
+        try {
+            DBActions dba = new DBActions(osFunctions);
+
+            conn = dba.getConnection(dbInfo);
+            try {
+                originalVersion = getOriginalVersion(conn);
+            } catch (SQLException e) {
+                throw new KeystoreActionsException("Could not determine the current version of the HSM keystore in the database: " + e.getMessage());
+            }
+
+            preparedStmt = conn.prepareStatement("update keystore_file set version=?, databytes=? where objectid=1 and name=\"HSM\"");
+            preparedStmt.setInt(1, originalVersion+1);
+            preparedStmt.setBinaryStream(2, is, keyData.length);
+            preparedStmt.addBatch();
+            preparedStmt.executeBatch();
+            logger.info("inserted the HSM keystore information into the database.");
+        } catch (ClassNotFoundException e) {
+            throw new KeystoreActionsException("Error while inserting the HSM keystore informaiton into the database: " + e.getMessage());
+        } catch (SQLException e) {
+            throw new KeystoreActionsException("Error while inserting the HSM keystore informaiton into the database: " + e.getMessage());
+        } finally {
+            ResourceUtils.closeQuietly(preparedStmt);
+            ResourceUtils.closeQuietly(conn);
         }
     }
 

@@ -296,4 +296,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
         answers.add(ksType);
         return answers;
     }
+
+    public void printKeystoreInfoMessage(String msg) {
+    }
 }
