@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.Window;
@@ -41,8 +42,8 @@ import com.l7tech.common.gui.ExceptionDialog;
 /**
  * GUI certificate related utils.
  *
- * @author Steve Jones, $Author$
- * @version $Revision$
+ * @author Steve Jones
+ * @noinspection UnnecessaryContinue
  */
 public class GuiCertUtil {
 
@@ -60,7 +61,7 @@ public class GuiCertUtil {
      * @return The ImportedData structure which may be null or empty.
      */
     public static ImportedData importCertificate(Window parent, boolean privateKeyRequired, CallbackHandler callbackHandler){
-        X509Certificate certificate = null;
+        X509Certificate[] certificateChain = null;
         PrivateKey privateKey = null;
 
         if (parent !=null) {
@@ -131,7 +132,7 @@ public class GuiCertUtil {
                         try {
                             if (selectedFilter == pemFilter) {
                                 String fileData = new String(fileBytes, "UTF-8");
-                                certificate = CertUtils.decodeFromPEM(fileData);
+                                certificateChain = new X509Certificate[] { CertUtils.decodeFromPEM(fileData) };
                                 if (privateKeyRequired || fileData.indexOf(" PRIVATE KEY-----")>0) {
                                     try {
                                         privateKey = CertUtils.decodeKeyFromPEM(fileData);
@@ -142,7 +143,7 @@ public class GuiCertUtil {
                                 }
                             }
                             else if (selectedFilter == cerFilter) {
-                                certificate = CertUtils.decodeCert(fileBytes);
+                                certificateChain = new X509Certificate[] { CertUtils.decodeCert(fileBytes) };
                                 if (privateKeyRequired)
                                     throw new CausedIOException("Certificate files cannot contain private keys");
                             }
@@ -199,17 +200,25 @@ public class GuiCertUtil {
                                             }
                                         }
                                     }
-                                    Certificate[] certificateChain = keyStore.getCertificateChain(alias);
+                                    if (null == key)
+                                        throw new IOException("PKCS12 entry '"+alias+"' does not contain a key.");
+                                    if (!(key instanceof PrivateKey))
+                                        throw new IOException("PKCS12 entry '"+alias+"' key is not a private key.");
 
-                                    if (certificateChain==null || certificateChain.length==0 ||
-                                        (privateKeyRequired && key==null))
-                                        throw new CausedIOException("PKCS12 entry '"+alias+"' missing certificate or key.");
+                                    Certificate[] chain = keyStore.getCertificateChain(alias);
+                                    if (chain==null || chain.length==0)
+                                        throw new CausedIOException("PKCS12 entry '"+alias+"' missing does not contain a certificate chain.");
 
-                                    if ((certificate != null && !(certificate instanceof X509Certificate)) ||
-                                        (key != null && !(key instanceof PrivateKey)))
-                                        throw new CausedIOException("PKCS12 entry '"+alias+"' certificate or key type is incorrect.");
+                                    List<X509Certificate> got = new ArrayList<X509Certificate>();
+                                    for (Certificate cert : chain) {
+                                        if (cert == null)
+                                            throw new IOException("PKCS12 entry '" + alias + "' contains a null certificate in its certificate chain.");
+                                        if (!(cert instanceof X509Certificate))
+                                            throw new IOException("PKCS12 entry '" + alias + "' certificate chain contains a non-X.509 certificate.");
+                                        got.add((X509Certificate)cert);
+                                    }
 
-                                    certificate = (X509Certificate) certificateChain[0];
+                                    certificateChain = got.toArray(new X509Certificate[0]);
                                     privateKey = (PrivateKey) key;
                                 }
                                 catch (KeyStoreException ke) {
@@ -259,12 +268,16 @@ public class GuiCertUtil {
 
         // create result data
         ImportedData id = null;
-        if (certificate != null) {
-            final X509Certificate idCertificate = certificate;
+        if (certificateChain != null && certificateChain.length > 0) {
+            final X509Certificate[] idCertificateChain = certificateChain;
             final PrivateKey idPrivateKey = privateKey;
             id = new ImportedData() {
                 public X509Certificate getCertificate() {
-                    return idCertificate;
+                    return getCertificateChain()[0];
+                }
+
+                public X509Certificate[] getCertificateChain() {
+                    return idCertificateChain;
                 }
 
                 public PrivateKey getPrivateKey() {
@@ -330,7 +343,7 @@ public class GuiCertUtil {
 
                     try {
                         data = isPem ?
-                                CertUtils.encodeAsPEM(certificate) :
+                                CertUtils.encodeAsPEM(certificate).getBytes("UTF-8") :
                                 certificate.getEncoded();
                     }
                     catch(IOException e) {
@@ -368,8 +381,15 @@ public class GuiCertUtil {
         }
     }
 
+    /** Represents the result of importing data from a keystore file. */
     public static interface ImportedData {
+        /** @return the first entry in the certificate chain.  Never null. */
         X509Certificate getCertificate();
+
+        /** @return The certificate chain.  Never null and always contains at least one entry. */
+        X509Certificate[] getCertificateChain();
+
+        /** @return The private key for this certificate chain.  May be null if a private key was not required. */
         PrivateKey getPrivateKey();
     }
 
@@ -379,11 +399,8 @@ public class GuiCertUtil {
 
     private static final String SAVE_DIALOG_ERROR_TITLE = "Error saving certificate";
 
-    /**
-     *
-     */
     private static FileFilter buildFilter(final String extension, final String description) {
-        FileFilter fileFilter = new FileFilter() {
+        return new FileFilter() {
             public boolean accept(File f) {
                 return  f.isDirectory() || f.getName().toLowerCase().endsWith(extension);
             }
@@ -391,13 +408,9 @@ public class GuiCertUtil {
                 return description;
             }
         };
-        return fileFilter;
     }
 
-    /**
-     *
-     */
-    private static final void displayError(Window parent, String title, String message) {
+    private static void displayError(Window parent, String title, String message) {
         ExceptionDialog ed;
         if (parent instanceof Dialog) {
             ed =ExceptionDialog.createExceptionDialog((Dialog) parent, title, null, message, null, Level.WARNING);

@@ -3,23 +3,25 @@
  */
 package com.l7tech.common.security;
 
-import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import static com.l7tech.common.security.rbac.EntityType.SSG_KEY_ENTRY;
+import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
+import com.l7tech.common.security.rbac.MethodStereotype;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
-import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.objectmodel.*;
-import com.l7tech.common.security.keystore.SsgKeyEntry;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.rmi.RemoteException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.KeyStoreException;
-import java.security.GeneralSecurityException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
 /**
@@ -53,7 +55,7 @@ public interface TrustedCertAdmin  {
      * Retrieves the {@link TrustedCert} with the specified subject DN.
      * @param dn the Subject DN of the {@link TrustedCert} to retrieve
      * @return the TrustedCert or null if no cert for that oid
-     * @throws FindException
+     * @throws FindException if there is a problem finding the cert
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
@@ -98,7 +100,7 @@ public interface TrustedCertAdmin  {
      * @throws HostnameMismatchException if the hostname did not match the cert's subject
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    public X509Certificate[] retrieveCertFromUrl(String url) throws RemoteException, IOException, HostnameMismatchException;
+    public X509Certificate[] retrieveCertFromUrl(String url) throws IOException, HostnameMismatchException;
 
     /**
      * Retrieves the {@link X509Certificate} chain from the specified URL.
@@ -110,7 +112,7 @@ public interface TrustedCertAdmin  {
      * @throws HostnameMismatchException if the hostname did not match the cert's subject
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    public X509Certificate[] retrieveCertFromUrl(String url, boolean ignoreHostname) throws RemoteException, IOException, HostnameMismatchException;
+    public X509Certificate[] retrieveCertFromUrl(String url, boolean ignoreHostname) throws IOException, HostnameMismatchException;
 
     /**
      * Get the gateway's root cert.
@@ -120,7 +122,7 @@ public interface TrustedCertAdmin  {
      * @throws RemoteException on remote communication error
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    public X509Certificate getSSGRootCert() throws IOException, CertificateException, RemoteException;
+    public X509Certificate getSSGRootCert() throws IOException, CertificateException;
 
     /**
      * Get the gateway's SSL cert.
@@ -130,7 +132,7 @@ public interface TrustedCertAdmin  {
      * @throws RemoteException on remote communication error
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    public X509Certificate getSSGSslCert() throws IOException, CertificateException, RemoteException;
+    public X509Certificate getSSGSslCert() throws IOException, CertificateException;
 
     /**
      * Represents general information about a Keystore instance available on this Gateway.
@@ -183,6 +185,9 @@ public interface TrustedCertAdmin  {
      *
      * @param keystoreId  the keystore in which to destroy an entry.  Required.
      * @param keyAlias    the alias of hte entry which is to be destroyed.  Required.
+     * @throws com.l7tech.objectmodel.DeleteException  if the key cannot be found or there is a problem deleting the key
+     * @throws java.io.IOException if there is a problem reading necessary keystore data
+     * @throws java.security.cert.CertificateException if there is a problem decoding a certificate
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
@@ -207,10 +212,65 @@ public interface TrustedCertAdmin  {
     @Secured(stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
     public X509Certificate generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException;
 
+    /**
+     * Generate a new PKCS#10 Certification Request (aka Certificate Signing Request) using the specified private key,
+     * identified by keystoreId and alias, and containing the specified DN.
+     *
+     * @param keystoreId the ID of the key store in which the private key can be found.  Required.
+     * @param alias the alias of the private key with which to sign the CSR.  Required.
+     * @param dn the DN to include in the new CSR, ie "CN=mymachine.example.com".  Required.
+     * @return the bytes of the encoded form of this certificate request, in PKCS#10 format.
+     * @throws FindException if there is a problem getting info from the database
+     */
     @Transactional(readOnly=true)
     byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException;
 
+    /**
+     * Replace the certificate chain for the specified private key with a new one whose subject cert
+     * uses the same public key.  This can be used to replace a placeholder self-signed cert with the real
+     * cert when it arrives back from the certificate authority.
+     *
+     * @param keystoreId the ID of the key store in which the private key can be found.  Required.
+     * @param alias the alias of the private key whose cert chain to replace.  Required.
+     * @param pemChain  the new certificate chain to use for this private key.  Must contain at least one cert
+     *                  (the subject cert, the first cert in the list).  The new subject cert must contain
+     *                  exactly the same public key as the previous subject cert.
+     *                  All certificates in the chain must be in X.509 format, and the subject certificate must use
+     *                  an RSA public key.
+     *
+     * @throws UpdateException if there is a problem getting info from the database
+     * @throws CertificateException if there is a problem with the PEM chain
+     */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    void assignNewCert(long keystoreId, String alias, String b64edCert) throws FindException;
+    void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException;
+
+    /**
+     * Create a new RSA private key entry in the specified keystore with the specified alias, cert chain,
+     * and RSA private key components.
+     * <p/>
+     * <b>Note:</b> Callers of this method (and implementors, for that matter) must take care not to allow
+     * the privateExponent to be persisted, audited, logged, displayed, saved, or even left in memory
+     * without being overwritten.
+     *
+     * @param keystoreId the ID of the key store in which the new private key entry is to be created.  Required.
+     * @param alias      the alias that is to be used for the new private key entry.  Required.
+     * @param pemChain   the cert chain to store, with each certificate in PEM-encoded (Base64) format.
+     *                   Must contain at least one certificate
+     *                   (the subject cert, the first cert in the list).
+     *                   All certificates in the chain must be in X.509 format, and the subject certificate must use
+     *                   an RSA public key.
+     *                   The new subject cert must contain
+     *                   the RSA public key corresponding to the RSA private key described by modulus and privateExponent.
+     * @param modulus    the modulus of the RSA private key.  Required.
+     * @param privateExponent  the private exponent of the RSA private key.  Required.
+     * @throws CertificateException if there is a problem with the PEM chain
+     * @throws InvalidKeySpecException if a valid RSA key corresponding to the subject cert private key
+     *                                 could not be created from modulus and privateExponent.
+     * @throws com.l7tech.objectmodel.SaveException if there is some other problem importing the new private key entry
+     */
+    // TODO need an annotation to note that this methods arguments must never be persisted in any debug or audit traces
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
+    void importKey(long keystoreId, String alias, String[] pemChain, BigInteger modulus, BigInteger privateExponent) throws CertificateException, SaveException, InvalidKeySpecException;
 }

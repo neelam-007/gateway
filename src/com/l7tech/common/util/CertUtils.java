@@ -250,8 +250,10 @@ public class CertUtils {
      * Get the PEM (aka base64) encoded X.509 certificate.
      * @param cert the certificate to encode
      * @return  the PEM encoded certificate as a byte array
+     * @throws java.security.cert.CertificateEncodingException if there is a problem encoding the cert
+     * @throws java.io.IOException if there is a problem encoding the encoding of the cert
      */
-    public static byte[] encodeAsPEM(X509Certificate cert) throws IOException, CertificateEncodingException {
+    public static String encodeAsPEM(X509Certificate cert) throws IOException, CertificateEncodingException {
         return encodeAsPEM(cert.getEncoded());
     }
 
@@ -260,8 +262,9 @@ public class CertUtils {
      * containing the X.509 certificate encoded as ASN.1 DER.
      * @param cert the byte array with the certificate encoded as ASN.1 and DER
      * @return  the PEM encoded certificate as a byte array
+     * @throws java.io.IOException if there is a problem encoding the cert
      */
-    public static byte[] encodeAsPEM(byte[] cert) throws IOException {
+    public static String encodeAsPEM(byte[] cert) throws IOException {
         BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
         try {
             String encoding = "UTF-8";
@@ -271,7 +274,7 @@ public class CertUtils {
             bos.write("\n".getBytes(encoding));
             bos.write(PEM_CERT_END_MARKER.getBytes(encoding));
             bos.write("\n".getBytes(encoding));
-            return bos.toByteArray();
+            return bos.toString(encoding);
         } finally {
             bos.close();
         }

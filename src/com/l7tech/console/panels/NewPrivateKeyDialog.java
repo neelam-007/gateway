@@ -1,6 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.NumberField;
+import com.l7tech.common.gui.widgets.SquigglyTextField;
+import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.util.Registry;
@@ -9,6 +11,7 @@ import com.l7tech.objectmodel.FindException;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.security.auth.x500.X500Principal;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -47,6 +50,10 @@ public class NewPrivateKeyDialog extends JDialog {
     private String lastDefaultDn;
 
     private boolean confirmed;
+    private String newAlias;
+
+    final InputValidator validator = new InputValidator(this, getTitle());
+
 
     /**
      * Create a NewPrivateKeyDialog.
@@ -83,8 +90,8 @@ public class NewPrivateKeyDialog extends JDialog {
 
         confirmed = false;
 
-        createButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+        validator.attachToButton(createButton, new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
                 if (createKey()) {
                     confirmed = true;
                     dispose();
@@ -113,6 +120,7 @@ public class NewPrivateKeyDialog extends JDialog {
                     if (defaultDn != null) dnField.setText(defaultDn);
             }
         });
+        validator.constrainTextFieldToBeNonEmpty("Alias", aliasField, null);
 
         // Have DN field select all on focus if the DN is not customized
         dnField.addFocusListener(new FocusListener() {
@@ -125,6 +133,19 @@ public class NewPrivateKeyDialog extends JDialog {
 
             public void focusLost(FocusEvent e) {}
         });
+        validator.constrainTextFieldToBeNonEmpty("DN", dnField, new InputValidator.ValidationRule() {
+            public String getValidationError() {
+                String dn = dnField.getText();
+                try {
+                    new X500Principal(dn);
+                    return null;
+                } catch (IllegalArgumentException e) {
+                    return "Bad DN: " + ExceptionUtils.getMessage(e);
+                }
+            }
+        });
+
+        validator.constrainTextFieldToNumberRange("Days until expiry", expiryDaysField, 1, Integer.MAX_VALUE);
 
         expiryDaysField.setDocument(new NumberField(8));
         expiryDaysField.setText(DEFAULT_EXPIRY);
@@ -161,6 +182,7 @@ public class NewPrivateKeyDialog extends JDialog {
         Throwable ouch = null;
         try {
             getCertAdmin().generateKeyPair(keystoreInfo.id, alias, dn, keybits, expiryDays);
+            newAlias = alias;
             return true;
         } catch (RemoteException e) {
             ouch = e;
@@ -197,5 +219,16 @@ public class NewPrivateKeyDialog extends JDialog {
     /** @return true if this dialog has been dismissed with the Create button. */
     public boolean isConfirmed() {
         return confirmed;
+    }
+
+    /** @return the alias of the last new key that was successfully created, or null. */
+    public String getNewAlias() {
+        return newAlias;
+    }
+
+    private void createUIComponents() {
+        aliasField = new SquigglyTextField();
+        dnField = new SquigglyTextField();
+        expiryDaysField = new SquigglyTextField();
     }
 }

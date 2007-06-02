@@ -1,36 +1,35 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.common.security.rbac.AttemptedOperation;
-import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.action.SecureAction;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 
+import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.naming.InvalidNameException;
-import javax.security.auth.x500.X500Principal;
+import javax.swing.filechooser.FileFilter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 
 /**
  *
@@ -257,7 +256,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                                 }
                             }, false);
 
-        final Wizard w = new AddCertificateWizard(this, sp);
+        final AddCertificateWizard w = new AddCertificateWizard(this, sp);
         w.setTitle("Assign Cert to Private Key");
         w.addWizardListener(new WizardAdapter() {
             public void wizardFinished(WizardEvent we) {
@@ -272,7 +271,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 final TrustedCert tc = (TrustedCert)o;
                 final TrustedCertAdmin admin = getTrustedCertAdmin();
                 try {
-                    admin.assignNewCert(subject.getKeystore().id, subject.getAlias(), HexUtils.encodeBase64(tc.getCertificate().getEncoded()));
+                    X509Certificate cert = tc.getCertificate();
+                    admin.assignNewCert(subject.getKeystore().id, subject.getAlias(), new String[] { CertUtils.encodeAsPEM(cert) });
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "error assigning cert", e);
                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error Assigning new Cert. Make sure the " +

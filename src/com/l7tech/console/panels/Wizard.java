@@ -86,7 +86,7 @@ public class Wizard extends JDialog {
      * @return the wizard information object, typically user
      *         entered data
      */
-    public final Object getWizardInput() {
+    public Object getWizardInput() {
         return wizardInput;
     }
 

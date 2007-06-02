@@ -1,14 +1,13 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.FontUtil;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.SsmApplication;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -19,17 +18,15 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.AccessControlException;
+import java.security.cert.*;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class provides users with a form for specifying the source or contents of the trusted 
@@ -41,8 +38,6 @@ import java.util.logging.Level;
  */
 public class CertImportMethodsPanel extends WizardStepPanel {
 
-    private static String PEM_CERT_BEGIN_MARKER = "-----BEGIN CERTIFICATE-----";
-    private static String PEM_CERT_END_MARKER = "-----END CERTIFICATE-----";
     private JPanel mainPanel;
     private JLabel headerLabel;
     private JRadioButton copyAndPasteRadioButton;
@@ -52,7 +47,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private JTextField certFileName;
     private JTextArea copyAndPasteTextArea;
     private JTextField urlConnTextField;
-    private X509Certificate cert = null;
+    private X509Certificate[] certChain = null;
     private boolean defaultToSslOption;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertImportMethodsPanel.class.getName());
@@ -61,6 +56,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      * Constructor
      *
      * @param next  The next step panel
+     * @param defaultToSslOption if true, defaults to "read from SSL connection"
      */
     public CertImportMethodsPanel(WizardStepPanel next, boolean defaultToSslOption) {
         super(next);
@@ -83,7 +79,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                     public void useFileChooser(JFileChooser fc) {
                         int returnVal = fc.showOpenDialog(CertImportMethodsPanel.this);
 
-                        File file = null;
+                        File file;
                         if (returnVal == JFileChooser.APPROVE_OPTION) {
                             file = fc.getSelectedFile();
 
@@ -179,7 +175,6 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     public boolean onNextButton() {
 
         InputStream is = null;
-        CertificateFactory cf = CertUtils.getFactory();
 
         if (fileRadioButton.isSelected()) {
             try {
@@ -200,7 +195,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                     }
                 });
                 if (is == null) return false;
-                cert = (X509Certificate)CertUtils.getFactory().generateCertificate(is);
+                Collection<? extends Certificate> certs = CertUtils.getFactory().generateCertificates(is);
+                certChain = certs.toArray(new X509Certificate[0]);
 
 
             } catch (CertificateException ce) {
@@ -213,8 +209,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             }
         } else if (urlConnRadioButton.isSelected()) {
 
-            String certURL = "";
-            String hostnameURL = "";
+            String certURL;
+            String hostnameURL;
             try {
                 certURL = urlConnTextField.getText().trim();
                 if (!certURL.startsWith("https://") && !certURL.startsWith("ldaps://")) {
@@ -233,7 +229,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 hostnameURL = url.getHost();
                 if (wasLdap && url.getPort()==-1) {
                     certURL = "https://" + hostnameURL + ":636/";
-                    url = new URL(certURL);
+                    new URL(certURL);
                 }
             } catch (MalformedURLException e) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.urlMalformed"),
@@ -244,8 +240,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             try {
 
-                X509Certificate[] certs = getTrustedCertAdmin().retrieveCertFromUrl(certURL, true);
-                cert = certs[0];
+                certChain = getTrustedCertAdmin().retrieveCertFromUrl(certURL, true);
 
             } catch (TrustedCertAdmin.HostnameMismatchException e) {
                 // This should never happen since we ask retrieveCertFromUrl() to ignore the mismatch
@@ -268,6 +263,16 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 return false;
             }
 
+            if (certChain == null || certChain.length < 1) {
+                final String msg = "Certificate chain is missing or empty.";
+                logger.log(Level.INFO, msg);
+                JOptionPane.showMessageDialog(this, msg,
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+
+            X509Certificate cert = certChain[0];
 
             // retrieve the value of cn
             String subjectName = cert.getSubjectDN().getName();
@@ -297,52 +302,13 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
         } else if (copyAndPasteRadioButton.isSelected()) {
 
-            String certPEM = copyAndPasteTextArea.getText();
-            int index = -1;
-
-            if((index = certPEM.indexOf(PEM_CERT_BEGIN_MARKER)) == -1) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.begin.marker.missing") + PEM_CERT_BEGIN_MARKER + "\n",
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
-                return false;
-            } else {
-                // strip the begin marker
-                certPEM = certPEM.substring(index + PEM_CERT_BEGIN_MARKER.length());
-            }
-
-            if((index = certPEM.indexOf(PEM_CERT_END_MARKER)) == -1) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.end.marker.missing") + PEM_CERT_END_MARKER + "\n",
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
-
-                return false;
-            } else {
-                // strip the end marker
-                certPEM = certPEM.substring(0, index);
-            }
-
-            byte[] certDER = null;
-            try {
-                certDER = HexUtils.decodeBase64(certPEM, true);
-            } catch (IOException e) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.decode"),
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-
-            if (certDER == null || certDER.length < 1) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.decode"),
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-
-            is = new ByteArrayInputStream(certDER);
+            String certPem = copyAndPasteTextArea.getText();
 
             try {
-                cert = (X509Certificate) cf.generateCertificate(is);
-            } catch (CertificateException e) {
+                is = new ByteArrayInputStream(certPem.getBytes("UTF-8"));
+                Collection<? extends Certificate> certs = CertUtils.getFactory().generateCertificates(is);
+                certChain = certs.toArray(new X509Certificate[0]);
+            } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.cert.generate"),
                                               resources.getString("view.error.title"),
                                               JOptionPane.ERROR_MESSAGE);
@@ -374,21 +340,22 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      * @param settings the object representing wizard panel state
      */
     public void storeSettings(Object settings) {
+        if (settings == null || certChain == null || certChain.length < 1 || certChain[0] == null)
+            return;
 
-        if (settings != null) {
+        if (settings instanceof TrustedCert) {
+            TrustedCert tc = (TrustedCert) settings;
 
-            if (settings instanceof TrustedCert) {
-
-                TrustedCert tc = (TrustedCert) settings;
-
-                try {
-                    tc.setCertificate(cert);
-                } catch (CertificateEncodingException e) {
-                    JOptionPane.showMessageDialog(this, resources.getString("cert.encode.error"),
-                                                  resources.getString("view.error.title"),
-                                                  JOptionPane.ERROR_MESSAGE);
-                }
+            try {
+                tc.setCertificate(certChain[0]);
+            } catch (CertificateEncodingException e) {
+                JOptionPane.showMessageDialog(this, resources.getString("cert.encode.error"),
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
             }
+        } else if (settings instanceof SsgKeyEntry) {
+            SsgKeyEntry ssgKeyEntry = (SsgKeyEntry)settings;
+            ssgKeyEntry.setCertificateChain(certChain);
         }
     }
 
@@ -408,8 +375,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      * @throws RuntimeException  if the object reference of the Trusted Cert Admin service is not found.
      */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
-        return tca;
+        return Registry.getDefault().getTrustedCertManager();
     }
 
 }

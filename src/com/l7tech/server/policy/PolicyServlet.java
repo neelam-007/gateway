@@ -354,7 +354,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         logger.finest("Request for root cert");
         // Find our certificate
         //byte[] cert = KeystoreUtils.getInstance().readRootCert();
-        byte[] pemEncodedServerCertificate = CertUtils.encodeAsPEM(serverCertificate);
+        String pemEncodedServerCertificateString = CertUtils.encodeAsPEM(serverCertificate);
+        byte[] pemEncodedServerCertificate = pemEncodedServerCertificateString.getBytes("UTF-8");
 
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null && nonce != null) {

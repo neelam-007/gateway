@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.gclient;
 
 import com.l7tech.common.gui.util.GuiCertUtil;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.GuiPasswordCallbackHandler;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
@@ -30,9 +31,6 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.*;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.PasswordCallback;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.wsdl.BindingOperation;
@@ -67,8 +65,6 @@ import java.util.logging.Logger;
  *
  * Builds sample messages based on discovered service information (from WSDL)
  *
- * @author $Author$
- * @version $Revision$
  * @noinspection BoundFieldAssignment,JavaDoc
  */
 public class GClient {
@@ -728,7 +724,7 @@ public class GClient {
      * Load a client certificate
      */
     private void loadCert(final JFrame frame) {
-        GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(frame, true, getCallbackHandler());
+        GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(frame, true, new GuiPasswordCallbackHandler());
         if (data != null) {
             clientCertificate = data.getCertificate();
             clientPrivateKey = data.getPrivateKey();
@@ -744,7 +740,7 @@ public class GClient {
     }
 
     private void loadServerCert(JFrame frame) {
-        GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(frame, false, getCallbackHandler());
+        GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(frame, false, new GuiPasswordCallbackHandler());
         if (data != null) {
             serverCertificate = data.getCertificate();
             serverCertLabel.setText(CertUtils.extractCommonNameFromClientCertificate(serverCertificate));
@@ -1019,39 +1015,6 @@ public class GClient {
         return cookieBuffer.toString();
     }
 
-    /**
-     *
-     */
-    private CallbackHandler getCallbackHandler() {
-        return new CallbackHandler() {
-            public void handle(Callback[] callbacks) {
-                PasswordCallback passwordCallback = null;
-
-                for (Callback callback : callbacks) {
-                    if (callback instanceof PasswordCallback) {
-                        passwordCallback = (PasswordCallback)callback;
-                    }
-                }
-
-                if (passwordCallback != null) {
-                    final JPasswordField pwd = new JPasswordField(22);
-                    JOptionPane pane = new JOptionPane(pwd, JOptionPane.QUESTION_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
-                    JDialog dialog = pane.createDialog(null, "Enter " + passwordCallback.getPrompt());
-                    dialog.addWindowFocusListener(new WindowAdapter(){
-                        public void windowGainedFocus(WindowEvent e) {
-                            pwd.requestFocusInWindow();
-                        }
-                    });
-                    dialog.setVisible(true);
-                    dialog.dispose();
-                    Object value = pane.getValue();
-                    if (value != null && (Integer)value == JOptionPane.OK_OPTION)
-                        passwordCallback.setPassword(pwd.getPassword());
-                }
-            }
-        };
-    }
-
     private class MySsgKeyStoreManager extends SsgKeyStoreManager {
         public boolean isClientCertUnlocked() throws KeyStoreCorruptException {
             return true;
@@ -1137,7 +1100,7 @@ public class GClient {
     }
 
     public String getServerCertificatePem() throws IOException, CertificateEncodingException {
-        return serverCertificate == null ? null : new String(CertUtils.encodeAsPEM(serverCertificate));
+        return serverCertificate == null ? null : CertUtils.encodeAsPEM(serverCertificate);
     }
 
     public void setServerCertificatePem(String b64) throws IOException, CertificateException {
@@ -1145,7 +1108,7 @@ public class GClient {
     }
 
     public String getClientCertificatePem() throws IOException, CertificateEncodingException {
-        return clientCertificate == null ? null : new String(CertUtils.encodeAsPEM(clientCertificate));
+        return clientCertificate == null ? null : CertUtils.encodeAsPEM(clientCertificate);
     }
 
     public void setClientCertificatePem(String b64) throws IOException, CertificateException {

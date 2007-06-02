@@ -11,7 +11,6 @@ import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
@@ -21,13 +20,14 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLConnection;
 import java.rmi.RemoteException;
-import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -301,27 +301,78 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         }
     }
 
-    public void assignNewCert(long keystoreId, String alias, String b64edCert) throws FindException {
-        // todo CertUtils.decodeCert(HexUtils.decodeBase64(certBase64));
+    public void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException {
+        X509Certificate[] safeChain = parsePemChain(pemChain);
+
         SsgKeyFinder keyFinder;
         try {
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
         } catch (KeyStoreException e) {
-            logger.log(Level.WARNING, "error getting keystore", e);
-            throw new FindException("error getting keystore", e);
+            logger.log(Level.WARNING, "error setting new cert", e);
+            throw new UpdateException("error getting keystore", e);
+        } catch (FindException e) {
+            throw new UpdateException("error getting keystore", e);
         }
-        SsgKeyStore keystore;
-        if (keyFinder != null) {
-            keystore = keyFinder.getKeyStore();
-        } else {
-            logger.log(Level.WARNING, "error getting keystore");
-            throw new FindException("cannot find keystore");
-        }
+
+        SsgKeyStore keystore = keyFinder.getKeyStore();
+        if (keystore == null)
+            throw new UpdateException("error: keystore ID " + keystoreId + " is read-only");
+
         try {
-            keystore.replaceCertificate(alias, CertUtils.decodeCert(HexUtils.decodeBase64(b64edCert)));
+            keystore.replaceCertificateChain(alias, safeChain);
         } catch (Exception e) {
             logger.log(Level.WARNING, "error setting new cert", e);
-            throw new FindException("error setting new cert", e);
+            throw new UpdateException("error setting new cert", e);
+        }
+    }
+
+    private X509Certificate[] parsePemChain(String[] pemChain) throws CertificateException {
+        if (pemChain == null || pemChain.length < 1)
+            throw new IllegalArgumentException("PEM chain must contain at least one certificate");
+
+        X509Certificate[] safeChain = new X509Certificate[pemChain.length];
+        try {
+            for (int i = 0; i < pemChain.length; i++) {
+                String pem = pemChain[i];
+                safeChain[i] = CertUtils.decodeFromPEM(pem);
+            }
+        } catch (IOException e) {
+            throw new CertificateException("error setting new cert", e);
+        }
+        return safeChain;
+    }
+
+    public void importKey(long keystoreId, String alias, String[] pemChain, BigInteger modulus, BigInteger privateExponent)
+            throws SaveException, CertificateException, InvalidKeySpecException
+    {
+        X509Certificate[] safeChain = parsePemChain(pemChain);
+
+        SsgKeyFinder keyFinder;
+        try {
+            keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+        } catch (KeyStoreException e) {
+            throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
+        } catch (FindException e) {
+            throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        SsgKeyStore keystore = keyFinder.getKeyStore();
+        if (keystore == null)
+            throw new SaveException("error: keystore ID " + keystoreId + " is read-only");
+
+        // Ensure all certs are instances that have come from the default certificate factory
+        try {
+            RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(modulus, privateExponent);
+            RSAPrivateKey rsaPrivateKey = (RSAPrivateKey)KeyFactory.getInstance("RSA").generatePrivate(keySpec);
+            SsgKeyEntry entry = new SsgKeyEntry(keystoreId, alias, safeChain, rsaPrivateKey);
+            keystore.storePrivateKeyEntry(entry, false);
+        } catch (InvalidKeySpecException e) {
+            throw e;
+        } catch (NoSuchAlgorithmException e) {
+            throw new SaveException("error setting new cert: " + ExceptionUtils.getMessage(e), e);
+        } catch (KeyStoreException e) {
+            logger.log(Level.WARNING, "error setting new cert", e);
+            throw new SaveException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

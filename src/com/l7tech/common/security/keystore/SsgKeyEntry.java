@@ -15,10 +15,10 @@ import java.io.Serializable;
 public class SsgKeyEntry implements Entity, Serializable {
     private static final long serialVersionUID = 23272983482973429L;
 
-    private final long keystoreId;
-    private final String alias;
-    private final X509Certificate[] certificateChain;
-    private final transient RSAPrivateKey rsaPrivateKey;
+    private long keystoreId;
+    private String alias;
+    private X509Certificate[] certificateChain;
+    private transient RSAPrivateKey rsaPrivateKey;
 
 
     /**
@@ -101,6 +101,26 @@ public class SsgKeyEntry implements Entity, Serializable {
      */
     public X509Certificate getCertificate() {
         return getCertificateChain()[0];
+    }
+
+    /** @param keystoreId the new keystore id. */
+    public void setKeystoreId(long keystoreId) {
+        this.keystoreId = keystoreId;
+    }
+
+    /** @param alias the new alias. */
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
+    /** @param certificateChain the new certificate chain.  Must contain at least one certificate. */
+    public void setCertificateChain(X509Certificate[] certificateChain) {
+        this.certificateChain = certificateChain;
+    }
+
+    /** @param rsaPrivateKey the new RSA private key, or null to clear it. */
+    public void setRsaPrivateKey(RSAPrivateKey rsaPrivateKey) {
+        this.rsaPrivateKey = rsaPrivateKey;
     }
 
     /** @noinspection RedundantIfStatement*/

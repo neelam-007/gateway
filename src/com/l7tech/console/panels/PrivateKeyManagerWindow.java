@@ -1,34 +1,45 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.GuiCertUtil;
+import com.l7tech.common.gui.util.GuiPasswordCallbackHandler;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.SaveException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.interfaces.RSAPublicKey;
+import java.security.interfaces.RSAPrivateKey;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.math.BigInteger;
 
 /**
  * Window for managing private key entries (certificate chains with private keys) in the Gateway.
@@ -147,8 +158,65 @@ public class PrivateKeyManagerWindow extends JDialog {
     }
 
     private void doImport() {
-        // TODO import from PKCS#12 file
-        JOptionPane.showMessageDialog(this, "Import from local PKCS#12 file goes here");
+        GuiCertUtil.ImportedData imported = GuiCertUtil.importCertificate(this, true, new GuiPasswordCallbackHandler());
+        if (imported == null)
+            return;
+
+        X509Certificate[] chain = imported.getCertificateChain();
+        assert chain != null && chain.length > 0;
+        PrivateKey key = imported.getPrivateKey();
+
+        if (key == null) {
+            showErrorMessage("Import Failed", "Could not find a private key in the specified file.", null);
+            return;
+        }
+
+        if (!(key instanceof RSAPrivateKey)) {
+            showErrorMessage("Import Failed", "Private key is not an RSA private key.", null);
+            return;
+        }
+
+        RSAPrivateKey rpk = (RSAPrivateKey)key;
+        BigInteger modulus = rpk.getModulus();
+        BigInteger privateExponent = rpk.getPrivateExponent();
+        if (modulus == null || privateExponent == null) {
+            showErrorMessage("Import Failed", "Unable to obtain RSA modulus and private exponent from RSA private key.", null);
+            return;
+        }
+
+        String alias = JOptionPane.showInputDialog(this, "Please enter an alias to use for the new private key entry.");
+        if (alias == null || alias.trim().length() < 1)
+            return;
+        alias = alias.trim();
+
+        final String[] pemChain = new String[chain.length];
+        for (int i = 0; i < chain.length; i++) {
+            X509Certificate cert = chain[i];
+            try {
+                pemChain[i] = CertUtils.encodeAsPEM(cert);
+            } catch (IOException e) {
+                showErrorMessage("Import Failed", "Unable to reencode the certificate chain.", e);
+            } catch (CertificateEncodingException e) {
+                showErrorMessage("Import Failed", "Unable to reencode the certificate chain.", e);
+            }
+        }
+
+        try {
+            getTrustedCertAdmin().importKey(mutableKeystore.id, alias, pemChain, modulus, privateExponent);
+        } catch (CertificateException e) {
+            showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
+        } catch (SaveException e) {
+            showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
+        } catch (InvalidKeySpecException e) {
+            showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        try {
+            loadPrivateKeys();
+            setSelectedKeyEntry(mutableKeystore.id, alias);
+        } catch (RemoteException e1) {
+            showErrorMessage("Refresh Failed", "Unable to reload private keys: " + ExceptionUtils.getMessage(e1), e1);
+        }
     }
 
     private void doProperties() {
@@ -183,12 +251,17 @@ public class PrivateKeyManagerWindow extends JDialog {
                 if (dlg.isConfirmed()) {
                     try {
                         loadPrivateKeys();
+                        setSelectedKeyEntry(mutableKeystore.id, dlg.getNewAlias());
                     } catch (RemoteException e1) {
                         showErrorMessage("Refresh Failed", "Unable to reload private keys: " + ExceptionUtils.getMessage(e1), e1);
                     }
                 }
             }
         });
+    }
+
+    private void setSelectedKeyEntry(long keystoreId, String newAlias) {
+        keyTable.setSelectedKeyEntry(keystoreId, newAlias);
     }
 
     /*
@@ -314,6 +387,14 @@ public class PrivateKeyManagerWindow extends JDialog {
             model.setData(rows);
         }
 
+        public void setSelectedKeyEntry(long keystoreId, String newAlias) {
+            int row = model.findRowIndex(keystoreId, newAlias);
+            if (row < 0)
+                getSelectionModel().clearSelection();
+            else
+                getSelectionModel().setSelectionInterval(row, row);
+        }
+
         private static class KeyTableModel extends AbstractTableModel {
             private static abstract class Col {
                 final String name;
@@ -387,6 +468,21 @@ public class PrivateKeyManagerWindow extends JDialog {
                 this.rows.clear();
                 this.rows.addAll(rows);
                 fireTableDataChanged();
+            }
+
+            /**
+             * @param keystoreId keystore id to search for
+             * @param newAlias   alias to search for.  must not be null
+             * @return index of row with the specified keystore ID and alias, or -1 if not found.
+             */
+            public int findRowIndex(long keystoreId, String newAlias) {
+                KeyTableRow[] rowsArray = rows.toArray(new KeyTableRow[0]);
+                for (int i = 0; i < rowsArray.length; i++) {
+                    KeyTableRow row = rowsArray[i];
+                    if (row.getKeystore().id == keystoreId && row.getAlias().equals(newAlias))
+                        return i;
+                }
+                return -1;
             }
 
             public int getRowCount() {

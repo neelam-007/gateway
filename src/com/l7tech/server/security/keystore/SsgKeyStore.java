@@ -34,24 +34,28 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * once it comes back from the CA.
      *
      * @param alias   the alias whose certificate to replace.  Required.   There must be a key pair at this alias.
-     * @param certificate  the certificate to use instead.  Required.  The public key must match the public key of
-     *                     the existing key pair.
+     * @param chain   the certificate chain to use instead.  Required.  Must contain at least one certificate,
+     *                the first one in the array being the subject certificate.
+     *                The subject public key must match the public key of the current subject.
      * @throws InvalidKeyException if the public key does not match the public key of the existing key pair
      * @throws KeyStoreException  if there is a problem reading or writing the keystore
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    void replaceCertificate(String alias, X509Certificate certificate) throws InvalidKeyException, KeyStoreException;
+    void replaceCertificateChain(String alias, X509Certificate[] chain) throws InvalidKeyException, KeyStoreException;
 
     /**
-     * Add an entry to this key store.  Any previous entry with this alias will be overwritten.  However, due to
+     * Add an entry to this key store.  Any previous entry with this alias can optionally be overwritten.  However, due to
      * key caching, callers should not count on this taking effect immediately.  Instead, it is recommended to
      * save changed keys under a new alias.
-     * @param entry             The entry to store.  Required.  Must contain a non-null alias that does not match
+     *
+     * @param entry             The entry to store.  Required.  Must contain the private key.
+     *                          Must also contain a non-null alias; if overwriteExisting is false, this must not match
      *                          the alias of any existing entry.  Must also contain the private key.
+     * @param overwriteExisting if true, any existing entry with this alias will be overwritten.
      * @throws KeyStoreException  if there is a problem storing this entry
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    void storePrivateKeyEntry(SsgKeyEntry entry) throws KeyStoreException;
+    void storePrivateKeyEntry(SsgKeyEntry entry, boolean overwriteExisting) throws KeyStoreException;
 
     /**
      * Delete an entry from this key store.

@@ -94,9 +94,9 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
      */
     protected abstract Logger getLogger();
 
-    private void storePrivateKeyEntryImpl(SsgKeyEntry entry) throws KeyStoreException {
+    private void storePrivateKeyEntryImpl(SsgKeyEntry entry, boolean overwriteExisting) throws KeyStoreException {
         final String alias = entry.getAlias();
-        if (alias == null || alias.trim().length() > 0)
+        if (alias == null || alias.trim().length() < 1)
             throw new KeyStoreException("Unable to store private key entry with null or empty alias");
 
         final X509Certificate[] chain = entry.getCertificateChain();
@@ -113,6 +113,9 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         }
 
         KeyStore keystore = keyStore();
+        if (!overwriteExisting && keystore.containsAlias(alias))
+            throw new KeyStoreException("Keystore already contains an entry with the alias '" + alias + "'");
+
         keystore.setKeyEntry(alias, key, getEntryPassword(), chain);
     }
 
@@ -132,11 +135,15 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         return this;
     }
 
-    public synchronized void storePrivateKeyEntry(final SsgKeyEntry entry) throws KeyStoreException {
+    public synchronized void storePrivateKeyEntry(final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
+        if (entry == null) throw new NullPointerException("entry must not be null");
+        if (entry.getAlias() == null) throw new NullPointerException("entry's alias must not be null");
+        if (entry.getAlias().length() < 1) throw new IllegalArgumentException("entry's alias must not be empty");
+
         mutateKeystore(new Functions.Nullary<Object>() {
             public Object call() {
                 try {
-                    storePrivateKeyEntryImpl(entry);
+                    storePrivateKeyEntryImpl(entry, overwriteExisting);
                     return null;
                 } catch (KeyStoreException e) {
                     throw new RuntimeException(e);
@@ -191,7 +198,9 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
-    public synchronized void replaceCertificate(final String alias, final X509Certificate certificate) throws InvalidKeyException, KeyStoreException {
+    public synchronized void replaceCertificateChain(final String alias, final X509Certificate[] chain) throws InvalidKeyException, KeyStoreException {
+        if (chain == null || chain.length < 1 || chain[0] == null)
+            throw new IllegalArgumentException("Cert chain must contain at least one cert.");
         mutateKeystore(new Functions.Nullary<Object>() {
             public Object call() {
                 try {
@@ -212,7 +221,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                     if (!(key instanceof RSAPrivateKey))
                         throw new RuntimeException("Keystore contains a key with alias " + alias + " but it is not an RSA private key");
 
-                    PublicKey newPublicKey = certificate.getPublicKey();
+                    PublicKey newPublicKey = chain[0].getPublicKey();
                     if (!(newPublicKey instanceof RSAPublicKey)) {
                         throw new RuntimeException("New certificate public key is not an RSA public key");
                     }
@@ -229,7 +238,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                     if (!newModulus.equals(oldModulus))
                         throw new RuntimeException("New certificate public key's RSA modulus is not the same as the old certificate's public key");
 
-                    keystore.setKeyEntry(alias, key, getEntryPassword(), new Certificate[] { certificate });
+                    keystore.setKeyEntry(alias, key, getEntryPassword(), chain);
 
                     return null;
                 } catch (NoSuchAlgorithmException e) {
