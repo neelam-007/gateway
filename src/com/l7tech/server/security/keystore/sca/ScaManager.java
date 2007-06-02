@@ -6,7 +6,6 @@ import com.l7tech.common.util.ProcUtils;
 import static com.l7tech.common.util.ProcUtils.args;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,7 +81,7 @@ public class ScaManager {
      * updated.
      * @throws ScaException if there is a problem invoking the scakiod_load program
      */
-    private void doStopSca() throws ScaException {
+    protected void doStopSca() throws ScaException {
         try {
             ProcResult result = exec(null, scakiodLoad, args("stop"), null, true);
             int status = result.getExitStatus();
@@ -108,7 +107,7 @@ public class ScaManager {
      *
      * @throws ScaException if there is a problem invoking the scakiod_load program
      */
-    private void doStartSca() throws ScaException {
+    protected void doStartSca() throws ScaException {
         try {
             exec(null, scakiodLoad, args("start"), null, false);
         } catch (IOException e) {
