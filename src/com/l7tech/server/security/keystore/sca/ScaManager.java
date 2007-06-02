@@ -2,8 +2,8 @@ package com.l7tech.server.security.keystore.sca;
 
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ProcResult;
+import com.l7tech.common.util.ProcUtils;
 import static com.l7tech.common.util.ProcUtils.args;
-import static com.l7tech.common.util.ProcUtils.exec;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -17,39 +17,39 @@ import java.util.logging.Logger;
 public class ScaManager {
     protected static final Logger logger = Logger.getLogger(ScaManager.class.getName());
 
-    private static final String DEFAULT_TAR_PATH = "/bin/tar";
+    private static final String DEFAULT_SUDO_PATH = "/usr/bin/sudo";
     private static final String DEFAULT_SCAKIOD_PATH = "/opt/sun/sca6000/bin/scakiod_load";
-    private static final String DEFAULT_KEYDATA_DIR = "/var/opt/sun/sca6000/keydata";
+    private static final String DEFAULT_LOAD_KEYDATA_PATH = "/ssg/libexec/load_keydata";
+    private static final String DEFAULT_SAVE_KEYDATA_PATH = "/ssg/libexec/save_keydata";
+    private static final String DEFAULT_WIPE_KEYDATA_PATH = "/ssg/libexec/wipe_keydata";
 
-    /** The system property that holds the path to the tar exectuable. */
-    public static final String PROPERTY_TAR_PATH = "tarPath";
+    private static final String SYSPROP_BASE = ScaManager.class.getPackage().getName() + ".";
 
-    /** The system property that holds the path to the scakiod_load exectuable. */
-    public static final String PROPERTY_SCAKIOD_PATH = "scakiodPath";
-
-    /** The system property that holds the path to the keydata directory. */
-    public static final String PROPERTY_KEYDATA_DIR = "keydataDir";
+    public static final String PROPERTY_SUDO_PATH = SYSPROP_BASE + "sudoPath";
+    public static final String PROPERTY_LOAD_KEYDATA_PATH = SYSPROP_BASE + "loadKeydataPath";
+    public static final String PROPERTY_SAVE_KEYDATA_PATH = SYSPROP_BASE + "saveKeydataPath";
+    public static final String PROPERTY_WIPE_KEYDATA_PATH = SYSPROP_BASE + "wipeKeydataPath";
+    public static final String PROPERTY_SCAKIOD_PATH = SYSPROP_BASE + "scakiodPath";
 
     private static final Object globalMutex = new Object();
 
-    private final File tar;
+    private final File sudo;
     private final File scakiodLoad;
-    private final File keydataDir;
+    private final File loadKeydata;
+    private final File saveKeydata;
+    private final File wipeKeydata;
 
 
     public ScaManager() throws ScaException {
-        tar = findFile("tar", PROPERTY_TAR_PATH, DEFAULT_TAR_PATH, true, false, true, false);
-        scakiodLoad = findFile("scakiod_load", PROPERTY_SCAKIOD_PATH, DEFAULT_SCAKIOD_PATH, true, false, true, false);
-        keydataDir = findFile("keydata directory", PROPERTY_KEYDATA_DIR, DEFAULT_KEYDATA_DIR, false, true, true, true);
-    }
-
-
-    public File getKeydataDir() {
-        return keydataDir;
+        sudo = findFile("sudo", PROPERTY_SUDO_PATH, DEFAULT_SUDO_PATH, true, false, false, false, true);
+        scakiodLoad = findFile("scakiod_load", PROPERTY_SCAKIOD_PATH, DEFAULT_SCAKIOD_PATH, true, false, true, false, false);
+        loadKeydata = findFile("load_keydata.sh", PROPERTY_LOAD_KEYDATA_PATH, DEFAULT_LOAD_KEYDATA_PATH, true, false, false, false, false);
+        saveKeydata = findFile("save_keydata.sh", PROPERTY_SAVE_KEYDATA_PATH, DEFAULT_SAVE_KEYDATA_PATH, true, false, false, false, false);
+        wipeKeydata = findFile("wipe_keydata.sh", PROPERTY_WIPE_KEYDATA_PATH, DEFAULT_WIPE_KEYDATA_PATH, true, false, false, false, false);
     }
 
     private File findFile(String thing, String sysprop, String defaultValue,
-                          boolean mustBeFile, boolean mustBeDirectory, boolean mustBeReadable, boolean mustBeWritable)
+                          boolean mustBeFile, boolean mustBeDirectory, boolean mustBeReadable, boolean mustBeWritable, boolean mustBeExecutable)
             throws ScaException
     {
         String path = System.getProperty(sysprop, defaultValue);
@@ -71,21 +71,10 @@ public class ScaManager {
         if (mustBeWritable && !file.canWrite())
             throw new ScaException(thing + " at path: "
                                    + path + " is not writable by the Gateway process.  Set system property " + sysprop + " to override.");
+        if (mustBeExecutable && !file.canExecute())
+            throw new ScaException(thing + " at path: "
+                                   + path + " is not executable by the Gateway process.  Set system property " + sysprop + " to override.");
         return file;
-    }
-
-    /** @return local names of all files and directories immediately under the keydataDir that appear to contain keystore data. */
-    private String[] findKeystoreFilenames() {
-        File[] files = keydataDir.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return !name.startsWith("sca.") && name.contains(".{");
-            }
-        });
-
-        String[] ret = new String[files.length];
-        for (int i = 0; i < files.length; i++)
-            ret[i] = files[i].getName();
-        return ret;
     }
 
     /**
@@ -121,7 +110,7 @@ public class ScaManager {
      */
     private void doStartSca() throws ScaException {
         try {
-            exec(null, scakiodLoad, args("start"), null);
+            exec(null, scakiodLoad, args("start"), null, false);
         } catch (IOException e) {
             throw new ScaException(e);
         }
@@ -133,11 +122,11 @@ public class ScaManager {
      *
      * @return bytes of a gzipped tar file, whose contents are relative to the KEYDATA_DIR, containing
      *         all files and directories composing the keystore data currently on this node.
-     * @throws ScaException if there is a problem invoking the tar program
+     * @throws ScaException if there is a problem invoking the command, or if the command returned nonzero
      */
     private byte[] doLoadKeydata() throws ScaException {
         try {
-            return exec(keydataDir, tar, args("czf", "-", findKeystoreFilenames()), null).getOutput();
+            return exec(null, loadKeydata, args("reallyForSure"), null, false).getOutput();
         } catch (IOException e) {
             throw new ScaException(e);
         }
@@ -150,16 +139,52 @@ public class ScaManager {
      * @param data  bytes of a gzipped tar file, whose contents are relative to the KEYDATA_DIR, containing
      *              all files and directories composing the updated keystore data to use for this node.
      * @return a ProcResult if the save was successful.  Never null.
-     * @throws ScaException if there is a problem invoking the tar program, or if the tar program exited nonzero.
+     * @throws ScaException if there is a problem invoking the command, or if the command returned nonzero
      *                      the keystore data may be corrupted in the latter case.
      */
     private ProcResult doSaveKeydata(byte[] data) throws ScaException {
         // TODO change so it is actually safe (writes to ".new" directory)
         try {
-            return exec(keydataDir, tar, args("xzf", "-"), data, false);
+            return exec(null, saveKeydata, args("reallyForSure"), data, false);
         } catch (IOException e) {
             throw new ScaException(e);
         }
+    }
+
+    /**
+     * Deletes everything from the keydata directory.  The configurator can invoke this after
+     * zeroizing the keystore.  Nobody else should use this method, ever.
+     *
+     * @return a ProcResult if the wipe was successful.  Never null.
+     * @throws ScaException if there is a problem invoking the command, or if the command returned nonzero
+     *                      the keystore data may be corrupted in the latter case.
+     */
+    private ProcResult doWipeKeydata() throws ScaException {
+        try {
+            return exec(null, wipeKeydata, args("reallyForSure"), null, false);
+        } catch (IOException e) {
+            throw new ScaException(e);
+        }
+    }
+
+    /**
+     * Just like {@link com.l7tech.common.util.ProcUtils#exec(java.io.File, java.io.File, String[], byte[], boolean)} except
+     * this always runs the command through sudo.
+     *
+     * @param cwd the current working directory in which to run the program, or null to inherit the current cwd.
+     *            This is not necessarily the directory in which the program can be found -- just the cwd the
+     *            subprocess shall be in before the program is invoked.
+     * @param program  the program to run.  Required.
+     * @param args the argument array.  May be empty but not null.
+     * @param stdin  a byte array to pass into the program's stdin, or null to provide no input.
+     * @param allowNonzeroExit  if true, this will return a result even if the program exits nonzero.
+     *                          if false, IOException will be thrown if the program exits nonzero.
+     * @return  the bytes that the program wrote to its stdout before exiting.  May be empty but never null.
+     * @throws java.io.IOException if there is a problem running the subprocess, or the subprocess exits nonzero.
+     * @see com.l7tech.common.util.ProcUtils#exec(java.io.File, java.io.File, String[], byte[], boolean)
+     */
+    private ProcResult exec(File cwd, File program, String[] args, byte[] stdin, boolean allowNonzeroExit) throws IOException {
+        return ProcUtils.exec(cwd, sudo, args(program.getAbsolutePath(), args), stdin, allowNonzeroExit);
     }
 
 
@@ -226,6 +251,34 @@ public class ScaManager {
                 } else {
                     commitKeydataChange();
                 }
+                try {
+                    doStartSca();
+                } catch (ScaException e) {
+                    logger.log(Level.WARNING, "Unable to restart scakiod: " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Wipe out all content of the keystore data for this node.  This should only be called by the configurator
+     * after zeroizing the board to clear out any stale keystore data.
+     * <p>
+     * This method will shut down the sckiod while the data is being deleted and start it again afterwards.
+     * Naturally no SSG that is using the HSM may be running while this is happening (or indeed until a new
+     * valid keystore has been created).
+     *
+     * @throws ScaException if there is a problem wiping the data.  This node's keystore may have been left in
+     *                      an unusable state.
+     */
+    public void wipeKeydata() throws ScaException {
+        synchronized (globalMutex) {
+            // Does not bother using begin/commit/rollback since we're just nuking the data anyway
+            // TODO might need to check for symlink pointing at .old though (or some other unusual state)
+            try {
+                doStopSca();
+                doWipeKeydata();
+            } finally {
                 try {
                     doStartSca();
                 } catch (ScaException e) {
