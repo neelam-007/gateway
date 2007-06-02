@@ -346,14 +346,13 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         logger.info("Initializing HSM");
         try {
             //HSM Specific setup
-            ScaManager scaManager = getScaManager();
+            MyScaManager scaManager = getScaManager();
 
             //TODO start kiod if it's not started
+            scaManager.startSca();
             //zero the board
             zeroHsm();
-            //TODO stop kiod
-            //empty the keydata dir
-            //TODO start kiod
+            scaManager.wipeKeydata();
             initializeHSM(ksPassword);
             prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
             makeHSMKeys(new File(ksDir), ksPassword);
@@ -380,7 +379,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private void doRestoreHsm(char[] fullKsPassword, KeystoreConfigBean ksBean, String ksDir, File javaSecFile, File newJavaSecFile, File keystorePropertiesFile, File tomcatServerConfigFile, File sslKeyStoreFile, File systemPropertiesFile) throws Exception {
         logger.info("Restoring HSM Backup");
         try {
-            ScaManager scaManager = getScaManager();
+            MyScaManager scaManager = getScaManager();
 
             //fetch from the db
             DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
@@ -389,14 +388,15 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             //zero the board
             zeroHsm();
 
-            //TODO stop kiod
-            //replace keydata dir
-            scaManager.saveKeydata(databytes);
-            //TODO start kiod
+            //delete keydata dir
+            scaManager.wipeKeydata();
 
-            //call masterkey_manage.pl restore
+            //restore the master key
             restoreHsmMasterkey(fullKsPassword, ksBean.getMasterKeyBackupPassword());
 
+            //replace keydata dir
+            scaManager.saveKeydata(databytes);
+            
             prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
 
             updateJavaSecurity(javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
@@ -418,8 +418,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private ScaManager getScaManager() throws ScaException {
-        return new ScaManager();
+    private MyScaManager getScaManager() throws ScaException {
+        return new MyScaManager();
     }
 
     private void backupHsmMasterkey(KeystoreConfigBean ksBean) throws IOException, KeystoreActions.KeystoreActionsException {
@@ -507,9 +507,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void insertKeystoreIntoDatabase(ScaManager scaManager) throws ScaException, KeystoreActions.KeystoreActionsException {
-        byte[] keyData = null;
         try {
-            keyData = scaManager.loadKeydata();
+            byte[] keyData = scaManager.loadKeydata();
             DBInformation dbinfo = sharedWizardInfo.getDbinfo();
             putKeydataInDatabase(dbinfo, keyData);
         } catch (ScaException e) {
@@ -1173,5 +1172,19 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private String getKsType() {
         KeystoreType ksTypeFromBean = ((KeystoreConfigBean)configBean).getKeyStoreType();
         return ksTypeFromBean.shortTypeName();
+    }
+
+    private class MyScaManager extends ScaManager {
+        public MyScaManager() throws ScaException {
+            super();
+        }
+
+        public void startSca() throws ScaException {
+            doStartSca();
+        }
+
+        public void stopSca() throws ScaException {
+            doStopSca();
+        }
     }
 }
