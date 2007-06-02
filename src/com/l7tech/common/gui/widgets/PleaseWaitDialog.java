@@ -19,35 +19,59 @@ public class PleaseWaitDialog extends JDialog {
 
     public PleaseWaitDialog(Dialog dialog) throws HeadlessException {
         super(dialog, MESS, false);
-        doInit();
+        doInit("", null);
     }
 
     public PleaseWaitDialog(JFrame parentFrame) throws HeadlessException {
         super(parentFrame, MESS, false);
-        doInit();
+        doInit("", null);
     }
 
     public PleaseWaitDialog(Dialog dialog, String message) throws HeadlessException {
         super(dialog, MESS, false);
-        initialMess = message;
-        doInit();
+        doInit(message, null);
     }
 
     public PleaseWaitDialog(JFrame parentFrame, String message) throws HeadlessException {
         super(parentFrame, MESS, false);
-        initialMess = message;
-        doInit();
+        doInit(message, null);
     }
 
-    private void doInit() {
+    public PleaseWaitDialog(Dialog dialog, String message, JProgressBar progressBar) throws HeadlessException {
+        super(dialog, MESS, false);
+        doInit(message, progressBar);
+    }
+
+    public PleaseWaitDialog(JFrame parentFrame, String message, JProgressBar progressBar) throws HeadlessException {
+        super(parentFrame, MESS, false);
+        doInit(message, progressBar);
+    }
+
+    private void doInit(String initialMess, JProgressBar progressBar) {
+        this.initialMess = initialMess == null ? "" : initialMess;
+
+        final boolean progress = progressBar != null;
+
+        this.setUndecorated(progress);
         this.setFocusableWindowState(false);
-        Container c = this.getContentPane();
+        JPanel c = new JPanel();
+        this.setContentPane(c);
         c.setLayout(new GridBagLayout());
         c.add(getMessageLabel(),
               new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
                                      GridBagConstraints.CENTER,
                                      GridBagConstraints.BOTH,
                                      new Insets(15, 8, 15, 8), 0, 0));
+
+        if (progress) {
+            c.add(progressBar,
+                  new GridBagConstraints(0, 1, GridBagConstraints.REMAINDER, 1, 1000.0, 0.0,
+                                         GridBagConstraints.CENTER,
+                                         GridBagConstraints.HORIZONTAL,
+                                         new Insets(5, 15, 5, 15), 0, 0));
+            c.setBorder(BorderFactory.createLineBorder(Color.BLACK, 4));
+        }
+
         pack();
     }
 
