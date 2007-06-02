@@ -129,7 +129,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
                 "13613"
         });
         props.put("ratelimit.maxNapTime", new String[] {
-                "Maximum time a request subject to traffic shaping will wait before awaking to check its status (Milliseconds)",
+                "Maximum time a request subject to traffic shaping will wait before awakening to check its status (Milliseconds)",
                 "4703"
         });
         props.put("ratelimit.maxTotalSleepTime", new String[] {
