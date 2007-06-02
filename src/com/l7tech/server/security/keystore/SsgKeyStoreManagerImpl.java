@@ -69,7 +69,8 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
                 } else {
                     if (createdHsmFinder)
                         throw new KeyStoreException("Database contains more than one keystore_file row with a format of hsm");
-                    list.add(ScaSsgKeyStore.getInstance(id, name, keystoreFileManager));
+                    char[] hsmPassword = keystoreUtils.getSslKeystorePasswd().toCharArray();
+                    list.add(ScaSsgKeyStore.getInstance(id, name, hsmPassword, keystoreFileManager));
                     createdHsmFinder = true;
                 }
             } else if (format.equals("ss")) {
