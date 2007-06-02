@@ -281,10 +281,10 @@ public class PrivateKeyManagerWindow extends JDialog {
             return keyList;
 
         } catch (Exception e) {
-            String msg = resources.getString("cert.find.error");
+            String msg = "Unable to load private keys: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, e);
             JOptionPane.showMessageDialog(PrivateKeyManagerWindow.this, msg,
-                                          resources.getString("load.error.title"),
+                                          "Unable to load private keys",
                                           JOptionPane.ERROR_MESSAGE);
             return Collections.emptyList();
         }
