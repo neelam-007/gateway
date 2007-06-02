@@ -72,6 +72,28 @@ class MessageProcessingFtplet extends DefaultFtplet {
     }
 
     /**
+     * Ensure that on initial connection the data connection is secure if the control connection is.
+     */
+    public FtpletEnum onConnect(FtpSession ftpSession, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
+        DataConnectionFactory dataConnectionFactory = ftpSession.getDataConnection();
+        if (dataConnectionFactory instanceof ServerDataConnectionFactory) {
+            ServerDataConnectionFactory sdcf = (ServerDataConnectionFactory) dataConnectionFactory;
+
+            boolean controlSecure = false;
+
+            if (ftpSession instanceof FtpServerSession) {
+                FtpServerSession ftpServerSession = (FtpServerSession) ftpSession;
+                controlSecure = ((AbstractListener)ftpServerSession.getListener()).isImplicitSsl();
+            }
+
+            // init data connection security to the same as the control connection
+            sdcf.setSecure( controlSecure );
+        }
+
+        return super.onConnect(ftpSession, ftpReplyOutput);
+    }
+
+    /**
      * Override the default SITE extensions. 
      */
     public FtpletEnum onSite(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
