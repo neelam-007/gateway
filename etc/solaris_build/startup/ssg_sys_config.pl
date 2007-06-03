@@ -9,7 +9,7 @@ my $hostsFH = new FileHandle;
 my $outputFh = new FileHandle;
 my $inputFh = new FileHandle;
 
-if ($logFile->open(">>ssgsysconfig.log")) {
+if ($logFile->open(">>/ssg/sysconfigwizard/ssgsysconfig.log")) {
 	$logFile->print("\n-------------------------------------------------------------------\n");
 	$logFile->print("$timestamp: System Configuration Started\n");
 	$logFile->print("-------------------------------------------------------------------\n");
@@ -25,20 +25,20 @@ my ($hostname, $domain) = ($hostnameInfo{'hostname'}, $hostnameInfo{'domain'});
 my $netConfigPattern = "netconfig_*";
 
 my %inputFiles = (
-	"HOSTNAMEFILE" => "hostname",
-	"NTPFILE" => "ntpconfig",
-	"TZFILE" => "timezone"
+	"HOSTNAMEFILE" => "/ssg/sysconfigwizard/configfiles/hostname",
+	"NTPFILE" => "/ssg/sysconfigwizard/configfiles/ntpconfig",
+	"TZFILE" => "/ssg/sysconfigwizard/configfiles/timezone"
 );
 
 my %outputFiles = (
-	"NTP" 		=> "etc/inet/ntp.conf",
-	"TZ" 		=> "etc/default/init",
-	"GATEWAY" 	=> "etc/defaultrouter",
-	"RESOLV" 	=> "etc/resolv.conf",
-	"HOSTNAME" 	=> "etc/nodename",
-	"DOMAIN" 	=> "etc/defaultdomain",
-	"HOSTS"		=> "etc/hosts",
-	"ETC" 		=> "etc/"
+	"NTP" 		=> "/etc/inet/ntp.conf",
+	"TZ" 		=> "/etc/default/init",
+	"GATEWAY" 	=> "/etc/defaultrouter",
+	"RESOLV" 	=> "/etc/resolv.conf",
+	"HOSTNAME" 	=> "/etc/nodename",
+	"DOMAIN" 	=> "/etc/defaultdomain",
+	"HOSTS"		=> "/etc/hosts",
+	"ETC" 		=> "/etc/"
 );
 
 ##########################http://xkcd.com/c208.html#####################
