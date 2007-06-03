@@ -9,8 +9,8 @@ my $interface = "e1000g0";
 my $outputFh = new FileHandle;
 
 # The ruleset that partitionControl will load. Use full path.
-#my $ruleset="ssg-ipf.conf";
-my $ruleset="/ssg/etc/ssg-ipf.conf";
+my $ruleset="ssg-ipf.conf";
+#my $ruleset="/ssg/etc/ssg-ipf.conf";
 my @rules;
 
 #Read in the rules, because we need to no matter what.
@@ -67,37 +67,45 @@ if ($outputFh->open(">$ruleset")) {
 	# Write out the new rules only if we're starting
 	if ( $mode eq "start") {
 		while (<RULES>) {
+			my $out = "";
+			my $begin = "";
+			my $end = "";
+			$line = "";
 			if ( /\[0:0\] -I INPUT \$Rule_Insert_Point (.*)/ ) {
-				# aha
 				$line=$1;
+
 				# 4 forms of the line
 				# -p tcp -m tcp --dport 8444 -j ACCEPT
 				# Single port
-				if ($line=~/ -p tcp -m tcp --dport (\d+) -j ACCEPT/) {
+				if ($line=~/^\s*-p tcp -m tcp --dport (\d+) -j ACCEPT/) {
 					$out= "pass in quick proto tcp from any to any port = $1 flags S keep state\t$flag\n";
-				}
+				} #continues...
+
 				# -p tcp -m tcp --dport 8444:8555 -j ACCEPT
 				# Port Range	
-				elsif ($line=~/ -p tcp -m tcp --dport (\d+)\:(\d+) -j ACCEPT/) {
+				elsif ($line=~/^\s*-p tcp -m tcp --dport (\d+)\:(\d+) -j ACCEPT/) {
 					$begin=$1; $end=$2; $begin--; $end++;
-					$out= "pass in quick proto tcp from any to any port  $1 flags S keep state\t$flag\n";
+					$out= "pass in quick proto tcp from any to any port $begin >< $end flags S keep state\t$flag\n";
+				} #continues...
 
-				}
 				# -d 192.168.1.186 -p tcp -m tcp --dport 8081 -j ACCEPT
 				# IP addy and port
-				elsif ($line=~/ -d (\d+\.\d+\.\d+\.\d+) -p tcp -m tcp --dport (\d+) -j ACCEPT/) {
+				elsif ($line=~/^\s*-d (\d+\.\d+\.\d+\.\d+) -p tcp -m tcp --dport (\d+) -j ACCEPT/) {
 					$out= "pass in quick proto tcp from any to $1 port = $2 flags S keep state\t$flag\n";
-	
+				} #continues...
+
 				# -d 192.168.1.186 -p tcp -m tcp --dport 9444:9555 -j ACCEPT
 				# IP Addy and port range
-				elsif ($line=~/ -d (\d+\.\d+\.\d+\.\d+) -p tcp -m tcp --dport (\d+)\:(\d+) -j ACCEPT/) {
+				elsif ($line=~/^\s*-d (\d+\.\d+\.\d+\.\d+) -p tcp -m tcp --dport (\d+)\:(\d+) -j ACCEPT/) {
 					$begin=$2; $end=$3; $begin--; $end++;
-					$out= "pass in quick proto tcp from any to $1 port =  flags S keep state\t$flag\n";
-				}	
-				#print "$line\n";
+					$out= "pass in quick proto tcp from any to $1 port $begin >< $end flags S keep state\t$flag\n";
+				} #OR ELSE! ;)	
+				#print $line . "\n";
+				#print "\t$out\n";
 				$outputFh->print($out);
 			} else {
-				print "Invalid!\t$line\n";
+				#Whining isn't required. I hope.
+				#print "Invalid!\t$line\n";
 			}
 		}
 	}
