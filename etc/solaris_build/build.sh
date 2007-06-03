@@ -70,6 +70,7 @@ mv ssg/bin/sysconfigscript-initd etc/init.d/ssg-sysconfig
 mv ssg/bin/ssgconfig.sh ssg/configwizard/
 mv ssg/bin/systemconfig.sh ssg/sysconfigwizard/
 mv ssg/bin/ssgmigration.sh ssg/migration/
+mv ssg/bin/ssg_sys_config.pl /ssg/sysconfigwizard/
 
 echo "Touching supplementary ruleset."
 touch ssg/etc/ssg-ipf.conf
