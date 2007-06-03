@@ -1,6 +1,8 @@
 package com.l7tech.server.config;
 
 import java.io.File;
+import java.util.List;
+import java.util.ArrayList;
 
 public class WindowsSpecificFunctions extends OSSpecificFunctions {
 
@@ -41,20 +43,20 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
             }
         }
 
-        KeystoreInfo lunaInfo = new KeystoreInfo(KeystoreType.LUNA_KEYSTORE_NAME);
-        lunaInfo.addMetaInfo("INSTALL_DIR", "C:/Program Files/LunaSA/");
-        lunaInfo.addMetaInfo("JSP_DIR", "C:/Program Files/LunaSA/JSP");
-        lunaInfo.addMetaInfo("CMU_PATH", "cmu.exe");
+        List<KeystoreInfo> infos = new ArrayList<KeystoreInfo>();
+        infos.add(new KeystoreInfo(KeystoreType.DEFAULT_KEYSTORE_NAME));
+        if (KeystoreInfo.isLunaEnabled()) {
+            KeystoreInfo lunaInfo = new KeystoreInfo(KeystoreType.LUNA_KEYSTORE_NAME);
+            lunaInfo.addMetaInfo("INSTALL_DIR", "C:/Program Files/LunaSA/");
+            lunaInfo.addMetaInfo("JSP_DIR", "C:/Program Files/LunaSA/JSP");
+            lunaInfo.addMetaInfo("CMU_PATH", "cmu.exe");
+            infos.add(lunaInfo);
+        }
 
         pathToJdk = "jdk/";
         partitionControlScriptName= "service.cmd";
 
-        keystoreInfos = new KeystoreInfo[]
-        {
-            new KeystoreInfo(KeystoreType.DEFAULT_KEYSTORE_NAME),
-            lunaInfo
-        };
-
+        keystoreInfos = infos.toArray(new KeystoreInfo[0]);
         upgradeFileNewExt = "new";
 
         timeZonesDir = null;
