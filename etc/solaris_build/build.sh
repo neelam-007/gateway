@@ -68,7 +68,8 @@ mv ssg/bin/ssgconfig.sh ssg/configwizard/
 # snmp
 mv ssg/bin/snmpd.conf etc/snmp/conf/snmpd.conf.sample
 # ipf source file
-mv ssg/bin/ipf.conf etc/ipf/ipf.conf
+cp ssg/bin/base-ipf.conf etc/ipf/ipf.conf
+mv ssg/bin/base-ipf.conf ssg/etc/
 # Tune Stack
 mv ssg/bin/tune_solaris_tcp_stack.sh etc/init.d/ssg_tcp_tune.sh
 # Database cluster startup daemon
