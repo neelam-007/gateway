@@ -84,6 +84,7 @@ public class ScaManager {
     protected void doStopSca() throws ScaException {
         try {
             ProcResult result = exec(null, scakiodLoad, args("stop"), null, true);
+            Thread.sleep(1000L);
             int status = result.getExitStatus();
             switch (status) {
                 case 0:
@@ -98,6 +99,9 @@ public class ScaManager {
             }
         } catch (IOException e) {
             throw new ScaException(e);
+        } catch (InterruptedException e) {
+            logger.warning("Interrupted");
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -110,8 +114,12 @@ public class ScaManager {
     protected void doStartSca() throws ScaException {
         try {
             exec(null, scakiodLoad, args("start"), null, false);
+            Thread.sleep(1000L);
         } catch (IOException e) {
             throw new ScaException(e);
+        } catch (InterruptedException e) {
+            logger.warning("Interrupted");
+            Thread.currentThread().interrupt();
         }
     }
 

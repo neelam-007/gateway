@@ -22,6 +22,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.Arrays;
+import java.util.ArrayList;
 
 /**
  * Dialog that offers ways of creating a new key pair and associated metadata.
@@ -35,6 +38,7 @@ public class NewPrivateKeyDialog extends JDialog {
     private static final String RSA512 = "512 bit RSA";
     private static final String RSA768 = "768 bit RSA";
     private static final String RSA1024 = "1024 bit RSA";
+    private static final String RSA1280 = "1280 bit RSA";
     private static final String RSA2048 = "2048 bit RSA";
 
     private final TrustedCertAdmin.KeystoreInfo keystoreInfo;
@@ -151,12 +155,20 @@ public class NewPrivateKeyDialog extends JDialog {
         expiryDaysField.setDocument(new NumberField(8));
         expiryDaysField.setText(DEFAULT_EXPIRY);
 
-        cbKeyType.setModel(new DefaultComboBoxModel(new Object[] {
+        Collection<String> sizes = new ArrayList<String>(Arrays.asList(
                 RSA512,
                 RSA768,
                 RSA1024,
+                RSA1280,
                 RSA2048
-        }));
+        ));
+
+        if (keystoreInfo.type != null && keystoreInfo.type.toLowerCase().contains("pkcs11")) {
+            logger.info("PKCS#11 detected -- disabling 2048 bit key size");
+            sizes.remove(RSA2048);
+        }
+
+        cbKeyType.setModel(new DefaultComboBoxModel(sizes.toArray()));
         cbKeyType.setSelectedItem(RSA1024);
     }
 
@@ -222,6 +234,8 @@ public class NewPrivateKeyDialog extends JDialog {
             return 768;
         else if (RSA1024.equals(s))
             return 1024;
+        else if (RSA1280.equals(s))
+            return 1280;
         else if (RSA2048.equals(s))
             return 2048;
         throw new IllegalStateException("Unrecognized key size: " + s);
