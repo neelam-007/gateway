@@ -69,7 +69,8 @@ public class BouncyCastleCertUtils {
 
         // Generate request
         final PKCS10CertificationRequest certReq;
-        certReq = new PKCS10CertificationRequest("SHA1withRSA", subject, publicKey, attrs, privateKey);
-        return new BouncyCastleCertificateRequest(certReq, JceProvider.getAsymmetricJceProvider().getName());
+        String rsaProvider = JceProvider.getAsymmetricJceProvider().getName();
+        certReq = new PKCS10CertificationRequest("SHA1withRSA", subject, publicKey, attrs, privateKey, rsaProvider);
+        return new BouncyCastleCertificateRequest(certReq, rsaProvider);
     }
 }

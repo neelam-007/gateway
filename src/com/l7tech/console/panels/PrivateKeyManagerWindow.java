@@ -389,10 +389,12 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         public void setSelectedKeyEntry(long keystoreId, String newAlias) {
             int row = model.findRowIndex(keystoreId, newAlias);
-            if (row < 0)
+            if (row < 0) {
                 getSelectionModel().clearSelection();
-            else
+            } else {
                 getSelectionModel().setSelectionInterval(row, row);
+                scrollRectToVisible(getCellRect(row, 0, true));                
+            }
         }
 
         private static class KeyTableModel extends AbstractTableModel {
