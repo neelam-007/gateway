@@ -59,7 +59,7 @@ do_control() {
         fi
     fi
 
-    export JAVA_OPTS="${ORIGINAL_JAVA_OPTS} ${partition_opts}"
+    export JAVA_OPTS="${ORIGINAL_JAVA_OPTS} ${partition_opts} -Djava.security.properties==${PARTITION_DIR}/java.security"
     export TOMCAT_HOME
     export CATALINA_OPTS=-Dcom.l7tech.server.partitionName=${PARTITION_NAME}
     export CATALINA_PID
