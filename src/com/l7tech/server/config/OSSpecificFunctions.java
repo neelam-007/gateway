@@ -104,7 +104,7 @@ public abstract class OSSpecificFunctions {
         ftpServerConfig = "ftpserver.properties";
         pathToJreLibExt = "jre/lib/ext/";
         pathToJavaLibPath = "lib/";
-        pathToJavaSecurityFile = "jre/lib/security/java.security";
+        pathToJavaSecurityFile = "java.security";
         pathToDBCreateFile = "etc/sql/ssg.sql";
     }
 
@@ -226,16 +226,12 @@ public abstract class OSSpecificFunctions {
     }
 
     public String getPathToJavaSecurityFile() {
-        return getPathToJdk() + pathToJavaSecurityFile;
+        return getConfigurationBase() + pathToJavaSecurityFile;
     }
 
     public String getPathToJreLibExt() {
         return getPathToJdk() + pathToJreLibExt;
     }
-
-//    public String getLunaCmuPath() {
-//        return lunaCmuPath;
-//    }
 
     public String getSsgSystemPropertiesFile() {
         return getConfigurationBase() + ssgSystemPropertiesFile;
