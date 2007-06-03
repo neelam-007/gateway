@@ -11,6 +11,18 @@ import java.util.ArrayList;
  * Time: 11:46:03 AM
  */
 public class SolarisSpecificFunctions extends UnixSpecificFunctions {
+//uncomment these if we decide that solaris gets the easy PORT IP format in firewall_rules
+//    private static final String IP_MARKER = "<IP>";
+//    private static final String PORT_MARKER = "<PORT>";
+//    private static final String TEMPLATE_IP_PORT = PORT_MARKER + " " + IP_MARKER + "\n";
+//    private static final String TEMPLATE_PORT = PORT_MARKER + "\n";
+
+//for now, solaris firewall_rules will look like the linux ones (iptables)
+    private static final String IP_MARKER = "<IP>";
+    private static final String PORT_MARKER = "<PORT>";
+    private static final String TEMPLATE_IP_PORT = "[0:0] -I INPUT $Rule_Insert_Point -d " + IP_MARKER + " -p tcp -m tcp --dport " + PORT_MARKER + " -j ACCEPT\n";
+    private static final String TEMPLATE_PORT = "[0:0] -I INPUT $Rule_Insert_Point -p tcp -m tcp --dport " + PORT_MARKER + " -j ACCEPT\n";
+
     public SolarisSpecificFunctions(String osname) {
         this(osname, null);
     }
@@ -44,6 +56,57 @@ public class SolarisSpecificFunctions extends UnixSpecificFunctions {
                                                PartitionInformation.FtpEndpointHolder basicFtpEndpoint,
                                                PartitionInformation.FtpEndpointHolder sslFtpEndpoint,
                                                PartitionInformation.OtherEndpointHolder rmiEndpoint) {
-        return "!!! No Rules for IPF yet !!!";
+        StringBuffer firewallRules = new StringBuffer();
+
+        // HTTP Basic
+        if (basicEndpoint.isEnabled()) {
+            firewallRules.append(buildIPPortRule(basicEndpoint.getIpAddress(), basicEndpoint.getPort().toString()));
+        }
+
+        // HTTP SSL
+        if (sslEndpoint.isEnabled()) {
+            firewallRules.append(buildIPPortRule(sslEndpoint.getIpAddress(), sslEndpoint.getPort().toString()));
+        }
+
+        // HTTP SSL (no client cert)
+        if (noAuthSslEndpoint.isEnabled()) {
+            firewallRules.append(buildIPPortRule(noAuthSslEndpoint.getIpAddress(), noAuthSslEndpoint.getPort().toString()));
+        }
+
+        // FTP Basic
+        if (basicFtpEndpoint.isEnabled()) {
+            firewallRules.append(buildIPPortRule(basicFtpEndpoint.getIpAddress(), basicFtpEndpoint.getPort().toString()));
+            firewallRules.append(buildIPPortRule(basicFtpEndpoint.getIpAddress(),
+                    basicFtpEndpoint.getPassivePortStart() + ":" +
+                    (basicFtpEndpoint.getPassivePortStart().intValue() + (basicFtpEndpoint.getPassivePortCount().intValue()-1))));
+        }
+
+        // FTP SSL
+        if (sslFtpEndpoint.isEnabled()) {
+            firewallRules.append(buildIPPortRule(sslFtpEndpoint.getIpAddress(), sslFtpEndpoint.getPort().toString()));
+            firewallRules.append(buildIPPortRule(sslFtpEndpoint.getIpAddress(),
+                    sslFtpEndpoint.getPassivePortStart() + ":" +
+                    (sslFtpEndpoint.getPassivePortStart().intValue() + (sslFtpEndpoint.getPassivePortCount().intValue()-1))));
+        }
+
+        // RMI
+        if (rmiEndpoint.isEnabled()) {
+            firewallRules.append(TEMPLATE_PORT.replaceAll(PORT_MARKER, rmiEndpoint.getPort().toString()));
+        }
+
+        return firewallRules.toString();
     }
+
+     private String buildIPPortRule(String ipAddress, String port) {
+        String rule = TEMPLATE_IP_PORT;
+
+        if (ipAddress.equals("*"))
+            rule= rule.replaceAll(IP_MARKER, "");
+        else
+            rule = rule.replaceAll(IP_MARKER, ipAddress);
+
+        rule = rule.replaceAll(PORT_MARKER, port);
+
+        return rule;
+     }
 }
