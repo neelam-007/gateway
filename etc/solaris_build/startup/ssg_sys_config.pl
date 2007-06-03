@@ -5,6 +5,10 @@ use FileHandle;
 
 my $timestamp = localtime time;
 my $logFile = new FileHandle;
+my $hostsFH = new FileHandle;
+my $outputFh = new FileHandle;
+my $inputFh = new FileHandle;
+
 if ($logFile->open(">>ssgsysconfig.log")) {
 	$logFile->print("\n-------------------------------------------------------------------\n");
 	$logFile->print("$timestamp: System Configuration Started\n");
@@ -20,22 +24,21 @@ my ($hostname, $domain) = ($hostnameInfo{'hostname'}, $hostnameInfo{'domain'});
 
 my $netConfigPattern = "netconfig_*";
 
-my $inputFh = new FileHandle;
 my %inputFiles = (
 	"HOSTNAMEFILE" => "hostname",
 	"NTPFILE" => "ntpconfig",
 	"TZFILE" => "timezone"
 );
 
-my $outputFh = new FileHandle;
 my %outputFiles = (
-	"NTP" 		=> "/etc/ntp.conf",
-	"TZ" 		=> "/etc/default/init",
-	"GATEWAY" 	=> "/etc/defaultrouter",
-	"RESOLV" 	=> "/etc/resolv.conf",
-	"HOSTNAME" 	=> "/etc/nodename",
-	"DOMAIN" 	=> "/etc/defaultdomain",
-	"ETC" 		=> "/etc/"
+	"NTP" 		=> "etc/ntp.conf",
+	"TZ" 		=> "etc/default/init",
+	"GATEWAY" 	=> "etc/defaultrouter",
+	"RESOLV" 	=> "etc/resolv.conf",
+	"HOSTNAME" 	=> "etc/nodename",
+	"DOMAIN" 	=> "etc/defaultdomain",
+	"HOSTS"		=> "etc/hosts",
+	"ETC" 		=> "etc/"
 );
 
 ##########################http://xkcd.com/c208.html#####################
@@ -67,6 +70,14 @@ if ($inputFh->open("<$inputFiles{'HOSTNAMEFILE'}")) {
 				$logFile->print("$timestamp: Couldn't open $outputFiles{'DOMAIN'}. Unable to set domain name\n");
 			}
 		}
+		if ($hostsFH->open(">$outputFiles{'HOSTS'}")) {
+			$hostsFH->print("127.0.0.1\t\t\tlocalhost loghost $hostname\n");
+			$hostsFH->print("::1\t\t\tlocalhost localhost6\n");
+			$hostsFH->close();
+		} else {
+			$logFile->print("$timestamp: couldn't write hosts file\n");
+		}
+
 	} else {
 		$logFile->print("$timestamp: no hostname found. Hostname will not be set\n");
 		%hostnameInfo = undef;
@@ -112,8 +123,8 @@ for my $configFile(@netConfigFiles) {
 		} elsif ($opts{bootproto} eq "static") {
 	#Static config is a bit of a nightmare, mostly because you need to manually edit /etc/netmasks to
 	#correspond with reality; set /etc/hostname.interface, /etc/defaultrouter, /etc/resolv.conf...
-	#Note that we're not touching /etc/hosts... which is the proper way to setup interfaces, but that
-	#much perl-based config editing could get hairy in a hurry.
+	#We blow away /etc/hosts (above) and add suffixed lines for each static interface. This is an
+	#acceptable method. Using 127.0.0.1 for nodename... I'm not so sure, but it works :)
 
 			my $Tip = pack "C4", split (/\./, $opts{ip}), shift;
 			my $Tmask = pack "C4", split (/\./, $opts{netmask}), shift;
@@ -121,8 +132,14 @@ for my $configFile(@netConfigFiles) {
 			unlink("$outputFiles{'ETC'}dhcp.$opts{device}");
 
 			if ($outputFh->open(">$outputFiles{'ETC'}hostname.$opts{device}")) {
-				$outputFh->print("inet $opts{ip}\n");
+				$outputFh->print("inet $hostname-$opts{device}\n");
 				$outputFh->close();
+	                	if ($hostsFH->open(">>$outputFiles{'HOSTS'}")) {
+	                	        $hostsFH->print("$opts{ip}\t\t\t$hostname-$opts{device}\n");
+	                	        $hostsFH->close();
+				} else {
+					$logFile->print("$timestamp: couldn't write hosts file for $opts{device}\n");
+                		}
 			}
 
 			if ($outputFh->open(">$outputFiles{'ETC'}defaultrouter")) {
@@ -134,7 +151,7 @@ for my $configFile(@netConfigFiles) {
 				#$outputFh->print("search $hostnameInfo{'domain'}\n");
 				my $ns;
 				foreach $ns (@{$opts{nameserver}}) {
-					print "$ns\n";
+					#print "$ns\n";
 					$outputFh->print("nameserver $ns\n");
 				}
 				$outputFh->close();
@@ -154,7 +171,7 @@ for my $configFile(@netConfigFiles) {
 				my $flag = "L7flag.$opts{device}";
 				foreach $maskline (@raw_data) {
 					if ($maskline =~ /$flag/) {
-						print "flag $flag\n";
+						#print "flag $flag\n";
 					} else {
 						$outputFh->print("$maskline");
 					}
@@ -165,7 +182,7 @@ for my $configFile(@netConfigFiles) {
 					print "Couldn\'t open $outputFiles{'ETC'}netmasks, unable to set timezone.\n";
 			}
 
-			print "Static device $opts{device}, IP $opts{ip}, mask $opts{netmask}, net $opts{network}, gw $opts{gateway}, nameservers @{$opts{nameserver}}\n";
+			#print "Static device $opts{device}, IP $opts{ip}, mask $opts{netmask}, net $opts{network}, gw $opts{gateway}, nameservers @{$opts{nameserver}}\n";
 		}
 		push (@filesToDelete, $configFile);
 		$inputFh->close();
