@@ -16,6 +16,8 @@ export JAVA_HOME
 /ssg/configwizard/ssgconfig.sh -partitionMigrate 
 
 # Added user previously, pre-expire them
-
 passwd -x 365 ssgconfig
 passwd -f ssgconfig
+
+# Enable pfil hooks for e1000g driver
+echo "e1000g -1      0       pfil" >> /etc/ipf/pfil.ap
