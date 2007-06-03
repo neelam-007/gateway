@@ -68,12 +68,32 @@ if ($outputFh->open(">$ruleset")) {
 	if ( $mode eq "start") {
 		while (<RULES>) {
 			if ( /\[0:0\] -I INPUT \$Rule_Insert_Point (.*)/ ) {
+				# aha
 				$line=$1;
-				$line =~ /(\d+)/;
+				# 4 forms of the line
+				# -p tcp -m tcp --dport 8444 -j ACCEPT
+				# Single port
+				if ($line=~/ -p tcp -m tcp --dport (\d+) -j ACCEPT/) {
+					$line = "pass in quick proto tcp from any to any port = $1 flags S keep state\t$flag\n";
+				}
+				# -p tcp -m tcp --dport 8444:8555 -j ACCEPT
+				# Port Range	
+				elsif ($line=~/ -p tcp -m tcp --dport (\d+)\:(\d+) -j ACCEPT/) {
+					$begin=$1; $end=$2; $begin--; $end++;
+					$line = "pass in quick proto tcp from any to any port  $1 flags S keep state\t$flag\n";
 
-				# This is our template rule here, $flag is appened for later removal
-				$line = "pass in quick on $interface proto tcp from any to any port = $1 flags S keep state\t$flag\n";
-
+				}
+				# -d 192.168.1.186 -p tcp -m tcp --dport 8081 -j ACCEPT
+				# IP addy and port
+				elsif ($line=~/ -d (\d+\.\d+\.\d+\.\d+) -p tcp -m tcp --dport (\d+) -j ACCEPT/) {
+					$line = "pass in quick proto tcp from any to $1 port = $2 flags S keep state\t$flag\n";
+	
+				# -d 192.168.1.186 -p tcp -m tcp --dport 9444:9555 -j ACCEPT
+				# IP Addy and port range
+				elsif ($line=~/ -d (\d+\.\d+\.\d+\.\d+) -p tcp -m tcp --dport (\d+)\:(\d+) -j ACCEPT/) {
+					$begin=$2; $end=$3; $begin--; $end++;
+					$line = "pass in quick proto tcp from any to $1 port =  flags S keep state\t$flag\n";
+				}	
 				#print "$line\n";
 				$outputFh->print("$line");
 			} else {
