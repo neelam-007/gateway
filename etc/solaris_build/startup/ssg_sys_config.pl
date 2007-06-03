@@ -22,7 +22,7 @@ my $ntpServerToUse = undef;
 my @filesToDelete;
 my ($hostname, $domain) = ($hostnameInfo{'hostname'}, $hostnameInfo{'domain'});
 
-my $netConfigPattern = "netconfig_*";
+my $netConfigPattern = "/ssg/sysconfigwizard/configfiles/netconfig_*";
 
 my %inputFiles = (
 	"HOSTNAMEFILE" => "/ssg/sysconfigwizard/configfiles/hostname",
@@ -165,7 +165,7 @@ for my $configFile(@netConfigFiles) {
 			@raw_data=<DAT>;
 			close(DAT);
 
-			#Write out the file with the changed TZ
+			#Write out the file with the changed masks
 			if ($outputFh->open(">$outputFiles{'ETC'}netmasks")) {
 				my $maskline;
 				my $flag = "L7flag.$opts{device}";
