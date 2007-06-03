@@ -17,9 +17,5 @@ export JAVA_HOME
 
 # Added user previously, pre-expire them
 
-Y=`date '+%Y'`
-Y=`expr $Y + 1`
-MD=`date '+%m/%d'`
-
-usermod -x 365 ssgconfig
+passwd -x 365 ssgconfig
 passwd -f ssgconfig
