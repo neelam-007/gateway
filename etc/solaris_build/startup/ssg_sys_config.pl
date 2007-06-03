@@ -109,6 +109,12 @@ for my $configFile(@netConfigFiles) {
 			}
 		}
 
+		#Read in the existing netmasks file
+		my @raw_data;
+		open(DAT, "$outputFiles{'ETC'}netmasks") || die("Could not open file! Your Solaris Installation is Damaged!\n");
+		@raw_data=<DAT>;
+		close(DAT);
+
 	#DHCP is easy, assuming it works on boot, just create the file and that's it.
 		if ($opts{bootproto} eq "dhcp") {
 			unlink("$outputFiles{'ETC'}hostname.$opts{device}");
@@ -119,6 +125,23 @@ for my $configFile(@netConfigFiles) {
 				$outputFh->close();
 			} else {
 				print "Unable to configure DHCP for $opts{device}, weird.\n";
+			}
+			##### Edit /etc/netmasks here. (Just incase there's a mask for this interface existing.)
+
+			#Write out the file with the changed masks
+			if ($outputFh->open(">$outputFiles{'ETC'}netmasks")) {
+				my $maskline;
+				my $flag = "L7flag.$opts{device}";
+				foreach $maskline (@raw_data) {
+					if ($maskline =~ /$flag/) {
+						#print "flag $flag\n";
+					} else {
+						$outputFh->print("$maskline");
+					}
+				}
+				$outputFh->close();
+			} else {
+					print "Couldn\'t open $outputFiles{'ETC'}netmasks, unable to set timezone.\n";
 			}
 		} elsif ($opts{bootproto} eq "static") {
 	#Static config is a bit of a nightmare, mostly because you need to manually edit /etc/netmasks to
@@ -158,12 +181,6 @@ for my $configFile(@netConfigFiles) {
 			}
 
 			##### Edit /etc/netmasks here.
-
-			#Read in the existing netmasks file
-			my @raw_data;
-			open(DAT, "$outputFiles{'ETC'}netmasks") || die("Could not open file! Your Solaris Installation is Damaged!\n");
-			@raw_data=<DAT>;
-			close(DAT);
 
 			#Write out the file with the changed masks
 			if ($outputFh->open(">$outputFiles{'ETC'}netmasks")) {
