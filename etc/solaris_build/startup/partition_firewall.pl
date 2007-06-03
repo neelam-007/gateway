@@ -9,8 +9,8 @@ my $interface = "e1000g0";
 my $outputFh = new FileHandle;
 
 # The ruleset that partitionControl will load. Use full path.
-my $ruleset="ssg-ipf.conf";
-#my $ruleset="/ssg/etc/ssg-ipf.conf";
+#my $ruleset="ssg-ipf.conf";
+my $ruleset="/ssg/etc/ssg-ipf.conf";
 my @rules;
 
 #Read in the rules, because we need to no matter what.
