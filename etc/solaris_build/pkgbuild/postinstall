@@ -20,5 +20,6 @@ export JAVA_HOME
 Y=`date '+%Y'`
 Y=`expr $Y + 1`
 MD=`date '+%m/%d'`
-usermod -e $MD/$Y ssgconfig
-passwd -x 1 ssgconfig
+
+usermod -x 365 ssgconfig
+passwd -f ssgconfig
