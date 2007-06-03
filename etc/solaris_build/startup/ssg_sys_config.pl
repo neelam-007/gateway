@@ -31,7 +31,7 @@ my %inputFiles = (
 );
 
 my %outputFiles = (
-	"NTP" 		=> "etc/ntp.conf",
+	"NTP" 		=> "etc/inet/ntp.conf",
 	"TZ" 		=> "etc/default/init",
 	"GATEWAY" 	=> "etc/defaultrouter",
 	"RESOLV" 	=> "etc/resolv.conf",
