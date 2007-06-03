@@ -59,18 +59,27 @@ mkdir -p etc/snmp/conf
 
 echo "moving config and startup"
 
+# Mysql config
 mv ssg/bin/my.cnf.ssg etc/my.cnf.ssg
+# profile for ssgconfig menu
 mv ssg/bin/configuser_bashrc export/home/ssgconfig/.profile
-mv ssg/bin/snmpd.conf etc/snmp/conf/snmpd.conf
-mv ssg/bin/ipf.conf etc/ipf/ipf.conf
-mv ssg/bin/tune_solaris_tcp_stack.sh etc/init.d/ssg_tcp_tune.sh
-mv ssg/bin/ssg-dbstatus-initd etc/init.d/ssg-dbstatus
-mv ssg/bin/ssg-initd etc/init.d/ssg
-mv ssg/bin/sysconfigscript-initd etc/init.d/ssg-sysconfig
+# ssg config run script
 mv ssg/bin/ssgconfig.sh ssg/configwizard/
+# snmp
+mv ssg/bin/snmpd.conf etc/snmp/conf/snmpd.conf.sample
+# ipf source file
+mv ssg/bin/ipf.conf etc/ipf/ipf.conf
+# Tune Stack
+mv ssg/bin/tune_solaris_tcp_stack.sh etc/init.d/ssg_tcp_tune.sh
+# Database cluster startup daemon
+mv ssg/bin/ssg-dbstatus-initd etc/init.d/ssg-dbstatus
+# Main ssg process startup
+mv ssg/bin/ssg-initd etc/init.d/ssg
+# apply network config startup/shutdown process
+mv ssg/bin/sysconfigscript-initd etc/init.d/ssg-sysconfig
 mv ssg/bin/systemconfig.sh ssg/sysconfigwizard/
+mv ssg/bin/ssg_sys_config.pl ssg/sysconfigwizard/
 mv ssg/bin/ssgmigration.sh ssg/migration/
-mv ssg/bin/ssg_sys_config.pl /ssg/sysconfigwizard/
 
 echo "Touching supplementary ruleset."
 touch ssg/etc/ssg-ipf.conf
