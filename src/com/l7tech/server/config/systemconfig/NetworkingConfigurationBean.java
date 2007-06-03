@@ -1,16 +1,18 @@
 package com.l7tech.server.config.systemconfig;
 
+import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.beans.BaseConfigurationBean;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Enumeration;
-import java.util.logging.Logger;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.InterfaceAddress;
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -88,7 +90,11 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
     private void getExistingInterfaces() {
         if (getOsFunctions().isUnix()) {
-            getExistingInterfacesLinux();
+            if (OSDetector.isLinux()) {
+                getExistingInterfacesLinux();
+            } else {
+                getExistingInterfacesSolaris();
+            }
         } else if (getOsFunctions().isWindows()){
             getExistingInterfacesWindows();            
         }
@@ -103,18 +109,50 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 Enumeration<NetworkInterface> allInterfaces = NetworkInterface.getNetworkInterfaces();
                 while (allInterfaces.hasMoreElements()) {
                     NetworkInterface networkInterface = allInterfaces.nextElement();
-                    Enumeration<InetAddress> addressesForInterface   = networkInterface.getInetAddresses();
-                    while (addressesForInterface.hasMoreElements()) {
-                        InetAddress inetAddress = addressesForInterface.nextElement();
+                    NetworkConfig nc = new NetworkConfig();
+                    nc.setInterfaceName(networkInterface.getDisplayName());
+                    List<InterfaceAddress> interfaceAddresses   = networkInterface.getInterfaceAddresses();
+                    for (InterfaceAddress interfaceAddress : interfaceAddresses) {
+                        InetAddress address = interfaceAddress.getAddress();
+                        nc.setIpAddress(address.getHostAddress());
+                    }
+                    networkingConfigs.add(nc);
+                }
+            } catch (SocketException e) {
+                logger.warning("Error while determining the IP Addresses for this machine:" + e.getMessage());
+            }
+        }
+    }
+
+    private void getExistingInterfacesSolaris() {
+        if (networkingConfigs == null) {
+            logger.info("Determining existing interface information.");
+            networkingConfigs = new ArrayList<NetworkConfig>();
+
+            try {
+                Enumeration<NetworkInterface> allInterfaces = NetworkInterface.getNetworkInterfaces();
+                while (allInterfaces.hasMoreElements()) {
+                    NetworkInterface networkInterface = allInterfaces.nextElement();
+                    if (!networkInterface.isLoopback()) {
                         NetworkConfig nc = new NetworkConfig();
-                        nc.setIpAddress(inetAddress.getHostAddress());
+                        nc.setInterfaceName(networkInterface.getDisplayName());
+                        List<InterfaceAddress> interfaceAddresses   = networkInterface.getInterfaceAddresses();
+                        for (InterfaceAddress interfaceAddress : interfaceAddresses) {
+                            InetAddress address = interfaceAddress.getAddress();
+                            nc.setIpAddress(address.getHostAddress());
+                        }
+                        if (new File("/etc/", "dhcp." + networkInterface.getDisplayName()).exists())
+                            nc.setBootProto(NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO);
+                        else
+                            nc.setBootProto(NetworkingConfigurationBean.STATIC_BOOT_PROTO);
+
                         networkingConfigs.add(nc);
                     }
                 }
             } catch (SocketException e) {
                 logger.warning("Error while determining the IP Addresses for this machine:" + e.getMessage());
             }
-        }
+        }        
     }
 
     private void getExistingInterfacesLinux() {
