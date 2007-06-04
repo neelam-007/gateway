@@ -369,7 +369,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
             prompts.add("Enable the \"" + ftpHolder.getEndpointType() + "\" endpoint" + getEolChar());
             prompts.add("1) Enable"  + getEolChar());
             prompts.add("2) Disable"  + getEolChar());
-            prompts.add("Please make a selection: [2]");
+            prompts.add("Please make a selection: [" + (ftpHolder.isEnabled() ?  "1" : "2" ) +"]");
             input = getData(prompts, "2", new String[] {"1","2"});
             if (StringUtils.equals(input, "2")) {
                 ftpHolder.setEnabled(false);

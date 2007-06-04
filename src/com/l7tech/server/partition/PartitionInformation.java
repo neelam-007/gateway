@@ -59,6 +59,9 @@ public class PartitionInformation{
     public static final int MIN_PORT = 1024;
     public static final int MAX_PORT = 65535;
 
+    private static final String ENABLED = " (Enabled)";
+    private static final String DISABLED = " (Disabled)";
+
     private static int DEFAULT_HTTP_PORT = 8080;
     private static int DEFAULT_SSL_PORT = 8443;
     private static boolean DEFAULT_FTP_ENABLED = false;
@@ -90,7 +93,7 @@ public class PartitionInformation{
     public enum HttpEndpointType {
         BASIC_HTTP("Basic HTTP Endpoint"),
         SSL_HTTP("SSL Endpoint"),
-        SSL_HTTP_NOCLIENTCERT("SSL Endpoint (No Client Certitifcate)"),
+        SSL_HTTP_NOCLIENTCERT("SSL Endpoint (No Client Certificate)"),
         ;
 
         private String endpointName;
@@ -830,7 +833,7 @@ public class PartitionInformation{
                 return "";
             }
             StringBuilder sb = new StringBuilder();
-            sb.append(endpointType.getName()).append(" = ");
+            sb.append(endpointType.getName()).append(isEnabled() ? ENABLED : DISABLED).append(" = ");
             sb.append(getIpAddress().equals("*")?"* (all interfaces)":getIpAddress()).append(", ");
             sb.append(getPort());
             sb.append(",");
