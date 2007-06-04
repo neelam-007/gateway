@@ -82,6 +82,8 @@ chmod 711 %{buildroot}/libexec/*
 /etc/init.d/ssg-dbstatus
 /etc/init.d/tcp_tune
 /etc/profile.d/ssgruntimedefs.sh
+/ssg/libexec/*
+
 %config(noreplace) /etc/sysconfig/iptables
 %defattr(0644,root,root)
 /etc/snmp/snmpd.conf_example
