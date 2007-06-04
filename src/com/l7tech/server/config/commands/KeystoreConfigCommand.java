@@ -102,7 +102,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
 
     private static final String SUDO_COMMAND = "/usr/bin/sudo";
-    private static final String SCADIAG_COMMAND = "/opt/sun/sca6000/sbin/scadiag";
+    private static final String ZERO_HSM_COMMAND = "libexec/zerohsm.sh";
 
 
     public KeystoreConfigCommand(ConfigurationBean bean) {
@@ -494,14 +494,15 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private void zeroHsm() throws IOException, ScaException {
         if (getOsFunctions().isUnix()) {
             String sudoCommand = SUDO_COMMAND;
+            String zeroCommand = getOsFunctions().getSsgInstallRoot() + ZERO_HSM_COMMAND;
             try {
-                logger.info("Executing \"" + SUDO_COMMAND + " " + SCADIAG_COMMAND + "\"");
-                ProcResult result = ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(SCADIAG_COMMAND, "-z", "mca0"), null, true);
+                logger.info("Executing \"" + SUDO_COMMAND + " " + ZERO_HSM_COMMAND + "\"");
+                ProcResult result = ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(zeroCommand), null, true);
                 if (result.getExitStatus() == 0) {
                     logger.info("Successfully zeroed the HSM");
                 } else {
                     logger.severe("There was an error trying to zero the HSM: Output=" + String.valueOf(result.getOutput()));
-                    throw new ScaException("There was an error trying to zero the HSM: Output=" + String.valueOf(result.getOutput()));
+                    throw new ScaException("There was an error trying to zero the HSM: Output=" + new String(result.getOutput()));
                 }
             } catch (IOException e) {
                 logger.warning("There was an error trying to zero the HSM: " + e.getMessage());
