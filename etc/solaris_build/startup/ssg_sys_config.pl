@@ -117,11 +117,16 @@ for my $configFile(@netConfigFiles) {
 
 	#DHCP is easy, assuming it works on boot, just create the file and that's it.
 		if ($opts{bootproto} eq "dhcp") {
-			unlink("$outputFiles{'ETC'}hostname.$opts{device}");
+			#turns out you HAVE to have a hostname.int file otherwise the interface doesn't get plumbed.
+			#unlink("$outputFiles{'ETC'}hostname.$opts{device}");
+			if ($outputFh->open(">$outputFiles{'ETC'}hostname.$opts{device}")) {
+				$outputFh->close();
+			}
+
 			#open my $touchy, ">", "$outputFiles{'ETC'}dhcp.$opts{device}";
 			#close $touchy;
 			if($outputFh->open(">$outputFiles{'ETC'}dhcp.$opts{device}")) {
-				$outputFh->print("inet $hostname\n");
+				#$outputFh->print("$hostname\n");
 				$outputFh->close();
 			} else {
 				print "Unable to configure DHCP for $opts{device}, weird.\n";
@@ -155,7 +160,7 @@ for my $configFile(@netConfigFiles) {
 			unlink("$outputFiles{'ETC'}dhcp.$opts{device}");
 
 			if ($outputFh->open(">$outputFiles{'ETC'}hostname.$opts{device}")) {
-				$outputFh->print("inet $hostname-$opts{device}\n");
+				$outputFh->print("$hostname-$opts{device}\n");
 				$outputFh->close();
 	                	if ($hostsFH->open(">>$outputFiles{'HOSTS'}")) {
 	                	        $hostsFH->print("$opts{ip}\t\t\t$hostname-$opts{device}\n");
