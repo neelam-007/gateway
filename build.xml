@@ -3088,6 +3088,7 @@
         <property name="install.rel.doc" value="doc"/>
         <property name="install.rel.etc" value="etc"/>
         <property name="install.rel.bin" value="bin"/>
+        <property name="install.rel.libexec" value="libexec"/>
         <property name="install.rel.logs" value="logs"/>
         <property name="install.rel.ldap" value="${install.rel.etc}/ldapTemplates"/>
         <property name="install.rel.conf" value="${install.rel.etc}/conf"/>
@@ -3099,6 +3100,7 @@
         <!-- Absolute source paths -->
         <property name="install.src.base" value="${build.dir}/install/ssg"/>
         <property name="install.src.bin" value="${install.src.base}/${install.rel.bin}"/>
+        <property name="install.src.libexec" value="${install.src.base}/${install.rel.libexec}"/>
         <property name="install.src.lib" value="${install.src.base}/lib"/>
         <property name="install.src.mods" value="${install.src.base}/modules/lib"/>
         <property name="install.src.aarmods" value="${install.src.base}/modules/assertions"/> 
@@ -3151,6 +3153,7 @@
         <mkdir dir="${install.src.sql}"/>
         <mkdir dir="${install.src.ldap}"/>
         <mkdir dir="${install.src.bin}"/>
+        <mkdir dir="${install.src.libexec}"/>
         <mkdir dir="${install.src.conf}"/>
         <mkdir dir="${install.src.partitions}"/>
         <mkdir dir="${install.src.partitionTemplate}"/>
@@ -3254,6 +3257,16 @@
                 <include name="upgrade*.sql"/>
             </fileset>
         </copy>
+
+        <!-- copy new sudo exececuted files to new libexec directory -->
+        <copy todir="${install.src.libexec}">
+            <fileset dir="${src.root}/etc">
+                <include name="load_keydata"/>
+                <include name="save_keydata"/>
+                <include name="wipe_keydata"/>
+            </fileset>
+        </copy>
+
         <copy todir="${install.src.bin}">
             <fileset dir="${src.root}/etc">
                 <include name="setkeys.sh"/>
