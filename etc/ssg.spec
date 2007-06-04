@@ -48,6 +48,7 @@ mkdir %{buildroot}/etc/init.d/
 mkdir %{buildroot}/etc/sysconfig
 mkdir %{buildroot}/etc/logrotate.d/
 mkdir -p %{buildroot}/home/ssgconfig/
+mkdir %{buildroot}/libexec/
 
 
 mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg
@@ -62,12 +63,16 @@ mv %{buildroot}/ssg/bin/configuser_bashrc %{buildroot}/home/ssgconfig/.bashrc
 mv %{buildroot}/ssg/etc/conf/*.properties %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/etc/conf/cluster_hostname-dist %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/tomcat/conf/server.xml %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
+mv %{buildroot}/ssg/bin/ssg-java.security %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/java.security
+mv %{buildroot}/ssg/libexec/* %{buildroot}/libexec
 
 # Root war is redundant
 rm -f %{buildroot}/ssg/dist/*
 
 chmod 755 %{buildroot}/etc/init.d/*
 chmod 755 %{buildroot}/etc/profile.d/*.sh
+chmod 755 %{buildroot}/libexec
+chmod 711 %{buildroot}/libexec/*
 
 %files
 # Root owned OS components
@@ -196,8 +201,21 @@ if [ -n "${SSGCONFIGENTRY}" ]; then
 else
     #the ssgconfig user is allowed to reboot the system, even when not at the console
     echo "ssgconfig  ALL = NOPASSWD: /sbin/reboot" >> /etc/sudoers
+    #the ssgconfig user is allowed to run the sca stuff without having to enter a password
+    echo "ssgconfig    ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
+    echo "ssgconfig    ALL = NOPASSWD: /ssg/libexec/" >> /etc/sudoers
+    echo "ssgconfig    ALL = NOPASSWD: /opt/sun/sca6000/sbin/scadiag" >> /etc/sudoers
 fi
 
+GATEWAYCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
+if [ -n "${GATEWAYCONFIGENTRY}" ]; then
+    echo -n ""
+    #user already exists in the sudoers file
+else
+    #the gateway user is allowed to run the sca stuff without having to enter a password
+    echo "gateway    ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
+    echo "gateway    ALL = NOPASSWD: /ssg/libexec/" >> /etc/sudoers
+fi
 rebootparam=`grep kernel.panic /etc/sysctl.conf`
 
 if [ "$rebootparam" ]; then
