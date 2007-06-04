@@ -34,7 +34,7 @@ start() {
 	echo "Disable route triangulation" 
 	echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
 	echo "Disable Source routing" 
-	echo 1 > /proc/sys/net/ipv4/conf/all/accept_source_route
+	echo 0 > /proc/sys/net/ipv4/conf/all/accept_source_route
 	echo "Disable Ping broadcasts" 
 	echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
 	echo "Increasing SYN packet Backlog"
