@@ -151,6 +151,7 @@
         <javac srcdir="src"
                destdir="${build.classes}"
                debug="on"
+               target="1.5" 
                classpathref="compile.classpath">
         </javac>
 

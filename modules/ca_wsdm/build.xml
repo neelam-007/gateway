@@ -43,6 +43,7 @@
         <mkdir dir="${build.classes}"/>
         <javac srcdir="src"
                destdir="${build.classes}"
+               target="1.5" 
                classpathref="compile.classpath">
         </javac>
     </target>
