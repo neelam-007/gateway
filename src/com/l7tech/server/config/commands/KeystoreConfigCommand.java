@@ -99,10 +99,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             };
     private KeystoreConfigBean ksBean;
     private SharedWizardInfo sharedWizardInfo;
-//    private static final String HSM_SETUP_SCRIPT = "bin/hsm_setup.sh";
 
-    private static final String SUDO_COMMAND = "sudo";
-    private static final String SCADIAG_COMMAND = "scadiag";
+
+    private static final String SUDO_COMMAND = "/usr/bin/sudo";
+    private static final String SCADIAG_COMMAND = "/opt/sun/sca6000/sbin/scadiag";
 
 
     public KeystoreConfigCommand(ConfigurationBean bean) {
@@ -348,7 +348,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             //HSM Specific setup
             MyScaManager scaManager = getScaManager();
 
-            //TODO start kiod if it's not started
             scaManager.startSca();
             //zero the board
             zeroHsm();
@@ -492,13 +491,18 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void zeroHsm() throws IOException {
+    private void zeroHsm() throws IOException, ScaException {
         if (getOsFunctions().isUnix()) {
             String sudoCommand = SUDO_COMMAND;
             try {
-                logger.info("Executing \"" + SCADIAG_COMMAND + "\"");
-                ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(SCADIAG_COMMAND, "-z", "mca0"), null, false);
-                logger.info("Successfully zeroed the HSM");
+                logger.info("Executing \"" + SUDO_COMMAND + " " + SCADIAG_COMMAND + "\"");
+                ProcResult result = ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(SCADIAG_COMMAND, "-z", "mca0"), null, true);
+                if (result.getExitStatus() == 0) {
+                    logger.info("Successfully zeroed the HSM");
+                } else {
+                    logger.severe("There was an error trying to zero the HSM: Output=" + String.valueOf(result.getOutput()));
+                    throw new ScaException("There was an error trying to zero the HSM: Output=" + String.valueOf(result.getOutput()));
+                }
             } catch (IOException e) {
                 logger.warning("There was an error trying to zero the HSM: " + e.getMessage());
                 throw e;
