@@ -1,6 +1,7 @@
 package com.l7tech.server.security.keystore.sca;
 
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
 import com.l7tech.objectmodel.FindException;
@@ -10,16 +11,15 @@ import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.KeystoreFileManager;
 import static com.l7tech.server.security.keystore.SsgKeyFinder.SsgKeyStoreType.PKCS11_HARDWARE;
 import com.l7tech.server.security.keystore.SsgKeyStore;
+import org.jboss.util.stream.NullInputStream;
 
+import javax.security.auth.x500.X500Principal;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
-
-import org.jboss.util.stream.NullInputStream;
 
 /**
  * SsgKeyStore view of this node's local SCA 6000 board.
@@ -141,6 +141,36 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
 
     protected char[] getEntryPassword() {
         return new char[0];  // unused by PKCS#11
+    }
+
+    public synchronized void deletePrivateKeyEntry(final String keyAlias) throws KeyStoreException {
+        if (isSystemAlias(keyAlias))
+            throw new KeyStoreException("The specified entry is a system private key and cannot be deleted.");
+        super.deletePrivateKeyEntry(keyAlias);
+    }
+
+    public synchronized void storePrivateKeyEntry(final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
+        if (isReservedAlias(entry.getAlias()))
+            throw new KeyStoreException("The specified private key alias is reserved for system use and cannot be created.");
+        super.storePrivateKeyEntry(entry, overwriteExisting);
+    }
+
+    public synchronized X509Certificate generateKeyPair(final String alias, final X500Principal dn, final int keybits, final int expiryDays) throws GeneralSecurityException {
+        if (isSystemAlias(alias))
+            throw new KeyStoreException("The specified entry is a system private key and cannot be overwritten.");
+        if (isReservedAlias(alias))
+            throw new KeyStoreException("The specified private key alias is reserved for system use and cannot be created.");
+        return super.generateKeyPair(alias, dn, keybits, expiryDays);
+    }
+
+    private boolean isSystemAlias(String keyAlias) {
+        // TODO find some other way to enforce this besides this awful hack
+        return "tomcat".equalsIgnoreCase(keyAlias) || "ssgroot".equalsIgnoreCase(keyAlias);
+    }
+
+    private boolean isReservedAlias(String keyAlias) {
+        // TODO find some other way to enforce this besides this awful hack
+        return ("CA".equalsIgnoreCase(keyAlias) || "SSL".equalsIgnoreCase(keyAlias));
     }
 
     /**
