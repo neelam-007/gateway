@@ -68,7 +68,7 @@ do
                 5)  echo -n "Are you sure you want to reboot the SecureSpan Gateway? [y/n]: "
                     read okToReboot
                     if [ "$okToReboot" == "y" ] || [ "$okToReboot" == "yes" ] ; then
-                        sudo /sbin/reboot
+                        su root -c /etc/reboot
                     fi
                     clear;;
                 6)  if [ -n ${UPDATER_PRESENT} ] ; then
