@@ -310,6 +310,7 @@ chmod -Rf 775 /ssg/etc/conf
 chmod -Rf 775 /ssg/tomcat/conf
 chmod -Rf 775 /ssg/jdk/jre/lib/security/
 chmod -Rf 775 /ssg/migration
+/bin/chown -R root.root /ssg/libexec
 
 #migrate the structure to the new partitioning scheme using the configuration wizard
 /ssg/configwizard/ssgconfig.sh -partitionMigrate &>/dev/null
@@ -351,6 +352,12 @@ if [ "$1" = "0" ] ; then
     if [ -n "${SSGCONFIGENTRY}" ]; then
         #remove the sudoers entry for ssgconfig
         perl -pi.bak -e 's/^ssgconfig.*$//g' /etc/sudoers
+    fi
+
+    GATEWAYENTRY=`grep ^gateway /etc/sudoers`
+    if [ -n "${GATEWAYENTRY}" ]; then
+        #remove the sudoers entry for gateway
+        perl -pi.bak -e 's/^gateway.*$//g' /etc/sudoers
     fi
 
     gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`

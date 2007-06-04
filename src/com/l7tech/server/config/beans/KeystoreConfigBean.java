@@ -8,7 +8,7 @@ import com.l7tech.server.config.SharedWizardInfo;
  * Date: Aug 17, 2005
  */
 public class KeystoreConfigBean extends BaseConfigurationBean {
-    public static final String MASTERKEY_MANAGE_SCRIPT = "bin/masterkey-manage.pl";
+    public static final String MASTERKEY_MANAGE_SCRIPT = "libexec/masterkey-manage.pl";
 
     private final static String NAME = "Keystore Configuration";
     private final static String DESCRIPTION = "Configures the keystore for the SSG";
@@ -33,6 +33,26 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private byte[] sharedKeyData;
     private boolean shouldBackupMasterKey;
     private char[] masterKeyBackupPassword;
+
+    public static final String[] DEFAULT_SECURITY_PROVIDERS =
+            {
+                "sun.security.provider.Sun",
+                "sun.security.rsa.SunRsaSign",
+                "com.sun.net.ssl.internal.ssl.Provider",
+                "com.sun.crypto.provider.SunJCE",
+                "sun.security.jgss.SunProvider",
+                "com.sun.security.sasl.Provider"
+            };
+
+    public static final String PKCS11_CFG_FILE = "/ssg/etc/conf/pkcs11.cfg";
+    public static final String[] HSM_SECURITY_PROVIDERS =
+            {
+                "sun.security.pkcs11.SunPKCS11 " + PKCS11_CFG_FILE,
+                "sun.security.provider.Sun",
+                "com.sun.net.ssl.internal.ssl.Provider",
+                "com.sun.crypto.provider.SunJCE"
+            };
+
 
     public KeystoreType getKeyStoreType() {
         return keyStoreType;

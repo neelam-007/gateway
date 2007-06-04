@@ -1,3 +1,3 @@
 #!/bin/sh
 
-scadiag -z mca0
+scadiag -z mca0 2>&1

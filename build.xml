@@ -3265,6 +3265,7 @@
                 <include name="save_keydata"/>
                 <include name="wipe_keydata"/>
                 <include name="zerohsm.sh"/>
+                <include name="masterkey-manage.pl"/>
             </fileset>
         </copy>
 
@@ -3293,7 +3294,6 @@
                 <include name="partitionControl.sh"/>
                 <include name="partition_firewall.pl"/>
                 <include name="ssg-java.security"/>
-                <include name="masterkey-manage.pl"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>

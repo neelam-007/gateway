@@ -26,12 +26,6 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -39,7 +33,9 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -79,24 +75,24 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 "com.sun.net.ssl.internal.ssl.Provider"
             };
 
-    private static final String[] DEFAULT_SECURITY_PROVIDERS =
-            {
-                "sun.security.provider.Sun",
-                "sun.security.rsa.SunRsaSign",
-                "com.sun.net.ssl.internal.ssl.Provider",
-                "com.sun.crypto.provider.SunJCE",
-                "sun.security.jgss.SunProvider",
-                "com.sun.security.sasl.Provider"
-            };
+//    private static final String[] DEFAULT_SECURITY_PROVIDERS =
+//            {
+//                "sun.security.provider.Sun",
+//                "sun.security.rsa.SunRsaSign",
+//                "com.sun.net.ssl.internal.ssl.Provider",
+//                "com.sun.crypto.provider.SunJCE",
+//                "sun.security.jgss.SunProvider",
+//                "com.sun.security.sasl.Provider"
+//            };
 
-    private static final String PKCS11_CFG_FILE = "/ssg/etc/conf/pkcs11.cfg";
-    private static final String[] HSM_SECURITY_PROVIDERS =
-            {
-                "sun.security.pkcs11.SunPKCS11 " + PKCS11_CFG_FILE,
-                "sun.security.provider.Sun",
-                "com.sun.net.ssl.internal.ssl.Provider",
-                "com.sun.crypto.provider.SunJCE"
-            };
+//    private static final String PKCS11_CFG_FILE = "/ssg/etc/conf/pkcs11.cfg";
+//    private static final String[] HSM_SECURITY_PROVIDERS =
+//            {
+//                "sun.security.pkcs11.SunPKCS11 " + PKCS11_CFG_FILE,
+//                "sun.security.provider.Sun",
+//                "com.sun.net.ssl.internal.ssl.Provider",
+//                "com.sun.crypto.provider.SunJCE"
+//            };
     private KeystoreConfigBean ksBean;
     private SharedWizardInfo sharedWizardInfo;
 
@@ -237,9 +233,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         backupFiles(files, BACKUP_FILE_NAME);
 
         try {
-            prepareJvmForNewKeystoreType(KeystoreType.DEFAULT_KEYSTORE_NAME);
+            KeystoreActions ka = new KeystoreActions(getOsFunctions());
+            ka.prepareJvmForNewKeystoreType(KeystoreType.DEFAULT_KEYSTORE_NAME);
             makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
-            updateJavaSecurity(javaSecFile, newJavaSecFile,DEFAULT_SECURITY_PROVIDERS );
+            updateJavaSecurity(javaSecFile, newJavaSecFile, KeystoreConfigBean.DEFAULT_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
             updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
             updateSystemPropertiesFile(ksBean, systemPropertiesFile);
@@ -284,10 +281,11 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
 
         try {
+            KeystoreActions ka = new KeystoreActions(getOsFunctions());
             //prepare the JDK and the Luna environment before generating keys
             setLunaSystemProps(ksBean);
             copyLunaJars(ksBean);
-            prepareJvmForNewKeystoreType(KeystoreType.LUNA_KEYSTORE_NAME);
+            ka.prepareJvmForNewKeystoreType(KeystoreType.LUNA_KEYSTORE_NAME);
             makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
             updateJavaSecurity(javaSecFile, newJavaSecFile, LUNA_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
@@ -342,27 +340,28 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void doInitializeHsm(char[] ksPassword, KeystoreConfigBean ksBean, String ksDir, File javaSecFile, File newJavaSecFile, File keystorePropertiesFile, File tomcatServerConfigFile, File sslKeyStoreFile, File systemPropertiesFile) throws Exception {
+    private void doInitializeHsm(char[] fullPassword, KeystoreConfigBean ksBean, String ksDir, File javaSecFile, File newJavaSecFile, File keystorePropertiesFile, File tomcatServerConfigFile, File sslKeyStoreFile, File systemPropertiesFile) throws Exception {
         logger.info("Initializing HSM");
         try {
             //HSM Specific setup
             MyScaManager scaManager = getScaManager();
+            KeystoreActions ka = new KeystoreActions(getOsFunctions());
 
             scaManager.startSca();
             //zero the board
             zeroHsm();
             scaManager.wipeKeydata();
-            initializeHSM(ksPassword);
-            prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
-            makeHSMKeys(new File(ksDir), ksPassword);
+            initializeHSM(ksBean.getKsPassword());
+            ka.prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
+            makeHSMKeys(new File(ksDir), fullPassword);
 
             insertKeystoreIntoDatabase(scaManager);
             backupHsmMasterkey(ksBean);
-            updateJavaSecurity(javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
+            updateJavaSecurity(javaSecFile, newJavaSecFile, KeystoreConfigBean.HSM_SECURITY_PROVIDERS);
 
             //General Keystore Setup
-            updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
+            updateKeystoreProperties(keystorePropertiesFile, fullPassword);
+            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), fullPassword);
             updateSystemPropertiesFile(ksBean, systemPropertiesFile);
 
         } catch (ScaException e) {
@@ -379,7 +378,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         logger.info("Restoring HSM Backup");
         try {
             MyScaManager scaManager = getScaManager();
-
+            KeystoreActions ka = new KeystoreActions(getOsFunctions());
             //fetch from the db
             DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
             final byte[] databytes = getKeydataFromDatabase(dbinfo);
@@ -396,9 +395,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             //replace keydata dir
             scaManager.saveKeydata(databytes);
             
-            prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
+            ka.prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
 
-            updateJavaSecurity(javaSecFile, newJavaSecFile, HSM_SECURITY_PROVIDERS);
+            updateJavaSecurity(javaSecFile, newJavaSecFile, KeystoreConfigBean.HSM_SECURITY_PROVIDERS);
 
             //General Keystore Setup
             updateKeystoreProperties(keystorePropertiesFile, fullKsPassword);
@@ -426,16 +425,18 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             if (ksBean.isShouldBackupMasterKey()) {
                 final char[] keystorePassword = ksBean.getKsPassword();
                 final char[] masterKeyBackupPassword = ksBean.getMasterKeyBackupPassword();
-                String masterKeyBackupScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
+                final String sudoCommand = SUDO_COMMAND;
+                final String masterKeyBackupScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
                 try {
                     logger.info("Executing \"" + masterKeyBackupScript + "\"");
-                    ProcResult result = ProcUtils.exec(null, new File(masterKeyBackupScript), ProcUtils.args("backup", String.valueOf(keystorePassword), MASTER_KEY_BACKUP_FILE_NAME, String.valueOf(masterKeyBackupPassword)), null, true);
+                    ProcResult result = ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(masterKeyBackupScript, "backup", String.valueOf(keystorePassword), MASTER_KEY_BACKUP_FILE_NAME, String.valueOf(masterKeyBackupPassword)), null, true);
                     if (result.getExitStatus() != 0) {
                         logger.warning(MessageFormat.format("{0} exited with a non zero return code: {1} ({2})",
                                 masterKeyBackupScript,
                                 result.getExitStatus(),
                                 new String(result.getOutput()))
                         );
+                        throw new IOException("There was an error while trying to backup the HSM master key: " + new String(result.getOutput()));
                     } else {
                         logger.info("HSM master key backup successful");
                     }
@@ -450,15 +451,17 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private void initializeHSM(char[] keystorePassword) throws IOException {
         if (getOsFunctions().isUnix()) {
             final String initializeScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
+            final String sudoCommand = SUDO_COMMAND;
             try {
-                logger.info("Executing \"" + initializeScript + "\"");
-                ProcResult result = ProcUtils.exec(null, new File(initializeScript), ProcUtils.args("init", String.valueOf(keystorePassword)), null, true);
+                logger.info("Executing \"" + sudoCommand + " " + initializeScript + "\"");
+                ProcResult result = ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(initializeScript, "init", String.valueOf(keystorePassword)), null, true);
                 if (result.getExitStatus() != 0) {
                     logger.warning(MessageFormat.format("{0} exited with a non zero return code: {1} ({2})",
                             initializeScript,
                             result.getExitStatus(),
                             new String(result.getOutput()))
                     );
+                    throw new IOException("There was an error trying to initialize the HSM: " + new String(result.getOutput()));
                 } else {
                     logger.info(MessageFormat.format("Successfully initialized the HSM: {0}", new String(result.getOutput())));
                 }
@@ -471,16 +474,18 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private void restoreHsmMasterkey(final char[] keystorePassword, final char[] backupPassword) throws IOException {
         if (getOsFunctions().isUnix()) {
-            final String restoreScript = getOsFunctions().getSsgInstallRoot() + MASTER_KEY_BACKUP_FILE_NAME;
+            final String sudoCommand = SUDO_COMMAND;
+            final String restoreScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
             try {
-                logger.info("Executing \"" + restoreScript + "\"");
-                ProcResult result = ProcUtils.exec(null, new File(restoreScript), ProcUtils.args("restore", String.valueOf(keystorePassword), MASTER_KEY_BACKUP_FILE_NAME, String.valueOf(backupPassword)), null, true);
+                logger.info("Executing \"" + sudoCommand + " " + restoreScript + "\"");
+                ProcResult result = ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(restoreScript, "restore", String.valueOf(keystorePassword), MASTER_KEY_BACKUP_FILE_NAME, String.valueOf(backupPassword)), null, true);
                 if (result.getExitStatus() != 0) {
                     logger.warning(MessageFormat.format("{0} exited with a non zero return code: {1} ({2})",
                             restoreScript,
                             result.getExitStatus(),
                             new String(result.getOutput()))
                     );
+                    throw new IOException("There was an error trying to restore the HSM master key: " + new String(result.getOutput()));
                 } else {
                     logger.info("Successfully restore the HSM master key");
                 }
@@ -536,7 +541,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     }
 
-    private void makeHSMKeys(File keystoreDir, char[] keystoreAccessPassword) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, SignatureException, InvalidKeyException {
+    private void makeHSMKeys(File keystoreDir, char[] fullKeystoreAccessPassword) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, SignatureException, InvalidKeyException {
         if ( !keystoreDir.exists() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' does not exist" );
         if ( !keystoreDir.isDirectory() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' is not a directory" );
         String kstype = "PKCS11";
@@ -547,8 +552,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         PrivateKey caPrivateKey;
 
         KeyStore theHsmKeystore = KeyStore.getInstance(kstype);
-        logger.info("Connecting to " + kstype + " keystore using password: " + new String(keystoreAccessPassword));
-        theHsmKeystore.load(null,keystoreAccessPassword);
+        logger.info("Connecting to " + kstype + " keystore using password: " + new String(fullKeystoreAccessPassword));
+        theHsmKeystore.load(null,fullKeystoreAccessPassword);
 
 
         logger.info("Generating RSA keypair for CA cert");
@@ -561,7 +566,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 KeyStoreConstants.CA_VALIDITY_DAYS, cakp);
 
         logger.info("Storing CA cert in HSM");
-        theHsmKeystore.setKeyEntry(KeyStoreConstants.CA_ALIAS, caPrivateKey, keystoreAccessPassword, new X509Certificate[] { caCert } );
+        theHsmKeystore.setKeyEntry(KeyStoreConstants.CA_ALIAS, caPrivateKey, fullKeystoreAccessPassword, new X509Certificate[] { caCert } );
 
         logger.info("Generating RSA keypair for SSL cert" );
         KeyPair sslkp = JceProvider.generateRsaKeyPair();
@@ -572,7 +577,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                                                                        sslkp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
 
         logger.info("Storing SSL cert in HSM");
-        theHsmKeystore.setKeyEntry(KeyStoreConstants.SSL_ALIAS, sslkp.getPrivate(), keystoreAccessPassword, new X509Certificate[] { sslCert, caCert } );
+        theHsmKeystore.setKeyEntry(KeyStoreConstants.SSL_ALIAS, sslkp.getPrivate(), fullKeystoreAccessPassword, new X509Certificate[] { sslCert, caCert } );
 
         File caCertFile = new File(keystoreDir,KeyStoreConstants.CA_CERT_FILE);
         File sslCertFile = new File(keystoreDir,KeyStoreConstants.SSL_CERT_FILE);
@@ -728,112 +733,112 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void prepareJvmForNewKeystoreType(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException {
-        Provider[] currentProviders = Security.getProviders();
-        for (Provider provider : currentProviders) {
-            Security.removeProvider(provider.getName());
-        }
+//    private void prepareJvmForNewKeystoreType(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException {
+//        Provider[] currentProviders = Security.getProviders();
+//        for (Provider provider : currentProviders) {
+//            Security.removeProvider(provider.getName());
+//        }
+//
+//       switch (ksType) {
+//            case DEFAULT_KEYSTORE_NAME:
+//                prepareProviders(DEFAULT_SECURITY_PROVIDERS);
+//                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
+//                break;
+//            case SCA6000_KEYSTORE_NAME:
+//                prepareProviders(HSM_SECURITY_PROVIDERS);
+//                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.PKCS11_ENGINE);
+//                break;
+//            case LUNA_KEYSTORE_NAME:
+//                prepareLunaProviders();
+//                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.LUNA_ENGINE);
+//                break;
+//        }
+//    }
 
-       switch (ksType) {
-            case DEFAULT_KEYSTORE_NAME:
-                prepareProviders(DEFAULT_SECURITY_PROVIDERS);
-                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
-                break;
-            case SCA6000_KEYSTORE_NAME:
-                prepareProviders(HSM_SECURITY_PROVIDERS);
-                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.PKCS11_ENGINE);
-                break;
-            case LUNA_KEYSTORE_NAME:
-                prepareLunaProviders();
-                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.LUNA_ENGINE);
-                break;
-        }
-    }
+//    private void prepareProviders(String[] securityProviders) throws IllegalAccessException, InstantiationException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
+//        for (String providerName : securityProviders) {
+//            try {
+//                Provider p = null;
+//                if (providerName.contains(" ")) {
+//                    String[] splitz = providerName.split(" ");
+//                    logger.info("Adding " + splitz[0]);
+//                    Class providerClass = Class.forName(splitz[0]);
+//                    Constructor ctor = providerClass.getConstructor(String.class);
+//                    p = (Provider) ctor.newInstance(splitz[1]);
+//                } else {
+//                    p = (Provider) Class.forName(providerName).newInstance();
+//                }
+//                Security.addProvider(p);
+//            } catch (ClassNotFoundException e) {
+//                logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
+//                throw e;
+//            } catch (NoSuchMethodException e) {
+//                logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
+//                throw e;
+//            } catch (InvocationTargetException e) {
+//                logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
+//                throw e;
+//            }
+//        }
+//    }
 
-    private void prepareProviders(String[] securityProviders) throws IllegalAccessException, InstantiationException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
-        for (String providerName : securityProviders) {
-            try {
-                Provider p = null;
-                if (providerName.contains(" ")) {
-                    String[] splitz = providerName.split(" ");
-                    logger.info("Adding " + splitz[0]);
-                    Class providerClass = Class.forName(splitz[0]);
-                    Constructor ctor = providerClass.getConstructor(String.class);
-                    p = (Provider) ctor.newInstance(splitz[1]);
-                } else {
-                    p = (Provider) Class.forName(providerName).newInstance();
-                }
-                Security.addProvider(p);
-            } catch (ClassNotFoundException e) {
-                logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
-                throw e;
-            } catch (NoSuchMethodException e) {
-                logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
-                throw e;
-            } catch (InvocationTargetException e) {
-                logger.severe("Could not instantiate the " + providerName + " security provider. Cannot proceed");
-                throw e;
-            }
-        }
-    }
-
-    private void prepareLunaProviders() throws FileNotFoundException, IllegalAccessException, InstantiationException {
-        File classDir = new File(getOsFunctions().getPathToJreLibExt());
-        if (!classDir.exists()) {
-            throw new FileNotFoundException("Could not locate the directory: \"" + classDir + "\"");
-        }
-
-        File[] lunaJars = classDir.listFiles(new FilenameFilter() {
-            public boolean accept(File file, String s) {
-                return  s.toUpperCase().startsWith("LUNA") &&
-                        s.toUpperCase().endsWith(".JAR");
-            }
-        });
-
-        if (lunaJars == null) {
-            throw new FileNotFoundException("Could not locate the Luna jar files in the specified directory: \"" + classDir + "\"");
-        }
-
-        URLClassLoader sysloader = (URLClassLoader)ClassLoader.getSystemClassLoader();
-        Class sysclass = URLClassLoader.class;
-        //this is a necessary hack to be able to hotplug some jars into the classloaders classpath.
-        // On linux, this happens already, but  not on windows
-
-        try {
-            Class[] parameters = new Class[]{URL.class};
-            Method method = sysclass.getDeclaredMethod("addURL", parameters);
-            method.setAccessible(true);
-            for (File lunaJar : lunaJars) {
-                URL url = lunaJar.toURI().toURL();
-                method.invoke(sysloader, new Object[]{url});
-            }
-            Class lunaJCAClass;
-            String lunaJCAClassName = "com.chrysalisits.crypto.LunaJCAProvider";
-            Class lunaJCEClass;
-            String lunaJCEClassName = "com.chrysalisits.cryptox.LunaJCEProvider";
-
-            try {
-                lunaJCAClass = sysloader.loadClass(lunaJCAClassName);
-                Object lunaJCA = lunaJCAClass.newInstance();
-                Security.addProvider((Provider) lunaJCA);
-
-                lunaJCEClass = sysloader.loadClass(lunaJCEClassName);
-                Object lunaJCE = lunaJCEClass.newInstance();
-                Security.addProvider((Provider) lunaJCE);
-
-            } catch (ClassNotFoundException cnfe) {
-                cnfe.printStackTrace();
-            }
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        Security.addProvider(new sun.security.provider.Sun());
-        Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
-    }
+//    private void prepareLunaProviders() throws FileNotFoundException, IllegalAccessException, InstantiationException {
+//        File classDir = new File(getOsFunctions().getPathToJreLibExt());
+//        if (!classDir.exists()) {
+//            throw new FileNotFoundException("Could not locate the directory: \"" + classDir + "\"");
+//        }
+//
+//        File[] lunaJars = classDir.listFiles(new FilenameFilter() {
+//            public boolean accept(File file, String s) {
+//                return  s.toUpperCase().startsWith("LUNA") &&
+//                        s.toUpperCase().endsWith(".JAR");
+//            }
+//        });
+//
+//        if (lunaJars == null) {
+//            throw new FileNotFoundException("Could not locate the Luna jar files in the specified directory: \"" + classDir + "\"");
+//        }
+//
+//        URLClassLoader sysloader = (URLClassLoader)ClassLoader.getSystemClassLoader();
+//        Class sysclass = URLClassLoader.class;
+//        //this is a necessary hack to be able to hotplug some jars into the classloaders classpath.
+//        // On linux, this happens already, but  not on windows
+//
+//        try {
+//            Class[] parameters = new Class[]{URL.class};
+//            Method method = sysclass.getDeclaredMethod("addURL", parameters);
+//            method.setAccessible(true);
+//            for (File lunaJar : lunaJars) {
+//                URL url = lunaJar.toURI().toURL();
+//                method.invoke(sysloader, new Object[]{url});
+//            }
+//            Class lunaJCAClass;
+//            String lunaJCAClassName = "com.chrysalisits.crypto.LunaJCAProvider";
+//            Class lunaJCEClass;
+//            String lunaJCEClassName = "com.chrysalisits.cryptox.LunaJCEProvider";
+//
+//            try {
+//                lunaJCAClass = sysloader.loadClass(lunaJCAClassName);
+//                Object lunaJCA = lunaJCAClass.newInstance();
+//                Security.addProvider((Provider) lunaJCA);
+//
+//                lunaJCEClass = sysloader.loadClass(lunaJCEClassName);
+//                Object lunaJCE = lunaJCEClass.newInstance();
+//                Security.addProvider((Provider) lunaJCE);
+//
+//            } catch (ClassNotFoundException cnfe) {
+//                cnfe.printStackTrace();
+//            }
+//        } catch (NoSuchMethodException e) {
+//            e.printStackTrace();
+//        } catch (InvocationTargetException e) {
+//            e.printStackTrace();
+//        } catch (MalformedURLException e) {
+//            e.printStackTrace();
+//        }
+//        Security.addProvider(new sun.security.provider.Sun());
+//        Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
+//    }
 
     private boolean makeLunaKeys(KeystoreConfigBean ksBean, File caCertFile, File sslCertFile, File caKeyStoreFile, File sslKeyStoreFile) throws Exception {
         boolean success = false;
