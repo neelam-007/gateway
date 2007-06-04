@@ -376,6 +376,7 @@ MAIN: {
         exit 99;
     };
 
+    usage() unless $command;
 
     my $blockDev;
     my $needBlockDev;
