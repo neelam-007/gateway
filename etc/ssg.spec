@@ -64,15 +64,15 @@ mv %{buildroot}/ssg/etc/conf/*.properties %{buildroot}/ssg/etc/conf/partitions/p
 mv %{buildroot}/ssg/etc/conf/cluster_hostname-dist %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/tomcat/conf/server.xml %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/bin/ssg-java.security %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/java.security
-mv %{buildroot}/ssg/libexec/* %{buildroot}/libexec
+# mv %{buildroot}/ssg/libexec/* %{buildroot}/libexec
 
 # Root war is redundant
 rm -f %{buildroot}/ssg/dist/*
 
 chmod 755 %{buildroot}/etc/init.d/*
 chmod 755 %{buildroot}/etc/profile.d/*.sh
-chmod 755 %{buildroot}/libexec
-chmod 711 %{buildroot}/libexec/*
+chmod 755 %{buildroot}/ssg/libexec
+chmod 711 %{buildroot}/ssg/libexec/*
 
 %files
 # Root owned OS components
