@@ -4,7 +4,6 @@ echo "Layer 7 SecureSpan(tm) Gateway v4.0" >/etc/issue
 cd /etc/rc2.d
 ln -s ../init.d/ssg_tcp_tune.sh S71SSG_tcptune
 ln -s ../init.d/ssg S99SSG_ssg
-ln -s ../init.d/ssg-sysconfig S01SSG_sysconfig
 
 cd /ssg
 
@@ -21,3 +20,7 @@ passwd -f ssgconfig
 
 # Enable pfil hooks for e1000g driver
 echo "e1000g -1      0       pfil" >> /etc/ipf/pfil.ap
+/usr/sbin/svcadm enable -r network/pfil
+
+# Enable ipfilter, you are at risk of being disconnected...
+/usr/sbin/svcadm enable -r network/ipfilter
