@@ -198,7 +198,7 @@ public class ProcUtils {
         if (logger.isLoggable(Level.FINEST)) logger.finest("Running program: " + program.getName());
         Process proc = null;
         try {
-            proc = Runtime.getRuntime().exec(cmdArray, null, cwd);
+            proc = new ProcessBuilder(cmdArray).directory(cwd).redirectErrorStream(true).start();
 
             final OutputStream os = proc.getOutputStream();
             if (stdin != null) {
