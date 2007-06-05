@@ -34,8 +34,6 @@ public class DsigUtil {
     private static final Logger logger = Logger.getLogger(DsigUtil.class.getName());
 
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
-    public static final String TRANSFORM_XSLT = "http://www.w3.org/TR/1999/REC-xslt-19991116";
-
 
     /**
      * Digitally sign the specified element, using the specified key and including the specified cert inline
@@ -211,7 +209,9 @@ public class DsigUtil {
 
         sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
             public Transform getTransform(String transform) throws NoSuchAlgorithmException {
-                if (TRANSFORM_XSLT.equals(transform)) {
+                if ( Transform.XSLT.equals(transform) ||
+                        Transform.XPATH.equals(transform) ||
+                        Transform.XPATH2.equals(transform) ) {
                     throw new NoSuchAlgorithmException(transform);
                 }
                 return super.getTransform(transform);

@@ -251,6 +251,9 @@ public class WssProcessorTest extends TestCase {
         doTest(result);
     }
 
+    /**
+     * Test that use of unsupported XPath transform causes reasonable error (not java.lang.NoSuchMethodError). 
+     */
     public void testBug3747DsigXpath() throws Exception {
         TestDocument result;
         try {
@@ -268,10 +271,8 @@ public class WssProcessorTest extends TestCase {
 
         try {
             doTest(result);
-        } catch (NoSuchMethodError e) {
+        } catch (InvalidDocumentFormatException idfe) {
             // Expected failure
-            // TODO fix this bug
-            log.log(Level.WARNING, "Expected failure due to as-yet-unfixed Bug #3747: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

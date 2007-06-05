@@ -336,7 +336,9 @@ public final class SamlAssertionV2 extends SamlAssertion {
                 public Transform getTransform(String transform) throws NoSuchAlgorithmException {
                     if (Transform.ENVELOPED.equals(transform)) {
                         accessedEnveloping[0] = true;
-                    } else if (SoapUtil.TRANSFORM_XSLT.equals(transform)) {
+                    } else if (Transform.XSLT.equals(transform)
+                            || Transform.XPATH.equals(transform)
+                            || Transform.XPATH2.equals(transform)) {
                         throw new NoSuchAlgorithmException(transform);
                     }
                     return super.getTransform(transform);

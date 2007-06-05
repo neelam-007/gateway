@@ -1472,7 +1472,9 @@ public class WssProcessorImpl implements WssProcessor {
             public Transform getTransform(String s) throws NoSuchAlgorithmException {
                 if (SoapUtil.TRANSFORM_STR.equals(s)) {
                     return new STRTransform(cntx.securityTokenReferenceElementToTargetElement);
-                } else if (SoapUtil.TRANSFORM_XSLT.equals(s)) {
+                } else if (Transform.XSLT.equals(s)
+                        || Transform.XPATH.equals(s)
+                        || Transform.XPATH2.equals(s)) {
                     throw new NoSuchAlgorithmException(s);
                 }
                 return super.getTransform(s);
