@@ -34,6 +34,7 @@ import java.util.logging.Logger;
  * vouched-for identity.  Keeping them in an LRU cache of some kind would be a good idea.
  */
 public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
+    private static final String PROP_SIGN_SAML_SV = "com.l7tech.proxy.signSamlSenderVouchesAssertion";
     private static final Logger log = Logger.getLogger(SenderVouchesSamlTokenStrategy.class.getName());
     private final String subjectUsername;
 
@@ -65,10 +66,10 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
 
         SamlAssertionGenerator.Options opts = new SamlAssertionGenerator.Options();
         opts.setClientAddress(InetAddressUtil.getLocalHost());       // TODO allow override from API caller (i.e. portal)
-        opts.setExpiryMinutes(5);                // TODO configurable?
+        opts.setExpiryMinutes(5);
         opts.setId(SamlAssertionGenerator.generateAssertionId("SSB-SamlAssertion"));
-        opts.setSignAssertion(true);             // TODO configurable?
-        opts.setUseThumbprintForSignature(true); // TODO configurable?        
+        opts.setSignAssertion(Boolean.getBoolean(PROP_SIGN_SAML_SV));
+        opts.setUseThumbprintForSignature(true);
         if (SecurityTokenType.SAML2_ASSERTION.equals(this.getType())) {
             opts.setVersion(2);
         }

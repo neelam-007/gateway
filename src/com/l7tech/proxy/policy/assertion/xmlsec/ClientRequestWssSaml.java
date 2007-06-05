@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,6 +34,7 @@ import java.util.logging.Logger;
  */
 public class ClientRequestWssSaml extends ClientAssertion {
     private static final Logger logger = Logger.getLogger(ClientRequestWssSaml.class.getName());
+    private static final String PROP_SIGN_SAML_SV = "com.l7tech.proxy.signSamlSenderVouchesAssertion";
     private RequestWssSaml data;
     private boolean senderVouches = false;
 
@@ -62,12 +64,16 @@ public class ClientRequestWssSaml extends ClientAssertion {
         final Ssg ssg = context.getSsg();
 
         // If we are capable of having client cert, then get one
+        final X509Certificate certificate;
         final PrivateKey privateKey;
         if (!ssg.isFederatedGateway() || ssg.getTrustedGateway() != null) {
             context.prepareClientCertificate();
+            certificate = ssg.getClientCertificate();
             privateKey = ssg.getClientCertificatePrivateKey();
-        } else
+        } else {
+            certificate = null;
             privateKey = null;
+        }
 
         final SamlAssertion ass;
         if (isSenderVouches()) {
@@ -96,12 +102,23 @@ public class ClientRequestWssSaml extends ClientAssertion {
                     } else {
                         wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
                     }
-                    if (privateKey != null) {
-                        wssReqs.setSenderSamlToken(ass.asElement(), false);
+
+                    if ( privateKey != null ) {
                         wssReqs.setSignTimestamp();
                         wssReqs.setSenderMessageSigningPrivateKey(privateKey);
+                    }
+
+                    if( ass.isHolderOfKey() ) {
+                        wssReqs.setSenderSamlToken(ass.asElement(), false);
                     } else {
-                        wssReqs.setSenderSamlToken(ass.asElement(), false); // can't sign the assertion
+                        if (privateKey != null && certificate != null) {
+                            wssReqs.setSenderMessageSigningCertificate(certificate);
+                            // only sign the SAML token if the assertion is not signed
+                            wssReqs.setSenderSamlToken(ass.asElement(), !Boolean.getBoolean(PROP_SIGN_SAML_SV));
+                        } else {
+                            logger.log(Level.WARNING, "Cannot use SAML Sender Vouches, no private key available to sign assertion.");
+                            return AssertionStatus.FALSIFIED;
+                        }
                     }
                     return AssertionStatus.NONE;
                 } catch (IOException e) {
