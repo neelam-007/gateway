@@ -15,8 +15,21 @@ export JAVA_HOME
 /ssg/configwizard/ssgconfig.sh -partitionMigrate 
 
 # Added user previously, pre-expire them
-passwd -x 365 ssgconfig
-passwd -f ssgconfig
+passwd -x 0 ssgconfig
+
+# set the ssgconfig password, this string was copied from a /etc/shadow of a machine
+# where the ssgconfig password was previously set to '7layer'. Salting may apply.
+PASSWD=YyodXLOqlkTSg
+
+#create a temporary input file
+cp /etc/shadow /etc/shadow.orig
+
+nawk -F: '{
+	if ( $1 == "ssgconfig" )
+		printf"%s:%s:%s:%s:%s:%s:%s:%s:%s\n",$1,passwd,$3,$4,$5,$6,$7,$8,$9
+	else
+		printf"%s:%s:%s:%s:%s:%s:%s:%s:%s\n",$1,$2,$3,$4,$5,$6,$7,$8,$9
+}' passwd="$PASSWD" /etc/shadow.orig > /etc/shadow
 
 # Enable pfil hooks for e1000g driver
 echo "e1000g -1      0       pfil" >> /etc/ipf/pfil.ap
