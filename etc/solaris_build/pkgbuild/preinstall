@@ -25,8 +25,9 @@ fi
 if [ `grep \^ssgconfig\: /etc/passwd` ]; then
 	echo "user ssgconfig already exists"
 else
-	echo "adding ssgconfig user, useradd will whine, this is safe to ignore"
-	useradd -G gateway -g gateway -d /export/home/ssgconfig -s /usr/bin/bash ssgconfig
+	echo "adding ssgconfig user"
+	# ssgconfig name is too long, swallow the output
+	useradd -G gateway -g gateway -d /export/home/ssgconfig -s /usr/bin/bash ssgconfig > /dev/null 2>&1
         if [ ${?} -eq 1 ]; then
                 echo "Error: User ssgconfig failed to add"
                 return 0;
