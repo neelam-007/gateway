@@ -113,6 +113,8 @@ stop_ssg() {
             if [ "$count" -ge "$tries" ]; then
                 (sh "${PARTITION_CONTROL}" "stop -force" "${which_partition}" &> /dev/null)    
                 RETVAL=$?
+                # sleep ensures TCP cleanup if process was killed
+                sleep 5;
             else
                 stop_ssg "${which_partition}" silent
             fi            
@@ -154,11 +156,6 @@ find_single_partition() {
             exit 1;
         fi
     fi
-}
-
-reallystop() {
-	echo "Killing $pid"
-	kill -9 $pid
 }
 
 case "$1" in
