@@ -7,7 +7,7 @@ else
 	groupadd gateway
         if [ ${?} -eq 1 ]; then
                 echo "Error: Group gateway failed to add"
-                return 0;
+                exit 1;
 	fi
 fi
 
@@ -18,7 +18,7 @@ else
 	useradd -G gateway -g gateway -d /export/home/gateway -s /usr/bin/bash gateway
         if [ ${?} -eq 1 ]; then
                 echo "Error: User gateway failed to add"
-                return 0;
+                exit 1;
 	fi
 fi
 
@@ -30,7 +30,7 @@ else
 	useradd -G gateway -g gateway -d /export/home/ssgconfig -s /usr/bin/bash ssgconfig > /dev/null 2>&1
         if [ ${?} -eq 1 ]; then
                 echo "Error: User ssgconfig failed to add"
-                return 0;
+                exit 1;
 	fi
 fi
 echo "SSG Users and Group check: Success"
