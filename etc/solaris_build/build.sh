@@ -91,6 +91,9 @@ mv ssg/etc/conf/*.properties ssg/etc/conf/partitions/partitiontemplate_/
 mv ssg/etc/conf/cluster_hostname-dist ssg/etc/conf/partitions/partitiontemplate_/
 mv ssg/tomcat/conf/server.xml ssg/etc/conf/partitions/partitiontemplate_/
 
+# put a java.security in the partition template (so we get one for each partition)
+mv ssg/bin/ssg-java.security ssg/etc/conf/partitions/partitiontemplate_/java.security
+
 echo Fixing permissions...
 
 chmod -f 755 export/home/ssgconfig/.profile
