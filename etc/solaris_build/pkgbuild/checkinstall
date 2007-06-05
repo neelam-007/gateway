@@ -1,21 +1,26 @@
 #!/bin/sh
 
 expected_release="5.10"
-expected_platform="i386"
-
+expected_java="1.6"
 release=`uname -r`
-platform=`uname -p`
-
-if [ ${platform} != ${expected_platform} ]; then
-	echo "\n\n\n\tThis package must be installed on a ${expected_platform} architecture\n"
-	echo "\tAborting installation.\n\n\n"
-	exit 1
-fi
 
 if [ ${release} != ${expected_release} ]; then
 	echo "\n\n\n\tThis package must be installed on a ${expected_release} machine\n"
 	echo "\tAborting installation.\n\n\n"
 	exit 1
+fi
+
+if [ -x /usr/j2se/jdk1.6.0_01/bin/java ]; then
+	javaver=`/usr/j2se/jdk1.6.0_01/bin/java -version 2>&1 | awk -F\" '/version/ {print $2}' | awk -F. '{print $1 "." $2}'`;
+	if [ ${javaver} != ${expected_java} ]; then
+		echo "\n\n\n\tThis package requires Java ${expected_java} to be installed in /usr/j2se/jdk1.6.0_01/bin/java\n"
+		echo "\tAborting installation.\n\n\n"
+		exit 1;
+	fi
+else
+	echo "\n\n\n\tThis package requires Java ${expected_java} to be installed in /usr/j2se/jdk1.6.0_01/bin/java\n"
+	echo "\tAborting installation.\n\n\n"
+	exit 1;
 fi
 
 echo Checkinstall exiting happily.
