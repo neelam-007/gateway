@@ -40,6 +40,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private static final Logger logger = Logger.getLogger(WssDecorator.class.getName());
 
     public static final String PROPERTY_SUPPRESS_NANOSECONDS = "com.l7tech.server.timestamp.omitNanos";
+    public static final String PROPERTY_SAML_USE_URI_REF = "com.l7tech.server.saml.useUriReference";
 
     public static final int TIMESTAMP_TIMOUT_MILLIS = 300000;
     private static final int NEW_DERIVED_KEY_LENGTH = 32;
@@ -298,7 +299,11 @@ public class WssDecoratorImpl implements WssDecorator {
                     SoapUtil.VALUETYPE_SAML_ASSERTIONID2 :
                     SoapUtil.VALUETYPE_SAML_ASSERTIONID3;
 
-                signatureKeyInfo = KeyInfoDetails.makeKeyId(assId, false, samlValueType);
+                if ( Boolean.getBoolean(PROPERTY_SAML_USE_URI_REF) ) {
+                    signatureKeyInfo = KeyInfoDetails.makeUriReference(assId, samlValueType);
+                } else {
+                    signatureKeyInfo = KeyInfoDetails.makeKeyId(assId, false, samlValueType);
+                }
             } else if (dreq.getRecipientCertificate() != null) {
                 // create a new EncryptedKey and sign with that
                 String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
