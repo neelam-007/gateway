@@ -171,7 +171,7 @@ public class SamlAssertionV1 extends SamlAssertion {
                 // Extract the issuer certificate
                 Element keyinfo = XmlUtil.findOnlyOneChildElementByName(signature, SoapUtil.DIGSIG_URI, "KeyInfo");
                 if (keyinfo == null) throw new SAXException("SAML issuer signature has no KeyInfo");
-                KeyInfoElement keyInfo = KeyInfoElement.parse(keyinfo, securityTokenResolver);
+                KeyInfoElement keyInfo = KeyInfoElement.parse(keyinfo, securityTokenResolver, true);
                 issuerCertificate = keyInfo.getCertificate();
             }
 

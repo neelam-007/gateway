@@ -53,12 +53,29 @@ public class KeyInfoElement implements ParsedElement {
     public static KeyInfoElement parse(Element keyinfo, SecurityTokenResolver securityTokenResolver)
             throws SAXException, MissingResolverException
     {
-        return new KeyInfoElement(keyinfo, securityTokenResolver);
+        return parse(keyinfo, securityTokenResolver, false);
+    }
+
+    /**
+     * Parse the specified KeyInfo element.
+     * @param keyinfo the element to parse.  Must not be null.  Must be a ds:KeyInfo element in proper namespace.
+     * @param securityTokenResolver resolver for X.509 sha1 thumbprints, or null to disable thumbprint support.
+     * @throws NullPointerException if it's null
+     * @throws IllegalArgumentException if it isn't a ds:KeyInfo element
+     * @throws SAXException if the format of this KeyInfo is invalid or not supported
+     * @throws MissingResolverException if this KeyInfo refers to an X509 SHA1 thumbprint or keyname, but no certificate resolver was supplied.
+     *
+     */
+    public static KeyInfoElement parse(Element keyinfo, SecurityTokenResolver securityTokenResolver, boolean allowX509SKI)
+            throws SAXException, MissingResolverException
+    {
+        return new KeyInfoElement(keyinfo, securityTokenResolver, allowX509SKI);
     }
 
 
     private KeyInfoElement(Element keyinfo,
-                           SecurityTokenResolver securityTokenResolver)
+                           SecurityTokenResolver securityTokenResolver,
+                           boolean allowX509SKI)
             throws SAXException, MissingResolverException
     {
         if (!"KeyInfo".equals(keyinfo.getLocalName())) throw new IllegalArgumentException("Element is not a KeyInfo element");
@@ -71,10 +88,22 @@ public class KeyInfoElement implements ParsedElement {
             if (x509Data != null) {
                 // Use X509Data
                 Element x509CertEl = XmlUtil.findOnlyOneChildElementByName(x509Data, SoapUtil.DIGSIG_URI, "X509Certificate");
-                if (x509CertEl == null) throw new SAXException("KeyInfo has no X509Data/X509Certificate");
-                String certBase64 = XmlUtil.getTextValue(x509CertEl);
-                byte[] certBytes = HexUtils.decodeBase64(certBase64, true);
-                cert = CertUtils.decodeCert(certBytes);
+                Element x509SkiEl = allowX509SKI ? XmlUtil.findOnlyOneChildElementByName(x509Data, SoapUtil.DIGSIG_URI, "X509SKI") : null;
+                if (x509CertEl != null) {
+                    String certBase64 = XmlUtil.getTextValue(x509CertEl);
+                    byte[] certBytes = HexUtils.decodeBase64(certBase64, true);
+                    cert = CertUtils.decodeCert(certBytes);
+                } else if (x509SkiEl != null) {
+                    if (securityTokenResolver == null) throw new MissingResolverException("KeyInfo uses X509Data/X509SKI but no certificate resolver is available");
+                    String skiRaw = XmlUtil.getTextValue(x509SkiEl);
+                    String ski = HexUtils.encodeBase64(HexUtils.decodeBase64(skiRaw, true), true);
+                    cert = securityTokenResolver.lookupBySki(ski);
+                    if (cert == null)
+                        throw new SAXException("KeyInfo includes certificate which cannot be recovered, SKI '"+ski+"'");
+                } else {
+                    throw new SAXException("KeyInfo has no X509Data/X509Certificate" + (allowX509SKI ? " or X509Data/X509SKI" : ""));
+                }
+
                 if (cert == null) throw new SAXException("KeyInfo includes certificate which cannot be recovered"); // can't happen
             } else {
                 // No x509Data -- look for SecurityTokenReference next

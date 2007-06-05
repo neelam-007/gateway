@@ -204,7 +204,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
                 // Extract the issuer certificate
                 KeyInfoType keyInfo = signature.getKeyInfo();
                 if (keyInfo == null) throw new SAXException("SAML issuer signature has no KeyInfo");
-                KeyInfoElement keyInfoElement = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver);
+                KeyInfoElement keyInfoElement = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver, true);
                 issuerCertificate = keyInfoElement.getCertificate();
             }
 
