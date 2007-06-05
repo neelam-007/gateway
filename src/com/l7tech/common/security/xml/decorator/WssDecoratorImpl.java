@@ -794,7 +794,6 @@ public class WssDecoratorImpl implements WssDecorator {
             final String id = signedIds[i];
 
             final Reference ref;
-            boolean c14ExRequired = true;
             if ( "Assertion".equals(element.getLocalName()) &&
                  (SamlConstants.NS_SAML2.equals(element.getNamespaceURI()) || SamlConstants.NS_SAML.equals(element.getNamespaceURI()))) {
                 // Bug #1434 -- unable to refer to SAML assertion directly using its AssertionID -- need intermediate STR with wsu:Id
@@ -817,7 +816,6 @@ public class WssDecoratorImpl implements WssDecorator {
                 cannonParam.setAttribute("Algorithm", Transform.C14N_EXCLUSIVE);
                 ref.addTransform(strTransform);
                 strTransformsNodeToNode.put(str, element);
-                c14ExRequired = false;
             } else
                 ref = template.createReference("#" + id);
 
@@ -827,8 +825,9 @@ public class WssDecoratorImpl implements WssDecorator {
                 ref.addTransform(Transform.ENVELOPED);
             }
 
-            if (c14ExRequired)
-                ref.addTransform(Transform.C14N_EXCLUSIVE);
+            // Note that c14n is not required when using STR-Transform, this can be removed
+            // once 4.0 is the earliest version in use.
+            ref.addTransform(Transform.C14N_EXCLUSIVE);
             template.addReference(ref);
         }
         Element emptySignatureElement = template.getSignatureElement();
