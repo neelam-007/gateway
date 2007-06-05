@@ -264,9 +264,9 @@ class GuiCredentialManager extends CredentialManager {
         invokeOnSwingThread(new Runnable() {
             public void run() {
                 Gui.errorMessage(
-                        "<HTML>The configured hostname for " + server + " is \"" + whatWeWanted + "\", <br>" +
-                        "but the server presented a certificate claiming its hostname is \"" + whatWeGotInstead + "\". <br>" +
-                        "<p>Please double check the hostname for " + server + ".");
+                        "The configured hostname for " + server + " is \"" + whatWeWanted + "\", \n" +
+                        "but the server presented a certificate claiming its hostname is \"" + whatWeGotInstead + "\".\n\n" +
+                        "Please double check the hostname for " + server + ".");
 
             }
         });
