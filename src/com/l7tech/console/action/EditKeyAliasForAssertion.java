@@ -29,7 +29,7 @@ public class EditKeyAliasForAssertion extends NodeAction {
     }
 
     public String getName() {
-        return "Set Private Key Alias";
+        return "Select Private Key";
     }
 
     public String getDescription() {
