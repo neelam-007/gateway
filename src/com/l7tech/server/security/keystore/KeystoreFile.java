@@ -18,7 +18,6 @@ public class KeystoreFile extends NamedEntityImp {
 
     private String format;
     private byte[] databytes;
-    private String updatingnodeid;
 
 
     public String getFormat() {
@@ -37,14 +36,7 @@ public class KeystoreFile extends NamedEntityImp {
         this.databytes = databytes;
     }
 
-    public String getUpdatingnodeid() {
-        return updatingnodeid;
-    }
-
-    public void setUpdatingnodeid(String updatingnodeid) {
-        this.updatingnodeid = updatingnodeid;
-    }
-
+    /** @noinspection RedundantIfStatement*/
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

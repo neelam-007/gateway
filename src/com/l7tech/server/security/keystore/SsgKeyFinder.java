@@ -10,37 +10,30 @@ import java.util.List;
 
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.NamedEntity;
 
 
 /**
  * KeyStore-like interface implemented by SSG components that provide access to certificates with private keys.
  */
-@Transactional(propagation= Propagation.SUPPORTS, rollbackFor=Throwable.class)
-public interface SsgKeyFinder {
+public interface SsgKeyFinder extends NamedEntity {
     enum SsgKeyStoreType {
         OTHER,
         PKCS12_SOFTWARE,
         PKCS11_HARDWARE
     }
 
-    /** @return ID of this key store.  Only guaranteed unique on a particular SSG node. */
-    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    long getId();
-
-    /** @return the display name of this key store.  Not necessarily unique.  Never null. */
-    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    String getName();
+    long getOid();
 
     /** @return the SsgKeyStoreType of this keystore instance. */
-    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     SsgKeyStoreType getType();
 
     /** @return true iff. getKeyStore would return a non-null value. */
-    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     boolean isMutable();
 
     /** @return a mutable SsgKeyStore interface to this KeyFinder, or null if this KeyFinder is read-only. */
-    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     SsgKeyStore getKeyStore();
 
     /**
@@ -49,7 +42,6 @@ public interface SsgKeyFinder {
      * @return a list of aliases.  May be empty but never null.
      * @throws KeyStoreException if there is a problem obtaining the list
      */
-    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     List<String> getAliases() throws KeyStoreException;
 
     /**

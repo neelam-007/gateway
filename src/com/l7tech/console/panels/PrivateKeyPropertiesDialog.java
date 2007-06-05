@@ -191,6 +191,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         final TrustedCertAdmin admin = getTrustedCertAdmin();
         DialogDisplayer.InputListener listener = new DialogDisplayer.InputListener() {
             public void reportResult(Object option) {
+                if (option == null)
+                    return;
                 String dnres = option.toString();
                 X500Principal dn;
                 try {

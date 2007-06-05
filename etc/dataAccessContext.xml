@@ -98,6 +98,7 @@
                 <idref bean="roleManager"/>
                 <idref bean="schemaEntryManager"/>
                 <idref bean="sharedKeyManager"/>
+                <idref bean="keystoreFileManager"/>
             </list>
         </property>
     </bean>

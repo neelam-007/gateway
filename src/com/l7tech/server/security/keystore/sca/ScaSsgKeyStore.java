@@ -72,7 +72,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
         this.password = password;
     }
 
-    public long getId() {
+    public long getOid() {
         return id;
     }
 
@@ -87,7 +87,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     protected synchronized KeyStore keyStore() throws KeyStoreException {
         if (keystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
             try {
-                KeystoreFile keystoreFile = kem.findByPrimaryKey(getId());
+                KeystoreFile keystoreFile = kem.findByPrimaryKey(getOid());
                 byte[] bytes = keystoreFile.getDatabytes();
                 if (bytes != null && bytes.length > 0 && !keystoreFile.getFormat().equals(DB_FORMAT))
                     throw new KeyStoreException("Database key data format unrecognized for SCA keystore named " + name +
@@ -185,7 +185,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     protected synchronized <OUT> OUT mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
         final Object[] out = new Object[] { null };
         try {
-            kem.updateDataBytes(getId(), new Functions.Unary<byte[], byte[]>() {
+            kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
                 public byte[] call(byte[] bytes) {
                     try {
                         keystore = bytesToKeyStore(bytes);

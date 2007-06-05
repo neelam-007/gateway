@@ -33,7 +33,11 @@ public class TomcatSsgKeyFinder implements SsgKeyFinder {
         this.keystoreUtils = keystoreUtils;
     }
 
-    public long getId() {
+    public String getId() {
+        return String.valueOf(getOid());
+    }
+
+    public long getOid() {
         return id;
     }
 
@@ -63,12 +67,12 @@ public class TomcatSsgKeyFinder implements SsgKeyFinder {
     public SsgKeyEntry getCertificateChain(String alias) throws KeyStoreException {
         try {
             if ("SSL".equals(alias)) {
-                return new SsgKeyEntry(getId(),
+                return new SsgKeyEntry(getOid(),
                                        alias,
                                        new X509Certificate[] { keystoreUtils.getSslCert() },
                                        (RSAPrivateKey)keystoreUtils.getSSLPrivateKey());
             } else if ("CA".equals(alias)) {
-                return new SsgKeyEntry(getId(),
+                return new SsgKeyEntry(getOid(),
                                        alias,
                                        new X509Certificate[] { keystoreUtils.getRootCert() },
                                        null); // TODO should we include the private key as well, if this is a master node?

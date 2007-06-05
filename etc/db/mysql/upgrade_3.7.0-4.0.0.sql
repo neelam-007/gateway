@@ -13,7 +13,6 @@ CREATE TABLE keystore_file (
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   format varchar(128) NOT NULL,
-  updatingnodeid varchar(32),
   databytes mediumblob,
   PRIMARY KEY (objectid),
   UNIQUE(name)

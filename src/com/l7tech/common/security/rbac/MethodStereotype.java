@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.common.security.rbac;
 
@@ -10,7 +10,7 @@ package com.l7tech.common.security.rbac;
  */
 public enum MethodStereotype {
     /**
-     * The method returns one or more {@link EntityHeader}s.
+     * The method returns one or more {@link com.l7tech.objectmodel.EntityHeader}s.
      *
      * If the method's return type is a {@link java.util.Collection} or an array of
      * {@link com.l7tech.objectmodel.EntityHeader}, the contents of the collection will be filtered so that only
@@ -131,8 +131,9 @@ public enum MethodStereotype {
 
     /**
      * The method does not conform to any known stereotype.
-     *
-     * Not currently supported (will throw an exception at runtime).
+     * 
+     * An {@link com.l7tech.common.security.rbac.Secured#entityResolverClass()} must be specified,
+     * otherwise an exception will be thrown.
      */
     NONE,
     ;

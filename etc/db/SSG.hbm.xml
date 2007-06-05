@@ -314,7 +314,6 @@
         <version name="version"/>
         <property name="name" column="name" type="string"/>
         <property name="format" column="format" type="string"/>
-        <property name="updatingnodeid" column="updatingnodeid" type="string"/>
         <property name="databytes" column="databytes" type="binary" lazy="true"/>
     </class>
 

@@ -42,15 +42,15 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
     /**
      * Create an SsgKeyStore that uses a PKCS#12 file in a KeystoreFile in the database as its backing store.
      *
-     * @param id       the ID of this SsgKeyStore.  This will also be the ID of the KeystoreFile instance we use
+     * @param oid      the OID of this SsgKeyStore.  This will also be the OID of the KeystoreFile instance we use
      *                 as our backing store.
      * @param name     The name of this SsgKeyStore.  Required.
      * @param cpm      ClusterPropertyManager.  Required.
      * @param kem      KeystoreFileManager.  Required.
      * @param password the password to use to encrypt the PKCS#12 data bytes.  Required.
      */
-    public DatabasePkcs12SsgKeyStore(long id, String name, ClusterPropertyManager cpm, KeystoreFileManager kem, char[] password) {
-        this.id = id;
+    public DatabasePkcs12SsgKeyStore(long oid, String name, ClusterPropertyManager cpm, KeystoreFileManager kem, char[] password) {
+        this.id = oid;
         this.name = name;
         this.cpm = cpm;
         this.kem = kem;
@@ -59,7 +59,11 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
             throw new IllegalArgumentException("ClusterPropertyManager and KeystoreFileManager must be provided");
     }
 
-    public long getId() {
+    public String getId() {
+        return String.valueOf(id);
+    }
+
+    public long getOid() {
         return id;
     }
 
@@ -74,7 +78,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
     protected synchronized KeyStore keyStore() throws KeyStoreException {
         if (cachedKeystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
             try {
-                KeystoreFile keystoreFile = kem.findByPrimaryKey(getId());
+                KeystoreFile keystoreFile = kem.findByPrimaryKey(getOid());
                 cachedKeystore = bytesToKeyStore(keystoreFile.getDatabytes());
                 lastLoaded = System.currentTimeMillis();
             } catch (FindException e) {
@@ -100,10 +104,10 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         try {
             ByteArrayInputStream inputStream = null;
             if (bytes != null && bytes.length > 0) {
-                if (logger.isLoggable(Level.FINE)) logger.fine("Loading existing PKCS#12 data for keystore id " + getId());
+                if (logger.isLoggable(Level.FINE)) logger.fine("Loading existing PKCS#12 data for keystore id " + getOid());
                 inputStream = new ByteArrayInputStream(bytes);
             } else {
-                if (logger.isLoggable(Level.INFO)) logger.info("Creating new empty PKCS#12 file for keystore id " + getId());
+                if (logger.isLoggable(Level.INFO)) logger.info("Creating new empty PKCS#12 file for keystore id " + getOid());
             }
 
             KeyStore keystore = KeyStore.getInstance("PKCS12", new BouncyCastleProvider());
@@ -139,7 +143,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
     protected synchronized <OUT> OUT mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
         final Object[] out = new Object[] { null };
         try {
-            kem.updateDataBytes(getId(), new Functions.Unary<byte[], byte[]>() {
+            kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
                 public byte[] call(byte[] bytes) {
                     try {
                         cachedKeystore = bytesToKeyStore(bytes);

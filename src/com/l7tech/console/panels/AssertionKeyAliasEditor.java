@@ -158,7 +158,7 @@ public class AssertionKeyAliasEditor extends JDialog {
                     for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(ksi.id)) {
                         existingAlias[i] = new ComboEntry(ksi.id, ksi.name, entry.getAlias());
                         if (assertion.getNonDefaultKeystoreId() == ksi.id) {
-                            if (entry.getId().equals(assertion.getKeyAlias())) {
+                            if (entry.getAlias().equals(assertion.getKeyAlias())) {
                                 tosel = i;
                             }
                         }

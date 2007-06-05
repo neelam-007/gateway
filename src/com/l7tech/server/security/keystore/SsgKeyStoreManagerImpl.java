@@ -104,7 +104,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException {
         init();
         for (SsgKeyFinder keystore : keystores) {
-            if (keystore.getId() == id)
+            if (keystore.getOid() == id)
                 return keystore;
         }
         throw new FindException("No SsgKeyFinder available on this node with id=" + id);

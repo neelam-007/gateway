@@ -1,19 +1,19 @@
 package com.l7tech.server.security.keystore;
 
-import com.l7tech.objectmodel.*;
 import com.l7tech.common.util.Functions;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.HibernateEntityManager;
+import com.l7tech.objectmodel.UpdateException;
+import org.hibernate.HibernateException;
+import org.hibernate.LockMode;
+import org.hibernate.Session;
+import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.orm.hibernate3.HibernateCallback;
-import org.hibernate.Session;
-import org.hibernate.HibernateException;
-import org.hibernate.Query;
 
-import java.util.logging.Logger;
 import java.sql.SQLException;
+import java.util.logging.Logger;
 
 /**
  * Hibernate manager for read/write access to the keystore table.
@@ -23,14 +23,8 @@ import java.sql.SQLException;
 @Transactional(propagation= Propagation.REQUIRED)
 public class KeystoreFileManagerImpl
         extends HibernateEntityManager<KeystoreFile, EntityHeader>
-        implements KeystoreFileManager {
-    private final Logger logger = Logger.getLogger(KeystoreFileManagerImpl.class.getName());
-
-    private final String HQL_FIND_BY_NAME =
-            "from " + getTableName() +
-                    " in class " + KeystoreFile.class.getName() +
-                    " where " + getTableName() + ".name = ?";
-
+        implements KeystoreFileManager
+{
     public KeystoreFileManagerImpl() {}
 
     public Class getImpClass() {
@@ -54,14 +48,12 @@ public class KeystoreFileManagerImpl
             getHibernateTemplate().execute(new HibernateCallback() {
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     try {
-                        KeystoreFile keystoreFile = findByPrimaryKey(id);
+                        KeystoreFile keystoreFile = (KeystoreFile)session.load(KeystoreFile.class, id, LockMode.UPGRADE);
                         byte[] bytesBefore = keystoreFile.getDatabytes();
                         byte[] bytesAfter = mutator.call(bytesBefore);
                         keystoreFile.setDatabytes(bytesAfter);
                         update(keystoreFile);
                         return null;
-                    } catch (FindException e) {
-                        throw new HibernateException(e);
                     } catch (UpdateException e) {
                         throw new HibernateException(e);
                     }

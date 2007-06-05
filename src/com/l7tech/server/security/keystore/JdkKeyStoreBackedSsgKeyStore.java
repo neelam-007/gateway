@@ -35,6 +35,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     /** @return the format string for this keystore, to store in the format column in the DB, ie "hsm" or "sdb". */
     protected abstract String getFormat();
 
+    public String getId() {
+        return String.valueOf(getOid());
+    }
+
     public List<String> getAliases() throws KeyStoreException {
         KeyStore keystore = keyStore();
 
@@ -83,7 +87,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             // Fallthrough and do without
         }
 
-        return new SsgKeyEntry(getId(), alias, x509chain, rsaPrivateKey);
+        return new SsgKeyEntry(getOid(), alias, x509chain, rsaPrivateKey);
     }
 
     /**

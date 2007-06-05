@@ -215,7 +215,7 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         List<SsgKeyFinder> finders = ssgKeyStoreManager.findAll();
         List<KeystoreInfo> list = new ArrayList<KeystoreInfo>();
         for (SsgKeyFinder finder : finders) {
-            long id = finder.getId();
+            long id = finder.getOid();
             String name = finder.getName();
             SsgKeyFinder.SsgKeyStoreType type = finder.getType();
             boolean readonly = !finder.isMutable();

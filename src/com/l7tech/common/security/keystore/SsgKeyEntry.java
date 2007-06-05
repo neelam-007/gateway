@@ -1,6 +1,7 @@
 package com.l7tech.common.security.keystore;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.NamedEntity;
 
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
@@ -12,7 +13,7 @@ import java.io.Serializable;
  * Represents a private key entry in a Gateway key store, including information about a cert chain and
  * RSA private key.
  */
-public class SsgKeyEntry implements Entity, Serializable {
+public class SsgKeyEntry implements NamedEntity, Serializable {
     private static final long serialVersionUID = 23272983482973429L;
 
     private long keystoreId;
@@ -44,9 +45,16 @@ public class SsgKeyEntry implements Entity, Serializable {
         this.rsaPrivateKey = rsaPrivateKey;
     }
 
-    /** @return the ID of this entry, or null if it's not yet assigned.  This is a synonym for getAlias. */
+    /**
+     * @return the ID of this entry, or null if it's not yet assigned.
+     *         This ID is the keystoreId converted to a string, followed by a colon, followed by the alias.
+     */
     public String getId() {
-        return alias;
+        return alias == null ? null : (keystoreId + ":" + alias);
+    }
+
+    public String getName() {
+        return getAlias();
     }
 
     /** @return the alias of this entry, or null if it's not yet assigned.  This is also used as the ID. */
