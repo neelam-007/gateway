@@ -28,8 +28,8 @@ class FtpCommandFactory implements CommandFactory {
         commandMap.put("CDUP", new org.apache.ftpserver.command.CDUP());
         commandMap.put("CWD",  new org.apache.ftpserver.command.CWD());
         commandMap.put("DELE", new org.apache.ftpserver.command.DELE());
-        //commandMap.put("EPRT", new org.apache.ftpserver.command.EPRT()); // RFC 2428 Nat / IPv6 extensions
-        //commandMap.put("EPSV", new org.apache.ftpserver.command.EPSV()); // RFC 2428 Nat / IPv6 extensions
+        commandMap.put("EPRT", new org.apache.ftpserver.command.EPRT()); // RFC 2428 Nat / IPv6 extensions
+        commandMap.put("EPSV", new org.apache.ftpserver.command.EPSV()); // RFC 2428 Nat / IPv6 extensions
         commandMap.put("FEAT", new com.l7tech.server.transport.ftp.FtpCommands.FEAT()); // RFC 2389 Feature negotiation
         commandMap.put("HELP", new org.apache.ftpserver.command.HELP());
         commandMap.put("LANG", new com.l7tech.server.transport.ftp.FtpCommands.LANG()); // RFC 2640 I18N
