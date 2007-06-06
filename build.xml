@@ -1362,6 +1362,7 @@
         <jar jarfile="${build.dir}/l7provider.jar">
             <fileset dir="${build.classes}">
                 <include name="com/l7tech/server/tomcat/ClientTrusting*.class"/>
+                <include name="com/l7tech/common/util/ConfigurableLogFormatter*.class"/>
             </fileset>
         </jar>
 

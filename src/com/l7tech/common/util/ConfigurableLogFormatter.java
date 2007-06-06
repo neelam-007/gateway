@@ -28,6 +28,7 @@ import java.io.IOException;
  *   <li>Logger Name</li>
  *   <li>Message</li>
  *   <li>Thread Id</li>
+ *   <li>Method Name</li>
  *   <li>Exception message</li>
  * </ol>
  *
@@ -37,7 +38,7 @@ import java.io.IOException;
  *  java.util.logging.ConsoleHandler.level = FINEST
  *  java.util.logging.ConsoleHandler.formatter = com.l7tech.common.util.ConfigurableLogFormatter
  *  java.util.logging.ConsoleHandler.formatter.format = [%1$tY/%1$tm/%1$td-%1$tH:%1$tM:%1$tS.%1$tL]-[%2$-7s]-[%5$d]-[%3$#2s]-%4$s%n
- *  java.util.logging.ConsoleHandler.formatter.exceptionFormat = [%1$tY/%1$tm/%1$td-%1$tH:%1$tM:%1$tS.%1$tL]-[%2$-7s]-[%5$d]-[%3$#2s]-%4$s%n%6$s%
+ *  java.util.logging.ConsoleHandler.formatter.exceptionFormat = [%1$tY/%1$tm/%1$td-%1$tH:%1$tM:%1$tS.%1$tL]-[%2$-7s]-[%5$d]-[%3$#2s]-%4$s%n%7$s%
  * </pre>
  *
  * @author $Author$
@@ -81,7 +82,8 @@ public class ConfigurableLogFormatter extends Formatter {
                 // if they don't use a valid pattern just log the raw message
             }
         }
-        Object[] formatArgs =  new Object[]{new Long(time), level.getName(), new FormattableLoggerName(name), message, new Integer(threadId), toString(thrown)};
+        // Note that you need to edit the EXCEPTION_ARG if you change the exception index
+        Object[] formatArgs =  new Object[]{new Long(time), level.getName(), new FormattableLoggerName(name), message, new Integer(threadId), toMethodString(record), toString(thrown)};
 
         String selectedFormat = null;
         boolean standardFormat = true;
@@ -118,13 +120,18 @@ public class ConfigurableLogFormatter extends Formatter {
     //- PRIVATE
 
     /**
+     * Exception argument position
+     */
+    private static final int EXCEPTION_ARG = 7;
+
+    /**
      * The standard message formats, e.g.
      *
      *   [2006/03/02-13:26:21,508]-[FINEST ]-[16]-[com.l7tech.server.ServerConfig]-Using default value 131071
      *
      */
     private static final String DEFAULT_FORMAT = "[%1$tY/%1$tm/%1$td-%1$tH:%1$tM:%1$tS,%1$tL]-[%2$-7s]-[%5$d]-[%3$s]-%4$s%n";
-    private static final String DEFAULT_FORMAT_THROWN = "[%1$tY/%1$tm/%1$td-%1$tH:%1$tM:%1$tS,%1$tL]-[%2$-7s]-[%5$d]-[%3$s]-%4$s%n%6$s%n";
+    private static final String DEFAULT_FORMAT_THROWN = "[%1$tY/%1$tm/%1$td-%1$tH:%1$tM:%1$tS,%1$tL]-[%2$-7s]-[%5$d]-[%3$s]-%4$s%n%7$s";
 
     /**
      *
@@ -161,8 +168,13 @@ public class ConfigurableLogFormatter extends Formatter {
                         String configFormat = manager.getProperty(prefix + ".format");
                         String configExceptFormat = manager.getProperty(prefix + ".exceptionFormat");
 
-                        if(configFormat!=null) format = configFormat;
-                        if(configExceptFormat!=null) exceptFormat = configExceptFormat;
+                        if(configFormat!=null) {
+                            format = configFormat;
+                            exceptFormat = configFormat + "%" + EXCEPTION_ARG + "$s"; // default to showing stack last
+                        }
+                        if(configExceptFormat!=null) {
+                            exceptFormat = configExceptFormat;
+                        }
 
                         found = true;
                         break;
@@ -173,25 +185,47 @@ public class ConfigurableLogFormatter extends Formatter {
     }
 
     /**
-     * Turn a throwable into a huge stacktrace.
+     * Turn a LogRecord into an object whose toString is the method name.
+     *
+     * @param record the log record
+     * @return the object
+     */
+    private Object toMethodString(final LogRecord record) {
+        Object formatted = new Object() {
+            public String toString() {
+                String methodName = record.getSourceMethodName();
+                return methodName==null ? "" : methodName;
+            }
+        };
+
+        return formatted;
+    }
+
+    /**
+     * Turn a throwable into an object whose toString is a huge stacktrace.
      *
      * @param t the throwable
-     * @return the formatted string
+     * @return the object
      */
-    private String toString(Throwable t) {
-        String formatted = null;
+    private Object toString(final Throwable t) {
+        Object formatted = null;
 
         if(t!=null) {
-            StringWriter stackWriter = new StringWriter(512);
-            PrintWriter printWriter = null;
-            try {
-                printWriter = new PrintWriter(stackWriter);
-                t.printStackTrace(printWriter);
-            } finally {
-                if(printWriter != null) printWriter.close();
-            }
+            formatted = new Object() {
 
-            formatted = stackWriter.toString();
+                public String toString() {
+                    StringWriter stackWriter = new StringWriter(512);
+                    PrintWriter printWriter = null;
+                    try {
+                        printWriter = new PrintWriter(stackWriter);
+                        t.printStackTrace(printWriter);
+                    } finally {
+                        if(printWriter != null) printWriter.close();
+                    }
+
+                    return stackWriter.toString();
+                }
+            };
         }
 
         return formatted;
