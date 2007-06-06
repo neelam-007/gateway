@@ -2,20 +2,17 @@ package com.l7tech.console.policy.exporter;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.ResolveExternalPolicyReferencesWizard;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import com.l7tech.policy.wsp.WspReader;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.awt.*;
 
@@ -32,6 +29,15 @@ import java.awt.*;
  */
 public class RemoteReferenceResolver {
 
+    private WspReader wspReader = null;
+
+    private WspReader getWspReader() {
+        if (wspReader == null) {
+            wspReader = (WspReader)TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
+        }
+        return wspReader;
+    }
+
     /**
      * Resolve remote references involving the administrator's input when necessary.
      * This method must be invoked before localizePolicy()
@@ -41,8 +47,7 @@ public class RemoteReferenceResolver {
      */
     public boolean resolveReferences(ExternalReference[] references) {
         Collection unresolved = new ArrayList();
-        for (int i = 0; i < references.length; i++) {
-            ExternalReference reference = references[i];
+        for (ExternalReference reference : references) {
             if (!reference.verifyReference()) {
                 // for all references not resolved automatically add a page in a wizard
                 unresolved.add(reference);
@@ -66,10 +71,9 @@ public class RemoteReferenceResolver {
 
     public Assertion localizePolicy(Element policyXML) throws InvalidPolicyStreamException {
         // Go through each assertion and fix the changed references.
-        final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
-        Assertion root = null;
+        Assertion root;
         try {
-            root = cr.resolvePolicy(XmlUtil.nodeToString(policyXML));
+            root = getWspReader().parsePermissively(XmlUtil.nodeToString(policyXML));
         } catch (IOException e) {
             throw new InvalidPolicyStreamException(e);
         }
@@ -82,23 +86,23 @@ public class RemoteReferenceResolver {
             CompositeAssertion ca = (CompositeAssertion)rootAssertion;
             List children = ca.getChildren();
             Collection childrenToRemoveFromCA = new ArrayList();
-            for (Iterator i = children.iterator(); i.hasNext();) {
-                Assertion child = (Assertion)i.next();
+            for (Object aChildren : children) {
+                Assertion child = (Assertion) aChildren;
                 if (!traverseAssertionTreeForLocalization(child)) {
                     childrenToRemoveFromCA.add(child);
                 }
             }
             // remove the children that are no longer wanted
-            for (Iterator it = childrenToRemoveFromCA.iterator(); it.hasNext();) {
-                ca.removeChild((Assertion)it.next());
+            for (Object aChildrenToRemoveFromCA : childrenToRemoveFromCA) {
+                ca.removeChild((Assertion) aChildrenToRemoveFromCA);
             }
             return true;
         } else {
             if (resolvedReferences == null)
                 return true;
             boolean ret = true;
-            for (int i = 0; i < resolvedReferences.length; i++) {
-                if (!resolvedReferences[i].localizeAssertion(rootAssertion)) {
+            for (ExternalReference resolvedReference : resolvedReferences) {
+                if (!resolvedReference.localizeAssertion(rootAssertion)) {
                     ret = false;
                     break;
                 }
