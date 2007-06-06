@@ -468,10 +468,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         TrustedSsgIdentityPanel tp = (TrustedSsgIdentityPanel)ssgIdentityPane;
 
         boolean kerbPrincFromCache = false;
+        String kprinc = null;
         try {
-            String kprinc = new KerberosClient().getKerberosInitPrincipal();
+            kprinc = new KerberosClient().getKerberosInitPrincipal();
             if (kprinc != null) {
-                tp.getUsernameTextField().setText(kprinc);
                 kerbPrincFromCache = true;
             }
         }
@@ -485,6 +485,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             // client creds or to save the password
             tp.getUseClientCredentialCheckBox().setEnabled(false);
             tp.getSavePasswordCheckBox().setEnabled(false);
+            tp.getUsernameTextField().setText(kprinc);
             tp.getUsernameTextField().setEditable(false);
             tp.getUserPasswordField().setEnabled(false);
             tp.getUserPasswordField().setEditable(false);
