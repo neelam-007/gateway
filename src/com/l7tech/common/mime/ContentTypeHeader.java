@@ -90,6 +90,11 @@ public class ContentTypeHeader extends MimeHeader {
     public static ContentTypeHeader parseValue(String contentTypeHeaderValue) throws IOException {
         if (contentTypeHeaderValue == null || contentTypeHeaderValue.length() < 1)
             throw new IOException("MIME Content-Type header missing or empty");
+
+        if (contentTypeHeaderValue.endsWith(";")) {
+            contentTypeHeaderValue = contentTypeHeaderValue.substring(0, contentTypeHeaderValue.length()-1);    
+        }
+
         HeaderTokenizer ht = new HeaderTokenizer(contentTypeHeaderValue, HeaderTokenizer.MIME, true);
         HeaderTokenizer.Token token;
         try {

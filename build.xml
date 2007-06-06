@@ -767,6 +767,7 @@
             <test name="com.l7tech.common.security.KeysTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.SoapMessageGeneratorTest" haltonfailure="no" fork="yes"/>
+            <test name="com.l7tech.common.mime.ContentTypeHeaderTest" haltonfailure="no"/>
             <test name="com.l7tech.common.mime.MimeHeaderTest" haltonfailure="no"/>
             <test name="com.l7tech.common.mime.MimeHeadersTest" haltonfailure="no"/>
             <test name="com.l7tech.common.mime.MimeBodyTest" haltonfailure="no" fork="yes"/>
