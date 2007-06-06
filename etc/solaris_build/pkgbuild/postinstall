@@ -5,6 +5,9 @@ cd /etc/rc2.d
 ln -s ../init.d/ssg_tcp_tune.sh S71SSG_tcptune
 ln -s ../init.d/ssg S99SSG_ssg
 
+cd /etc/rc0.d
+ln -s ../init.d/ssg-sysconfig K01SSG_sysconfig
+
 cd /ssg
 
 # migrate the structure to the new partitioning scheme using the configuration wizard
