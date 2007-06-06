@@ -180,6 +180,15 @@
     </patternset>
 
     <!--
+      Patternset used for Bridge API javadoc
+    -->
+    <patternset id="bridgeapi.sources">
+        <include name="com/l7tech/proxy/SecureSpanBridge.java"/>
+        <include name="com/l7tech/proxy/SecureSpanBridgeOptions.java"/>
+        <include name="com/l7tech/proxy/SecureSpanBridgeFactory.java"/>
+    </patternset>
+
+    <!--
       Patternset used for Manager API javadoc
     -->
     <patternset id="managerapi.sources">
@@ -2336,7 +2345,29 @@
 
     </target>
 
-    <target name="managerapi.javadoc">
+    <target name="bridgeapi.javadoc" depends="init">
+        <mkdir dir="${build.dir}/docs"/>
+        <javadoc
+                destdir="${build.dir}/docs/bridge-api"
+                version="true"
+                author="false"
+                use="true"
+                public="true"
+                windowtitle="Layer 7 Technologies API Specification"
+                doctitle="Layer 7 Technologies API Specification"
+                header="&lt;b&gt;Layer 7 Technologies&lt;/b&gt;"
+                bottom="&lt;font size=-1&gt;Copyright (c) 2007, Layer 7 Technologies&lt;/font&gt;"
+                 >
+
+            <fileset dir="${src.root}/src/" defaultexcludes="yes">
+                <patternset refid="bridgeapi.sources"/>
+            </fileset>
+            
+            <classpath refid="project.classpath"/>
+        </javadoc>
+    </target>
+
+    <target name="managerapi.javadoc" depends="init">
         <mkdir dir="${build.dir}/docs"/>
         <javadoc
                 destdir="${build.dir}/docs/manager-api"
@@ -2354,7 +2385,9 @@
         </javadoc>
     </target>
 
-    <target name="zip.api" depends="package.api">
+    <target name="zip.api" depends="package.api,bridgeapi.javadoc">
+        <!-- package bridge api for distribution -->
+        <zip destfile="${build.dir}/BridgeAPI-${build.version}.zip" basedir="${build.dir}/docs" includes="bridge-api/**" />
 
         <!-- package layer7 api for distribution -->
         <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}"/>
