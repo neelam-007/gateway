@@ -36,7 +36,7 @@ if  [ -e "/ssg/etc/conf/partitions/default_/cluster_hostname" ];
 then
         default_java_opts="$default_java_opts -Djava.rmi.server.hostname=`cat /ssg/etc/conf/partitions/default_/cluster_hostname`"
 else
-        default_java_opts="$default_java_opts -Djava.rmi.server.hostname=`hostname`"
+        default_java_opts="$default_java_opts -Djava.rmi.server.hostname=`hostname`.`domainname`"
 fi
 
 
