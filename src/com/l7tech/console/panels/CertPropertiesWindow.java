@@ -235,7 +235,9 @@ public class CertPropertiesWindow extends JDialog {
             }
         });
 
-        descriptionText.setText(resources.getString("usage.desc"));
+        descriptionText.setText(
+                resources.getString("usage.desc") + 
+                resources.getString("usage.desc.extended"));
         descriptionText.getCaret().setDot(0);
     }
 
