@@ -4,6 +4,7 @@
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.audit.MessageProcessingMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.FtpRequestKnob;
@@ -56,6 +57,60 @@ public class UriResolver extends ServiceResolver<String> {
         return FAST;
     }
 
+    public static Result doResolve(String requestValue, Set<PublishedService> serviceSubset,
+                                 Map<URIResolutionParam, List<Long>> uriToServiceMap, Auditor auditor) {
+        List<Long> res = uriToServiceMap.get(new URIResolutionParam(requestValue));
+        if (res != null && res.size() > 0) {
+            if (auditor != null) {
+                auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_PERFECT, requestValue);
+            }
+            Set<PublishedService> output = narrowList(serviceSubset, res);
+            if (output.size() > 0) return new Result(output); // otherwise, we continue and try to find match using wildcard ones
+        }
+
+        // otherwise, try to match using wildcards
+        Set<URIResolutionParam> keys = uriToServiceMap.keySet();
+        boolean encounteredPathPattern = false;
+        boolean encounteredExtensionPattern = false;
+        ArrayList<URIResolutionParam> matchingRegexKeys = new ArrayList<URIResolutionParam>();
+        for (URIResolutionParam key : keys) {
+            if (key.hasWildcards) {
+                // only consider cached URI associated to at least one service in the passed subset
+                // this ensures that further calls to narrowList will not yield empty service sets and
+                // that the best fit will chosen from a set of potentially valid ones only
+                if (isInSubset(serviceSubset, uriToServiceMap.get(key))) {
+                    if (((Pattern) key.pattern).matcher(requestValue).matches()) {
+                        if (key.pathPattern) encounteredPathPattern = true;
+                        else encounteredExtensionPattern = true;
+                        matchingRegexKeys.add(key);
+                    }
+                }
+            }
+        }
+        if (matchingRegexKeys.size() <= 0) {
+            if (auditor != null) {
+                auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_NONE, requestValue);
+            }
+            return Result.NO_MATCH;
+        } else if (matchingRegexKeys.size() == 1) {
+            if (auditor != null) {
+                auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_ONE, requestValue);
+            }
+            res = uriToServiceMap.get(matchingRegexKeys.get(0));
+            return new Result(narrowList(serviceSubset, res));
+        } else {
+            // choose best match
+            if (auditor != null) {
+                auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_MULTI, requestValue);
+            }
+            URIResolutionParam best = whichOneIsBest(matchingRegexKeys,
+                                                    encounteredPathPattern,
+                                                    encounteredExtensionPattern);
+            res = uriToServiceMap.get(best);
+            return new Result(narrowList(serviceSubset, res));
+        }
+    }
+
     public Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
         rwlock.readLock().lock();
         try {
@@ -71,60 +126,20 @@ public class UriResolver extends ServiceResolver<String> {
                     auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_CACHEDFAIL, requestValue);
                     return Result.NO_MATCH;
                 }
-
-                // second, try to get an exact match
-                List<Long> res = uriToServiceMap.get(new URIResolutionParam(requestValue));
-                if (res != null && res.size() > 0) {
-                    auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_PERFECT, requestValue);
-                    Set<PublishedService> output = narrowList(serviceSubset, res);
-                    if (output.size() > 0) return new Result(output); // otherwise, we continue and try to find match using wildcard ones
-                }
-
-                // otherwise, try to match using wildcards
-                Set<URIResolutionParam> keys = uriToServiceMap.keySet();
-                boolean encounteredPathPattern = false;
-                boolean encounteredExtensionPattern = false;
-                ArrayList<URIResolutionParam> matchingRegexKeys = new ArrayList<URIResolutionParam>();
-                for (URIResolutionParam key : keys) {
-                    if (key.hasWildcards) {
-                        // only consider cached URI associated to at least one service in the passed subset
-                        // this ensures that further calls to narrowList will not yield empty service sets and
-                        // that the best fit will chosen from a set of potentially valid ones only
-                        if (isInSubset(serviceSubset, uriToServiceMap.get(key))) {
-                            if (((Pattern) key.pattern).matcher(requestValue).matches()) {
-                                if (key.pathPattern) encounteredPathPattern = true;
-                                else encounteredExtensionPattern = true;
-                                matchingRegexKeys.add(key);
-                            }
-                        }
-                    }
-                }
-                if (matchingRegexKeys.size() <= 0) {
+                Result res = doResolve(requestValue, serviceSubset, uriToServiceMap, auditor);
+                if (res == Result.NO_MATCH) {
                     // todo, this could be exploted as an attack. we should either not try to do this or
                     // we should have a worker thread making sure this does not grow too big
                     knownToFail.add(requestValue);
-                    auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_NONE, requestValue);
-                    return Result.NO_MATCH;
-                } else if (matchingRegexKeys.size() == 1) {
-                    auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_ONE, requestValue);
-                    res = uriToServiceMap.get(matchingRegexKeys.get(0));
-                    return new Result(narrowList(serviceSubset, res));
-                } else {
-                    // choose best match
-                    auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_WILD_MULTI, requestValue);
-                    URIResolutionParam best = whichOneIsBest(matchingRegexKeys,
-                                                            encounteredPathPattern,
-                                                            encounteredExtensionPattern);
-                    res = uriToServiceMap.get(best);
-                    return new Result(narrowList(serviceSubset, res));
                 }
+                return res;
             }
         } finally {
             rwlock.readLock().unlock();
         }
     }
 
-    private boolean isInSubset(Set<PublishedService> serviceSubset, List<Long> criteria) {
+    private static boolean isInSubset(Set<PublishedService> serviceSubset, List<Long> criteria) {
         for (PublishedService svc : serviceSubset) {
             if (criteria.contains(svc.getOid())) {
                 return true;
@@ -133,7 +148,7 @@ public class UriResolver extends ServiceResolver<String> {
         return false;
     }
 
-    private Set<PublishedService> narrowList(Set<PublishedService> serviceSubset, List<Long> criteria) {
+    private static Set<PublishedService> narrowList(Set<PublishedService> serviceSubset, List<Long> criteria) {
         Set<PublishedService> output = new HashSet<PublishedService>();
         for (PublishedService svc : serviceSubset) {
             if (criteria.contains(svc.getOid())) {
@@ -213,7 +228,7 @@ public class UriResolver extends ServiceResolver<String> {
         servicetoURIMap.remove(service.getOid());
     }
 
-    private URIResolutionParam whichOneIsBest(List<URIResolutionParam> in,
+    private static URIResolutionParam whichOneIsBest(List<URIResolutionParam> in,
                                               boolean containsPathPattern,
                                               boolean containsExtensionPattern) {
         // eliminate /* if present
@@ -277,8 +292,8 @@ public class UriResolver extends ServiceResolver<String> {
         }
     }
 
-    static class URIResolutionParam {
-        URIResolutionParam(String uri) {
+    public static class URIResolutionParam {
+        public URIResolutionParam(String uri) {
             while (uri.indexOf("**") >= 0) {
                 uri = uri.replace("**", "*");
             }

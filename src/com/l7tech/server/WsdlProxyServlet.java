@@ -20,9 +20,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.IdentityRule;
-import com.l7tech.server.service.resolution.ServiceResolutionException;
-import com.l7tech.server.service.resolution.SoapActionResolver;
-import com.l7tech.server.service.resolution.UrnResolver;
+import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -101,7 +99,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        PublishedService ps = null;
+        PublishedService ps;
         try {
             ps = getRequestedService(req);
         } catch (FindException e) {
@@ -157,6 +155,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
      * @param req the http get that contains the parameters that hint towards which service is wanted
      * @return either the requested service or null if no service appear to be requested
      * @throws AmbiguousServiceException thrown if the parameters resolve more than one possible service
+     * @throws com.l7tech.objectmodel.FindException when nothing resolves
      */
     private PublishedService getRequestedService(HttpServletRequest req) throws AmbiguousServiceException, FindException {
         // resolution using traditional serviceoid param
@@ -185,20 +184,31 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             return null;
         }
         // get all current services
-        Collection services = serviceManager.findAll();
+        Collection<PublishedService> services = serviceManager.findAll();
         // if uri param provided, narrow down list using it
         if (uriparam != null) {
-            for (Iterator iterator = services.iterator(); iterator.hasNext();) {
-                PublishedService publishedService = (PublishedService) iterator.next();
-                if (uriparam.length() <= 0 && publishedService.getRoutingUri() == null) continue;
-                if (!uriparam.equals(publishedService.getRoutingUri())) iterator.remove();
+            Set<PublishedService> serviceSubset = new HashSet<PublishedService>();
+            serviceSubset.addAll(services);
+            Map<UriResolver.URIResolutionParam, List<Long>> uriToServiceMap = new HashMap<UriResolver.URIResolutionParam, List<Long>>();
+            for (PublishedService s : serviceSubset) {
+                String uri = s.getRoutingUri();
+                if (uri == null) uri = "";
+                UriResolver.URIResolutionParam up = new UriResolver.URIResolutionParam(uri);
+                List<Long> listedServicesForThatURI = uriToServiceMap.get(up);
+                if (listedServicesForThatURI == null) {
+                    listedServicesForThatURI = new ArrayList<Long>();
+                    uriToServiceMap.put(up, listedServicesForThatURI);
+                }
+                listedServicesForThatURI.add(s.getOid());
             }
-            if (services.size() == 1) {
-                return (PublishedService)services.iterator().next();
-            }
-            if (services.size() == 0) {
+            Result res = UriResolver.doResolve(uriparam, serviceSubset, uriToServiceMap, null);
+            if (res.getMatches() == null || res.getMatches().size() == 0) {
                 throw new FindException("URI param '" + uriparam + "' did not resolve any service.");
             }
+            if (res.getMatches().size() == 1) {
+                return res.getMatches().iterator().next();
+            }
+            services = res.getMatches();
         }
         // narrow it down using soapaction (if provided)
         if (sactionparam != null) {
@@ -212,7 +222,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 }
             }
             if (services.size() == 1) {
-                return (PublishedService)services.iterator().next();
+                return services.iterator().next();
             }
             if (services.size() == 0) {
                 throw new FindException("SoapAction param '" + sactionparam + "' did not resolve any service.");
@@ -230,7 +240,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 }
             }
             if (services.size() == 1) {
-                return (PublishedService)services.iterator().next();
+                return services.iterator().next();
             }
             if (services.size() == 0) {
                 throw new FindException("ns param '" + nsparam + "' did not resolve any service.");
@@ -239,9 +249,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
         // could not narrow it down enough -> throw AmbiguousServiceException
         StringBuffer names = new StringBuffer();
-        for (Iterator iterator = services.iterator(); iterator.hasNext();) {
-            PublishedService publishedService = (PublishedService) iterator.next();
-            names.append(publishedService.getName()).append(" ");
+        for (PublishedService service : services) {
+            names.append(service.getName()).append(" ");
         }
         logger.info("service query too wide: " + names.toString());
         throw new AmbiguousServiceException("Too many services fit the mold: " + names.toString());
@@ -276,8 +285,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 boolean ok = false;
                 if (!policyAllowAnonymous(svc)) {
                     User requestor = null;
-                    for (int i = 0; i < results.length; i++) {
-                        AuthenticationResult result = results[i];
+                    for (AuthenticationResult result : results) {
                         requestor = result.getUser();
                         if (userCanSeeThisService(requestor, svc)) ok = true;
                     }
@@ -353,16 +361,10 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         res.getOutputStream().close();
     }
 
-    /**
-     * this must always resolve to the http port
-     */
     private String styleURL() {
         return "/ssg/wsil2xhtml.xml";
     }
 
-    /**
-     *
-     */
     private void substituteSoapAddressURL(Document wsdl, URL newURL) {
         // get http://schemas.xmlsoap.org/wsdl/ 'port' element
         NodeList portlist = wsdl.getElementsByTagNameNS("http://schemas.xmlsoap.org/wsdl/", "port");
@@ -371,23 +373,20 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             // get child http://schemas.xmlsoap.org/wsdl/soap/ 'address'
             List addresses = XmlUtil.findChildElementsByName(portel, "http://schemas.xmlsoap.org/wsdl/soap/", "address");
             // change the location attribute with new URL
-            for (Iterator iterator = addresses.iterator(); iterator.hasNext();) {
-                Element address = (Element) iterator.next();
+            for (Object address1 : addresses) {
+                Element address = (Element) address1;
                 address.setAttribute("location", newURL.toString());
             }
 
             // and for soap12 (this is better than just leaving the protected service url in there)
             List addressesToRemove = XmlUtil.findChildElementsByName(portel, "http://schemas.xmlsoap.org/wsdl/soap12/", "address");
-            for (Iterator iterator = addressesToRemove.iterator(); iterator.hasNext();) {
-                Element address = (Element) iterator.next();
+            for (Object anAddressesToRemove : addressesToRemove) {
+                Element address = (Element) anAddressesToRemove;
                 address.setAttribute("location", newURL.toString());
             }
         }
     }
 
-    /**
-     *
-     */
     private void addSecurityPolicy(Document wsdl, PublishedService svc) {
         try{
             if (System.getProperty(PROPERTY_WSSP_ATTACH)==null ||
@@ -535,14 +534,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         final Collection output = new ArrayList();
 
         // decide which ones make the cut
-        for (Iterator i = allServices.iterator(); i.hasNext();) {
-            PublishedService svc = (PublishedService)i.next();
+        for (Object allService : allServices) {
+            PublishedService svc = (PublishedService) allService;
             if (policyAllowAnonymous(svc)) {
                 output.add(svc);
-            }
-            else if (results != null) {
-                for (int j = 0; j < results.length; j++) {
-                    AuthenticationResult result = results[j];
+            } else if (results != null) {
+                for (AuthenticationResult result : results) {
                     User requestor = result.getUser();
                     if (userCanSeeThisService(requestor, svc))
                         output.add(svc);
@@ -601,16 +598,16 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         String nsval = "";
         Set nsparams = nsResolver.getDistinctParameters(service);
         // pick the first one not null or empty
-        for (Iterator iterator = nsparams.iterator(); iterator.hasNext();) {
-            String s = (String) iterator.next();
+        for (Object nsparam : nsparams) {
+            String s = (String) nsparam;
             if (s != null) nsval = s;
             if (s != null && s.length() > 0) break;
         }
         String sactionval = "";
         Set sactionparams = sactionResolver.getDistinctParameters(service);
         // pick the first one not null or empty
-        for (Iterator iterator = sactionparams.iterator(); iterator.hasNext();) {
-            String s = (String) iterator.next();
+        for (Object sactionparam : sactionparams) {
+            String s = (String) sactionparam;
             if (s != null) sactionval = s;
             if (s != null && s.length() > 0) break;
         }
@@ -643,8 +640,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
           "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL() + "\"?>\n" +
           "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\">\n");
         // for each service
-        for (Iterator i = services.iterator(); i.hasNext();) {
-            PublishedService svc = (PublishedService)i.next();
+        for (Object service : services) {
+            PublishedService svc = (PublishedService) service;
             if (svc.isSoap()) {
                 try {
                     String query;
@@ -661,7 +658,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     outDoc.append("\"/>\n");
                     outDoc.append("\t</service>\n");
                 } catch (ServiceResolutionException sre) {
-                    logger.log(Level.WARNING, "Could not process service with oid '"+svc.getOid()+"'.", sre);                
+                    logger.log(Level.WARNING, "Could not process service with oid '" + svc.getOid() + "'.", sre);
                 }
             }
         }
@@ -691,10 +688,10 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         else  if (in instanceof CompositeAssertion) {
             CompositeAssertion comp = (CompositeAssertion) in;
             List kids = comp.getChildren();
-            for (Iterator iterator = kids.iterator(); iterator.hasNext();) {
-                Assertion current = (Assertion) iterator.next();
+            for (Object kid : kids) {
+                Assertion current = (Assertion) kid;
                 assertion = getFirstChild(current, assertionClass);
-                if(assertion != null) {
+                if (assertion != null) {
                     break;
                 }
             }
