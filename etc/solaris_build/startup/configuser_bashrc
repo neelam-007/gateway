@@ -1,6 +1,6 @@
 set -u
 set -e
-JAVA_HOME="/usr/j2se/jre1.6.0_01/"
+JAVA_HOME="/usr/j2se/jdk1.6.0_01/"
 trap doLogout INT
 
 SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"

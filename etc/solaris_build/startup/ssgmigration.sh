@@ -20,7 +20,7 @@ SSG_ROOT=`pwd`
 popd > /dev/null
 
 # assume location of the jdk
-JAVA_HOME="/usr/j2se/jre1.6.0_01/"
+JAVA_HOME="/usr/j2se/jdk1.6.0_01/"
 
 if [ "$1" == "cfgdeamon" ]; then
     ${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*

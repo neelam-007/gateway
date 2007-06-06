@@ -9,7 +9,7 @@ cd /ssg
 
 # migrate the structure to the new partitioning scheme using the configuration wizard
 # Set java in version, in case its needed
-JAVA_HOME=/usr/j2se/jre1.6.0_01
+JAVA_HOME=/usr/j2se/jdk1.6.0_01
 export JAVA_HOME
 
 /ssg/configwizard/ssgconfig.sh -partitionMigrate 
