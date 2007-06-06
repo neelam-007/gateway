@@ -11,9 +11,11 @@ import org.apache.ftpserver.ftplet.FileSystemManager;
 import org.apache.ftpserver.ftplet.UserManager;
 import org.apache.ftpserver.FtpServer;
 import org.apache.ftpserver.ConfigurableFtpServerContext;
+import org.apache.ftpserver.listener.Listener;
 import org.apache.ftpserver.interfaces.FtpServerContext;
 import org.apache.ftpserver.interfaces.CommandFactory;
 import org.apache.ftpserver.interfaces.IpRestrictor;
+import org.apache.ftpserver.interfaces.Ssl;
 import org.apache.ftpserver.config.PropertiesConfiguration;
 
 import com.l7tech.server.MessageProcessor;
@@ -21,6 +23,7 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.Auditor;
@@ -58,6 +61,7 @@ public class FtpServerManager extends LifecycleBean {
                             final SoapFaultManager soapFaultManager,
                             final StashManagerFactory stashManagerFactory,
                             final LicenseManager licenseManager,
+                            final KeystoreUtils keystoreUtils,
                             final Properties properties) {
         super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager);
 
@@ -66,6 +70,7 @@ public class FtpServerManager extends LifecycleBean {
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
+        this.keystoreUtils = keystoreUtils;
         this.properties = filterListeners(properties);
     }
 
@@ -106,6 +111,11 @@ public class FtpServerManager extends LifecycleBean {
                         return ftpIpRestrictor;
                     }
                 };
+
+                for(Listener listener : context.getListeners()) {
+                    configure(listener.getSsl());
+                    configure(listener.getDataConnectionConfig().getSSL());
+                }
 
                 ftpServer = new FtpServer(context);
             }
@@ -166,6 +176,7 @@ public class FtpServerManager extends LifecycleBean {
     private final MessageProcessor messageProcessor;
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
+    private final KeystoreUtils keystoreUtils;
     private final Properties properties;
     private Auditor auditor;
     private FtpServer ftpServer;
@@ -214,6 +225,13 @@ public class FtpServerManager extends LifecycleBean {
         }
 
         return filteredProperties;
+    }
+
+    private void configure(Ssl ssl) {
+        if (ssl instanceof FtpSsl) {
+            FtpSsl ftpSsl = (FtpSsl) ssl;
+            ftpSsl.setKeystoreUtils(keystoreUtils);
+        }
     }
 
     private void auditNotConfigured() {

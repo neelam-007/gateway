@@ -1,6 +1,7 @@
 package com.l7tech.common.security;
 
-import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509ExtendedKeyManager;
+import javax.net.ssl.SSLEngine;
 import java.security.cert.X509Certificate;
 import java.security.PrivateKey;
 import java.security.Principal;
@@ -10,7 +11,7 @@ import java.net.Socket;
  * An SSL X509KeyManager that holds a single preconfigured client cert and private key, and always uses
  * it to respond to challenges.
  */
-public class SingleCertX509KeyManager implements X509KeyManager {
+public class SingleCertX509KeyManager extends X509ExtendedKeyManager {
     private final X509Certificate[] clientCertChain;
     private final PrivateKey clientKey;
     private final String alias;
@@ -64,5 +65,13 @@ public class SingleCertX509KeyManager implements X509KeyManager {
 
     public PrivateKey getPrivateKey(String s) {
         return alias.equals(s) ? clientKey : null;
+    }
+
+    public String chooseEngineClientAlias(String[] strings, Principal[] principals, SSLEngine sslEngine) {
+        return alias;
+    }
+
+    public String chooseEngineServerAlias(String string, Principal[] principals, SSLEngine sslEngine) {
+        return alias;
     }
 }

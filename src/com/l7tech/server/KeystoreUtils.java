@@ -150,6 +150,23 @@ public class KeystoreUtils {
         }
     }
 
+    public X509Certificate[] getSSLCertChain() throws KeyStoreException {
+        KeyStore keystore = getSSLKeyStore();
+        String alias = getProps().getProperty(SSL_ALIAS, SSL_ALIAS_DEFAULT);
+        X509Certificate[] output = null;
+        try {
+            java.security.cert.Certificate[] certs = keystore.getCertificateChain(alias);
+            if (certs != null && certs.length > 0 && certs[0] instanceof X509Certificate) {
+                output = new X509Certificate[certs.length];
+                System.arraycopy(certs, 0, output, 0, certs.length);
+            }
+        } catch (KeyStoreException e) {
+            logger.log(Level.SEVERE, "error getting certificate chain", e);
+            throw new KeyStoreException(e.getMessage());
+        }
+        return output;
+    }
+
     public PrivateKey getSSLPrivateKey() throws KeyStoreException {
         KeyStore keystore = getSSLKeyStore();
         String sslkeystorepassword = getProps().getProperty(SSL_KSTORE_PASSWD);
