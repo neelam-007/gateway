@@ -325,7 +325,7 @@ public class SchemaManagerImpl implements SchemaManager {
             handlesNeedingClosed.clear();
         }
 
-        logger.log(Level.FINE, "Schema cache closing {0} unused schem handles", deferredClose.size());
+        logger.log(Level.FINE, "Schema cache closing {0} unused schema handles", deferredClose.size());
 
         // Processed deferred closes while owning no locks
         for (SchemaHandle handle : deferredClose)
@@ -452,10 +452,11 @@ public class SchemaManagerImpl implements SchemaManager {
 
         // Check for errors we should report
         IOException e = result.getException();
-        if (e != null) throw new CausedIOException("Unable to download remote schema: " + ExceptionUtils.getMessage(e), e);
+        if (e != null)
+            throw new CausedIOException("Unable to download remote schema " + describeResource(baseUrl, url) +  " : " + ExceptionUtils.getMessage(e), e);
 
         // Shouldn't happen
-        throw new IOException("Unable to download remote schema");
+        throw new IOException("Unable to download remote schema " + describeResource(baseUrl, url));
     }
 
     /** @return an LSInput that contains StringData and a SystemId. */
@@ -527,20 +528,57 @@ public class SchemaManagerImpl implements SchemaManager {
             onUrlDownloaded(globalUrl);
     }
 
+    private String describeResource(String baseURI, String url) {
+        return describeResource(baseURI, url, null, null);
+    }
+
+    private String describeResource(String baseURI, String systemId, String publicId, String namespaceURI) {
+        String description = null;
+
+        if (systemId != null) {
+            String resourceUrl = systemId;
+            if (baseURI != null) {
+                try {
+                    // build url for use in description only
+                    resourceUrl = new URI(baseURI).resolve(systemId).toString();
+                } catch (URISyntaxException e) {
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.log(Level.FINE,
+                                "Unable to resolve url ''{0}'', relative to base url ''{1}''.", 
+                                new String[]{systemId, baseURI});
+                    }
+                }
+            }
+
+            description = "URL:" + resourceUrl;
+        }
+        else if (publicId != null) {
+            description = "PublicID:" + publicId;
+        }
+        else if (namespaceURI != null) {
+            description = "Namespace:" + namespaceURI;
+        }
+        else {
+            description = "Unknown";
+        }
+
+        return description;
+    }
+
     private static class UnresolveableException extends RuntimeException {
-        public UnresolveableException() {
-        }
+        private final String resourceDescription;
 
-        public UnresolveableException(String message) {
-            super(message);
-        }
-
-        public UnresolveableException(String message, Throwable cause) {
-            super(message, cause);
-        }
-
-        public UnresolveableException(Throwable cause) {
+        public UnresolveableException(Throwable cause, String resourceDescription) {
             super(cause);
+            this.resourceDescription = resourceDescription;
+        }
+
+        public String getMessage() {
+            return "Unable to resolve resource " + resourceDescription;
+        }
+
+        public String getResourceDescription() {
+            return resourceDescription;
         }
     }
 
@@ -567,12 +605,14 @@ public class SchemaManagerImpl implements SchemaManager {
                                            String baseURI)
             {
                 try {
+                    if (systemId == null) throw new CausedIOException("No systemId, cannot resolve resource");
+
                     LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
                     assert lsi != null;
                     imports.add(lsi.getSystemId());
                     return lsi;
                 } catch (IOException e) {
-                    throw new UnresolveableException(e);
+                    throw new UnresolveableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                 }
             }
         };
@@ -584,7 +624,7 @@ public class SchemaManagerImpl implements SchemaManager {
             return imports;
         } catch (RuntimeException e) {
             UnresolveableException unres = (UnresolveableException)ExceptionUtils.getCauseIfCausedBy(e, UnresolveableException.class);
-            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema", unres.getCause());
+            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema for resource " + unres.getResourceDescription(), unres.getCause());
             throw e;
         }
     }
@@ -690,6 +730,8 @@ public class SchemaManagerImpl implements SchemaManager {
         final LSResourceResolver lsrr = new LSResourceResolver() {
             public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
                 try {
+                    if (systemId == null) throw new CausedIOException("No systemId, cannot resolve resource");
+
                     LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
                     assert lsi != null;
 
@@ -706,9 +748,9 @@ public class SchemaManagerImpl implements SchemaManager {
                     directImports.put(handle.getCompiledSchema().getSystemId(), handle); // give it away without closing it
                     return makeLsInput(handle.getCompiledSchema().getSystemId(), handle.getCompiledSchema().getSchemaDocument());
                 } catch (IOException e) {
-                    throw new UnresolveableException(e);
+                    throw new UnresolveableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                 } catch (SAXException e) {
-                    throw new UnresolveableException(e);
+                    throw new UnresolveableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                 }
             }
         };
@@ -740,8 +782,8 @@ public class SchemaManagerImpl implements SchemaManager {
         } catch (XmlUtil.BadSchemaException e) {
             throw new SAXException("Unable to parse Schema", e);
         } catch (RuntimeException e) {
-            Throwable unres = ExceptionUtils.getCauseIfCausedBy(e, UnresolveableException.class);
-            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema", unres.getCause());
+            UnresolveableException unres = (UnresolveableException) ExceptionUtils.getCauseIfCausedBy(e, UnresolveableException.class);
+            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema for resource " + unres.getResourceDescription(), unres.getCause());
             throw e;
         }
     }
