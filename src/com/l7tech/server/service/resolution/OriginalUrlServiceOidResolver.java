@@ -26,21 +26,14 @@ import java.util.regex.Pattern;
 public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<String> {
     private final Pattern[] regexPatterns;
 
-    /**
-     * the regular expresison that extracts the service oid at the end of the original url ir request URI
-     * Each regex must match the service OID as match group #1 or else fail
-     */
-    private final String[] REGEXES = {
-        "/service/(\\d+)$",
-        "\\?(?<=[?&])serviceoid=(\\d+)(?:(\\&|$))",
-    };
+
 
     public OriginalUrlServiceOidResolver(ApplicationContext spring) {
         super(spring);
         List<Pattern> compiled = new ArrayList<Pattern>();
 
         try {
-            for (String s : REGEXES) {
+            for (String s : SecureSpanConstants.RESOLUTION_BY_OID_REGEXES) {
                 compiled.add(Pattern.compile(s));
             }
         } catch (Exception e) {

@@ -24,6 +24,15 @@ public class SecureSpanConstants {
     public static final String SSG_RESERVEDURI_PREFIX = "/ssg";
 
     /**
+     * the regular expresison that extracts the service oid at the end of the original url ir request URI
+     * Each regex must match the service OID as match group #1 or else fail
+     */
+    public static final String[] RESOLUTION_BY_OID_REGEXES = {
+        "/service/(\\d+)$",
+        "\\?(?<=[?&])serviceoid=(\\d+)(?:(\\&|$))",
+    };
+
+    /**
      * The filename portion of the URL of the message processing service on the Gateway.
      */
     public static final String SSG_FILE = SSG_RESERVEDURI_PREFIX + "/soap";

@@ -30,11 +30,9 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -352,12 +350,18 @@ public class ServicePropertiesDialog extends JDialog {
                 JOptionPane.showMessageDialog(this, "Cannot set empty uri on non-soap service");
                 return;
             } else if (newURI.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
-                JOptionPane.showMessageDialog(this, "URI cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
+                JOptionPane.showMessageDialog(this, "custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
+                return;
+            } else if (uriConflictsWithServiceOIDResolver(newURI)) {
+                JOptionPane.showMessageDialog(this, "This custom resolution path conflicts with an internal resolution mechanism.");
                 return;
             }
         } else {
             if (newURI != null && newURI.length() > 0 && newURI.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
-                JOptionPane.showMessageDialog(this, "URI cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
+                JOptionPane.showMessageDialog(this, "Custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
+                return;
+            }  else if (uriConflictsWithServiceOIDResolver(newURI)) {
+                JOptionPane.showMessageDialog(this, "This custom resolution path conflicts with an internal resolution mechanism.");
                 return;
             }
         }
@@ -407,6 +411,28 @@ public class ServicePropertiesDialog extends JDialog {
 
         wasoked = true;
         cancel();
+    }
+
+    private boolean uriConflictsWithServiceOIDResolver(String newURI) {
+        java.util.List<Pattern> compiled = new ArrayList<Pattern>();
+
+        try {
+            for (String s : SecureSpanConstants.RESOLUTION_BY_OID_REGEXES) {
+                compiled.add(Pattern.compile(s));
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "A Regular Expression failed to compile. " +
+                                      "This resolver is disabled.", e);
+            compiled.clear();
+        }
+
+        for (Pattern regexPattern : compiled) {
+            Matcher matcher = regexPattern.matcher(newURI);
+            if (matcher.find() && matcher.groupCount() >= 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String updateURL() {
