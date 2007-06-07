@@ -64,6 +64,7 @@ mv %{buildroot}/ssg/etc/conf/*.properties %{buildroot}/ssg/etc/conf/partitions/p
 mv %{buildroot}/ssg/etc/conf/cluster_hostname-dist %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/tomcat/conf/server.xml %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/bin/ssg-java.security %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/java.security
+mv %{buildroot}/ssg/bin/pkcs11_linux.cfg %{buildroot}/ssg/etc/conf/pkcs11.cfg
 # mv %{buildroot}/ssg/libexec/* %{buildroot}/libexec
 
 # Root war is redundant
