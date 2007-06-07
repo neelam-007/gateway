@@ -3329,6 +3329,7 @@
                 <include name="partitionControl.sh"/>
                 <include name="partition_firewall.pl"/>
                 <include name="ssg-java.security"/>
+                <include name="pkcs11_linux.cfg"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
