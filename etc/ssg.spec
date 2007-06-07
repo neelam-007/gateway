@@ -183,24 +183,30 @@ chmod 711 %{buildroot}/ssg/libexec/*
 %attr(0755,gateway,gateway) /ssg/migration/*.sh
 
 %pre
-if [ `grep ^gateway: /etc/group`]; then
+if [ `grep ^gateway: /etc/group` ]; then
 	echo -n ""
 else
 	groupadd gateway
 fi
 
-if [ `grep ^gateway: /etc/passwd` ]; then
+if [ `grep ^pkcs11: /etc/group` ]; then
 	echo -n ""
-       #  echo "user/group gateway already exists"
 else
-  adduser -G gateway -g gateway gateway
+	groupadd pkcs11
+fi
+
+if [ `grep ^gateway: /etc/passwd` ]; then
+    #user gateway already exists, but needs it's group membership modified
+    usermod -G gateway,pkcs11 gateway
+else
+    adduser -G gateway,pkcs11 -g gateway gateway
 fi
 
 if [ `grep ^ssgconfig: /etc/passwd` ]; then
-	echo -n ""
-       #  echo "user ssgconfig already exists"
+    #user ssgconfig already exists, but needs it's group membership modified
+    usermod -G gateway,pkcs11 ssgconfig
 else
-  adduser -g gateway -G gateway ssgconfig
+    adduser -G gateway,pkcs11 -g gateway ssgconfig
 fi
 
 SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
