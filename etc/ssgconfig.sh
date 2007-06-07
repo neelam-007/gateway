@@ -5,6 +5,7 @@ cd `dirname $0`
 pushd .. > /dev/null
 SSG_ROOT=`pwd`
 USER=${LOGNAME}
+SCADIAG="/opt/sun/sca6000/sbin/scadiag"
 popd > /dev/null
 
 JAVA_HOME=${SSG_ROOT}/jdk
@@ -13,8 +14,7 @@ launchtype=${1}
 OPTIONS="-Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT}"
 
 check_options(){
-    ENABLE_HSM="yesfornow"
-    if [ -n "${ENABLE_HSM}" ]; then
+    if [ -s "${SCADIAG}" ] ; then
         OPTIONS="$OPTIONS -Dcom.l7tech.server.keystore.enablehsm=true"
     fi
 }
