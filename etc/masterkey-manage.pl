@@ -4,7 +4,6 @@ require 5.005;
 use strict;
 use IO::File;
 use Expect;
-use Data::Dumper;
 use warnings;
 
 use constant OK                    => 0;
@@ -215,7 +214,7 @@ sub dialog($@) {
              } @wants;
 
              ($pos, $err) = $exp->expect($timeout, @newWant);
-             fatal ERR_EXPECT_FAILED, "\n\nFailed to match: \n" . Data::Dumper->Dump([\@newWant]) . "\nResult: $err\n" if $err;
+             fatal ERR_EXPECT_FAILED, "\n\nFailed to match expected result from script. Result: $err\n" if $err;
              next;
         }
 
