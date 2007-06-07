@@ -99,7 +99,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         String message = null;
         if (StringUtils.isEmpty(ipAddress))
             message = MISSING_IP_ADDRESS_MSG;
-        else if (!isValidIpAddress(ipAddress, false))
+        else if (!isValidIpAddress(ipAddress))
             message = ipAddress + "\" is not a valid IP Address";
 
         if (message != null)
@@ -114,7 +114,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         String message = null;
         if (StringUtils.isEmpty(netMask))
             message = MISSING_NETMASK_MSG;
-        else if (!isValidIpAddress(netMask, true))
+        else if (!isValidIpAddress(netMask))
             message = netMask + "\" is not a valid netmask ";
 
         if (message != null)
@@ -129,7 +129,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         String message = null;
         if (StringUtils.isEmpty(gateway))
             message = MISSING_GATEWAY_MSG;
-        else if (!isValidIpAddress(gateway, false))
+        else if (!isValidIpAddress(gateway))
             message = gateway + "\" is not a valid gateway address";
 
         if (message != null)
@@ -142,7 +142,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (nameServers == null || nameServers.length == 0) return null;
         List<String> errors = new ArrayList<String>();
         for (String ns : nameServers) {
-            if (!isValidIpAddress(ns, false))
+            if (!isValidIpAddress(ns))
                 errors.add(ns);
         }
 
@@ -156,8 +156,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         return errors;
     }
 
-    private boolean isValidIpAddress(String address, boolean isNetworkAddressAllowed) {
-        return consoleWizardUtils.isValidIpAddress(address, isNetworkAddressAllowed);
+    private boolean isValidIpAddress(String address) {
+        return consoleWizardUtils.isValidIpAddress(address);
     }
 
     private boolean doRepeatConfiguration() throws IOException, WizardNavigationException {

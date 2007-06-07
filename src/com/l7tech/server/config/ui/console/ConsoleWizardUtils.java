@@ -208,7 +208,7 @@ public class ConsoleWizardUtils {
         return StringUtils.equalsIgnoreCase("yes", answer) || StringUtils.equalsIgnoreCase("y", answer);
     }
 
-    public boolean isValidIpAddress(String address, boolean isNetworkAddressAllowed) {
+    public boolean isValidIpAddress(String address) {
 
         if (address == null) return false;
 
@@ -227,7 +227,7 @@ public class ConsoleWizardUtils {
                     if (i == 1)
                         start = 1;
                     else
-                        start = isNetworkAddressAllowed ? 0 : 1;
+                        start = 0;
 
                     if (octet < start || octet > end)
                         return false;
@@ -250,7 +250,7 @@ public class ConsoleWizardUtils {
         if (StringUtils.isEmpty(timeserverLine))
             return null;
 
-        if (isValidIpAddress(timeserverLine, false))
+        if (isValidIpAddress(timeserverLine))
             return timeserverLine;
 
         String resolvedIp = null;
