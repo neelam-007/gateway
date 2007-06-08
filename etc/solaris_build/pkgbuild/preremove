@@ -5,12 +5,12 @@
 
 userdel -r gateway
 if [ ${?} -eq 1 ]; then
-	usedel gateway
+	userdel gateway
 	# handle the dir not being there
 fi
 userdel -r ssgconfig
 if [ ${?} -eq 1 ]; then
-	usedel ssgconfig
+	userdel ssgconfig
 	# handle the dir not being there, just in case
 fi
 groupdel gateway
