@@ -138,7 +138,7 @@ public class NewPrivateKeyDialog extends JDialog {
 
             public void focusLost(FocusEvent e) {}
         });
-        validator.constrainTextFieldToBeNonEmpty("DN", dnField, new InputValidator.ValidationRule() {
+        validator.constrainTextFieldToBeNonEmpty("Subject DN", dnField, new InputValidator.ValidationRule() {
             public String getValidationError() {
                 String dn = dnField.getText();
                 try {
