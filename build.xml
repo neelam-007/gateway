@@ -2199,7 +2199,7 @@
             <root classname="com.l7tech.common.security.prov.luna.LunaJceProviderEngine" />
             <root classname="com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine" />
             <root classname="com.l7tech.common.util.DnParserBc" />
-            <root classname="com.l7tech.common.util.SingleLineLogFormatter" />
+            <root classname="com.l7tech.common.util.ConfigurableLogFormatter" />
         </classfileset>
         <jar jarfile="${build.dir}/configwizard/ConfigWizard.jar" manifest="${build.etc}/ConfigWizard.mf">
             <fileset refid="package.configwiz.classfileset"/>
@@ -2276,7 +2276,7 @@
             <root classname="com.l7tech.server.config.systemconfig.SysConfigWizardLauncher" />
 
             <!-- Providers -->
-            <root classname="com.l7tech.common.util.SingleLineLogFormatter" />
+            <root classname="com.l7tech.common.util.ConfigurableLogFormatter" />
         </classfileset>
         <jar jarfile="${build.dir}/sysconfigwizard/SystemConfigWizard.jar" manifest="${build.etc}/SystemConfigWizard.mf">
             <fileset refid="package.systemconfigwiz.classfileset"/>
