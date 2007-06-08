@@ -138,7 +138,8 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                 case 1:
                     return doSelectPartitionPrompts();
                 case 2:
-                    return doAddPartitionPrompts();
+                    PartitionInformation pi = doAddPartitionPrompts();
+                    return (pi == null?doPartitionActionPrompts():pi);
                 case 3:
                     //we want to delete a partition, but not go to the next step yet, so we'll loop here
                     doDeletePartitionPrompts();
@@ -152,38 +153,49 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
     }
 
     private PartitionInformation doAddPartitionPrompts() throws IOException, WizardNavigationException {
-        List<String> prompts = new ArrayList<String>();
-        prompts.add(HEADER_ADD_PARTITION);
-        String defaultValue = getNextNewName();
-        prompts.add("Enter the name of the new partition: ["+ defaultValue + "]");
-
-        Pattern allowedEntries = Pattern.compile(PartitionInformation.ALLOWED_PARTITION_NAME_PATTERN);
-
-        String newPartitionName;
-        do {
-            newPartitionName = getData(prompts.toArray(new String[0]), defaultValue, allowedEntries, "*** Invalid Partition Name. Please re-enter ***");
-            if (partitionNames.contains(newPartitionName))
-                printText(new String[] {
-                    "*** " + newPartitionName + " already exists. Please choose another name ***" + getEolChar(),
-                    ""
-                });
-        } while (partitionNames.contains(newPartitionName));
-
         PartitionInformation pi = null;
-        if (StringUtils.isNotEmpty(newPartitionName)) {
-            pi = new PartitionInformation(newPartitionName);
-            PartitionActions pa = new PartitionActions(osFunctions);
-            try {
-                pa.createNewPartition(pi.getPartitionId());
-                PartitionActions.prepareNewpartition(pi);
-            } catch (SAXException e) {
-                logger.warning("Error while trying to prepare the newly added partition. Please finish the configuration for this partition to ensure that it works properly. [" + e.getMessage() + "]");
-            } catch (InterruptedException e) {
-                logger.warning("Error while trying to prepare the newly added partition. Please finish the configuration for this partition to ensure that it works properly. [" + e.getMessage() + "]");
+        if (partitionNames.size() >= PartitionInformation.MAX_PARTITIONS) {
+            String message = MessageFormat.format("*** A maximum of {0} partitions is supported ***" + getEolChar(), PartitionInformation.MAX_PARTITIONS);
+            getData(new String[] {
+                        getEolChar(),
+                        message,
+                        "Press enter to continue",
+                        getEolChar(),
+                    }, "");
+
+        } else {
+            List<String> prompts = new ArrayList<String>();
+            prompts.add(HEADER_ADD_PARTITION);
+            String defaultValue = getNextNewName();
+            prompts.add("Enter the name of the new partition: ["+ defaultValue + "]");
+
+            Pattern allowedEntries = Pattern.compile(PartitionInformation.ALLOWED_PARTITION_NAME_PATTERN);
+
+            String newPartitionName;
+            do {
+                newPartitionName = getData(prompts.toArray(new String[0]), defaultValue, allowedEntries, "*** Invalid Partition Name. Please re-enter ***");
+                if (partitionNames.contains(newPartitionName))
+                    printText(new String[] {
+                        "*** " + newPartitionName + " already exists. Please choose another name ***" + getEolChar(),
+                        ""
+                    });
+            } while (partitionNames.contains(newPartitionName));
+
+            if (StringUtils.isNotEmpty(newPartitionName)) {
+                pi = new PartitionInformation(newPartitionName);
+                PartitionActions pa = new PartitionActions(osFunctions);
+                try {
+                    pa.createNewPartition(pi.getPartitionId());
+                    PartitionActions.prepareNewpartition(pi);
+                } catch (SAXException e) {
+                    logger.warning("Error while trying to prepare the newly added partition. Please finish the configuration for this partition to ensure that it works properly. [" + e.getMessage() + "]");
+                } catch (InterruptedException e) {
+                    logger.warning("Error while trying to prepare the newly added partition. Please finish the configuration for this partition to ensure that it works properly. [" + e.getMessage() + "]");
+                }
+                PartitionManager.getInstance().addPartition(pi);
+                partitionNames = PartitionManager.getInstance().getPartitionNames();
+                pi = PartitionManager.getInstance().getPartition(newPartitionName);
             }
-            PartitionManager.getInstance().addPartition(pi);
-            partitionNames = PartitionManager.getInstance().getPartitionNames();
-            pi = PartitionManager.getInstance().getPartition(newPartitionName);
         }
 
         return pi;

@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * User: megery
@@ -73,7 +74,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
         }
     };
 
-   public ConfigWizardPartitioningPanel(WizardStepPanel next) {
+    public ConfigWizardPartitioningPanel(WizardStepPanel next) {
         super(next);
         stepLabel = "Configure Partitions";
         setShowDescriptionPanel(false);
@@ -362,9 +363,9 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
 
     private void enableAddButton() {
         int size = partitionListModel.getSize();
-        if (size == 8) {
+        if (size == PartitionInformation.MAX_PARTITIONS) {
             addPartition.setEnabled(false);
-            addPartition.setToolTipText("A maximum of 8 partitions is supported");
+            addPartition.setToolTipText(MessageFormat.format("A maximum of {0} partitions is supported", PartitionInformation.MAX_PARTITIONS));
         } else {
             if (StringUtils.isEmpty(addedNewPartition)) {
                 addPartition.setEnabled(true);

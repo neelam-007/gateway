@@ -77,6 +77,7 @@ public class PartitionInformation{
 
 
     public static final String ALLOWED_PARTITION_NAME_PATTERN = "[^\\p{Punct}\\s]{1,128}";
+    public static final int MAX_PARTITIONS = 8;
 
     public enum OtherEndpointType {
         RMI_ENDPOINT("Inter-Node Communication Port"),
