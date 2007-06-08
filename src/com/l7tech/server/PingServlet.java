@@ -121,10 +121,8 @@ public class PingServlet extends AuthenticatableHttpServlet {
                     authenticated = false;
                 } catch (LicenseException e) {
                     _logger.warning("Ping service is unlicensed; returning " + HttpServletResponse.SC_SERVICE_UNAVAILABLE + ".");
-                    response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                    response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                     return;
-                    // Not calling sendError because that will return an error page with detail build info.
-                    // Should I kill response instead?
                 } catch (FindException e) {
                     authenticated = false;
                 } catch (CannotCreateTransactionException e) {
