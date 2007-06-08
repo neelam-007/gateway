@@ -4,6 +4,8 @@
 
 package com.l7tech.identity.fed;
 
+import java.util.Map;
+
 import com.l7tech.identity.PersistentGroup;
 import com.l7tech.identity.IdentityProviderConfig;
 
@@ -24,6 +26,10 @@ public class FederatedGroup extends PersistentGroup {
 
     public FederatedGroup(long providerOid, String name) {
         super(providerOid, name);
+    }
+
+    public FederatedGroup(long providerOid, String name, Map<String, String> properties) {
+        super(providerOid, name, properties);
     }
 
     public String toString() {

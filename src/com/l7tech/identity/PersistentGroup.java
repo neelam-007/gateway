@@ -5,6 +5,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.beans.XMLDecoder;
@@ -24,12 +25,18 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
 
     private long providerOid;
     private String description;
-    protected String xmlProperties;
-    private transient Map<String, String> properties;
+    private transient String xmlProperties;
+    private Map<String, String> properties;
 
     protected PersistentGroup(long providerOid, String name) {
         this.providerOid = providerOid;
         this._name = name;
+    }
+
+    protected PersistentGroup(long providerOid, String name, Map<String, String> properties) {
+        this.providerOid = providerOid;
+        this._name = name;
+        this.properties = new HashMap(properties);
     }
 
     public synchronized void setXmlProperties(String xml) {
@@ -48,12 +55,13 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
 
     public synchronized String getXmlProperties() {
         if ( xmlProperties == null ) {
-            Map<String, String> properties = getProperties();
+            Map<String, String> properties = this.properties;
             if ( properties == null ) return null;
             BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
             try {
-                XMLEncoder xe = new XMLEncoder(baos);
+                XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
                 xe.writeObject(properties);
+                xe.close();
                 xmlProperties = baos.toString(PROPERTIES_ENCODING);
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e); // Can't happen
@@ -62,16 +70,6 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
             }
         }
         return xmlProperties;
-    }
-
-    protected Map<String, String> getProperties() {
-        if (properties == null) properties = new HashMap<String, String>();
-        return properties;
-    }
-
-    public synchronized void setProperties(Map<String, String> properties) {
-        this.properties = properties;
-        this.xmlProperties = null;
     }
 
     public String getDescription() {
@@ -90,8 +88,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         this.providerOid = providerId;
     }
 
-    public void copyFrom( Group objToCopy) {
-        PersistentGroup imp = (PersistentGroup)objToCopy;
+    public void copyFrom( PersistentGroup imp ) {
         setOid(imp.getOid());
         setName(imp.getName());
         setDescription(imp.getDescription());
@@ -121,5 +118,29 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         result = 31 * result + (int) (providerOid ^ (providerOid >>> 32));
         result = 31 * result + (description != null ? description.hashCode() : 0);
         return result;
+    }
+
+    protected synchronized String getProperty(String propertyName) {
+        String propertyValue = null;
+
+        Map<String,String> properties = this.properties;
+        if (properties != null) {
+            propertyValue = properties.get(propertyName);
+        }
+
+        return propertyValue;
+    }
+
+    protected synchronized void setProperty(String propertyName, String propertyValue) {
+        Map<String,String> properties = this.properties;
+        if (properties == null) {
+            properties = new HashMap<String, String>();
+            this.properties = properties;
+        }
+
+        properties.put(propertyName, propertyValue);
+
+        // invalidate cached properties
+        xmlProperties = null;
     }
 }

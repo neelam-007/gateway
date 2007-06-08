@@ -34,7 +34,6 @@ public class InternalGroupManagerImpl
         InternalGroup ig = new InternalGroup(bean.getName());
         ig.setDescription(bean.getDescription());
         ig.setOid(bean.getId() == null ? InternalGroup.DEFAULT_OID : Long.valueOf(bean.getId()));
-        ig.setProperties(bean.getProperties());
         return ig;
     }
 

@@ -4,7 +4,6 @@
 
 package com.l7tech.identity.fed;
 
-import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 
 /**
@@ -27,32 +26,20 @@ public class VirtualGroup extends FederatedGroup {
     }
 
     public String getSamlEmailPattern() { 
-        return getProperties().get(PROP_SAML_EMAIL_PATTERN);
+        return getProperty(PROP_SAML_EMAIL_PATTERN);
     }
 
     public void setSamlEmailPattern( String samlEmailPattern ) {
-        getProperties().put(PROP_SAML_EMAIL_PATTERN, samlEmailPattern);
+        setProperty(PROP_SAML_EMAIL_PATTERN, samlEmailPattern);
     }
 
     public String getX509SubjectDnPattern() {
-        return getProperties().get(PROP_X509_DN_PATTERN);
+        return getProperty(PROP_X509_DN_PATTERN);
     }
 
     public void setX509SubjectDnPattern( String x509SubjectDnPattern ) {
-        getProperties().put(PROP_X509_DN_PATTERN, x509SubjectDnPattern);
+        setProperty(PROP_X509_DN_PATTERN, x509SubjectDnPattern);
     }
-
-    /**
-     * allows to set all properties from another object
-     */
-    public void copyFrom(Group objToCopy) {
-        super.copyFrom(objToCopy);
-
-        VirtualGroup imp = (VirtualGroup) objToCopy;
-        setSamlEmailPattern(imp.getProperties().get(PROP_SAML_EMAIL_PATTERN));
-        setX509SubjectDnPattern(imp.getProperties().get(PROP_X509_DN_PATTERN));
-    }
-
 
     public boolean equals(Object o) {
         if (this == o) return true;

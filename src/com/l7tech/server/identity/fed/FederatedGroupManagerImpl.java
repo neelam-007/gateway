@@ -50,10 +50,9 @@ public class FederatedGroupManagerImpl
     }
 
     public FederatedGroup reify(GroupBean bean) {
-        FederatedGroup fg = new FederatedGroup(bean.getProviderId(), bean.getName());
+        FederatedGroup fg = new FederatedGroup(bean.getProviderId(), bean.getName(), bean.getProperties());
         fg.setDescription(bean.getDescription());
         fg.setOid(bean.getId() == null ? FederatedGroup.DEFAULT_OID : Long.valueOf(bean.getId()));
-        fg.setProperties(bean.getProperties());
         return fg;
     }
 

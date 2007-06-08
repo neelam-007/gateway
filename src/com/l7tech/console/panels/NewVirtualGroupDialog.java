@@ -49,13 +49,9 @@ public class NewVirtualGroupDialog extends JDialog {
     private JButton cancelButton;
     private JTextField groupDescriptionTextField;
 
-    private Frame parent;
     private IdentityProviderConfig ipc;
     private EventListenerList listenerList = new EventListenerList();
-    GroupBean group = new GroupBean();
-    private JTextArea textArea1;
-    private JTextField textField1;
-    private JLabel emailPatternLabel;
+    private GroupBean group = new GroupBean();
 
     /**
      * Create a new NewGroupDialog fdialog for a given Company
@@ -64,7 +60,6 @@ public class NewVirtualGroupDialog extends JDialog {
      */
     public NewVirtualGroupDialog(Frame parent, IdentityProviderConfig ipc) {
         super(parent, true);
-        this.parent = parent;
         this.ipc = ipc;
         initResources();
         initComponents();
@@ -125,11 +120,6 @@ public class NewVirtualGroupDialog extends JDialog {
 
         // equalize buttons
         Utilities.equalizeButtonSizes(new JButton[]{createButton, cancelButton});
-
-        // Bugzilla #1090 - disable the fields that cannot be tested in rel 3.0                
-        //emailPatternTextField.setEnabled(false);
-        //emailPatternLabel.setEnabled(false);
-
     }
 
     /**
@@ -162,9 +152,9 @@ public class NewVirtualGroupDialog extends JDialog {
         group.setName(groupNameTextField.getText());
         group.setDescription(groupDescriptionTextField.getText());
         final VirtualGroup vGroup = new VirtualGroup(ipc.getOid(), groupNameTextField.getText());
-        vGroup.setProviderId(ipc.getOid());
         vGroup.setX509SubjectDnPattern(x509DNPatternTextField.getText());
         vGroup.setSamlEmailPattern(emailPatternTextField.getText());
+        vGroup.setDescription(groupDescriptionTextField.getText());
         SwingUtilities.invokeLater(
                 new Runnable() {
                     public void run() {
