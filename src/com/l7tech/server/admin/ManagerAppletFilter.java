@@ -282,11 +282,13 @@ public class ManagerAppletFilter implements Filter {
                 return AuthResult.OK;
             }
         } catch (LoginException e) {
-            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)}, e);
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)});
             // Fall through and either challenge or send error message
+            logger.log(Level.FINE, "Error authenticating administrator, " + ExceptionUtils.getMessage(e), e);
         } catch (PolicyAssertionException e) {
-            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)}, e);
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)});
             // Fall through and either challenge or send error message
+            logger.log(Level.FINE, "Error authenticating administrator, " + ExceptionUtils.getMessage(e), e);
         }
 
         // Ensure that we send back a challenge withour 401
