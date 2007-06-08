@@ -4,6 +4,7 @@
 
 package com.l7tech.server.message;
 
+import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.RequestId;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.AuditContext;
@@ -17,23 +18,22 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
-import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.service.PublishedService;
-import com.l7tech.cluster.ClusterPropertyManager;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Operation;
@@ -348,7 +348,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
         VariableMap vars = new VariableMap();
         for (String name : names) {
             try {
-                vars.put(name, getVariable(name.toLowerCase()));
+                vars.put(name, getVariable(name));
             } catch (NoSuchVariableException e) {
                 auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[]{name});
             }
