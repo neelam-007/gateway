@@ -507,6 +507,10 @@ public class ServerVariables {
     private static class OperationGetter implements Getter {
         public Object get(String name, PolicyEnforcementContext context) {
             try {
+                if (context.getService() == null) {
+                    logger.info("Can't get operation name because there is no resolved service attached to this context");
+                    return null;
+                }
                 if (context.getService().isSoap()) {
                     Operation operation = context.getOperation();
                     if (operation != null) return operation.getName();
