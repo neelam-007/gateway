@@ -24,6 +24,6 @@ public class DbVersion40Checker extends DbVersionChecker {
     }
 
     public String getVersion() {
-        return "4.0";
+        return "4.0.0";
     }
 }
