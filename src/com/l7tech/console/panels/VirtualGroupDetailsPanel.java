@@ -43,10 +43,6 @@ public class VirtualGroupDetailsPanel extends JPanel {
                 GridBagConstraints.CENTER,
                 GridBagConstraints.BOTH,
                 new Insets(0, 0, 0, 0), 0, 0));
-
-        // Bugzilla #1090 - disable the fields that cannot be tested in rel 3.0        
-        emailTextField.setEnabled(false);
-        emailPatternLabel.setEnabled(false);
     }
 
     public JTextField getGroupDescTextField() {

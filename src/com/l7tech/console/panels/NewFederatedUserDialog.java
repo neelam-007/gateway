@@ -173,12 +173,6 @@ public class NewFederatedUserDialog extends JDialog {
                 }
             }
         });
-
-        // Bugzilla #1090 - disable the fields that cannot be tested in rel 3.0        
-        //emailTextField.setEnabled(false);
-        //loginTextField.setEnabled(false);
-        //loginLabel.setEnabled(false);
-        //emailLabel.setEnabled(false);
     }
 
     /**
