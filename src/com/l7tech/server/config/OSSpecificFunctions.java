@@ -205,22 +205,6 @@ public abstract class OSSpecificFunctions {
         return getConfigurationBase() + keystoreDir;
     }
 
-//    public String getLunaJSPDir() {
-//        return lunaJSPDir;
-//    }
-
-//    public void setLunaJSPDir(String lunaJSPDir) {
-//        this.lunaJSPDir = lunaJSPDir;
-//    }
-
-//    public String getLunaInstallDir() {
-//        return lunaInstallDir;
-//    }
-
-//    public void setLunaInstallDir(String lunaInstallDir) {
-//        this.lunaInstallDir = lunaInstallDir;
-//    }
-
     public String getPathToJdk() {
         return getSsgInstallRoot() + pathToJdk;
     }
