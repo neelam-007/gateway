@@ -12,7 +12,6 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -74,11 +73,11 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         }
 
         // Get the private key, if we can access it
-        RSAPrivateKey rsaPrivateKey = null;
+        PrivateKey rsaPrivateKey = null;
         try {
             Key key = keystore.getKey(alias, getEntryPassword());
-            if (key instanceof RSAPrivateKey)
-                rsaPrivateKey = (RSAPrivateKey)key;
+            if (key instanceof PrivateKey && "RSA".equals(key.getAlgorithm()))
+                rsaPrivateKey = (PrivateKey)key;
         } catch (NoSuchAlgorithmException e) {
             getLogger().log(Level.WARNING, "Unsupported key type in cert entry in " + "Keystore " + getName() + " with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
             // Fallthrough and do without
@@ -107,9 +106,9 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         if (chain == null || chain.length < 1)
             throw new KeyStoreException("Unable to store private key entry with null or empty certificate chain");
 
-        final RSAPrivateKey key;
+        final PrivateKey key;
         try {
-            key = entry.getRSAPrivateKey();
+            key = entry.getPrivateKey();
             if (key == null)
                 throw new KeyStoreException("Unable to store private key entry with null private key");
         } catch (UnrecoverableKeyException e) {
@@ -196,6 +195,8 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                     throw new RuntimeException(e);
                 } catch (KeyStoreException e) {
                     throw new RuntimeException(e);
+                } catch (NoSuchProviderException e) {
+                    throw new RuntimeException(e);
                 }
             }
         });
@@ -221,8 +222,8 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                     if (!(oldPublicKey instanceof RSAPublicKey))
                         throw new RuntimeException("Existing certificate public key is not an RSA public key");
                     RSAPublicKey oldRsaPublicKey = (RSAPublicKey)oldPublicKey;
-                    if (!(key instanceof RSAPrivateKey))
-                        throw new RuntimeException("Keystore contains a key with alias " + alias + " but it is not an RSA private key");
+                    if (!(key instanceof PrivateKey) || !"RSA".equals(key.getAlgorithm()))
+                        throw new RuntimeException("Keystore contains a key with alias " + alias + " but it is not an RSA private key: " + key);
 
                     PublicKey newPublicKey = chain[0].getPublicKey();
                     if (!(newPublicKey instanceof RSAPublicKey)) {
@@ -260,9 +261,9 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             X500Principal dnObj = new X500Principal(dn);
             KeyStore keystore = keyStore();
             Key key = keystore.getKey(alias, getEntryPassword());
-            if (!(key instanceof RSAPrivateKey))
+            if (!(key instanceof PrivateKey) || !"RSA".equals(key.getAlgorithm()))
                 throw new InvalidKeyException("The key with alias " + alias + " is not an RSA private key");
-            RSAPrivateKey rsaPrivate = (RSAPrivateKey)key;
+            PrivateKey rsaPrivate = (PrivateKey)key;
             Certificate[] chain = keystore.getCertificateChain(alias);
             if (chain == null || chain.length < 1)
                 throw new RuntimeException("Existing certificate chain for alias " + alias + " is empty");

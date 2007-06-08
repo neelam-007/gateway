@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     protected static final Logger logger = Logger.getLogger(ScaSsgKeyStore.class.getName());
     private static final String DB_FORMAT = "hsm.sca.targz";
-    private static final long refreshTime = 5 * 60 * 1000;
+    private static final long refreshTime = 5 * 1000;
 
     private static ScaSsgKeyStore INSTANCE = null;
 
@@ -37,6 +37,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     private final KeystoreFileManager kem;
     private final ScaManager scaManager;
     private KeyStore keystore;
+    private int keystoreVersion = -1;
     private long lastLoaded = 0;
 
     /**
@@ -88,11 +89,18 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
         if (keystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
             try {
                 KeystoreFile keystoreFile = kem.findByPrimaryKey(getOid());
+                int dbVersion = keystoreFile.getVersion();
+                if (keystore != null && keystoreVersion == dbVersion) {
+                    // No changes since last time we checked.  Just use the one we've got.
+                    return keystore;
+                }
+
                 byte[] bytes = keystoreFile.getDatabytes();
                 if (bytes != null && bytes.length > 0 && !keystoreFile.getFormat().equals(DB_FORMAT))
                     throw new KeyStoreException("Database key data format unrecognized for SCA keystore named " + name +
                                                 "(expected \"" + DB_FORMAT + "\"; found \"" + keystoreFile.getFormat() + "\")");
                 keystore = bytesToKeyStore(bytes);
+                keystoreVersion = dbVersion;
             } catch (FindException e) {
                 throw new KeyStoreException("Unable to load hardware keystore data from database for keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
             }
@@ -103,7 +111,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     private synchronized KeyStore bytesToKeyStore(byte[] bytes) throws KeyStoreException {
         try {
             if (bytes != null && bytes.length > 0) {
-                logger.info("Syncing from database to local keydata directory for SCA keystore named " + name);
+                logger.info("Copying updated keystore info from database to local keydata directory for SCA keystore named " + name);
                 scaManager.saveKeydata(bytes);
             }
 
@@ -123,6 +131,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
 
     private synchronized byte[] keyStoreToBytes() throws KeyStoreException {
         try {
+            logger.info("Copying updated keystore info from local keydata directory to database for SCA keystore named " + name);
             return scaManager.loadKeydata();
         } catch (ScaException e) {
             final String msg = "Unable to read local hardware keystore data for keystore named " + name + ": " + ExceptionUtils.getMessage(e);
@@ -185,7 +194,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     protected synchronized <OUT> OUT mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
         final Object[] out = new Object[] { null };
         try {
-            kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
+            KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
                 public byte[] call(byte[] bytes) {
                     try {
                         keystore = bytesToKeyStore(bytes);
@@ -197,6 +206,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
                     }
                 }
             });
+            keystoreVersion = updated.getVersion();
         } catch (UpdateException e) {
             throw new KeyStoreException(e);
         }

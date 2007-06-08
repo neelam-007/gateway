@@ -1,11 +1,10 @@
 package com.l7tech.common.security.keystore;
 
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.UnrecoverableKeyException;
+import java.security.PrivateKey;
 import java.util.Arrays;
 import java.io.Serializable;
 
@@ -19,7 +18,7 @@ public class SsgKeyEntry implements NamedEntity, Serializable {
     private long keystoreId;
     private String alias;
     private X509Certificate[] certificateChain;
-    private transient RSAPrivateKey rsaPrivateKey;
+    private transient PrivateKey privateKey;
 
 
     /**
@@ -28,21 +27,21 @@ public class SsgKeyEntry implements NamedEntity, Serializable {
      * @param keystoreId        ID of the keystore to which this entry belongs
      * @param alias  the alias for this SsgKeyEntry, or null if it doesn't (yet?) have one
      * @param certificateChain  the certificate chain for this entry.  Must contain at least one certificate.
-     * @param rsaPrivateKey     the private key for this entry, or null if the private key is not available
+     * @param privateKey        the private key for this entry, or null if the private key is not available
      *                          (perhaps because it is stored in an HSM and cannot be exported/serialized, and this
      *                          code is currently running on the client).
      */
     public SsgKeyEntry(long keystoreId,
                        String alias,
                        X509Certificate[] certificateChain,
-                       RSAPrivateKey rsaPrivateKey)
+                       PrivateKey privateKey)
     {
         if (certificateChain == null || certificateChain.length < 1 || certificateChain[0] == null)
             throw new IllegalArgumentException("certificateChain must contain at least one certificate");
         this.keystoreId = keystoreId;
         this.alias = alias;
         this.certificateChain = certificateChain;
-        this.rsaPrivateKey = rsaPrivateKey;
+        this.privateKey = privateKey;
     }
 
     /**
@@ -72,10 +71,10 @@ public class SsgKeyEntry implements NamedEntity, Serializable {
     }
 
     /**
-     * @return true if getRSAPrivateKey() would return non-null without throwing.
+     * @return true if getPrivateKey() would return non-null without throwing.
      */
     public boolean isPrivateKeyAvailable() {
-        return rsaPrivateKey != null;
+        return privateKey != null;
     }
 
     /**
@@ -85,10 +84,10 @@ public class SsgKeyEntry implements NamedEntity, Serializable {
      *                                    is never sent outside the Gateway (and in any case may just be a handle
      *                                    to a secure PKCS#11 object).
      */
-    public RSAPrivateKey getRSAPrivateKey() throws UnrecoverableKeyException {
-        if (rsaPrivateKey == null)
+    public PrivateKey getPrivateKey() throws UnrecoverableKeyException {
+        if (privateKey == null)
             throw new UnrecoverableKeyException("The private key is not available to this code");
-        return rsaPrivateKey;
+        return privateKey;
     }
 
     /**
@@ -126,9 +125,9 @@ public class SsgKeyEntry implements NamedEntity, Serializable {
         this.certificateChain = certificateChain;
     }
 
-    /** @param rsaPrivateKey the new RSA private key, or null to clear it. */
-    public void setRsaPrivateKey(RSAPrivateKey rsaPrivateKey) {
-        this.rsaPrivateKey = rsaPrivateKey;
+    /** @param privateKey the new RSA private key, or null to clear it. */
+    public void setPrivateKey(PrivateKey privateKey) {
+        this.privateKey = privateKey;
     }
 
     /** @noinspection RedundantIfStatement*/

@@ -2,9 +2,9 @@ package com.l7tech.server.security.keystore.software;
 
 import com.l7tech.common.security.BouncyCastleCertUtils;
 import com.l7tech.common.security.CertificateRequest;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.KeystoreUtils;
-import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import org.springframework.transaction.annotation.Propagation;
@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,7 +69,7 @@ public class TomcatSsgKeyFinder implements SsgKeyFinder {
                 return new SsgKeyEntry(getOid(),
                                        alias,
                                        new X509Certificate[] { keystoreUtils.getSslCert() },
-                                       (RSAPrivateKey)keystoreUtils.getSSLPrivateKey());
+                                       keystoreUtils.getSSLPrivateKey());
             } else if ("CA".equals(alias)) {
                 return new SsgKeyEntry(getOid(),
                                        alias,

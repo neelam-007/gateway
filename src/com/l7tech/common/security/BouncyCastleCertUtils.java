@@ -30,9 +30,13 @@ public class BouncyCastleCertUtils {
      * @throws CertificateEncodingException  if there is a problem producing the new cert
      * @throws NoSuchAlgorithmException      if a required crypto algorithm is unavailable
      * @throws SignatureException            if there is a problem signing the new cert
-     * @throws InvalidKeyException           if there is a problem with the provided key pair           
+     * @throws InvalidKeyException           if there is a problem with the provided key pair
+     * @throws NoSuchProviderException       if the current asymmetric crypto provider doesn't exist
      */
-    public static X509Certificate generateSelfSignedCertificate(X500Principal dn, int expiryDays, KeyPair keyPair) throws CertificateEncodingException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+    public static X509Certificate generateSelfSignedCertificate(X500Principal dn, int expiryDays, KeyPair keyPair)
+            throws CertificateEncodingException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, NoSuchProviderException
+    {
+        String rsaProvider = JceProvider.getAsymmetricJceProvider().getName();
 
         X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
         certGen.setSerialNumber(BigInteger.valueOf(new Random().nextInt(2000000) + 1));
@@ -46,7 +50,7 @@ public class BouncyCastleCertUtils {
         certGen.setPublicKey(keyPair.getPublic());
         certGen.setSignatureAlgorithm("SHA1withRSA");
 
-        return certGen.generate(keyPair.getPrivate());
+        return certGen.generate(keyPair.getPrivate(), rsaProvider);
     }
 
     /**

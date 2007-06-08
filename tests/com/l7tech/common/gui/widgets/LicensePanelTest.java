@@ -53,7 +53,7 @@ public class LicensePanelTest {
 
     public static void main(String[] args) {
         final JDialog dlg = new JDialog();
-        final LicensePanel licensePanel = new LicensePanel("My SSG");
+        final LicensePanel licensePanel = new LicensePanel("My SSG", true);
 
         Container p = dlg.getContentPane();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));

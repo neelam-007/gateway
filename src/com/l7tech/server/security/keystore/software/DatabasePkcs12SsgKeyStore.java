@@ -27,7 +27,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  */
 public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     protected static final Logger logger = Logger.getLogger(DatabasePkcs12SsgKeyStore.class.getName());
-    private static final long refreshTime = 5 * 60 * 1000;
+    private static final long refreshTime = 5 * 1000;
     private static final String DB_FORMAT = "sdb.pkcs12";
 
     private final long id;
@@ -37,6 +37,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
     private final char[] password;
 
     private KeyStore cachedKeystore = null;
+    private int keystoreVersion = -1;
     private long lastLoaded = 0;
 
     /**
@@ -79,7 +80,13 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         if (cachedKeystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
             try {
                 KeystoreFile keystoreFile = kem.findByPrimaryKey(getOid());
+                int dbVersion = keystoreFile.getVersion();
+                if (cachedKeystore != null && keystoreVersion == dbVersion) {
+                    // No changes since last time we checked.  Just use the one we've got.
+                    return cachedKeystore;
+                }
                 cachedKeystore = bytesToKeyStore(keystoreFile.getDatabytes());
+                keystoreVersion = keystoreFile.getVersion();
                 lastLoaded = System.currentTimeMillis();
             } catch (FindException e) {
                 throw new KeyStoreException("Unable to load software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
@@ -143,7 +150,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
     protected synchronized <OUT> OUT mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
         final Object[] out = new Object[] { null };
         try {
-            kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
+            KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
                 public byte[] call(byte[] bytes) {
                     try {
                         cachedKeystore = bytesToKeyStore(bytes);
@@ -155,6 +162,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
                     }
                 }
             });
+            keystoreVersion = updated.getVersion();
         } catch (UpdateException e) {
             throw new KeyStoreException(e);
         }

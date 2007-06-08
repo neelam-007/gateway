@@ -772,7 +772,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         String signaturemethod;
-        if (senderSigningKey instanceof RSAPrivateKey)
+        if (senderSigningKey instanceof RSAPrivateKey || "RSA".equals(senderSigningKey.getAlgorithm()))
             signaturemethod = SignatureMethod.RSA;
         else if (senderSigningKey instanceof DSAPrivateKey)
             signaturemethod = SignatureMethod.DSA;

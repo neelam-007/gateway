@@ -6,11 +6,7 @@
 
 package com.l7tech.identity.cert;
 
-import java.security.interfaces.RSAPrivateKey;
-import java.security.Signature;
-import java.security.NoSuchAlgorithmException;
-import java.security.InvalidKeyException;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.X509Certificate;
 
 /**
@@ -24,12 +20,12 @@ public class RsaDataSigner {
      * and return the resulting signature as a byte array.
      *
      * @param data          the data to sign
-     * @param privateKey    the private key to sign it with
+     * @param privateKey    the private key to sign it with.  Must have algorithm "RSA".
      * @return              the computed signature
      * @throws RuntimeException     if the SHA1withRSA signature algorithm is not available
      * @throws InvalidKeyException  if the specified RSAPrivateKey is not valid
      */
-    public static byte[] sign(byte[] data, RSAPrivateKey privateKey) throws InvalidKeyException {
+    public static byte[] sign(byte[] data, PrivateKey privateKey) throws InvalidKeyException {
         try {
             Signature signer = Signature.getInstance(SIG_ALG);
             signer.initSign(privateKey);

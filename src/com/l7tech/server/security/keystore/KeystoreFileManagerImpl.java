@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
-import java.util.logging.Logger;
 
 /**
  * Hibernate manager for read/write access to the keystore table.
@@ -43,9 +42,9 @@ public class KeystoreFileManagerImpl
         return EntityType.PRIVATE_KEY;
     }
 
-    public void updateDataBytes(final long id, final Functions.Unary<byte[], byte[]> mutator) throws UpdateException {
+    public KeystoreFile updateDataBytes(final long id, final Functions.Unary<byte[], byte[]> mutator) throws UpdateException {
         try {
-            getHibernateTemplate().execute(new HibernateCallback() {
+            return (KeystoreFile)getHibernateTemplate().execute(new HibernateCallback() {
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     try {
                         KeystoreFile keystoreFile = (KeystoreFile)session.load(KeystoreFile.class, id, LockMode.UPGRADE);
@@ -53,7 +52,7 @@ public class KeystoreFileManagerImpl
                         byte[] bytesAfter = mutator.call(bytesBefore);
                         keystoreFile.setDatabytes(bytesAfter);
                         update(keystoreFile);
-                        return null;
+                        return keystoreFile;
                     } catch (UpdateException e) {
                         throw new HibernateException(e);
                     }

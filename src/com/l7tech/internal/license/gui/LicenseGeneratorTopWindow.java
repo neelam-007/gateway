@@ -29,14 +29,12 @@ import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
-import java.math.BigInteger;
 import java.net.URL;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.TimerTask;
@@ -61,7 +59,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
             "\n  " + PROPERTY_KEYSTORE_ALIAS;
     public static final String DEFAULT_KEYSTORE_TYPE = "PKCS12";
 
-    private LicensePanel licensePanel = new LicensePanel("Building License");
+    private LicensePanel licensePanel = new LicensePanel("Building License", true);
     private LicenseSpecPanel specPanel = new LicenseSpecPanel();
 
     private JPanel rootPanel;
@@ -621,34 +619,6 @@ public class LicenseGeneratorTopWindow extends JFrame {
         }
 
         LicenseGeneratorMain.saveProperties();
-    }
-
-    private PrivateKey getDemoSignerKey() {
-        return new RSAPrivateKey() {
-            public BigInteger getPrivateExponent() {
-                return new BigInteger(KEY_PRIVATE_EXPONENT);
-            }
-
-            public String getAlgorithm() {
-                return "RSA";
-            }
-
-            public String getFormat() {
-                return ENCODED_FORMAT;
-            }
-
-            public byte[] getEncoded() {
-                try {
-                    return HexUtils.unHexDump(KEY_ENCODED);
-                } catch (IOException e) {
-                    throw new RuntimeException(e); // can't happen
-                }
-            }
-
-            public BigInteger getModulus() {
-                return new BigInteger(KEY_MODULUS);
-            }
-        };
     }
 
     private X509Certificate getDemoSignerCert() throws CertificateException, IOException {

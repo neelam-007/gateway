@@ -31,7 +31,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -669,8 +668,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             String alias = aliases.nextElement();
             if (keystore.isKeyEntry(alias)) {
                 Object obj = keystore.getKey(alias, password.toCharArray());
-                if (obj instanceof RSAPrivateKey) {
-                    candidateKeys.add(alias);
+                if (obj instanceof PrivateKey) {
+                    PrivateKey pk = (PrivateKey)obj;
+                    if ("RSA".equals(pk.getAlgorithm()))
+                        candidateKeys.add(alias);
                 }
             }
         }

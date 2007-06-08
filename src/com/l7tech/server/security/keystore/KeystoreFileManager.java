@@ -20,8 +20,9 @@ public interface KeystoreFileManager extends EntityManager<KeystoreFile, EntityH
      *                 <p/>
      *                 Mutator may throw RuntimeException to roll back the transaction; this will be
      *                 reported back up as an UpdateException.
+     * @return the updated KeystoreFile instance, containing the latest version number.  Never null.
      * @throws UpdateException if the update could not be performed due to DB connectivity or the mutator throwing
      *                         a RuntimeException.
      */
-    void updateDataBytes(long id, Functions.Unary<byte[], byte[]> mutator) throws UpdateException;
+    KeystoreFile updateDataBytes(long id, Functions.Unary<byte[], byte[]> mutator) throws UpdateException;
 }

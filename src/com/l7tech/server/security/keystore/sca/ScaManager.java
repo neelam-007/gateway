@@ -83,8 +83,10 @@ public class ScaManager {
      */
     protected void doStopSca() throws ScaException {
         try {
+            // Work-around for SCA STALL deadlock (Bug #3802) -- wait for any pending DB changes to be
+            // written out before we stop the kiod
+            Thread.sleep(2000L);
             ProcResult result = exec(null, scakiodLoad, args("stop"), null, true);
-            Thread.sleep(1000L);
             int status = result.getExitStatus();
             switch (status) {
                 case 0:
@@ -114,12 +116,8 @@ public class ScaManager {
     protected void doStartSca() throws ScaException {
         try {
             exec(null, scakiodLoad, args("start"), null, false);
-            Thread.sleep(1000L);
         } catch (IOException e) {
             throw new ScaException(e);
-        } catch (InterruptedException e) {
-            logger.warning("Interrupted");
-            Thread.currentThread().interrupt();
         }
     }
 

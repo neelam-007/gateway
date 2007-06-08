@@ -38,6 +38,7 @@ public class LicensePanel extends JPanel {
     private JLabel startLabel;
     private JLabel expiresLabel;
     private JLabel grantsLabel;
+    private JLabel eulaLabel;
 
     private JLabel licenseIdField;
     private JLabel descriptionField;
@@ -47,11 +48,15 @@ public class LicensePanel extends JPanel {
     private JLabel startField;
     private JLabel expiresField;
     private JPanel grantsPanel;
+    private JLabel eulaField;
+    private JButton eulaButton;
 
     private String statusNone = DEFAULT_STATUS_NONE;
     private String statusInvalid = DEFAULT_STATUS_INVALID;
     private String statusUnsigned = DEFAULT_STATUS_UNSIGNED;
     private String statusValid = DEFAULT_STATUS_VALID;
+
+    private final boolean showEulaInfo;
 
     private License license = null;
     private boolean validLicense = false;
@@ -79,7 +84,8 @@ public class LicensePanel extends JPanel {
             expiresField,
     };
 
-    public LicensePanel(String gatewayName) {
+    public LicensePanel(String gatewayName, boolean showEulaInfo) {
+        this.showEulaInfo = showEulaInfo;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         add(rootPanel);
         init();
@@ -98,7 +104,13 @@ public class LicensePanel extends JPanel {
                 startLabel,
                 expiresLabel,
                 grantsLabel,
+                eulaLabel
         });
+        if (!showEulaInfo) {
+            eulaLabel.setVisible(false);
+            eulaField.setVisible(false);
+            eulaButton.setVisible(false);
+        }
         setLicense(null);
     }
 
@@ -247,6 +259,15 @@ public class LicensePanel extends JPanel {
         grantsPanel.add(new JScrollPane(new WrappingLabel(grants, (grants.length() / 70) + 2),
                                         JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                                         JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
+
+        String eualaId = license.getEulaIdentifier();
+        // TODO Display the EULA info
+        // TODO Display the EULA info
+        // TODO Display the EULA info
+        // TODO Display the EULA info
+        // TODO Display the EULA info
+        // TODO Display the EULA info
+        // TODO Display the EULA info
     }
 
     private void displayExpiryDate(License license) {
@@ -256,18 +277,22 @@ public class LicensePanel extends JPanel {
         expiresField.setText(n(date == null ? null : date.toString()) + m);
     }
 
-    /** Clears license fields and sets their visibility. */
+    /* Clears license fields and sets their visibility. */
     private void setLicenseFieldsVisible(boolean visibility) {
-        for (int i = 0; i < licenseLabels.length; i++) {
-            JLabel licenseLabel = licenseLabels[i];
+        for (JLabel licenseLabel : licenseLabels) {
             licenseLabel.setVisible(visibility);
         }
 
-        for (int i = 0; i < licenseFields.length; i++) {
-            JLabel licenseField = licenseFields[i];
+        for (JLabel licenseField : licenseFields) {
             licenseField.setVisible(visibility);
             licenseField.setText("");
         }
+
+        boolean eulaVis = visibility && showEulaInfo;
+        eulaLabel.setVisible(eulaVis);
+        eulaField.setVisible(eulaVis);
+        eulaField.setText("");
+        eulaButton.setVisible(eulaVis);
 
         grantsPanel.removeAll();
         grantsPanel.setVisible(visibility);

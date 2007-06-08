@@ -156,9 +156,10 @@ public class ProcUtils {
         try {
             return doExec(null, program, args, stdin, allowNonzeroExit);
         } catch (IOException e) {
-            throw new CausedIOException("Unable to invoke " + program.getName() + " program: " + e.getMessage(), e);
+            throw new CausedIOException("Unable to invoke program " + program.getName() + ": " + e.getMessage(), e);
         } catch (InterruptedException e) {
-            throw new CausedIOException("Unable to invoke " + program.getName() + " program: " + e.getMessage(), e);
+            Thread.currentThread().interrupt();
+            throw new CausedIOException("Interrupted during invocation of program " + program.getName() + ": " + e.getMessage(), e);
         }
     }
 

@@ -25,11 +25,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.security.*;
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.InvalidKeySpecException;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPrivateKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -363,7 +362,7 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         // Ensure all certs are instances that have come from the default certificate factory
         try {
             RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(modulus, privateExponent);
-            RSAPrivateKey rsaPrivateKey = (RSAPrivateKey)KeyFactory.getInstance("RSA").generatePrivate(keySpec);
+            PrivateKey rsaPrivateKey = KeyFactory.getInstance("RSA").generatePrivate(keySpec);
             SsgKeyEntry entry = new SsgKeyEntry(keystoreId, alias, safeChain, rsaPrivateKey);
             keystore.storePrivateKeyEntry(entry, false);
         } catch (InvalidKeySpecException e) {

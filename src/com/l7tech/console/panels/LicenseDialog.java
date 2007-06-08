@@ -9,6 +9,7 @@ import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
+import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.common.gui.widgets.LicensePanel;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
@@ -29,14 +30,16 @@ import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.*;
+import java.text.ParseException;
 
 /**
  * Dialog for viewing the current license and possibly installing a new one.
  */
 public class LicenseDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(LicenseDialog.class.getName());
-    private static final String CLICKWRAP_PATH = "com/l7tech/console/resources/clickwrap.txt";
-    private static final String CLICKWRAP_ENCODING = "ISO8859-1";
+    private static final String EULA_DIR = "com/l7tech/console/resources/";
+    private static final String DEFAULT_EULA = EULA_DIR + "clickwrap.txt";
+    private static final String EULA_ENCODING = "ISO8859-1";
 
     final LicensePanel licensePanel;
     private JPanel rootPanel;
@@ -48,13 +51,13 @@ public class LicenseDialog extends JDialog {
 
     public LicenseDialog(Frame owner, String gatewayName) throws HeadlessException {
         super(owner);
-        this.licensePanel = new LicensePanel(gatewayName);
+        this.licensePanel = new LicensePanel(gatewayName, false);
         init();
     }
 
     public LicenseDialog(Dialog owner, String gatewayName) throws HeadlessException {
         super(owner);
-        this.licensePanel = new LicensePanel(gatewayName);
+        this.licensePanel = new LicensePanel(gatewayName, false);
         init();
     }
 
@@ -191,11 +194,11 @@ public class LicenseDialog extends JDialog {
                                     return;
                             }
 
-                            // Show click wrap license
-                            if (!eulaConfirmed())
-                                return;
-
                             try {
+                                // Show click wrap license
+                                if (!eulaConfirmed(licenseXml))
+                                    return;
+
                                 admin.installNewLicense(licenseXml);
                             } catch (InvalidLicenseException e1) {
                                 final String msg = ExceptionUtils.getMessage(e1);
@@ -299,34 +302,78 @@ public class LicenseDialog extends JDialog {
     }
 
     /**
-     * Show the click-wrap EULA dialog.
-     *
-     * @return true if the user clicked "I agree"
-     * @throws IOException if there is a problem reading the license text.
+     * @param resourcePath path of eula text to load, ie "com/l7tech/console/resources/clickwrap.txt".  Required.
+     * @return the eula string from the specified path, or null if the resource was not found.
+     * @throws java.io.IOException if there was a problem reading the file
      */
-    private boolean eulaConfirmed() throws IOException {
-        boolean eulaOk = false;
+    private String getEulaResource(String resourcePath) throws IOException {
         InputStream eulaStream = null;
         try {
-            eulaStream = getClass().getClassLoader().getResourceAsStream(CLICKWRAP_PATH);
+            eulaStream = getClass().getClassLoader().getResourceAsStream(resourcePath);
+            if (eulaStream == null)
+                return null;
             byte[] eulaBytes = HexUtils.slurpStream(eulaStream);
             // Replace "smart" quotes with smart quotes
             HexUtils.replaceBytes(
                     eulaBytes,
                     new int[] { 0x82, 0x84, 0x91, 0x92, 0x93, 0x94, 0x8b, 0x9b, 0x96, 0x97 },
                     new int[] { ',',  ',',  '\'', '\'', '\'', '\'',  '<',  '>',  '-',  '-' });
-            String eulaStr =
-                    eulaStream != null
-                    ? new String(eulaBytes, CLICKWRAP_ENCODING)
-                    : "Missing " + CLICKWRAP_PATH;
-            ClickwrapDialog clickWrap = new ClickwrapDialog(LicenseDialog.this, eulaStr);
-            clickWrap.pack();
-            Utilities.centerOnScreen(clickWrap);
-            clickWrap.setVisible(true);
-            eulaOk = clickWrap.isConfirmed();
+            return new String(eulaBytes, EULA_ENCODING);
         } finally {
             ResourceUtils.closeQuietly(eulaStream);
         }
-        return eulaOk;
+    }
+
+    private String getEulaText(License license) throws IOException {
+        // Check for custom eula text
+        String text = license.getEulaText();
+        if (text != null && text.trim().length() > 0)
+            return text;
+
+        // Check for non-default eula identifier
+        String id = license.getEulaIdentifier();
+        if (id != null) {
+            text = getEulaResource(EULA_DIR + "eula-" + id + ".txt");
+            if (text != null && text.trim().length() > 0)
+                return text;
+        }
+
+        text = getEulaResource(DEFAULT_EULA);
+        if (text != null && text.trim().length() > 0)
+            return text;
+
+        return "Unable to find " + DEFAULT_EULA;
+    }
+
+    /**
+     * Show the click-wrap EULA dialog.
+     *
+     * @param licenseXml the license XML that is about to be installed.  Required.
+     * @return true if the user clicked "I agree"
+     * @throws IOException if there is a problem reading the license text.
+     * @throws InvalidLicenseException if the license XML is not valid.
+     */
+    private boolean eulaConfirmed(String licenseXml) throws IOException, InvalidLicenseException {
+        final License license;
+        try {
+            // Parse to extract custom eula, but don't bother checking signature or feature sets yet
+            // (that'll be done on the server when we try to install the license)
+            license = new License(licenseXml, null, null);
+        } catch (TooManyChildElementsException e) {
+            throw new InvalidLicenseException(e);
+        } catch (SignatureException e) {
+            throw new InvalidLicenseException(e); // can't happen
+        } catch (SAXException e) {
+            throw new InvalidLicenseException(e);
+        } catch (ParseException e) {
+            throw new InvalidLicenseException(e);
+        }
+
+        String eulaStr = getEulaText(license);
+        ClickwrapDialog clickWrap = new ClickwrapDialog(LicenseDialog.this, eulaStr);
+        clickWrap.pack();
+        Utilities.centerOnScreen(clickWrap);
+        clickWrap.setVisible(true);
+        return clickWrap.isConfirmed();
     }
 }
