@@ -259,7 +259,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                             }, false);
 
         final AddCertificateWizard w = new AddCertificateWizard(this, sp);
-        w.setTitle("Assign Cert to Private Key");
+        w.setTitle("Assign Certificate to Private Key");
         w.addWizardListener(new WizardAdapter() {
             public void wizardFinished(WizardEvent we) {
                 Object o = w.getWizardInput();
