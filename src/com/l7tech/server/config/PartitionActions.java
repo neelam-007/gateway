@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * User: megery
@@ -243,7 +244,7 @@ public class PartitionActions {
         }
     }
 
-    public static void fixKeystorePaths(File partitionDir) throws FileNotFoundException {
+    public static void fixKeystorePaths(File partitionDir, PartitionInformation piToUpdate) throws FileNotFoundException {
         File serverConfig = new File(partitionDir, "server.xml");
         File keystoreProperties = new File(partitionDir, "keystore.properties");
         FileInputStream serverConfigFis = null;
@@ -269,6 +270,8 @@ public class PartitionActions {
             }
             serverConfigFos = new FileOutputStream(serverConfig);
             XmlUtil.nodeToOutputStream(serverConfigDom, serverConfigFos);
+            if (piToUpdate != null)
+                piToUpdate.setOriginalDom(serverConfigDom);
 
             keystoreConfigFis = new FileInputStream(keystoreProperties);
             Properties props = new Properties();
@@ -278,9 +281,9 @@ public class PartitionActions {
             props.store(keystoreConfigFos, "");
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error updating keystore paths.", e);
         } catch (SAXException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error updating keystore paths.", e);
         } finally {
             ResourceUtils.closeQuietly(serverConfigFis);
             ResourceUtils.closeQuietly(serverConfigFos);
@@ -510,7 +513,7 @@ public class PartitionActions {
         //edit the system.properties file so the name is correct
         try {
             updatePartitionEndpoints(newPartition, false);
-            fixKeystorePaths(new File(newPartition.getOSSpecificFunctions().getPartitionBase() + newPartition.getPartitionId()));
+            fixKeystorePaths(new File(newPartition.getOSSpecificFunctions().getPartitionBase() + newPartition.getPartitionId()), newPartition);
             updateSystemProperties(newPartition, false);
         } catch (FileNotFoundException e) {
             logger.warning("Error while preparing the \"" + newPartition.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
