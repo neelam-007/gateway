@@ -11,6 +11,7 @@ import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
 import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.common.gui.widgets.LicensePanel;
+import com.l7tech.common.gui.widgets.EulaDialog;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.*;
@@ -37,6 +38,8 @@ import java.text.ParseException;
  */
 public class LicenseDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(LicenseDialog.class.getName());
+
+    // These must agree with the fields in LicenseGeneratorTopWindow so ita preview function agrees with what the SSM will do
     private static final String EULA_DIR = "com/l7tech/console/resources/";
     private static final String DEFAULT_EULA = EULA_DIR + "clickwrap.txt";
     private static final String EULA_ENCODING = "ISO8859-1";
@@ -301,49 +304,6 @@ public class LicenseDialog extends JDialog {
         }
     }
 
-    /**
-     * @param resourcePath path of eula text to load, ie "com/l7tech/console/resources/clickwrap.txt".  Required.
-     * @return the eula string from the specified path, or null if the resource was not found.
-     * @throws java.io.IOException if there was a problem reading the file
-     */
-    private String getEulaResource(String resourcePath) throws IOException {
-        InputStream eulaStream = null;
-        try {
-            eulaStream = getClass().getClassLoader().getResourceAsStream(resourcePath);
-            if (eulaStream == null)
-                return null;
-            byte[] eulaBytes = HexUtils.slurpStream(eulaStream);
-            // Replace "smart" quotes with smart quotes
-            HexUtils.replaceBytes(
-                    eulaBytes,
-                    new int[] { 0x82, 0x84, 0x91, 0x92, 0x93, 0x94, 0x8b, 0x9b, 0x96, 0x97 },
-                    new int[] { ',',  ',',  '\'', '\'', '\'', '\'',  '<',  '>',  '-',  '-' });
-            return new String(eulaBytes, EULA_ENCODING);
-        } finally {
-            ResourceUtils.closeQuietly(eulaStream);
-        }
-    }
-
-    private String getEulaText(License license) throws IOException {
-        // Check for custom eula text
-        String text = license.getEulaText();
-        if (text != null && text.trim().length() > 0)
-            return text;
-
-        // Check for non-default eula identifier
-        String id = license.getEulaIdentifier();
-        if (id != null) {
-            text = getEulaResource(EULA_DIR + "eula-" + id + ".txt");
-            if (text != null && text.trim().length() > 0)
-                return text;
-        }
-
-        text = getEulaResource(DEFAULT_EULA);
-        if (text != null && text.trim().length() > 0)
-            return text;
-
-        return "Unable to find " + DEFAULT_EULA;
-    }
 
     /**
      * Show the click-wrap EULA dialog.
@@ -369,8 +329,7 @@ public class LicenseDialog extends JDialog {
             throw new InvalidLicenseException(e);
         }
 
-        String eulaStr = getEulaText(license);
-        ClickwrapDialog clickWrap = new ClickwrapDialog(LicenseDialog.this, eulaStr);
+        EulaDialog clickWrap = new EulaDialog(LicenseDialog.this, license, EULA_DIR, DEFAULT_EULA, EULA_ENCODING);
         clickWrap.pack();
         Utilities.centerOnScreen(clickWrap);
         clickWrap.setVisible(true);

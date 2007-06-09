@@ -14,6 +14,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.net.URLEncoder;
 import java.net.URLDecoder;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Utility methods for hex encoding and dealing with streams and byte buffers.
@@ -327,13 +329,29 @@ public class HexUtils {
     }
 
     /**
+     * Read an entire file into memory.
+     *
+     * @param file  the file to read.  Required.
+     * @return the content of the file.  May be empty but never null.
+     * @throws IOException if the file wasn't found or couldn't be read.
+     */
+    public static byte[] slurpFile(File file) throws IOException {
+        FileInputStream fis = null;
+        try {
+            return slurpStream(fis = new FileInputStream(file));
+        } finally {
+            ResourceUtils.closeQuietly(fis);
+        }
+    }
+
+    /**
      * Write all of the specified bytes out to the specified OutputStream.
      *
      * @param output  the bytes to write.  May be empty but never null.
      * @param stream  the stream to write them to.  Required.
      * @throws IOException if there is an IOException while writing the bytes to the stream.
      */
-    public static void spewStreasm(byte[] output, OutputStream stream) throws IOException {
+    public static void spewStream(byte[] output, OutputStream stream) throws IOException {
         copyStream(new ByteArrayInputStream(output), stream);
     }
 
@@ -614,5 +632,44 @@ public class HexUtils {
                     big[i] = (byte)replaceWith[j];
             }
         }
+    }
+
+    /**
+     * Compress the specified bytes using gzip, and return the compressed bytes.
+     *
+     * @param bytes the bytes to compress.  May be empty but must not be null.
+     * @return the gzip compressed representation of the input bytes.  Never null.
+     * @throws java.io.IOException if there is a problem compressing the bytes
+     */
+    public static byte[] compressGzip(byte[] bytes) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        OutputStream gzos = new GZIPOutputStream(baos);
+        copyStream(new ByteArrayInputStream(bytes), gzos);
+        gzos.flush();
+        gzos.close();
+        return baos.toByteArray();
+    }
+
+    /**
+     * Decompress the specified bytes using gzip, and return the compressed bytes.
+     *
+     * @param bytes the bytes to decompress.  Must be valid gzip format.  Required.
+     * @return the raw uncompressed contents of the gzipped data.  May be empty but never null.
+     * @throws IOException if there was a problem decompressing the bytes.
+     */
+    public static byte[] decompressGzip(byte[] bytes) throws IOException {
+        return slurpStream(new GZIPInputStream(new ByteArrayInputStream(bytes)));
+    }
+
+    /**
+     * Decompress the specified bytes using gzip, and return the compressed bytes.
+     * This is a synonym for {@link #decompressGzip}.
+     *
+     * @param bytes the bytes to decompress.  Must be valid gzip format.  Required.
+     * @return the raw uncompressed contents of the gzipped data.  May be empty but never null.
+     * @throws IOException if there was a problem decompressing the bytes.
+     */
+    public static byte[] uncompressGzip(byte[] bytes) throws IOException {
+        return decompressGzip(bytes);
     }
 }

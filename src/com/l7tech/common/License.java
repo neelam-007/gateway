@@ -14,6 +14,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.Serializable;
+import java.io.IOException;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -277,12 +278,8 @@ public final class License implements Serializable {
         String versionMajor = parseWildcardStringAttribute(ld, "product", "version", "major");
         String versionMinor = parseWildcardStringAttribute(ld, "product", "version", "minor");
 
-        String eulaText = parseWildcardStringElement(ld, "eulatext");
-        this.eulaText = eulaText != null && eulaText.length() > 0 && !"*".equals(eulaText) ? eulaText : null;
-        String eulaId = parseWildcardStringElement(ld, "eulaid");
-        this.eulaIdentifier = eulaText != null ? "custom" : (
-                    eulaId != null && eulaId.trim().length() > 0 && !"*".equals(eulaId) ? eulaId : null
-                ); 
+        this.eulaText = parseEulaText(ld);
+        this.eulaIdentifier = parseEulaId(ld, eulaText);
 
         Set featureSets = new HashSet();
         collectFeatureSets(ld, "product", "featureset", featureSets);
@@ -320,6 +317,26 @@ public final class License implements Serializable {
             trustedIssuer = null;
         }
 
+    }
+
+    private String parseEulaId(Document ld, String eulaText) throws TooManyChildElementsException {
+        String eulaId = parseWildcardStringElement(ld, "eulaid");
+        eulaId = eulaText != null ? "custom" : (
+                eulaId != null && eulaId.trim().length() > 0 && !"*".equals(eulaId) ? eulaId : null
+        );
+        return eulaId;
+    }
+
+    private String parseEulaText(Document ld) throws TooManyChildElementsException, InvalidLicenseException {
+        String eulaText = parseWildcardStringElement(ld, "eulatext");
+        if ("*".equals(eulaText)) eulaText = null;
+        if (eulaText != null && eulaText.trim().length() > 0) try {
+            eulaText = new String(HexUtils.uncompressGzip(HexUtils.decodeBase64(eulaText.trim(), true)), "UTF-8");
+        } catch (IOException e) {
+            throw new InvalidLicenseException("unable to decode eulatext contents", e);
+        }
+        eulaText = eulaText != null && eulaText.length() > 0 ? eulaText : null;
+        return eulaText;
     }
 
     /**

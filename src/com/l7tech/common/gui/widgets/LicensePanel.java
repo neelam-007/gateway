@@ -6,11 +6,12 @@
 package com.l7tech.common.gui.widgets;
 
 import com.l7tech.common.License;
-import com.l7tech.common.util.DateUtils;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.DateUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
@@ -111,7 +112,26 @@ public class LicensePanel extends JPanel {
             eulaField.setVisible(false);
             eulaButton.setVisible(false);
         }
+
         setLicense(null);
+    }
+
+    /**
+     * Add an AcitonListener to invoke if the "View EULA" button is pressed.
+     *
+     * @param listener  listener to invoke. Required.
+     */
+    public void addEulaButtonActionListener(ActionListener listener) {
+        eulaButton.addActionListener(listener);
+    }
+
+    /**
+     * Remove a previously-added ActionListener from the "View EULA" button.
+     *
+     * @param listener  the listener to remove.  Required.
+     */
+    public void removeEulaButtonActionListener(ActionListener listener) {
+        eulaButton.removeActionListener(listener);
     }
 
     /**
@@ -260,14 +280,10 @@ public class LicensePanel extends JPanel {
                                         JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                                         JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
 
-        String eualaId = license.getEulaIdentifier();
-        // TODO Display the EULA info
-        // TODO Display the EULA info
-        // TODO Display the EULA info
-        // TODO Display the EULA info
-        // TODO Display the EULA info
-        // TODO Display the EULA info
-        // TODO Display the EULA info
+        boolean customEula = null != license.getEulaText();
+        String eula = customEula ? "<Custom>" : license.getEulaIdentifier();
+        if (eula == null) eula = "<Default>";
+        eulaField.setText(eula);
     }
 
     private void displayExpiryDate(License license) {

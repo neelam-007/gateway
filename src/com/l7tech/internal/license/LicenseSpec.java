@@ -29,6 +29,8 @@ public class LicenseSpec {
     private String product = "*";
     private String versionMinor = "*";
     private String versionMajor = "*";
+    private String eulaId = null;
+    private String eulaText = null;
     private Set<String> rootFeatures = new LinkedHashSet<String>();
 
     /**
@@ -75,6 +77,8 @@ public class LicenseSpec {
         this.setDescription(license.getDescription());
         this.setStartDate(license.getStartDate());
         this.setExpiryDate(license.getExpiryDate());
+        this.setEulaId(license.getEulaIdentifier());
+        this.setEulaText(license.getEulaText());
 
         this.setIp(grants.getIp());
         this.setHostname(grants.getHostname());
@@ -96,7 +100,11 @@ public class LicenseSpec {
         rootFeatures.clear();
     }
 
-    /** Add a root feature (named feature set, ie "set:Profile:IPS" or "assertion:OneOrMore") to this license spec. */
+    /**
+     * Add a root feature (named feature set, ie "set:Profile:IPS" or "assertion:OneOrMore") to this license spec.
+     *
+     * @param featureName  the feature to add.  Required.
+     */
     public void addRootFeature(String featureName) {
         rootFeatures.add(featureName);
     }
@@ -252,7 +260,7 @@ public class LicenseSpec {
         return versionMinor;
     }
 
-    /** param versionMinor the minor version to which to bind the liense, or "*" to allow any minor version. */
+    /** @param versionMinor the minor version to which to bind the liense, or "*" to allow any minor version. */
     public void setVersionMinor(String versionMinor) {
         if (versionMinor == null) versionMinor = "*";
         this.versionMinor = versionMinor;
@@ -267,5 +275,25 @@ public class LicenseSpec {
     public void setVersionMajor(String versionMajor) {
         if (versionMajor == null) versionMajor = "*";
         this.versionMajor = versionMajor;
+    }
+
+    /** @return the eula identifier to include in the new license, or null to avoid including one. */
+    public String getEulaId() {
+        return eulaId;
+    }
+
+    /** @param eulaId the eula identifier to include in the new license, or null to avoid including one. */
+    public void setEulaId(String eulaId) {
+        this.eulaId = eulaId;
+    }
+
+    /** @return the literal text of the EULA to include in the new license, or null to avoid including any. */
+    public String getEulaText() {
+        return eulaText;
+    }
+
+    /** @param eulaText the literal text of the EULA to include in the new license, or null to avoid including any. */
+    public void setEulaText(String eulaText) {
+        this.eulaText = eulaText;
     }
 }

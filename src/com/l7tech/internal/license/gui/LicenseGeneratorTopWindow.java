@@ -8,6 +8,8 @@ package com.l7tech.internal.license.gui;
 import com.japisoft.xmlpad.XMLContainer;
 import com.l7tech.common.License;
 import com.l7tech.common.gui.widgets.LicensePanel;
+import com.l7tech.common.gui.widgets.EulaDialog;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.ExceptionUtils;
@@ -26,6 +28,7 @@ import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
@@ -56,8 +59,14 @@ public class LicenseGeneratorTopWindow extends JFrame {
     public static final String KEYSTORE_MESSAGE = "No keystore is configured.  Please set these system properties:\n" +
             "\n  " + PROPERTY_KEYSTORE_PATH +
             "\n  " + PROPERTY_KEYSTORE_PASSWORD +
-            "\n  " + PROPERTY_KEYSTORE_ALIAS;
+            "\n  " + PROPERTY_KEYSTORE_ALIAS +
+            "\n  " + PROPERTY_KEYSTORE_TYPE;
     public static final String DEFAULT_KEYSTORE_TYPE = "PKCS12";
+
+    // This must agree with the fields in LicenseDialog so the preview function agrees with what the SSM will do
+    private static final String EULA_DIR = "com/l7tech/console/resources/";
+    private static final String DEFAULT_EULA = EULA_DIR + "clickwrap.txt";
+    private static final String EULA_ENCODING = "ISO8859-1";
 
     private LicensePanel licensePanel = new LicensePanel("Building License", true);
     private LicenseSpecPanel specPanel = new LicenseSpecPanel();
@@ -155,6 +164,26 @@ public class LicenseGeneratorTopWindow extends JFrame {
         quitButton.setAction(getQuitAction());
         newLicenseButton.setAction(getNewAction());
         openLicenseButton.setAction(getOpenAction());
+
+        licensePanel.addEulaButtonActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                License license = licensePanel.getLicense();
+                if (license == null)
+                    return;
+
+                EulaDialog clickWrap = null;
+                LicenseGeneratorTopWindow owner = LicenseGeneratorTopWindow.this;
+                try {
+                    clickWrap = new EulaDialog(owner, license, EULA_DIR, DEFAULT_EULA, EULA_ENCODING);
+                    clickWrap.pack();
+                    Utilities.centerOnScreen(clickWrap);
+                    clickWrap.setVisible(true);
+                } catch (IOException e1) {
+                    JOptionPane.showMessageDialog(owner, "Unable to show EULA: " + ExceptionUtils.getMessage(e1), "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            }
+        });
 
         createTemplateLicense();
 

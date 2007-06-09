@@ -7,9 +7,7 @@ package com.l7tech.internal.license.gui;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.util.Background;
-import com.l7tech.common.util.ISO8601Date;
-import com.l7tech.common.util.TextUtils;
+import com.l7tech.common.util.*;
 import com.l7tech.internal.license.LicenseSpec;
 import com.l7tech.server.GatewayFeatureSet;
 import com.l7tech.server.GatewayFeatureSets;
@@ -17,11 +15,15 @@ import com.l7tech.server.GatewayFeatureSets;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.text.ParseException;
 import java.util.*;
@@ -74,11 +76,15 @@ public class LicenseSpecPanel extends JPanel {
     private JButton featureExpandAllButton;
     private JButton featureCollapseAllButton;
     private JButton featureClearAll;
+    private JComboBox eulaComboBox;
+    private JButton eulaDefaultButton;
+    private JButton eulaCustomButton;
+    private JLabel detailsLabel;
 
     private JTextField defaultTextField = new JTextField();
     private FocusListener focusListener;
     private DocumentListener documentListener;
-    private Map oldFieldValues = new HashMap();
+    private Map<JTextField, String> oldFieldValues = new HashMap<JTextField, String>();
     private Random random = new SecureRandom();
     private TreeModel featureTreeModel;
     private TreeCellEditor featureTreeEditor;
@@ -86,6 +92,7 @@ public class LicenseSpecPanel extends JPanel {
     private Set<String> featureNamesChecked = new HashSet<String>();
     private Set<String> featureNamesWithCheckedKids = new HashSet<String>();
     private Map<String, Set<GatewayFeatureSet>> featureParents = new HashMap<String, Set<GatewayFeatureSet>>();
+    private String customEulaText = null;
 
     private boolean fieldChanged = false;
     private long fieldChangedWhen = 0;
@@ -107,7 +114,18 @@ public class LicenseSpecPanel extends JPanel {
     private GatewayFeatureSet rootSet = new GatewayFeatureSet("set:ROOT", "All registered feature sets",
                                                               "Holds all registered feature sets",
                                                               profilesForward.toArray(new GatewayFeatureSet[0]));
-    private JLabel detailsLabel;
+
+    private final String EULA_DEFAULT = "<Default>";
+    private final String EULA_CUSTOM = "<Custom>";
+    private final String[] eulaChoices = new String[] {
+            EULA_DEFAULT,
+            EULA_CUSTOM,
+            "clickwrap",
+    };
+
+    // ----
+    // Contstructor
+    // ----
 
     public LicenseSpecPanel() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -127,6 +145,7 @@ public class LicenseSpecPanel extends JPanel {
         minorVersionField.addFocusListener(getFocusListener());
         hostField.addFocusListener(getFocusListener());
         ipField.addFocusListener(getFocusListener());
+        eulaComboBox.addFocusListener(getFocusListener());
 
         idField.getDocument().addDocumentListener(getDocumentListener());
         descriptionField.getDocument().addDocumentListener(getDocumentListener());
@@ -139,6 +158,19 @@ public class LicenseSpecPanel extends JPanel {
         minorVersionField.getDocument().addDocumentListener(getDocumentListener());
         hostField.getDocument().addDocumentListener(getDocumentListener());
         ipField.getDocument().addDocumentListener(getDocumentListener());
+        eulaComboBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if (ItemEvent.SELECTED != e.getStateChange())
+                    return;
+                if (EULA_CUSTOM.equals(e.getItem()) && customEulaText == null)
+                    eulaCustomButton.doClick();
+                else
+                    fireUpdate();
+            }
+        });
+
+        eulaComboBox.setModel(new DefaultComboBoxModel(eulaChoices));
+        eulaComboBox.setSelectedItem(EULA_DEFAULT);
 
         featureTree.setModel(getFeatureTreeModel());
         featureTree.setCellRenderer(getFeatureTreeRenderer());
@@ -208,6 +240,8 @@ public class LicenseSpecPanel extends JPanel {
         anyMinorVersionButton.addActionListener(blankFieldAction(minorVersionField));
         anyHostButton.addActionListener(blankFieldAction(hostField));
         anyIpButton.addActionListener(blankFieldAction(ipField));
+        eulaDefaultButton.addActionListener(selectItemAction(eulaComboBox, EULA_DEFAULT));
+        eulaCustomButton.addActionListener(new CustomEulaAction());
 
         setSpec(null);
     }
@@ -274,6 +308,15 @@ public class LicenseSpecPanel extends JPanel {
         };
     }
 
+    private ActionListener selectItemAction(final JComboBox cb, final String item) {
+        return new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                cb.setSelectedItem(item);
+                fireUpdate();
+            }
+        };
+    }
+
     /** Initialize all fields with useful default values, except licensee name which has to be set. */
     public void setDefaults() {
         setSpec(new LicenseSpec());
@@ -295,7 +338,7 @@ public class LicenseSpecPanel extends JPanel {
                     // Heh, this is such a smelly hack.  I'm so proud of it
                     JTextField field = (JTextField)c;
                     String currentValue = field.getText();
-                    String oldValue = (String)oldFieldValues.get(field);
+                    String oldValue = oldFieldValues.get(field);
                     if (oldValue == null || !(oldValue.equals(currentValue))) {
                         oldFieldValues.put(field, currentValue);
                         fireUpdate();
@@ -310,7 +353,10 @@ public class LicenseSpecPanel extends JPanel {
         firePropertyChange(PROPERTY_LICENSE_SPEC, null, null);
     }
 
-    /** Updates the view to correspond with this license spec. */
+    /**
+     * Updates the view to correspond with this license spec.
+     * @param spec the new LicenseSpec.  Required.
+     */
     public void setSpec(LicenseSpec spec) {
         fieldChanged = false;
         if (spec == null) spec = new LicenseSpec();
@@ -352,6 +398,7 @@ public class LicenseSpecPanel extends JPanel {
 
     /**
      * Read the view and build a LicenseSpec out of it.
+     * @return a LicenseSpec built out of the current view.
      */
     public LicenseSpec getSpec() {
         LicenseSpec spec = new LicenseSpec();
@@ -366,11 +413,27 @@ public class LicenseSpecPanel extends JPanel {
         spec.setVersionMinor(fts(minorVersionField));
         spec.setHostname(fts(hostField));
         spec.setIp(fts(ipField));
+
+        Object ecb = eulaComboBox.getSelectedItem();
+        if (EULA_DEFAULT.equals(ecb)) {
+            spec.setEulaId(null);
+            spec.setEulaText(null);
+        } else if (EULA_CUSTOM.equals(ecb)) {
+            spec.setEulaId(null);
+            spec.setEulaText(customEulaText);
+        } else {
+            spec.setEulaId(ecb.toString());
+            spec.setEulaText(null);
+        }
+
         addCheckedFeaturesToSpec(spec);
         return spec;
     }
 
-    /** Find all checked features and make sure they get added to spec. */
+    /**
+     * Find all checked features and make sure they get added to spec.
+     * @param spec the LicenseSpec to update.  Required.
+     */
     private void addCheckedFeaturesToSpec(LicenseSpec spec) {
         // make sure features are optimized first if they need to be
         optimizeCheckedFeatures(true);
@@ -431,7 +494,7 @@ public class LicenseSpecPanel extends JPanel {
             markAllEnabled(kid, allEnabled);
     }
 
-    /** from text to date. */
+    /* from text to date. */
     private Date ftd(JTextField f) {
         boolean good = true;
         try {
@@ -451,13 +514,13 @@ public class LicenseSpecPanel extends JPanel {
         }
     }
 
-    /** from text to string. */
+    /* from text to string. */
     private String fts(JTextField f) {
         String s = f.getText();
         return s == null || s.trim().length() < 1 ? null : s.trim();
     }
 
-    /** from text to required string. */
+    /* from text to required string. */
     private String ftsReq(JTextField f) {
         boolean good = false;
         try {
@@ -473,7 +536,7 @@ public class LicenseSpecPanel extends JPanel {
         }
     }
 
-    /** from text to license id. */
+    /* from text to license id. */
     private long ftid(JTextField f) {
         boolean good = false;
         try {
@@ -492,17 +555,17 @@ public class LicenseSpecPanel extends JPanel {
         }
     }
 
-    /** to text from date. */
+    /* to text from date. */
     private String tt(Date d) {
         return d == null ? "" : ISO8601Date.format(d);
     }
 
-    /** to text from long. */
+    /* to text from long. */
     private String tt(long n) {
         return n == 0 ? "" : String.valueOf(n);
     }
 
-    /** to text from string. */
+    /* to text from string. */
     private String tt(String s) {
         return s == null || "*".equals(s) ? "" : s;
     }
@@ -555,7 +618,94 @@ public class LicenseSpecPanel extends JPanel {
         }
     }
 
+    private class CustomEulaAction implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            final JFileChooser fc = Utilities.createJFileChooser();
+            fc.setDialogTitle("Select custom EULA text file");
+            fc.setDialogType(JFileChooser.OPEN_DIALOG);
+            fc.addChoosableFileFilter(buildFileFilter(".txt", "(*.txt) Text files."));
+            fc.setMultiSelectionEnabled(false);
+            int result = fc.showDialog(LicenseSpecPanel.this, "Load");
+            if (JFileChooser.APPROVE_OPTION != result) return;
+            File file = fc.getSelectedFile();
+            if (file == null) return;
+
+            final byte[] bytes;
+            try {
+                bytes = HexUtils.slurpFile(file);
+            } catch (IOException e1) {
+                err("Unable to read file", e1);
+                return;
+            }
+
+            boolean assumeAscii = true;
+            for (byte b : bytes) {
+                if (b == '\r' || b == '\n' || b == '\t')
+                    continue;
+                if (b < 21 || b > 127) {
+                    assumeAscii = false;
+                    break;
+                }
+            }
+
+            final String encoding;
+            if (assumeAscii) {
+                encoding = "ASCII";
+            } else {
+                encoding = chooseEncoding("File contains non-ASCII characters.  What encoding should be used to read it?");
+                if (encoding == null)
+                    return;
+            }
+
+            try {
+                customEulaText = new String(bytes, encoding);
+            } catch (UnsupportedEncodingException e1) {
+                err("error", e1);
+            }
+
+            eulaComboBox.setSelectedItem(EULA_CUSTOM);            
+            fireUpdate();
+        }
+    }
+
     /**
+     * @param prompt the prompt to display.  Required
+     * @return the chosen encoding or null if it was canceled.
+     */
+    private String chooseEncoding(String prompt) {
+        String dflt = "ISO8859-1";
+        String[] opts = new String[] {
+                dflt,
+                "UTF-8"
+        };
+        int result = JOptionPane.showOptionDialog(this,
+                                                  prompt,
+                                                  "Select Character Encoding",
+                                                  JOptionPane.OK_CANCEL_OPTION,
+                                                  JOptionPane.QUESTION_MESSAGE,
+                                                  null,
+                                                  opts,
+                                                  dflt);
+        return result < 0 ? null : opts[result];
+
+    }
+
+    private void err(String what, Throwable t) {
+        JOptionPane.showMessageDialog(this, what + ": " + ExceptionUtils.getMessage(t), "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private static FileFilter buildFileFilter(final String extension, final String description) {
+        return new FileFilter() {
+            public boolean accept(File f) {
+                return  f.isDirectory() || f.getName().toLowerCase().endsWith(extension);
+            }
+            public String getDescription() {
+                return description;
+            }
+        };
+    }
+
+    /*
      * Set feature check status and trigger optimization if anything changes.
      */
     private void setFeatureChecked(GatewayFeatureSet fs, boolean checked) {
@@ -577,7 +727,7 @@ public class LicenseSpecPanel extends JPanel {
         });
     }
 
-    /**
+    /*
      * Set feature check status but never trigger any optimization.
      *
      * @return true if the check status was changed.
@@ -606,7 +756,7 @@ public class LicenseSpecPanel extends JPanel {
         return featureNamesWithCheckedKids.contains(featureName);
     }
 
-    /**
+    /*
      * Analyze the checked feature tree and ensure that parents are on if and only if all their children are on.
      */
     private void optimizeCheckedFeatures(boolean suppressUpdate) {
@@ -622,7 +772,7 @@ public class LicenseSpecPanel extends JPanel {
             fireUpdate();
     }
 
-    /**
+    /*
      * @return the check status of this feature set after optimization:
      *           Boolean.TRUE:   feature and all children (if any) checked
      *           Boolean.FALSE:  neither feature nor any children checked
@@ -673,7 +823,7 @@ public class LicenseSpecPanel extends JPanel {
     }
 
 
-    /** Register a child->parent relationship. */
+    /* Register a child->parent relationship. */
     private void addFeatureParent(GatewayFeatureSet kid, GatewayFeatureSet parent) {
         // The rootSet doesn't really exist, it's a fiction for the benefit of the JTree, so don't let it bung up
         // our record of which are the root-most feature sets.
@@ -796,12 +946,6 @@ public class LicenseSpecPanel extends JPanel {
         public FeatureCellEditor(JCheckBox checkBox) {
             super(checkBox);
         }
-
-        private final ItemListener itemListener = new ItemListener() {
-            public void itemStateChanged(ItemEvent e) {
-                LicenseSpecPanel.this.setFeatureChecked(lastFs, e.getStateChange() == ItemEvent.SELECTED);
-            }
-        };
 
         public Component getTreeCellEditorComponent(JTree tree, Object value, boolean isSelected, boolean expanded, boolean leaf, int row) {
             FeatureNode fn = (FeatureNode)value;

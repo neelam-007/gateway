@@ -8,6 +8,7 @@ package com.l7tech.internal.license;
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.common.security.xml.DsigUtil;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
@@ -15,9 +16,9 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.security.SignatureException;
+import java.io.UnsupportedEncodingException;
 import java.security.PrivateKey;
-import java.security.cert.CertificateEncodingException;
+import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
@@ -89,6 +90,8 @@ public final class LicenseGenerator {
         licensee.setAttribute("name", name);
         setAttributeIfNonEmpty(licensee, "contactEmail", spec.getLicenseeContactEmail());
 
+        appendSimpleElementIfNonEmpty(de, "eulaid", spec.getEulaId());
+        appendSimpleElementIfNonEmpty(de, "eulatext", base64(spec.getEulaText()));
 
         try {
             // serialize and reparse before returning to make sure we don't leak any strange DOM states
@@ -113,11 +116,24 @@ public final class LicenseGenerator {
     }
 
     /**
+     * @param in  raw input.  If null or empty, this method returns null.
+     * @return the base64-ed input, or null if null was passed in.
+     */
+    private static String base64(String in) {
+        if (in == null || in.trim().length() < 1)
+            return null;
+        try {
+            String enc = HexUtils.encodeBase64(HexUtils.compressGzip(in.getBytes("UTF-8")));
+            return enc.replaceAll("(?<!\n)\r(?!\n)|(?<!\r)\n(?!\r)", "\r\n");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
+    /*
      * Append a simple element of the form &lt;elname&gt;value&lt;/elname&gt; to the parent element.
-     *
-     * @param parent
-     * @param elname
-     * @param value
      */
     private static Element appendSimpleElement(final Element parent, final String elname, final String value) {
         Element elm = XmlUtil.createAndAppendElement(parent, elname);
