@@ -296,6 +296,7 @@
         <include name="**/kunststoff.jar"/>
         <include name="**/xercesImpl.jar"/>
         <include name="**/commons-lang-1.0.1.jar"/>
+        <include name="**/commons-codec-1.2.jar"/>
         <include name="**/commons-collections-2.1.1.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
         <include name="**/commons-discovery.jar"/>
@@ -1786,6 +1787,7 @@
                 <include name="com/l7tech/common/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
                 <include name="com/l7tech/server/GatewayFeatureSet*.class"/>
+                <include name="com/l7tech/console/resources/*.txt"/>
 
                 <exclude name="com/l7tech/common/xml/saml/**/*"/>
                 <exclude name="com/l7tech/common/xml/*SoapMessage*"/>
