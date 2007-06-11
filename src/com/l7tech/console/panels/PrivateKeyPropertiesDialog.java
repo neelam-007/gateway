@@ -251,7 +251,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void assignCert() {
-        CertImportMethodsPanel sp = new CertImportMethodsPanel(
+        final CertImportMethodsPanel sp = new CertImportMethodsPanel(
                             new CertDetailsPanel(null) {
                                 public boolean canFinish() {
                                     return true;
@@ -270,11 +270,14 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     throw new IllegalStateException("Wizard returned a " + o.getClass().getName() + ", was expecting a " + TrustedCert.class.getName());
                 }
 
-                final TrustedCert tc = (TrustedCert)o;
                 final TrustedCertAdmin admin = getTrustedCertAdmin();
                 try {
-                    X509Certificate cert = tc.getCertificate();
-                    admin.assignNewCert(subject.getKeystore().id, subject.getAlias(), new String[] { CertUtils.encodeAsPEM(cert) });
+                    X509Certificate[] certChain = sp.getCertChain();
+                    String[] pemchain = new String[certChain.length];
+                    for (int i = 0; i < certChain.length; i++) {
+                        pemchain[i] = CertUtils.encodeAsPEM(certChain[i]);
+                    }
+                    admin.assignNewCert(subject.getKeystore().id, subject.getAlias(), pemchain);
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "error assigning cert", e);
                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error Assigning new Cert. Make sure the " +

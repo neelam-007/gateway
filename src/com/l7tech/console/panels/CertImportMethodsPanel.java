@@ -378,4 +378,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         return Registry.getDefault().getTrustedCertManager();
     }
 
+
+    public X509Certificate[] getCertChain() {
+        return certChain;
+    }
 }
