@@ -312,7 +312,7 @@ public class TrustedCertManagerImp
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Couldn't find cert", e);
         } catch (CacheVeto e) {
-            logger.log(Level.SEVERE, "Couldn't cache cert: " + e.getMessage(), e.getCause());
+            logger.log(Level.WARNING, "Couldn't cache cert: " + e.getMessage(), e.getCause());
         }
     }
 
