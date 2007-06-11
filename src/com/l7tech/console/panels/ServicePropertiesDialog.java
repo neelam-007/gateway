@@ -360,7 +360,7 @@ public class ServicePropertiesDialog extends JDialog {
             if (newURI != null && newURI.length() > 0 && newURI.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
                 JOptionPane.showMessageDialog(this, "Custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
                 return;
-            }  else if (uriConflictsWithServiceOIDResolver(newURI)) {
+            }  else if (newURI != null && newURI.length() > 0 && uriConflictsWithServiceOIDResolver(newURI)) {
                 JOptionPane.showMessageDialog(this, "This custom resolution path conflicts with an internal resolution mechanism.");
                 return;
             }
