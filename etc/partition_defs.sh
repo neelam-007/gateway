@@ -35,7 +35,8 @@ if [ "${this_is_a_partition}" == "true" ] ; then
 	fi
 fi
 
-partition_opts="-Xmx${java_ram}k -Xss256k"
+# Setting larger permsize for java 1.6
+partition_opts="-Xmx${java_ram}k -XX:MaxPermSize=128M -Xss256k"
 
 export partition_opts
 unset system_ram
