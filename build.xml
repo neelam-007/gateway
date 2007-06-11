@@ -2131,6 +2131,7 @@
                 <include name="com/l7tech/common/xml/TooManyChildElementsException*"/>
                 <include name="com/l7tech/common/xml/InvalidDocumentFormatException*"/>
                 <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream*"/>
+                <include name="com/l7tech/server/config/KeystoreType*"/>
                 <include name="com/l7tech/server/config/LinuxSpecificFunctions*"/>
                 <include name="com/l7tech/server/config/OSDetector*"/>
                 <include name="com/l7tech/server/config/*SpecificFunctions*"/>
