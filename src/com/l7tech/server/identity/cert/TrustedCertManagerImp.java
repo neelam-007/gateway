@@ -9,6 +9,7 @@ package com.l7tech.server.identity.cert;
 import com.l7tech.common.security.CertificateExpiry;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
@@ -312,7 +313,7 @@ public class TrustedCertManagerImp
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Couldn't find cert", e);
         } catch (CacheVeto e) {
-            logger.log(Level.WARNING, "Couldn't cache cert: " + e.getMessage(), e.getCause());
+            logger.log(Level.WARNING, "Couldn't cache cert: " + ExceptionUtils.getMessage(e.getCause()));
         }
     }
 
