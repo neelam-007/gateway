@@ -12,8 +12,10 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.transport.ftp.FtpTestException;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.external.assertions.ftprouting.FtpCredentialsSource;
 import com.l7tech.external.assertions.ftprouting.FtpFileNameSource;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
@@ -26,6 +28,8 @@ import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
+import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -36,10 +40,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.UnknownHostException;
+import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,8 +58,11 @@ import java.util.logging.Logger;
  */
 public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRoutingAssertion> {
     private static final Logger _logger = Logger.getLogger(ServerFtpRoutingAssertion.class.getName());
+    private static final Random _random = new Random(System.currentTimeMillis());
     private final Auditor _auditor;
     private final TrustedCertManager _trustedCertManager;
+    private final SsgKeyStoreManager _ssgKeyStoreManager;
+
 
     /**
      * FTPS certificate verifier.
@@ -106,6 +116,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             try {
                 _trustedCertManager.checkSslTrust(x509certs);
                 _authorized = true;
+                _exception = null;
             } catch (CertificateException e) {
                 _exception = new FtpException(MessageFormat.format(AssertionMessages.FTP_ROUTING_SSL_UNTRUSTED.getMessage(), _hostName, e.getMessage()));
                 return;
@@ -124,6 +135,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         super(assertion, applicationContext, _logger);
         _auditor = new Auditor(this, applicationContext, _logger);
         _trustedCertManager = (TrustedCertManager)applicationContext.getBean("trustedCertManager", TrustedCertManager.class);
+        _ssgKeyStoreManager = (SsgKeyStoreManager)applicationContext.getBean("ssgKeyStoreManager", SsgKeyStoreManager.class);
+
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -150,6 +163,10 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             if (credentials != null) {
                 userName = credentials.getName();
                 password = new String(credentials.getCredentials());
+            }
+            if (userName == null) {
+                _auditor.logAndAudit(AssertionMessages.FTP_ROUTING_PASSTHRU_NO_USERNAME);
+                return AssertionStatus.FAILED;
             }
         } else if (assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
             userName = assertion.getUserName();
@@ -211,16 +228,20 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                         String password,
                         InputStream is,
                         String fileName) throws FtpException {
-        final Ftps ftps = newFtpsConnection(assertion.isVerifyServerCert(),
-                                            isExplicit,
+        final Ftps ftps = newFtpsConnection(isExplicit,
+                                            assertion.isVerifyServerCert(),
                                             assertion.getHostName(),
                                             assertion.getPort(),
                                             userName,
                                             password,
+                                            assertion.isUseClientCert(),
+                                            assertion.getClientCertKeystoreId(),
+                                            assertion.getClientCertKeyAlias(),
                                             assertion.getDirectory(),
                                             assertion.getTimeout(),
                                             null,
-                                            _trustedCertManager);
+                                            _trustedCertManager,
+                                            _ssgKeyStoreManager);
         try {
             ftps.upload(is, fileName);
         } finally {
@@ -276,26 +297,42 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     /**
      * Creates a new FTPS connection.
      *
+     * @param isExplicit            if FTPS: true if explicit FTPS, false if implicit FTPS
+     * @param isVerifyServerCert    whether to verify FTPS server certificate using trusted certificate store; applies only if isFtps is true
+     * @param hostName              host name of FTP(S) server
+     * @param port                  port number of FTP(S) server
+     * @param userName              user name to login in as
+     * @param password              password to login with
+     * @param useClientCert         whether to use client cert and private key for authentication
+     * @param clientCertKeystoreId  ID of keystore to use if useClientCert is true; must be a valid ID if useClientCert is true
+     * @param clientCertKeyAlias    key alias in keystore to use if useClientCert is true; must not be null if useClientCert is true
      * @param directory             remote directory to "cd" into; supply empty string if no "cd" wanted
+     * @param timeout               connection timeout in milliseconds
      * @param debugStream           an opened stream to receive server responses; can be null
-     * @param trustedCertManager    must not be null if <code>isVerifyServerCert</code> is true
+     * @param trustedCertManager    must not be null if isVerifyServerCert is true
+     * @param ssgKeyStoreManager    must not be null if useClientCert is true
      * @return a new Ftps object in connected state
      * @throws FtpException if failure
      */
-    private static Ftps newFtpsConnection(boolean isVerifyServerCert,
-                                          boolean isExplicit,
+    private static Ftps newFtpsConnection(boolean isExplicit,
+                                          boolean isVerifyServerCert,
                                           String hostName,
                                           int port,
                                           String userName,
                                           String password,
+                                          boolean useClientCert,
+                                          long clientCertKeystoreId,
+                                          String clientCertKeyAlias,
                                           String directory,
                                           int timeout,
                                           PrintStream debugStream,
-                                          TrustedCertManager trustedCertManager) throws FtpException {
+                                          TrustedCertManager trustedCertManager,
+                                          SsgKeyStoreManager ssgKeyStoreManager) throws FtpException {
         assert(!isVerifyServerCert || trustedCertManager != null);
         assert(hostName != null);
         assert(userName != null);
         assert(password != null);
+        assert(!useClientCert || (clientCertKeystoreId != -1 && clientCertKeyAlias != null));
         assert(directory != null);
 
         final Ftps ftps = new Ftps(hostName, userName, password, port);
@@ -309,6 +346,36 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         if (isVerifyServerCert) {
             certificateVerifier = new CertificateVerifier(trustedCertManager, hostName);
             ftps.setFtpsCertificateVerifier(certificateVerifier);
+        }
+
+        if (useClientCert) {
+            try {
+                // Retrieves the private key and cert.
+                final SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(clientCertKeystoreId);
+                final SsgKeyEntry keyEntry = keyFinder.getCertificateChain(clientCertKeyAlias);
+                final X509Certificate[] certChain = keyEntry.getCertificateChain();
+                final PrivateKey privateKey = keyEntry.getPrivateKey();
+
+                // Creates a KeyStore object with a random password.
+                final byte[] randomBytes = new byte[16];
+                _random.nextBytes(randomBytes);
+                final String privateKeyPassword = HexUtils.encodeBase64(randomBytes);
+                final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+                keyStore.load(null, null);
+                final String alias = "ftp";
+                keyStore.setKeyEntry(alias, privateKey, privateKeyPassword.toCharArray(), certChain);
+
+                ftps.setClientCertificates(keyStore, privateKeyPassword);
+                if (_logger.isLoggable(Level.FINE)) {
+                    _logger.fine("Assigned private key and certificate for FTPS client authentication. (key alias=" + clientCertKeyAlias + ")");
+                }
+            } catch (Exception e) {
+                final StringBuilder msg = new StringBuilder("Cannot create keystore from private key (key alias=" + clientCertKeyAlias + ") for authentication: " + e.toString());
+                if (e.getCause() != null) {
+                    msg.append(": " + e.getCause().toString());
+                }
+                throw new FtpException(msg.toString());
+            }
         }
 
         if (isExplicit) {
@@ -402,40 +469,60 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     }
 
     /**
+     * Tests connection to FTP(S) server and tries "cd" into remote directory.
+     *
      * Called by {@link com.l7tech.server.transport.ftp.FtpAdminImpl#testConnection} using reflection.
      *
      * @param isFtps                true if FTPS; false if FTP (unsecured)
      * @param isVerifyServerCert    whether to verify FTP server certificate using trusted certificate store
      * @param isExplicit            if FTPS: true if explicit FTPS, false if implicit FTPS
+     * @param hostName              host name of FTP(S) server
+     * @param port                  port number of FTP(S) server
+     * @param userName              user name to login in as
+     * @param password              password to login with
+     * @param useClientCert         whether to use client cert and private key for authentication if isFtps is true
+     * @param clientCertKeystoreId  ID of keystore to use if useClientCert is true; must be a valid ID if useClientCert is true
+     * @param clientCertKeyAlias    key alias in keystore to use if useClientCert is true; must not be null if useClientCert is true
      * @param directory             remote directory to "cd" into; supply empty string if no "cd" wanted
-     * @param trustedCertManager    must not be null if <code>isVerifyServerCert</code> is true
+     * @param timeout               connection timeout in milliseconds
+     * @param trustedCertManager    must not be null if isVerifyServerCert is true
+     * @param ssgKeyStoreManager    must not be null if useClientCert is true
+     * @throws FtpTestException if connection test failed
      */
     public static void testConnection(boolean isFtps,
-                                      boolean isVerifyServerCert,
                                       boolean isExplicit,
+                                      boolean isVerifyServerCert,
                                       String hostName,
                                       int port,
                                       String userName,
                                       String password,
+                                      boolean useClientCert,
+                                      long clientCertKeystoreId,
+                                      String clientCertKeyAlias,
                                       String directory,
                                       int timeout,
-                                      TrustedCertManager trustedCertManager) throws FtpTestException {
+                                      TrustedCertManager trustedCertManager,
+                                      SsgKeyStoreManager ssgKeyStoreManager) throws FtpTestException {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final PrintStream debugStream = new PrintStream(baos);
         Ftp ftp = null;
         Ftps ftps = null;
         try {
             if (isFtps) {
-                ftps = newFtpsConnection(isVerifyServerCert,
-                                         isExplicit,
+                ftps = newFtpsConnection(isExplicit,
+                                         isVerifyServerCert,
                                          hostName,
                                          port,
                                          userName,
                                          password,
+                                         useClientCert,
+                                         clientCertKeystoreId,
+                                         clientCertKeyAlias,
                                          directory,
                                          timeout,
                                          debugStream,
-                                         trustedCertManager);
+                                         trustedCertManager,
+                                         ssgKeyStoreManager);
             } else {
                 ftp = newFtpConnection(hostName,
                                        port,

@@ -59,6 +59,15 @@ public class FtpRoutingAssertion extends RoutingAssertion {
     /** Password to use if {@link #_credentialsSource} is {@link FtpCredentialsSource#SPECIFIED}. */
     private String _password;
 
+    /** Whether to use client cert and private key for authentication. */
+    private boolean _useClientCert;
+
+    /** ID of keystore to use if {@link #_useClientCert} is true. */
+    private long _clientCertKeystoreId;
+
+    /** Key alias in keystore to use if {@link #_useClientCert} is true. */
+    private String _clientCertKeyAlias;
+
     /** Timeout for opening connection to FTP server (in milliseconds). */
     private int _timeout = DEFAULT_TIMEOUT;
 
@@ -82,6 +91,30 @@ public class FtpRoutingAssertion extends RoutingAssertion {
 
     public void setVerifyServerCert(boolean b) {
         _verifyServerCert = b;
+    }
+
+    public boolean isUseClientCert() {
+        return _useClientCert;
+    }
+
+    public void setUseClientCert(boolean useClientCert) {
+        _useClientCert = useClientCert;
+    }
+
+    public String getClientCertKeyAlias() {
+        return _clientCertKeyAlias;
+    }
+
+    public void setClientCertKeyAlias(String clientCertKeyAlias) {
+        _clientCertKeyAlias = clientCertKeyAlias;
+    }
+
+    public long getClientCertKeystoreId() {
+        return _clientCertKeystoreId;
+    }
+
+    public void setClientCertKeystoreId(long clientCertKeystoreId) {
+        _clientCertKeystoreId = clientCertKeystoreId;
     }
 
     public String getDirectory() {

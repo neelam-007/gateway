@@ -18,6 +18,17 @@ import java.rmi.RemoteException;
  */
 public class FtpAdminStub implements FtpAdmin {
     @Transactional(readOnly = true)
-    public void testConnection(boolean isFtps, boolean isExplicit, boolean isVerifyServerCert, String hostName, int port, String userName, String password, String directory, int timeout) throws RemoteException, FtpTestException {
+    public void testConnection(boolean isFtps,
+                               boolean isExplicit,
+                               boolean isVerifyServerCert,
+                               String hostName,
+                               int port,
+                               String userName,
+                               String password,
+                               boolean useClientCert,
+                               long clientCertKeystoreId,
+                               String clientCertKeyAlias,
+                               String directory,
+                               int timeout) throws RemoteException, FtpTestException {
     }
 }

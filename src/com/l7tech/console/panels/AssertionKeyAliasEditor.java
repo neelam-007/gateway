@@ -1,9 +1,9 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.PrivateKeyable;
@@ -12,9 +12,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
 
 /**
  * Dialog allowing SSM administrator to set the keystore used by a particular assertion.
@@ -24,6 +24,8 @@ import java.rmi.RemoteException;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: May 23, 2007<br/>
+ *
+ * @see PrivateKeysComboBox
  */
 public class AssertionKeyAliasEditor extends JDialog {
     private final Logger logger = Logger.getLogger(AssertionKeyAliasEditor.class.getName());

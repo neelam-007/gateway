@@ -10,6 +10,7 @@ import com.l7tech.common.transport.ftp.FtpTestException;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.PrivateKeysComboBox;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ftprouting.FtpCredentialsSource;
 import com.l7tech.external.assertions.ftprouting.FtpFileNameSource;
@@ -27,8 +28,11 @@ import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.rmi.RemoteException;
 import java.util.EventListener;
+import java.util.logging.Logger;
 
 /**
  * Dialog for editing the FtpRoutingAssertion.
@@ -53,6 +57,8 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
     private JRadioButton _credentialsSpecifyRadioButton;
     private JTextField _userNameTextField;              // blank not allowed
     private JPasswordField _passwordField;              // blank allowed
+    private JCheckBox _useClientCertCheckBox;
+    private PrivateKeysComboBox _clientCertsComboBox;
     private JTextField _timeoutTextField;               // blank allowed
     private JButton _testButton;
     private JButton _okButton;
@@ -60,6 +66,7 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
     private JRadioButton wssRemoveRadioButton;
     private JRadioButton wssLeaveRadioButton;
 
+    private final Logger _logger = Logger.getLogger(FtpRoutingPropertiesDialog.class.getName());
     public static final int DEFAULT_PORT_FTP = 21;
     public static final int DEFAULT_PORT_FTPS_IMPLICIT = 990;
 
@@ -143,7 +150,7 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
 
         final ActionListener securityListener = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                _verifyServerCertCheckBox.setEnabled(_ftpsExplicitRadioButton.isSelected() || _ftpsImplicitRadioButton.isSelected());
+                enableOrDisableComponents();
                 setDefaultPortNumber();
             }
         };
@@ -178,8 +185,6 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
 
         final ActionListener credentialsListener = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                _userNameTextField.setEnabled(_credentialsSpecifyRadioButton.isSelected());
-                _passwordField.setEnabled(_credentialsSpecifyRadioButton.isSelected());
                 enableOrDisableComponents();
             }
         };
@@ -193,6 +198,17 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
         });
         Utilities.enableGrayOnDisabled(_userNameTextField);
         Utilities.enableGrayOnDisabled(_passwordField);
+
+        _useClientCertCheckBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                enableOrDisableComponents();
+            }
+        });
+        _clientCertsComboBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableComponents();
+            }
+        });
 
         _testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -246,6 +262,9 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
             _passwordField.setText(_assertion.getPassword());
         }
 
+        _useClientCertCheckBox.setSelected(_assertion.isUseClientCert());
+        _clientCertsComboBox.select(_assertion.getClientCertKeystoreId(), _assertion.getClientCertKeyAlias());
+
         _timeoutTextField.setText(Integer.toString(_assertion.getTimeout() / 1000));
 
         if (_assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER) {
@@ -253,6 +272,8 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
         } else if (_assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS) {
             wssLeaveRadioButton.setSelected(true);
         }
+
+        enableOrDisableComponents();
     }
 
     private void setDefaultPortNumber() {
@@ -267,14 +288,23 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
      * Enable/disable the OK and test buttons if all settings are OK.
      */
     private void enableOrDisableComponents() {
+        final boolean isFtps = _ftpsExplicitRadioButton.isSelected() || _ftpsImplicitRadioButton.isSelected();
+        _verifyServerCertCheckBox.setEnabled(isFtps);
+        _userNameTextField.setEnabled(_credentialsSpecifyRadioButton.isSelected());
+        _passwordField.setEnabled(_credentialsSpecifyRadioButton.isSelected());
+        _useClientCertCheckBox.setEnabled(isFtps);
+        _clientCertsComboBox.setEnabled(_useClientCertCheckBox.isEnabled() && _useClientCertCheckBox.isSelected());
+
         final boolean canTest = _hostNameTextField.getText().length() != 0
                 && _credentialsSpecifyRadioButton.isSelected()
-                && _userNameTextField.getText().length() != 0;
+                && _userNameTextField.getText().length() != 0
+                && (!_useClientCertCheckBox.isSelected() || _clientCertsComboBox.getSelectedIndex() != -1);
         _testButton.setEnabled(canTest);
 
         final boolean canOK = _hostNameTextField.getText().length() != 0
                 && !(_filenamePatternRadioButton.isSelected() && _filenamePatternTextField.getText().length() == 0)
-                && !(_credentialsSpecifyRadioButton.isSelected() && _userNameTextField.getText().length() == 0);
+                && !(_credentialsSpecifyRadioButton.isSelected() && _userNameTextField.getText().length() == 0)
+                && (!_useClientCertCheckBox.isSelected() || _clientCertsComboBox.getSelectedIndex() != -1);
         _okButton.setEnabled(canOK);
     }
 
@@ -332,6 +362,12 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
         assertion.setUserName(_userNameTextField.getText());
         assertion.setPassword(new String(_passwordField.getPassword()));
 
+        assertion.setUseClientCert(_useClientCertCheckBox.isSelected());
+        if (_useClientCertCheckBox.isSelected()) {
+            assertion.setClientCertKeystoreId(_clientCertsComboBox.getSelectedKeystoreId());
+            assertion.setClientCertKeyAlias(_clientCertsComboBox.getSelectedKeyAlias());
+        }
+
         if (_timeoutTextField.getText().length() == 0) {
             _timeoutTextField.setText(Integer.toString(FtpRoutingAssertion.DEFAULT_TIMEOUT / 1000));
         }
@@ -359,6 +395,9 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
                     a.getPort(),
                     a.getUserName(),
                     a.getPassword(),
+                    a.isUseClientCert(),
+                    a.getClientCertKeystoreId(),
+                    a.getClientCertKeyAlias(),
                     a.getDirectory(),
                     a.getTimeout());
             JOptionPane.showMessageDialog(

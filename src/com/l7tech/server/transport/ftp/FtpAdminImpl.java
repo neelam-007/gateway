@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
@@ -28,11 +29,16 @@ public class FtpAdminImpl implements FtpAdmin {
     private static final Logger _logger = Logger.getLogger(FtpAdminImpl.class.getName());
     private final LicenseManager _licenseManager;
     private final TrustedCertManager _trustedCertManager;
+    private final SsgKeyStoreManager _ssgKeyStoreManager;
     private final ServerAssertionRegistry _serverAssertionRegistry;
 
-    public FtpAdminImpl(LicenseManager licenseManager, TrustedCertManager trustedCertManager, ServerAssertionRegistry serverAssertionRegistry) {
+    public FtpAdminImpl(LicenseManager licenseManager,
+                        TrustedCertManager trustedCertManager,
+                        SsgKeyStoreManager ssgKeyStoreManager,
+                        ServerAssertionRegistry serverAssertionRegistry) {
         _licenseManager = licenseManager;
         _trustedCertManager = trustedCertManager;
+        _ssgKeyStoreManager = ssgKeyStoreManager;
         _serverAssertionRegistry = serverAssertionRegistry;
     }
 
@@ -46,10 +52,22 @@ public class FtpAdminImpl implements FtpAdmin {
     }
 
     /**
-     * Test connection to the specified FTP server.
+     * Tests connection to FTP(S) server and tries "cd" into remote directory.
      *
-     * @throws RemoteException
-     * @throws FtpTestException if a test connection could not be established
+     * @param isFtps                true if FTPS; false if FTP (unsecured)
+     * @param isExplicit            if FTPS: true if explicit FTPS, false if implicit FTPS
+     * @param isVerifyServerCert    whether to verify FTPS server certificate using trusted certificate store; applies only if isFtps is true
+     * @param hostName              host name of FTP(S) server
+     * @param port                  port number of FTP(S) server
+     * @param userName              user name to login in as
+     * @param password              password to login with
+     * @param useClientCert         whether to use client cert and private key for authentication
+     * @param clientCertKeystoreId  ID of keystore to use if useClientCert is true; must be a valid ID if useClientCert is true
+     * @param clientCertKeyAlias    key alias in keystore to use if useClientCert is true; must not be null if useClientCert is true
+     * @param directory             remote directory to "cd" into; supply empty string if no "cd" wanted
+     * @param timeout               connection timeout in milliseconds
+     * @throws RemoteException if remote method call failed
+     * @throws FtpTestException if connection test failed
      */
     public void testConnection(boolean isFtps,
                                boolean isExplicit,
@@ -58,6 +76,9 @@ public class FtpAdminImpl implements FtpAdmin {
                                int port,
                                String userName,
                                String password,
+                               boolean useClientCert,
+                               long clientCertKeystoreId,
+                               String clientCertKeyAlias,
                                String directory,
                                int timeout) throws RemoteException, FtpTestException {
         checkLicense();
@@ -67,27 +88,35 @@ public class FtpAdminImpl implements FtpAdmin {
             String serverFtpRoutingAssertionClassname = (String)ftpRoutingAssertion.meta().get(AssertionMetadata.SERVER_ASSERTION_CLASSNAME);
             Class serverFtpRoutingAssertionClass = ftpRoutingAssertion.getClass().getClassLoader().loadClass(serverFtpRoutingAssertionClassname);
             serverFtpRoutingAssertionClass.getMethod("testConnection",
-                                                     Boolean.TYPE,
-                                                     Boolean.TYPE,
-                                                     Boolean.TYPE,
-                                                     String.class,
-                                                     Integer.TYPE,
-                                                     String.class,
-                                                     String.class,
-                                                     String.class,
-                                                     Integer.TYPE,
-                                                     TrustedCertManager.class)
+                                                     Boolean.TYPE,              // isFtps
+                                                     Boolean.TYPE,              // isExplicit
+                                                     Boolean.TYPE,              // isVerifyServerCert
+                                                     String.class,              // hostName
+                                                     Integer.TYPE,              // port
+                                                     String.class,              // userName
+                                                     String.class,              // password
+                                                     Boolean.TYPE,              // useClientCert
+                                                     Long.TYPE,                 // clientCertKeystoreId
+                                                     String.class,              // clientCertKeyAlias
+                                                     String.class,              // directory
+                                                     Integer.TYPE,              // timeout
+                                                     TrustedCertManager.class,  // trustedCertManager
+                                                     SsgKeyStoreManager.class)  // ssgKeyStoreManager
                                           .invoke(null /* static method */,
                                                   isFtps,
-                                                  isVerifyServerCert,
                                                   isExplicit,
+                                                  isVerifyServerCert,
                                                   hostName,
                                                   port,
                                                   userName,
                                                   password,
+                                                  useClientCert,
+                                                  clientCertKeystoreId,
+                                                  clientCertKeyAlias,
                                                   directory,
                                                   timeout,
-                                                  _trustedCertManager);
+                                                  _trustedCertManager,
+                                                  _ssgKeyStoreManager);
         } catch (ClassNotFoundException e) {
             _logger.log(Level.INFO, "Caught ClassNotFoundException while testing connection.", e);
             throw new FtpTestException(e.toString(), null);

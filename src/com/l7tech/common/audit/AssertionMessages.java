@@ -285,6 +285,7 @@ public class AssertionMessages extends Messages {
     public static final M FTP_ROUTING_SSL_NO_CERT = m(6051, Level.WARNING, "FTP server ({0}) did not identify itself properly: {1}");
     public static final M FTP_ROUTING_SSL_NOT_X509 = m(6052, Level.WARNING, "Cannot handle non-X.509 certifcates from FTP server ({0}).");
     public static final M FTP_ROUTING_SSL_UNTRUSTED = m(6053, Level.WARNING, "Cannot establish trust of SSL certificate from FTP server ({0}): {1}");
+    public static final M FTP_ROUTING_PASSTHRU_NO_USERNAME = m(6054, Level.WARNING, "No user name found for passing through to FTP server.");
 
     // ServerRequestWssSaml
     public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate SAML Statement");
