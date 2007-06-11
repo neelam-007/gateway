@@ -72,23 +72,30 @@ public class GuiCertUtil {
         }
 
         final JFileChooser fc = Utilities.createJFileChooser();
-        fc.setDialogTitle("Load certificate from ...");
-        fc.setDialogType(JFileChooser.OPEN_DIALOG);
         FileFilter pemFilter = buildFilter(".pem", "(*.pem) PEM/BASE64 X.509 certificates.");
         FileFilter cerFilter = buildFilter(".cer", "(*.cer) DER encoded X.509 certificates.");
         FileFilter p12Filter = buildFilter(".p12", "(*.p12) PKCS 12 key store.");
-        fc.addChoosableFileFilter(pemFilter);
-        fc.addChoosableFileFilter(cerFilter);
-        fc.addChoosableFileFilter(p12Filter);
+
+        if (privateKeyRequired) {
+            fc.setDialogTitle("Load Private Key");
+            fc.addChoosableFileFilter(p12Filter);
+        } else {
+            fc.setDialogTitle("Load Certificate");
+            fc.addChoosableFileFilter(pemFilter);
+            fc.addChoosableFileFilter(cerFilter);
+            fc.addChoosableFileFilter(p12Filter);
+        }
+
+        fc.setDialogType(JFileChooser.OPEN_DIALOG);
         fc.setMultiSelectionEnabled(false);
 
         boolean done = false;
         while (!done) {
             int r = fc.showDialog(parent, "Load");
 
-            if(r == JFileChooser.APPROVE_OPTION) {
+            if (r == JFileChooser.APPROVE_OPTION) {
                 File file = fc.getSelectedFile();
-                if(file!=null) {
+                if (file!=null) {
                     //
                     // Can't check parent is writable due to JDK bug (see bug 2349 for info)
                     //
@@ -103,12 +110,10 @@ public class GuiCertUtil {
                             if (selectedFileName.endsWith(".pem") ||
                                 selectedFileName.endsWith(".txt")) {
                                 selectedFilter = pemFilter;
-                            }
-                            else if (selectedFileName.endsWith(".cer") ||
+                            } else if (selectedFileName.endsWith(".cer") ||
                                      selectedFileName.endsWith(".der")) {
                                 selectedFilter = cerFilter;
-                            }
-                            else if (selectedFileName.endsWith(".p12")) {
+                            } else if (selectedFileName.endsWith(".p12")) {
                                 selectedFilter = p12Filter;
                             }
                         }
@@ -119,13 +124,11 @@ public class GuiCertUtil {
                         try {
                             in = new FileInputStream(file);
                             fileBytes = HexUtils.slurpStream(in, 1024*64);
-                        }
-                        catch(IOException ioe) {
+                        } catch (IOException ioe) {
                             displayError(parent, "Error reading file", "Could not read certificate.");
                             logger.log(Level.WARNING, "Error reading certificate data", ioe);
                             continue;
-                        }
-                        finally {
+                        } finally {
                             ResourceUtils.closeQuietly(in);
                         }
 
