@@ -4,12 +4,15 @@
 
 package com.l7tech.external.assertions.ftprouting.console;
 
+import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.NumberField;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.transport.ftp.FtpTestException;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.panels.PrivateKeysComboBox;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ftprouting.FtpCredentialsSource;
@@ -30,8 +33,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.rmi.RemoteException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.EventListener;
+import java.util.concurrent.Callable;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -67,6 +72,7 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
     private JRadioButton wssLeaveRadioButton;
 
     private final Logger _logger = Logger.getLogger(FtpRoutingPropertiesDialog.class.getName());
+    private static final Cursor WAIT_CURSOR = new Cursor(Cursor.WAIT_CURSOR);
     public static final int DEFAULT_PORT_FTP = 21;
     public static final int DEFAULT_PORT_FTPS_IMPLICIT = 990;
 
@@ -382,52 +388,86 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
         return assertion;
     }
 
+    /**
+     * Runs connection test with cancellable progress bar. Displays result with
+     * session log if failure.
+     */
     private void testConnection() {
-        final FtpRoutingAssertion a = getData(new FtpRoutingAssertion());
-        final boolean isFtps = a.getSecurity() == FtpSecurity.FTPS_EXPLICIT || a.getSecurity() == FtpSecurity.FTPS_IMPLICIT;
-        final boolean isExplicit = a.getSecurity() == FtpSecurity.FTPS_EXPLICIT;
         try {
-            Registry.getDefault().getFtpManager().testConnection(
-                    isFtps,
-                    isExplicit,
-                    a.isVerifyServerCert(),
-                    a.getHostName(),
-                    a.getPort(),
-                    a.getUserName(),
-                    a.getPassword(),
-                    a.isUseClientCert(),
-                    a.getClientCertKeystoreId(),
-                    a.getClientCertKeyAlias(),
-                    a.getDirectory(),
-                    a.getTimeout());
-            JOptionPane.showMessageDialog(
-                    this,
-                    "The Gateway has verified the connection to this FTP server.",
-                    "FTP Connection Success",
-                    JOptionPane.INFORMATION_MESSAGE);
-        } catch (RemoteException e) {
-            throw new RuntimeException("Unable to test connection to FTP server.", e);
-        } catch (FtpTestException e) {
-            JPanel panel = new JPanel();
-            panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-            panel.add(new JLabel("The Gateway was unable to connect to this FTP server:"));
-            panel.add(new JLabel(e.getMessage()));
-            if (e.getSessionLog() != null && e.getSessionLog().length() != 0) {
-                panel.add(Box.createVerticalStrut(10));
-                panel.add(new JLabel("Detail log of FTP session:"));
-                JTextArea sessionLog = new JTextArea(e.getSessionLog());
-                sessionLog.setAlignmentX(Component.LEFT_ALIGNMENT);
-                sessionLog.setBorder(BorderFactory.createEtchedBorder());
-                sessionLog.setEditable(false);
-                sessionLog.setEnabled(true);
-                sessionLog.setFont(new Font(null, Font.PLAIN, 11));
-                panel.add(sessionLog);
+            final JProgressBar progressBar = new JProgressBar();
+            progressBar.setIndeterminate(true);
+            final CancelableOperationDialog cancelDialog =
+                    new CancelableOperationDialog(null, "FTP(S) Connection Test", "Testing connection to FTP(S) server ...", progressBar);
+            cancelDialog.pack();
+            cancelDialog.setModal(true);
+            Utilities.centerOnScreen(cancelDialog);
+
+            Callable<Boolean> callable = new Callable<Boolean>() {
+                public Boolean call() throws Exception {
+                    final FtpRoutingAssertion a = getData(new FtpRoutingAssertion());
+                    final boolean isFtps = a.getSecurity() == FtpSecurity.FTPS_EXPLICIT || a.getSecurity() == FtpSecurity.FTPS_IMPLICIT;
+                    final boolean isExplicit = a.getSecurity() == FtpSecurity.FTPS_EXPLICIT;
+                    Registry.getDefault().getFtpManager().testConnection(
+                            isFtps,
+                            isExplicit,
+                            a.isVerifyServerCert(),
+                            a.getHostName(),
+                            a.getPort(),
+                            a.getUserName(),
+                            a.getPassword(),
+                            a.isUseClientCert(),
+                            a.getClientCertKeystoreId(),
+                            a.getClientCertKeyAlias(),
+                            a.getDirectory(),
+                            a.getTimeout());
+                    return Boolean.TRUE;
+                }
+            };
+
+            final Boolean result = Utilities.doWithDelayedCancelDialog(callable, cancelDialog, 500L);
+            if (result == Boolean.TRUE) {
+                JOptionPane.showMessageDialog(
+                        FtpRoutingPropertiesDialog.this,
+                        "The Gateway has verified the connection to this FTP(S) server.",
+                        "FTP(S) Connection Success",
+                        JOptionPane.INFORMATION_MESSAGE);
             }
-            JOptionPane.showMessageDialog(
-                    this,
-                    panel,
-                    "FTP Connection Failure",
-                    JOptionPane.ERROR_MESSAGE);
+        } catch (InterruptedException e) {
+            // Swing thread interrupted.
+        } catch (InvocationTargetException e) {
+            final Throwable cause = e.getCause();
+            if (cause != null) {
+                if (cause instanceof FtpTestException) {
+                    final FtpTestException fte = (FtpTestException)cause;
+                    JPanel panel = new JPanel();
+                    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+                    panel.add(new JLabel("The Gateway was unable to connect to this FTP(S) server:"));
+                    panel.add(new JLabel(fte.getMessage()));
+                    if (fte.getSessionLog() != null && fte.getSessionLog().length() != 0) {
+                        panel.add(Box.createVerticalStrut(10));
+                        panel.add(new JLabel("Detail log of FTP(S) session:"));
+                        JTextArea sessionLog = new JTextArea(fte.getSessionLog());
+                        sessionLog.setAlignmentX(Component.LEFT_ALIGNMENT);
+                        sessionLog.setBorder(BorderFactory.createEtchedBorder());
+                        sessionLog.setEditable(false);
+                        sessionLog.setEnabled(true);
+                        sessionLog.setFont(new Font(null, Font.PLAIN, 11));
+                        panel.add(sessionLog);
+                    }
+                    JOptionPane.showMessageDialog(
+                            FtpRoutingPropertiesDialog.this,
+                            panel,
+                            "FTP(S) Connection Failure",
+                            JOptionPane.ERROR_MESSAGE);
+
+                } else {
+                    ExceptionDialog dialog = ExceptionDialog.createExceptionDialog(
+                            null, "FTP(S) Connection Test Error", "Unable to test connection to FTP(S) server.", cause, Level.WARNING);
+                    dialog.pack();
+                    Utilities.centerOnScreen(dialog);
+                    DialogDisplayer.display(dialog);
+                }
+            }
         }
     }
 }
