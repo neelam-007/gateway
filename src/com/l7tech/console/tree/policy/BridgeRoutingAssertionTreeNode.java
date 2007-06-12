@@ -42,7 +42,6 @@ public class BridgeRoutingAssertionTreeNode extends HttpRoutingAssertionTreeNode
             }
         }
         list.add(0, getPreferredAction());
-        list.add(new EditKeyAliasForAssertion(this));
         return (Action[])list.toArray(new Action[]{});
     }
 }
