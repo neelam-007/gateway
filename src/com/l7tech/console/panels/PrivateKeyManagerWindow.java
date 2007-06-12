@@ -20,17 +20,14 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import javax.security.auth.x500.X500Principal;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.security.InvalidKeyException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.security.*;
+import java.security.cert.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.DateFormat;
@@ -193,9 +190,39 @@ public class PrivateKeyManagerWindow extends JDialog {
             return;
         alias = alias.trim();
 
+        boolean sawExpired = false;
+        boolean sawNotYetValid = false;
+        boolean sawDnMismatch = false;
+        boolean sawBadSignature = false;
         final String[] pemChain = new String[chain.length];
         for (int i = 0; i < chain.length; i++) {
             X509Certificate cert = chain[i];
+
+            // Record warnings if any cert expired or not yet valid
+            try {
+                cert.checkValidity();
+            } catch (CertificateExpiredException e) {
+                sawExpired = true;
+            } catch (CertificateNotYetValidException e) {
+                sawNotYetValid = true;
+            }
+
+            // Record warnings about broken chain
+            if (i + 1 < chain.length) {
+                X509Certificate issuerCert = chain[i + 1];
+                String certIssuerDn = cert.getIssuerX500Principal().getName(X500Principal.CANONICAL);
+                String issuerSubjectDn = issuerCert.getSubjectX500Principal().getName(X500Principal.CANONICAL);
+                if (!certIssuerDn.equalsIgnoreCase(issuerSubjectDn)) {
+                    sawDnMismatch = true;
+                }
+
+                try {
+                    cert.verify(issuerCert.getPublicKey());
+                } catch (GeneralSecurityException e) {
+                    sawBadSignature = true;
+                }
+            }
+
             try {
                 pemChain[i] = CertUtils.encodeAsPEM(cert);
             } catch (IOException e) {
@@ -203,6 +230,27 @@ public class PrivateKeyManagerWindow extends JDialog {
             } catch (CertificateEncodingException e) {
                 showErrorMessage("Import Failed", "Unable to reencode the certificate chain.", e);
             }
+        }
+
+        if (sawExpired || sawNotYetValid || sawDnMismatch || sawBadSignature) {
+            StringBuffer mess = new StringBuffer("At lease one certificate in the chain: \n\n");
+            if (sawExpired) mess.append("     * has expired\n");
+            if (sawNotYetValid) mess.append("     * is not yet valid\n");
+            if (sawDnMismatch) mess.append("     * has an issuer DN that does not match its issuer's DN\n");
+            if (sawBadSignature) mess.append("     * has an invalid issuer signature\n");
+            mess.append("\nDo you want to import this certificate chain anyway?");
+            Object initialValue = "Do Not Import";
+            Object[] options = { "Import Anyway", initialValue };
+            int result = JOptionPane.showOptionDialog(this,
+                                                      mess.toString(),
+                                                      "Certificate Chain Warning",
+                                                      0,
+                                                      JOptionPane.WARNING_MESSAGE,
+                                                      null,
+                                                      options,
+                                                      initialValue);
+            if (result != 0)
+                return;
         }
 
         try {
