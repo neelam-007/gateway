@@ -142,6 +142,13 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         if (entry == null) throw new NullPointerException("entry must not be null");
         if (entry.getAlias() == null) throw new NullPointerException("entry's alias must not be null");
         if (entry.getAlias().length() < 1) throw new IllegalArgumentException("entry's alias must not be empty");
+        final PrivateKey privateKey;
+        try {
+            privateKey = entry.getPrivateKey();
+            if (privateKey == null) throw new NullPointerException("entry's private key must be present");
+        } catch (UnrecoverableKeyException e) {
+            throw new IllegalArgumentException("entry's private key must be present", e);
+        }
 
         mutateKeystore(new Functions.Nullary<Object>() {
             public Object call() {

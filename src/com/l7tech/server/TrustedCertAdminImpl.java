@@ -20,15 +20,12 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPrivateKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -341,9 +338,8 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         return safeChain;
     }
 
-    public void importKey(long keystoreId, String alias, String[] pemChain, BigInteger modulus, BigInteger privateExponent)
-            throws SaveException, CertificateException, InvalidKeySpecException
-    {
+    public void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8)
+            throws SaveException, CertificateException, InvalidKeyException {
         X509Certificate[] safeChain = parsePemChain(pemChain);
 
         SsgKeyFinder keyFinder;
@@ -361,12 +357,21 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
 
         // Ensure all certs are instances that have come from the default certificate factory
         try {
-            RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(modulus, privateExponent);
-            PrivateKey rsaPrivateKey = KeyFactory.getInstance("RSA").generatePrivate(keySpec);
+            PrivateKey rsaPrivateKey = (PrivateKey)KeyFactory.getInstance("RSA").translateKey(new PrivateKey() {
+                public String getAlgorithm() {
+                    return "RSA";
+                }
+
+                public String getFormat() {
+                    return "PKCS#8";
+                }
+
+                public byte[] getEncoded() {
+                    return privateKeyPkcs8;
+                }
+            });
             SsgKeyEntry entry = new SsgKeyEntry(keystoreId, alias, safeChain, rsaPrivateKey);
             keystore.storePrivateKeyEntry(entry, false);
-        } catch (InvalidKeySpecException e) {
-            throw e;
         } catch (NoSuchAlgorithmException e) {
             throw new SaveException("error setting new cert: " + ExceptionUtils.getMessage(e), e);
         } catch (KeyStoreException e) {

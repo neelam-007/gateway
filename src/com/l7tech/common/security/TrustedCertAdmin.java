@@ -15,13 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.rmi.RemoteException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
 /**
@@ -262,15 +261,14 @@ public interface TrustedCertAdmin  {
      *                   an RSA public key.
      *                   The new subject cert must contain
      *                   the RSA public key corresponding to the RSA private key described by modulus and privateExponent.
-     * @param modulus    the modulus of the RSA private key.  Required.
-     * @param privateExponent  the private exponent of the RSA private key.  Required.
+     * @param privateKeyPkcs8  the PKCS#8 encoded RSA private key.  Required.
      * @throws CertificateException if there is a problem with the PEM chain
-     * @throws InvalidKeySpecException if a valid RSA key corresponding to the subject cert private key
-     *                                 could not be created from modulus and privateExponent.
-     * @throws com.l7tech.objectmodel.SaveException if there is some other problem importing the new private key entry
+     * @throws InvalidKeyException   if a valid RSA key corresponding to the subject cert private key
+     *                                 could not be created from privateKeyPkcs8.
+     * @throws SaveException if there is some other problem importing the new private key entry
      */
     // TODO need an annotation to note that this methods arguments must never be persisted in any debug or audit traces
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    void importKey(long keystoreId, String alias, String[] pemChain, BigInteger modulus, BigInteger privateExponent) throws CertificateException, SaveException, InvalidKeySpecException;
+    void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8) throws CertificateException, SaveException, InvalidKeyException;
 }

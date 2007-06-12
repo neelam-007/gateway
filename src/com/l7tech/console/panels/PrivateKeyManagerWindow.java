@@ -7,8 +7,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DeleteException;
@@ -25,21 +25,20 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.interfaces.RSAPublicKey;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.math.BigInteger;
 
 /**
  * Window for managing private key entries (certificate chains with private keys) in the Gateway.
@@ -171,16 +170,21 @@ public class PrivateKeyManagerWindow extends JDialog {
             return;
         }
 
-        if (!(key instanceof RSAPrivateKey)) {
+        if (!(key instanceof RSAPrivateKey) || !("RSA".equals(key.getAlgorithm()))) {
             showErrorMessage("Import Failed", "Private key is not an RSA private key.", null);
             return;
         }
 
-        RSAPrivateKey rpk = (RSAPrivateKey)key;
-        BigInteger modulus = rpk.getModulus();
-        BigInteger privateExponent = rpk.getPrivateExponent();
-        if (modulus == null || privateExponent == null) {
-            showErrorMessage("Import Failed", "Unable to obtain RSA modulus and private exponent from RSA private key.", null);
+        if (!"PKCS#8".equalsIgnoreCase(key.getFormat())) {
+            // Shouldn't be possible
+            showErrorMessage("Import Failed", "Private key cannot be encoded in PKCS#8 format.", null);
+            return;
+        }
+        
+        byte[] pkcs8Bytes = key.getEncoded();
+        if (pkcs8Bytes == null || pkcs8Bytes.length < 1) {
+            // Shouldn't be possible
+            showErrorMessage("Import Failed", "Private key PKCS#8 encoding was missing or empty.", null);
             return;
         }
 
@@ -202,12 +206,12 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
 
         try {
-            getTrustedCertAdmin().importKey(mutableKeystore.id, alias, pemChain, modulus, privateExponent);
+            getTrustedCertAdmin().importKey(mutableKeystore.id, alias, pemChain, pkcs8Bytes);
         } catch (CertificateException e) {
             showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
         } catch (SaveException e) {
             showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
-        } catch (InvalidKeySpecException e) {
+        } catch (InvalidKeyException e) {
             showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
         }
 
