@@ -159,7 +159,8 @@ public class ServiceMetrics {
             final long now = System.currentTimeMillis();
             _currentFineBin.setEndTime(now);
             try {
-                _queue.put(_currentFineBin);
+                // Bug 3728: Neglecting to save no-traffic bins doesn't actually cause problems
+                if (_currentFineBin.getNumAttemptedRequest() > 0) _queue.put(_currentFineBin);
             } catch (InterruptedException e) {
                 _logger.log(Level.WARNING, "Interrupted waiting for queue", e);
                 Thread.currentThread().interrupt();
