@@ -47,7 +47,7 @@ public class SolarisSpecificFunctions extends UnixSpecificFunctions {
 
         keystoreInfos = infos.toArray(new KeystoreInfo[0]);
 
-        timeZonesDir = null;
+        timeZonesDir = "/usr/share/lib/zoneinfo/";
     }
 
     public String getFirewallRulesForPartition(PartitionInformation.HttpEndpointHolder basicEndpoint,
