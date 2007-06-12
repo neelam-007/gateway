@@ -98,15 +98,15 @@ public class SolarisSpecificFunctions extends UnixSpecificFunctions {
     }
 
      private String buildIPPortRule(String ipAddress, String port) {
-        String rule = TEMPLATE_IP_PORT;
+         String rule = TEMPLATE_IP_PORT;
 
-        if (ipAddress.equals("*"))
-            rule= rule.replaceAll(IP_MARKER, "");
-        else
-            rule = rule.replaceAll(IP_MARKER, ipAddress);
+         if (ipAddress.equals("*"))
+             rule= rule.replaceAll("-d " + IP_MARKER, "");
+         else
+             rule = rule.replaceAll(IP_MARKER, ipAddress);
 
-        rule = rule.replaceAll(PORT_MARKER, port);
+         rule = rule.replaceAll(PORT_MARKER, port);
 
-        return rule;
+         return rule;
      }
 }
