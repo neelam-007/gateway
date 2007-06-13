@@ -8,6 +8,9 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.policy.assertion.annotation.ProcessesResponse;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.common.util.ClassUtils;
 
 import java.io.Serializable;
@@ -437,6 +440,35 @@ public abstract class Assertion implements Cloneable, Serializable {
         }
 
         return found;
+    }
+
+    public static boolean isRequest(Assertion assertion) {
+        return hasAnnotation(assertion, ProcessesRequest.class);
+    }
+
+    public static boolean isResponse(Assertion assertion) {
+        return hasAnnotation(assertion, ProcessesResponse.class);
+    }
+
+    public static boolean isWSSecurity(Assertion assertion) {
+        boolean isWss = false;
+
+        if ( assertion != null ) {
+            RequiresSOAP soapAnnotation = assertion.getClass().getAnnotation(RequiresSOAP.class);
+            isWss = soapAnnotation != null && soapAnnotation.wss();
+        }
+
+        return isWss;
+    }
+
+    private static boolean hasAnnotation(Assertion assertion, Class annotationClass) {
+        boolean hasAnnotation = false;
+
+        if ( assertion != null ) {
+            hasAnnotation = assertion.getClass().isAnnotationPresent(annotationClass);                    
+        }
+
+        return hasAnnotation;
     }
 
     /**

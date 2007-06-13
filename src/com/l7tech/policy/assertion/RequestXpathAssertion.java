@@ -8,6 +8,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.xpath.XpathExpression;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 /**
  * Data for an assertion that verifies whether a request matches a specified
@@ -19,6 +20,7 @@ import com.l7tech.common.xml.xpath.XpathExpression;
  *
  * @version $Revision$
  */
+@ProcessesRequest
 public class RequestXpathAssertion extends SimpleXpathAssertion {
     public static final String DEFAULT_VAR_PREFIX = "requestXpath";
 

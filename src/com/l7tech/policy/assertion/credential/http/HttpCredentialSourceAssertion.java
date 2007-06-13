@@ -6,11 +6,13 @@
 package com.l7tech.policy.assertion.credential.http;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 /**
  * @author alex
  * @version $Revision$
  */
+@ProcessesRequest
 public abstract class HttpCredentialSourceAssertion extends Assertion {
     public String getRealm() {
         return _realm;

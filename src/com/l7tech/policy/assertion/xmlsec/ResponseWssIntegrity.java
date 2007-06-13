@@ -3,6 +3,7 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.policy.assertion.PrivateKeyable;
+import com.l7tech.policy.assertion.annotation.ProcessesResponse;
 
 /**
  * Enforces XML security on the message elements or the entire message.
@@ -13,6 +14,7 @@ import com.l7tech.policy.assertion.PrivateKeyable;
  * @author flascell<br/>
  * @version Aug 27, 2003<br/>
  */
+@ProcessesResponse
 public class ResponseWssIntegrity extends XmlSecurityAssertionBase implements ResponseWssConfig, PrivateKeyable {
     private String keyReference = KeyReference.BST.getName();
     public ResponseWssIntegrity() {

@@ -5,9 +5,12 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+
 /**
  * Assertion for limiting request size.
  */
+@ProcessesRequest
 public class RequestSizeLimit extends Assertion {
     private long limit = 128 * 1024;
     private boolean entireMessage = true;

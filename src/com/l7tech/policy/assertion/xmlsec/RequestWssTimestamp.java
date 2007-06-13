@@ -5,6 +5,7 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.common.util.TimeUnit;
 
 /**
@@ -13,7 +14,8 @@ import com.l7tech.common.util.TimeUnit;
  * Set {@link #setSignatureRequired} to require that the timestamp be signed (if set, this assertion
  * must follow one of {@link RequestWssX509Cert}, {@link SecureConversation} or {@link RequestWssSaml}).
  */
-@RequiresSOAP()
+@ProcessesRequest
+@RequiresSOAP(wss=true)
 public class RequestWssTimestamp extends Assertion implements SecurityHeaderAddressable {
 
     /**

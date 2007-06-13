@@ -5,6 +5,8 @@ package com.l7tech.policy.assertion;
 
 import java.io.Serializable;
 
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+
 /**
  * Provides validation of HTML Form data set in an incoming request.
  *
@@ -15,6 +17,7 @@ import java.io.Serializable;
  * @author rmak
  * @since SecureSpan 3.7
  */
+@ProcessesRequest
 public class HtmlFormDataAssertion extends Assertion implements MimeMultipartAssertion {
 
     /**

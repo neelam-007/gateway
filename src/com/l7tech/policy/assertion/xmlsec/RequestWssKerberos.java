@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 /**
  * Specifies that a kerberos ticket is required.
@@ -9,7 +10,8 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
  * @author $Author$
  * @version $Version: $
  */
-@RequiresSOAP()
+@ProcessesRequest
+@RequiresSOAP(wss=true)
 public class RequestWssKerberos extends Assertion {
 
     //- PUBLIC

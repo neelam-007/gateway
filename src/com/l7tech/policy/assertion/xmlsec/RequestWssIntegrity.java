@@ -3,6 +3,7 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspUpgradeUtilFrom21;
 
@@ -16,6 +17,7 @@ import java.util.HashMap;
  * User: flascell<br/>
  * Date: July 14, 2004<br/>
  */
+@ProcessesRequest
 public class RequestWssIntegrity extends XmlSecurityAssertionBase {
     public RequestWssIntegrity() {
         setXpathExpression(XpathExpression.soapBodyXpathValue());

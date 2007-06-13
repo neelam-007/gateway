@@ -7,9 +7,9 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.common.util.EnumTranslator;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
-import com.l7tech.policy.wsp.TypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -21,6 +21,7 @@ import java.util.Set;
  * @author alex
  * @version $Revision$
  */
+@ProcessesRequest
 public class SslAssertion extends ConfidentialityAssertion {
     public static final Option OPTIONAL = new Option(0, "SSL Optional", "Optional");
     public static final Option REQUIRED = new Option(1, "SSL Required", "Required");

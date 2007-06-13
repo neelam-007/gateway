@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 /**
  * Gathers credentials based on XPath expressions pointing to the login and password.
@@ -11,6 +12,7 @@ import com.l7tech.policy.assertion.XpathBasedAssertion;
  *
  * @author alex
  */
+@ProcessesRequest
 public class XpathCredentialSource extends XpathBasedAssertion {
     private boolean removeLoginElement;
     private boolean removePasswordElement;

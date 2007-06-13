@@ -16,6 +16,7 @@ import java.util.Arrays;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.AllAssertions;
 
 /**
  * Test Assertion/CompositeAssertion data structure management.
@@ -90,5 +91,24 @@ public class AssertionTest extends TestCase {
         String compClassname = "com.l7tech.external.assertions.comparison.ComparisonAssertion";
         String defaultCompFs = Assertion.makeDefaultFeatureSetName(compClassname, "com.l7tech.external.assertions.comparison");
         assertEquals("assertion:Comparison", defaultCompFs);
+    }
+
+    public void testAnnotationSanity() {
+        for ( Assertion assertion : AllAssertions.GATEWAY_EVERYTHING ) {
+            String name = assertion.getClass().getName();
+            if (name.startsWith("Request")) {
+                assertTrue("Has request annotation : " + name, Assertion.isRequest(assertion));
+
+            } else if (name.startsWith("Response")) {
+                assertTrue("Has response annotation : " + name, Assertion.isResponse(assertion));
+            }
+
+            assertFalse("Has both request and response annotations : " + name,
+                    Assertion.isRequest(assertion) && Assertion.isResponse(assertion));                
+
+            if (name.contains("Wss") && !name.contains("Wssp")) {
+                assertTrue("Has WSS annotation : " + name, Assertion.isWSSecurity(assertion));
+            }
+        }
     }
 }

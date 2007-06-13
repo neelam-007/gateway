@@ -2,6 +2,8 @@ package com.l7tech.policy.assertion;
 
 import java.io.Serializable;
 
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+
 /**
  * Extracts fields from an HTML form submission and constructs MIME parts in the current
  * request out of them.  The request must have been received via HTTP.
@@ -9,6 +11,7 @@ import java.io.Serializable;
  * <b>NOTE</b>: This assertion destroys the current request and replaces it
  * with new content!
  */
+@ProcessesRequest
 public class HttpFormPost extends Assertion {
     private FieldInfo[] fieldInfos = new FieldInfo[0];
     public static final String X_WWW_FORM_URLENCODED = "x-www-form-urlencoded";

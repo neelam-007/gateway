@@ -5,12 +5,14 @@ import java.util.Map;
 import java.util.Iterator;
 
 import com.l7tech.common.wsdl.BindingInfo;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
  */
+@ProcessesRequest
 public class RequestSwAAssertion extends SwAAssertion {
 
     /**

@@ -7,13 +7,15 @@ package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.common.xml.WsTrustRequestType;
 
 /**
  * An assertion that sends the current request's credentials to a WS-Trust token service and replaces them with
  * the new credentials received from it.
  */
-@RequiresSOAP()
+@ProcessesRequest
+@RequiresSOAP(wss=true)
 public class WsTrustCredentialExchange extends Assertion {
     public WsTrustCredentialExchange() {
     }

@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 /**
  * This assertion verifies that the soap request contained
@@ -16,7 +17,8 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
  * Date: Jul 14, 2004<br/>
  * $Id$<br/>
  */
-@RequiresSOAP()
+@ProcessesRequest
+@RequiresSOAP(wss=true)
 public class RequestWssX509Cert extends Assertion implements SecurityHeaderAddressable {
     public XmlSecurityRecipientContext getRecipientContext() {
         return recipientContext;

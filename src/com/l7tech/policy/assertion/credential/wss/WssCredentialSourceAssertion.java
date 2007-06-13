@@ -12,7 +12,7 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
  * @author alex
  * @version $Revision$
  */
-@RequiresSOAP()
+@RequiresSOAP(wss=true)
 public abstract class WssCredentialSourceAssertion extends Assertion {
     /**
      * Always an credential source

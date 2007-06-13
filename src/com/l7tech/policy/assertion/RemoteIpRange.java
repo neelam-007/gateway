@@ -2,6 +2,8 @@ package com.l7tech.policy.assertion;
 
 import java.util.StringTokenizer;
 
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+
 /**
  * Assertion that verifies that remote ip address of requestor is within valid range.
  * The ip range is recorded in CIDR format.
@@ -11,6 +13,7 @@ import java.util.StringTokenizer;
  * User: flascell<br/>
  * Date: Feb 23, 2004<br/>
  */
+@ProcessesRequest
 public class RemoteIpRange extends Assertion implements UsesVariables {
 
     public RemoteIpRange() {

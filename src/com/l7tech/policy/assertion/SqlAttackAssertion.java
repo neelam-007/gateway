@@ -4,12 +4,14 @@
  */
 
 package com.l7tech.policy.assertion;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 import java.util.*;
 
 /**
  * Assertion that triggers the canned SQL attack threat protection behavior.
  */
+@ProcessesRequest
 public class SqlAttackAssertion extends Assertion {
     public static final String PROT_METATEXT = "SqlMetaText";
     public static final String PROT_META = "SqlMeta";

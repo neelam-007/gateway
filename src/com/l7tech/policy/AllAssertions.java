@@ -85,6 +85,7 @@ public class AllAssertions {
         new JmsRoutingAssertion(),
         new MemberOfGroup(),
         new SpecificUser(),
+        new RequestWssX509Cert(),
         new RequestWssIntegrity(),
         new RequestWssConfidentiality(),
         new ResponseWssIntegrity(),

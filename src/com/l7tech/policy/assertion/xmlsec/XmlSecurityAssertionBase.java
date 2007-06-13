@@ -13,7 +13,7 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
  * User: flascell<br/>
  * Date: Jan 17, 2005<br/>
  */
-@RequiresSOAP
+@RequiresSOAP(wss=true)
 public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion implements SecurityHeaderAddressable {
 
     public XmlSecurityRecipientContext getRecipientContext() {

@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.policy.assertion.annotation.ProcessesResponse;
 
 /**
  * Enforces XML security on the message elements or the entire message.
@@ -12,6 +13,7 @@ import com.l7tech.common.security.xml.XencUtil;
  * @author flascell<br/>
  * @version Aug 27, 2003<br/>
  */
+@ProcessesResponse
 public class ResponseWssConfidentiality extends XmlSecurityAssertionBase {
     public ResponseWssConfidentiality() {
         setXpathExpression(XpathExpression.soapBodyXpathValue());

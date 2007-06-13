@@ -3,13 +3,15 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 /**
  * The <code>RequestWssSaml</code> assertion describes the common SAML constraints
  * about subject, general SAML Assertion conditions and Statement constraints: for
  * authentication, authorization and attribute statements.
  */
-@RequiresSOAP()
+@ProcessesRequest
+@RequiresSOAP(wss=true)
 public class RequestWssSaml extends Assertion implements SecurityHeaderAddressable {
     private Integer version;
     private String[] subjectConfirmations = new String[]{};

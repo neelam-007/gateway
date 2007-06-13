@@ -19,7 +19,7 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
  * Date: Aug 4, 2004<br/>
  * $Id$<br/>
  */
-@RequiresSOAP()
+@RequiresSOAP(wss=true)
 public class SecureConversation extends Assertion {
     /**
      *Secure Conversation is always credential source
