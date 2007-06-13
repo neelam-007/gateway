@@ -288,3 +288,5 @@ if($inputFh->open("<$inputFiles{'TZFILE'}")) {
 	}
 }
 
+unlink(@filesToDelete);
+$logFile->close();
