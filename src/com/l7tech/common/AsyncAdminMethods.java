@@ -27,7 +27,7 @@ public interface AsyncAdminMethods {
      * of the job.
      * <p/>
      * <pre>
-     *     inactive:rejected:REASON    job was not admitted into work queue (ie, "active:rejected:Queue is full")
+     *     inactive:rejected:REASON    job was not admitted into work queue (ie, "inactive:rejected:Queue is full")
      *     active:pending:             job is enqueued and is waiting to be executed
      *     active:running:             job is currently executing
      *     active:paused:REASON        job is paused but may eventually finish

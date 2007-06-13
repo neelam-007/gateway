@@ -83,7 +83,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
         return jobId;
     }
 
-    public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) throws RemoteException
+    public synchronized <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) throws RemoteException
     {
         mustNotBeClosed();
         JobEntry entry = jobs.get(jobId);
