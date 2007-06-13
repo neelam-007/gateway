@@ -164,8 +164,13 @@ public class ServerVariables {
         new Variable(BuiltinVariables.PREFIX_REQUEST_URL, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
-                if (hrk == null)
-                    return null;
+                if (hrk == null) {
+                    FtpRequestKnob frk = (FtpRequestKnob)context.getRequest().getKnob(FtpRequestKnob.class);
+                    if (frk == null)
+                        return null;
+                    final String fullUrl = frk.getRequestUrl();
+                    return getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, fullUrl);
+                }
                 final String fullUrl = hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
                 return getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, fullUrl);
             }

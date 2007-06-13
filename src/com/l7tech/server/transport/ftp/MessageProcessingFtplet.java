@@ -179,7 +179,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                                 ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_250_REQUESTED_FILE_ACTION_OKAY, file + ": Transfer started."));
                             }
 
-                            int storeResult = onStore(dataConnection, ftpSession.getClientAddress(), message, user, path, file, secure, unique);
+                            int storeResult = onStore(dataConnection, ftpSession, message, user, path, file, secure, unique);
 
                             if ( storeResult == STORE_RESULT_DROP ) {
                                 result = FtpletEnum.RET_DISCONNECT;
@@ -237,7 +237,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
      * Store to message processor 
      */
     private int onStore( final DataConnection dataConnection,
-                         final InetAddress clientAddress,
+                         final FtpSession ftpSession,
                          final String[] messageHolder, 
                          final User user,
                          final String path,
@@ -255,7 +255,15 @@ class MessageProcessingFtplet extends DefaultFtplet {
             ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
             Message requestMessage = new Message();
             requestMessage.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)));
-            requestMessage.attachFtpKnob(buildFtpKnob(clientAddress, file, path, secure, unique, user));
+            requestMessage.attachFtpKnob(buildFtpKnob(
+                    ftpSession.getServerAddress(),
+                    ftpSession.getServerPort(),
+                    ftpSession.getClientAddress(),
+                    file,
+                    path,
+                    secure,
+                    unique,
+                    user));
             request = requestMessage;
         } catch (NoSuchPartException nspe) {
             messageHolder[0] = "Invalid multipart data.";
@@ -337,10 +345,10 @@ class MessageProcessingFtplet extends DefaultFtplet {
     /**
      * Create an FtpKnob for the given info. 
      */
-    private FtpRequestKnob buildFtpKnob(final InetAddress clientAddress, final String file, final String path, final boolean secure, final boolean unique, final User user) {
+    private FtpRequestKnob buildFtpKnob(final InetAddress serverAddress, final int port, final InetAddress clientAddress, final String file, final String path, final boolean secure, final boolean unique, final User user) {
         return new FtpRequestKnob(){
             public int getLocalPort() {
-                return -1;
+                return port;
             }
             public String getRemoteAddress() {
                 return clientAddress.getHostAddress();
@@ -356,6 +364,21 @@ class MessageProcessingFtplet extends DefaultFtplet {
             }
             public String getRequestUri() {
                 return path;
+            }
+            public String getRequestUrl() {
+                StringBuffer urlBuffer = new StringBuffer();
+
+                urlBuffer.append(secure ? "ftps" : "ftp");
+                urlBuffer.append("://");
+                urlBuffer.append(serverAddress.getHostAddress());
+                urlBuffer.append(":");
+                urlBuffer.append(port);
+                urlBuffer.append(path);
+                if (!path.endsWith("/"))
+                    urlBuffer.append("/");
+                urlBuffer.append(file);
+
+                return urlBuffer.toString();
             }
             public boolean isSecure() {
                 return secure;

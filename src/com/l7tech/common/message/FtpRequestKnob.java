@@ -33,6 +33,15 @@ public interface FtpRequestKnob extends TcpKnob {
     String getRequestUri();
 
     /**
+     * The (constructed) URL for this request (e.g. ftps://gateway:2121/ssg/soap/file.xml).
+     *
+     * <p>Never null or empty.</p>
+     *
+     * @return the url
+     */
+    String getRequestUrl();
+
+    /**
      * True for STOU, false for STOR
      *
      * @return true if storing with a unique file name

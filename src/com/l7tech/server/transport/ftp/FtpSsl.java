@@ -99,8 +99,6 @@ public class FtpSsl implements Ssl {
         }
 
         // initialize server socket
-        String cipherSuites[] = serverSocket.getSupportedCipherSuites();
-        serverSocket.setEnabledCipherSuites(cipherSuites);
         serverSocket.setNeedClientAuth(false);
         serverSocket.setWantClientAuth(clientAuthentication);
 
@@ -129,8 +127,6 @@ public class FtpSsl implements Ssl {
         ssoc.setUseClientMode(clientMode);
 
         // initialize socket
-        String cipherSuites[] = ssoc.getSupportedCipherSuites();
-        ssoc.setEnabledCipherSuites(cipherSuites);
         ssoc.setNeedClientAuth(clientAuthentication);
 
         return ssoc;
@@ -150,10 +146,6 @@ public class FtpSsl implements Ssl {
         // create socket
         SSLSocket ssoc = (SSLSocket)socFactory.createSocket(addr, port);
         ssoc.setUseClientMode(clientMode);
-
-        // initialize socket
-        String cipherSuites[] = ssoc.getSupportedCipherSuites();
-        ssoc.setEnabledCipherSuites(cipherSuites);
 
         return ssoc;
     }
@@ -175,10 +167,6 @@ public class FtpSsl implements Ssl {
         SSLSocket ssoc = (SSLSocket)socFactory.createSocket(host, port, localhost, localport);
         ssoc.setUseClientMode(clientMode);
 
-        // initialize socket
-        String cipherSuites[] = ssoc.getSupportedCipherSuites();
-        ssoc.setEnabledCipherSuites(cipherSuites);
-        
         return ssoc;
     }
 
