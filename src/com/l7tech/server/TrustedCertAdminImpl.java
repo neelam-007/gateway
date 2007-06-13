@@ -5,6 +5,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
@@ -31,7 +32,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class TrustedCertAdminImpl implements TrustedCertAdmin {
+public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements TrustedCertAdmin {
     private final X509Certificate rootCertificate;
     private final X509Certificate sslCertificate;
     private final LicenseManager licenseManager;
@@ -43,6 +44,7 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
                                 LicenseManager licenseManager,
                                 SsgKeyStoreManager ssgKeyStoreManager)
     {
+        super(120 * 60);
         this.trustedCertManager = trustedCertManager;
         if (trustedCertManager == null) {
             throw new IllegalArgumentException("trusted cert manager is required");
@@ -252,7 +254,7 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         }
     }
 
-    public X509Certificate generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException {
         if (alias == null) throw new NullPointerException("alias is null");
         if (alias.length() < 1) throw new IllegalArgumentException("alias is empty");
         if (dn == null) throw new NullPointerException("dn is null");
@@ -270,7 +272,7 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         if (expiryDays < 1)
             throw new IllegalArgumentException("expiryDays must be positive");
 
-        return keystore.generateKeyPair(alias, new X500Principal(dn), keybits, expiryDays);
+        return registerJob(keystore.generateKeyPair(alias, new X500Principal(dn), keybits, expiryDays), X509Certificate.class);
     }
 
     public byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException {

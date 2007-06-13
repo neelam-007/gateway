@@ -75,6 +75,30 @@ public final class Background {
         timer.schedule(wrapTask(task), delay);
     }
 
+    /**
+     * Cancel the specified timer task.
+     *
+     * @param taskToCancel the task to cancel.
+     */
+    public static void cancel(TimerTask taskToCancel) {
+        final Set<SafeTimerTask> toCancel = new HashSet<SafeTimerTask>();
+
+        synchronized (Background.class) {
+            Collection<Map<SafeTimerTask, Object>> taskLists = tasksByClassLoader.values();
+            for (Map<SafeTimerTask, Object> taskList : taskLists) {
+                Set<SafeTimerTask> wrappedTasks = taskList.keySet();
+                for (SafeTimerTask wrappedTask : wrappedTasks) {
+                    if (wrappedTask == null)
+                        continue;
+                    if (wrappedTask.t == taskToCancel)
+                        toCancel.add(wrappedTask);
+                }
+            }
+        }
+
+        cancelTasks(toCancel);
+    }
+
     // Wrap this task in a wrapper that absorbs exceptions, and record which class loader the task is from in case
     // we need to evict it later (if a module is unloaded)
     private static SafeTimerTask wrapTask(TimerTask originalTask) {
@@ -112,6 +136,10 @@ public final class Background {
             toCancel = new HashSet<SafeTimerTask>(taskSet.keySet());
         }
 
+        cancelTasks(toCancel);
+    }
+
+    private static void cancelTasks(Set<SafeTimerTask> toCancel) {
         for (SafeTimerTask task : toCancel) {
             if (task != null) {
                 if (logger.isLoggable(Level.INFO)) logger.info("Canceling background task " + task.t + " (" + task.t.getClass().getName() + ")");

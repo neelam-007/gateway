@@ -3,6 +3,7 @@
  */
 package com.l7tech.common.security;
 
+import com.l7tech.common.AsyncAdminMethods;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import static com.l7tech.common.security.rbac.EntityType.SSG_KEY_ENTRY;
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
@@ -28,7 +29,7 @@ import java.util.List;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=TRUSTED_CERT)
-public interface TrustedCertAdmin  {
+public interface TrustedCertAdmin extends AsyncAdminMethods {
     /**
      * Retrieves all {@link TrustedCert}s from the database.
      * @return a {@link List} of {@link TrustedCert}s
@@ -201,7 +202,8 @@ public interface TrustedCertAdmin  {
      * @param dn the DN to use in the new self-signed cert.  Required.
      * @param keybits number of bits for the new RSA key, ie 512, 768, 1024 or 2048.  Required.
      * @param expiryDays number of days the self-signed cert should be valid.  Required.
-     * @return the new self-signed certificate, with a public key corresponding to the new private key.  Never null.
+     * @return the job identifier of the key generation job.  Call {@link #getJobStatus} to poll for job completion
+     *         and {@link #getJobResult} to pick up the result in the form of a self-signed X509Certificate.
      * @throws RemoteException on remote communication error
      * @throws FindException if there is a problem getting info from the database
      * @throws java.security.GeneralSecurityException if there is a problem generating or signing the cert
@@ -209,7 +211,7 @@ public interface TrustedCertAdmin  {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    public X509Certificate generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException;
+    JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException;
 
     /**
      * Generate a new PKCS#10 Certification Request (aka Certificate Signing Request) using the specified private key,

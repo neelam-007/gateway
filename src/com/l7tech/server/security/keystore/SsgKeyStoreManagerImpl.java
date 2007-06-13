@@ -1,17 +1,19 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
-import com.l7tech.server.security.keystore.software.TomcatSsgKeyFinder;
-import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
-import com.l7tech.server.security.sharedkey.SharedKeyManager;
-import com.l7tech.server.KeystoreUtils;
-import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
+import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
+import com.l7tech.server.security.keystore.software.TomcatSsgKeyFinder;
+import com.l7tech.server.security.sharedkey.SharedKeyManager;
 
-import java.util.*;
-import java.util.logging.Logger;
 import java.security.KeyStoreException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Manages all SsgKeyFinder (and SsgKeyStore) instances that will be available on this Gateway node.
@@ -28,14 +30,12 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     private static final String PASSPHRASE_MAP = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()-_=+[]{};:'\\|\"/?.,<>`~";
     private final char[] softwareKeystorePasssword;
 
-    private final ClusterPropertyManager clusterPropertyManager;
     private final KeystoreFileManager keystoreFileManager;
     private final KeystoreUtils keystoreUtils;
 
     private List<SsgKeyFinder> keystores = null;
 
-    public SsgKeyStoreManagerImpl(ClusterPropertyManager cpm, SharedKeyManager skm, KeystoreFileManager kem, KeystoreUtils keystoreUtils) throws KeyStoreException, FindException {
-        this.clusterPropertyManager = cpm;
+    public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, KeystoreUtils keystoreUtils) throws KeyStoreException, FindException {
         this.keystoreFileManager = kem;
         this.keystoreUtils = keystoreUtils;
         this.softwareKeystorePasssword = toPassphrase(skm.getSharedKey());
@@ -82,7 +82,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
                 if (haveHsm)
                     logger.info("Ignoring keystore_file row with a format of sdb because this Gateway node is using an HSM instead");
                 else
-                    list.add(new DatabasePkcs12SsgKeyStore(id, name, clusterPropertyManager, keystoreFileManager,  softwareKeystorePasssword));
+                    list.add(new DatabasePkcs12SsgKeyStore(id, name, keystoreFileManager,  softwareKeystorePasssword));
             }
         }
 

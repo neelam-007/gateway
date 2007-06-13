@@ -20,6 +20,8 @@ import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.concurrent.Future;
+import java.util.concurrent.Callable;
 
 /**
  * SsgKeyStore view of this node's local SCA 6000 board.
@@ -152,19 +154,19 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
         return new char[0];  // unused by PKCS#11
     }
 
-    public synchronized void deletePrivateKeyEntry(final String keyAlias) throws KeyStoreException {
+    public synchronized Future<Boolean> deletePrivateKeyEntry(final String keyAlias) throws KeyStoreException {
         if (isSystemAlias(keyAlias))
             throw new KeyStoreException("The specified entry is a system private key and cannot be deleted.");
-        super.deletePrivateKeyEntry(keyAlias);
+        return super.deletePrivateKeyEntry(keyAlias);
     }
 
-    public synchronized void storePrivateKeyEntry(final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
+    public synchronized Future<Boolean> storePrivateKeyEntry(final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
         if (isReservedAlias(entry.getAlias()))
             throw new KeyStoreException("The specified private key alias is reserved for system use and cannot be created.");
-        super.storePrivateKeyEntry(entry, overwriteExisting);
+        return super.storePrivateKeyEntry(entry, overwriteExisting);
     }
 
-    public synchronized X509Certificate generateKeyPair(final String alias, final X500Principal dn, final int keybits, final int expiryDays) throws GeneralSecurityException {
+    public synchronized Future<X509Certificate> generateKeyPair(final String alias, final X500Principal dn, final int keybits, final int expiryDays) throws GeneralSecurityException {
         if (isSystemAlias(alias))
             throw new KeyStoreException("The specified entry is a system private key and cannot be overwritten.");
         if (isReservedAlias(alias))
@@ -191,26 +193,31 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
      *                           the process
      * @return the value returned by the mutator
      */
-    protected synchronized <OUT> OUT mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
-        final Object[] out = new Object[] { null };
-        try {
-            KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
-                public byte[] call(byte[] bytes) {
-                    try {
-                        keystore = bytesToKeyStore(bytes);
-                        lastLoaded = System.currentTimeMillis();
-                        out[0] = mutator.call();
-                        return keyStoreToBytes();
-                    } catch (KeyStoreException e) {
-                        throw new RuntimeException(e);
-                    }
+    protected synchronized <OUT> Future<OUT> mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
+        return mutationExecutor.submit(new Callable<OUT>() {
+            public OUT call() throws Exception {
+
+                final Object[] out = new Object[] { null };
+                try {
+                    KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
+                        public byte[] call(byte[] bytes) {
+                            try {
+                                keystore = bytesToKeyStore(bytes);
+                                lastLoaded = System.currentTimeMillis();
+                                out[0] = mutator.call();
+                                return keyStoreToBytes();
+                            } catch (KeyStoreException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    });
+                    keystoreVersion = updated.getVersion();
+                } catch (UpdateException e) {
+                    throw new KeyStoreException(e);
                 }
-            });
-            keystoreVersion = updated.getVersion();
-        } catch (UpdateException e) {
-            throw new KeyStoreException(e);
-        }
-        //noinspection unchecked
-        return (OUT)out[0];
+                //noinspection unchecked
+                return (OUT)out[0];
+            }
+        });
     }
 }

@@ -16,6 +16,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.math.BigInteger;
@@ -24,6 +25,10 @@ import java.math.BigInteger;
  * Base class for SsgKeyStore implementations that are based on a JDK KeyStore instance.
  */
 public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
+
+    protected BlockingQueue<Runnable> mutationQueue = new LinkedBlockingQueue<Runnable>();
+    protected ExecutorService mutationExecutor = new ThreadPoolExecutor(1, 1, 5 * 60, TimeUnit.SECONDS, mutationQueue);
+
     /**
      * Get the KeyStore instance that we will be working with.
      * @return a KeyStore instance ready to use.   Never null.
@@ -138,7 +143,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         return this;
     }
 
-    public synchronized void storePrivateKeyEntry(final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
+    public synchronized Future<Boolean> storePrivateKeyEntry(final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
         if (entry == null) throw new NullPointerException("entry must not be null");
         if (entry.getAlias() == null) throw new NullPointerException("entry's alias must not be null");
         if (entry.getAlias().length() < 1) throw new IllegalArgumentException("entry's alias must not be empty");
@@ -150,11 +155,11 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             throw new IllegalArgumentException("entry's private key must be present", e);
         }
 
-        mutateKeystore(new Functions.Nullary<Object>() {
-            public Object call() {
+        return mutateKeystore(new Functions.Nullary<Boolean>() {
+            public Boolean call() {
                 try {
                     storePrivateKeyEntryImpl(entry, overwriteExisting);
-                    return null;
+                    return Boolean.TRUE;
                 } catch (KeyStoreException e) {
                     throw new RuntimeException(e);
                 }
@@ -162,12 +167,12 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
-    public synchronized void deletePrivateKeyEntry(final String keyAlias) throws KeyStoreException {
-        mutateKeystore(new Functions.Nullary<Object>() {
-            public Object call() {
+    public synchronized Future<Boolean> deletePrivateKeyEntry(final String keyAlias) throws KeyStoreException {
+        return mutateKeystore(new Functions.Nullary<Boolean>() {
+            public Boolean call() {
                 try {
                     keyStore().deleteEntry(keyAlias);
-                    return null;
+                    return Boolean.TRUE;
                 } catch (KeyStoreException e) {
                     throw new RuntimeException(e);
                 }
@@ -175,7 +180,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
-    public synchronized X509Certificate generateKeyPair(final String alias, final X500Principal dn, final int keybits, final int expiryDays)
+    public synchronized Future<X509Certificate> generateKeyPair(final String alias, final X500Principal dn, final int keybits, final int expiryDays)
             throws GeneralSecurityException
     {
         return mutateKeystore(new Functions.Nullary<X509Certificate>() {
@@ -209,11 +214,11 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
-    public synchronized void replaceCertificateChain(final String alias, final X509Certificate[] chain) throws InvalidKeyException, KeyStoreException {
+    public synchronized Future<Boolean> replaceCertificateChain(final String alias, final X509Certificate[] chain) throws InvalidKeyException, KeyStoreException {
         if (chain == null || chain.length < 1 || chain[0] == null)
             throw new IllegalArgumentException("Cert chain must contain at least one cert.");
-        mutateKeystore(new Functions.Nullary<Object>() {
-            public Object call() {
+        return mutateKeystore(new Functions.Nullary<Boolean>() {
+            public Boolean call() {
                 try {
                     KeyStore keystore = keyStore();
                     if (!keystore.isKeyEntry(alias))
@@ -251,7 +256,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
                     keystore.setKeyEntry(alias, key, getEntryPassword(), chain);
 
-                    return null;
+                    return Boolean.TRUE;
                 } catch (NoSuchAlgorithmException e) {
                     throw new RuntimeException(e);
                 } catch (KeyStoreException e) {
@@ -301,5 +306,5 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
      *                           the process
      * @return the value returned by the mutator
      */
-    protected abstract <OUT> OUT mutateKeystore(Functions.Nullary<OUT> mutator) throws KeyStoreException;
+    protected abstract <OUT> Future<OUT> mutateKeystore(Functions.Nullary<OUT> mutator) throws KeyStoreException;
 }

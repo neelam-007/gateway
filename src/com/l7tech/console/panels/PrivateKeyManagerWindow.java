@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.AsyncAdminMethods;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.GuiCertUtil;
 import com.l7tech.common.gui.util.GuiPasswordCallbackHandler;
@@ -14,19 +15,22 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.SaveException;
 
+import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
-import javax.security.auth.x500.X500Principal;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -34,6 +38,7 @@ import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
+import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,10 +55,40 @@ public class PrivateKeyManagerWindow extends JDialog {
     private JButton createButton;
     private JButton importButton;
 
+    private static final Timer jobStatusTimer = new Timer("PrivateKeyManagerWindow job status timer");
+    private static final Map<PrivateKeyManagerWindow, Object> timerClients = new WeakHashMap<PrivateKeyManagerWindow, Object>();
+    static {
+        TimerTask task = new TimerTask() {
+            public void run() {
+                if (!timerClients.isEmpty()) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            // Deliver tick events on the swing thread
+                            for (PrivateKeyManagerWindow client : timerClients.keySet())
+                                if (client != null) client.onTimerTick();
+                        }
+                    });
+                }
+            }
+        };
+        jobStatusTimer.schedule(task, 311, 311);
+    }
+
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
+    private static AsyncAdminMethods.JobId<X509Certificate> activeKeypairJob = null;
+    private static String activeKeypairJobAlias = "";
+    private static long activeKeypairJobStarted = 0;
+    private static int activeKeypairJobEstimatedTotalSeconds = 0;
+    private static long lastJobPollTime = 0;
+    private static long minJobPollInterval = 1011;
+    private static TrustedCertAdmin.KeystoreInfo mutableKeystore;
+
+    private JLabel keypairJobProgressLabel;
+    private JProgressBar keypairJobProgressBar;
+    private Component keypairJobViewportView;
     private PermissionFlags flags;
-    private TrustedCertAdmin.KeystoreInfo mutableKeystore;
     private KeyTable keyTable = null;
+    private Component showingInScrollPane = null;
 
 
     public PrivateKeyManagerWindow(JDialog owner) throws RemoteException {
@@ -67,6 +102,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     }
 
     private void initialize() throws RemoteException {
+        timerClients.put(this, Boolean.TRUE);
         flags = PermissionFlags.get(EntityType.SSG_KEY_ENTRY);
 
         final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
@@ -77,8 +113,6 @@ public class PrivateKeyManagerWindow extends JDialog {
         setContentPane(mainPanel);
 
         keyTable = new KeyTable();
-        keyTableScrollPane.setViewportView(keyTable);
-        keyTableScrollPane.getViewport().setBackground(Color.white);
 
         keyTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
@@ -113,16 +147,28 @@ public class PrivateKeyManagerWindow extends JDialog {
         pack();
         enableOrDisableButtons();
 
-        if (flags.canReadAll()) {
-            loadPrivateKeys();
-        } else {
+        if (!flags.canReadAll()) {
             keyTable.setData(Collections.<KeyTableRow>emptyList());
             mutableKeystore = null;
         }
 
+        loadPrivateKeys();
+    }
+
+    private void disableManagementButtons() {
+        createButton.setEnabled(false);
+        importButton.setEnabled(false);
+        propertiesButton.setEnabled(false);
+    }
+
+    private void enableManagementButtons() {
+        propertiesButton.setEnabled(true);
         if (mutableKeystore == null) {
             createButton.setEnabled(false);
             importButton.setEnabled(false);
+        } else {
+            createButton.setEnabled(true);
+            importButton.setEnabled(true);
         }
 
         if (!flags.canCreateSome())
@@ -141,11 +187,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         } catch (DeleteException e) {
             showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
         }
-        try {
-            loadPrivateKeys();
-        } catch (RemoteException e) {
-            showErrorMessage("Refresh Failed", "Unable to load key list: " + ExceptionUtils.getMessage(e), e);
-        }
+        loadPrivateKeys();
     }
 
     private void showErrorMessage(String title, String msg, Throwable e) {
@@ -154,6 +196,10 @@ public class PrivateKeyManagerWindow extends JDialog {
     }
 
     private void doImport() {
+        if (mutableKeystore == null)
+            return;
+        final long mutableKeystoreId = mutableKeystore.id;
+
         GuiCertUtil.ImportedData imported = GuiCertUtil.importCertificate(this, true, new GuiPasswordCallbackHandler());
         if (imported == null)
             return;
@@ -254,7 +300,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
 
         try {
-            getTrustedCertAdmin().importKey(mutableKeystore.id, alias, pemChain, pkcs8Bytes);
+            getTrustedCertAdmin().importKey(mutableKeystoreId, alias, pemChain, pkcs8Bytes);
         } catch (CertificateException e) {
             showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
         } catch (SaveException e) {
@@ -263,12 +309,8 @@ public class PrivateKeyManagerWindow extends JDialog {
             showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
         }
 
-        try {
-            loadPrivateKeys();
-            setSelectedKeyEntry(mutableKeystore.id, alias);
-        } catch (RemoteException e1) {
-            showErrorMessage("Refresh Failed", "Unable to reload private keys: " + ExceptionUtils.getMessage(e1), e1);
-        }
+        loadPrivateKeys();
+        setSelectedKeyEntry(mutableKeystoreId, alias);
     }
 
     private void doProperties() {
@@ -301,25 +343,92 @@ public class PrivateKeyManagerWindow extends JDialog {
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.isConfirmed()) {
-                    try {
-                        loadPrivateKeys();
-                        setSelectedKeyEntry(mutableKeystore.id, dlg.getNewAlias());
-                    } catch (RemoteException e1) {
-                        showErrorMessage("Refresh Failed", "Unable to reload private keys: " + ExceptionUtils.getMessage(e1), e1);
-                    }
+                    setActiveKeypairJob(dlg.getKeypairJobId(), dlg.getNewAlias(), dlg.getSecondsToWaitForJobToFinish());
+                    loadPrivateKeys();
                 }
             }
         });
+    }
+
+    private static void setActiveKeypairJob(AsyncAdminMethods.JobId<X509Certificate> keypairJobId, String alias, int secondsToWaitForJobToFinish) {
+        activeKeypairJob = keypairJobId;
+        activeKeypairJobStarted = keypairJobId == null ? 0 : System.currentTimeMillis();
+        activeKeypairJobEstimatedTotalSeconds = secondsToWaitForJobToFinish;
+        activeKeypairJobAlias = alias;
+
+        int minPoll = (secondsToWaitForJobToFinish * 1000) / 30;
+        if (minPoll < 1011) minPoll = 1011;
+        minJobPollInterval = minPoll;
     }
 
     private void setSelectedKeyEntry(long keystoreId, String newAlias) {
         keyTable.setSelectedKeyEntry(keystoreId, newAlias);
     }
 
+    private void onTimerTick() {
+        if (activeKeypairJob != null || showingInScrollPane != keyTable)
+            loadPrivateKeys();
+    }
+
+    private int getTotalSec() {
+        int totalSec = activeKeypairJobEstimatedTotalSeconds;
+        if (totalSec < 1)
+            totalSec = 1;
+        return totalSec;
+    }
+
     /*
-     * Load the certs from the SSG
+     * Configure the dialog to display either the current cert list, or a please wait panel
+     * if the Gateway is currently performing a generate keypair operation for us.
      */
-    private List<KeyTableRow> loadPrivateKeys() throws RemoteException {
+    private List<KeyTableRow> loadPrivateKeys() {
+        if (isKeypairJobActive()) {
+            String mess = "        Gateway is generating a new key pair";
+            int totalMillis = getTotalSec() * 1000;
+            if (keypairJobViewportView == null) {
+                JPanel panel = new JPanel(new BorderLayout());
+                keypairJobProgressLabel = new JLabel(fmt(mess, 99, 99));
+                keypairJobProgressBar = new JProgressBar();
+                JPanel p = new JPanel();
+                p.setLayout(null);
+                p.add(keypairJobProgressLabel);
+                p.add(keypairJobProgressBar);
+                p.setSize(480, 110);
+                keypairJobProgressLabel.setLocation(10, 20);
+                keypairJobProgressLabel.setSize(keypairJobProgressLabel.getPreferredSize());
+                keypairJobProgressBar.setLocation(10, 80);
+                keypairJobProgressBar.setSize(460, 20);
+                keypairJobProgressBar.setPreferredSize(new Dimension(460, 20));
+                panel.add(p, BorderLayout.CENTER);
+                keypairJobViewportView = panel;
+                keypairJobProgressBar.setIndeterminate(false);
+                keypairJobProgressBar.setMinimum(0);
+                keypairJobProgressBar.setMaximum(totalMillis);
+                keypairJobProgressBar.setStringPainted(false);
+            }
+            int elapsedMillis = (int)(System.currentTimeMillis() - activeKeypairJobStarted);
+            keypairJobProgressBar.setValue(elapsedMillis);
+
+            int millisLeft = totalMillis - elapsedMillis;
+            if (millisLeft < 0) millisLeft = 0;
+            int secLeft = millisLeft / 1000;
+            int minLeft = secLeft / 60;
+            secLeft %= 60;
+            keypairJobProgressLabel.setText(fmt(mess, minLeft, secLeft));
+
+            keyTableScrollPane.setViewport(null);
+            keyTableScrollPane.setViewportView(showingInScrollPane = keypairJobViewportView);
+            keyTableScrollPane.getViewport().setBackground(keypairJobViewportView.getBackground());
+            disableManagementButtons();
+            return Collections.emptyList();
+        }
+
+        if (showingInScrollPane != keyTable) {
+            keyTableScrollPane.setViewport(null);
+            keyTableScrollPane.setViewportView(showingInScrollPane = keyTable);
+            keyTableScrollPane.getViewport().setBackground(Color.white);
+        }
+
         try {
             java.util.List<KeyTableRow> keyList = new ArrayList<KeyTableRow>();
             for (TrustedCertAdmin.KeystoreInfo keystore : getTrustedCertAdmin().findAllKeystores()) {
@@ -330,6 +439,14 @@ public class PrivateKeyManagerWindow extends JDialog {
             }
 
             keyTable.setData(keyList);
+            enableManagementButtons();
+            enableOrDisableButtons();
+
+            if (activeKeypairJobAlias != null && mutableKeystore != null) {
+                keyTable.setSelectedKeyEntry(mutableKeystore.id, activeKeypairJobAlias);
+                activeKeypairJobAlias = null;
+            }
+
             return keyList;
 
         } catch (Exception e) {
@@ -342,12 +459,16 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
     }
 
+    private String fmt(String mess, int minLeft, int secLeft) {
+        return String.format("%s (est %02d:%02d remaining)...", mess, minLeft, secLeft);
+    }
+
     /**
      * Enable or disable the fields based on the current selections.
      */
     private void enableOrDisableButtons() {
         KeyTableRow row = getSelectedObject();
-        propertiesButton.setEnabled(row != null);
+        propertiesButton.setEnabled(row != null && activeKeypairJob == null);
     }
 
     /**
@@ -356,8 +477,59 @@ public class PrivateKeyManagerWindow extends JDialog {
      * @return TrustedCertAdmin  - The object reference.
      * @throws RuntimeException if the object reference of the Trusted Cert Admin service is not found.
      */
-    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
+    private static TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
         return Registry.getDefault().getTrustedCertManager();
+    }
+
+    /**
+     * Check if there is a keypair job currently active.  If one has recently finished, displays the result
+     * of the job in a dialog.
+     *
+     * @return true if there is currently a private key job being performed on this Gateway node.
+     */
+    public boolean isKeypairJobActive() {
+        if (activeKeypairJob == null)
+            return false;
+
+        final long now = System.currentTimeMillis();
+        if (now - lastJobPollTime < minJobPollInterval)
+            return true;
+
+        try {
+            lastJobPollTime = now;
+            String status = getTrustedCertAdmin().getJobStatus(activeKeypairJob);
+            if (status == null) {
+                activeKeypairJob = null;
+                return false;
+            } else if (status.startsWith("inactive:")) {
+                AsyncAdminMethods.JobResult<X509Certificate> result = getTrustedCertAdmin().getJobResult(activeKeypairJob);
+                activeKeypairJob = null;
+                if (result.throwableClassname != null) {
+                    final String mess = "Key generation failed: " + result.throwableClassname + ": " + result.throwableMessage;
+                    logger.log(Level.WARNING, mess);
+                    JOptionPane.showMessageDialog(this,
+                                                  mess,
+                                                  "Key Generation Failed",
+                                                  JOptionPane.ERROR_MESSAGE);
+                } else if (result.result != null && mutableKeystore != null && activeKeypairJobAlias != null) {
+                    keyTable.setSelectedKeyEntry(mutableKeystore.id, activeKeypairJobAlias);
+                    activeKeypairJobAlias = null;
+                }
+                return false;
+            } else {
+                return true;
+            }
+        } catch (AsyncAdminMethods.UnknownJobException e) {
+            logger.log(Level.WARNING, "Unable to check remote job status: " + ExceptionUtils.getMessage(e), e);
+            activeKeypairJob = null;
+            return false;
+        } catch (AsyncAdminMethods.JobStillActiveException e) {
+            logger.log(Level.WARNING, "Unable to check remote job status: " + ExceptionUtils.getMessage(e), e);
+            return true;
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "Unable to check remote job status: " + ExceptionUtils.getMessage(e), e);
+            return false;
+        }
     }
 
     /** Represents a row in the Manage Private Keys table. */

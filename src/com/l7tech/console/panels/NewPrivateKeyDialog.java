@@ -7,6 +7,7 @@ import com.l7tech.common.gui.widgets.PleaseWaitDialog;
 import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.AsyncAdminMethods;
 import com.l7tech.console.util.Registry;
 
 import javax.security.auth.x500.X500Principal;
@@ -25,6 +26,7 @@ import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.security.cert.X509Certificate;
 
 /**
  * Dialog that offers ways of creating a new key pair and associated metadata.
@@ -35,11 +37,29 @@ public class NewPrivateKeyDialog extends JDialog {
     private static final String TITLE = "Create Private Key";
     private static final String DEFAULT_EXPIRY = Long.toString(365 * 5);
 
-    private static final String RSA512 = "512 bit RSA";
-    private static final String RSA768 = "768 bit RSA";
-    private static final String RSA1024 = "1024 bit RSA";
-    private static final String RSA1280 = "1280 bit RSA";
-    private static final String RSA2048 = "2048 bit RSA";
+    private static class KeySize {
+        private final int size;
+        private final String label;
+        private final int hsmSec;
+        private final int softSec;
+
+        protected KeySize(int size, String label, int hsmSec, int softSec) {
+            this.size = size;
+            this.label = label;
+            this.hsmSec = hsmSec;
+            this.softSec = softSec;
+        }
+
+        public String toString() {
+            return label;
+        }
+    }
+
+    private static final KeySize RSA512 = new KeySize(512, "512 bit RSA", 20, 1);
+    private static final KeySize RSA768 = new KeySize(768, "768 bit RSA", 50, 2);
+    private static final KeySize RSA1024 = new KeySize(1024, "1024 bit RSA", 100, 5);
+    private static final KeySize RSA1280 = new KeySize(1280, "1280 bit RSA", 60 * 7, 10);
+    private static final KeySize RSA2048 = new KeySize(2048, "2048 bit RSA", 60 * 20, 17);
 
     private final TrustedCertAdmin.KeystoreInfo keystoreInfo;
 
@@ -53,9 +73,11 @@ public class NewPrivateKeyDialog extends JDialog {
 
     private String defaultDn;
     private String lastDefaultDn;
+    private boolean usingHsm;
 
     private boolean confirmed;
     private String newAlias;
+    private AsyncAdminMethods.JobId<X509Certificate> keypairJobId;
 
     final InputValidator validator = new InputValidator(this, getTitle());
 
@@ -155,7 +177,7 @@ public class NewPrivateKeyDialog extends JDialog {
         expiryDaysField.setDocument(new NumberField(8));
         expiryDaysField.setText(DEFAULT_EXPIRY);
 
-        Collection<String> sizes = new ArrayList<String>(Arrays.asList(
+        Collection<KeySize> sizes = new ArrayList<KeySize>(Arrays.asList(
                 RSA512,
                 RSA768,
                 RSA1024,
@@ -163,10 +185,8 @@ public class NewPrivateKeyDialog extends JDialog {
                 RSA2048
         ));
 
-        if (keystoreInfo.type != null && keystoreInfo.type.toLowerCase().contains("pkcs11")) {
-            logger.info("PKCS#11 detected -- disabling 2048 bit key size");
-            sizes.remove(RSA2048);
-        }
+        if (keystoreInfo.type != null && keystoreInfo.type.toLowerCase().contains("pkcs11"))
+            usingHsm = true;
 
         cbKeyType.setModel(new DefaultComboBoxModel(sizes.toArray()));
         cbKeyType.setSelectedItem(RSA1024);
@@ -203,7 +223,7 @@ public class NewPrivateKeyDialog extends JDialog {
 
             Callable<Object> callable = new Callable<Object>() {
                 public Object call() throws Exception {
-                    getCertAdmin().generateKeyPair(keystoreInfo.id, alias, dn, keybits, expiryDays);
+                    keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.id, alias, dn, keybits, expiryDays);
                     newAlias = alias;
                     return null;
                 }
@@ -226,21 +246,15 @@ public class NewPrivateKeyDialog extends JDialog {
     }
 
     private int getKeyBits() {
-        Object s = cbKeyType.getSelectedItem();
-
-        if (RSA512.equals(s))
-            return 512;
-        else if (RSA768.equals(s))
-            return 768;
-        else if (RSA1024.equals(s))
-            return 1024;
-        else if (RSA1280.equals(s))
-            return 1280;
-        else if (RSA2048.equals(s))
-            return 2048;
-        throw new IllegalStateException("Unrecognized key size: " + s);
+        return getSelectedKeySize().size;
     }
 
+    private KeySize getSelectedKeySize() {
+        Object s = cbKeyType.getSelectedItem();
+        if (s instanceof KeySize)
+            return (KeySize)s;
+        throw new IllegalStateException("Unrecognized key size: " + s);
+    }
 
     private TrustedCertAdmin getCertAdmin() {
         return Registry.getDefault().getTrustedCertManager();
@@ -251,9 +265,20 @@ public class NewPrivateKeyDialog extends JDialog {
         return confirmed;
     }
 
-    /** @return the alias of the last new key that was successfully created, or null. */
+    /** @return the new alias chosen. */
     public String getNewAlias() {
         return newAlias;
+    }
+
+    /** @return the JobId of the "generate keypair" job that was started on the server, or null if the dialog was not confirmed. */
+    public AsyncAdminMethods.JobId<X509Certificate> getKeypairJobId() {
+        return keypairJobId;
+    }
+
+    /** @return recommended maximum number of minutes to wait for the "generate keypair" job to finish. */
+    public int getSecondsToWaitForJobToFinish() {
+        final KeySize ks = getSelectedKeySize();
+        return usingHsm ? ks.hsmSec : ks.softSec;
     }
 
     private void createUIComponents() {

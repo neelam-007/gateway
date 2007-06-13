@@ -906,7 +906,6 @@
     </bean>
 
     <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl">
-        <constructor-arg ref="clusterPropertyManager"/>
         <constructor-arg ref="sharedKeyManager"/>
         <constructor-arg ref="keystoreFileManager"/>
         <constructor-arg ref="keystore"/>
