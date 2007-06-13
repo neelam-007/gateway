@@ -114,22 +114,44 @@ for my $configFile(@netConfigFiles) {
 		open(DAT, "$outputFiles{'ETC'}netmasks") || die("Could not open file! Your Solaris Installation is Damaged!\n");
 		@raw_data=<DAT>;
 		close(DAT);
+		
+		# Enable pfil hooks for card driver
+		my $PfilFh=undef;
+		if($PfilFh->open("/etc/ipf/pfil.ap")) {
+			my @pfil=(<$PfilFh>);
+			if ( grep /$opts{device}/, @pfil ) {
+				# Its there
+				# so we don't have to add it
+			} else {
+				# Append it
+				$PfilFh->close();
+				$PfilFh->open(">>/etc/ipf/pfil.ap");
+				$PfilFh->print("$opts{device} -1      0       pfil\n");
+			}
+			$PfilFh->close();
+		} else {
+			print "Unable to add $opts{device} to firewall config\n";
+			$logFile->print("Unable to add $opts{device} to firewall\n");
+		}
 
-	#DHCP is easy, assuming it works on boot, just create the file and that's it.
+		# DHCP is easy, assuming it works on boot, 
+		# just write hostnames to the file and that's it.
 		if ($opts{bootproto} eq "dhcp") {
-			#turns out you HAVE to have a hostname.int file otherwise the interface doesn't get plumbed.
-			#unlink("$outputFiles{'ETC'}hostname.$opts{device}");
+			# turns out you HAVE to have a hostname.int file 
+			# otherwise the interface doesn't get plumbed.
+			# remove previous
+			unlink("$outputFiles{'ETC'}hostname.$opts{device}");
+			# write a new one with "inet hostname" to tickle DDNS in bind 9
 			if ($outputFh->open(">$outputFiles{'ETC'}hostname.$opts{device}")) {
+				$outputFh->print("inet $hostname\n");
 				$outputFh->close();
 			}
 
-			#open my $touchy, ">", "$outputFiles{'ETC'}dhcp.$opts{device}";
-			#close $touchy;
 			if($outputFh->open(">$outputFiles{'ETC'}dhcp.$opts{device}")) {
-				#$outputFh->print("$hostname\n");
 				$outputFh->close();
 			} else {
 				print "Unable to configure DHCP for $opts{device}, weird.\n";
+				$logFile->print("Unable to configure DHCP for $opts{device}, weird.\n");
 			}
 			##### Edit /etc/netmasks here. (Just incase there's a mask for this interface existing.)
 
@@ -146,13 +168,16 @@ for my $configFile(@netConfigFiles) {
 				}
 				$outputFh->close();
 			} else {
-					print "Couldn\'t open $outputFiles{'ETC'}netmasks, unable to set timezone.\n";
+				print "Couldn\'t open $outputFiles{'ETC'}netmasks, unable to set timezone.\n";
 			}
+			$logFile->print("Set: DHCP device $opts{device}, mask $opts{netmask}, nameservers @{$opts{nameserver}}\n");
+			
 		} elsif ($opts{bootproto} eq "static") {
-	#Static config is a bit of a nightmare, mostly because you need to manually edit /etc/netmasks to
-	#correspond with reality; set /etc/hostname.interface, /etc/defaultrouter, /etc/resolv.conf...
-	#We blow away /etc/hosts (above) and add suffixed lines for each static interface. This is an
-	#acceptable method. Using 127.0.0.1 for nodename... I'm not so sure, but it works :)
+
+		# Static config is a bit of a nightmare, mostly because you need to manually edit /etc/netmasks to
+		# correspond with reality; set /etc/hostname.interface, /etc/defaultrouter, /etc/resolv.conf...
+		# We blow away /etc/hosts (above) and add suffixed lines for each static interface. This is an
+		# acceptable method. Using 127.0.0.1 for nodename... I'm not so sure, but it works :)
 
 			my $Tip = pack "C4", split (/\./, $opts{ip}), shift;
 			my $Tmask = pack "C4", split (/\./, $opts{netmask}), shift;
@@ -176,12 +201,12 @@ for my $configFile(@netConfigFiles) {
 			}
 
 			if ($outputFh->open(">$outputFiles{'ETC'}resolv.conf")) {
-				#$outputFh->print("search $hostnameInfo{'domain'}\n");
 				my $ns;
 				foreach $ns (@{$opts{nameserver}}) {
 					#print "$ns\n";
 					$outputFh->print("nameserver $ns\n");
 				}
+				$outputFh->print("search $hostnameInfo{'domain'}\n");
 				$outputFh->close();
 			}
 
@@ -204,13 +229,13 @@ for my $configFile(@netConfigFiles) {
 					print "Couldn\'t open $outputFiles{'ETC'}netmasks, unable to set timezone.\n";
 			}
 
-			#print "Static device $opts{device}, IP $opts{ip}, mask $opts{netmask}, net $opts{network}, gw $opts{gateway}, nameservers @{$opts{nameserver}}\n";
+			$logFile->print("Set: Static device $opts{device}, IP $opts{ip}, mask $opts{netmask}, net $opts{network}, gw $opts{gateway}, nameservers @{$opts{nameserver}}\n");
 		}
 		push (@filesToDelete, $configFile);
 		$inputFh->close();
 	}
 
-	#$logFile->print("$timestamp: executing network configuration command:\n");
+	$logFile->print("$timestamp: executing network configuration command:\n");
 }
 
 ########################################################################

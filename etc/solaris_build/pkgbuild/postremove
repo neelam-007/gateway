@@ -2,5 +2,6 @@
 
 rm -f /etc/rc2.d/S71SSG_tcptune
 rm -f /etc/rc2.d/S99SSG_ssg
-rm -f /etc/rc2.d/S01SSG_sysconfig
 
+rm -f /etc/rc2.d/K01SSG_sysconfig
+rm -f /etc/rc2.d/S01SSG_sysconfig
