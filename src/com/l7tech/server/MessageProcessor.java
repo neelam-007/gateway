@@ -532,11 +532,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             try {
-                if ( preferDom ) {
-                    // force DOM parse to avoid Tarari
-                    message.getXmlKnob().getDocumentReadOnly();
-                }
-                isSoap = context.getRequest().isSoap();
+                isSoap = context.getRequest().isSoap(preferDom);
                 hasSecurity = isSoap && context.getRequest().getSoapKnob().isSecurityHeaderPresent();
             } catch (SAXException e) {
                 auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT_WITH_DETAIL, new String[]{e.getMessage()}, e);

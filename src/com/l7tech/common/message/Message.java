@@ -299,6 +299,27 @@ public final class Message {
      * @throws IllegalStateException if the SOAP MIME part has already been destructively read.
      */
     public boolean isSoap() throws IOException, SAXException {
+        return isSoap(false);
+    }
+
+    /**
+     * Check if this message appears to contain a SOAP envelope.  This will fail fast if the message isn't XML,
+     * but may need to begin parsing the XML if it is.
+     * <p>
+     * If this method returns true, a SoapKnob will be present on this Message.
+     * <p>
+     * If Tarari hardware was used to examine the message to determine if it was soap, and the message turned out
+     * to be well-formed XML, a TarariKnob will be present on this Message regardless of whether or not it
+     * was SOAP.
+     *
+     * @param preferDOM true to prefer a DOM parse
+     * @return true if this mesage appears to contain SOAP.
+     * @throws SAXException if the XML in the first part's InputStream is not well formed
+     * @throws IOException if there is a problem reading XML from the first part's InputStream; or,
+     *                     if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
+     * @throws IllegalStateException if the SOAP MIME part has already been destructively read.
+     */
+    public boolean isSoap(boolean preferDOM) throws IOException, SAXException {
         HttpRequestKnob hrk = (HttpRequestKnob) getKnob(HttpRequestKnob.class);
         if (hrk != null && !"post".equalsIgnoreCase(hrk.getMethod())) {
             return false;
@@ -313,12 +334,15 @@ public final class Message {
 
         // See if we have already inspected a non-SOAP XML message
         TarariKnob tk = (TarariKnob)getKnob(TarariKnob.class);
-        if (tk != null)
+        if (tk != null && !preferDOM)
             info = tk.getSoapInfo();
 
         if (info == null) {
             // We have an XML knob but no SOAP knob.  See if we can create a SOAP knob.
             try {
+                if (preferDOM) {
+                    getXmlKnob().getDocumentReadOnly();   
+                }
                 info = SoapFacet.getSoapInfo(this);
             } catch (NoSuchPartException e) {
                 throw new SAXException(e);
