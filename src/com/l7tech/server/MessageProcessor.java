@@ -51,8 +51,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.Set;
 import java.util.TimerTask;
@@ -68,8 +66,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private static final int SETTINGS_RECHECK_MILLIS = 7937;
     private final ServiceCache serviceCache;
     private final WssDecorator wssDecorator;
-    private final PrivateKey serverPrivateKey;
-    private final X509Certificate serverCertificate;
     private final SecurityTokenResolver securityTokenResolver;
     private final LicenseManager licenseManager;
     private final ServiceMetricsManager serviceMetricsManager;
@@ -84,16 +80,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
      *
      * @param sc             the service cache
      * @param wssd           the Wss Decorator
-     * @param pkey           the server private key
-     * @param pkey           the server certificate
      * @param licenseManager the SSG's Licence Manager
      * @param metricsManager the SSG's ServiceMetricsManager
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public MessageProcessor(ServiceCache sc,
                             WssDecorator wssd,
-                            PrivateKey pkey,
-                            X509Certificate cert,
                             SecurityTokenResolver securityTokenResolver,
                             LicenseManager licenseManager,
                             ServiceMetricsManager metricsManager,
@@ -103,8 +95,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
       throws IllegalArgumentException {
         if (sc == null) throw new IllegalArgumentException("Service Cache is required");
         if (wssd == null) throw new IllegalArgumentException("Wss Decorator is required");
-        if (pkey == null) throw new IllegalArgumentException("Server Private Key is required");
-        if (cert == null) throw new IllegalArgumentException("Server Certificate is required");
         if (licenseManager == null) throw new IllegalArgumentException("License Manager is required");
         if (metricsManager == null) throw new IllegalArgumentException("Service Metrics Manager is required");
         if (auditContext == null) throw new IllegalArgumentException("Audit Context is required");
@@ -112,8 +102,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (trafficLogger == null) throw new IllegalArgumentException("Traffic Logger is required");
         this.serviceCache = sc;
         this.wssDecorator = wssd;
-        this.serverPrivateKey = pkey;
-        this.serverCertificate = cert;
         this.securityTokenResolver = securityTokenResolver;
         this.licenseManager = licenseManager;
         this.serviceMetricsManager = metricsManager;
@@ -151,7 +139,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         return hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
     }
 
-    private AssertionStatus reallyProcessMessage(PolicyEnforcementContext context)
+    private AssertionStatus reallyProcessMessage(final PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
         context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
         // License check hook
@@ -159,7 +147,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
         final Message request = context.getRequest();
         final Message response = context.getResponse();
-        ProcessorResult wssOutput = null;
+        final ProcessorResult[] wssOutput = { null };
         AssertionStatus status = AssertionStatus.UNDEFINED;
         ServiceMetrics metrics = null;
         ServiceStatistics stats = null;
@@ -168,75 +156,23 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         // WSS-Processing Step
         ServerPolicyHandle serverPolicy = null;
         try {
-            boolean isSoap = false;
-            boolean hasSecurity = false;
-
-            try {
-                isSoap = context.getRequest().isSoap();
-                hasSecurity = isSoap && context.getRequest().getSoapKnob().isSecurityHeaderPresent();
-            } catch (SAXException e) {
-                auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT_WITH_DETAIL, new String[]{e.getMessage()}, e);
-                status = AssertionStatus.BAD_REQUEST;
-                return AssertionStatus.BAD_REQUEST;
-            } catch (MessageNotSoapException e) {
-                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP, null, e);
-            } catch (NoSuchPartException e) {
-                auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT_WITH_DETAIL, new String[]{e.getMessage()}, e);
-                status = AssertionStatus.BAD_REQUEST;
-                return AssertionStatus.BAD_REQUEST;
-            }
-
-            if (isSoap && hasSecurity) {
-                WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
-                try {
-                    final SecurityKnob reqSec = request.getSecurityKnob();
-                    wssOutput = trogdor.undecorateMessage(request,
-                                                          null,
-                                                          SecureConversationContextManager.getInstance(),
-                                                          securityTokenResolver);
-                    reqSec.setProcessorResult(wssOutput);
-                } catch (MessageNotSoapException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);
-                    // this shouldn't be possible now
-                    // pass through, leaving wssOutput as null
-                } catch (ProcessorException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                    status = AssertionStatus.SERVER_ERROR;
-                    return AssertionStatus.SERVER_ERROR;
-                } catch (InvalidDocumentFormatException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                    context.setAuditLevel(Level.WARNING);
-                    status = AssertionStatus.BAD_REQUEST;
-                    return AssertionStatus.BAD_REQUEST;
-                } catch (GeneralSecurityException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                    context.setAuditLevel(Level.SEVERE);
-                    status = AssertionStatus.SERVER_ERROR;
-                    return AssertionStatus.SERVER_ERROR;
-                } catch (SAXException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.ERROR_RETRIEVE_XML, null, e);
-                    context.setAuditLevel(Level.SEVERE);
-                    status = AssertionStatus.SERVER_ERROR;
-                    return AssertionStatus.SERVER_ERROR;
-                } catch (BadSecurityContextException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                    context.setAuditLevel(Level.SEVERE);
-                    SoapFaultLevel cfault = new SoapFaultLevel();
-                    cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
-                    cfault.setFaultTemplate(SoapFaultUtils.badContextTokenFault(getIncomingURL(context)));
-                    context.setFaultlevel(cfault);
-                    status = AssertionStatus.FAILED;
-                    return AssertionStatus.FAILED;
-                }
-                auditor.logAndAudit(MessageProcessingMessages.WSS_PROCESSING_COMPLETE);
-            }
+            final AssertionStatus[] securityProcessingAssertionStatus = { null };
+            final IOException[] securityProcessingIOException = { null };
+            ServiceCache.ResolutionListener securityProcessingResolutionListener =
+                    new SecurityProcessingResolutionListener(context, wssOutput, securityProcessingAssertionStatus, securityProcessingIOException);
 
             // Policy Verification Step
-            PublishedService service = serviceCache.resolve(context.getRequest());
+            PublishedService service = serviceCache.resolve(context.getRequest(), securityProcessingResolutionListener);
             if (service == null) {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_NOT_FOUND);
-                status = AssertionStatus.SERVICE_NOT_FOUND;
-                return AssertionStatus.SERVICE_NOT_FOUND;
+                if (securityProcessingIOException[0] != null) {
+                    throw securityProcessingIOException[0]; 
+                } else if (securityProcessingAssertionStatus[0] != null) {
+                    return securityProcessingAssertionStatus[0];
+                } else {
+                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_NOT_FOUND);
+                    status = AssertionStatus.SERVICE_NOT_FOUND;
+                    return AssertionStatus.SERVICE_NOT_FOUND;
+                }
             }
 
             metrics = serviceMetricsManager.getServiceMetrics(service.getOid());
@@ -372,12 +308,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
                     // do the actual decoration
                     for (final DecorationRequirements responseDecoReq : allrequirements) {
-                        if (responseDecoReq != null && wssOutput != null) {
-                            if (wssOutput.getSecurityNS() != null)
-                                responseDecoReq.getNamespaceFactory().setWsseNs(wssOutput.getSecurityNS());
-                            if (wssOutput.getWSUNS() != null)
-                                responseDecoReq.getNamespaceFactory().setWsuNs(wssOutput.getWSUNS());
-                            if (wssOutput.isDerivedKeySeen())
+                        if (responseDecoReq != null && wssOutput[0] != null) {
+                            if (wssOutput[0].getSecurityNS() != null)
+                                responseDecoReq.getNamespaceFactory().setWsseNs(wssOutput[0].getSecurityNS());
+                            if (wssOutput[0].getWSUNS() != null)
+                                responseDecoReq.getNamespaceFactory().setWsuNs(wssOutput[0].getWSUNS());
+                            if (wssOutput[0].isDerivedKeySeen())
                                 responseDecoReq.setUseDerivedKeys(true);
                         }
                         wssDecorator.decorateMessage(doc, responseDecoReq);
@@ -564,5 +500,110 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             statusEnabled = Boolean.valueOf(propStatusStr.trim());
         }
         return statusEnabled;
+    }
+
+    private final class SecurityProcessingResolutionListener implements ServiceCache.ResolutionListener {
+        private final PolicyEnforcementContext context;
+        private final ProcessorResult[] wssOutputHolder;
+        private final AssertionStatus[] assertionStatusHolder;
+        private final IOException[] ioExceptionHolder;
+
+        private SecurityProcessingResolutionListener(final PolicyEnforcementContext context,
+                                                     final ProcessorResult[] wssOutput,
+                                                     final AssertionStatus[] assertionStatus,
+                                                     final IOException[] ioException) {
+            this.context = context;
+            this.wssOutputHolder = wssOutput;
+            this.assertionStatusHolder = assertionStatus;
+            this.ioExceptionHolder = ioException;
+        }
+
+        public boolean notifyPreParseServices(Message message, Set<PublishedService> serviceSet) {
+            boolean isSoap = false;
+            boolean hasSecurity = false;
+            boolean preferDom = true;
+
+            // If any service does not use WSS then don't prefer DOM
+            for (PublishedService service : serviceSet) {
+                if (!service.isWssInPolicy()) {
+                    preferDom = false;
+                    break;
+                }
+            }
+
+            try {
+                if ( preferDom ) {
+                    // force DOM parse to avoid Tarari
+                    message.getXmlKnob().getDocumentReadOnly();
+                }
+                isSoap = context.getRequest().isSoap();
+                hasSecurity = isSoap && context.getRequest().getSoapKnob().isSecurityHeaderPresent();
+            } catch (SAXException e) {
+                auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT_WITH_DETAIL, new String[]{e.getMessage()}, e);
+                assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
+                return false;
+            } catch (MessageNotSoapException e) {
+                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP, null, e);
+            } catch (NoSuchPartException e) {
+                auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT_WITH_DETAIL, new String[]{e.getMessage()}, e);
+                assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
+                return false;
+            } catch (IOException ioe) {
+                ioExceptionHolder[0] = ioe;
+                return false;
+            }
+
+
+            if (isSoap && hasSecurity) {
+                WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
+                try {
+                    final Message request = context.getRequest();
+                    final SecurityKnob reqSec = request.getSecurityKnob();
+                    wssOutputHolder[0] = trogdor.undecorateMessage(request,
+                                                          null,
+                                                          SecureConversationContextManager.getInstance(),
+                                                          securityTokenResolver);
+                    reqSec.setProcessorResult(wssOutputHolder[0]);
+                } catch (MessageNotSoapException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);
+                    // this shouldn't be possible now
+                    // pass through, leaving wssOutput as null
+                } catch (ProcessorException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
+                    return false;
+                } catch (InvalidDocumentFormatException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    context.setAuditLevel(Level.WARNING);
+                    assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
+                    return false;
+                } catch (GeneralSecurityException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    context.setAuditLevel(Level.SEVERE);
+                    assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
+                    return false;
+                } catch (SAXException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_RETRIEVE_XML, null, e);
+                    context.setAuditLevel(Level.SEVERE);
+                    assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
+                    return false;
+                } catch (BadSecurityContextException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    context.setAuditLevel(Level.SEVERE);
+                    SoapFaultLevel cfault = new SoapFaultLevel();
+                    cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+                    cfault.setFaultTemplate(SoapFaultUtils.badContextTokenFault(getIncomingURL(context)));
+                    context.setFaultlevel(cfault);
+                    assertionStatusHolder[0] = AssertionStatus.FAILED;
+                    return false;
+                } catch (IOException ioe) {
+                    ioExceptionHolder[0] = ioe;
+                    return false;
+                }
+                auditor.logAndAudit(MessageProcessingMessages.WSS_PROCESSING_COMPLETE);
+            }
+
+            return true;
+        }
     }
 }

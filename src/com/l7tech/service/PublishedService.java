@@ -44,6 +44,7 @@ public class PublishedService extends NamedEntityImp {
     private static final Pattern SPLIT_COMMAS = Pattern.compile("\\s*,\\s*");
 
     private volatile boolean tarariWanted;
+    private volatile boolean wssInPolicy;
 
     public PublishedService() {
         setVersion(1);
@@ -467,6 +468,8 @@ public class PublishedService extends NamedEntityImp {
             Assertion ass = (Assertion) i.next();
             if (ass instanceof SchemaValidation || ass instanceof XslTransformation) {
                 tarariWanted = true;
+            } else if ( Assertion.isRequest(ass) && Assertion.isWSSecurity(ass)) {
+                wssInPolicy = true;
             }
         }
     }
@@ -477,6 +480,14 @@ public class PublishedService extends NamedEntityImp {
      */
     public boolean isTarariWanted() {
         return tarariWanted;
+    }
+
+    /**
+     * Indicates that there is a WSS assertion in this services policy, in which case DOM would likely be better than
+     * using Tarari. 
+     */
+    public boolean isWssInPolicy() {
+        return wssInPolicy;
     }
 
     /**

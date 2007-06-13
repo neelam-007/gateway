@@ -59,7 +59,7 @@ public class UrnResolver extends WsdlOperationServiceResolver<String> {
         }
     }
 
-    public int getSpeed() {
-        return SLOW;
+    public boolean usesMessageContent() {
+        return true;
     }
 }

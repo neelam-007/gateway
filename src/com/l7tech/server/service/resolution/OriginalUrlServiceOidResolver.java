@@ -99,8 +99,8 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<Stri
         return null;
     }
 
-    public int getSpeed() {
-        return FAST;
+    public boolean usesMessageContent() {
+        return false;
     }
 
     public Set<String> getDistinctParameters(PublishedService candidateService) {

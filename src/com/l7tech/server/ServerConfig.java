@@ -37,7 +37,6 @@ public class ServerConfig implements ClusterPropertyListener {
 
     public static final long DEFAULT_CACHE_AGE = 30000;
 
-    public static final String PARAM_SERVICE_RESOLVERS = "serviceResolvers";
     public static final String PARAM_SERVER_ID = "serverId";
     public static final String PARAM_KEYSTORE = "keystorePropertiesPath";
     public static final String PARAM_LDAP_TEMPLATES = "ldapTemplatesPath";

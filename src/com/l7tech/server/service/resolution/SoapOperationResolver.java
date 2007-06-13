@@ -199,8 +199,8 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
         }
     }
 
-    public int getSpeed() {
-        return ServiceResolver.SLOW;
+    public boolean usesMessageContent() {
+        return true;
     }
 
     public Set<List<QName>> getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException {

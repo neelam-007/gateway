@@ -53,8 +53,8 @@ public class UriResolver extends ServiceResolver<String> {
         super(spring);
     }
 
-    public int getSpeed() {
-        return FAST;
+    public boolean usesMessageContent() {
+        return false;
     }
 
     public static Result doResolve(String requestValue, Set<PublishedService> serviceSubset,

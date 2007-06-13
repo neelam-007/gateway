@@ -14,12 +14,9 @@ import java.util.logging.Logger;
 /**
  * @param <T> the type of value employed by this resolver
  */
-public abstract class ServiceResolver<T> implements Comparable {
+public abstract class ServiceResolver<T> {
     protected final Logger logger = Logger.getLogger(getClass().getName()); // Not static so we get the real classname
     protected final Auditor auditor;
-
-    public static final int FAST = 0;
-    public static final int SLOW = 100;
 
     public ServiceResolver(ApplicationContext spring) {
         auditor = new Auditor(this, spring, logger);
@@ -50,22 +47,7 @@ public abstract class ServiceResolver<T> implements Comparable {
 
     public abstract Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException;
 
-    public abstract int getSpeed();
-
-    /**
-     * Could throw a ClassCastException.
-     */
-    public int compareTo( Object obj ) {
-        ServiceResolver other = (ServiceResolver)obj;
-        int mySpeed = getSpeed();
-        int otherSpeed = other.getSpeed();
-        if ( mySpeed > otherSpeed )
-            return 1;
-        else if ( mySpeed == otherSpeed )
-            return 0;
-        else
-            return -1;
-    }
+    public abstract boolean usesMessageContent();
 
     /**
      * a set of distinct parameters for this service

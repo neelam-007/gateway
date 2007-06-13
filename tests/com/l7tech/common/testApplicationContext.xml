@@ -189,12 +189,6 @@
         <constructor-arg>
             <ref bean="wssDecorator"/>
         </constructor-arg>
-        <constructor-arg>
-            <ref bean="sslKeystorePrivateKey"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="sslKeystoreCertificate"/>
-        </constructor-arg>
     </bean>
 
     <!-- server side policy filter manager  -->

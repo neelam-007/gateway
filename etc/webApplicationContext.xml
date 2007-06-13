@@ -525,12 +525,6 @@
             <ref bean="wssDecorator"/>
         </constructor-arg>
         <constructor-arg>
-            <ref bean="sslKeystorePrivateKey"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="sslKeystoreCertificate"/>
-        </constructor-arg>
-        <constructor-arg>
             <ref bean="securityTokenResolver"/>
         </constructor-arg>
         <constructor-arg>

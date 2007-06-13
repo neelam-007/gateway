@@ -262,13 +262,16 @@ public class ServiceCache
         }
     }
 
+    public static interface ResolutionListener {
+        boolean notifyPreParseServices(Message message, Set<PublishedService> serviceSet);        
+    }
 
     /**
      * @param req the soap request to resolve the service from
      * @return the cached version of the service that this request resolve to. null if no match
      * @throws ServiceResolutionException
      */
-    public PublishedService resolve(Message req) throws ServiceResolutionException {
+    public PublishedService resolve(Message req, ResolutionListener rl) throws ServiceResolutionException {
         Set<PublishedService> serviceSet;
         rwlock.readLock().lock();
         try {
@@ -280,7 +283,13 @@ public class ServiceCache
                 return null;
             }
 
+            boolean notified = false;
             for (ServiceResolver resolver : activeResolvers) {
+                if (rl != null && resolver.usesMessageContent() && !notified) {
+                    if (!rl.notifyPreParseServices(req, serviceSet))
+                        return null;
+                }
+
                 Set<PublishedService> resolvedServices;
                 Result result = resolver.resolve(req, serviceSet);
                 if (result == Result.NOT_APPLICABLE) {
@@ -314,6 +323,11 @@ public class ServiceCache
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_MATCH);
                 return null;
             } else if (serviceSet.size() == 1) {
+                if (rl != null && !notified) {
+                    if (!rl.notifyPreParseServices(req, serviceSet))
+                        return null;
+                }
+
                 PublishedService service = serviceSet.iterator().next();
                 XmlKnob xk = (XmlKnob) req.getKnob(XmlKnob.class);
 

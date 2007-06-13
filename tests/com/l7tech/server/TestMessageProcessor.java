@@ -40,13 +40,11 @@ public class TestMessageProcessor extends MessageProcessor {
      *
      * @param sc           the service cache
      * @param wssd         the Wss Decorator
-     * @param pkey         the server private key
-     * @param pkey         the server certificate
      * @throws IllegalArgumentException if any of the arguments is null
      */
-    public TestMessageProcessor(ServiceCache sc, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
+    public TestMessageProcessor(ServiceCache sc, WssDecorator wssd)
       throws IllegalArgumentException {
-        super(sc , wssd, pkey, cert, null, new TestLicenseManager(), new ServiceMetricsManager("yo",null), new AuditContextStub(), ServerConfig.getInstance(), new TrafficLogger(null));
+        super(sc , wssd, null, new TestLicenseManager(), new ServiceMetricsManager("yo",null), new AuditContextStub(), ServerConfig.getInstance(), new TrafficLogger(null));
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)

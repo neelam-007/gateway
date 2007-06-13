@@ -24,8 +24,8 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
         super(spring);
     }
 
-    public int getSpeed() {
-        return FAST;
+    public boolean usesMessageContent() {
+        return false;
     }
 
     protected String getTargetValue(Definition def, BindingOperation operation) {
