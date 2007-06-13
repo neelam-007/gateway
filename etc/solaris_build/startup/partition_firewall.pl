@@ -105,7 +105,7 @@ if ($outputFh->open(">$ruleset")) {
 				$outputFh->print($out);
 			} else {
 				#Whining isn't required. I hope.
-				#print "Invalid!\t$line\n";
+				print "Firewall item not understood:\t$line\n";
 			}
 		}
 	}
