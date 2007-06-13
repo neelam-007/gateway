@@ -69,6 +69,9 @@ public class ServerFtpCredentialAssertionTest extends TestCase {
                 public String getRequestUri() {
                     return null;
                 }
+                public String getRequestUrl() {
+                    return null;
+                }
                 public boolean isSecure() {
                     return false;
                 }
