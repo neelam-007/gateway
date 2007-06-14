@@ -29,8 +29,33 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     private static final Logger logger = Logger.getLogger(JmsConnection.class.getName());
     private static final String ENCODING = "UTF-8";
 
+    // Constants used in property mapping/substitution.
+    //
+    // Constants starting with VALUE_ are used as stand-in strings saved as
+    // property values during configuration. And then during connection, they
+    // are replaced by their corresponding objects. Most stand-in values
+    // contains just a single string token. But some, e.g. VALUE_KEYSTORE,
+    // VALUE_KEYSTORE_BYTES and VALUE_KEYSTORE_PASSWORD, have additional
+    // parameter tokens separated by tab characters.
+    //
+    // IMPORTANT: For backward compatibility, never change these string values.
+    public static final String PREFIX = "com.l7tech.server.jms.prop";
+    public static final String VALUE_KEYSTORE = PREFIX + ".keystore";
+    public static final String VALUE_KEYSTORE_BYTES = PREFIX + ".keystore.bytes";
+    public static final String VALUE_KEYSTORE_PASSWORD = PREFIX + ".keystore.password";
+    public static final String VALUE_TRUSTED_LIST = PREFIX + ".trustedcert.listx509"; // actually a Vector
+    public static final String VALUE_BOOLEAN_TRUE = PREFIX + ".boolean.true";
+    public static final String VALUE_BOOLEAN_FALSE = PREFIX + ".boolean.false";
+    public static final String PROP_KEYSTORE_ALIAS = PREFIX + ".keystore.alias";
+    public static final String PROP_JNDI_SSG_KEYSTORE_ID = PREFIX + ".jndi.ssgKeystoreId";
+    public static final String PROP_JNDI_SSG_KEY_ALIAS = PREFIX + ".jndi.ssgKeyAlias";
+    public static final String PROP_QUEUE_SSG_KEYSTORE_ID = PREFIX + ".queue.ssgKeystoreId";
+    public static final String PROP_QUEUE_SSG_KEY_ALIAS = PREFIX + ".queue.ssgKeyAlias";
+    public static final String PROP_CUSTOMIZER = PREFIX + ".customizer.class";
+
     /** Name of String property (in returned value of {@link #properties()}) that
-        contains the name of JMS message property to be used as SOAPAction value. */
+        contains the name of JMS message property to be used as SOAPAction value
+        during service resolution. */
     public static final String JMS_MSG_PROP_WITH_SOAPACTION = "com.l7tech.server.jms.soapAction.msgPropName";
 
     private String _initialContextFactoryClassname;

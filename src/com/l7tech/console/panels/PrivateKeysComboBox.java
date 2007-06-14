@@ -102,12 +102,18 @@ public class PrivateKeysComboBox extends JComboBox {
         return -1;
     }
 
+    /**
+     * @return keystore ID of current selection; -1 if none selected
+     */
     public long getSelectedKeystoreId() {
         final PrivateKeyItem item = (PrivateKeyItem)getSelectedItem();
         if (item == null) return -1;
         return item.keystoreId;
     }
 
+    /**
+     * @return key alias of current selection; null if none selected
+     */
     public String getSelectedKeyAlias() {
         final PrivateKeyItem item = (PrivateKeyItem)getSelectedItem();
         if (item == null) return null;

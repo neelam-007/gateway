@@ -107,7 +107,7 @@ public class JmsUtil {
 
             connFactory = (ConnectionFactory) o;
 
-            String customizerClassname = (String) jndiContext.getEnvironment().get(JmsPropertyMapper.PROP_CUSTOMIZER);
+            String customizerClassname = (String) jndiContext.getEnvironment().get(JmsConnection.PROP_CUSTOMIZER);
             if (customizerClassname != null) {
                 try {
                     Class customizerClass = Class.forName(customizerClassname);

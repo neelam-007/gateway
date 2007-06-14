@@ -1,17 +1,18 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
+import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.cert.Certificate;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -27,71 +28,81 @@ import java.util.logging.Logger;
  * </p>
  *
  * @author Steve Jones
+ * @author rmak
  */
 public class JmsPropertyMapper {
 
     //- PUBLIC
 
-    public static final String PREFIX = "com.l7tech.server.jms.prop";
-    public static final String VALUE_KEYSTORE = PREFIX + ".keystore";
-    public static final String VALUE_KEYSTORE_BYTES = PREFIX + ".keystore.bytes";
-    public static final String VALUE_KEYSTORE_PASSWORD = PREFIX + ".keystore.password";
-    public static final String VALUE_TRUSTED_LIST = PREFIX + ".trustedcert.listx509"; // actually a Vector
-    public static final String VALUE_BOOLEAN_TRUE = PREFIX + ".boolean.true";
-    public static final String VALUE_BOOLEAN_FALSE = PREFIX + ".boolean.false";
-
-    public static final String PROP_KEYSTORE_ALIAS = PREFIX + ".keystore.alias";
-    public static final String PROP_CUSTOMIZER = PREFIX + ".customizer.class";
-
     /**
      * Create a new JmsPropertyMapper.
      *
-     * @param keystoreUtils The keystoreUtils to use
-     * @param trustedCertManager The source for trusted certificates
+     * @param trustedCertManager    the source for trusted certificates
+     * @param ssgKeyStoreManager    the source for client certificates
+     * @param keystoreUtils         the source for SSG SSL certificate
      */
-    public JmsPropertyMapper(KeystoreUtils keystoreUtils,
-                             TrustedCertManager trustedCertManager) {
-        this.keystoreUtils = keystoreUtils;
+    public JmsPropertyMapper(TrustedCertManager trustedCertManager,
+                             SsgKeyStoreManager ssgKeyStoreManager,
+                             KeystoreUtils keystoreUtils) {
         this.trustedCertManager = trustedCertManager;
+        this.ssgKeyStoreManager = ssgKeyStoreManager;
+        this.keystoreUtils = keystoreUtils;
         this.random = new Random(System.currentTimeMillis());
     }
 
     /**
      * Substitute values in the given properties.
      *
+     * <p>Most stand-in values contains just a single string token. But some,
+     * e.g. VALUE_KEYSTORE, VALUE_KEYSTORE_BYTES and VALUE_KEYSTORE_PASSWORD,
+     * have additional parameter tokens separated by tab characters.
+     *
      * @param properties The properties to modify.
-     * @return
+     * @return true if substitution had occurred
      */
-    public boolean substitutePropertyValues(Map properties) {
+    public boolean substitutePropertyValues(Map<Object, Object> properties) {
         boolean modified = false;
-        KeyStoreInfo ksi = null;
 
         try {
-            for (Map.Entry property : (Set<Map.Entry>) properties.entrySet()) {
-                Object value = property.getValue();
-                if (VALUE_KEYSTORE_PASSWORD.equals(value)) {
-                    if (ksi == null)
-                        ksi = buildKeystoreInfo(properties);
-                    property.setValue(ksi.password);
-                }
-                else if (VALUE_KEYSTORE_BYTES.equals(value)) {
-                    if (ksi == null)
-                        ksi = buildKeystoreInfo(properties);
-                    property.setValue(ksi.keystoreBytes);
-                }
-                else if (VALUE_KEYSTORE.equals(value)) {
-                    if (ksi == null)
-                        ksi = buildKeystoreInfo(properties);
-                    property.setValue(ksi.keystore);
-                }
-                else if (VALUE_TRUSTED_LIST.equals(value)) {
+            for (Map.Entry<Object, Object> property : properties.entrySet()) {
+                final String[] values = property.getValue().toString().split("\t");
+
+                if (JmsConnection.VALUE_KEYSTORE.equals(values[0]) ||
+                    JmsConnection.VALUE_KEYSTORE_BYTES.equals(values[0]) ||
+                    JmsConnection.VALUE_KEYSTORE_PASSWORD.equals(values[0])) {
+                    try {
+                        long ssgKeystoreId = -1;
+                        String ssgKeyAlias = null;
+                        if (values.length == 1) {
+                            // version 3.7 format - no SSG keystore ID and key alias specified; defaults to the SSG SSL private key and cert
+                        } else if (values.length == 3) {
+                            // version 4.0 format - with tab-separated SSG keystore ID and key alias
+                            ssgKeystoreId = Long.parseLong((values[1]));
+                            ssgKeyAlias = values[2];
+                        } else {
+                            logger.log(Level.WARNING, "Unexpected format of substitutable property value. Expected format is \"" + values[0] + "<tab><SSG kesytore ID><tab><SSG key alias>\". Encountered: \"" + property.getValue() + "\"");
+                        }
+                        final KeyStoreInfo keyStoreInfo = buildKeystoreInfo(ssgKeystoreId, ssgKeyAlias, properties);
+                        if (JmsConnection.VALUE_KEYSTORE.equals(values[0])) {
+                            property.setValue(keyStoreInfo.keystore);
+                        } else if (JmsConnection.VALUE_KEYSTORE_BYTES.equals(values[0])) {
+                            property.setValue(keyStoreInfo.keystoreBytes);
+                        } else if (JmsConnection.VALUE_KEYSTORE_PASSWORD.equals(values[0])) {
+                            property.setValue(keyStoreInfo.password);
+                        }
+                        modified = true;
+                    } catch (NumberFormatException e) {
+                        logger.log(Level.WARNING, "Unable to parse SSG keystore ID.", e);
+                    }
+                } else if (JmsConnection.VALUE_TRUSTED_LIST.equals(values[0])) {
                     property.setValue(buildTrustedList());
-                }
-                else if (VALUE_BOOLEAN_TRUE.equals(value)) {
+                    modified = true;
+                } else if (JmsConnection.VALUE_BOOLEAN_TRUE.equals(values[0])) {
                     property.setValue(Boolean.TRUE);
-                }
-                else if (VALUE_BOOLEAN_FALSE.equals(value)) {
+                    modified = true;
+                } else if (JmsConnection.VALUE_BOOLEAN_FALSE.equals(values[0])) {
                     property.setValue(Boolean.FALSE);
+                    modified = true;
                 }
             }
         }
@@ -102,7 +113,7 @@ public class JmsPropertyMapper {
         if (logger.isLoggable(Level.FINE)) {
             StringBuffer propBuffer = new StringBuffer(512);
 
-            for (Map.Entry property : (Set<Map.Entry>) properties.entrySet()) {
+            for (Map.Entry<Object, Object> property : (Set<Map.Entry<Object, Object>>) properties.entrySet()) {
                 Object key = property.getKey();
                 Object value = property.getValue();
                 
@@ -123,9 +134,15 @@ public class JmsPropertyMapper {
 
     private static final Logger logger = Logger.getLogger(JmsPropertyMapper.class.getName());
 
-    private final KeystoreUtils keystoreUtils;
     private final TrustedCertManager trustedCertManager;
+    private final SsgKeyStoreManager ssgKeyStoreManager;
+    private final KeystoreUtils keystoreUtils;
     private final Random random;
+
+    /** Collection of KeyStoreInfo objects constructed.
+        Map key is the String form of SSG keystore ID followed by one tab character and SSG key alias.
+        Map value is the KeyStoreInfo object constructed for that key. */
+    private final Map<String, KeyStoreInfo> keyStoreInfos = new HashMap<String, KeyStoreInfo>();
 
     /**
      * KeyStore data / metadata
@@ -177,45 +194,66 @@ public class JmsPropertyMapper {
     }
 
     /**
-     * Build a KeyStore
+     * Build a KeyStore that contains a copy of a specific private key & cert from SSG's keystore.
      *
-     * @param properties Used to set alias (optional), etc
+     * @param ssgKeystoreId     ID of SSG keystore to find the key
+     * @param ssgKeyAlias       key alias in the specified SSG keystore
+     * @param properties        used to set alias (optional), etc
      * @return The newly populated KeyStoreInfo
      * @throws KeyStoreException If an error occurs
      */
-    private KeyStoreInfo buildKeystoreInfo(Map properties) throws KeyStoreException {
-        try {
-            KeyStoreInfo keyStoreInfo = new KeyStoreInfo();
-            keyStoreInfo.password = buildPassword();
+    private KeyStoreInfo buildKeystoreInfo(long ssgKeystoreId, String ssgKeyAlias, Map properties) throws KeyStoreException {
+        final String whichKey = ssgKeystoreId + "\t" + ssgKeyAlias;
+        KeyStoreInfo keyStoreInfo = keyStoreInfos.get(whichKey);
+        if (keyStoreInfo == null) {
+            try {
+                X509Certificate[] certChain = null;
+                PrivateKey privateKey = null;
+                String alias = null;
+                if (ssgKeystoreId == -1 || ssgKeyAlias == null) {
+                    // version 3.7 format - Defaults to SSG SSL private key and cert.
+                    certChain = keystoreUtils.getSSLCertChain();
+                    privateKey = keystoreUtils.getSSLPrivateKey();
+                    alias = (String) properties.get(JmsConnection.PROP_KEYSTORE_ALIAS);
+                    if (alias == null) alias = "jms";
+                } else {
+                    // version 4.0 format - Retrieves specified private key and cert from SSG key store.
+                    final SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(ssgKeystoreId);
+                    final SsgKeyEntry keyEntry = keyFinder.getCertificateChain(ssgKeyAlias);
+                    certChain = keyEntry.getCertificateChain();
+                    privateKey = keyEntry.getPrivateKey();
+                    alias = (String) properties.get(JmsConnection.PROP_KEYSTORE_ALIAS);
+                    if (alias == null) alias = ssgKeyAlias;
+                }
 
-            // create empty keystore
-            KeyStore keyStore = KeyStore.getInstance("PKCS12");
-            keyStore.load(null, null);
+                // Creates new keystore and populates it.
+                final String password = buildPassword();
+                final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+                keyStore.load(null, null);
+                keyStore.setKeyEntry(ssgKeyAlias, privateKey, password.toCharArray(), certChain);
 
-            // populate with identity
-            X509Certificate clientCert = keystoreUtils.getSslCert();
-            PrivateKey clientKey = keystoreUtils.getSSLPrivateKey();
-            String alias = (String) properties.get(PROP_KEYSTORE_ALIAS);
-            if (alias == null)
-                alias = "jms";
-            keyStore.setKeyEntry(alias, clientKey, keyStoreInfo.password.toCharArray(), new Certificate[]{clientCert});
+                // Saves to a KeyStoreInfo object.
+                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                keyStore.store(baos, password.toCharArray());
+                keyStoreInfo = new KeyStoreInfo();
+                keyStoreInfo.keystoreBytes = baos.toByteArray();
+                keyStoreInfo.keystore = keyStore;
+                keyStoreInfo.password = password;
+            } catch (IOException e) {
+                throw new KeyStoreException("Error creating keystore", e);
+            } catch (FindException e) {
+                throw new KeyStoreException("Error creating keystore", e);
+            } catch (NoSuchAlgorithmException e) {
+                throw new KeyStoreException("Error creating keystore", e);
+            } catch (CertificateException e) {
+                throw new KeyStoreException("Error creating keystore", e);
+            } catch (UnrecoverableKeyException e) {
+                throw new KeyStoreException("Error creating keystore", e);
+            }
 
-            // save
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            keyStore.store(baos, keyStoreInfo.password.toCharArray());
-            keyStoreInfo.keystoreBytes = baos.toByteArray();
-            keyStoreInfo.keystore = keyStore;
+            keyStoreInfos.put(whichKey, keyStoreInfo);
+        }
 
-            return keyStoreInfo;
-        }
-        catch (IOException ioe) {
-            throw new KeyStoreException("Error creating keystore", ioe);
-        }
-        catch (NoSuchAlgorithmException nsae) {
-            throw new KeyStoreException("Error creating keystore", nsae);
-        }
-        catch (CertificateException ce) {
-            throw new KeyStoreException("Error creating keystore", ce);
-        }
+        return keyStoreInfo;
     }
 }

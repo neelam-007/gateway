@@ -346,8 +346,9 @@
     </bean>
     <!-- jms property mapper -->
     <bean id="jmsPropertyMapper" class="com.l7tech.server.transport.jms.JmsPropertyMapper">
-        <constructor-arg ref="keystore"/>
         <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="ssgKeyStoreManager"/>
+        <constructor-arg ref="keystore"/>
     </bean>
 
     <!-- server side policy validator -->

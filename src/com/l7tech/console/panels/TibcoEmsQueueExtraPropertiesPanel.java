@@ -4,15 +4,10 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.TibcoEmsConstants;
-import com.l7tech.console.event.CertEvent;
-import com.l7tech.console.event.CertListenerAdapter;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -35,8 +30,7 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
     private JCheckBox verifyServerCertCheckBox;
     private JCheckBox verifyServerHostNameCheckBox;
     private JCheckBox useCertForClientAuthCheckBox;
-    private JButton selectClientCertButton;
-    private JTextField clientCertTextField;
+    private PrivateKeysComboBox clientCertsComboBox;
 
     public TibcoEmsQueueExtraPropertiesPanel(final Properties properties) {
         setLayout(new BorderLayout());
@@ -66,26 +60,10 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             }
         });
 
-        selectClientCertButton.addActionListener(new ActionListener() {
+        clientCertsComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                CertSearchPanel sp = new CertSearchPanel(
-                        (JDialog)SwingUtilities.getAncestorOfClass(JDialog.class, TibcoEmsQueueExtraPropertiesPanel.this),
-                        true);
-                sp.addCertListener(new CertListenerAdapter() {
-                    public void certSelected(CertEvent e) {
-                        clientCertTextField.setText(e.getCert().getSubjectDn());
-                    }
-                });
-                sp.pack();
-                Utilities.centerOnParentWindow(sp);
-                DialogDisplayer.display(sp);
+                enableOrDisableComponents();
             }
-        });
-
-        clientCertTextField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { fireStateChanged(); }
-            public void removeUpdate(DocumentEvent e) { fireStateChanged(); }
-            public void changedUpdate(DocumentEvent e) { fireStateChanged(); }
         });
 
         setProperties(properties);
@@ -94,14 +72,15 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
     @Override
     public void setProperties(final Properties properties) {
         if (properties != null) {
-            // We borrow property keys defined in com.tibco.tibjms.naming.TibjmsSSL
-            // to identify settings for {@link TibcoConnectionFactoryCustomizer} to implement.
-            useSslCheckBox.setSelected(properties.getProperty(PROP_CUSTOMIZER) != null);
+            // We borrow property keys defined in com.tibco.tibjms.naming.TibjmsSSL to transmit
+            // configurations to com.l7tech.server.transport.jms.prov.TibcoConnectionFactoryCustomizer.
+            useSslCheckBox.setSelected(properties.getProperty(JmsConnection.PROP_CUSTOMIZER) != null);
             useSslForClientAuthOnlyCheckBox.setSelected(strToBool(properties.getProperty(TibcoEmsConstants.TibjmsSSL.AUTH_ONLY)));
             verifyServerCertCheckBox.setSelected(strToBool(properties.getProperty(TibcoEmsConstants.TibjmsSSL.ENABLE_VERIFY_HOST)));
             verifyServerHostNameCheckBox.setSelected(strToBool(properties.getProperty(TibcoEmsConstants.TibjmsSSL.ENABLE_VERIFY_HOST_NAME)));
             useCertForClientAuthCheckBox.setSelected(properties.getProperty(TibcoEmsConstants.TibjmsSSL.IDENTITY) != null);
-            clientCertTextField.setText(properties.getProperty(CERT_PROP, ""));
+            clientCertsComboBox.select(Long.parseLong(properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, "-1")),
+                                       properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS));
         }
 
         enableOrDisableComponents();
@@ -112,24 +91,27 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
         final Properties properties = new Properties();
 
         if (useSslCheckBox.isSelected()) {
-            properties.setProperty(PROP_CUSTOMIZER, "com.l7tech.server.transport.jms.prov.TibcoConnectionFactoryCustomizer");
+            properties.setProperty(JmsConnection.PROP_CUSTOMIZER, "com.l7tech.server.transport.jms.prov.TibcoConnectionFactoryCustomizer");
         }
 
         properties.setProperty(TibcoEmsConstants.TibjmsSSL.AUTH_ONLY, boolToStr(useSslForClientAuthOnlyCheckBox.isSelected()));
 
         if (verifyServerCertCheckBox.isSelected()) {
-            properties.setProperty(TibcoEmsConstants.TibjmsSSL.ENABLE_VERIFY_HOST, VALUE_TRUE);
-            properties.setProperty(TibcoEmsConstants.TibjmsSSL.TRUSTED_CERTIFICATES, VALUE_TRUSTED_CERTS);
+            properties.setProperty(TibcoEmsConstants.TibjmsSSL.ENABLE_VERIFY_HOST, JmsConnection.VALUE_BOOLEAN_TRUE);
+            properties.setProperty(TibcoEmsConstants.TibjmsSSL.TRUSTED_CERTIFICATES, JmsConnection.VALUE_TRUSTED_LIST);
         } else {
-            properties.setProperty(TibcoEmsConstants.TibjmsSSL.ENABLE_VERIFY_HOST, VALUE_FALSE);
+            properties.setProperty(TibcoEmsConstants.TibjmsSSL.ENABLE_VERIFY_HOST, JmsConnection.VALUE_BOOLEAN_FALSE);
         }
 
         properties.setProperty(TibcoEmsConstants.TibjmsSSL.ENABLE_VERIFY_HOST_NAME, boolToStr(verifyServerHostNameCheckBox.isSelected()));
 
         if (useCertForClientAuthCheckBox.isSelected()) {
-            properties.setProperty(TibcoEmsConstants.TibjmsSSL.IDENTITY, VALUE_KEYSTORE_BYTES);
-            properties.setProperty(TibcoEmsConstants.TibjmsSSL.PASSWORD, VALUE_KEYSTORE_PASSWORD);
-            properties.setProperty(CERT_PROP, clientCertTextField.getText());
+            final String whichKey = "\t" + clientCertsComboBox.getSelectedKeystoreId() +
+                                    "\t" + clientCertsComboBox.getSelectedKeyAlias();
+            properties.setProperty(TibcoEmsConstants.TibjmsSSL.IDENTITY, JmsConnection.VALUE_KEYSTORE_BYTES + whichKey);
+            properties.setProperty(TibcoEmsConstants.TibjmsSSL.PASSWORD, JmsConnection.VALUE_KEYSTORE_PASSWORD + whichKey);
+            properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, Long.toString(clientCertsComboBox.getSelectedKeystoreId()));
+            properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS, clientCertsComboBox.getSelectedKeyAlias());
         }
 
         return properties;
@@ -140,7 +122,7 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
         verifyServerCertCheckBox.setEnabled(useSslCheckBox.isSelected());
         verifyServerHostNameCheckBox.setEnabled(verifyServerCertCheckBox.isEnabled() && verifyServerCertCheckBox.isSelected());
         useCertForClientAuthCheckBox.setEnabled(useSslCheckBox.isSelected());
-        selectClientCertButton.setEnabled(useCertForClientAuthCheckBox.isEnabled() && useCertForClientAuthCheckBox.isSelected());
+        clientCertsComboBox.setEnabled(useCertForClientAuthCheckBox.isEnabled() && useCertForClientAuthCheckBox.isSelected());
         fireStateChanged();
     }
 
@@ -148,7 +130,7 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
     public boolean validatePanel() {
         boolean ok = true;
         if (useCertForClientAuthCheckBox.isEnabled() && useCertForClientAuthCheckBox.isSelected()) {
-            if (clientCertTextField.getText().length() == 0) {
+            if (clientCertsComboBox.getSelectedIndex() == -1) {
                 ok = false;
             }
         }
@@ -156,10 +138,10 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
     }
 
     private static boolean strToBool(final String s) {
-        return VALUE_TRUE.equals(s);
+        return JmsConnection.VALUE_BOOLEAN_TRUE.equals(s);
     }
 
     private static String boolToStr(final boolean b) {
-        return b ? VALUE_TRUE : VALUE_FALSE;
+        return b ? JmsConnection.VALUE_BOOLEAN_TRUE : JmsConnection.VALUE_BOOLEAN_FALSE;
     }
 }

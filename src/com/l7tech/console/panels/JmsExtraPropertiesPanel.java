@@ -5,8 +5,8 @@
 package com.l7tech.console.panels;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.util.Properties;
 
 /**
@@ -18,16 +18,6 @@ import java.util.Properties;
  * @since SecureSpan 3.7
  */
 public abstract class JmsExtraPropertiesPanel extends JPanel {
-
-    // Property keys copied from {@link JmsPropertyMapper}.
-    protected static final String VALUE_TRUE = "com.l7tech.server.jms.prop.boolean.true";
-    protected static final String VALUE_FALSE = "com.l7tech.server.jms.prop.boolean.false";
-    protected static final String VALUE_TRUSTED_CERTS = "com.l7tech.server.jms.prop.trustedcert.listx509";
-    protected static final String VALUE_KEYSTORE = "com.l7tech.server.jms.prop.keystore";
-    protected static final String VALUE_KEYSTORE_BYTES = "com.l7tech.server.jms.prop.keystore.bytes";
-    protected static final String VALUE_KEYSTORE_PASSWORD = "com.l7tech.server.jms.prop.keystore.password";
-    protected static final String CERT_PROP = "com.l7tech.server.jms.prop.certificate.subject";
-    protected static final String PROP_CUSTOMIZER = "com.l7tech.server.jms.prop.customizer.class";
 
     protected transient ChangeEvent changeEvent;
 

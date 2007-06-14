@@ -263,10 +263,13 @@
     </bean>
 
     <bean id="jmsPropertyMapper" class="com.l7tech.server.transport.jms.JmsPropertyMapper">
-        <constructor-arg ref="keystore"/>
         <constructor-arg>
             <bean class="com.l7tech.server.identity.cert.TestTrustedCertManager"/>
         </constructor-arg>
+        <constructor-arg>
+            <bean class="com.l7tech.server.security.keystore.SsgKeyStoreManagerStub"/>
+        </constructor-arg>
+        <constructor-arg ref="keystore"/>
     </bean>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>    
