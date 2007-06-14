@@ -10,9 +10,14 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.util.XmlUtil;
+
 import org.jaxen.dom.DOMXPath;
+import org.jaxen.XPathFunctionContext;
+import org.jaxen.NamespaceContext;
 
 import java.util.logging.Logger;
+import java.util.Map;
 
 /**
  * @author mike
@@ -35,7 +40,18 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
             logger.info(errString);
         } else {
             try {
-                new DOMXPath(pattern);
+                final Map namespaces = ra.namespaceMap();
+                DOMXPath xpath = new DOMXPath(pattern);
+                xpath.setFunctionContext(new XPathFunctionContext(false));
+                xpath.setNamespaceContext(new NamespaceContext(){
+                    public String translateNamespacePrefixToUri(String prefix) {
+                        if (namespaces == null)
+                            return null;
+                        else
+                            return (String) namespaces.get(prefix);
+                    }
+                });
+                xpath.evaluate(XmlUtil.stringToDocument("<blah xmlns=\"http://bzzt.com\"/>"));
             } catch (Exception e) {
                 errString = "XPath pattern is not valid";
                 errThrowable = e;
