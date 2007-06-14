@@ -221,6 +221,21 @@ public class XmlUtil {
     }
 
     /**
+     * Version of stringToDocument for use when you know that the XML is valid.
+     *
+     * @param inputXmlNotAUrl A known valid XML string.
+     * @return the Document
+     * @throws IllegalArgumentException if the given string is not XML
+     */
+    public static Document stringAsDocument(String inputXmlNotAUrl) {
+        try {
+            return stringToDocument(inputXmlNotAUrl);
+        } catch (SAXException se) {
+            throw new IllegalArgumentException("Unable to parse '"+inputXmlNotAUrl+"' as XML.", se);
+        }
+    }
+
+    /**
      * Create an XML document from the given InputStream. If the InputStream
      * data does NOT contain charset information and you know the charset you
      * should call the parse method that takes an encoding argument.

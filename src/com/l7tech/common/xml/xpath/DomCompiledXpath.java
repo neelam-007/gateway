@@ -8,6 +8,8 @@ package com.l7tech.common.xml.xpath;
 import com.l7tech.common.xml.DomElementCursor;
 import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.util.XmlUtil;
+
 import org.jaxen.JaxenException;
 import org.jaxen.XPathFunctionContext;
 import org.jaxen.FunctionContext;
@@ -64,8 +66,14 @@ public class DomCompiledXpath extends CompiledXpath {
      * @throws InvalidXpathException if the expression is invalid or uses an undeclared namespace prefix.
      */
     protected DOMXPath getDomXpath() throws InvalidXpathException {
-        if (domXpath != null)
-            return domXpath;
+        DOMXPath dxp = null;
+        synchronized (this) {
+            dxp = domXpath;
+        }
+
+        if (dxp != null)
+            return dxp;
+        
         synchronized (this) {
             return domXpath = makeJaxenXpath();
         }
@@ -95,6 +103,10 @@ public class DomCompiledXpath extends CompiledXpath {
                     domXpath.addNamespace(key, uri);
                 }
             }
+
+            // fail fast for expressions that are syntactically valid but use incorrect
+            // namespace prefixes or functions
+            domXpath.evaluate(XmlUtil.stringAsDocument("<test xmlns=\"http://test.com/testing\"/>"));
 
             return domXpath;
         } catch (JaxenException e) {

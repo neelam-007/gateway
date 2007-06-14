@@ -30,7 +30,7 @@ public abstract class ServerXpathBasedAssertion extends AbstractServerAssertion 
         try {
             compiledXpath = assertion.getXpathExpression().compile();
         } catch (InvalidXpathException e) {
-            auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_UNSUPPORTED_PATTERN, null, e);
+            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID, null, e);
             // Invalid expression -- disable processing
             compiledXpath = null;
         }
