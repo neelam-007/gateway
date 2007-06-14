@@ -1,0 +1,19 @@
+# -----------------------------------------------------------------------------
+# LAYER 7 TECHNOLOGIES
+# June 2007
+#
+# flasher utility config file
+#
+# controls which os level files are included in ssg image and overwritten at
+# import time when specifying the -os option
+#
+# should not be edited unless instructed to
+# -----------------------------------------------------------------------------
+
+/etc/inet/ntp.conf
+/etc/default/init
+/etc/defaultrouter
+/etc/resolv.conf
+/etc/nodename
+/etc/defaultdomain
+/etc/hosts
