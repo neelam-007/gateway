@@ -10,6 +10,8 @@ import java.util.logging.Logger;
 
 import org.springframework.remoting.rmi.RmiRegistryFactoryBean;
 
+import com.l7tech.common.util.ExceptionUtils;
+
 /**
  * An extension of the standard Spring RMI Registry that expects to create the Registry.
  *
@@ -52,7 +54,7 @@ public class RmiRegistryInitializer extends RmiRegistryFactoryBean {
 			}
 			catch (RemoteException ex) {
                 // it is expected that the registry does not yet exist
-                logger.log(Level.FINEST, "RMI registry access threw exception", ex);
+                logger.log(Level.FINEST, "RMI registry access threw exception", ExceptionUtils.getDebugException(ex));
 			}
 		}
 

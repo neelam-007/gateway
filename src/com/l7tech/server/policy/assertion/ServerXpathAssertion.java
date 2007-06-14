@@ -93,7 +93,8 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
             xpathResult = cursor.getXpathResult(compiledXpath, velement != null);
         } catch (XPathExpressionException e) {
             // Log it, but treat it as null
-            if (logger.isLoggable(Level.WARNING)) logger.log(Level.WARNING, "XPath failed: " + ExceptionUtils.getMessage(e), e);
+            if (logger.isLoggable(Level.WARNING))
+                logger.log(Level.WARNING, "XPath failed: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
         if (xpathResult == null) {
             auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST_MI

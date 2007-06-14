@@ -145,6 +145,19 @@ public class ExceptionUtils {
     }
 
     /**
+     * Return the given throwable if debug is on.
+     *
+     * <p>This is for use when logging stacktraces that could be useful but
+     * generally aren't.</p>
+     *
+     * @param throwable The throwable to return
+     * @return null, unless debugging is enabled.
+     */
+    public static Throwable getDebugException(Throwable throwable) {
+        return JdkLoggerConfigurator.debugState() ? throwable : null;
+    }
+
+    /**
      * Filter the given Throwable by removing any Throwables in the given list.
      *
      * <p>This is useful when passing Throwables to external systems (e.g. over RMI).</p>

@@ -8,7 +8,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -28,7 +28,10 @@ import java.util.logging.Logger;
  */
 public class JdkLoggerConfigurator {
     private static Probe probe;
-    private static boolean serviceNameAppenderState = false;
+    private static AtomicBoolean serviceNameAppenderState =
+            new AtomicBoolean(Boolean.getBoolean("com.l7tech.logging.appendservicename"));
+    private static AtomicBoolean debugState =
+            new AtomicBoolean(Boolean.getBoolean("com.l7tech.logging.debug"));
 
     /**
      * this class cannot be instantiated
@@ -85,7 +88,7 @@ public class JdkLoggerConfigurator {
                         logManager.readConfiguration(in);
                         probeFile = file;
                         configFound = true;
-                        readServiceNameSufficeAppenderState();
+                        updateState();
                         break;
                     }
                 }
@@ -94,7 +97,7 @@ public class JdkLoggerConfigurator {
                 if (resource != null) {
                     logManager.readConfiguration(resource.openStream());
                     configFound = true;
-                    readServiceNameSufficeAppenderState();
+                    updateState();
                     probeFile = new File(resource.getPath());
                     break;
                 }
@@ -222,7 +225,7 @@ public class JdkLoggerConfigurator {
                             logger.log(Level.CONFIG,
                                        "logging config file reread complete, new interval is {0} secs",
                                        new Long(interval));
-                            readServiceNameSufficeAppenderState();
+                            updateState();
                         } catch (Throwable t) {
                             logger.log(Level.WARNING,
                               "exception reading logging config file",
@@ -266,30 +269,30 @@ public class JdkLoggerConfigurator {
         return interval;
     }
 
+    private static void updateState() {
+        readServiceNameSufficeAppenderState();
+        readDebugState();
+    }
+
     private static void readServiceNameSufficeAppenderState() {
         LogManager logManager = LogManager.getLogManager();
         String val = logManager.getProperty("com.l7tech.logging.appendservicename");
-        ReentrantReadWriteLock.WriteLock lock = serviceNameAppenderStateLock.writeLock();
-        lock.lock();
-        try {
-            if (val != null) {
-                serviceNameAppenderState = Boolean.parseBoolean(val);
-            } else {
-                serviceNameAppenderState = false;
-            }
-        } finally {
-            lock.unlock();
-        }
+        if (val != null)
+            serviceNameAppenderState.set(Boolean.parseBoolean(val));
     }
 
     public static boolean serviceNameAppenderState() {
-        ReentrantReadWriteLock.ReadLock lock = serviceNameAppenderStateLock.readLock();
-        lock.lock();
-        try {
-            return serviceNameAppenderState;
-        } finally {
-            lock.unlock();
-        }
+        return serviceNameAppenderState.get();
     }
-    private static final ReentrantReadWriteLock serviceNameAppenderStateLock = new ReentrantReadWriteLock();
+
+    private static void readDebugState() {
+        LogManager logManager = LogManager.getLogManager();
+        String val = logManager.getProperty("com.l7tech.logging.debug");
+        if (val != null)
+            debugState.set(Boolean.parseBoolean(val));
+    }
+
+    public static boolean debugState() {
+        return debugState.get();
+    }
 }
