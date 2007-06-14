@@ -12,8 +12,6 @@ ORIGINAL_JAVA_OPTS=${JAVA_OPTS}
 USER=$LOGNAME
 SSGUSER="gateway"
 
-echo $USER
-
 usage() {
     echo
     echo "Usage: partitionControl.sh [start|run|stop|usage] partition-name"
