@@ -8,6 +8,7 @@ my $logFile = new FileHandle;
 my $hostsFH = new FileHandle;
 my $outputFh = new FileHandle;
 my $inputFh = new FileHandle;
+my $PfilFh= new FileHandle;
 
 if ($logFile->open(">>/ssg/sysconfigwizard/ssgsysconfig.log")) {
 	$logFile->print("\n-------------------------------------------------------------------\n");
@@ -16,7 +17,6 @@ if ($logFile->open(">>/ssg/sysconfigwizard/ssgsysconfig.log")) {
 } else {
  	print("Could not open log file. Will not proceed with system configuration\n");
 }
-
 my %hostnameInfo = ();
 my $ntpServerToUse = undef;
 my @filesToDelete;
@@ -84,10 +84,10 @@ if ($inputFh->open("<$inputFiles{'HOSTNAMEFILE'}")) {
 	}
 	$inputFh->close();
 	push (@filesToDelete, $inputFiles{'HOSTNAMEFILE'});
+	print "Hostname set..."
 } else {
 	$logFile->print("$timestamp: $inputFiles{'HOSTNAMEFILE'} not found. The hostname will not be changed.\n");
 }
-
 #Setup Interfaces & Routes
 my @netConfigFiles = glob($netConfigPattern);
 for my $configFile(@netConfigFiles) {
@@ -116,7 +116,6 @@ for my $configFile(@netConfigFiles) {
 		close(DAT);
 		
 		# Enable pfil hooks for card driver
-		my $PfilFh=undef;
 		if($PfilFh->open("/etc/ipf/pfil.ap")) {
 			my @pfil=(<$PfilFh>);
 			if ( grep /$opts{device}/, @pfil ) {
@@ -170,7 +169,7 @@ for my $configFile(@netConfigFiles) {
 			} else {
 				print "Couldn\'t open $outputFiles{'ETC'}netmasks, unable to set timezone.\n";
 			}
-			$logFile->print("Set: DHCP device $opts{device}, mask $opts{netmask}, nameservers @{$opts{nameserver}}\n");
+			$logFile->print("Set: DHCP device $opts{device}, nameservers ", @{$opts{nameserver}},"\n");
 			
 		} elsif ($opts{bootproto} eq "static") {
 
@@ -236,6 +235,7 @@ for my $configFile(@netConfigFiles) {
 	}
 
 	$logFile->print("$timestamp: executing network configuration command:\n");
+	print "network set..."
 }
 
 ########################################################################
@@ -257,6 +257,7 @@ if ($inputFh->open("<$inputFiles{'NTPFILE'}")) {
 	} else {
 		$logFile->print("$timestamp: $inputFiles{'NTPFILE'} not writable. The NTP configuration will not be changed.\n");
 	}
+	print "ntp set..."
 } else {
 	$logFile->print("$timestamp: $inputFiles{'NTPFILE'} not found. The NTP configuration will not be changed.\n");
 }
@@ -286,7 +287,6 @@ if($inputFh->open("<$inputFiles{'TZFILE'}")) {
 	} else {
 		print "Couldn't open $outputFiles{'TZ'}, unable to set timezone.\n";
 	}
+	print "timezone set...\n"
 }
 
-unlink(@filesToDelete);
-$logFile->close();
