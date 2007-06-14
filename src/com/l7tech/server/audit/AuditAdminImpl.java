@@ -129,7 +129,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         private final PrivateKey sslPrivateKey;
         private final PipedOutputStream pos = new PipedOutputStream();
         private final PipedInputStream pis = new PipedInputStream(pos);
-        private final Timer timer = new Timer("DownloadContextTimer", false);
+        private final Timer timer = new Timer("DownloadContextTimer", true);
         private final int chunkLength;
         private final Thread producerThread = new Thread(new Runnable() {
             public void run() {

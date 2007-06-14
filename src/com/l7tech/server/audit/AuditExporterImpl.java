@@ -80,7 +80,6 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * @param rawOut the OutputStream to which the colon-delimited dump will be written.
      * @return the time in milliseconds of the most-recent audit record exported.
      */
-    @Transactional(readOnly=true)
     private ExportedInfo exportAllAudits(OutputStream rawOut) throws SQLException, IOException, HibernateException, InterruptedException {
         Connection conn = null;
         Statement st = null;
@@ -238,7 +237,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * Export all audit events from the database to the specified OutputStream as a Zip file, including a signature.
      * @param fileOut OutputStream to which the Zip file will be written.
      */
-    @Transactional(readOnly=true)
+    @Transactional(propagation=Propagation.SUPPORTS,readOnly=true)
     public void exportAuditsAsZipFile(OutputStream fileOut,
                                              X509Certificate signingCert,
                                              PrivateKey signingKey)
