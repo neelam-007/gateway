@@ -716,6 +716,8 @@ public class PolicyApplicationContext extends ProcessingContext {
                 throw new HttpChallengeRequiredException("username and password required");
 
             PasswordAuthentication pw = ssg.getRuntime().getCredentials();
+            if (pw == null)
+                throw new ConfigurationException("Unable to create sender vouches assertion -- no username to vouch for");
             creds = LoginCredentials.makePasswordCredentials(pw.getUserName(), null, HttpBasic.class);
         }
         creds.setCredentialSourceAssertion(HttpBasic.class);
