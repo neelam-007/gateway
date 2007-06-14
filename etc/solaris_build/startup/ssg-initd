@@ -150,11 +150,7 @@ status_ssg() {
 
 
 find_tomcat() {
-	#This needs to be tested with multiple partitions running
-	pid=`cat /ssg/etc/conf/partitions/default_/ssg.pid`
-
-	#this doesn't work with path in Solaris... and there could be many Javas running
-	#pid=$(pidof "${JAVA_HOME}/bin/java")
+    pid=$(ps -a | grep java | awk '{print $1}')
 }
 
 find_single_partition() {
