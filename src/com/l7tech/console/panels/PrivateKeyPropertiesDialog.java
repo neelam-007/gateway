@@ -278,6 +278,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                         pemchain[i] = CertUtils.encodeAsPEM(certChain[i]);
                     }
                     admin.assignNewCert(subject.getKeystore().id, subject.getAlias(), pemchain);
+                    // refresh the table containing the new cert chain
+                    subject.getKeyEntry().setCertificateChain(certChain);
+                    populateList();
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "error assigning cert", e);
                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error Assigning new Cert. Make sure the " +
