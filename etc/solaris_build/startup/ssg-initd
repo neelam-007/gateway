@@ -7,6 +7,19 @@
 #	       secures and provides access for SOAP services
 # processname: ssg
 
+# startup is complicated by the fact that 
+# there's no user in the /etc/init run at startup
+# on Solaris only
+
+if [ "${_INIT_RUN_LEVEL}" = 3  -o "${_INIT_RUN_LEVEL}" = 6  -o "$LOGNAME" = "root" ] ; then
+    # its either startup, shutdown, or run interactively by root
+    echo -n ""
+else 
+    echo "Must be root to run this script"
+    exit
+fi
+
+
 # Source function library.
 #. /etc/rc.d/init.d/functions
 . /ssg/bin/rhstub.sh
@@ -23,12 +36,6 @@ count=0
 PARTITION_BASE="$SSG_HOME/etc/conf/partitions/"
 PARTITION_CONTROL="$SSG_HOME/bin/partitionControl.sh"
 SINGLE_PARTITION=""
-
-# See how we were called.
-if [ "$LOGNAME" != "root" ] ; then
-    echo "Need to be root to run this script";
-    exit
-fi
 
 # This script redirects STDOUT and STDERR to /dev/null as well as closing STDIN (<&-) so it can be detached from a
 # terminal

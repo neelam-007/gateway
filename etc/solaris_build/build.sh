@@ -75,9 +75,14 @@ mv ssg/bin/tune_solaris_tcp_stack.sh etc/init.d/ssg_tcp_tune.sh
 # Database cluster startup daemon
 mv ssg/bin/ssg-dbstatus-initd etc/init.d/ssg-dbstatus
 # Main ssg process startup
-mv ssg/bin/ssg-initd etc/init.d/ssg
+mv ssg/bin/ssg-initd ssg/bin/ssg
+# need a separate sh starter script to work around solaris vagarities
+mv ssg/bin/ssg-starter etc/init.d/ssg
 # apply network config startup/shutdown process
-mv ssg/bin/sysconfigscript-initd etc/init.d/ssg-sysconfig
+mv ssg/bin/sysconfigscript-initd ssg/bin/ssg-sysconfig
+# need a separate sh starter script to work around solaris vagarities
+mv ssg/bin/ssg-sysconfig-starter etc/init.d/ssg-sysconfig
+
 mv ssg/bin/systemconfig.sh ssg/sysconfigwizard/
 mv ssg/bin/ssg_sys_config.pl ssg/sysconfigwizard/
 mv ssg/bin/ssgmigration.sh ssg/migration/

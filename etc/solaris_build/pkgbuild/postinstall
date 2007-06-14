@@ -1,11 +1,18 @@
 #!/bin/sh -x 
 echo "Layer 7 SecureSpan(tm) Gateway v4.0" >/etc/issue
 
-cd /etc/rc2.d
-ln -s ../init.d/ssg_tcp_tune.sh S71SSG_tcptune
-ln -s ../init.d/ssg S99SSG_ssg
-ln -s ../init.d/ssg-sysconfig K01SSG_sysconfig
-ln -s ../init.d/ssg-sysconfig S01SSG_sysconfig
+# Startups
+cd /etc/rc3.d
+# Network config
+ln -sf ../init.d/ssg_tcp_tune.sh S71SSG_tcptune
+# SSG startup
+ln -sf ../init.d/ssg S99SSG_ssg
+# shutdowns:
+cd /etc/rc0.d
+# run network config on shutdown
+ln -s ../init.d/ssg-sysconfig K03SSG_sysconfig
+# and shut down the ssg nicely
+ln -sf ../init.d/ssg K04SSG_ssg
 
 cd /ssg
 
