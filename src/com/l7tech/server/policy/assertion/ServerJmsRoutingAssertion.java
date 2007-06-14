@@ -156,15 +156,14 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             }
 
             // Enforces rules on propagation of request JMS message properties.
-            Map<String, Object> inboundRequestProps = null;
             final JmsKnob jmsInboundKnob = (JmsKnob)context.getRequest().getKnob(JmsKnob.class);
             if (jmsInboundKnob != null) {
-                inboundRequestProps = jmsInboundKnob.getJmsMsgPropMap();
-            }
-            final Map<String, Object> outboundRequestProps = new HashMap<String, Object>();
-            enforceJmsMessagePropertyRuleSet(context, data.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps);
-            for (String name : outboundRequestProps.keySet()) {
-                jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
+                final Map<String, Object> inboundRequestProps = jmsInboundKnob.getJmsMsgPropMap();
+                final Map<String, Object> outboundRequestProps = new HashMap<String, Object>();
+                enforceJmsMessagePropertyRuleSet(context, data.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps);
+                for (String name : outboundRequestProps.keySet()) {
+                    jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
+                }
             }
 
             boolean inbound = context.isReplyExpected()
