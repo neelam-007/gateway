@@ -87,10 +87,10 @@ public class SafeWsdlPublishedServiceDecorator implements Decorator<PublishedSer
         try {
             Collection<ServiceDocument> serviceDocuments = serviceDocumentManager.findByServiceIdAndType(undecorated.getOid(), "WSDL-IMPORT");
             if (!serviceDocuments.isEmpty()) {
-                logger.info("Service '"+undecorated.getOid()+"', has "+serviceDocuments.size()+" imports.");
+                logger.log(Level.FINE, "Service ''{0,number,0}'', has ''{1}'' imports.", new Object[]{undecorated.getOid(), serviceDocuments.size()});
                 publishedService.parseWsdlStrategy(new SafeWsdlPublishedService(serviceDocuments));
             } else {
-                logger.info("Service '"+undecorated.getOid()+"', has no available imports.");                
+                logger.log(Level.FINE, "Service ''{0,number,0}'', has no available imports.", undecorated.getOid());
             }
         }
         catch(FindException fe) {
