@@ -15,10 +15,18 @@ ln -s ../init.d/ssg-sysconfig K03SSG_sysconfig
 ln -sf ../init.d/ssg K04SSG_ssg
 
 cd /ssg
+if [ -s "/tmp/java_is_here" ] ; then
+    my_java_home=`cat /tmp/java_is_here`
+    rm /tmp/java_is_here
+else
+    my_java_home=/usr/j2se/jdk1.6.0_01
+fi
 
 # migrate the structure to the new partitioning scheme using the configuration wizard
 # Set java in version, in case its needed
-JAVA_HOME=/usr/j2se/jdk1.6.0_01
+ln -s ${my_java_home} /ssg/jdk
+chown -h gateway:gateway /ssg/jdk
+JAVA_HOME=/ssg/jdk
 export JAVA_HOME
 
 /ssg/configwizard/ssgconfig.sh -partitionMigrate 

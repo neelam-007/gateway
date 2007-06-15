@@ -22,7 +22,7 @@ if [ -e /ssg/etc/conf/JVM ]; then
 	JAVA_HOME=`cat /ssg/etc/conf/JVM`
 	# we use its contents to override the OS supplied JDK
 else
- 	JAVA_HOME="/usr/j2se/jdk1.6.0_01/"
+ 	JAVA_HOME="/ssg/jdk/"
 fi
 
 ulimit -s 2048

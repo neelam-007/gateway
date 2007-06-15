@@ -1,6 +1,6 @@
 set -u
 set -e
-JAVA_HOME="/usr/j2se/jdk1.6.0_01/"
+JAVA_HOME="/ssg/jdk/"
 export JAVA_HOME
 trap doLogout INT
 umask 002
@@ -9,6 +9,7 @@ SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
 CONFWIZARD="/ssg/configwizard/ssgconfig.sh"
 UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh"
 GETROOT="su -"
+REBOOT_CMD="/sbin/init 6"
 
 checkForUpdater() {
     if [ -e "/ssg/updatewizard/ssgupdatewizard.sh" ] ; then
@@ -70,7 +71,8 @@ do
                 5)  echo -n "Are you sure you want to reboot the SecureSpan Gateway? [y/n]: "
                     read okToReboot
                     if [ "$okToReboot" == "y" ] || [ "$okToReboot" == "yes" ] ; then
-                        su root -c /etc/reboot
+                        echo "Please enter the root password in order to reboot"
+                        su root -c "${REBOOT_CMD}"
                     fi
                     clear;;
                 6)  if [ -n ${UPDATER_PRESENT} ] ; then

@@ -6,7 +6,7 @@ pushd .. > /dev/null
 SSG_ROOT=`pwd`
 popd > /dev/null
 # FIXME: Our config dependent
-JAVA_HOME="/usr/j2se/jdk1.6.0_01/"
+JAVA_HOME="/ssg/jdk/"
 
 if [ $UID -eq 0 ]; then
     su ssgconfig -c "${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SystemConfigWizard.jar $*"
