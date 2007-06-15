@@ -14,7 +14,6 @@
 # processname: ssg-dbstatus
 
 # Source function library.
-#. /etc/rc.d/init.d/functions
 . /ssg/bin/rhstub.sh
 
 # If credentials are required to access MySQL then add them as a user config file.
@@ -24,20 +23,22 @@
 PROG=ssg-dbstatus
 MYSQL="/usr/bin/mysql"
 MYSQL_OPTS=""
-MYSQL_DEFAULT_OPTIONS="/root/.my.cnf"
+MYSQL_DEFAULT_OPTIONS=".my.cnf"
 TIME_DESIRED=15
 LOGGER="/usr/bin/logger"
 PID_FILE="/var/run/${PROG}.pid"
 
-#IPTABLES="/sbin/iptables"
-#IPTABLES_RULE="INPUT -m tcp -p tcp --dport 3306 -j REJECT --reject-with tcp-reset"
+IPF="/usr/sbin/ipf"
+IPF_NAME="dbstatuscheck_"
+IPF_DIR="/tmp/${IPF_NAME}"
+IPF_FILE="firewall_rules"
+IPF_RULE="IPF block return-rst in quick proto tcp from any to any port = 3306 flags S/SA #${IPF_NAME}L7"
 
 if [ ! -f "${HOME}/.my.cnf" ] && [ -f "${MYSQL_DEFAULT_OPTIONS}" ] ; then
     MYSQL_OPTS="--defaults-extra-file=${MYSQL_DEFAULT_OPTIONS} ${MYSQL_OPTS}"
 fi
 
-export MYSQL MYSQL_OPTS TIME_DESIRED
-# IPTABLES IPTABLES_RULE
+export MYSQL MYSQL_OPTS TIME_DESIRED IPF IPF_DIR IPF_FILE IPF_RULE
 
 # Check if replication is enabled
 checkRequired() {
@@ -52,10 +53,10 @@ checkRequired() {
 # Configuration checks, ensure process list output is usable and we can
 # see the 'system user'
 checkConfigured() {
-#    if [ ! -f "${IPTABLES}" ] ; then
-#        echo "iptables [${IPTABLES}] not found."
-#        return 1
-#    fi
+    if [ ! -f "${IPF}" ] ; then
+        echo "ipf [${IPF}] not found."
+        return 1
+    fi
     if [ ! -f "${MYSQL}" ] ; then
         echo "MySQL client [${MYSQL}] not found."
         return 1
@@ -88,15 +89,24 @@ report() {
 
 # Disable MySQL
 disableTcpConnections() {
-    # Insert iptables rule
-#    "${IPTABLES}" -I ${IPTABLES_RULE}
-    return ${?}
+    # Insert ipf rule
+    doTcpConnections start
 }
 
 # Enable MySQl
 enableTcpConnections() {
-    # Delete iptables rule
-#    "${IPTABLES}" -D ${IPTABLES_RULE}
+    # Delete ipf rule
+    doTcpConnections stop
+}
+
+# Apply firewall config
+doTcpConnections() {
+    test -d "${IPF_DIR}" || mkdir "${IPF_DIR}"
+    echo "${IPF_RULE}" > "${IPF_DIR}/${IPF_FILE}"
+    (perl /ssg/bin/partition_firewall.pl "${IPF_DIR}/${IPF_FILE}" "${1}")
+    ${IPF} -Fa -f /etc/ipf/ipf.conf
+    ${IPF} -f /ssg/etc/ssg-ipf.conf    
+    rm -rf "${IPF_DIR}"
     return ${?}
 }
 
@@ -113,7 +123,7 @@ start () {
     checkConfigured
     if [ ${?} -eq 1 ] ; then
         echo -n $"${PROG} starting: "
-#        failure
+        failure
         echo
         exit 1
     fi
@@ -174,7 +184,7 @@ start () {
             # Process line of input
             if [ ! -z "${L}" ] ; then
                 # Ignore info for non-system processes
-                echo "${L}" | grep -q 'system user' &>/dev/null
+                echo "${L}" | grep 'system user' &>/dev/null
                 if [ $? -eq 0  ] ; then
                     # There are 2 slave processes, use the MAX time
                     L=$(echo "${L}" | awk -F'|' '{print $7}' | sed 's/ //g')
