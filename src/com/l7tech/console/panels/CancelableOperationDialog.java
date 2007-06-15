@@ -93,6 +93,8 @@ public class CancelableOperationDialog extends JDialog {
 
     public void setMessage(String message) {
         messageLabel.setText(message);
+        pack();                             // Bug 3686
+        Utilities.centerOnScreen(this);
     }
 
     public String getMessage() {
