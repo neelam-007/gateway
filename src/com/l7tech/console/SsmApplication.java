@@ -34,7 +34,7 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
         return mainWindow;
     }
 
-    abstract void run();
+    public abstract void run();
 
     public String getResourcePath() {
         return resourcePath;
@@ -44,7 +44,7 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
         this.resourcePath = resourcePath;
     }
 
-    abstract boolean isApplet();
+    public abstract boolean isApplet();
 
     /** @return true if a custom look and feel should be honored.  False to do normal automatic look-and-feel selection. */
     public static boolean isSuppressAutoLookAndFeel() {

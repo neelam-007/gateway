@@ -57,7 +57,7 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
         });
     }
 
-    boolean isApplet() {
+    public boolean isApplet() {
         return false;
     }
 

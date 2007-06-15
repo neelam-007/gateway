@@ -30,7 +30,7 @@ public class SsmApplicationApplet extends SsmApplication {
         running = true;
     }
 
-    boolean isApplet() {
+    public boolean isApplet() {
         return true;
     }
 
