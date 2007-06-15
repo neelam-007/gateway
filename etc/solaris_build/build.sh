@@ -98,6 +98,11 @@ mv ssg/tomcat/conf/server.xml ssg/etc/conf/partitions/partitiontemplate_/
 
 # put a java.security in the partition template (so we get one for each partition)
 mv ssg/bin/ssg-java.security ssg/etc/conf/partitions/partitiontemplate_/java.security
+echo "Cleaning non-solaris scripts"
+rm ssg/bin/ssg_appliance_config.sh
+rm ssg/bin/tcp_tune.sh
+rm ssg/bin/upgrade.sh
+rm ssg/bin/setkeys.sh
 
 echo Fixing permissions...
 
