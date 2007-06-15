@@ -369,7 +369,7 @@ public class CommonsHttpClient implements GenericHttpClient {
                     } catch (URIException e1) {
                         logger.log(Level.WARNING, "cannot get URI", e1);
                     }
-                    throw new GenericHttpException("Unable to obtain HTTP response from " + target, e);
+                    throw new GenericHttpException("Unable to obtain HTTP response from " + target + ": " + ExceptionUtils.getMessage(e), e);
                 }
 
                 final GenericHttpResponse genericHttpResponse = new GenericHttpResponse() {
