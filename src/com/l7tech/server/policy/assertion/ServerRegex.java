@@ -8,6 +8,7 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.BufferPool;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Regex;
@@ -63,13 +64,14 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
                                         compileException.getMessage()}, compileException);
             } else {
                 auditor.logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID,
-                                    new String[]{regexAssertion.getRegex(), "unknown error"});
+                                    regexAssertion.getRegex(), "unknown error");
             }
             return AssertionStatus.FALSIFIED;
         }
 
         int whichPart = regexAssertion.getMimePart();
         InputStream is = null;
+        byte[] returnBuffer = null;
         try {
 
             PartInfo messagePart = isPostRouting(context) ?
@@ -85,23 +87,32 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
                 throw new PolicyAssertionException(regexAssertion, AssertionMessages.REGEX_NO_REPLACEMENT.getMessage());
             }
 
-            is = messagePart.getInputStream(false);
-            byte[] messageBytes = HexUtils.getLocalBuffer();
-            int messageBytesLen = HexUtils.slurpStream(is, messageBytes);
-            if (messageBytesLen >= HexUtils.LOCAL_BUFFER_SIZE) {
-                auditor.logAndAudit(AssertionMessages.REGEX_TOO_BIG);
-                return AssertionStatus.FAILED;
+            byte[] messageBytes = messagePart.getBytesIfAlreadyAvailable();
+            final int messageBytesLen;
+            if (messageBytes != null) {
+                messageBytesLen = messageBytes.length;
+            } else {
+                // Need to slurp it up
+                long messageLen = messagePart.getActualContentLength();
+                if (messageLen > Integer.MAX_VALUE) {
+                    auditor.logAndAudit(AssertionMessages.REGEX_TOO_BIG);
+                    return AssertionStatus.FAILED;
+                }
+                messageBytes = returnBuffer = BufferPool.getBuffer((int)messageLen);
+                is = messagePart.getInputStream(false);
+                messageBytesLen = HexUtils.slurpStream(is, messageBytes);
+                assert messageBytesLen == messageLen;
             }
 
             String encoding = regexAssertion.getEncoding();
             if (encoding != null && encoding.length() > 0) {
-                auditor.logAndAudit(AssertionMessages.REGEX_ENCODING_OVERRIDE, new String[] { encoding });
+                auditor.logAndAudit(AssertionMessages.REGEX_ENCODING_OVERRIDE, encoding);
             } else if (encoding == null || encoding.length() == 0) {
                 encoding = messagePart.getContentType().getEncoding();
             }
 
             if (encoding == null) {
-                auditor.logAndAudit(AssertionMessages.REGEX_NO_ENCODING, new String[] { ENCODING });
+                auditor.logAndAudit(AssertionMessages.REGEX_NO_ENCODING, ENCODING);
                 encoding = ENCODING;
             }
 
@@ -119,21 +130,22 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
                     logger.fine("Proceeding : Matched " + regexAssertion.getRegex());
                     assertionStatus = AssertionStatus.NONE;
                 } else if (!matched && regexAssertion.isProceedIfPatternMatches()) {
-                    auditor.logAndAudit(AssertionMessages.REGEX_NO_MATCH_FAILURE, new String[]{regexAssertion.getRegex()});
+                    auditor.logAndAudit(AssertionMessages.REGEX_NO_MATCH_FAILURE, regexAssertion.getRegex());
                     assertionStatus = AssertionStatus.FAILED;
                 } else if (!matched && !regexAssertion.isProceedIfPatternMatches()) {
                     logger.fine("Proceeding : Not matched and proceed if no match requested " + regexAssertion.getRegex());
                     assertionStatus = AssertionStatus.NONE;
                 } else if (matched && !regexAssertion.isProceedIfPatternMatches()) {
-                    auditor.logAndAudit(AssertionMessages.REGEX_MATCH_FAILURE, new String[]{regexAssertion.getRegex()});
+                    auditor.logAndAudit(AssertionMessages.REGEX_MATCH_FAILURE, regexAssertion.getRegex());
                     assertionStatus = AssertionStatus.FAILED;
                 }
             }
             return assertionStatus;
         } catch (NoSuchPartException e) {
-            auditor.logAndAudit(AssertionMessages.REGEX_NO_SUCH_PART, new String[] { Integer.toString(whichPart) });
+            auditor.logAndAudit(AssertionMessages.REGEX_NO_SUCH_PART, Integer.toString(whichPart));
             return AssertionStatus.FAILED;
         } finally {
+            if (returnBuffer != null) BufferPool.returnBuffer(returnBuffer);
             if (is != null) try { is.close(); } catch (IOException e) { /* IGNORE */ }
         }
     }

@@ -40,6 +40,16 @@ public interface PartInfo {
     public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException;
 
     /**
+     * Get this part's body as a byte array, but only if it is already available internally in that form.
+     * Use this method only as an optimization in cases where you would always have slurped the entire InputStream
+     * into a byte array anyway.
+     *
+     * @return the body bytes of this part, if they are already available as a byte array, or null if they are not
+     *         available in that form
+     */
+    public byte[] getBytesIfAlreadyAvailable();
+
+    /**
      * Completely replace the body content of this multipart part.  This may require reading and discarding the
      * old content, and will result in the new content being stashed.
      * <p>

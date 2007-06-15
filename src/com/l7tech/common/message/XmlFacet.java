@@ -259,6 +259,10 @@ public class XmlFacet extends MessageFacet {
             return delegate.getInputStream(destroyAsRead);
         }
 
+        public byte[] getBytesIfAlreadyAvailable() {
+            return delegate.getBytesIfAlreadyAvailable();
+        }
+
         public void setBodyBytes(byte[] newBody) throws IOException {
             delegate.setBodyBytes(newBody);
             if (isFirstPart()) {

@@ -863,6 +863,14 @@ public class MimeBody {
             return stashAndRecall(is);
         }
 
+        public byte[] getBytesIfAlreadyAvailable() {
+            try {
+                return stashManager.isByteArrayAvailable(ordinal) ? stashManager.recallBytes(ordinal) : null;
+            } catch (NoSuchPartException e) {
+                throw new RuntimeException(e); // can't happen -- we checked first
+            }
+        }
+
         /**
          * Get a previously stashed InputStream or, if there isn't one, ensure that the main input stream
          * is positioned to read this part's body.

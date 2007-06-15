@@ -225,8 +225,7 @@ public class RegexDialog extends JDialog {
                     regexTextArea.setColor(Color.RED);
                     regexTextArea.setSquiggly();
                 } else {
-                    regexTextArea.setColor(Color.BLUE);
-                    regexTextArea.setStraight();
+                    regexTextArea.setNone();
                 }
             }
 

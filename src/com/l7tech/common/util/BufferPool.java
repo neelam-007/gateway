@@ -13,6 +13,10 @@ import java.lang.ref.WeakReference;
  * Class that provides access to a pool of not-zeroed-on-use byte arrays to use as read buffers.
  * Each thread has its own pool of small buffers, but buffers larger than 64k are shared process wide
  * (and involve some synchronization).
+ * <p/>
+ * <b>Note</b>: Since buffers are not prezeroed they might contain sensitive data from previous unrelated computations.
+ * Buffers obtained from this class, even partially overwritten ones, should never be saved, logged, or serialized over RMI.
+ *
  * @noinspection unchecked
  */
 public class BufferPool {
@@ -62,6 +66,9 @@ public class BufferPool {
      * Get a buffer that is at least the specified size.  If possible, this buffer will come from a pool
      * of already-used buffers, and may have leftover random garbage still inside it.  To get the
      * benefit of this mechanism, be sure to return unused buffers when you no longer need them.
+     * <p/>
+     * <b>Note</b>: Since buffers are not prezeroed they might contain sensitive data from previous unrelated computations.
+     * Buffers obtained from this class, even partially overwritten ones, should never be saved, logged, or serialized over RMI.
      *
      * @param minSize  the minimum size of buffer to obtain.
      * @return a buffer that is at least the requested size, but that may not be new.  Never null.
