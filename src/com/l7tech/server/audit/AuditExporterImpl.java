@@ -237,7 +237,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * Export all audit events from the database to the specified OutputStream as a Zip file, including a signature.
      * @param fileOut OutputStream to which the Zip file will be written.
      */
-    @Transactional(propagation=Propagation.SUPPORTS,readOnly=true)
+    @Transactional(propagation=Propagation.REQUIRED,readOnly=true)
     public void exportAuditsAsZipFile(OutputStream fileOut,
                                              X509Certificate signingCert,
                                              PrivateKey signingKey)
@@ -318,6 +318,8 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         } finally {
             if (zipOut != null) zipOut.close();
             if (buffOut != null) buffOut.close();
+            // clear interrupted status - this is essential to avoid SQL errors
+            Thread.interrupted();
         }
     }
 }
