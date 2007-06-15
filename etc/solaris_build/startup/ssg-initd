@@ -157,7 +157,7 @@ status_ssg() {
 
 
 find_tomcat() {
-    pid=$(ps -a | grep java | awk '{print $1}')
+    pid=$(ps -A | grep java | awk '{print $1}')
 }
 
 find_single_partition() {
