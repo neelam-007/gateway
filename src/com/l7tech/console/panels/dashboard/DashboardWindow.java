@@ -410,13 +410,15 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
                                                                      serviceOids,
                                                                      resolution,
                                                                      _currentResolution.getChartTimeRange() +
-                                                                     _currentResolution.getBinInterval());
+                                                                     _currentResolution.getBinInterval(),
+                                                                     true); // (Bug 3855) Need to include empty uptime bins in order for moving chart to advance when there are no request message.
             } else {
                 newBins = clusterStatusAdmin.summarizeByPeriod(nodeId,
                                                                serviceOids,
                                                                resolution,
                                                                _latestDownloadedPeriodStart + 1,
-                                                               null);
+                                                               null,
+                                                               true);       // (Bug 3855) Need to include empty uptime bins in order for moving chart to advance when there are no request message.
             }
 
             MetricsSummaryBin latestBin = null;
@@ -447,10 +449,10 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
                 // either during this call or the previous call.
             } else if (_currentResolution == _hourlyResolution) {
                 // Gets a summary collated from an hour's worth of fine metrics bins.
-                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_FINE, 60 * 60 * 1000);
+                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_FINE, 60 * 60 * 1000, true);
             } else if (_currentResolution == _dailyResolution) {
                 // Gets a summary collated from a day's worth of hourly metrics bins.
-                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_HOURLY, 24 * 60 * 60 * 1000);
+                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_HOURLY, 24 * 60 * 60 * 1000, false /* only FINE resolution has empty uptime bins */);
             }
 
             if (latestBin != null) {

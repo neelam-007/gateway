@@ -222,20 +222,20 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return serviceMetricsManager.getFineInterval();
     }
 
-    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, final boolean includeEmpty) throws RemoteException, FindException {
         checkLicense();
-        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, maxPeriodStart);
+        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, maxPeriodStart, includeEmpty);
     }
 
-    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration, final boolean includeEmpty) throws RemoteException, FindException {
         checkLicense();
         final long minPeriodStart = System.currentTimeMillis() - duration;
-        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, null);
+        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, null, includeEmpty);
     }
 
-    public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration) throws RemoteException, FindException {
+    public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration, final boolean includeEmpty) throws RemoteException, FindException {
         checkLicense();
-        return serviceMetricsManager.summarizeLatest(nodeId, serviceOids, resolution, duration);
+        return serviceMetricsManager.summarizeLatest(nodeId, serviceOids, resolution, duration, includeEmpty);
     }
 
     @Transactional(propagation = Propagation.SUPPORTS)

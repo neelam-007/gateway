@@ -156,15 +156,15 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         throw new UnsupportedOperationException();
     }
 
-    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, final boolean includeEmpty) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 
-    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration, final boolean includeEmpty) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 
-    public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration) throws RemoteException, FindException {
+    public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration, final boolean includeEmpty) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 

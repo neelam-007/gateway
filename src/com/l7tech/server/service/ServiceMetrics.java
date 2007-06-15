@@ -151,16 +151,25 @@ public class ServiceMetrics {
 
     /**
      * Archives the current fine resolution bin and starts a new one.
+     * For performance reason, the current bin will not be archived if there was
+     * no request message.
+     *
+     * @return true if the current bin was archived
      */
-    public void archiveFineBin() {
+    public boolean archiveFineBin() {
         // Use locking to stop further modification to the current bin before it is archived.
+        boolean archived = false;
         try {
             _fineLock.writeLock().acquire();
             final long now = System.currentTimeMillis();
             _currentFineBin.setEndTime(now);
             try {
-                // Bug 3728: Neglecting to save no-traffic bins doesn't actually cause problems
-                if (_currentFineBin.getNumAttemptedRequest() > 0) _queue.put(_currentFineBin);
+                // Bug 3728: Omit no-traffic fine bins to improve performance.
+                // Dashboard will use empty uptime bins to keep moving chart advancing.
+                if (_currentFineBin.getNumAttemptedRequest() > 0) {
+                    _queue.put(_currentFineBin);
+                    archived = true;
+                }
             } catch (InterruptedException e) {
                 _logger.log(Level.WARNING, "Interrupted waiting for queue", e);
                 Thread.currentThread().interrupt();
@@ -173,6 +182,7 @@ public class ServiceMetrics {
         } finally {
             _fineLock.writeLock().release();
         }
+        return archived;
     }
 
     /**

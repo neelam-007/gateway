@@ -3,13 +3,13 @@
  */
 package com.l7tech.server;
 
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import com.l7tech.common.ApplicationContexts;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.service.MetricsBin;
 import com.l7tech.service.MetricsSummaryBin;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.springframework.context.ApplicationContext;
 
 /**
@@ -30,7 +30,7 @@ public class ServiceMetricsManagerTest extends TestCase {
 
     public void testSummarizeLatest() throws Exception {
         int hour = 60 * 60 * 1000;
-        MetricsSummaryBin bin = metricsManager.summarizeLatest(null, null, MetricsBin.RES_FINE, hour);
+        MetricsSummaryBin bin = metricsManager.summarizeLatest(null, null, MetricsBin.RES_FINE, hour, false);
         System.out.println(bin);
     }
 

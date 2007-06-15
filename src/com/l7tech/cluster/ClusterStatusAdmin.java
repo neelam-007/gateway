@@ -195,6 +195,7 @@ public interface ClusterStatusAdmin {
      * @param resolution        bin resolution; null = all
      * @param minPeriodStart    minimum bin period start time; null = as far back as available
      * @param maxPeriodStart    maximum bin period statt time; null = up to the latest available
+     * @param includeEmpty      whether to include empty uptime bins
      *
      * @return collection of summary bins; can be empty but never <code>null</code>
      * @throws FindException if there was a server-side problem accessing the requested information
@@ -205,7 +206,8 @@ public interface ClusterStatusAdmin {
                                                     final long[] serviceOids,
                                                     final Integer resolution,
                                                     final Long minPeriodStart,
-                                                    final Long maxPeriodStart)
+                                                    final Long maxPeriodStart,
+                                                    final boolean includeEmpty)
             throws RemoteException, FindException;
 
     /**
@@ -221,6 +223,7 @@ public interface ClusterStatusAdmin {
      * @param duration          time duration (from current clock time on
      *                          gateway) to search backward for bins whose
      *                          nominal periods fall within
+     * @param includeEmpty      whether to include empty uptime bins (same as include service OID -1)
      *
      * @return collection of summary bins; can be empty but never <code>null</code>
      * @throws FindException if there was a server-side problem accessing the requested information
@@ -230,7 +233,8 @@ public interface ClusterStatusAdmin {
     Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId,
                                                           final long[] serviceOids,
                                                           final Integer resolution,
-                                                          final long duration)
+                                                          final long duration,
+                                                          final boolean includeEmpty)
             throws RemoteException, FindException;
 
     /**
@@ -246,6 +250,8 @@ public interface ClusterStatusAdmin {
      * @param duration      time duration (from latest nominal period boundary
      *                      time on gateway) to search backward for bins whose
      *                      nominal periods fall within
+     * @param includeEmpty  whether to include empty uptime bins (same as include service OID -1)
+     *
      * @return a summary bin; <code>null</code> if no metrics bins are found
      * @throws FindException if there was a server-side problem accessing the requested information
      * @throws RemoteException on remote communication error
@@ -254,7 +260,8 @@ public interface ClusterStatusAdmin {
     MetricsSummaryBin summarizeLatest(final String clusterNodeId,
                                       final long[] serviceOids,
                                       final int resolution,
-                                      final int duration)
+                                      final int duration,
+                                      final boolean includeEmpty)
             throws RemoteException, FindException;
 
     /**

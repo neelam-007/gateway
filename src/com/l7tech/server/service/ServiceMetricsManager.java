@@ -123,6 +123,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      *                          {@link MetricsBin#RES_DAILY}); null = all
      * @param minPeriodStart    minimum bin period start time; null = as far back as available
      * @param maxPeriodStart    maximum bin period statt time; null = up to the latest available
+     * @param includeEmpty      whether to include empty uptime bins (same as include service OID -1)
      *
      * @return collection of summary bins; can be empty but never <code>null</code>
      * @throws FindException if failure to query database
@@ -132,10 +133,14 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                                                            final long[] serviceOids,
                                                            final Integer resolution,
                                                            final Long minPeriodStart,
-                                                           final Long maxPeriodStart)
+                                                           final Long maxPeriodStart,
+                                                           final boolean includeEmpty)
             throws FindException {
         // Enforces RBAC permissions.
         final Set<Long> filteredOids = filterPermittedPublishedServices(serviceOids);
+        if (filteredOids != null && includeEmpty) {
+            filteredOids.add(-1L);      // Empty uptime bins have service OID of -1.
+        }
         if (filteredOids != null && filteredOids.isEmpty()) {
             return Collections.emptyList();     // No bins can possibly be found.
         }
@@ -214,16 +219,22 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * @param duration      time duration (from latest nominal period boundary
      *                      time on gateway) to search backward for bins whose
      *                      nominal periods fall within
+     * @param includeEmpty  whether to include empty uptime bins (same as include service OID -1)
+     *
      * @return a summary bin; <code>null</code> if no metrics bins are found
      * @throws FindException if failure to query database
      */
     public MetricsSummaryBin summarizeLatest(final String clusterNodeId,
                                              final long[] serviceOids,
                                              final int resolution,
-                                             final int duration)
+                                             final int duration,
+                                             final boolean includeEmpty)
             throws FindException {
         // Enforces RBAC permissions.
         final Set<Long> filteredOids = filterPermittedPublishedServices(serviceOids);
+        if (filteredOids != null && includeEmpty) {
+            filteredOids.add(-1L);      // Empty uptime bins have service OID of -1.
+        }
         if (filteredOids != null && filteredOids.isEmpty()) {
             return null;    // No bins can possibly be found.
         }
@@ -558,6 +569,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     /**
      * A timer task to execute at fine resolution binning interval; to close off
      * and archive the current fine resolution bins and start new ones.
+     *
+     * <p>Also archives an empty uptime bin (since 4.0).
      */
     private class FineTask extends ManagedTimerTask {
         protected void doRun() {
@@ -565,11 +578,28 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             synchronized(_serviceMetricsMapLock) {
                 list.addAll(_serviceMetricsMap.values());
             }
+            int numArchived = 0;
             for (ServiceMetrics serviceMetrics : list) {
-                serviceMetrics.archiveFineBin();
+                if (serviceMetrics.archiveFineBin()) {
+                    ++ numArchived;
+                }
             }
             if (_logger.isLoggable(Level.FINER))
-                _logger.finer("Fine archiving task completed; archived " + list.size() + " fine bins.");
+                _logger.finer("Fine archiving task completed; archived " + numArchived + " fine bins.");
+
+            // Archives an empty uptime bin with service OID -1 for 2 reasons:
+            // 1. to distinguish SSG running state from shutdown state
+            // 2. to keep Dashboard moving chart advancing when no request is going through a service
+            final long periodEnd = MetricsBin.periodStartFor(MetricsBin.RES_FINE, _fineBinInterval, System.currentTimeMillis());
+            final long periodStart = periodEnd - _fineBinInterval;
+            final MetricsBin emptyBin = new MetricsBin(periodStart, _fineBinInterval, MetricsBin.RES_FINE, _clusterNodeId, -1L);
+            emptyBin.setEndTime(periodEnd);
+            try {
+                _flusherQueue.put(emptyBin);
+            } catch (InterruptedException e) {
+                _logger.log(Level.WARNING, "Interrupted waiting for queue", e);
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
