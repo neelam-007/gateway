@@ -17,3 +17,10 @@
 /etc/nodename
 /etc/defaultdomain
 /etc/hosts
+/etc/hostname.e1000g0
+/etc/hostname.e1000g1
+/etc/hostname.e1000g2
+/etc/hostname.e1000g3
+/etc/hostname.nge0
+/etc/hostname.nge1
+
