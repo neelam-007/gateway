@@ -103,9 +103,13 @@ if ($outputFh->open(">$ruleset")) {
 				#print $line . "\n";
 				#print "\t$out\n";
 				$outputFh->print($out);
+			} elsif ( /^IPF (.*)/ ) {
+				$line=$1;
+				$out= "$line\n";
+				$outputFh->print($out);
 			} else {
 				#Whining isn't required. I hope.
-				print "Firewall item not understood:\t$line\n";
+				print "Firewall item not understood:\t$_\n";
 			}
 		}
 	}
