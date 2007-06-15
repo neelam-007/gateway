@@ -55,7 +55,8 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
         HasSoapAction hsa = (HasSoapAction)request.getKnob(HasSoapAction.class);
         boolean noSoapActionAvailable = hsa == null;
         try {
-            noSoapActionAvailable |= hsa.getSoapAction() == null;
+            if (hsa != null)
+                noSoapActionAvailable |= hsa.getSoapAction() == null;
         } catch (IOException e) {
             // let resolve() handle multivalue case
         }
