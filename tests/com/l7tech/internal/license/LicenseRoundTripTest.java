@@ -53,6 +53,7 @@ public class LicenseRoundTripTest extends TestCase {
         spec.setLicenseeName("Layer 7 Developer");
         spec.setLicenseId(1001);
         spec.setLicenseeContactEmail("developers@layer7tech.com");
+        spec.setEulaText("phuckoff");
         spec.setHostname("*");
         spec.setIp("*");
         spec.setProduct(BuildInfo.getProductName());

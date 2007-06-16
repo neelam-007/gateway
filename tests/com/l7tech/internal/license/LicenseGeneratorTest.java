@@ -61,6 +61,7 @@ public class LicenseGeneratorTest extends TestCase {
         }
 
         spec.setLicenseeName("Blah Blah");
+        spec.setEulaText("my happy happy eula");
 
         // Should work OK now
         LicenseGenerator.generateUnsignedLicense(spec, false);
@@ -84,6 +85,18 @@ public class LicenseGeneratorTest extends TestCase {
             // ok
         }
 
+        spec.setLicenseeName("Blah Blah");
+        spec.setEulaText("");
+
+        try {
+            LicenseGenerator.generateUnsignedLicense(spec, false); // empty eula text
+            fail("Expected exception was not thrown");
+        } catch (LicenseGenerator.LicenseGeneratorException e) {
+            // ok
+        }
+
+        spec.setEulaText("my happy happy eula");
+
         try {
             LicenseGenerator.generateSignedLicense(spec); // missing cert and key for signing
             fail("Expected exception was not thrown");
@@ -105,6 +118,7 @@ public class LicenseGeneratorTest extends TestCase {
         spec.setLicenseeName("Demo User");
         spec.setLicenseId(1001);
         spec.setLicenseeContactEmail("nomailbox@NOWHERE");
+        spec.setEulaText("happy eula");
 
         Document lic = LicenseGenerator.generateUnsignedLicense(spec, false);
 
@@ -124,6 +138,7 @@ public class LicenseGeneratorTest extends TestCase {
         spec.setLicenseeName("Demo User");
         spec.setLicenseId(1001);
         spec.setLicenseeContactEmail("nomailbox@NOWHERE");
+        spec.setEulaText("my eula");
         spec.addRootFeature("set:Profile:IPS");
         spec.addRootFeature("service:SnmpQuery");
         spec.addRootFeature("assertion:JmsRouting");
@@ -147,6 +162,7 @@ public class LicenseGeneratorTest extends TestCase {
         spec.setLicenseeName("Demo User");
         spec.setLicenseId(1001);
         spec.setLicenseeContactEmail("nomailbox@NOWHERE");
+        spec.setEulaText("my eula");
         spec.addRootFeature("set:Profile:IPS");
         spec.addRootFeature("service:SnmpQuery");
         spec.addRootFeature("assertion:JmsRouting");
