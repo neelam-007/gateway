@@ -77,7 +77,6 @@ public class LicenseSpec {
         this.setDescription(license.getDescription());
         this.setStartDate(license.getStartDate());
         this.setExpiryDate(license.getExpiryDate());
-        this.setEulaId(license.getEulaIdentifier());
         this.setEulaText(license.getEulaText());
 
         this.setIp(grants.getIp());

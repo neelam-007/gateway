@@ -63,11 +63,6 @@ public class LicenseGeneratorTopWindow extends JFrame {
             "\n  " + PROPERTY_KEYSTORE_TYPE;
     public static final String DEFAULT_KEYSTORE_TYPE = "PKCS12";
 
-    // This must agree with the fields in LicenseDialog so the preview function agrees with what the SSM will do
-    private static final String EULA_DIR = "com/l7tech/console/resources/";
-    private static final String DEFAULT_EULA = EULA_DIR + "clickwrap.txt";
-    private static final String EULA_ENCODING = "ISO8859-1";
-
     private LicensePanel licensePanel = new LicensePanel("Building License", true);
     private LicenseSpecPanel specPanel = new LicenseSpecPanel();
 
@@ -171,16 +166,18 @@ public class LicenseGeneratorTopWindow extends JFrame {
                 if (license == null)
                     return;
 
-                EulaDialog clickWrap = null;
+                final EulaDialog clickWrap;
                 LicenseGeneratorTopWindow owner = LicenseGeneratorTopWindow.this;
                 try {
-                    clickWrap = new EulaDialog(owner, license, EULA_DIR, DEFAULT_EULA, EULA_ENCODING);
+                    clickWrap = new EulaDialog(owner, license);
                     clickWrap.pack();
                     Utilities.centerOnScreen(clickWrap);
                     clickWrap.setVisible(true);
+                    if (!clickWrap.isEulaPresent()) {
+                        JOptionPane.showMessageDialog(owner, "(This license would not trigger any EULA dialog as of SecureSpan version 4.0.)", "Nothing happens...", JOptionPane.INFORMATION_MESSAGE);
+                    }
                 } catch (IOException e1) {
                     JOptionPane.showMessageDialog(owner, "Unable to show EULA: " + ExceptionUtils.getMessage(e1), "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
                 }
             }
         });
@@ -255,7 +252,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         };
         action.setEnabled(false); // TODO enable after it's written
         action.putValue(Action.SHORT_DESCRIPTION, "Create a new signing certificate and key store.");
-        action.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_C));
+        action.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_C);
         return createNewKeystoreAction = action;
     }
 
@@ -268,7 +265,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         };
         action.setEnabled(false); // TODO enable after it's written
         action.putValue(Action.SHORT_DESCRIPTION, "Configure the License Generator to point at an existing key store.");
-        action.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_K));
+        action.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_K);
         return configureKeystoreAction = action;
     }
 
@@ -305,7 +302,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
             }
         };
         action.putValue(Action.SHORT_DESCRIPTION, "Sign this license with the currently-configured key store.");
-        action.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_S));
+        action.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_S);
         return signLicenseAction = action;
     }
 
@@ -544,10 +541,9 @@ public class LicenseGeneratorTopWindow extends JFrame {
         xmlContainer.getAccessibility().setText(licenseXml);
         xmlChanged = false; // just in case it fired another update
         doUpdateAllFromXml(licenseXml);
-        return;
     }
 
-    /** Add lines of spaces to s to pad it to at least 6 lines of text in the wrappingLabel. */
+    /* Add lines of spaces to s to pad it to at least 6 lines of text in the wrappingLabel. */
     private String pad(String s) {
         while (s.length() < (60 * 6)) {
             s += "\n                                                            ";
@@ -640,8 +636,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
                 PROPERTY_KEYSTORE_ALIAS_PASSWORD,
         };
 
-        for (int i = 0; i < propsToMerge.length; i++) {
-            String key = propsToMerge[i];
+        for (String key : propsToMerge) {
             String sysVal = System.getProperty(key);
             if (sysVal != null && sysVal.length() > 0)
                 props.setProperty(key, sysVal);

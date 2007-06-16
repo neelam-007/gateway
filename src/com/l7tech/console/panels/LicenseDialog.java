@@ -39,11 +39,6 @@ import java.text.ParseException;
 public class LicenseDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(LicenseDialog.class.getName());
 
-    // These must agree with the fields in LicenseGeneratorTopWindow so ita preview function agrees with what the SSM will do
-    private static final String EULA_DIR = "com/l7tech/console/resources/";
-    private static final String DEFAULT_EULA = EULA_DIR + "clickwrap.txt";
-    private static final String EULA_ENCODING = "ISO8859-1";
-
     final LicensePanel licensePanel;
     private JPanel rootPanel;
     private JPanel leftPanel;
@@ -306,7 +301,7 @@ public class LicenseDialog extends JDialog {
 
 
     /**
-     * Show the click-wrap EULA dialog.
+     * Show the click-wrap EULA dialog, if there's a EULA in this license.
      *
      * @param licenseXml the license XML that is about to be installed.  Required.
      * @return true if the user clicked "I agree"
@@ -329,10 +324,10 @@ public class LicenseDialog extends JDialog {
             throw new InvalidLicenseException(e);
         }
 
-        EulaDialog clickWrap = new EulaDialog(LicenseDialog.this, license, EULA_DIR, DEFAULT_EULA, EULA_ENCODING);
+        EulaDialog clickWrap = new EulaDialog(LicenseDialog.this, license);
         clickWrap.pack();
         Utilities.centerOnScreen(clickWrap);
         clickWrap.setVisible(true);
-        return clickWrap.isConfirmed();
+        return clickWrap.isConfirmed() || !clickWrap.isEulaPresent();
     }
 }

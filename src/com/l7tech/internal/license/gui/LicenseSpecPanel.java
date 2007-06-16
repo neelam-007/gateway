@@ -115,12 +115,11 @@ public class LicenseSpecPanel extends JPanel {
                                                               "Holds all registered feature sets",
                                                               profilesForward.toArray(new GatewayFeatureSet[0]));
 
-    private final String EULA_DEFAULT = "<Default>";
+    private final String EULA_NONE = "<None>";
     private final String EULA_CUSTOM = "<Custom>";
     private final String[] eulaChoices = new String[] {
-            EULA_DEFAULT,
-            EULA_CUSTOM,
-            "clickwrap",
+            EULA_NONE,
+            EULA_CUSTOM
     };
 
     // ----
@@ -170,7 +169,7 @@ public class LicenseSpecPanel extends JPanel {
         });
 
         eulaComboBox.setModel(new DefaultComboBoxModel(eulaChoices));
-        eulaComboBox.setSelectedItem(EULA_DEFAULT);
+        eulaComboBox.setSelectedItem(EULA_NONE);
 
         featureTree.setModel(getFeatureTreeModel());
         featureTree.setCellRenderer(getFeatureTreeRenderer());
@@ -240,7 +239,7 @@ public class LicenseSpecPanel extends JPanel {
         anyMinorVersionButton.addActionListener(blankFieldAction(minorVersionField));
         anyHostButton.addActionListener(blankFieldAction(hostField));
         anyIpButton.addActionListener(blankFieldAction(ipField));
-        eulaDefaultButton.addActionListener(selectItemAction(eulaComboBox, EULA_DEFAULT));
+        eulaDefaultButton.addActionListener(selectItemAction(eulaComboBox, EULA_NONE));
         eulaCustomButton.addActionListener(new CustomEulaAction());
 
         setSpec(null);
@@ -415,7 +414,7 @@ public class LicenseSpecPanel extends JPanel {
         spec.setIp(fts(ipField));
 
         Object ecb = eulaComboBox.getSelectedItem();
-        if (EULA_DEFAULT.equals(ecb)) {
+        if (EULA_NONE.equals(ecb)) {
             spec.setEulaId(null);
             spec.setEulaText(null);
         } else if (EULA_CUSTOM.equals(ecb)) {

@@ -37,7 +37,6 @@ public final class License implements Serializable {
     private final String description;
     private final String licenseeName;
     private final String licenseeContactEmail;
-    private final String eulaIdentifier;
     private final String eulaText;
     private final Set allEnabledFeatures;
 
@@ -123,7 +122,7 @@ public final class License implements Serializable {
             return rootFeatureSetNames;
         }
 
-        /** Get a string description of the grants. */
+        /** @return a string description of the grants. */
         public String asEnglish() {
             final StringBuffer sb = new StringBuffer();
 
@@ -279,7 +278,6 @@ public final class License implements Serializable {
         String versionMinor = parseWildcardStringAttribute(ld, "product", "version", "minor");
 
         this.eulaText = parseEulaText(ld);
-        this.eulaIdentifier = parseEulaId(ld, eulaText);
 
         Set featureSets = new HashSet();
         collectFeatureSets(ld, "product", "featureset", featureSets);
@@ -317,14 +315,6 @@ public final class License implements Serializable {
             trustedIssuer = null;
         }
 
-    }
-
-    private String parseEulaId(Document ld, String eulaText) throws TooManyChildElementsException {
-        String eulaId = parseWildcardStringElement(ld, "eulaid");
-        eulaId = eulaText != null ? "custom" : (
-                eulaId != null && eulaId.trim().length() > 0 && !"*".equals(eulaId) ? eulaId : null
-        );
-        return eulaId;
     }
 
     private String parseEulaText(Document ld) throws TooManyChildElementsException, InvalidLicenseException {
@@ -386,6 +376,7 @@ public final class License implements Serializable {
     /**
      * Parse a simple String out of a top-level element of this license.
      *
+     * @param licenseDoc  the license DOM Document.  Required.
      * @param elementName  name of the element to search for.  Must be an immediate child of the license root element.
      * @return the string parsed out of this element, or "*" if the element wasn't found or it was empty.
      * @throws com.l7tech.common.xml.TooManyChildElementsException if there is more than one element with this name.
@@ -404,6 +395,7 @@ public final class License implements Serializable {
     /**
      * Parse a simple String out of an attribute of a top-level element of this license.
      *
+     * @param licenseDoc  the license DOM Document.  Required.
      * @param elementName  name of the element to search for.  Must be an immediate child of the license root element.
      * @param attributeName name of the attribute of this element to snag.  Must not be in any namespace.
      * @return the string parsed out of this element, or "*" if the element wasn't found or it was empty.
@@ -423,6 +415,7 @@ public final class License implements Serializable {
     /**
      * Parse a simple String out of an attribute of a second-level element of this license.
      *
+     * @param licenseDoc  the license DOM Document.  Required.
      * @param nameTopEl  name of the top-level element to search for.  Must be an immediate child of the license root element.
      * @param name2ndEl  name of the 2nd-level element to search for.  Must be an immediate child of nameTopEl.
      * @param attributeName name of the attribute of this element to snag.  Must not be in any namespace.
@@ -446,6 +439,7 @@ public final class License implements Serializable {
     /**
      * Parse a date out of this license.
      *
+     * @param licenseDoc  the license DOM Document.  Required.
      * @param elementName name of the element to search for.  Must be an immediate child of the license root element.
      * @return the date parsed out of this element, or null if the element was not found.
      * @throws java.text.ParseException if there is a date but it is invalid.
@@ -518,14 +512,6 @@ public final class License implements Serializable {
     }
 
     /**
-     * @return the symbolic name of the EULA to display when this license is installed; "custom" to use the literal
-     *         content of {@link #getEulaText}, or null to use the default EULA
-     */
-    public String getEulaIdentifier() {
-        return eulaIdentifier;
-    }
-
-    /**
      * @return custom EULA text to display when this license is installed, or null if no custom EULA was provided.
      */
     public String getEulaText() {
@@ -569,7 +555,6 @@ public final class License implements Serializable {
                     expiryDate + " (" + DateUtils.makeRelativeDateMessage(expiryDate, false) + ")");
 
         // Ok looks good
-        return;
     }
 
     /**
@@ -625,9 +610,7 @@ public final class License implements Serializable {
      * @return true iff. this IP is allowed by this license.
      */
     public boolean isIpEnabled(String wantIp) {
-        if ("*".equals(g.ip))
-            return true;
-        return wantIp.equals(g.ip);
+        return "*".equals(g.ip) || wantIp.equals(g.ip);
     }
 
     /**
@@ -640,9 +623,7 @@ public final class License implements Serializable {
      * @return true iff. this hostname is allowed by this license.
      */
     public boolean isHostnameEnabled(String wantHostname) {
-        if ("*".equals(g.hostname))
-            return true;
-        return wantHostname.equals(g.hostname);
+        return "*".equals(g.hostname) || wantHostname.equals(g.hostname);
     }
 
     public String toString() {
@@ -651,6 +632,7 @@ public final class License implements Serializable {
 
     /**
      * For internal use only (license maker GUI) -- do not call this method anywhere else.
+     * @return the opaque Spec object.
      */
     public Object getSpec() {
         return g;
@@ -672,7 +654,6 @@ public final class License implements Serializable {
         if (licenseeContactEmail != null ? !licenseeContactEmail.equals(license.licenseeContactEmail) : license.licenseeContactEmail != null) return false;
         if (licenseeName != null ? !licenseeName.equals(license.licenseeName) : license.licenseeName != null) return false;
         if (trustedIssuer != null ? !CertUtils.certsAreEqual(trustedIssuer, license.trustedIssuer) : license.trustedIssuer != null) return false;
-        if (eulaIdentifier != null ? !eulaIdentifier.equals(license.eulaIdentifier) : license.eulaIdentifier != null) return false;
         if (eulaText != null ? !eulaText.equals(license.eulaText) : license.eulaText != null) return false;
 
         return true;
@@ -693,7 +674,6 @@ public final class License implements Serializable {
         result = 29 * result + (licenseeName != null ? licenseeName.hashCode() : 0);
         result = 29 * result + (licenseeContactEmail != null ? licenseeContactEmail.hashCode() : 0);
         result = 29 * result + (g != null ? g.hashCode() : 0);
-        result = 29 * result + (eulaIdentifier != null ? eulaIdentifier.hashCode() : 0);
         result = 29 * result + (eulaText != null ? eulaText.hashCode() : 0);
         return result;
     }

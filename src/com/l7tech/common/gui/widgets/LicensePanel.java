@@ -281,8 +281,8 @@ public class LicensePanel extends JPanel {
                                         JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
 
         boolean customEula = null != license.getEulaText();
-        String eula = customEula ? "<Custom>" : license.getEulaIdentifier();
-        if (eula == null) eula = "<Default>";
+        String eula = customEula ? "<Custom>" : null;
+        if (eula == null) eula = "<None>";
         eulaField.setText(eula);
     }
 
