@@ -65,7 +65,8 @@ public final class LicenseGenerator {
         }
 
         if (spec.getEulaText() == null || spec.getEulaText().trim().length() < 1)
-            throw new LicenseGeneratorException("Non-empty EULA text is required.");
+            if (!ignoreErrors)
+                throw new LicenseGeneratorException("Non-empty EULA text is required.");
 
         Document d = XmlUtil.createEmptyDocument(LIC_EL, null, LIC_NS);
         final Element de = d.getDocumentElement();
