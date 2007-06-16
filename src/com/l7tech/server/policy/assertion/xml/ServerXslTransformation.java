@@ -27,6 +27,8 @@ import com.l7tech.common.xml.xslt.StylesheetCompiler;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
@@ -94,6 +96,7 @@ public class ServerXslTransformation
 
     private final Auditor auditor;
     private final ResourceGetter<CompiledStylesheet> resourceGetter;
+    private final boolean allowMessagesWithNoProcessingInstruction;
     private final String[] varsUsed;
 
     public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) throws ServerPolicyException {
@@ -130,9 +133,14 @@ public class ServerXslTransformation
             }
         };
 
+        MessageUrlResourceInfo muri = null;
+        final AssertionResourceInfo ri = assertion.getResourceInfo();
+        if (ri instanceof MessageUrlResourceInfo)
+            muri = (MessageUrlResourceInfo)ri;
+        allowMessagesWithNoProcessingInstruction = muri != null && muri.isAllowMessagesWithoutUrl();
 
         this.resourceGetter = ResourceGetter.createResourceGetter(assertion,
-                                                                  assertion.getResourceInfo(),
+                                                                  ri,
                                                                   resourceObjectfactory,
                                                                   urlFinder,
                                                                   getCache(springContext));
@@ -245,6 +253,11 @@ public class ServerXslTransformation
             CompiledStylesheet resource = resourceGetter.getResource(ec, input.getVars());
 
             if (resource == null) {
+                if (allowMessagesWithNoProcessingInstruction) {
+                    auditor.logAndAudit(AssertionMessages.XSLT_NO_PI_OK);
+                    return AssertionStatus.NONE;
+                }
+
                 // Can't happen
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Internal server error: null resource");
                 return AssertionStatus.SERVER_ERROR;
