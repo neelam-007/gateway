@@ -29,7 +29,6 @@ public class LicenseSpec {
     private String product = "*";
     private String versionMinor = "*";
     private String versionMajor = "*";
-    private String eulaId = null;
     private String eulaText = null;
     private Set<String> rootFeatures = new LinkedHashSet<String>();
 
@@ -274,16 +273,6 @@ public class LicenseSpec {
     public void setVersionMajor(String versionMajor) {
         if (versionMajor == null) versionMajor = "*";
         this.versionMajor = versionMajor;
-    }
-
-    /** @return the eula identifier to include in the new license, or null to avoid including one. */
-    public String getEulaId() {
-        return eulaId;
-    }
-
-    /** @param eulaId the eula identifier to include in the new license, or null to avoid including one. */
-    public void setEulaId(String eulaId) {
-        this.eulaId = eulaId;
     }
 
     /** @return the literal text of the EULA to include in the new license, or null to avoid including any. */

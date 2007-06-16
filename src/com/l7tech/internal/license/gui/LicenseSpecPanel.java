@@ -82,6 +82,7 @@ public class LicenseSpecPanel extends JPanel {
     private JLabel detailsLabel;
 
     private JTextField defaultTextField = new JTextField();
+    private JComboBox defaultComboBox = new JComboBox();
     private FocusListener focusListener;
     private DocumentListener documentListener;
     private Map<JTextField, String> oldFieldValues = new HashMap<JTextField, String>();
@@ -414,15 +415,12 @@ public class LicenseSpecPanel extends JPanel {
         spec.setIp(fts(ipField));
 
         Object ecb = eulaComboBox.getSelectedItem();
-        if (EULA_NONE.equals(ecb)) {
-            spec.setEulaId(null);
-            spec.setEulaText(null);
-        } else if (EULA_CUSTOM.equals(ecb)) {
-            spec.setEulaId(null);
+        if (EULA_CUSTOM.equals(ecb)) {
             spec.setEulaText(customEulaText);
+            eulaComboBox.setBackground(defaultTextField.getBackground());
         } else {
-            spec.setEulaId(ecb.toString());
             spec.setEulaText(null);
+            eulaComboBox.setBackground(BAD_FIELD_BG);
         }
 
         addCheckedFeaturesToSpec(spec);

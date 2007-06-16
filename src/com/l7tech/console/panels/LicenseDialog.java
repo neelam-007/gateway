@@ -325,9 +325,13 @@ public class LicenseDialog extends JDialog {
         }
 
         EulaDialog clickWrap = new EulaDialog(LicenseDialog.this, license);
+
+        if (!clickWrap.isEulaPresent())
+            throw new InvalidLicenseException("The specified license does not contain any EULA text.");
+
         clickWrap.pack();
         Utilities.centerOnScreen(clickWrap);
         clickWrap.setVisible(true);
-        return clickWrap.isConfirmed() || !clickWrap.isEulaPresent();
+        return clickWrap.isConfirmed();
     }
 }

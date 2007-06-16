@@ -64,6 +64,9 @@ public final class LicenseGenerator {
                 throw new LicenseGeneratorException("A unique, positive license ID is required.");
         }
 
+        if (spec.getEulaText() == null || spec.getEulaText().trim().length() < 1)
+            throw new LicenseGeneratorException("Non-empty EULA text is required.");
+
         Document d = XmlUtil.createEmptyDocument(LIC_EL, null, LIC_NS);
         final Element de = d.getDocumentElement();
 
@@ -90,7 +93,6 @@ public final class LicenseGenerator {
         licensee.setAttribute("name", name);
         setAttributeIfNonEmpty(licensee, "contactEmail", spec.getLicenseeContactEmail());
 
-        appendSimpleElementIfNonEmpty(de, "eulaid", spec.getEulaId());
         appendSimpleElementIfNonEmpty(de, "eulatext", base64(spec.getEulaText()));
 
         try {
