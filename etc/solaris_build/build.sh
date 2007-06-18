@@ -82,10 +82,12 @@ mv ssg/bin/ssg-starter etc/init.d/ssg
 mv ssg/bin/sysconfigscript-initd ssg/bin/ssg-sysconfig
 # need a separate sh starter script to work around solaris vagarities
 mv ssg/bin/ssg-sysconfig-starter etc/init.d/ssg-sysconfig
-
 mv ssg/bin/systemconfig.sh ssg/sysconfigwizard/
 mv ssg/bin/ssg_sys_config.pl ssg/sysconfigwizard/
 mv ssg/bin/ssgmigration.sh ssg/migration/
+# because of the way the tarball is built, it only include the linux flash file
+# so I had to move it into the solaris kit that we copy into /ssg/bin
+mv ssg/bin/grandmaster_flash.solaris ssg/migration/cfg/grandmaster_flash
 
 echo "Touching supplementary ruleset."
 touch ssg/etc/ssg-ipf.conf
