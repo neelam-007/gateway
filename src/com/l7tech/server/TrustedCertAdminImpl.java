@@ -308,7 +308,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     }
 
     public void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException {
-        X509Certificate[] safeChain = parsePemChain(pemChain);
+        X509Certificate[] safeChain = CertUtils.parsePemChain(pemChain);
 
         SsgKeyFinder keyFinder;
         try {
@@ -334,25 +334,9 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         }
     }
 
-    private X509Certificate[] parsePemChain(String[] pemChain) throws CertificateException {
-        if (pemChain == null || pemChain.length < 1)
-            throw new IllegalArgumentException("PEM chain must contain at least one certificate");
-
-        X509Certificate[] safeChain = new X509Certificate[pemChain.length];
-        try {
-            for (int i = 0; i < pemChain.length; i++) {
-                String pem = pemChain[i];
-                safeChain[i] = CertUtils.decodeFromPEM(pem);
-            }
-        } catch (IOException e) {
-            throw new CertificateException("error setting new cert", e);
-        }
-        return safeChain;
-    }
-
     public void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8)
             throws SaveException, CertificateException, InvalidKeyException {
-        X509Certificate[] safeChain = parsePemChain(pemChain);
+        X509Certificate[] safeChain = CertUtils.parsePemChain(pemChain);
 
         SsgKeyFinder keyFinder;
         try {

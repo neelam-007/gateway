@@ -535,7 +535,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     /** Represents a row in the Manage Private Keys table. */
     public static class KeyTableRow {
         private final TrustedCertAdmin.KeystoreInfo keystoreInfo;
-        private final SsgKeyEntry keyEntry;
+        private SsgKeyEntry keyEntry;
         private String keyType = null;
         private String expiry = null;
 
@@ -550,6 +550,10 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         public SsgKeyEntry getKeyEntry() {
             return keyEntry;
+        }
+
+        public void setKeyEntry(SsgKeyEntry keyEntry) {
+            this.keyEntry = keyEntry;
         }
 
         public String getAlias() {

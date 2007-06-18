@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
@@ -30,6 +31,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.List;
 
 /**
  *
@@ -278,8 +280,14 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                         pemchain[i] = CertUtils.encodeAsPEM(certChain[i]);
                     }
                     admin.assignNewCert(subject.getKeystore().id, subject.getAlias(), pemchain);
-                    // refresh the table containing the new cert chain
-                    subject.getKeyEntry().setCertificateChain(certChain);
+                    //re-get the entry from the ssg after assigning (weird but see bzilla #3852)
+                    List<SsgKeyEntry> tmp = admin.findAllKeys(subject.getKeystore().id);
+                    for (SsgKeyEntry ske : tmp) {
+                        if (ske.getAlias().equals(subject.getAlias())) {
+                            subject.setKeyEntry(ske);
+                            break;
+                        }
+                    }
                     populateList();
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "error assigning cert", e);

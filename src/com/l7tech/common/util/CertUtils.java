@@ -223,6 +223,22 @@ public class CertUtils {
         }
     }
 
+    public static X509Certificate[] parsePemChain(String[] pemChain) throws CertificateException {
+        if (pemChain == null || pemChain.length < 1)
+            throw new IllegalArgumentException("PEM chain must contain at least one certificate");
+
+        X509Certificate[] safeChain = new X509Certificate[pemChain.length];
+        try {
+            for (int i = 0; i < pemChain.length; i++) {
+                String pem = pemChain[i];
+                safeChain[i] = CertUtils.decodeFromPEM(pem);
+            }
+        } catch (IOException e) {
+            throw new CertificateException("error setting new cert", e);
+        }
+        return safeChain;
+    }
+
     public static X509Certificate[] decodeCertChain(byte[] bytes) throws CertificateException {
         Collection list = getFactory().generateCertificates(new ByteArrayInputStream(bytes));
         ArrayList certs = new ArrayList(list.size());
