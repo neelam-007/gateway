@@ -95,6 +95,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
                 // Need to slurp it up
                 long messageLen = messagePart.getActualContentLength();
                 if (messageLen > Integer.MAX_VALUE) {
+                    // Note--this is just to keep the array index from overflowing; actual limit is enforced elsewhere
                     auditor.logAndAudit(AssertionMessages.REGEX_TOO_BIG);
                     return AssertionStatus.FAILED;
                 }
