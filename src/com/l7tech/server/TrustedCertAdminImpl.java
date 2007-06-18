@@ -29,6 +29,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -245,11 +247,17 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
             SsgKeyStore store = keyFinder.getKeyStore();
             if (store == null)
                 throw new DeleteException("Unable to delete key: keystore id " + keystoreId + " is read-only");
-            store.deletePrivateKeyEntry(keyAlias);
+            Future<Boolean> result = store.deletePrivateKeyEntry(keyAlias);
+            // Force it to be synchronous (Bug #3852)
+            result.get();
 
         } catch (KeyStoreException e) {
             throw new CertificateException(e);
         } catch (FindException e) {
+            throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
+        } catch (ExecutionException e) {
+            throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
+        } catch (InterruptedException e) {
             throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
         }
     }
@@ -317,7 +325,9 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
             throw new UpdateException("error: keystore ID " + keystoreId + " is read-only");
 
         try {
-            keystore.replaceCertificateChain(alias, safeChain);
+            Future<Boolean> future = keystore.replaceCertificateChain(alias, safeChain);
+            // Force it to be synchronous (Bug #3852)
+            future.get();
         } catch (Exception e) {
             logger.log(Level.WARNING, "error setting new cert", e);
             throw new UpdateException("error setting new cert", e);
