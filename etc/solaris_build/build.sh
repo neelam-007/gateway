@@ -103,6 +103,9 @@ rm ssg/bin/ssg_appliance_config.sh
 rm ssg/bin/tcp_tune.sh
 rm ssg/bin/upgrade.sh
 rm ssg/bin/setkeys.sh
+rm ssg/bin/my.ini
+rm ssg/bin/pkcs11_linux.cfg
+rm ssg/bin/tarari-initd
 
 echo Fixing permissions...
 

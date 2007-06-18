@@ -69,6 +69,10 @@ mv %{buildroot}/ssg/bin/pkcs11_linux.cfg %{buildroot}/ssg/etc/conf/pkcs11.cfg
 
 # Root war is redundant
 rm -f %{buildroot}/ssg/dist/*
+# so is the windows mysql config
+rm -f %{buildroot}/ssg/bin/my.ini
+# tarari rpm has this
+rm -f %{buildroot}/ssg/bin/tarari-initd
 
 chmod 755 %{buildroot}/etc/init.d/*
 chmod 755 %{buildroot}/etc/profile.d/*.sh
