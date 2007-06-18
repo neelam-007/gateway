@@ -13,6 +13,8 @@ import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ResourceUtils;
+
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
@@ -197,12 +199,11 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // can't happen
         } finally {
-            try {
-                if (rs != null) rs.close();
-            }catch(SQLException e) {}
-            try {
-                if (st !=null) st.close();
-            }catch(SQLException e) {}
+            // clear interrupted status - this is essential to avoid SQL errors
+            Thread.interrupted();
+
+            ResourceUtils.closeQuietly(rs);
+            ResourceUtils.closeQuietly(st);
             releaseSession(session);
         }
     }
@@ -237,7 +238,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * Export all audit events from the database to the specified OutputStream as a Zip file, including a signature.
      * @param fileOut OutputStream to which the Zip file will be written.
      */
-    @Transactional(propagation=Propagation.REQUIRED,readOnly=true)
+    @Transactional(propagation=Propagation.REQUIRED,readOnly=true,rollbackFor={},noRollbackFor=Throwable.class)
     public void exportAuditsAsZipFile(OutputStream fileOut,
                                              X509Certificate signingCert,
                                              PrivateKey signingKey)
@@ -316,8 +317,8 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         } catch (XSignatureException e) {
             throw new CausedSignatureException(e);
         } finally {
-            if (zipOut != null) zipOut.close();
-            if (buffOut != null) buffOut.close();
+            ResourceUtils.closeQuietly(zipOut);
+            ResourceUtils.closeQuietly(buffOut);
             // clear interrupted status - this is essential to avoid SQL errors
             Thread.interrupted();
         }

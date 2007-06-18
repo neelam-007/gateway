@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  */
 public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
-    private static final long CONTEXT_TIMEOUT = 1000L * 60 * 2; // expire after 2 min of inactivity
+    private static final long CONTEXT_TIMEOUT = 1000L * 90; // expire after 1 1/2 min of inactivity
     private static final int DEFAULT_DOWNLOAD_CHUNK_LENGTH = 8192;
     private static Map<OpaqueId, DownloadContext> downloadContexts = Collections.synchronizedMap(new HashMap<OpaqueId, DownloadContext>());
     private static final String CLUSTER_PROP_LAST_AUDITACK_TIME = "audit.acknowledge.highestTime";
@@ -71,7 +71,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     };
 
     static {
-        Background.scheduleRepeated(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
+        Background.scheduleRepeated(downloadReaperTask, 10, 10);
     }
 
     public void setAuditRecordManager(AuditRecordManager auditRecordManager) {

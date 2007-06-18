@@ -22,6 +22,7 @@ innodb_safe_binlog
 sync_binlog=1
 slave_compressed_protocol=1 
 slave-net-timeout=30
+net_write_timeout=120
 '
 
 DELETE_LINES_mysqld='
