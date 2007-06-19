@@ -14,6 +14,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.objectmodel.CompressedStringType;
 
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -114,10 +115,13 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
 
             int timecolumn = 3; // initial guess
             int columns = md.getColumnCount();
+            boolean[] zipColumns = new boolean[columns];
             for (int i = 1; i <= columns; ++i) {
                 final String columnName = quoteMeta(md.getColumnName(i));
                 if ("time".equalsIgnoreCase(columnName))
                     timecolumn = i;
+                else if (columnName.indexOf("_zip") > -1)
+                    zipColumns[i-1] = true;
                 out.print(columnName);
                 if (i < columns) out.print(DELIM);
             }
@@ -134,22 +138,29 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                 if (Thread.currentThread().isInterrupted())
                     throw new InterruptedException();
                 for (int i = 1; i <= columns; ++i) {
-                    String data = rs.getString(i);
-                    if (data != null) {
-                        if (i == timecolumn) {
-                            long millis = rs.getLong(i);
-                            if (millis > highestTime)
-                                highestTime = millis;
-                            if (millis < lowestTime)
-                                lowestTime = millis;
-                        } else if (i == 1) {
-                            long id = rs.getLong(i);
-                            if (id > highestId)
-                                highestId = id;
-                            if (id < lowestId)
-                                lowestId = id;
+                    if (zipColumns[i-1]) {
+                        byte[] data = rs.getBytes(i);
+                        if (data != null) {
+                            out.print(quoteMeta(CompressedStringType.decompress(data)));                            
                         }
-                        out.print(quoteMeta(data));
+                    } else {
+                        String data = rs.getString(i);
+                        if (data != null) {
+                            if (i == timecolumn) {
+                                long millis = rs.getLong(i);
+                                if (millis > highestTime)
+                                    highestTime = millis;
+                                if (millis < lowestTime)
+                                    lowestTime = millis;
+                            } else if (i == 1) {
+                                long id = rs.getLong(i);
+                                if (id > highestId)
+                                    highestId = id;
+                                if (id < lowestId)
+                                    lowestId = id;
+                            }
+                            out.print(quoteMeta(data));
+                        }
                     }
                     if (i < columns) out.print(DELIM);
                 }

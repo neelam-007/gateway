@@ -80,41 +80,70 @@ public class CompressedStringType implements UserType {
         return false;
     }
 
+    public static String decompress(final byte[] blob) throws SQLException {
+        String uncompressed = null;
+        InputStream blobIn = null;
+        try {
+            blobIn = new ByteArrayInputStream(blob);
+            byte[] lenBytes = new byte[4];
+            int read = blobIn.read(lenBytes);
+            if (read == 4) { // got length
+                long length = bytesToLength(lenBytes);
+                if (length > Integer.MAX_VALUE || length < 0) {
+                    throw new HibernateException("Invalid compressed string length '" + length + "'.");
+                }
+                int dataLength = (int) length;
+                InflaterInputStream infIn = new InflaterInputStream(blobIn);
+                byte[] expandedData = new byte[dataLength];
+                int dataRead = HexUtils.slurpStream(infIn, expandedData);
+                if (dataRead != dataLength) {
+                    throw new HibernateException("Incorrect amount of data read for compressed string "+dataRead+"!="+dataLength+".");
+                }
+                uncompressed = new String(expandedData, "UTF-8");
+            }
+            else {
+                uncompressed = ""; // empty != null
+            }
+        }
+        catch (IOException ioe) {
+            throw (SQLException) new SQLException("Error reading blob").initCause(ioe);
+        }
+        finally {
+            ResourceUtils.closeQuietly(blobIn);
+        }
+
+        return uncompressed;
+    }
+
+    public static byte[] compress(final String text) throws SQLException  {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(text.length());
+        DeflaterOutputStream defOut = null;
+        try {
+            if (text.length() > 0) {
+                byte[] dataBytes = text.getBytes("UTF-8");
+                baos.write(lengthToBytes(dataBytes.length));
+                defOut = new DeflaterOutputStream(baos);
+                defOut.write(dataBytes);
+                defOut.close();
+            }
+        }
+        catch (IOException ioe) {
+            throw (SQLException) new SQLException("Error creating blob.").initCause(ioe);
+        }
+        finally {
+            ResourceUtils.closeQuietly(defOut);
+        }
+
+        return baos.toByteArray();
+    }
+
     public Object nullSafeGet(ResultSet resultSet, String[] names, Object owner) throws HibernateException, SQLException {
         if (names==null || names.length!=1) throw new HibernateException("Expected single column mapping.");
 
         String uncompressed = null;
         byte[] blob = resultSet.getBytes(names[0]);
         if (blob != null) {
-            InputStream blobIn = null;
-            try {
-                blobIn = new ByteArrayInputStream(blob);
-                byte[] lenBytes = new byte[4];
-                int read = blobIn.read(lenBytes);
-                if (read == 4) { // got length
-                    long length = bytesToLength(lenBytes);
-                    if (length > Integer.MAX_VALUE || length < 0) {
-                        throw new HibernateException("Invalid compressed string length '" + length + "'.");
-                    }
-                    int dataLength = (int) length;
-                    InflaterInputStream infIn = new InflaterInputStream(blobIn);
-                    byte[] expandedData = new byte[dataLength];
-                    int dataRead = HexUtils.slurpStream(infIn, expandedData);
-                    if (dataRead != dataLength) {
-                        throw new HibernateException("Incorrect amount of data read for compressed string "+dataRead+"!="+dataLength+".");
-                    }
-                    uncompressed = new String(expandedData, "UTF-8");
-                }
-                else {
-                    uncompressed = ""; // empty != null
-                }
-            }
-            catch (IOException ioe) {
-                throw (SQLException) new SQLException("Error reading blob '"+names[0]+"'").initCause(ioe);
-            }
-            finally {
-                ResourceUtils.closeQuietly(blobIn);
-            }
+            uncompressed = decompress(blob);
         }
 
         return uncompressed;
@@ -123,25 +152,8 @@ public class CompressedStringType implements UserType {
     public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index) throws HibernateException, SQLException {
         if (value != null) {
             String text = (String) value;
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(text.length());
-            DeflaterOutputStream defOut = null;
-            try {
-                if (text.length() > 0) {
-                    byte[] dataBytes = text.getBytes("UTF-8");
-                    baos.write(lengthToBytes(dataBytes.length));
-                    defOut = new DeflaterOutputStream(baos);
-                    defOut.write(dataBytes);
-                    defOut.close();
-                }
-            }
-            catch (IOException ioe) {
-                throw (SQLException) new SQLException("Error creating blob.").initCause(ioe);
-            }
-            finally {
-                ResourceUtils.closeQuietly(defOut);
-            }
-
-            preparedStatement.setBytes(index, baos.toByteArray());
+            byte[] data = compress(text);
+            preparedStatement.setBytes(index, data);
         }
         else {
             preparedStatement.setNull(index, Types.BLOB);
@@ -162,7 +174,7 @@ public class CompressedStringType implements UserType {
 
     //- PRIVATE
 
-    private byte[] lengthToBytes(long length) {
+    private static byte[] lengthToBytes(long length) {
         byte[] lengthBytes = new byte[4];
 
         lengthBytes[0] |= (length & 0x000000FFL) >>  0;
@@ -173,7 +185,7 @@ public class CompressedStringType implements UserType {
         return lengthBytes;
     }
 
-    public long bytesToLength(byte[] lengthBytes) {
+    private static long bytesToLength(byte[] lengthBytes) {
         long length = 0;
 
         if (lengthBytes.length == 4) {
