@@ -9,6 +9,7 @@ package com.l7tech.server.audit;
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.audit.Messages;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
@@ -35,16 +36,28 @@ import java.sql.*;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.util.List;
+import java.util.ArrayList;
+import java.text.MessageFormat;
 
 /**
  * Simple utility to export signed audit records.
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class AuditExporterImpl extends HibernateDaoSupport implements AuditExporter {
-    private static final String SQL = "select * from audit_main left ou" +
-            "ter join audit_admin on audit_main.objectid=audit_admin.objectid left outer join audit_message on audit_main." +
-            "objectid=audit_message.objectid left outer join audit_system on audit_main.objectid=audit_system.objecti" +
-            "d";
+    private static final String SQL =
+            "select audit_main.*, audit_admin.*, audit_message.*, audit_system.*,\n" +
+            "GROUP_CONCAT(distinct 'ADMID:', audit_detail.message_id, '/-/_/-/', (select GROUP_CONCAT(value ORDER BY position asc SEPARATOR '/-/_/-/') from audit_detail_params where\n" +
+            "audit_detail_params.audit_detail_oid=audit_detail.objectid) ORDER BY ordinal SEPARATOR '/-/_/-/') as audit_associated_logs\n" +
+            "from audit_main\n" +
+            "left outer join audit_admin on audit_main.objectid=audit_admin.objectid\n" +
+            "left outer join audit_message on audit_main.objectid=audit_message.objectid\n" +
+            "left outer join audit_system on audit_main.objectid=audit_system.objectid\n" +
+            "left outer join audit_detail on audit_main.objectid=audit_detail.audit_oid GROUP BY audit_main.objectid";
+
+    private static final String DETAILS_TO_EXPAND = "audit_associated_logs";
+    private static final String AUDITDETAILMESSAGEID = "ADMID:";
+    private static final String SEPARATOR = "/-/_/-/";
     private static final int FETCH_SIZE_ROWS = Integer.MIN_VALUE;
     private static final String COUNT_SQL = "select count(*) from audit_main"; // TODO replace with faster query that counts index instead
     private static final String SIG_XML = "<audit:AuditMetadata xmlns:audit=\"http://l7tech.com/ns/2004/Oct/08/audit\" />";
@@ -114,12 +127,15 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             ResultSetMetaData md = rs.getMetaData();
 
             int timecolumn = 3; // initial guess
+            int detailsToExpand = -1;
             int columns = md.getColumnCount();
             boolean[] zipColumns = new boolean[columns];
             for (int i = 1; i <= columns; ++i) {
                 final String columnName = quoteMeta(md.getColumnName(i));
                 if ("time".equalsIgnoreCase(columnName))
                     timecolumn = i;
+                else if (DETAILS_TO_EXPAND.equalsIgnoreCase(columnName))
+                    detailsToExpand = i;
                 else if (columnName.indexOf("_zip") > -1)
                     zipColumns[i-1] = true;
                 out.print(columnName);
@@ -141,7 +157,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                     if (zipColumns[i-1]) {
                         byte[] data = rs.getBytes(i);
                         if (data != null) {
-                            out.print(quoteMeta(CompressedStringType.decompress(data)));                            
+                            out.print(quoteMeta(CompressedStringType.decompress(data)));
                         }
                     } else {
                         String data = rs.getString(i);
@@ -152,6 +168,8 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                                     highestTime = millis;
                                 if (millis < lowestTime)
                                     lowestTime = millis;
+                            } else if (i == detailsToExpand) {
+                                data = expandDetails(data);
                             } else if (i == 1) {
                                 long id = rs.getLong(i);
                                 if (id > highestId)
@@ -217,6 +235,68 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             ResourceUtils.closeQuietly(st);
             releaseSession(session);
         }
+    }
+
+    /**
+     * Expand a string of detail messages into a set with full message text.
+     *
+     * ADMID:4714/-/_/-/string(document('file:.../server.xml')/Server/@port)/-/_/-/ADMID:3017/-/_/-/Warehouse [524288]/-/_/-/601/-/_/-/Error in Assertion Processing
+     */
+    private static String expandDetails(String details) {
+        StringBuffer buffer = new StringBuffer();
+
+        if (details.startsWith(AUDITDETAILMESSAGEID)) {
+            buffer.append("[");
+            boolean isFirst = true;
+
+            String[] detailParts = details.split(SEPARATOR);
+            String currentMessage = null;
+            String currentMessageId = null;
+            List paramList = new ArrayList();
+            for (String detailPart : detailParts) {
+                if (detailPart.startsWith(AUDITDETAILMESSAGEID)) {
+                    Object[] paramArray = paramList.toArray();
+                    paramList.clear();
+
+                    if (currentMessage != null) {
+                        if (!isFirst)
+                            buffer.append(",");
+                        else
+                            isFirst = false;
+                        String formatted = MessageFormat.format(currentMessage, paramArray);
+                        buffer.append(currentMessageId);
+                        buffer.append(":");
+                        buffer.append(formatted);
+                    }
+
+                    try {
+                        currentMessage = Messages.getMessageById(Integer.parseInt(detailPart.substring(AUDITDETAILMESSAGEID.length())));
+                        currentMessageId = detailPart.substring(AUDITDETAILMESSAGEID.length());
+                    } catch (NumberFormatException nfe) {
+                        currentMessage = null;
+                        currentMessageId = null;
+                    }
+
+                } else {
+                    paramList.add(detailPart);
+                }
+            }
+
+            if (currentMessage != null) {
+                if (!isFirst)
+                    buffer.append(",");
+                else
+                    isFirst = false;
+                String formatted = MessageFormat.format(currentMessage, paramList.toArray());
+                buffer.append(currentMessageId);
+                buffer.append(":");
+                buffer.append(formatted);
+            }
+
+            buffer.append("]");
+        }
+
+        return buffer.toString();
     }
 
     private static class CausedSignatureException extends SignatureException {
@@ -320,7 +400,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             buffOut = null;
             synchronized (this) { this.highestTime = highestTime; }
             return;
-            
+
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SignatureStructureException e) {
