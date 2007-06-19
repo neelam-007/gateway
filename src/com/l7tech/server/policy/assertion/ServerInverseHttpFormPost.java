@@ -57,10 +57,6 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion implement
                     ContentTypeHeader ctype = partInfo.getContentType();
                     InputStream partStream = partInfo.getInputStream(true);
                     byte[] partBytes = HexUtils.slurpStreamLocalBuffer(partStream);
-                    if (partBytes.length >= HexUtils.LOCAL_BUFFER_SIZE) {
-                        auditor.logAndAudit(AssertionMessages.INVERSE_HTTPFORM_TOO_BIG, new String[] { Integer.toString(i) });
-                        return AssertionStatus.FAILED;
-                    }
 
                     baos.write(fieldName.getBytes(ENCODING));
                     baos.write("=".getBytes());

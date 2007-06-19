@@ -278,7 +278,7 @@ public class RequestHandler extends AbstractHttpHandler {
         if (ss == null) throw new HttpException(404);
         response.setContentType("text/xml");
         OutputStream os = response.getOutputStream();
-        byte[] chunk = HexUtils.getLocalBuffer();
+        byte[] chunk = BufferPool.getBuffer(16384);
         try {
             int got;
             while ((got = ss.read(chunk)) > 0)
@@ -290,6 +290,7 @@ public class RequestHandler extends AbstractHttpHandler {
             log.log(Level.SEVERE, msg, e);
             throw new HttpException(500, msg);
         } finally {
+            BufferPool.returnBuffer(chunk);
             try {
                 ss.close();
             } catch (IOException e) { /* can't happen */ }

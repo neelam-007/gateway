@@ -8,6 +8,7 @@ package com.l7tech.common.mime;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SyspropUtil;
+import com.l7tech.common.util.BufferPool;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 
 import java.io.*;
@@ -79,8 +80,9 @@ public class HybridStashManager implements StashManager {
         }
 
         BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(initialBuffer);
+        byte[] buff = null;
         try {
-            byte[] buff = HexUtils.getLocalBuffer();
+            buff = BufferPool.getBuffer(16384);
             int got;
             long newSize = size;
             while ((got = in.read(buff)) > 0) {
@@ -101,6 +103,7 @@ public class HybridStashManager implements StashManager {
             ramstash.stash(ordinal, data, 0, length);
         } finally {
             baos.close();
+            BufferPool.returnBuffer(buff);
         }
     }
 

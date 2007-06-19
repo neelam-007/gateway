@@ -22,15 +22,6 @@ import java.util.zip.GZIPOutputStream;
  * @noinspection UnnecessaryUnboxing,ForLoopReplaceableByForEach,unchecked
  */
 public class HexUtils {
-    private static final int DEFAULT_LOCAL_BUFFER_SIZE = 256 * 1024;
-    private static final int MIN_LOCAL_BUFFER_SIZE = 32 * 1024; // contract guarantees at least 32k
-    private static final int CFG_LOCAL_BUFFER_SIZE = SyspropUtil.getInteger("com.l7tech.common.util.localBufferSize",
-                                                                        DEFAULT_LOCAL_BUFFER_SIZE).intValue();
-
-    /** The size of the thread-local buffer returned by getBuffer() and used by slurpStreamLimited. */
-    public static final int LOCAL_BUFFER_SIZE = CFG_LOCAL_BUFFER_SIZE >= MIN_LOCAL_BUFFER_SIZE
-                                                      ? CFG_LOCAL_BUFFER_SIZE : MIN_LOCAL_BUFFER_SIZE;
-
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
     public static byte[] getMd5Digest(byte[] stuffToDigest) {
@@ -69,25 +60,6 @@ public class HexUtils {
     private HexUtils() {}
 
     private static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
-    /**
-     * Get a thread-local buffer for i.e. reading stuff that is at least 32 kilobytes and has not been zeroed
-     * since the last person used it.  You may use this method ONLY if you can prove that
-     * no method that you call while still using your thread's buffer might also try to use it -- be especially
-     * careful when using InputStreams and OutputStreams which may actually be wrappers for other Layer 7 code.
-     *
-     * @return a thread-local byte buffer that is at least 32k in size and has NOT been zeroed:
-     *         it may contain random leftover garbage.  Never null.
-     */
-    public static byte[] getLocalBuffer() {
-        return ((ByteBuffer)localBuffer.get()).array();
-    }
-
-    private static ThreadLocal localBuffer = new ThreadLocal() {
-        protected Object initialValue() {
-            return ByteBuffer.allocate(LOCAL_BUFFER_SIZE);
-        }
-    };
 
     public static String encodeBase64(byte[] binaryData) {
         return encodeBase64(binaryData, false);
@@ -253,31 +225,15 @@ public class HexUtils {
     }
 
     /**
-     * Slurp at most {@link #LOCAL_BUFFER_SIZE} bytes of a stream into a byte array and return
-     * a new array of the appropriate size.
-     * This requires reading into a thread-local buffer array, and then copying to a new array.
-     * If you don't need the the returned array to be the same size as the total amount of data read,
-     * you can avoid a copy by supplying your own array to the alternate call
-     * {@link #slurpStream(java.io.InputStream, byte[])}.
-     * <p/>
-     * If the stream contains more than {@link #LOCAL_BUFFER_SIZE} bytes of data, additional unread information
-     * might be left in the stream, and
-     * the amount returned will be silently truncated to {@link #LOCAL_BUFFER_SIZE}.  To detect if this might
-     * have been the case, check if the returned amount exactly equals {@link #LOCAL_BUFFER_SIZE}.  (Unfortunately
-     * there is no way to tell this situation apart from the non-lossy outcome of the stream containing exactly
-     * {@link #LOCAL_BUFFER_SIZE} bytes.)
+     * This method is now a synonym for {@link #slurpStream(InputStream)}, now that that method uses BufferPool.
      *
      * @param stream  the stream to read.  Must not be null.
-     * @return the newly read array, sized to the amount read or {@link #LOCAL_BUFFER_SIZE} if the data may have been truncated.
-     *         never null.
+     * @return the newly read array, sized to the amount read.  never null.
      * @throws IOException if there was a problem reading the stream
+     * @see #slurpStream(InputStream)
      */
     public static byte[] slurpStreamLocalBuffer(InputStream stream) throws IOException {
-        byte[] buffer = getLocalBuffer();
-        int got = slurpStream(stream, buffer);
-        byte[] ret = new byte[got];
-        System.arraycopy(buffer, 0, ret, 0, got);
-        return ret;
+        return slurpStream(stream);
     }
 
     /**
@@ -418,14 +374,18 @@ public class HexUtils {
      */
     public static long copyStream(InputStream in, OutputStream out) throws IOException {
         if (in == null || out == null) throw new NullPointerException("in and out must both be non-null");
-        byte[] buf = getLocalBuffer();
-        int got;
-        long total = 0;
-        while ((got = in.read(buf)) > 0) {
-            out.write(buf, 0, got);
-            total += got;
+        byte[] buf = BufferPool.getBuffer(16384);
+        try {
+            int got;
+            long total = 0;
+            while ((got = in.read(buf)) > 0) {
+                out.write(buf, 0, got);
+                total += got;
+            }
+            return total;
+        } finally {
+            BufferPool.returnBuffer(buf);
         }
-        return total;
     }
 
     /**
