@@ -111,7 +111,6 @@ chmod 711 %{buildroot}/ssg/libexec/*
 %attr(0755,gateway,gateway) /ssg/bin/iptables*
 %attr(0755,gateway,gateway) /ssg/bin/*.pl
 %attr(0755,gateway,gateway) /ssg/bin/*.sh
-%attr(0755,gateway,gateway) /ssg/bin/*-initd
 
 # Tomcat
 %dir /ssg/tomcat
