@@ -3,7 +3,7 @@ package com.l7tech.common.message;
 import java.net.PasswordAuthentication;
 
 /**
- * Information about a request that arrived over HTTP.
+ * Information about a request that arrived over FTP.
  *
  * @author Steve Jones
  */
