@@ -206,14 +206,16 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     if (context.getRequest().getMimeKnob().isMultipart())
                         auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_NO_ATTACHMENTS);
 
-                    URL origUrl = DEFAULT_ORIG_URL;
-                    if(httpRequestKnob != null) {
+                    final URL origUrl;
+                    try {
+                        origUrl = new URL(ssg.getServerUrl());
+                    } catch (MalformedURLException e) {
+                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_ORIGINAL_URL);
+                        return AssertionStatus.SERVER_ERROR;
+                    }
+
+                    if (httpRequestKnob != null) {
                         soapAction = httpRequestKnob.getHeaderSingleValue(SoapUtil.SOAPACTION);
-                        try {
-                            origUrl = new URL(httpRequestKnob.getRequestUrl());
-                        } catch (MalformedURLException e) {
-                            auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_ORIGINAL_URL);
-                        }
                     }
 
                     PolicyAttachmentKey pak = new PolicyAttachmentKey(nsUri, soapAction, origUrl.getPath());
@@ -321,16 +323,6 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ServerBridgeRoutingAssertion.class.getName());
-
-    private static final URL DEFAULT_ORIG_URL;
-
-    static {
-        try {
-            DEFAULT_ORIG_URL = new URL("http://no-original-uri.layer7tech.com/");
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e); // can't happen
-        }
-    }
 
     private final SignerInfo signerInfo;
     private final Ssg ssg;
