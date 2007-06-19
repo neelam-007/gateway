@@ -488,8 +488,9 @@ public class NewInternalUserDialog extends JDialog {
 
     /** insert user */
     private void insertUser() {
-        user.setName(idTextField.getText());
-        user.setLogin(idTextField.getText());
+        final String name = idTextField.getText().trim();
+        user.setName(name);
+        user.setLogin(name);
         user.setCleartextPassword(new String(passwordField.getPassword()));
         SwingUtilities.invokeLater(
                 new Runnable() {
@@ -632,7 +633,7 @@ public class NewInternalUserDialog extends JDialog {
         }
     }
 
-    private static final Pattern CERT_NAME_CHECKER = Pattern.compile("[^\\p{L}\\p{N} ]");
+    static final Pattern CERT_NAME_CHECKER = Pattern.compile("[#,+\"\\\\<>;]");
 
     private boolean validateIdTextField() {
         String t = idTextField.getText();
