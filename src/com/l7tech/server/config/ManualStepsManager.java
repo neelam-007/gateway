@@ -65,15 +65,6 @@ public class ManualStepsManager {
                 "</dl>" + eol +
             "</li>" + eol;
 
-    private final String updateHostsFileLine =
-        "<li>UPDATE HOSTS FILE:" +
-            "<p>add a line containing the IP address for this SSG node, then the cluster host name, then this SSG node's hostname" + eol +
-            "<dl>" + eol +
-                "<dt>ex:</dt>" + eol +
-                    "<dd>192.168.1.186      ssgcluster.domain.com ssgnode1.domain.com</dd>" + eol +
-            "</dl>" + eol +
-        "</li>" + eol;
-
     private final String timeSyncLine =
         "<li>TIME SYNCHRONIZATION:" +
             "<p>Please ensure time is synchronized among all SSG nodes within the cluster" + eol +
@@ -103,7 +94,6 @@ public class ManualStepsManager {
 
         if (getClusteringType() != ClusteringType.CLUSTER_NONE &&
             getClusteringType() != ClusteringType.UNDEFINED) {
-            steps.add(updateHostsFileLine);
             steps.add(timeSyncLine);
             steps.add("<br>");
         }
@@ -141,14 +131,6 @@ public class ManualStepsManager {
         if (!steps.isEmpty()) steps.add("<br>");
         return steps;
     }
-
-//    public void setKeystoreType(KeystoreType keystoreType) {
-//        this.keystoreType = keystoreType;
-//    }
-
-//    public void setClusteringType(ClusteringType clusteringType) {
-//        this.clusteringType = clusteringType;
-//    }
 
     private ClusteringType getClusteringType() {
         return sharedWizardInfo.getClusterType();
