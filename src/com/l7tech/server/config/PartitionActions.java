@@ -21,6 +21,7 @@ import org.xml.sax.SAXException;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.net.InterfaceAddress;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -810,8 +811,12 @@ public class PartitionActions {
                 for (NetworkingConfigurationBean.NetworkConfig networkConfig : networkConfigs) {
                     String bootProto = networkConfig.getBootProto();
 
-                    if (!StringUtils.equals(bootProto, NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO))
-                        allIpAddresses.add(networkConfig.getIpAddress());
+                    if (!StringUtils.equals(bootProto, NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO)) {
+                        List<InterfaceAddress> interfaceAddresses = networkConfig.getIpAddresses();
+                        for (InterfaceAddress interfaceAddress : interfaceAddresses) {
+                            allIpAddresses.add(interfaceAddress.getAddress().getHostAddress());
+                        }
+                    }
                 }
             }
         } catch (UnknownHostException e) {

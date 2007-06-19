@@ -5,10 +5,12 @@ import com.l7tech.server.config.ui.console.BaseConsoleStep;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.LinkedList;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * User: megery
@@ -175,12 +177,12 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
     private NetworkingConfigurationBean.NetworkConfig doSelectInterfacePrompts() throws IOException, WizardNavigationException {
 
-        List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = getInterfaces();
+        List<NetworkingConfigurationBean.NetworkConfig> allNetworkConfigs = getInterfaces();
 
         List<String> promptList = new ArrayList<String>();
 
         int x = 1;
-        for (NetworkingConfigurationBean.NetworkConfig networkConfig : networkConfigs) {
+        for (NetworkingConfigurationBean.NetworkConfig networkConfig : allNetworkConfigs) {
             String indexStr = String.valueOf(x++);
             String prompt = indexStr + ") " + networkConfig.describe();
             promptList.add(prompt + getEolChar());
@@ -202,11 +204,11 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         int choiceNum = Integer.parseInt(whichChoice);
         NetworkingConfigurationBean.NetworkConfig theConfig;
 
-        if (choiceNum < 1 || choiceNum > networkConfigs.size()) {
+        if (choiceNum < 1 || choiceNum > allNetworkConfigs.size()) {
             //creating a new interface
             theConfig = NetworkingConfigurationBean.makeNetworkConfig(null, null);
         } else {
-            theConfig = networkConfigs.get(choiceNum -1);
+            theConfig = allNetworkConfigs.get(choiceNum -1);
         }
         theConfig.setDirtyFlag(true);
         return theConfig;
@@ -324,26 +326,27 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
     private String getIpAddress(NetworkingConfigurationBean.NetworkConfig netConfig) throws IOException, WizardNavigationException {
         String interfaceName = netConfig.getInterfaceName();
-        String ipAddress = netConfig.getIpAddress();
+        String currentFirstAddress = netConfig.getIpAddresses().get(0).getAddress().getHostAddress();
 
 
         String prompt = "Enter the IP for interface \"" + interfaceName + "\"";
-        if (StringUtils.isNotEmpty(ipAddress)) prompt += " [" + ipAddress + "] ";
+        if (StringUtils.isNotEmpty(currentFirstAddress)) prompt += " [" + currentFirstAddress + "] ";
         prompt += ": ";
 
         boolean isValid;
         List<String> errors;
-        String defaultAddress = StringUtils.isNotEmpty(ipAddress)?ipAddress:"";
+        String defaultAddress = StringUtils.isNotEmpty(currentFirstAddress)?currentFirstAddress:"";
 
+        String newAddress = "";
         do {
-            ipAddress = getData(new String[] {prompt}, defaultAddress);
-            errors = validateIpAddress(ipAddress);
+            newAddress = getData(new String[] {prompt}, defaultAddress);
+            errors = validateIpAddress(newAddress);
 
             isValid = errors.isEmpty();
             if (!isValid) printText(errors);
         } while (!isValid);
 
-        return ipAddress;
+        return newAddress;
     }
 
     private String getNetMask(NetworkingConfigurationBean.NetworkConfig netConfig) throws IOException, WizardNavigationException {
@@ -397,7 +400,13 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     }
 
     private List<NetworkingConfigurationBean.NetworkConfig> getInterfaces() {
-        return netBean.getAllNetworkInterfaces();
+        List<NetworkingConfigurationBean.NetworkConfig> allConfigs = netBean.getAllNetworkInterfaces();
+        List<NetworkingConfigurationBean.NetworkConfig> configurableConfigs = new LinkedList<NetworkingConfigurationBean.NetworkConfig>();
+        for (NetworkingConfigurationBean.NetworkConfig aConfig : allConfigs) {
+            if (!aConfig.isVirtual())
+                configurableConfigs.add(aConfig);
+        }
+        return configurableConfigs;
     }
 
     public String getTitle() {

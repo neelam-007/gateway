@@ -1,10 +1,13 @@
 package com.l7tech.server.config;
 
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 
 import java.io.*;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.net.SocketException;
 
 /**
  * A class that encapsulates the configuraration locations for an SSG on a supported platform.
@@ -264,6 +267,8 @@ public abstract class OSSpecificFunctions {
         return timeZonesDir;
     }
 
+    public abstract List<NetworkingConfigurationBean.NetworkConfig> getNetworkConfigs() throws SocketException;
+
     public static class KeystoreInfo {
         KeystoreType type;
         Map<String, String> metaInfo;
@@ -302,7 +307,5 @@ public abstract class OSSpecificFunctions {
         public static boolean isLunaEnabled() {
             return Boolean.getBoolean(ENABLE_LUNA) ;
         }
-
-
     }
 }

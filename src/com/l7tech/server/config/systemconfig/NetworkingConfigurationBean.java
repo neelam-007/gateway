@@ -1,17 +1,13 @@
 package com.l7tech.server.config.systemconfig;
 
-import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.beans.BaseConfigurationBean;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.*;
+import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.InterfaceAddress;
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
@@ -31,8 +27,8 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
     private List<NetworkConfig> networkingConfigs;
 
-    public static NetworkConfig makeNetworkConfig(String interfaceName, String bootProto) {
-        return new NetworkConfig(interfaceName, bootProto);
+    public static NetworkConfig makeNetworkConfig(NetworkInterface nic, String bootProto) {
+        return new NetworkConfig(nic, bootProto);
     }
 
     public NetworkingConfigurationBean(String name, String description) {
@@ -52,7 +48,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 explanations.add("Configure \"" + networkConfig.getInterfaceName() + "\" interface");
                 explanations.add("\tBOOTPROTO=" + networkConfig.getBootProto());
                 if (networkConfig.getBootProto().equals(STATIC_BOOT_PROTO)) {
-                    explanations.add("\tIPADDR=" + networkConfig.getIpAddress());
+                    explanations.add("\tIPADDR=" + networkConfig.getIpAddresses());
                     explanations.add("\tNETMASK=" + networkConfig.getNetMask());
                     explanations.add("\tGATEWAY=" + networkConfig.getGateway());
                     if (networkConfig.getNameServers() != null) {
@@ -64,10 +60,6 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 explanations.add("");
             }
         }
-    }
-
-    public List<NetworkConfig> getNetworkingConfigurations() {
-        return networkingConfigs;
     }
 
     public void addNetworkingConfig(NetworkConfig netConfig) {
@@ -83,156 +75,17 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         this.hostname = hostname;
     }
 
-
     public List<NetworkConfig> getAllNetworkInterfaces() {
         return networkingConfigs;
     }
 
     private void getExistingInterfaces() {
-        if (getOsFunctions().isUnix()) {
-            if (OSDetector.isLinux()) {
-                getExistingInterfacesLinux();
-            } else {
-                getExistingInterfacesSolaris();
-            }
-        } else if (getOsFunctions().isWindows()){
-            getExistingInterfacesWindows();            
-        }
-    }
-
-    private void getExistingInterfacesWindows() {
-        if (networkingConfigs == null) {
-            logger.info("Determining existing interface information.");
-            networkingConfigs = new ArrayList<NetworkConfig>();
-
-            try {
-                Enumeration<NetworkInterface> allInterfaces = NetworkInterface.getNetworkInterfaces();
-                while (allInterfaces.hasMoreElements()) {
-                    NetworkInterface networkInterface = allInterfaces.nextElement();
-                    NetworkConfig nc = new NetworkConfig();
-                    nc.setInterfaceName(networkInterface.getDisplayName());
-                    List<InterfaceAddress> interfaceAddresses   = networkInterface.getInterfaceAddresses();
-                    for (InterfaceAddress interfaceAddress : interfaceAddresses) {
-                        InetAddress address = interfaceAddress.getAddress();
-                        nc.setIpAddress(address.getHostAddress());
-                    }
-                    networkingConfigs.add(nc);
-                }
-            } catch (SocketException e) {
-                logger.warning("Error while determining the IP Addresses for this machine:" + e.getMessage());
-            }
-        }
-    }
-
-    private void getExistingInterfacesSolaris() {
-        if (networkingConfigs == null) {
-            logger.info("Determining existing interface information.");
-            networkingConfigs = new ArrayList<NetworkConfig>();
-
-            try {
-                Enumeration<NetworkInterface> allInterfaces = NetworkInterface.getNetworkInterfaces();
-                while (allInterfaces.hasMoreElements()) {
-                    NetworkInterface networkInterface = allInterfaces.nextElement();
-                    if (!networkInterface.isLoopback()) {
-                        NetworkConfig nc = new NetworkConfig();
-                        nc.setInterfaceName(networkInterface.getDisplayName());
-                        List<InterfaceAddress> interfaceAddresses   = networkInterface.getInterfaceAddresses();
-                        for (InterfaceAddress interfaceAddress : interfaceAddresses) {
-                            InetAddress address = interfaceAddress.getAddress();
-                            nc.setIpAddress(address.getHostAddress());
-                        }
-                        if (new File("/etc/", "dhcp." + networkInterface.getDisplayName()).exists())
-                            nc.setBootProto(NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO);
-                        else
-                            nc.setBootProto(NetworkingConfigurationBean.STATIC_BOOT_PROTO);
-
-                        networkingConfigs.add(nc);
-                    }
-                }
-            } catch (SocketException e) {
-                logger.warning("Error while determining the IP Addresses for this machine:" + e.getMessage());
-            }
-        }        
-    }
-
-    private void getExistingInterfacesLinux() {
-        if (networkingConfigs == null) {
-            logger.info("Determining existing interface information.");
-            networkingConfigs = new ArrayList<NetworkConfig>();
-
-            File parentDir = new File(getOsFunctions().getNetworkConfigurationDirectory());
-            File[] configFiles = parentDir.listFiles(new FilenameFilter() {
-                    public boolean accept(File file, String s) {
-                        return s.toLowerCase().startsWith("ifcfg-") && !s.toLowerCase().equals("ifcfg-lo");
-                    }
-            });
-
-            if (configFiles != null && configFiles.length != 0) {
-                for (File file : configFiles) {
-                    NetworkConfig theConfig = parseConfigFile(file);
-                    if (theConfig != null) {
-                        //in case the file name is off, like it has some extra characters at the end of it, or has an extension
-                        //we are only interested in the configurations from files with the pattern:
-                        //  ifcfg-<interface>
-                        String ifName = theConfig.getInterfaceName();
-                        if (ifName != null && file.getName().endsWith(ifName)) {
-                            networkingConfigs.add(theConfig);
-                            logger.info("found existing configuration for interface: " + theConfig.describe());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private NetworkingConfigurationBean.NetworkConfig parseConfigFile(File file) {
-        NetworkingConfigurationBean.NetworkConfig theNetConfig = null;
-
-        String justFileName = file.getName();
-        int dashIndex = justFileName.indexOf("-");
-        if (dashIndex == -1) return null;
-
-        String interfaceNameFromFileName = justFileName.substring(dashIndex + 1);
-        BufferedReader reader = null;
-
+        logger.info("Determining existing interface information.");
         try {
-            reader  = new BufferedReader(new FileReader(file));
-            String bootProto = null;
-            String interfaceName = null;
-            String ipAddress = null;
-            String netMask = null;
-            String gateway = null;
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                int equalsIndex = line.indexOf("=");
-                //if this is a name=value pair
-                if (equalsIndex != -1) {
-                    String key = line.substring(0, equalsIndex);
-                    String value = line.substring(equalsIndex + 1);
-                    if (key.equals("DEVICE")) interfaceName = value;
-                    else if (key.equals("BOOTPROTO")) bootProto = value;
-                    else if (key.equals("IPADDR")) ipAddress = value;
-                    else if (key.equals("NETMASK")) netMask = value;
-                    else if (key.equals("GATEWAY")) gateway = value;
-                }
-            }
-            //finished reading the file, now make the network config
-            theNetConfig = NetworkingConfigurationBean.makeNetworkConfig(interfaceName, bootProto);
-            if (StringUtils.isNotEmpty(ipAddress)) theNetConfig.setIpAddress(ipAddress);
-            if (StringUtils.isNotEmpty(netMask)) theNetConfig.setNetMask(netMask);
-            if (StringUtils.isNotEmpty(gateway)) theNetConfig.setGateway(gateway);
-
-        } catch (FileNotFoundException e) {
-            logger.severe("Error while reading configuration for " + interfaceNameFromFileName + ": " + e.getMessage());
-        } catch (IOException e) {
-            logger.severe("Error while reading configuration for " + interfaceNameFromFileName + ": " + e.getMessage());
-        } finally {
-            if (reader != null) try {
-                reader.close();
-            } catch (IOException e) {}
+            networkingConfigs  = getOsFunctions().getNetworkConfigs();
+        } catch (SocketException e) {
+            logger.warning("Error while determining the IP Addresses for this machine:" + e.getMessage());
         }
-        return theNetConfig;
     }
 
     public void setDomain(String domain) {
@@ -246,22 +99,23 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     public static class NetworkConfig {
         private String interfaceName;
         private String bootProto;
-        private String ipAddress;
+        private List<String> ipAddresses;
         private String netMask;
         private String gateway;
         private String[] nameservers;
         private boolean dirtyFlag;
+        NetworkInterface nic;
 
-
-        public NetworkConfig() {}
-
-        public NetworkConfig(String interfaceName, String bootProto) {
-            this.interfaceName = interfaceName;
+        protected NetworkConfig(NetworkInterface nic, String bootProto) {
+            this.nic = nic;
+            ipAddresses = new ArrayList<String>();
             this.bootProto = bootProto;
         }
 
         public String getInterfaceName() {
-            return interfaceName;
+            if (nic == null)
+                return interfaceName;
+            return nic.getName();
         }
 
         public void setInterfaceName(String interfaceName) {
@@ -276,12 +130,12 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
             this.bootProto = bootProto;
         }
 
-        public String getIpAddress() {
-            return ipAddress;
+        public List<InterfaceAddress> getIpAddresses() {
+            return nic.getInterfaceAddresses();
         }
 
         public void setIpAddress(String ipAddress) {
-            this.ipAddress = ipAddress;
+            ipAddresses.add(ipAddress);
         }
 
         public String getNetMask() {
@@ -310,10 +164,10 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("--device ").append(interfaceName).append(eol);
+            sb.append("--device ").append(getInterfaceName()).append(eol);
             sb.append("--bootproto=").append(bootProto).append(eol);
             if (STATIC_BOOT_PROTO.equals(bootProto)) {
-                sb.append("--ip=").append(ipAddress).append(eol);
+                sb.append("--ip=").append(getIpAddresses().get(0)).append(eol);
                 sb.append("--netmask=").append(netMask).append(eol);
                 sb.append("--gateway=").append(gateway).append(eol);
                 if (nameservers != null) {
@@ -340,6 +194,20 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
         public void setDirtyFlag(boolean dirtyFlag) {
             this.dirtyFlag = dirtyFlag;
+        }
+
+        public NetworkInterface getNic() {
+            return nic;
+        }
+
+        public byte[] getHardwareAddress() throws SocketException {
+            if (nic != null)
+                return nic.getHardwareAddress();
+            return null;
+        }
+
+        public boolean isVirtual() {
+            return (nic != null && nic.isVirtual());
         }
     }
 

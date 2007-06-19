@@ -1,11 +1,18 @@
 package com.l7tech.server.config;
 
+import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.partition.PartitionInformation;
+import org.apache.commons.lang.StringUtils;
 
-import java.util.List;
+import java.io.*;
+import java.net.NetworkInterface;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 public class LinuxSpecificFunctions extends UnixSpecificFunctions {
+    private static final Logger logger = Logger.getLogger(LinuxSpecificFunctions.class.getName());
+
     private static final String IP_MARKER = "<IP>";
     private static final String PORT_MARKER = "<PORT>";
     private static final String TEMPLATE_IP_PORT = "[0:0] -I INPUT $Rule_Insert_Point -d " + IP_MARKER + " -p tcp -m tcp --dport " + PORT_MARKER + " -j ACCEPT\n";
@@ -44,6 +51,56 @@ public class LinuxSpecificFunctions extends UnixSpecificFunctions {
         keystoreInfos = infos.toArray(new KeystoreInfo[0]);
 
         timeZonesDir = "/usr/share/zoneinfo/";
+    }
+
+    NetworkingConfigurationBean.NetworkConfig createNetworkConfig(NetworkInterface networkInterface) {
+        //get the corresponding ifcfg file from /etc/sysconfig/network-scripts/
+        String ifName = networkInterface.getName();
+        File ifCfgFile = new File(getNetworkConfigurationDirectory(), "ifcfg-"+ifName);
+        return parseConfigFile(networkInterface, ifCfgFile);
+    }
+
+    private NetworkingConfigurationBean.NetworkConfig parseConfigFile(NetworkInterface networkInterface, File file) {
+        if (!file.exists()) {
+            return null;
+        }
+
+        NetworkingConfigurationBean.NetworkConfig theNetConfig = null;
+        BufferedReader reader = null;
+
+        try {
+            reader  = new BufferedReader(new FileReader(file));
+            String bootProto = null;
+
+            String netMask = null;
+            String gateway = null;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                int equalsIndex = line.indexOf("=");
+                //if this is a name=value pair
+                if (equalsIndex != -1) {
+                    String key = line.substring(0, equalsIndex);
+                    String value = line.substring(equalsIndex + 1);
+                    if (key.equals("BOOTPROTO")) bootProto = value;
+                    else if (key.equals("NETMASK")) netMask = value;
+                    else if (key.equals("GATEWAY")) gateway = value;
+                }
+            }
+            //finished reading the file, now make the network config
+            theNetConfig = NetworkingConfigurationBean.makeNetworkConfig(networkInterface, bootProto==null?NetworkingConfigurationBean.STATIC_BOOT_PROTO:bootProto);
+            if (StringUtils.isNotEmpty(netMask)) theNetConfig.setNetMask(netMask);
+            if (StringUtils.isNotEmpty(gateway)) theNetConfig.setGateway(gateway);
+
+        } catch (FileNotFoundException e) {
+            logger.severe("Error while reading configuration for " + networkInterface.getName() + ": " + e.getMessage());
+        } catch (IOException e) {
+            logger.severe("Error while reading configuration for " + networkInterface.getName() + ": " + e.getMessage());
+        } finally {
+            if (reader != null) try {
+                reader.close();
+            } catch (IOException e) {}
+        }
+        return theNetConfig;
     }
 
     public boolean isLinux() {

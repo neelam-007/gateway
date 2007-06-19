@@ -11,10 +11,9 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.text.MessageFormat;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: megery
@@ -32,11 +31,11 @@ public class SystemConfigurationWizard extends ConfigurationWizard {
     public void printConfigOnly() {
         ConsoleWizardUtils utils = getWizardUtils();
         try {
-            Enumeration<NetworkInterface> allInterfaces = NetworkInterface.getNetworkInterfaces();
-            while (allInterfaces.hasMoreElements()) {
-                NetworkInterface networkInterface = allInterfaces.nextElement();
+            List<NetworkingConfigurationBean.NetworkConfig> netConfigs = osFunctions.getNetworkConfigs();
+            for (NetworkingConfigurationBean.NetworkConfig netConfig : netConfigs) {
+                NetworkInterface networkInterface = netConfig.getNic();
                 if (!networkInterface.isLoopback()) {
-                    printNetworkInterfaceInfo(networkInterface);
+                    printNetworkConfig(netConfig);
                 }
             }
         } catch (SocketException e) {
@@ -44,19 +43,20 @@ public class SystemConfigurationWizard extends ConfigurationWizard {
         }
     }
 
-    private void printNetworkInterfaceInfo(NetworkInterface networkInterface) {
+    private void printNetworkConfig(NetworkingConfigurationBean.NetworkConfig networkConfig) {
         ConsoleWizardUtils utils = getWizardUtils();
         try {
-            utils.printText(MessageFormat.format("Interface \"{0}\"", networkInterface.getDisplayName()) + ConsoleWizardUtils.EOL_CHAR);
+            utils.printText(MessageFormat.format("Interface \"{0}\"", networkConfig.getInterfaceName()) + ConsoleWizardUtils.EOL_CHAR);
             utils.printText("Details:" + ConsoleWizardUtils.EOL_CHAR);
-            utils.printText(MessageFormat.format("\tName: {0}", networkInterface.getName()) + ConsoleWizardUtils.EOL_CHAR);
-            byte[] hardwareAdress = networkInterface.getHardwareAddress();
+            utils.printText("\tBoot Protocol: " + networkConfig.getBootProto().toUpperCase() +  ConsoleWizardUtils.EOL_CHAR);            
+            utils.printText("\tCurrently Online: " + (networkConfig.getNic().isUp()?"yes":"no") +  ConsoleWizardUtils.EOL_CHAR);
+            byte[] hardwareAdress = networkConfig.getHardwareAddress();
             if (hardwareAdress != null) {
-                String mac = HexUtils.hexDump(networkInterface.getHardwareAddress()).toUpperCase();
+                String mac = HexUtils.hexDump(networkConfig.getHardwareAddress()).toUpperCase();
                 utils.printText("\tHardware Address (MAC): " + getFormattedMac(mac));
             }
             utils.printText("\tAddresses:" + ConsoleWizardUtils.EOL_CHAR);
-            List<InterfaceAddress> interfaceAddresses   = networkInterface.getInterfaceAddresses();
+            List<InterfaceAddress> interfaceAddresses   = networkConfig.getIpAddresses();
             for (InterfaceAddress interfaceAddress : interfaceAddresses) {
                 InetAddress address = interfaceAddress.getAddress();
                 short maskLength = interfaceAddress.getNetworkPrefixLength();

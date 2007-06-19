@@ -1,8 +1,13 @@
 package com.l7tech.server.config;
 
+import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
+
 import java.io.File;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.net.SocketException;
+import java.net.NetworkInterface;
 
 public class WindowsSpecificFunctions extends OSSpecificFunctions {
 
@@ -26,6 +31,17 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
 
     public String getNetworkConfigurationDirectory() {
         throw new IllegalStateException("Cannot Configure the network on Windows.");
+    }
+
+    public List<NetworkingConfigurationBean.NetworkConfig> getNetworkConfigs() throws SocketException {
+        List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = new ArrayList<NetworkingConfigurationBean.NetworkConfig>();
+        Enumeration<NetworkInterface> allInterfaces = NetworkInterface.getNetworkInterfaces();
+        while (allInterfaces.hasMoreElements()) {
+            NetworkInterface networkInterface = allInterfaces.nextElement();
+            if (!networkInterface.isLoopback())
+                networkConfigs.add(NetworkingConfigurationBean.makeNetworkConfig(networkInterface, null));
+        }
+        return networkConfigs;
     }
 
     public boolean isWindows() {

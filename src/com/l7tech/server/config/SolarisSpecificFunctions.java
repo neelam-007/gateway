@@ -1,9 +1,12 @@
 package com.l7tech.server.config;
 
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.net.NetworkInterface;
+import java.io.File;
 
 /**
  * User: megery
@@ -48,6 +51,21 @@ public class SolarisSpecificFunctions extends UnixSpecificFunctions {
         keystoreInfos = infos.toArray(new KeystoreInfo[0]);
 
         timeZonesDir = "/usr/share/lib/zoneinfo/";
+    }
+
+    NetworkingConfigurationBean.NetworkConfig createNetworkConfig(NetworkInterface networkInterface) {
+        //get the corresponding info on this interface from the various places they exist in solaris
+        return collectInterfaceInfo(networkInterface);
+    }
+
+    private NetworkingConfigurationBean.NetworkConfig collectInterfaceInfo(NetworkInterface networkInterface) {
+        String ifName = networkInterface.getName();
+        File isInterfaceDhcpFile = new File("/etc/", "dhcp."+ifName);
+        if (isInterfaceDhcpFile.exists()) {
+            return NetworkingConfigurationBean.makeNetworkConfig(networkInterface, NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO);
+        } else {
+            return NetworkingConfigurationBean.makeNetworkConfig(networkInterface, NetworkingConfigurationBean.STATIC_BOOT_PROTO);
+        }
     }
 
     public String getFirewallRulesForPartition(PartitionInformation.HttpEndpointHolder basicEndpoint,

@@ -29,7 +29,7 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = true;
 
-        List<NetworkingConfigurationBean.NetworkConfig> netConfigs = netBean.getNetworkingConfigurations();
+        List<NetworkingConfigurationBean.NetworkConfig> netConfigs = netBean.getAllNetworkInterfaces();
         File currentWorkingDir = new File(".");
         File configDir = new File(currentWorkingDir, "configfiles");
         if (!configDir.mkdir())
