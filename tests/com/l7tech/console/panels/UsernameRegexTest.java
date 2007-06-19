@@ -25,8 +25,8 @@ public class UsernameRegexTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    private static String[] GOOD = { "good boy", "goodboy", " ok go", "no you go " };
-    private static String[] BAD = { "bad#boy", "bad,boy", "no<damned>good" };
+    private static String[] GOOD = { "good boy", "goodboy", " ok go", "no you go ", "Mr. James O'Punctuation", };
+    private static String[] BAD = { "bad#boy", "bad,boy", "no<damned>good", "you+suck", "Tom \"Maverick\" Cruise", "You can't \\escape", "and then;" };
 
     public void testFoo() throws Exception {
         for (String s : GOOD) {
