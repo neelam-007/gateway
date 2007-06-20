@@ -28,10 +28,15 @@ if [ `expr $java_ram \> 2074412` == 1 ]; then
 	# CAP at 2 gigs
 fi
 
+
 if [ "${this_is_a_partition}" == "true" ] ; then
-	if [ ${number_of_partitions} -gt 1 ]; then
-	  let java_ram="${system_ram}*${multiplier}/${number_of_partitions}"
-	fi
+        if [ ${number_of_partitions} -gt 1 ]; then
+                let java_ram="${system_ram}*${multiplier}/${number_of_partitions}"
+                if [ `expr $java_ram \< 524288 ` == 1 ]; then
+                        # Set a floor, prevent OOM situation
+                        java_ram=524288;
+                fi
+        fi
 fi
 
 partition_opts="-Xmx${java_ram}k -XX:MaxPermSize=128M -Xss256k"
