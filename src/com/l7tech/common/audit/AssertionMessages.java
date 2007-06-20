@@ -72,7 +72,7 @@ public class AssertionMessages extends Messages {
     public static final M IDPROV_MISMATCH                         = m(4210, Level.FINE, "Authentication failed because ID of provider did not match ({0} instead of {1})");
     public static final M USERID_MISMATCH                         = m(4211, Level.FINE, "Authentication failed because the user ID did not match");
     public static final M LOGIN_MISMATCH                          = m(4212, Level.FINE, "Authentication failed because the login did not match");
-    public static final M GROUP_NOTEXIST                          = m(4213, Level.WARNING, "Assertions refers to a non existent group; policy may be corrupted");
+    public static final M GROUP_NOTEXIST                          = m(4213, Level.WARNING, "Assertions refer to a nonexistent group; policy may be corrupted");
     public static final M USER_NOT_IN_GROUP                       = m(4214, Level.FINE, "User not member of group");
     public static final M CACHED_GROUP_MEMBERSHIP_FAILURE         = m(4215, Level.FINE, "Reusing cached group membership failure");
 
@@ -128,7 +128,7 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_RESPONSE_NOT_XML                  = m(4701, Level.WARNING, false, true, "Response not XML; cannot evaluate XPath expression");
     public static final M XPATH_PATTERN_INVALID                   = m(4702, Level.WARNING, "Assertion has failed because the XPath pattern is null or empty");
     public static final M XPATH_PATTERN_NOT_MATCHED_REQUEST       = m(4703, Level.INFO, "Assertion has failed because the XPath pattern did not match request" );
-    public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE      = m(4704, Level.INFO, "Assertion has failed because the XPath pattern did not match responset" );
+    public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE      = m(4704, Level.INFO, "Assertion has failed because the XPath pattern did not match response" );
     public static final M XPATH_RESULT_TRUE                       = m(4705, Level.FINE, "XPath pattern returned true");
     public static final M XPATH_RESULT_FALSE                      = m(4706, Level.INFO, "XPath pattern returned false");
     public static final M XPATH_TEXT_NODE_FOUND                   = m(4707, Level.FINE, "XPath pattern found a text node");
@@ -201,7 +201,7 @@ public class AssertionMessages extends Messages {
     public static final M RESPONSE_WSS_CONF_REQUEST_NOT_SOAP                = m(5400, Level.INFO, "Request not SOAP; unable to check for WS-Security encrypted elements");
     public static final M RESPONSE_WSS_CONF_NO_WSS_SECURITY                 = m(5401, Level.INFO, "Request did not contain any WSS level security");
     public static final M RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN             = m(5402, Level.WARNING, true, false, "Request included more than one X509 security token whose key ownership was proven");
-    public static final M RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN             = m(5403, Level.WARNING, "Unable to encrypt response; request did not include X509 token or Secure Conversation token");
+    public static final M RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN             = m(5403, Level.WARNING, "Unable to encrypt response; request did not include X509 token or SecureConversation");
     public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP               = m(5404, Level.WARNING, false, true, "Response not SOAP; unable to encrypt response elements");
     public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED          = m(5405, Level.INFO, "No matching elements to encrypt in response: Assertion therefore fails");
     public static final M RESPONSE_WSS_CONF_RESPONSE_ENCRYPTED              = m(5406, Level.FINEST, "Designated {0} response elements for encryption");
@@ -308,7 +308,7 @@ public class AssertionMessages extends Messages {
     //ServerRegex
     public static final M REGEX_PATTERN_INVALID   = m(6300, Level.WARNING, "Assertion has failed because of regex pattern ''{0}'' compile error: {1}");
     public static final M REGEX_TOO_BIG           = m(6301, Level.WARNING, "Regular expression cannot be evaluated; content is too large (>= " + Integer.MAX_VALUE + " bytes)");
-    public static final M REGEX_NO_REPLACEMENT    = m(6302, Level.WARNING, "A replace was requested, but no replace string was specified (null)");
+    public static final M REGEX_NO_REPLACEMENT    = m(6302, Level.WARNING, "A replace was requested, but no replacement string was specified (null)");
     public static final M REGEX_NO_SUCH_PART      = m(6303, Level.WARNING, "Cannot search or replace in nonexistent part #{0}");
     public static final M REGEX_NO_ENCODING       = m(6304, Level.INFO,    "Character encoding not specified; will use default {0}");
     public static final M REGEX_ENCODING_OVERRIDE = m(6305, Level.FINE,    "Using overridden character encoding {0}");
