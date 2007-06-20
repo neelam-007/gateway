@@ -71,8 +71,7 @@ if ($inputFh->open("<$inputFiles{'HOSTNAMEFILE'}")) {
 			}
 		}
 		if ($hostsFH->open(">$outputFiles{'HOSTS'}")) {
-			$hostsFH->print("127.0.0.1\t\t\tlocalhost loghost $hostname\n");
-			$hostsFH->print("::1\t\t\tlocalhost localhost6\n");
+			$hostsFH->print("127.0.0.1\t\t\tlocalhost loghost\n");
 			$hostsFH->close();
 		} else {
 			$logFile->print("$timestamp: couldn't write hosts file\n");
