@@ -121,8 +121,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * @param resolution        bin resolution ({@link MetricsBin#RES_FINE},
      *                          {@link MetricsBin#RES_HOURLY} or
      *                          {@link MetricsBin#RES_DAILY}); null = all
-     * @param minPeriodStart    minimum bin period start time; null = as far back as available
-     * @param maxPeriodStart    maximum bin period statt time; null = up to the latest available
+     * @param minPeriodStart    minimum bin period start time (milliseconds since epoch); null = as far back as available
+     * @param maxPeriodStart    maximum bin period statt time (milliseconds since epoch); null = up to the latest available
      * @param includeEmpty      whether to include empty uptime bins (same as include service OID -1)
      *
      * @return collection of summary bins; can be empty but never <code>null</code>
@@ -215,8 +215,10 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      *
      * @param clusterNodeId cluster node ID; null = all
      * @param serviceOids   published service OIDs; null = all services permitted for this user
-     * @param resolution    bin resolution
-     * @param duration      time duration (from latest nominal period boundary
+     * @param resolution    bin resolution ({@link MetricsBin#RES_FINE},
+     *                      {@link MetricsBin#RES_HOURLY} or
+     *                      {@link MetricsBin#RES_DAILY})
+     * @param duration      time duration (milliseconds from latest nominal period boundary
      *                      time on gateway) to search backward for bins whose
      *                      nominal periods fall within
      * @param includeEmpty  whether to include empty uptime bins (same as include service OID -1)
