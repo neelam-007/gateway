@@ -8,7 +8,6 @@ import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.variable.ExpandVariables;
 
 import javax.swing.*;
-import javax.swing.border.EtchedBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.*;
@@ -32,6 +31,7 @@ public class RegexDialog extends JDialog {
     private JButton okButton;
     private SquigglyTextArea regexTextArea;
     private JTextArea replaceTextArea;
+    private JTextField nameTextField;
     private JTextArea testInputTextArea;
     private JButton testButton;
     private Regex regexAssertion;
@@ -46,7 +46,6 @@ public class RegexDialog extends JDialog {
     private JRadioButton proceedIfNoMatchRadioButton;
     private JSpinner mimePartSpinner;
     private JFormattedTextField encodingField;
-    private JPanel testReplacementPanel;
     private JLabel testInputLabel;
     private JLabel testResultLabel;
     private JScrollPane testInputScroller;
@@ -70,6 +69,9 @@ public class RegexDialog extends JDialog {
         }
         if (regexAssertion.getEncoding() != null) {
             encodingField.setText(regexAssertion.getEncoding());
+        }
+        if (regexAssertion.getRegexName() != null) {
+            nameTextField.setText(regexAssertion.getRegexName());
         }
 
         matchAndReplaceRadioButton.setToolTipText("If the pattern matches, replace the match with the replacement expression, then proceed to process the message");
@@ -110,6 +112,10 @@ public class RegexDialog extends JDialog {
                 dispose();
                 regexAssertion.setRegex(regexTextArea.getText());
                 regexAssertion.setReplacement(replaceTextArea.getText());
+                if (nameTextField.getText().trim().length() > 0)
+                    regexAssertion.setRegexName(nameTextField.getText().trim());
+                else
+                    regexAssertion.setRegexName(null);
                 regexAssertion.setCaseInsensitive(caseInsensitivecheckBox.isSelected());
                 regexAssertion.setReplace(matchAndReplaceRadioButton.isSelected());
                 regexAssertion.setProceedIfPatternMatches(!proceedIfNoMatchRadioButton.isSelected());

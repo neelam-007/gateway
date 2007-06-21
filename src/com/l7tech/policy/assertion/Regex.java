@@ -23,6 +23,7 @@ public class Regex extends Assertion implements UsesVariables {
     private int mimePart = 0;
     private boolean proceedIfPatternMatches = true;
     private String encoding;
+    private String regexName;
 
     /**
      * Test whether the assertion is a credential source. The <code>RegexAssertion</code>
@@ -126,6 +127,24 @@ public class Regex extends Assertion implements UsesVariables {
      */
     public void setEncoding(String encoding) {
         this.encoding = encoding;
+    }
+
+    /**
+     * Get the name for this regular expression
+     *
+     * @return the name or null if none is set
+     */
+    public String getRegexName() {
+        return regexName;
+    }
+
+    /**
+     * Set the name for this regular expression
+     *
+     * @param regexName the name or null for none 
+     */
+    public void setRegexName(String regexName) {
+        this.regexName = regexName;
     }
 
     public String[] getVariablesUsed() {

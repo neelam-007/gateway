@@ -3,7 +3,6 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Regex;
 import com.l7tech.console.action.RegexPropertiesAction;
-import com.l7tech.console.action.SslPropertiesAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -25,7 +24,16 @@ public class RegexPolicyNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Reqular Expression";
+        Regex regex = (Regex) asAssertion();
+        StringBuffer nameBuffer = new StringBuffer(256);
+        nameBuffer.append("Reqular Expression");
+
+        if (regex.getRegexName() != null) {
+            nameBuffer.append(" - ");
+            nameBuffer.append(regex.getRegexName());
+        }
+
+        return nameBuffer.toString();
     }
 
     /**
