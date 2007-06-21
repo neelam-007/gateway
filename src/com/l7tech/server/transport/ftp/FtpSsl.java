@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.net.ServerSocket;
 import java.net.InetAddress;
 import java.net.Socket;
-import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
@@ -71,7 +70,7 @@ public class FtpSsl implements Ssl {
         // create SSLContext
         ctx = SSLContext.getInstance(protocol);
         ctx.init(new KeyManager[]{keyManager},
-                 TrustManagerFactory.getInstance("AXPK").getTrustManagers(),
+                 null,
                  null);
 
         // store it in map
