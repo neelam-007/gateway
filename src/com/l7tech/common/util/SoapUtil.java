@@ -854,6 +854,22 @@ public class SoapUtil {
         try {
             SoapUtil.getEnvelopeElement(doc);
             SoapUtil.getBodyElement(doc); // This returns null if there's no body, so Faults will still pass
+
+            // Check for any processing instructions at the start of the document (Bug #3888)
+            // We should only need to check for immediate children of the Document node itself,
+            // and we can stop as soon as we encounter the document element.
+            NodeList nodes = doc.getChildNodes();
+            for (int i = 0; i < nodes.getLength(); i++) {
+                Node node = nodes.item(i);
+                if (node.getNodeType() == Node.PROCESSING_INSTRUCTION_NODE) {
+                    // Not soap
+                    return false;
+                } else if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    // Don't bother looking any further for processing instructions
+                    break;
+                }
+            }
+
             return true;
         } catch (InvalidDocumentFormatException e) {
             // not SOAP

@@ -102,6 +102,29 @@ public class SoapUtilTest extends TestCase {
         }
     }
 
+    public void testBug3888_IsSoapRejectsProcessingInstructions() throws Exception {
+        Document doc = XmlUtil.stringToDocument(SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION);
+
+        assertFalse(SoapUtil.isSoapMessage(doc));
+    }
+
+    public static final String SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<?xml-stylesheet type=\"text/xsl\"\n" +
+            "href=\"http://hugh.l7tech.com/xsl/harmless.xsl\"?>\n" +
+            "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
+            "xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
+            "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+            "<soap:Body>\n" +
+            "  <placeOrder xmlns=\"http://warehouse.acme.com/ws\">\n" +
+            "    <productid>111111114</productid>\n" +
+            "      <amount>1</amount>\n" +
+            "      <price>1230</price>\n" +
+            "      <accountid>997</accountid>\n" +
+            "  </placeOrder>\n" +
+            "</soap:Body>\n" +
+            "</soap:Envelope>";
+
 
     private Message makeMessage(final Document doc, final String saction) {
         // produce fake message with arguments
