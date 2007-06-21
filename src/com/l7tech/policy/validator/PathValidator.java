@@ -487,17 +487,19 @@ class PathValidator {
     private void processRouting(RoutingAssertion a) {
         seenResponse = true;
         if (a instanceof HttpRoutingAssertion) {
-            seenRouting = true;
             processHttpRouting((HttpRoutingAssertion)a);
             if (a instanceof BridgeRoutingAssertion) {
                 processBridgeRouting((BridgeRoutingAssertion)a);
             }
         } else if (a instanceof JmsRoutingAssertion) {
-            seenRouting = true;
             processJmsRouting((JmsRoutingAssertion)a);
-        } else if (a != null) {
-            // Some routing assertion that either doesn't need any further validation, or that
-            // didn't exist when this version of the validator was current
+        }
+        // todo, refactor RoutingAssertion interface so it doesn't need to be implemented
+        // by assertions that dont really route like echo and template
+        if (a != null) {
+            if (!(a.getClass().getName().contains("EchoRoutingAssertion") || a instanceof HardcodedResponseAssertion)) {
+                seenRouting = true;
+            }
         }
     }
 
