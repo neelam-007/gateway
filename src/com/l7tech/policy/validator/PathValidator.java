@@ -114,6 +114,13 @@ class PathValidator {
             processPrecondition(a);
         }
 
+        if (onlyForNonSoap(a)) {
+            if (service != null && service.isSoap()) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion will not work with SOAP messages.", null));
+            }
+        }
+
         if (onlyForSoap(a)) {
             processSoapSpecific(a);
         }
@@ -661,6 +668,16 @@ class PathValidator {
 
     private boolean onlyForSoap(Assertion a) {
         return a != null && a.getClass().isAnnotationPresent(RequiresSOAP.class);
+    }
+
+    private boolean onlyForNonSoap(Assertion a) {
+        if (a instanceof XslTransformation) {
+            XslTransformation xslt = (XslTransformation)a;
+            if (xslt.getResourceInfo().getType() == AssertionResourceType.MESSAGE_URL) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean parsesXML(Assertion a) {
