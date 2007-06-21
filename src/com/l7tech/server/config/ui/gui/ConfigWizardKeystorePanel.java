@@ -259,8 +259,8 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
                 } else {
                     shouldDisable = false;
                 }
+                pinfo.setShouldDisable(shouldDisable);
             }
-            pinfo.setShouldDisable(shouldDisable);
         }
         return !shouldDisable;
     }

@@ -203,12 +203,15 @@ public class ServiceNode extends EntityHeaderNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        if (svc == null || svc.isDisabled()) {
+        if (svc == null) {
+            return "com/l7tech/console/resources/services_disabled16.png";
+        }
+        else if (svc.isDisabled()) {
             if(svc.isSoap()) {
                 return "com/l7tech/console/resources/services_disabled16.png";
             } else {
                 return "com/l7tech/console/resources/xmlObject_disabled16.png";
-            }
+            }                                                               
         }
         else {
             if(svc.isSoap()) {

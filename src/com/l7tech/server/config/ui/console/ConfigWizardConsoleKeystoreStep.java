@@ -260,7 +260,8 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 }
             }
         }
-        pinfo.setShouldDisable(shouldDisable);
+        if (pinfo != null)
+            pinfo.setShouldDisable(shouldDisable);
         return shouldConfigure;
     }
 

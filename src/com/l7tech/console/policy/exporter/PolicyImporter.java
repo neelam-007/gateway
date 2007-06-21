@@ -60,7 +60,7 @@ public class PolicyImporter {
             } catch (InvalidDocumentFormatException e) {
                 logger.log(Level.WARNING, "cannot parse references from document " + name, e);
             }
-            if (!resolver.resolveReferences(references)) {
+            if (references == null || !resolver.resolveReferences(references)) {
                 logger.info("The resolution process failed. This policy will not be imported");
                 return null;
             }

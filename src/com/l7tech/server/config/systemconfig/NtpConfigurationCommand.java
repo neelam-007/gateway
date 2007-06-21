@@ -82,7 +82,7 @@ public class NtpConfigurationCommand extends BaseConfigurationCommand {
             if (configDir.mkdir())
                 logger.info("Created new directory for NTP and Timezone configuration: " + configDir.getAbsolutePath());
 
-            File ntpConfFile = ntpConfFile = new File(configDir, "ntpconfig");
+            File ntpConfFile = new File(configDir, "ntpconfig");
             PrintWriter pw = null;
             try {
                 if (ntpConfFile.createNewFile())

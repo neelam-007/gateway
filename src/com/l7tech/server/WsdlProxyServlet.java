@@ -426,6 +426,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             wsdlDoc = XmlUtil.stringToDocument(svc.getWsdlXml());
         } catch (SAXException e) {
             logger.log(Level.WARNING, "cannot parse wsdl", e);
+            res.sendError(HttpServletResponse.SC_NOT_FOUND, "service has no wsdl");
+            return;
         }
 
         // change url of the wsdl
