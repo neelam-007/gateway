@@ -103,12 +103,15 @@ public class SoapUtilTest extends TestCase {
     }
 
     public void testBug3888_IsSoapRejectsProcessingInstructions() throws Exception {
-        Document doc = XmlUtil.stringToDocument(SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION);
-
+        Document doc = XmlUtil.stringToDocument(SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION_BEFORE_CONTENT);
         assertFalse(SoapUtil.isSoapMessage(doc));
+
+        // TODO find a fast way to fix it so it fails on PIs hidden within the body as well
+        doc = XmlUtil.stringToDocument(SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION_IN_BODY);
+        assertTrue(SoapUtil.isSoapMessage(doc));
     }
 
-    public static final String SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION =
+    public static final String SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION_BEFORE_CONTENT =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<?xml-stylesheet type=\"text/xsl\"\n" +
             "href=\"http://hugh.l7tech.com/xsl/harmless.xsl\"?>\n" +
@@ -118,6 +121,23 @@ public class SoapUtilTest extends TestCase {
             "<soap:Body>\n" +
             "  <placeOrder xmlns=\"http://warehouse.acme.com/ws\">\n" +
             "    <productid>111111114</productid>\n" +
+            "      <amount>1</amount>\n" +
+            "      <price>1230</price>\n" +
+            "      <accountid>997</accountid>\n" +
+            "  </placeOrder>\n" +
+            "</soap:Body>\n" +
+            "</soap:Envelope>";
+
+    public static final String SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION_IN_BODY =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
+            "xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
+            "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+            "<soap:Body>\n" +
+            "  <placeOrder xmlns=\"http://warehouse.acme.com/ws\">\n" +
+            "    <productid>111111114</productid>\n" +
+            "<?xml-stylesheet type=\"text/xsl\"\n" +
+            "href=\"http://hugh.l7tech.com/xsl/harmless.xsl\"?>\n" +
             "      <amount>1</amount>\n" +
             "      <price>1230</price>\n" +
             "      <accountid>997</accountid>\n" +
