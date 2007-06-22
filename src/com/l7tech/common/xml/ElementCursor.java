@@ -254,6 +254,15 @@ public abstract class ElementCursor {
     }
 
     /**
+     * Check if the current element contains any children other than attributes and child elements.
+     *
+     * @param ignoreWhitespace if ture, text nodes containing only whitespace will be ignored.
+     * @param ignoreComments if true, comment nodes will be ignored.
+     * @return true if any mixed mode content was detected.
+     */
+    public abstract boolean containsMixedModeContent(boolean ignoreWhitespace, boolean ignoreComments);
+
+    /**
      * Get the local name of the current element.
      *
      * @return the local name.  Never null.

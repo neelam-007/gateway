@@ -78,6 +78,7 @@ public class ElementCursorTest extends TestCase {
 
     private void testAll(ElementCursorFactory f) throws Exception {
         testSimple(f);
+        testMixed(f);
     }
 
     private void assertEmptyStack(ElementCursor c) {
@@ -119,6 +120,9 @@ public class ElementCursorTest extends TestCase {
             "</author>\n" +
             "</catalog>";
 
+    private static final String MIXED =
+            "<hasmixed>this node has <mixed>mixed mode</mixed> content.</hasmixed>";
+
     private void testSimple(ElementCursorFactory f) throws SAXException {
         ElementCursor c = f.newElementCursor(SIMPLE);
         c.moveToDocumentElement();
@@ -149,5 +153,15 @@ public class ElementCursorTest extends TestCase {
         assertEquals("catalog", c.getLocalName());
         assertEmptyStack(c);
         assertEmptyStack(d);
+    }
+
+    private void testMixed(ElementCursorFactory f) throws SAXException {
+        ElementCursor c = f.newElementCursor(SIMPLE);
+        c.moveToDocumentElement();
+        assertFalse(c.containsMixedModeContent(true, false));
+
+        c = f.newElementCursor(MIXED);
+        c.moveToDocumentElement();
+        assertTrue(c.containsMixedModeContent(true, false));
     }
 }

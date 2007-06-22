@@ -28,6 +28,9 @@ public class SoapValidator {
         if (soapNs == null || soapNs.length() < 1 || !SoapUtil.ENVELOPE_URIS.contains(soapNs))
             return "Envelope element was present but the namespace was not recognized as SOAP";
 
+        if (c.containsMixedModeContent(true, false))
+            return "Envelope element was present but contained mixed mode content";
+
         boolean sawBody = false;
         boolean sawHeader = false;
 

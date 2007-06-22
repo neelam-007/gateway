@@ -12,6 +12,7 @@ import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.XpathResult;
 import com.tarari.io.Encoding;
 import com.tarari.xml.XmlResult;
+import com.tarari.xml.NodeType;
 import com.tarari.xml.cursor.XmlCursor;
 import com.tarari.xml.output.DomOutput;
 import com.tarari.xml.output.OutputFormat;
@@ -180,6 +181,41 @@ class TarariElementCursor extends ElementCursor {
                 if (localName.equals(c.getNodeLocalName()) &&
                         ArrayUtils.contains(namespaceUris, c.getNodeNamespaceUri()))
                     return c.getNodeValue();
+            }
+        } finally {
+            popPosition();
+        }
+    }
+
+    public boolean containsMixedModeContent(boolean ignoreWhitespace, boolean ignoreComments) {
+        pushPosition();
+        try {
+            SCAN: for (;;) {
+                if (!c.toNextSibling())
+                    return false;
+                int type = c.getNodeType();
+                switch (type) {
+                    case NodeType.ATTRIBUTE:
+                    case NodeType.ELEMENT:
+                    case NodeType.ELEMENT_END:
+                        continue SCAN;
+
+                    case NodeType.COMMENT:
+                        if (ignoreComments)
+                            continue SCAN;
+                        return true;
+
+                    case NodeType.TEXT:
+                        if (ignoreWhitespace) {
+                            String text = c.getNodeValue();
+                            if (text != null && text.trim().length() < 1)
+                                continue SCAN;
+                        }
+                        return true;
+
+                    default:
+                        return true;
+                }
             }
         } finally {
             popPosition();

@@ -26,7 +26,7 @@ import java.util.LinkedList;
 public class DomElementCursor extends ElementCursor {
     private final Document doc;
     private Node cur;
-    private LinkedList stack = null;
+    private LinkedList<Node> stack = null;
 
     /**
      * Create a new DomElementCursor that provides read-only access to the specified Document.  Caller must
@@ -57,7 +57,7 @@ public class DomElementCursor extends ElementCursor {
     }
 
 
-    private DomElementCursor(Document doc, Node cur, LinkedList stack) {
+    private DomElementCursor(Document doc, Node cur, LinkedList<Node> stack) {
         this.doc = doc;
         this.cur = cur;
         this.stack = stack;
@@ -77,18 +77,18 @@ public class DomElementCursor extends ElementCursor {
 
     public ElementCursor duplicate() {
         // Don't bother copying an empty stack
-        LinkedList s = stack != null && !stack.isEmpty() ? new LinkedList(stack) : null;
+        LinkedList<Node> s = stack != null && !stack.isEmpty() ? new LinkedList<Node>(stack) : null;
         return new DomElementCursor(doc, cur, s);
     }
 
     public void pushPosition() {
-        if (stack == null) stack = new LinkedList();
+        if (stack == null) stack = new LinkedList<Node>();
         stack.addLast(cur);
     }
 
     public void popPosition() throws IllegalStateException {
         if (stack == null || stack.isEmpty()) throw new IllegalStateException("No saved position");
-        cur = (Element)stack.removeLast();
+        cur = stack.removeLast();
     }
 
     public void popPosition(boolean discard) throws IllegalStateException {
@@ -96,7 +96,7 @@ public class DomElementCursor extends ElementCursor {
         if (discard)
             stack.removeLast();
         else
-            cur = (Element)stack.removeLast();
+            cur = stack.removeLast();
     }
 
     public void moveToDocumentElement() {
@@ -177,6 +177,39 @@ public class DomElementCursor extends ElementCursor {
                 return attr.getNodeValue();
         }
         return null;
+    }
+
+    public boolean containsMixedModeContent(boolean ignoreWhitespace, boolean ignoreComments) {
+        NodeList nodes = cur.getChildNodes();
+        SCAN: for (int i = 0; i < nodes.getLength(); ++i) {
+            Node node = nodes.item(i);
+            switch (node.getNodeType()) {
+                case Node.ATTRIBUTE_NODE:
+                case Node.ELEMENT_NODE:
+                    continue SCAN;
+
+                case Node.COMMENT_NODE:
+                    if (ignoreComments)
+                        continue SCAN;
+                    return true;
+
+                case Node.CDATA_SECTION_NODE:
+                    return true;
+
+                case Node.TEXT_NODE:
+                    if (ignoreWhitespace) {
+                        String text = node.getTextContent();
+                        if (text != null && text.trim().length() < 1)
+                            continue SCAN;
+                    }
+                    return true;
+
+                default:
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     public String getLocalName() {
