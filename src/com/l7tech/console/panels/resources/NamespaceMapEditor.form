@@ -102,7 +102,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="3e2fa" class="javax.swing.JTable" binding="table1">
+          <component id="3e2fa" class="javax.swing.JTable" binding="namespacesTable">
             <constraints/>
             <properties/>
           </component>

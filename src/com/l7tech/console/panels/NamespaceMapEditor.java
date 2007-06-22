@@ -32,7 +32,7 @@ import java.util.HashMap;
 public class NamespaceMapEditor extends JDialog {
 
     private JPanel mainPanel;
-    private JTable table1;
+    private JTable namespacesTable;
     private JButton removeButton;
     private JButton addButton;
     private JButton okButton;
@@ -87,7 +87,7 @@ public class NamespaceMapEditor extends JDialog {
         setContentPane(mainPanel);
         setTitle("Edit Namespaces and Prefixes");
         setTableModel();
-        TableUtil.adjustColumnWidth(table1, 1);
+        TableUtil.adjustColumnWidth(namespacesTable, 1);
         setListeners();
         enableRemoveBasedOnSelection();
     }
@@ -115,11 +115,11 @@ public class NamespaceMapEditor extends JDialog {
                 return "";
             }
         };
-        table1.setModel(model);
+        namespacesTable.setModel(model);
 
         // render rows that cannot be edited with different font from ones that can be removed
         if (forbiddenNamespaces != null) {
-            final TableCellRenderer normalCellRenderer = table1.getCellRenderer(0,0);
+            final TableCellRenderer normalCellRenderer = namespacesTable.getCellRenderer(0,0);
             TableCellRenderer specialCellRenderer = new TableCellRenderer() {
                 public Component getTableCellRendererComponent(JTable table,
                                                                Object value,
@@ -137,7 +137,7 @@ public class NamespaceMapEditor extends JDialog {
                     Map<TextAttribute, Object> fontAttributes = new HashMap<TextAttribute, Object>(font.getAttributes());
                     fontAttributes.put(TextAttribute.POSTURE, TextAttribute.POSTURE_REGULAR);
                     fontAttributes.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
-                    String ns = (String)table1.getModel().getValueAt(row, 1);
+                    String ns = (String) namespacesTable.getModel().getValueAt(row, 1);
                     if (forbiddenNamespaces.contains(ns)) {
                         fontAttributes.put(TextAttribute.POSTURE, TextAttribute.POSTURE_OBLIQUE);
                         fontAttributes.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_REGULAR);
@@ -147,8 +147,8 @@ public class NamespaceMapEditor extends JDialog {
                     return output;
                 }
             };
-            table1.getColumnModel().getColumn(0).setCellRenderer(specialCellRenderer);
-            table1.getColumnModel().getColumn(1).setCellRenderer(specialCellRenderer);
+            namespacesTable.getColumnModel().getColumn(0).setCellRenderer(specialCellRenderer);
+            namespacesTable.getColumnModel().getColumn(1).setCellRenderer(specialCellRenderer);
         }
     }
 
@@ -183,7 +183,7 @@ public class NamespaceMapEditor extends JDialog {
             }
         });
 
-        table1.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+        namespacesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 enableRemoveBasedOnSelection();
             }
@@ -201,7 +201,13 @@ public class NamespaceMapEditor extends JDialog {
             }
             public void keyTyped(KeyEvent e) {}
         };
-        table1.addKeyListener(defBehaviorKeyListener);
+        namespacesTable.addKeyListener(defBehaviorKeyListener);
+        namespacesTable.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2)
+                    edit();
+            }
+        });
         removeButton.addKeyListener(defBehaviorKeyListener);
         addButton.addKeyListener(defBehaviorKeyListener);
         okButton.addKeyListener(defBehaviorKeyListener);
@@ -211,88 +217,123 @@ public class NamespaceMapEditor extends JDialog {
 
     private void enableRemoveBasedOnSelection() {
         // get new selection
-        int selectedRow = table1.getSelectedRow();
+        int selectedRow = namespacesTable.getSelectedRow();
         // decide whether or not the remove button should be enabled
         if (selectedRow < 0) {
             removeButton.setEnabled(false);
             return;
         }
         String selectedNSURI = namespaces.get(selectedRow);
-        if (forbiddenNamespaces != null && forbiddenNamespaces.contains(selectedNSURI)) {
-            removeButton.setEnabled(false);
-        } else {
-            removeButton.setEnabled(true);
-        }
+        removeButton.setEnabled(isEditableNamespace(selectedNSURI));
+    }
+
+    private boolean isEditableNamespace(String selectedNSURI) {
+        return !(forbiddenNamespaces != null && forbiddenNamespaces.contains(selectedNSURI));
+    }
+
+    private void edit() {
+        final int[] selectedRow = new int[] {namespacesTable.getSelectedRow()};
+        final String originalPrefix = (String) namespacesTable.getModel().getValueAt(selectedRow[0], 0);
+        final String originalNsURI = (String) namespacesTable.getModel().getValueAt(selectedRow[0], 1);
+        if (!isEditableNamespace(originalNsURI))
+            return;
+
+        final NamespacePrefixQueryForm grabber = new NamespacePrefixQueryForm(this);
+        grabber.setInitialPrefix(originalPrefix);
+        grabber.setInitialNsUri(originalNsURI);
+        grabber.pack();
+        Utilities.centerOnScreen(grabber);        
+        DialogDisplayer.display(grabber, new Runnable() {
+            public void run() {
+                if (isInvalidNamespaceEntry(grabber, false)) return;
+                prefixes.remove(originalPrefix) ;
+                namespaces.remove(originalNsURI);
+
+                prefixes.add(grabber.prefix);
+                namespaces.add(grabber.nsuri);
+                updateTable(selectedRow);
+            }
+        });
     }
 
     private void add() {
-        final int[] selectedRow = new int[]{table1.getSelectedRow()};
+        final int[] selectedRow = new int[]{namespacesTable.getSelectedRow()};
 
         final NamespacePrefixQueryForm grabber = new NamespacePrefixQueryForm(this);
         grabber.pack();
         Utilities.centerOnScreen(grabber);
         DialogDisplayer.display(grabber, new Runnable() {
             public void run() {
-                if (grabber.cancelled) return;
+                if (isInvalidNamespaceEntry(grabber, true))
+                    return;
 
-                if (grabber.prefix == null || grabber.nsuri == null ||
-                    grabber.prefix.length() < 1 || grabber.nsuri.length() < 1) {
-                    JOptionPane.showMessageDialog(addButton, "The prefix and namespace URI must both be specified");
-                    return;
-                }
-
-                if (prefixes.contains(grabber.prefix)) {
-                    JOptionPane.showMessageDialog(addButton, "The prefix " + grabber.prefix + " is already specified.");
-                    return;
-                } else if (grabber.prefix.indexOf("=") >= 0 ||
-                           grabber.prefix.indexOf("/") >= 0 ||
-                           grabber.prefix.indexOf("<") >= 0 ||
-                           grabber.prefix.indexOf(">") >= 0 ||
-                           grabber.prefix.indexOf(":") >= 0 ||
-                           grabber.prefix.indexOf("?") >= 0 ||
-                           grabber.prefix.indexOf("!") >= 0 ||
-                           grabber.prefix.indexOf("\"") >= 0) {
-                    JOptionPane.showMessageDialog(addButton, grabber.prefix + " is not a valid namespace prefix value.");
-                    return;
-                }
-
-                if (namespaces.contains(grabber.nsuri)) {
-                    JOptionPane.showMessageDialog(addButton, "The namespace " + grabber.nsuri + " is already specified.");
-                    return;
-                } else if (grabber.nsuri.indexOf("\'") >= 0 ||
-                           grabber.nsuri.indexOf("\"") >= 0) {
-                    JOptionPane.showMessageDialog(addButton, grabber.nsuri + " is not a valid namespace value.");
-                    return;
-                }
                 prefixes.add(grabber.prefix);
                 namespaces.add(grabber.nsuri);
-
-                ((AbstractTableModel)table1.getModel()).fireTableDataChanged();
-                if (selectedRow[0] == -1 && table1.getModel().getRowCount() == 1) selectedRow[0] = 0;
-                if (selectedRow[0] >= 0) {
-                    table1.getSelectionModel().setSelectionInterval(selectedRow[0], selectedRow[0]);
-                }
-                enableRemoveBasedOnSelection();
+                updateTable(selectedRow);
             }
         });
 
     }
 
+    private void updateTable(int[] selectedRow) {
+        ((AbstractTableModel) namespacesTable.getModel()).fireTableDataChanged();
+        if (selectedRow[0] == -1 && namespacesTable.getModel().getRowCount() == 1) selectedRow[0] = 0;
+        if (selectedRow[0] >= 0) {
+            namespacesTable.getSelectionModel().setSelectionInterval(selectedRow[0], selectedRow[0]);
+        }
+        enableRemoveBasedOnSelection();
+    }
+
+    private boolean isInvalidNamespaceEntry(NamespacePrefixQueryForm grabber, boolean isNewEntry) {
+        if (grabber.cancelled) return true;
+
+        if (grabber.prefix == null || grabber.nsuri == null ||
+            grabber.prefix.length() < 1 || grabber.nsuri.length() < 1) {
+            JOptionPane.showMessageDialog(addButton, "The prefix and namespace URI must both be specified");
+            return true;
+        }
+
+        if (prefixes.contains(grabber.prefix) && isNewEntry) {
+            JOptionPane.showMessageDialog(addButton, "The prefix " + grabber.prefix + " is already specified.");
+            return true;
+        } else if (grabber.prefix.indexOf("=") >= 0 ||
+                   grabber.prefix.indexOf("/") >= 0 ||
+                   grabber.prefix.indexOf("<") >= 0 ||
+                   grabber.prefix.indexOf(">") >= 0 ||
+                   grabber.prefix.indexOf(":") >= 0 ||
+                   grabber.prefix.indexOf("?") >= 0 ||
+                   grabber.prefix.indexOf("!") >= 0 ||
+                   grabber.prefix.indexOf("\"") >= 0) {
+            JOptionPane.showMessageDialog(addButton, grabber.prefix + " is not a valid namespace prefix value.");
+            return true;
+        }
+
+        if (namespaces.contains(grabber.nsuri) && isNewEntry) {
+            JOptionPane.showMessageDialog(addButton, "The namespace " + grabber.nsuri + " is already specified.");
+            return true;
+        } else if (grabber.nsuri.indexOf("\'") >= 0 ||
+                   grabber.nsuri.indexOf("\"") >= 0) {
+            JOptionPane.showMessageDialog(addButton, grabber.nsuri + " is not a valid namespace value.");
+            return true;
+        }
+        return false;
+    }
+
     private void remove() {
-        int selectedRow = table1.getSelectedRow();
+        int selectedRow = namespacesTable.getSelectedRow();
         if (selectedRow >= 0) {
             prefixes.remove(selectedRow);
             namespaces.remove(selectedRow);
-            ((AbstractTableModel)table1.getModel()).fireTableRowsDeleted(selectedRow, selectedRow);
+            ((AbstractTableModel) namespacesTable.getModel()).fireTableRowsDeleted(selectedRow, selectedRow);
         }
         if ((selectedRow - 1) >= 0) {
             --selectedRow;
         } else {
-            if (table1.getModel().getRowCount() > 0) selectedRow = 0;
+            if (namespacesTable.getModel().getRowCount() > 0) selectedRow = 0;
             else selectedRow = -1;
         }
         if (selectedRow >= 0) {
-            table1.getSelectionModel().setSelectionInterval(selectedRow, selectedRow);
+            namespacesTable.getSelectionModel().setSelectionInterval(selectedRow, selectedRow);
         }
         enableRemoveBasedOnSelection();
     }

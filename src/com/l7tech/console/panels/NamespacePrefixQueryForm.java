@@ -65,6 +65,14 @@ public class NamespacePrefixQueryForm extends JDialog {
         okbutton.addKeyListener(defBehaviorKeyListener);
     }
 
+    public void setInitialPrefix(String text) {
+        this.prefixtxt.setText(text);
+    }
+
+    public void setInitialNsUri(String uri) {
+        this.uritxt.setText(uri);
+    }
+
     private void ok() {
         nsuri = uritxt.getText();
         prefix = prefixtxt.getText();

@@ -41,6 +41,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
@@ -197,6 +198,9 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 for (Message soapRequest : soapMessages) {
                     requiredNamespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
                 }
+                requiredNamespaces.put("L7p",WspConstants.L7_POLICY_NS);
+                requiredNamespaces.put("wsp",WspConstants.WSP_POLICY_NS);
+
             }
         } catch (Exception e) {
             throw new RuntimeException("Unable to parse the service WSDL " + serviceNode.getName(), e);
