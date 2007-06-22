@@ -77,6 +77,10 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             File[] allTimeZones = dir.listFiles();
             File[] timezonesToDisplay = null;
             int howManyTimeZones = allTimeZones.length;
+            List<String> allowedEntries = new ArrayList<String>();
+            for (int i = 0; i < howManyTimeZones; i++) {
+                allowedEntries.add(String.valueOf(i+1));
+            }
 
             int whichIndex = 0;
             if (howManyTimeZones > TIMEZONES_PER_PAGE) {
@@ -85,17 +89,24 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
 
                 timezonesToDisplay = new File[TIMEZONES_PER_PAGE];
                 System.arraycopy(allTimeZones, 0, timezonesToDisplay, 0, TIMEZONES_PER_PAGE);
+                boolean hasMoreEntries = true;
                 while (displayedCount < howManyTimeZones && selectedTimeZone == null) {
-                    whichIndex = showTimeZones(timezonesToDisplay, dir.equals(new File(osFunctions.getTimeZonesDir()))?null:dir, displayedCount + 1);
+                    whichIndex = showTimeZones(timezonesToDisplay, dir.equals(new File(osFunctions.getTimeZonesDir()))?null:dir, displayedCount + 1, allowedEntries, hasMoreEntries);
                     displayedCount += TIMEZONES_PER_PAGE;
-                    if (whichIndex > 0) {
+                    if (whichIndex >= 0) {
                         selectedTimeZone = allTimeZones[whichIndex];
                     } else {
-                        System.arraycopy(allTimeZones, displayedCount, timezonesToDisplay, 0, TIMEZONES_PER_PAGE);
+                        int length = TIMEZONES_PER_PAGE;
+                        if ( (displayedCount + TIMEZONES_PER_PAGE) > allTimeZones.length) {
+                            length = allTimeZones.length - displayedCount;
+                            hasMoreEntries = false;
+                        }
+                        timezonesToDisplay = new File[length];
+                        System.arraycopy(allTimeZones, displayedCount, timezonesToDisplay, 0, length);
                     }
                 }
             } else {
-                whichIndex = showTimeZones(allTimeZones, dir, 1);
+                whichIndex = showTimeZones(allTimeZones, dir, 1, allowedEntries, false);
                 selectedTimeZone = allTimeZones[whichIndex];
             }
 
@@ -104,7 +115,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
         return selectedTimeZone;
     }
 
-    private int showTimeZones(File[] timezones, File baseDir, int startingIndex) throws IOException, WizardNavigationException {
+    private int showTimeZones(File[] timezones, File baseDir, int startingIndex, List<String> allowedEntries, boolean hasMoreEntries) throws IOException, WizardNavigationException {
         List<String> prompts = new ArrayList<String>();
         prompts.add("Select a timezone from the following list " + getEolChar());
 
@@ -118,15 +129,20 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             prompts.add(prompt + getEolChar());
         }
 
-        prompts.add("Please make a selection [Enter for next page]: ");
-        String[] allowedEntries = new String[x+1];
-        for (int index=1; index <= x; ++index) {
-            allowedEntries[index-1] = String.valueOf(index);
-        }
+        String[] acceptedEntries = null;
         String defaultValue = "";
-        allowedEntries[allowedEntries.length -1] = defaultValue;
+        if (!hasMoreEntries) {
+            acceptedEntries = allowedEntries.toArray(new String[0]);
+            prompts.add("Please make a selection : ");
+        } else {
+            List<String> tempList = new ArrayList<String>();
+            tempList.addAll(allowedEntries);
+            tempList.add(defaultValue);
+            acceptedEntries = tempList.toArray(new String[0]);
+            prompts.add("Please make a selection [Enter for next page]: ");            
+        }
 
-        String tzSelection = getData(prompts, "", allowedEntries);
+        String tzSelection = getData(prompts, defaultValue, acceptedEntries);
         if (tzSelection.equals(defaultValue)) {
             return -1;
         }
