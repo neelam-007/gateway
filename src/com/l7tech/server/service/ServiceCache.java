@@ -286,6 +286,7 @@ public class ServiceCache
             boolean notified = false;
             for (ServiceResolver resolver : activeResolvers) {
                 if (rl != null && resolver.usesMessageContent() && !notified) {
+                    notified = true;
                     if (!rl.notifyPreParseServices(req, serviceSet))
                         return null;
                 }
