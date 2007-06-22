@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.net.InterfaceAddress;
+import java.net.Inet6Address;
 
 /**
  * User: megery
@@ -326,7 +328,14 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
     private String getIpAddress(NetworkingConfigurationBean.NetworkConfig netConfig) throws IOException, WizardNavigationException {
         String interfaceName = netConfig.getInterfaceName();
-        String currentFirstAddress = netConfig.getIpAddresses().get(0).getAddress().getHostAddress();
+        List<InterfaceAddress> addresses = netConfig.getIpAddresses();
+        List<String> stringAddresses = new ArrayList<String>();
+        for (InterfaceAddress address : addresses) {
+            if (!(address.getAddress() instanceof Inet6Address)) {
+                stringAddresses.add(address.getAddress().getHostAddress());
+            }
+        }
+        String currentFirstAddress = stringAddresses.get(0);
 
 
         String prompt = "Enter the IP for interface \"" + interfaceName + "\"";
