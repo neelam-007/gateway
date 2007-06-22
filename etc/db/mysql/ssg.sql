@@ -228,7 +228,7 @@ CREATE TABLE jms_connection (
   topic_factory_url varchar(255) default '',
   username varchar(32) default '',
   password varchar(32) default '',
-  properties mediumtext default '',
+  properties mediumtext,
   primary key(objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
