@@ -167,6 +167,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 if (securityProcessingIOException[0] != null) {
                     throw securityProcessingIOException[0]; 
                 } else if (securityProcessingAssertionStatus[0] != null) {
+                    status = securityProcessingAssertionStatus[0];
                     return securityProcessingAssertionStatus[0];
                 } else {
                     auditor.logAndAudit(MessageProcessingMessages.SERVICE_NOT_FOUND);
