@@ -7,9 +7,11 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileFilter;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -74,7 +76,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             printText("*** " + "Could not determine available timezones. Timezone directory \"" + dir.getAbsolutePath() + "\" does not exist" + " ***" + getEolChar());
             logger.warning("Could not determine available timezones. Timezone directory \"" + dir.getAbsolutePath() + "\" does not exist");
         } else {
-            File[] allTimeZones = dir.listFiles();
+            File[] allTimeZones = getTimezones(dir);
             File[] timezonesToDisplay = null;
             int howManyTimeZones = allTimeZones.length;
             List<String> allowedEntries = new ArrayList<String>();
@@ -113,6 +115,27 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             selectedTimeZone = doTzConfigurationPrompts(selectedTimeZone);
         }
         return selectedTimeZone;
+    }
+
+    private File[] getTimezones(File baseDir) {
+        File[] subdirs = baseDir.listFiles(new FileFilter() {
+            public boolean accept(File pathname) {
+                return pathname.isDirectory();
+            }
+        });
+        if (subdirs != null) Arrays.sort(subdirs);
+
+        File[] filesonly = baseDir.listFiles(new FileFilter() {
+            public boolean accept(File pathname) {
+                return !pathname.isDirectory();
+            }
+        });
+        if (filesonly != null) Arrays.sort(filesonly);
+
+        List<File> allOfThem = new ArrayList<File>(Arrays.asList(subdirs));
+        allOfThem.addAll(Arrays.asList(filesonly));
+
+        return allOfThem.toArray(new File[0]);
     }
 
     private int showTimeZones(File[] timezones, File baseDir, int startingIndex, List<String> allowedEntries, boolean hasMoreEntries) throws IOException, WizardNavigationException {
