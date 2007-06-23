@@ -18,13 +18,17 @@ import com.l7tech.server.event.system.AuditPurgeEvent;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -115,7 +119,8 @@ public class AuditRecordManagerImpl
     public void deleteOldAuditRecords() throws DeleteException {
         applicationContext.publishEvent(new AuditPurgeInitiated(this));
         String sMinAgeHours = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
-        if (sMinAgeHours == null || sMinAgeHours.length() == 0) sMinAgeHours = "168";
+        if (sMinAgeHours == null || sMinAgeHours.length() == 0)
+            sMinAgeHours = "168";
         int minAgeHours = 168;
         try {
             minAgeHours = Integer.valueOf(sMinAgeHours).intValue();
@@ -124,25 +129,11 @@ public class AuditRecordManagerImpl
                     "' is not a valid number. Using " + minAgeHours + " instead.");
         }
 
-        long maxTime = System.currentTimeMillis() - (minAgeHours * 60 * 60 * 1000);
+        final long maxTime = System.currentTimeMillis() - (minAgeHours * 60 * 60 * 1000);
 
-        PreparedStatement deleteStmt = null;
-        Session s = null;
-        try {
-            s = getSession();
-            deleteStmt = s.connection().prepareStatement("DELETE FROM audit_main WHERE audit_level <> ? AND time < ?");
-            deleteStmt.setString(1, Level.SEVERE.getName());
-            deleteStmt.setLong(2, maxTime);
-            int numDeleted = deleteStmt.executeUpdate();
-            if(logger.isLoggable(Level.INFO))
-                logger.log(Level.INFO, "Deleted {0} audit events.", numDeleted);
-            applicationContext.publishEvent(new AuditPurgeEvent(this, numDeleted));
-        } catch (Exception e) {
-            throw new DeleteException("Couldn't delete audit records", e);
-        } finally {
-            if (deleteStmt != null) try { deleteStmt.close(); } catch (SQLException e) { }
-            releaseSession(s);
-        }
+        Runnable runnable = new DeletionTask(maxTime);
+
+        new Thread(runnable).start();
     }
 
     @Override
@@ -170,4 +161,62 @@ public class AuditRecordManagerImpl
 
     private ServerConfig serverConfig;
     private ApplicationContext applicationContext;
+
+    private class DeletionTask implements Runnable {
+        private final long maxTime;
+
+        public DeletionTask(long maxTime) {
+            this.maxTime = maxTime;
+        }
+
+        public void run() {
+            new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+                protected void doInTransactionWithoutResult(TransactionStatus status) {
+                    PreparedStatement deleteStmt = null;
+                    Session s = null;
+
+                    try {
+                        s = getSession();
+                        Connection conn = s.connection();
+
+                        // Delete in blocks of 10000 audit events. Otherwise a single delete of millions
+                        // will fail with socket timeout. (Bugzilla # 3687)
+                        //
+                        // Note that these other solutions were tried but did not work:
+                        // 1. PreparedStatement.setQueryTimeout() requires MySQL 5.0.0 or newer.
+                        // 2. com.mysql.jdbc.Connection.setSocketTimeout() is not accessible through com.mchange.v2.c3p0.impl.NewProxyConnection.
+                        // 3. Setting MySQL session variables net_read_timeout and net_write_timeout has no effect.
+                        deleteStmt = conn.prepareStatement("DELETE FROM audit_main WHERE audit_level <> ? AND time < ? LIMIT 10000");
+                        deleteStmt.setString(1, Level.SEVERE.getName());
+                        deleteStmt.setLong(2, maxTime);
+                        int totalDeleted = 0;
+                        int numDeleted = 0;
+                        long startTime = System.currentTimeMillis();
+                        do {
+                            numDeleted = deleteStmt.executeUpdate();
+                            totalDeleted += numDeleted;
+                            if (logger.isLoggable(Level.FINE) && numDeleted != 0) {
+                                logger.fine("Deleted progress: " + totalDeleted + " audit events in " + ((System.currentTimeMillis() - startTime) / 1000.) + " sec.");
+                            }
+                        } while (numDeleted != 0);
+
+                        if (logger.isLoggable(Level.INFO)) {
+                            logger.log(Level.INFO, "Deleted " + totalDeleted + " audit events in " + ((System.currentTimeMillis() - startTime) / 1000.) + " sec.");
+                        }
+                        applicationContext.publishEvent(new AuditPurgeEvent(this, totalDeleted));
+                            // This must run in same transaction, otherwise will result in
+                            // lock wait timeout. (Bugzilla # 3687)
+                    } catch (Exception e) {
+                        throw new RuntimeException("Couldn't delete audit records", e);
+                    } finally {
+                        if (deleteStmt != null) try {
+                            deleteStmt.close();
+                        } catch (SQLException e) {
+                        }
+                        releaseSession(s);
+                    }
+                }
+            });
+        }
+    }
 }

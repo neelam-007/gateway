@@ -7,10 +7,10 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.security.rbac.Permission;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DeleteException;
 
@@ -68,7 +68,7 @@ public class DeleteAuditEventsAction extends SecureAction {
         // Delete the audit events
         try {
             Object[] options  = new Object[] {"Delete Events", "Cancel"};
-            String title  ="Delete Audit Events";
+            final String title  ="Delete Audit Events";
 
             final int age = auditAdmin.serverMinimumPurgeAge();
             String message = "You are about to cause this Gateway to delete\n" +
@@ -86,6 +86,7 @@ public class DeleteAuditEventsAction extends SecureAction {
                     if (option == 0) {
                         try {
                             auditAdmin.deleteOldAuditRecords();
+                            DialogDisplayer.showMessageDialog(null, "Deletion will take place in the background. An audit entry (with total number deleted) will be added upon completion.", title, JOptionPane.INFORMATION_MESSAGE, null);
                         } catch (RemoteException e) {
                             throw new RuntimeException("Unable to delete old audit events.", e);
                         } catch (DeleteException e) {
