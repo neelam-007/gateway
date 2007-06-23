@@ -6,15 +6,17 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.audit.MessageSummaryAuditDetail;
+import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.TcpKnob;
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -24,7 +26,7 @@ import com.l7tech.service.PublishedService;
 import javax.wsdl.Operation;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
+import java.text.MessageFormat;
 
 /**
  * A MessageSummaryAuditRecord must be generated upon the conclusion of the processing of a message,
@@ -83,53 +85,36 @@ public class MessageSummaryAuditFactory {
         }
 
         // Request info
-        Message request = context.getRequest();
         String requestId;
-        requestId = context.getRequestId().toString();
-        try {
-            if (context.isAuditSaveRequest() && request.isXml()) {
-                try {
-                    byte[] req = HexUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(true));
-                    String encoding = request.getMimeKnob().getFirstPart().getContentType().getEncoding();
-                    requestXml = new String(req, encoding);
-                    requestContentLength = requestXml.length();
-                } catch (Throwable t) {
-                    requestXml = null;
-                }
-
-                if ( requestContentLength == -1 && requestXml != null ) requestContentLength = requestXml.length();
+        {
+            Message request = context.getRequest();
+            requestId = context.getRequestId().toString();
+            if (context.isAuditSaveRequest()) {
+                int[] requestContentLengths = new int[] { -1 };
+                requestXml = getMessageBodyText(request, requestContentLengths, true);
+                requestContentLength = requestContentLengths[0];
             }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "unexpected problem while testing for xml content");
+
+            TcpKnob reqTcp = (TcpKnob)request.getKnob(TcpKnob.class);
+            if (reqTcp != null)
+                clientAddr = reqTcp.getRemoteAddress();
         }
-        TcpKnob reqTcp = (TcpKnob)request.getKnob(TcpKnob.class);
-        if (reqTcp != null)
-            clientAddr = reqTcp.getRemoteAddress();
 
         // Response info
-        Message response = context.getResponse();
-        try {
-            if (context.isAuditSaveResponse() && response.isXml()) {
-                if (response.getKnob(MimeKnob.class) != null) {
-                    try {
-                        byte[] resp = HexUtils.slurpStream(response.getMimeKnob().getFirstPart().getInputStream(false));
-                        String encoding = response.getMimeKnob().getFirstPart().getContentType().getEncoding();
-                        responseXml = new String(resp, encoding);
-                    } catch (Throwable t) {
-                        responseXml = null;
-                    }
-                }
-
-                if (responseXml != null) responseContentLength = responseXml.length();
+        int responseHttpStatus;
+        {
+            Message response = context.getResponse();
+            if (context.isAuditSaveResponse()) {
+                int[] responseContentLengths = new int[]{responseContentLength};
+                responseXml = getMessageBodyText(response, responseContentLengths, false);
+                responseContentLength = responseContentLengths[0];
             }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "unexpected problem while testing for xml content");
-        }
 
-        int responseHttpStatus = -1;
-        HttpResponseKnob respKnob = (HttpResponseKnob)response.getKnob(HttpResponseKnob.class);
-        if (respKnob != null) {
-            responseHttpStatus = respKnob.getStatus();
+            responseHttpStatus = -1;
+            HttpResponseKnob respKnob = (HttpResponseKnob) response.getKnob(HttpResponseKnob.class);
+            if (respKnob != null) {
+                responseHttpStatus = respKnob.getStatus();
+            }
         }
 
         long start = context.getRoutingStartTime();
@@ -154,6 +139,33 @@ public class MessageSummaryAuditFactory {
                                              routingLatency,
                                              serviceOid, serviceName, operationNameHaver,
                                              authenticated, authType, identityProviderOid, userName, userId);
+    }
+
+    private String getMessageBodyText(Message msg, int[] lengthHolder, boolean isRequest) {
+        String what = isRequest ? "request" : "response";
+        try {
+            final MimeKnob mk = (MimeKnob) msg.getKnob(MimeKnob.class);
+            if (mk == null) {
+                logger.fine(MessageFormat.format("{0} has not been initialized; not attempting to save body text", what));
+                lengthHolder[0] = 0;
+                return null;
+            }
+            final PartInfo part = mk.getFirstPart();
+            byte[] req = HexUtils.slurpStream(part.getInputStream(true));
+            lengthHolder[0] = req.length;
+            ContentTypeHeader reqct = part.getContentType();
+            String encoding;
+            if (reqct != null && reqct.isText()) {
+                encoding = reqct.getEncoding();
+            } else {
+                logger.log(Level.INFO, MessageFormat.format("Unable to detect {0} character encoding; using ISO8859-1", what));
+                encoding = "ISO8859-1";
+            }
+            return new String(req, encoding);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, MessageFormat.format("Unable to get {0} XML", what), e);
+            return null;
+        }
     }
 
     public AuditDetail makeEvent(PolicyEnforcementContext context, String faultMessage) {
