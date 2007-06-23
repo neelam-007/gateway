@@ -151,7 +151,7 @@ public class MessageSummaryAuditFactory {
                 return null;
             }
             final PartInfo part = mk.getFirstPart();
-            byte[] req = HexUtils.slurpStream(part.getInputStream(true));
+            byte[] req = HexUtils.slurpStream(part.getInputStream(isRequest));
             lengthHolder[0] = req.length;
             ContentTypeHeader reqct = part.getContentType();
             String encoding;
