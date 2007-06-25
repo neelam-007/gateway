@@ -6,15 +6,21 @@
 
 package com.l7tech.server.event.system;
 
-import java.util.logging.Level;
-
 import com.l7tech.common.Component;
+import com.l7tech.common.audit.SystemAuditRecord;
+
+import java.util.logging.Level;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class AuditPurgeEvent extends SystemEvent {
+    private static final Component COMPONENT = Component.GW_AUDIT_SYSTEM;
+    private static final String NAME = "Purged";
+
+    private final int numDeleted;
+    private SystemAuditRecord systemAuditRecord; // TODO surely there must be some better way
 
     //- PUBLIC
 
@@ -27,18 +33,19 @@ public class AuditPurgeEvent extends SystemEvent {
         return buildAction(numDeleted);
     }
 
-    //- PRIVATE
-
-    private static String buildAction(int numDeleted) {
+    public static String buildAction(int numDeleted) {
         return NAME + " " + numDeleted + " Audit records";
     }
 
-    private static String buildMessage(int numDeleted) {
+    public static String buildMessage(int numDeleted) {
         return COMPONENT.getName() + " " + buildAction(numDeleted);
     }
 
-    private static final Component COMPONENT = Component.GW_AUDIT_SYSTEM;
-    private static final String NAME = "Purged";
-    
-    private int numDeleted;
+    public SystemAuditRecord getSystemAuditRecord() {
+        return systemAuditRecord;
+    }
+
+    public void setSystemAuditRecord(SystemAuditRecord systemAuditRecord) {
+        this.systemAuditRecord = systemAuditRecord;
+    }
 }

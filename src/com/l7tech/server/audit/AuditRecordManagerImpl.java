@@ -8,6 +8,9 @@ package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
+import com.l7tech.common.audit.SystemAuditRecord;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -22,10 +25,11 @@ import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Connection;
@@ -162,7 +166,12 @@ public class AuditRecordManagerImpl
     private ServerConfig serverConfig;
     private ApplicationContext applicationContext;
 
+    private static class AuditRecordHolder {
+        private SystemAuditRecord auditRecord = null;
+    }
+
     private class DeletionTask implements Runnable {
+        private final AuditRecordHolder auditPurgeRecordHolder = new AuditRecordHolder();
         private final long maxTime;
 
         public DeletionTask(long maxTime) {
@@ -170,53 +179,90 @@ public class AuditRecordManagerImpl
         }
 
         public void run() {
-            new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
-                protected void doInTransactionWithoutResult(TransactionStatus status) {
-                    PreparedStatement deleteStmt = null;
-                    Session s = null;
-
-                    try {
-                        s = getSession();
-                        Connection conn = s.connection();
-
-                        // Delete in blocks of 10000 audit events. Otherwise a single delete of millions
-                        // will fail with socket timeout. (Bugzilla # 3687)
-                        //
-                        // Note that these other solutions were tried but did not work:
-                        // 1. PreparedStatement.setQueryTimeout() requires MySQL 5.0.0 or newer.
-                        // 2. com.mysql.jdbc.Connection.setSocketTimeout() is not accessible through com.mchange.v2.c3p0.impl.NewProxyConnection.
-                        // 3. Setting MySQL session variables net_read_timeout and net_write_timeout has no effect.
-                        deleteStmt = conn.prepareStatement("DELETE FROM audit_main WHERE audit_level <> ? AND time < ? LIMIT 10000");
-                        deleteStmt.setString(1, Level.SEVERE.getName());
-                        deleteStmt.setLong(2, maxTime);
-                        int totalDeleted = 0;
-                        int numDeleted = 0;
-                        long startTime = System.currentTimeMillis();
-                        do {
-                            numDeleted = deleteStmt.executeUpdate();
-                            totalDeleted += numDeleted;
-                            if (logger.isLoggable(Level.FINE) && numDeleted != 0) {
-                                logger.fine("Deleted progress: " + totalDeleted + " audit events in " + ((System.currentTimeMillis() - startTime) / 1000.) + " sec.");
+            // Delete in blocks of 10000 audit events. Otherwise a single delete of millions
+            // will fail with socket timeout. (Bugzilla # 3687)
+            //
+            // Note that these other solutions were tried but did not work:
+            // 1. PreparedStatement.setQueryTimeout() requires MySQL 5.0.0 or newer.
+            // 2. com.mysql.jdbc.Connection.setSocketTimeout() is not accessible through com.mchange.v2.c3p0.impl.NewProxyConnection.
+            // 3. Setting MySQL session variables net_read_timeout and net_write_timeout has no effect.
+            int totalDeleted = 0;
+            int numDeleted = 0;
+            long startTime = System.currentTimeMillis();
+            do {
+                try {
+                    final int tempTotal = totalDeleted;
+                    numDeleted = (Integer) new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
+                        /**
+                         * Commit the block delete and purge record creation/update in a transaction.
+                         * Otherwise, without immediate commits, the total deletion time is exponential
+                         * and audit events from other source will get "lock wait timeout".
+                         */
+                        public Object doInTransaction(TransactionStatus status) {
+                            try {
+                                return deleteBatch(auditPurgeRecordHolder, maxTime, tempTotal);
+                            } catch (Exception e) {
+                                logger.log(Level.WARNING, "Unable to delete batch: " + ExceptionUtils.getMessage(e), e);
+                                status.setRollbackOnly();
+                                return 0;
                             }
-                        } while (numDeleted != 0);
-
-                        if (logger.isLoggable(Level.INFO)) {
-                            logger.log(Level.INFO, "Deleted " + totalDeleted + " audit events in " + ((System.currentTimeMillis() - startTime) / 1000.) + " sec.");
                         }
-                        applicationContext.publishEvent(new AuditPurgeEvent(this, totalDeleted));
-                            // This must run in same transaction, otherwise will result in
-                            // lock wait timeout. (Bugzilla # 3687)
-                    } catch (Exception e) {
-                        throw new RuntimeException("Couldn't delete audit records", e);
-                    } finally {
-                        if (deleteStmt != null) try {
-                            deleteStmt.close();
-                        } catch (SQLException e) {
-                        }
-                        releaseSession(s);
-                    }
+                    });
+                    totalDeleted += numDeleted;
+                } catch (TransactionException e) {
+                    logger.log(Level.WARNING, "Couldn't commit audit deletion batch: " + ExceptionUtils.getMessage(e), e);
+                    break;
                 }
-            });
+
+                if (numDeleted > 0 && logger.isLoggable(Level.FINE)) {
+                    logger.fine("Deletion progress: " + totalDeleted + " audit events in " + ((System.currentTimeMillis() - startTime) / 1000.) + " sec");
+                }
+            } while (numDeleted != 0);
+
+            if (logger.isLoggable(Level.INFO)) {
+                logger.log(Level.INFO, "Deleted " + totalDeleted + " audit events in " + ((System.currentTimeMillis() - startTime) / 1000.) + " sec.");
+            }
+
         }
+
+        private int deleteBatch(final AuditRecordHolder auditRecordHolder, final long maxTime, int totalDeleted) throws HibernateException, SQLException {
+            Session session = getSession();
+            try {
+                int numDeleted;
+                PreparedStatement deleteStmt = null;
+                try {
+                    Connection conn = session.connection();
+                    deleteStmt = conn.prepareStatement("DELETE FROM audit_main WHERE audit_level <> ? AND time < ? LIMIT 10000");
+                    deleteStmt.setString(1, Level.SEVERE.getName());
+                    deleteStmt.setLong(2, maxTime);
+                    numDeleted = deleteStmt.executeUpdate();
+                } finally {
+                    ResourceUtils.closeQuietly(deleteStmt);
+                }
+
+                if (numDeleted == 0) return 0;
+
+                if (auditRecordHolder.auditRecord == null) {
+                    // This is the first batch in this session, we need to create the audit message
+                    AuditPurgeEvent auditPurgeEvent = new AuditPurgeEvent(AuditRecordManagerImpl.this, numDeleted);
+                    applicationContext.publishEvent(auditPurgeEvent);
+                    auditRecordHolder.auditRecord = auditPurgeEvent.getSystemAuditRecord();
+                } else {
+                    // Second or subsequent batch, we need to bump the count in the audit message
+                    totalDeleted += numDeleted;
+                    final SystemAuditRecord rec = auditRecordHolder.auditRecord;
+                    rec.setAction(AuditPurgeEvent.buildAction(totalDeleted));
+                    rec.setMessage(AuditPurgeEvent.buildMessage(totalDeleted));
+                    rec.setMillis(System.currentTimeMillis());
+                    session.update(rec);
+                }
+
+                return numDeleted;
+            } finally {
+                if (session != null) releaseSession(session);
+            }
+        }
+
     }
+
 }

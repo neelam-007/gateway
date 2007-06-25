@@ -8,11 +8,7 @@ package com.l7tech.server.audit;
 import com.l7tech.common.Component;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.SystemAuditRecord;
-import com.l7tech.server.event.system.Started;
-import com.l7tech.server.event.system.Stopped;
-import com.l7tech.server.event.system.SystemEvent;
-import com.l7tech.server.event.system.RoutineSystemEvent;
-
+import com.l7tech.server.event.system.*;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -43,9 +39,14 @@ public class SystemAuditListener implements ApplicationListener {
             if (event instanceof RoutineSystemEvent) {
                 alwaysAudit = false;
             }
-            auditContext.setCurrentRecord(new SystemAuditRecord(level, nodeId, se.getComponent(), se.getMessage(),
+            SystemAuditRecord record = new SystemAuditRecord(level, nodeId, se.getComponent(), se.getMessage(),
                     alwaysAudit, se.getIdentityProviderOid(), se.getUserName(), se.getUserId(), se.getAction(),
-                    se.getIpAddress()));
+                    se.getIpAddress());
+            if (event instanceof AuditPurgeEvent) {
+                AuditPurgeEvent ape = (AuditPurgeEvent) event;
+                ape.setSystemAuditRecord(record);
+            }
+            auditContext.setCurrentRecord(record);
             auditContext.flush();
         }
     }
