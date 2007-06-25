@@ -87,13 +87,13 @@ public class XslTransformationSpecifyPanel extends JPanel {
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVE_ACTION));
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVEAS_ACTION));
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.NEW_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.PARSE_ACTION));
         
         if (TopComponents.getInstance().isApplet()) {
             // Search action tries to get the class loader
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.INSERT_ACTION));
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.SEARCH_ACTION));
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.COMMENT_ACTION));
-            popupModel.removeAction(ActionModel.getActionByName(ActionModel.PARSE_ACTION));
         }
 
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_SELECTNODE_ACTION));
