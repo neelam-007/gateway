@@ -90,6 +90,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.NEW_ACTION));
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.PARSE_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_SELECTNODE_ACTION));
+        xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_COMMENTNODE_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_COPYNODE_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_CUTNODE_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_EDITNODE_ACTION));
