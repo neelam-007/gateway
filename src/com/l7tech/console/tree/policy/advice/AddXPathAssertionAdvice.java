@@ -4,6 +4,7 @@ import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SimpleXpathAssertion;
 import com.l7tech.common.xml.xpath.XpathExpression;
+import com.l7tech.common.util.SoapUtil;
 
 import java.util.HashMap;
 
@@ -25,7 +26,11 @@ public class AddXPathAssertionAdvice implements Advice {
         }
         SimpleXpathAssertion subject = (SimpleXpathAssertion)assertions[0];
         if (pc.getService() != null && !pc.getService().isSoap()) {
-            subject.setXpathExpression(new XpathExpression("/", new HashMap()));
+            // if this xpath has not been previously customized, then adjust default value
+            // see bzilla #3870
+            if (SoapUtil.SOAP_ENVELOPE_XPATH.equals(subject.getXpathExpression().getExpression())) {
+                subject.setXpathExpression(new XpathExpression("/", new HashMap()));
+            }
         }
         pc.proceed();
     }
