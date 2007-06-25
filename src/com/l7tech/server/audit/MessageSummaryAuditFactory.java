@@ -26,7 +26,11 @@ import com.l7tech.service.PublishedService;
 import javax.wsdl.Operation;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Arrays;
 import java.text.MessageFormat;
+import java.io.UnsupportedEncodingException;
 
 /**
  * A MessageSummaryAuditRecord must be generated upon the conclusion of the processing of a message,
@@ -38,6 +42,9 @@ import java.text.MessageFormat;
 public class MessageSummaryAuditFactory {
     private final String nodeId;
     private static final Logger logger = Logger.getLogger(MessageSummaryAuditFactory.class.getName());
+    private static final String FALLBACK_ENCODING = "ISO8859-1";
+
+    private static final Set<String> KNOWN_GOOD_ENCODINGS = new HashSet<String>(Arrays.asList("utf-8", "utf-16", "iso8859-1"));
 
     public MessageSummaryAuditFactory(String nodeId) {
         if (nodeId == null) {
@@ -153,14 +160,25 @@ public class MessageSummaryAuditFactory {
             final PartInfo part = mk.getFirstPart();
             byte[] req = HexUtils.slurpStream(part.getInputStream(isRequest));
             lengthHolder[0] = req.length;
-            ContentTypeHeader reqct = part.getContentType();
-            String encoding;
-            if (reqct != null && reqct.isText()) {
-                encoding = reqct.getEncoding();
+            ContentTypeHeader cth = part.getContentType();
+            String encoding = null;
+            if (cth != null && cth.isText()) {
+                String declaredEncoding = cth.getEncoding();
+                if (KNOWN_GOOD_ENCODINGS.contains(declaredEncoding.toLowerCase())) {
+                    encoding = declaredEncoding;
+                } else {
+                    try {
+                        new String(new byte[0], declaredEncoding);
+                        encoding = declaredEncoding;
+                    } catch (UnsupportedEncodingException e) {
+                        logger.log(Level.INFO, MessageFormat.format("Unsupported {0} character encoding \"{1}\"; using {2} to save {0} text", what, declaredEncoding, FALLBACK_ENCODING));
+                    }
+                }
             } else {
-                logger.log(Level.INFO, MessageFormat.format("Unable to detect {0} character encoding; using ISO8859-1", what));
-                encoding = "ISO8859-1";
+                logger.log(Level.INFO, MessageFormat.format("Content-Type of {0} (\"{1}\") is unknown or not text; using {2} to save {0} text",
+                        what, cth == null ? "null" : cth.getFullValue(), FALLBACK_ENCODING));
             }
+            if (encoding == null) encoding = FALLBACK_ENCODING;
             return new String(req, encoding);
         } catch (Exception e) {
             logger.log(Level.WARNING, MessageFormat.format("Unable to get {0} XML", what), e);
