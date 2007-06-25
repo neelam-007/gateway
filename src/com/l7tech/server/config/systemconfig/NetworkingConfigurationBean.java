@@ -6,8 +6,9 @@ import org.apache.commons.lang.StringUtils;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -48,7 +49,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 explanations.add("Configure \"" + networkConfig.getInterfaceName() + "\" interface");
                 explanations.add("\tBOOTPROTO=" + networkConfig.getBootProto());
                 if (networkConfig.getBootProto().equals(STATIC_BOOT_PROTO)) {
-                    explanations.add("\tIPADDR=" + networkConfig.getIpAddresses());
+                    explanations.add("\tIPADDR=" + networkConfig.getIpAddresses().get(0));
                     explanations.add("\tNETMASK=" + networkConfig.getNetMask());
                     explanations.add("\tGATEWAY=" + networkConfig.getGateway());
                     if (networkConfig.getNameServers() != null) {
@@ -109,6 +110,12 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         protected NetworkConfig(NetworkInterface nic, String bootProto) {
             this.nic = nic;
             ipAddresses = new ArrayList<String>();
+            if (nic != null) {
+                List<InterfaceAddress> addrs = nic.getInterfaceAddresses();
+                for (InterfaceAddress addr : addrs) {
+                    ipAddresses.add(addr.getAddress().getHostAddress());
+                }
+            }
             this.bootProto = bootProto;
         }
 
@@ -130,8 +137,14 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
             this.bootProto = bootProto;
         }
 
-        public List<InterfaceAddress> getIpAddresses() {
+        public List<InterfaceAddress> getInterfaceAddresses() {
+            if (nic == null)
+                return Collections.emptyList();
             return nic.getInterfaceAddresses();
+        }
+
+        public List<String> getIpAddresses() {
+           return ipAddresses;
         }
 
         public void setIpAddress(String ipAddress) {

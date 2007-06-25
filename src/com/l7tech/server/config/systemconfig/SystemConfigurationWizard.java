@@ -56,7 +56,7 @@ public class SystemConfigurationWizard extends ConfigurationWizard {
                 utils.printText("\tHardware Address (MAC): " + getFormattedMac(mac));
             }
             utils.printText("\tAddresses:" + ConsoleWizardUtils.EOL_CHAR);
-            List<InterfaceAddress> interfaceAddresses   = networkConfig.getIpAddresses();
+            List<InterfaceAddress> interfaceAddresses   = networkConfig.getInterfaceAddresses();
             for (InterfaceAddress interfaceAddress : interfaceAddresses) {
                 InetAddress address = interfaceAddress.getAddress();
                 short maskLength = interfaceAddress.getNetworkPrefixLength();

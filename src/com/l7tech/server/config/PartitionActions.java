@@ -1,18 +1,14 @@
 package com.l7tech.server.config;
 
-import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.*;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -21,10 +17,9 @@ import org.xml.sax.SAXException;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.net.InterfaceAddress;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -812,9 +807,9 @@ public class PartitionActions {
                     String bootProto = networkConfig.getBootProto();
 
                     if (!StringUtils.equals(bootProto, NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO)) {
-                        List<InterfaceAddress> interfaceAddresses = networkConfig.getIpAddresses();
-                        for (InterfaceAddress interfaceAddress : interfaceAddresses) {
-                            allIpAddresses.add(interfaceAddress.getAddress().getHostAddress());
+                        List<String> interfaceAddresses = networkConfig.getIpAddresses();
+                        for (String interfaceAddress : interfaceAddresses) {
+                            allIpAddresses.add(interfaceAddress);
                         }
                     }
                 }

@@ -7,8 +7,8 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.net.InterfaceAddress;
@@ -226,7 +226,6 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         whichConfig.setBootProto(bootProto);
 
         if (StringUtils.equalsIgnoreCase(bootProto, NetworkingConfigurationBean.STATIC_BOOT_PROTO)) {
-
             whichConfig.setIpAddress(getIpAddress(whichConfig));
             whichConfig.setGateway(getGateway(whichConfig));
             whichConfig.setNetMask(getNetMask(whichConfig));
@@ -328,15 +327,17 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
     private String getIpAddress(NetworkingConfigurationBean.NetworkConfig netConfig) throws IOException, WizardNavigationException {
         String interfaceName = netConfig.getInterfaceName();
-        List<InterfaceAddress> addresses = netConfig.getIpAddresses();
-        List<String> stringAddresses = new ArrayList<String>();
-        for (InterfaceAddress address : addresses) {
-            if (!(address.getAddress() instanceof Inet6Address)) {
-                stringAddresses.add(address.getAddress().getHostAddress());
+        List<InterfaceAddress> addresses = netConfig.getInterfaceAddresses();
+        String currentFirstAddress = null;
+        if (!addresses.isEmpty()) {
+            List<String> stringAddresses = new ArrayList<String>();
+            for (InterfaceAddress address : addresses) {
+                if (!(address.getAddress() instanceof Inet6Address)) {
+                    stringAddresses.add(address.getAddress().getHostAddress());
+                }
             }
+            currentFirstAddress = stringAddresses.get(0);
         }
-        String currentFirstAddress = stringAddresses.get(0);
-
 
         String prompt = "Enter the IP for interface \"" + interfaceName + "\"";
         if (StringUtils.isNotEmpty(currentFirstAddress)) prompt += " [" + currentFirstAddress + "] ";
