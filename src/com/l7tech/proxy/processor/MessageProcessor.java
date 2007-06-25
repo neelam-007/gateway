@@ -13,7 +13,6 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
@@ -488,9 +487,12 @@ public class MessageProcessor {
             // FALLTHROUGH: not handled by agent -- fall through and send it back to the client
         }
         else if (context.usedKerberosServiceTicketReference()) {
-            log.info("Clearing Kerberos service ticket and retrying.");
-            context.clearKerberosServiceTicket();
-            throw new PolicyRetryableException("Retry with new kerberos ticket.");
+            if (responseFaultDetail != null && responseFaultDetail.getFaultCode() != null)
+            {
+                log.info("Clearing Kerberos service ticket and retrying.");
+                context.clearKerberosServiceTicket();
+                throw new PolicyRetryableException("Retry with new kerberos ticket.");
+            }
         }
 
         if (responseFaultDetail != null &&
@@ -782,10 +784,6 @@ public class MessageProcessor {
                 response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
                     public void addCookie(HttpCookie cookie) {
                         // Agent currently stores cookies in the Ssg instance, and does not pass them on to the client
-                        throw new UnsupportedOperationException();
-                    }
-
-                    public void beginResponse() {
                         throw new UnsupportedOperationException();
                     }
                 });
