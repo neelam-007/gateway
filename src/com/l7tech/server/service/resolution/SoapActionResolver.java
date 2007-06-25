@@ -6,7 +6,8 @@ package com.l7tech.server.service.resolution;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.HasSoapAction;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.message.SoapKnob;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
@@ -52,16 +53,34 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
     }
 
     public Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
-        HasSoapAction hsa = (HasSoapAction)request.getKnob(HasSoapAction.class);
-        boolean noSoapActionAvailable = hsa == null;
+        // Filter out requests for which resolution by soap action is not appropriate.
+        //
+        MimeKnob mimeKnob = (MimeKnob) request.getKnob(MimeKnob.class);
+        HasSoapAction hsa = (HasSoapAction) request.getKnob(HasSoapAction.class);
+        boolean isHttp = request.getKnob(HttpRequestKnob.class) != null;
+        boolean isXml = false;
+        boolean soapActionAvailable = false;
+
+        // If we want to check for a soap knob here we need to mark this as a
+        // resolver that required parsing of the message body (#usesMessageContent())
+        if ( mimeKnob != null ) {
+            try {
+                isXml = mimeKnob.getFirstPart().getContentType().isXml();
+            } catch (IOException e) {
+                // then it is not xml
+            }
+        }
+
+        // For non HTTP messages, SOAPAction may not always be available
         try {
             if (hsa != null)
-                noSoapActionAvailable |= hsa.getSoapAction() == null;
+                soapActionAvailable = hsa.getSoapAction() != null;
         } catch (IOException e) {
             // let resolve() handle multivalue case
         }
-        boolean notSoap = (request.getKnob(SoapKnob.class) == null);
-        if (noSoapActionAvailable || notSoap) {
+
+        // If it is an HTTP/XML service it should have been resolved by now.
+        if ( (isHttp && !isXml) || (!isHttp && !soapActionAvailable) ) {
             auditor.logAndAudit(MessageProcessingMessages.SR_SOAPACTION_NOT_HTTP_OR_SOAP);
             return Result.NOT_APPLICABLE;
         } else {
