@@ -462,7 +462,7 @@ class PathValidator {
         }
 
         if (a instanceof ResponseWssConfig || a instanceof ResponseWssConfidentiality) {
-            if (!seenRouting) {
+            if (!seenResponse) {
                 result.addWarning(
                         new PolicyValidatorResult.Warning(a,
                                                           assertionPath,
