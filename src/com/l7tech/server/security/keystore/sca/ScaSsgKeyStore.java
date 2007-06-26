@@ -193,25 +193,27 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
      *                           the process
      * @return the value returned by the mutator
      */
-    protected synchronized <OUT> Future<OUT> mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
+    protected <OUT> Future<OUT> mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
         return mutationExecutor.submit(new Callable<OUT>() {
             public OUT call() throws Exception {
 
                 final Object[] out = new Object[] { null };
                 try {
-                    KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
-                        public byte[] call(byte[] bytes) {
-                            try {
-                                keystore = bytesToKeyStore(bytes);
-                                lastLoaded = System.currentTimeMillis();
-                                out[0] = mutator.call();
-                                return keyStoreToBytes();
-                            } catch (KeyStoreException e) {
-                                throw new RuntimeException(e);
+                    synchronized (ScaSsgKeyStore.this) {
+                        KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
+                            public byte[] call(byte[] bytes) {
+                                try {
+                                    keystore = bytesToKeyStore(bytes);
+                                    lastLoaded = System.currentTimeMillis();
+                                    out[0] = mutator.call();
+                                    return keyStoreToBytes();
+                                } catch (KeyStoreException e) {
+                                    throw new RuntimeException(e);
+                                }
                             }
-                        }
-                    });
-                    keystoreVersion = updated.getVersion();
+                        });
+                        keystoreVersion = updated.getVersion();
+                    }
                 } catch (UpdateException e) {
                     throw new KeyStoreException(e);
                 }
