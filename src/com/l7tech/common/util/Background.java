@@ -17,12 +17,17 @@ import java.util.logging.Level;
 public final class Background {
     protected static final Logger logger = Logger.getLogger(Background.class.getName());
 
-    private static final Map<ClassLoader, Map<SafeTimerTask, Object>> tasksByClassLoader =
-            new WeakHashMap<ClassLoader, Map<SafeTimerTask, Object>>();
+    private static final Map<ClassLoader, Map<TimerTask, Object>> tasksByClassLoader =
+            new WeakHashMap<ClassLoader, Map<TimerTask, Object>>();
     private static Timer timer = new Timer(true);
     private static boolean timerLocked = false;
 
     private Background() {
+    }
+
+    public interface TimerTaskWrapper {
+        public TimerTask wrap(TimerTask timerTask);
+        public TimerTask unwrap(TimerTask timerTask);
     }
 
     public static void installTimer(Timer timer) {
@@ -91,16 +96,16 @@ public final class Background {
      * @param taskToCancel the task to cancel.
      */
     public static void cancel(TimerTask taskToCancel) {
-        final Set<SafeTimerTask> toCancel = new HashSet<SafeTimerTask>();
+        final Set<TimerTask> toCancel = new HashSet<TimerTask>();
 
         synchronized (Background.class) {
-            Collection<Map<SafeTimerTask, Object>> taskLists = tasksByClassLoader.values();
-            for (Map<SafeTimerTask, Object> taskList : taskLists) {
-                Set<SafeTimerTask> wrappedTasks = taskList.keySet();
-                for (SafeTimerTask wrappedTask : wrappedTasks) {
+            Collection<Map<TimerTask, Object>> taskLists = tasksByClassLoader.values();
+            for (Map<TimerTask, Object> taskList : taskLists) {
+                Set<TimerTask> wrappedTasks = taskList.keySet();
+                for (TimerTask wrappedTask : wrappedTasks) {
                     if (wrappedTask == null)
                         continue;
-                    if (wrappedTask.t == taskToCancel)
+                    if (unwrapTask(wrappedTask) == taskToCancel)
                         toCancel.add(wrappedTask);
                 }
             }
@@ -111,18 +116,33 @@ public final class Background {
 
     // Wrap this task in a wrapper that absorbs exceptions, and record which class loader the task is from in case
     // we need to evict it later (if a module is unloaded)
-    private static SafeTimerTask wrapTask(TimerTask originalTask) {
+    private static TimerTask wrapTask(TimerTask originalTask) {
         ClassLoader classLoader = originalTask.getClass().getClassLoader();
-        SafeTimerTask task = new SafeTimerTask(originalTask);
+        TimerTask task = null;
+        if (timer instanceof TimerTaskWrapper)
+            task = ((TimerTaskWrapper)timer).wrap(originalTask);
+        else
+            task = new SafeTimerTask(originalTask);
 
         synchronized (Background.class) {
-            Map<SafeTimerTask, Object> taskSet = tasksByClassLoader.get(classLoader);
+            Map<TimerTask, Object> taskSet = tasksByClassLoader.get(classLoader);
             if (taskSet == null) {
-                taskSet = new WeakHashMap<SafeTimerTask, Object>();
+                taskSet = new WeakHashMap<TimerTask, Object>();
                 tasksByClassLoader.put(classLoader, taskSet);
             }
             taskSet.put(task, null);
         }
+
+        return task;
+    }
+
+    private static TimerTask unwrapTask(final TimerTask wrappedTask) {
+        TimerTask task = null;
+
+        if (wrappedTask instanceof SafeTimerTask)
+            task = ((SafeTimerTask)wrappedTask).t;
+        else if (timer instanceof TimerTaskWrapper)
+            task = ((TimerTaskWrapper)timer).unwrap(wrappedTask);
 
         return task;
     }
@@ -137,22 +157,24 @@ public final class Background {
      * @param classLoader the class loader whose tasks are to be canceled and evicted
      */
     public static void cancelAllTasksFromClassLoader(ClassLoader classLoader) {
-        final Set<SafeTimerTask> toCancel;
+        final Set<TimerTask> toCancel;
 
         synchronized (Background.class) {
-            Map<SafeTimerTask, Object> taskSet = tasksByClassLoader.remove(classLoader);
+            Map<TimerTask, Object> taskSet = tasksByClassLoader.remove(classLoader);
             if (taskSet == null || taskSet.isEmpty())
                 return;
-            toCancel = new HashSet<SafeTimerTask>(taskSet.keySet());
+            toCancel = new HashSet<TimerTask>(taskSet.keySet());
         }
 
         cancelTasks(toCancel);
     }
 
-    private static void cancelTasks(Set<SafeTimerTask> toCancel) {
-        for (SafeTimerTask task : toCancel) {
+    private static void cancelTasks(Set<TimerTask> toCancel) {
+        for (TimerTask task : toCancel) {
             if (task != null) {
-                if (logger.isLoggable(Level.INFO)) logger.info("Canceling background task " + task.t + " (" + task.t.getClass().getName() + ")");
+                TimerTask actualTask = unwrapTask(task);
+                if (logger.isLoggable(Level.INFO))
+                    logger.info("Cancelling background task '" + actualTask + "' (" + actualTask.getClass().getName() + ")");
                 task.cancel();
             }
         }

@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.logging.Logger;
 import java.lang.ref.WeakReference;
 
+import com.l7tech.common.util.Background;
+
 /**
  * Extension of Timer with life cycle management.
  *
@@ -22,7 +24,7 @@ import java.lang.ref.WeakReference;
  *
  * @author Steve Jones
  */
-public class ManagedTimer extends Timer {
+public class ManagedTimer extends Timer implements Background.TimerTaskWrapper {
 
     //- PUBLIC
 
@@ -129,6 +131,30 @@ public class ManagedTimer extends Timer {
         }
     }
 
+    public TimerTask unwrap(TimerTask timerTask) {
+        TimerTask unwrapped = null;
+
+        if (timerTask instanceof ManagedTimerTaskWrapper) {
+            unwrapped = ((ManagedTimerTaskWrapper) timerTask).delegate;
+        } else {
+            unwrapped = timerTask;
+        }
+
+        return unwrapped;
+    }
+
+    public TimerTask wrap(TimerTask timerTask) {
+        TimerTask wrapped = null;
+
+        if (timerTask instanceof ManagedTimerTaskWrapper) {
+            wrapped = (ManagedTimerTaskWrapper) timerTask;
+        } else {
+            wrapped = new ManagedTimerTaskWrapper(timerTask);
+        }
+
+        return wrapped;
+    }
+
     //- PACKAGE
 
     void enter(final TimerTask task) {
@@ -175,14 +201,15 @@ public class ManagedTimer extends Timer {
      * @return null if timerTask is null else the wrapped task
      */
     private TimerTask managementProxy(final TimerTask timerTask) {
-        TimerTask managedTimerTask = null;
+        ManagedTimerTask managedTimerTask = null;
 
         if (timerTask instanceof ManagedTimerTask) {
-            ((ManagedTimerTask)timerTask).scheduled(this);
-            managedTimerTask = timerTask;    
+            managedTimerTask = (ManagedTimerTask) timerTask;    
         } else if (timerTask != null) {
             managedTimerTask = new ManagedTimerTaskWrapper(timerTask);
         }
+
+        managedTimerTask.scheduled(this);
 
         return managedTimerTask;
     }
@@ -206,11 +233,15 @@ public class ManagedTimer extends Timer {
 
         private ManagedTimerTaskWrapper(TimerTask delegate) {
             this.delegate = delegate;
-            scheduled(ManagedTimer.this);
         }
 
         protected void doRun() {
             delegate.run();
+        }
+
+        public boolean cancel() {
+            delegate.cancel();
+            return super.cancel();
         }
     }
 }

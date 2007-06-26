@@ -2,6 +2,9 @@ package com.l7tech.server.util;
 
 import java.util.TimerTask;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+
+import com.l7tech.common.util.ExceptionUtils;
 
 /**
  * ManagedTimerTask for use with a {@link ManagedTimer}
@@ -24,6 +27,9 @@ public abstract class ManagedTimerTask extends TimerTask {
 
         try {
             doRun();
+        }
+        catch (Throwable thrown) {
+            logger.log(Level.SEVERE, "Uncaught exception in background task '" + ExceptionUtils.getMessage(thrown) + "'.", thrown);    
         }
         finally {
             if (mt != null)
