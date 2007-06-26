@@ -38,8 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author alex
- * @version $Revision$
+ * Implementation of AuditAdmin in SSG.
  */
 public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
@@ -58,7 +57,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     private ClusterPropertyManager clusterPropertyManager;
 
     private static boolean downloadReaperScheduled = false;
-    private static TimerTask downloadReaperTask = new TimerTask() {
+    private static final TimerTask downloadReaperTask = new TimerTask() {
         public void run() {
             Collection<DownloadContext> contexts = new ArrayList<DownloadContext>(downloadContexts.values());
             long now = System.currentTimeMillis();
