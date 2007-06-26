@@ -306,6 +306,7 @@ public class ServerXslTransformation
                 auditor.logAndAudit(AssertionMessages.XSLT_TRANS_ERR, exception.getMessageAndLocation());
             }
             public void fatalError(TransformerException exception) throws TransformerException {
+                throw exception;
             }
         };
     }
