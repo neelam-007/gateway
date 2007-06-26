@@ -19,9 +19,17 @@ public final class Background {
 
     private static final Map<ClassLoader, Map<SafeTimerTask, Object>> tasksByClassLoader =
             new WeakHashMap<ClassLoader, Map<SafeTimerTask, Object>>();
-    private static final Timer timer = new Timer(true);
+    private static Timer timer = new Timer(true);
+    private static boolean timerLocked = false;
 
     private Background() {
+    }
+
+    public static void installTimer(Timer timer) {
+        if (timerLocked)
+            throw new IllegalStateException("Locked timer cannot be replaced.");
+        timerLocked = true;
+        Background.timer = timer;
     }
 
     public static class SafeTimerTask extends TimerTask {
@@ -61,6 +69,7 @@ public final class Background {
      * @see Timer#schedule(java.util.TimerTask, long, long)
      */
     public static void scheduleRepeated(TimerTask task, long delay, long period) {
+        timerLocked = true;
         timer.schedule(wrapTask(task), delay, period);
     }
 
@@ -72,6 +81,7 @@ public final class Background {
      * @see Timer#schedule(java.util.TimerTask, long)
      */
     public static void scheduleOneShot(TimerTask task, long delay) {
+        timerLocked = true;
         timer.schedule(wrapTask(task), delay);
     }
 

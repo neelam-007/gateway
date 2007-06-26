@@ -57,6 +57,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     private ServerConfig serverConfig;
     private ClusterPropertyManager clusterPropertyManager;
 
+    private static boolean downloadReaperScheduled = false;
     private static TimerTask downloadReaperTask = new TimerTask() {
         public void run() {
             Collection<DownloadContext> contexts = new ArrayList<DownloadContext>(downloadContexts.values());
@@ -70,8 +71,13 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         }
     };
 
-    static {
-        Background.scheduleRepeated(downloadReaperTask, 10, 10);
+    private void scheduleBackgroundCleanupIfRequired() {
+        synchronized( downloadReaperTask ) {
+            if (!downloadReaperScheduled) {
+                downloadReaperScheduled = true;
+                Background.scheduleRepeated(downloadReaperTask, 10, 10);
+            }
+        }
     }
 
     public void setAuditRecordManager(AuditRecordManager auditRecordManager) {
@@ -121,6 +127,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
      */
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+        scheduleBackgroundCleanupIfRequired();
     }
 
     private static class DownloadContext {
