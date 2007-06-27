@@ -350,10 +350,8 @@ CREATE TABLE audit_main (
   user_id varchar(255),
   provider_oid bigint(20) NOT NULL DEFAULT -1,
   PRIMARY KEY  (objectid),
-  KEY idx_nodeid (nodeid),
   KEY idx_time (time),
   KEY idx_ip_address (ip_address),
-  KEY idx_level (audit_level),
   KEY idx_prov_user (provider_oid, user_id)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 

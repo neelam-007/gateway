@@ -32,3 +32,9 @@ CREATE TABLE shared_keys (
   b64edval varchar(256) NOT NULL,
   primary key(encodingid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Drop audit indexes that cause slow queries
+--
+alter table audit_main drop index idx_nodeid;
+alter table audit_main drop index idx_level;
