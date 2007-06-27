@@ -173,6 +173,10 @@ class PathValidator {
             processHtmlFormDataAssertion((HtmlFormDataAssertion)a);
         }
 
+        if (a instanceof XslTransformation) {
+            processXslTransformation((XslTransformation)a);
+        }
+
         if (parsesXML(a)) {
             seenParsing = true;
         }
@@ -192,6 +196,15 @@ class PathValidator {
         }
 
         setSeen(a.getClass());
+    }
+
+    private void processXslTransformation(XslTransformation xslt) {
+        if (xslt.getResourceInfo().getType() == AssertionResourceType.MESSAGE_URL) {
+            if (service != null && service.isSoap()) {
+                result.addWarning(new PolicyValidatorResult.Warning(xslt, assertionPath,
+                  "This assertion is configured to require an &lt;?xml-stylesheet?&gt; processing instruction, but SOAP messages do not allow them.", null));
+            }
+        }
     }
 
     private void validateRegex(Regex a) {
@@ -367,6 +380,8 @@ class PathValidator {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                   "XSL transformation on the response must not be positioned before a response is available.", null));
             }
+
+
         } else if (a instanceof RequestSwAAssertion) {
             if (seenRouting) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
@@ -669,12 +684,6 @@ class PathValidator {
     }
 
     private boolean onlyForNonSoap(Assertion a) {
-        if (a instanceof XslTransformation) {
-            XslTransformation xslt = (XslTransformation)a;
-            if (xslt.getResourceInfo().getType() == AssertionResourceType.MESSAGE_URL) {
-                return true;
-            }
-        }
         return false;
     }
 
