@@ -27,14 +27,20 @@ public class NamespacePrefixQueryForm extends JDialog {
     public String nsuri;
     public String prefix;
 
-    public NamespacePrefixQueryForm(Dialog owner) {
+
+    public NamespacePrefixQueryForm(Dialog owner, String title) {
         super(owner, true);
-        initialize();
+        initialize(title);
     }
 
-    private void initialize() {
+    public NamespacePrefixQueryForm(Dialog owner) {
+        super(owner, true);
+        initialize(null);
+    }
+
+    private void initialize(String title) {
         setContentPane(mainPanel);
-        setTitle("Add XML Namespace and Prefix");
+        setTitle(title == null?"Add XML Namespace and Prefix":title);
         okbutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ok();

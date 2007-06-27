@@ -238,7 +238,7 @@ public class NamespaceMapEditor extends JDialog {
         if (!isEditableNamespace(originalNsURI))
             return;
 
-        final NamespacePrefixQueryForm grabber = new NamespacePrefixQueryForm(this);
+        final NamespacePrefixQueryForm grabber = new NamespacePrefixQueryForm(this, "Edit XML Namespace and Prefix");
         grabber.setInitialPrefix(originalPrefix);
         grabber.setInitialNsUri(originalNsURI);
         grabber.pack();
