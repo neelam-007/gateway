@@ -26,7 +26,9 @@ class AuthenticationStatement extends SubjectStatement {
         super(credentials, confirmation, useThumbprintForSubject);
 
         this.authenticationMethod = mapAuthMethod(credentials.getCredentialSourceAssertion());
-        this.authenticationInstant.setTime(new Date(credentials.getAuthInstant()));
+        long when = credentials.getAuthInstant();
+        if (when == 0) when = System.currentTimeMillis();
+        this.authenticationInstant.setTime(new Date(when));
     }
 
     private static String mapAuthMethod(Class credentialSourceClass) {
