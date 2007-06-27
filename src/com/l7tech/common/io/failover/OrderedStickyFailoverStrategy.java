@@ -22,6 +22,7 @@ public class OrderedStickyFailoverStrategy extends AbstractFailoverStrategy {
 
     private int probeDelay;
     private int probing = -1;
+    private int nextdown = -1;
 
     private Map index = new HashMap();
 
@@ -72,8 +73,10 @@ public class OrderedStickyFailoverStrategy extends AbstractFailoverStrategy {
         }
 
         if (current >= servers.length) {
-            // Nothing is up
-            return servers[0];
+            // Nothing is up, so cycle through all downed servers
+            if (nextdown < 0 || nextdown > servers.length)
+                nextdown = 0;
+            return servers[nextdown++];
         }
 
         return servers[current];

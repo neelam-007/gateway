@@ -107,6 +107,40 @@ public class FailoverStrategyTest extends TestCase {
         assertEquals(set.size(), servers.length);
     }
 
+    public void testOrderedStickyBug3930() throws Exception {
+        String sa = "SA";
+        String sb = "SB";
+        Object got;
+
+        OrderedStickyFailoverStrategy s = new OrderedStickyFailoverStrategy(new String[] { sa, sb });
+        //s.setProbeTime(100);
+
+        // 1. With both SSG2 & SSG3 up, issue a request to SSG1 -- this should work
+        got = s.selectService();
+        assertEquals(got, sa);
+        s.reportSuccess(got);
+
+        // 2. Bring both SSG2 & SSG3 down and issue a request again -- this should fail
+        got = s.selectService();
+        assertEquals(got, sa);
+        s.reportFailure(got);
+
+        got = s.selectService();
+        assertEquals(got, sb);
+        s.reportFailure(got);
+
+        // 3. Of SSG2 or SSG3, startup the one that is second in the list of IPs SSG1's BRA Properties
+
+        // 4. Issue a request to SSG1 -- this should not fail (bug #3930 was that it was failing)
+        got = s.selectService();
+        assertEquals(got, sa);
+        s.reportFailure(got);
+
+        got = s.selectService();
+        assertEquals(got, sb);
+        s.reportSuccess(got);
+    }
+
     public void testOrderedStickyFailoverStrategy() throws Exception {
         OrderedStickyFailoverStrategy s = new OrderedStickyFailoverStrategy(servers);
         s.setProbeTime(100);
