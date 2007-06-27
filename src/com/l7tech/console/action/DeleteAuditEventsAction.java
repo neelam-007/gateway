@@ -86,7 +86,7 @@ public class DeleteAuditEventsAction extends SecureAction {
                     if (option == 0) {
                         try {
                             auditAdmin.deleteOldAuditRecords();
-                            DialogDisplayer.showMessageDialog(null, "Deletion will take place in the background. An audit entry (with total number deleted) will be added upon completion.", title, JOptionPane.INFORMATION_MESSAGE, null);
+                            DialogDisplayer.showMessageDialog(null, "Deletion will occur in the background.\nAn audit event has been created and will refresh\nafter every 10,000 events are deleted.", title, JOptionPane.INFORMATION_MESSAGE, null);
                         } catch (RemoteException e) {
                             throw new RuntimeException("Unable to delete old audit events.", e);
                         } catch (DeleteException e) {
