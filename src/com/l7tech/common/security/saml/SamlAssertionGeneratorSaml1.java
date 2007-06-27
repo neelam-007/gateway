@@ -1,28 +1,27 @@
 package com.l7tech.common.security.saml;
 
+import com.l7tech.common.security.xml.KeyInfoDetails;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.NamespaceFactory;
+import com.l7tech.common.util.SoapUtil;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlString;
+import org.w3.x2000.x09.xmldsig.KeyInfoType;
+import org.w3.x2000.x09.xmldsig.X509DataType;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import x0Assertion.oasisNamesTcSAML1.*;
+
+import java.math.BigInteger;
+import java.net.InetAddress;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
-import java.util.Map;
-import java.util.List;
 import java.util.HashMap;
-import java.net.InetAddress;
-import java.math.BigInteger;
-
-import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlString;
-import org.w3c.dom.Element;
-import org.w3c.dom.Document;
-import org.w3.x2000.x09.xmldsig.KeyInfoType;
-import org.w3.x2000.x09.xmldsig.X509DataType;
-import x0Assertion.oasisNamesTcSAML1.*;
-
-import com.l7tech.common.util.NamespaceFactory;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.security.xml.KeyInfoDetails;
+import java.util.List;
+import java.util.Map;
 
 /**
  * SAML Assertion Generator for SAML 1.x assertions.
@@ -65,6 +64,7 @@ class SamlAssertionGeneratorSaml1 {
             AuthenticationStatement as = (AuthenticationStatement)subjectStatement;
             AuthenticationStatementType authStatement = assertionType.addNewAuthenticationStatement();
             authStatement.setAuthenticationMethod(as.getAuthenticationMethod());
+            authStatement.setAuthenticationInstant(as.getAuthenticationInstant());
 
             InetAddress clientAddress = options.getClientAddress();
             if (clientAddress != null) {

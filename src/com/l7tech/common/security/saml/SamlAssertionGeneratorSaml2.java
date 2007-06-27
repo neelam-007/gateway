@@ -1,51 +1,25 @@
 package com.l7tech.common.security.saml;
 
-import java.security.SignatureException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.util.Calendar;
-import java.util.Map;
-import java.util.List;
-import java.util.LinkedHashMap;
-import java.util.Iterator;
-import java.net.InetAddress;
-import java.math.BigInteger;
-
-import javax.xml.XMLConstants;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Attr;
-import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlString;
-import org.w3.x2000.x09.xmldsig.X509DataType;
-import org.w3.x2000.x09.xmldsig.KeyInfoType;
-
+import com.l7tech.common.security.xml.KeyInfoDetails;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.NamespaceFactory;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.security.xml.KeyInfoDetails;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlString;
+import org.w3.x2000.x09.xmldsig.KeyInfoType;
+import org.w3.x2000.x09.xmldsig.X509DataType;
+import org.w3c.dom.*;
+import x0Assertion.oasisNamesTcSAML2.*;
 
-import x0Assertion.oasisNamesTcSAML2.AssertionType;
-import x0Assertion.oasisNamesTcSAML2.SubjectType;
-import x0Assertion.oasisNamesTcSAML2.AuthnStatementType;
-import x0Assertion.oasisNamesTcSAML2.AuthnContextType;
-import x0Assertion.oasisNamesTcSAML2.SubjectLocalityType;
-import x0Assertion.oasisNamesTcSAML2.AuthzDecisionStatementType;
-import x0Assertion.oasisNamesTcSAML2.ActionType;
-import x0Assertion.oasisNamesTcSAML2.AttributeStatementType;
-import x0Assertion.oasisNamesTcSAML2.AttributeType;
-import x0Assertion.oasisNamesTcSAML2.NameIDType;
-import x0Assertion.oasisNamesTcSAML2.SubjectConfirmationType;
-import x0Assertion.oasisNamesTcSAML2.ConditionsType;
-import x0Assertion.oasisNamesTcSAML2.AssertionDocument;
-import x0Assertion.oasisNamesTcSAML2.KeyInfoConfirmationDataType;
-import x0Assertion.oasisNamesTcSAML2.DecisionType;
+import javax.xml.XMLConstants;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.*;
 
 /**
  * SAML Assertion Generator for SAML 2.x assertions.
@@ -85,7 +59,8 @@ public class SamlAssertionGeneratorSaml2 {
         if (subjectStatement instanceof AuthenticationStatement) {
             AuthenticationStatement authenticationStatement = (AuthenticationStatement) subjectStatement;
             AuthnStatementType as = assertionType.addNewAuthnStatement();
-
+            as.setAuthnInstant(authenticationStatement.getAuthenticationInstant());
+            
             String authenticationMethod = authenticationStatement.getAuthenticationMethod();
             XmlObject authnContextDecl = null;
             if (SamlConstants.PASSWORD_AUTHENTICATION.equals(authenticationMethod) ||
