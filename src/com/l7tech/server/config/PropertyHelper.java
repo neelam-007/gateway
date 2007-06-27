@@ -1,20 +1,16 @@
 package com.l7tech.server.config;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.logging.Logger;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.io.File;
-
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ResourceUtils;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.lang.StringUtils;
+
+import java.io.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -62,6 +58,79 @@ public class PropertyHelper {
         return propsReturned;
     }
 
+    public static void mergePropertiesInPlace(File origPropsFile, File newPropsFile, boolean createIfNew) throws CausedIOException, FileNotFoundException {
+        if (origPropsFile == null) throw new IllegalArgumentException("The original property file cannot be null");
+        if (newPropsFile == null) throw new IllegalArgumentException("The new property file cannot be null");
+
+        if (!origPropsFile.exists() && createIfNew) {
+            try {
+                if (origPropsFile.createNewFile()) {
+                    logger.info("Successfully created new properties file: " + origPropsFile.getName());
+                }
+            } catch (IOException e) {
+                logger.info("Error while creating new properties file: " + origPropsFile.getName() + " (" + e.getMessage() + ")");
+            }
+        }
+
+        PropertiesConfiguration newProps = new PropertiesConfiguration();
+        newProps.setAutoSave(false);
+        newProps.setListDelimiter((char)0);
+
+        //load the new props
+        FileInputStream newFis = null;
+        try {
+            newFis = new FileInputStream(newPropsFile);
+            newProps.load(newFis);
+        } catch (FileNotFoundException e) {
+            logger.info(newPropsFile.getAbsolutePath() + " does not exist, no need to merge with existing properties");
+            return;
+        } catch (ConfigurationException ce) {
+            throw new CausedIOException("Error reading properties file '"+newPropsFile+"'.", ce);
+        } finally {
+            ResourceUtils.closeQuietly(newFis);
+        }
+
+        PropertiesConfiguration origConfiguration = new PropertiesConfiguration();
+        origConfiguration.setAutoSave(false);
+        origConfiguration.setListDelimiter((char)0);
+
+        //if successful, back a new properties object with these as defaults
+        FileInputStream origFis = null;
+        try {
+            origFis = new FileInputStream(origPropsFile);
+            origConfiguration.load(origFis);
+        } catch (ConfigurationException ce) {
+            throw new CausedIOException("Error reading properties file '"+origPropsFile+"'.", ce);
+        } finally {
+            ResourceUtils.closeQuietly(origFis);
+        }
+
+
+        //now get all the keys and make a new properties object;
+        boolean shouldSave = false;
+        Iterator allProps = newProps.getKeys();
+        while(allProps.hasNext()) {
+            String propName = (String) allProps.next();
+            if (!origConfiguration.containsKey(propName)) {
+                origConfiguration.addProperty(propName, newProps.getProperty(propName));
+                shouldSave = true;
+            }
+        }
+
+        if (shouldSave) {
+            FileOutputStream origFos = null;
+
+            try {
+                origFos = new FileOutputStream(origPropsFile);
+                origConfiguration.save(origFos);
+            } catch (ConfigurationException ce) {
+                throw new CausedIOException("Error writing properties file '"+origPropsFile+"'.", ce);
+            } finally {
+                ResourceUtils.closeQuietly(origFos);
+            }
+        }
+    }
+
     /**
      * <p>Merges properties from the properties file with propName "newPropsFileName" into the properies obtained from file
      * "originalPropsFileName".</p>
@@ -87,10 +156,10 @@ public class PropertyHelper {
         if (origPropsFile == null) throw new IllegalArgumentException("The original property file cannot be null");
         if (newPropsFile == null) throw new IllegalArgumentException("The new property file cannot be null");
 
-        if (createIfNew) {
+        if (!origPropsFile.exists() && createIfNew) {
             try {
                 if (origPropsFile.createNewFile()) {
-                    logger.info("Successfully create new properties file: " + origPropsFile.getName());
+                    logger.info("Successfully created new properties file: " + origPropsFile.getName());
                 }
             } catch (IOException e) {
                 logger.info("Error while creating new properties file: " + origPropsFile.getName() + " (" + e.getMessage() + ")");

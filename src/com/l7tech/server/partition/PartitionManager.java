@@ -6,6 +6,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
+import com.l7tech.server.config.PropertyHelper;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -292,7 +293,8 @@ public class PartitionManager {
                 System.out.println("the default partition does not need to be migrated");
             }
             removeOriginalConfigurations(deletableOriginalFiles);
-            copyNewFiles(templatePartitionDir, partitionsBaseDir);
+            copyNewTemplateFilesToPartitions(templatePartitionDir, partitionsBaseDir);
+            updatePartitionConfigsWithNewChanges(templatePartitionDir, partitionsBaseDir);
 
         } catch (PartitionException pe) {
             System.out.println(pe.getMessage());
@@ -301,10 +303,50 @@ public class PartitionManager {
             System.out.println("Error while copying new files into the destination partitions");
             System.out.println(e.getMessage());
             System.exit(1);
+        } catch (SAXException e) {
+            System.out.println("Error while modifying new files in the partitions");
+            System.out.println(e.getMessage());
+            System.exit(1);
         }
     }
 
-    private static void copyNewFiles(final File templatePartitionDir, final File partitionsBaseDir) throws IOException {
+    private static void updatePartitionConfigsWithNewChanges(File templatePartitionDir, File partitionsBaseDir) throws IOException, SAXException {
+        File[] templateFiles = templatePartitionDir.listFiles();
+
+        File[] listOfPartitions = partitionsBaseDir.listFiles(new FileFilter() {
+            public boolean accept(File pathname) {
+                return pathname.isDirectory() && !pathname.getName().equalsIgnoreCase(PartitionInformation.TEMPLATE_PARTITION_NAME);
+            }
+        });
+
+        for (File destinationPartition: listOfPartitions) {
+            updateConfigInPartition(templateFiles, destinationPartition);
+        }
+    }
+
+    private static void updateConfigInPartition(File[] templateFiles, File destinationPartition) throws IOException, SAXException {
+        for (File templateFile : templateFiles) {
+            File partitionFile = new File(destinationPartition, templateFile.getName());
+            if (templateFile.isDirectory()) {
+                File[] templateSubDirFiles = templateFile.listFiles();
+                if (!partitionFile.exists()) partitionFile.mkdir();
+                updateConfigInPartition(templateSubDirFiles, partitionFile);
+            } else {
+                if (templateFile.getName().endsWith("properties")) {
+                    PropertyHelper.mergePropertiesInPlace(partitionFile, templateFile, true);
+                } else if (templateFile.getName().equals("server.xml")){
+                    //do special server xml merge.
+                    mergeServerXmlFileInPlace(partitionFile, templateFile);
+                }
+            }
+        }
+    }
+
+    private static void mergeServerXmlFileInPlace(File originalXmlFile, File newXmlFile) throws IOException, SAXException {
+        //do nothing for now until we decide what to do with server.xml updates, if anything
+    }
+
+    private static void copyNewTemplateFilesToPartitions(final File templatePartitionDir, final File partitionsBaseDir) throws IOException {
         //TODO make sure this doesn't clobber anything that's already there.
         File[] listOfPartitions = partitionsBaseDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
