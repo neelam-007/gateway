@@ -240,21 +240,23 @@ public class AuditRecordManagerImpl
                     ResourceUtils.closeQuietly(deleteStmt);
                 }
 
-                if (numDeleted == 0) return 0;
-
                 if (auditRecordHolder.auditRecord == null) {
                     // This is the first batch in this session, we need to create the audit message
                     AuditPurgeEvent auditPurgeEvent = new AuditPurgeEvent(AuditRecordManagerImpl.this, numDeleted);
                     applicationContext.publishEvent(auditPurgeEvent);
                     auditRecordHolder.auditRecord = auditPurgeEvent.getSystemAuditRecord();
                 } else {
-                    // Second or subsequent batch, we need to bump the count in the audit message
-                    totalDeleted += numDeleted;
-                    final SystemAuditRecord rec = auditRecordHolder.auditRecord;
-                    rec.setAction(AuditPurgeEvent.buildAction(totalDeleted));
-                    rec.setMessage(AuditPurgeEvent.buildMessage(totalDeleted));
-                    rec.setMillis(System.currentTimeMillis());
-                    session.update(rec);
+                    // Second or subsequent batch, we need to update the count in the audit message
+                    if (numDeleted == 0) {
+                        // No need to update.
+                    } else {
+                        totalDeleted += numDeleted;
+                        final SystemAuditRecord rec = auditRecordHolder.auditRecord;
+                        rec.setAction(AuditPurgeEvent.buildAction(totalDeleted));
+                        rec.setMessage(AuditPurgeEvent.buildMessage(totalDeleted));
+                        rec.setMillis(System.currentTimeMillis());
+                        session.update(rec);
+                    }
                 }
 
                 return numDeleted;
