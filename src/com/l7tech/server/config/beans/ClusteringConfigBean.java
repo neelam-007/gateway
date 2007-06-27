@@ -6,17 +6,14 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: megery
  * Date: Aug 12, 2005
- * Time: 11:26:07 AM
- * To change this template use File | Settings | File Templates.
  */
 public class ClusteringConfigBean extends BaseConfigurationBean {
 
 
     private boolean isNewHostName;
-    private String hostname;
+    private String clusterHostname;
     private String localHostName;
     private ClusteringType clusterType;
 
@@ -62,7 +59,7 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     }
 
     private void init() {
-        setClusterHostname(null);
+        setClusterHostname(getOsFunctions().getClusterHostName());
 
         try {
             setLocalHostName(InetAddress.getLocalHost().getCanonicalHostName());
@@ -88,17 +85,17 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
 
     public void reset() {
         isNewHostName = false;
-        hostname = "";
+        clusterHostname = "";
         localHostName  = "";
         clusterType = ClusteringType.CLUSTER_NONE;
     }
 
     public void setClusterHostname(String hostName) {
-        this.hostname = hostName;
+        this.clusterHostname = hostName;
     }
 
     public String getClusterHostname() {
-        return this.hostname;
+        return this.clusterHostname;
     }
 
     public boolean isNewHostName() {
