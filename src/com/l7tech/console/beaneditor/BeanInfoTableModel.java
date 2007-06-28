@@ -13,6 +13,10 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
+import com.l7tech.common.util.ExceptionUtils;
 
 /**
  * The <code>TableModel</code> implementation to support bean property
@@ -21,6 +25,7 @@ import java.util.*;
  * @version Feb 17, 2004
  */
 public class BeanInfoTableModel extends AbstractTableModel {
+    private static final Logger logger = Logger.getLogger(BeanInfoTableModel.class.getName());
     protected List propertiesList;
     protected Object bean;
     /**
@@ -58,8 +63,8 @@ public class BeanInfoTableModel extends AbstractTableModel {
             }
             propertiesList = new ArrayList(sortedProperties);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Error: " + ex.toString(),
+            logger.log(Level.WARNING, "Error creating model.", ex);
+            JOptionPane.showMessageDialog(null, "Error: " + ExceptionUtils.getMessage(ex),
               "Warning", JOptionPane.WARNING_MESSAGE);
         }
     }
@@ -114,8 +119,12 @@ public class BeanInfoTableModel extends AbstractTableModel {
         try {
             mWrite.invoke(bean, new Object[]{obj});
         } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Error: " + ex.toString(),
+            if (ExceptionUtils.causedBy(ex, IllegalArgumentException.class)) {
+                logger.log(Level.INFO, "Error setting bean value: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+            } else {
+                logger.log(Level.WARNING, "Error setting bean value: " + ExceptionUtils.getMessage(ex), ex);
+            }
+            JOptionPane.showMessageDialog(null, "Error: " + ExceptionUtils.getMessage(ex),
               "Warning", JOptionPane.WARNING_MESSAGE);
         }
     }
