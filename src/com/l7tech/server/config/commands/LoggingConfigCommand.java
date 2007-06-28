@@ -33,7 +33,7 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = true;
         PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
-        partitionName = (pi == null)?"default_":pi.getPartitionId();
+        partitionName = pi.getPartitionId();
         String ssgLogPropsPath = pi.getOSSpecificFunctions().getSsgLogPropertiesFile();
         File logProps = new File(ssgLogPropsPath);
         if (logProps.exists()) {

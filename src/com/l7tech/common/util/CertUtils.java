@@ -559,21 +559,24 @@ public class CertUtils {
         l.add(new String[]{"Key usage", keyUsageToString(cert.getKeyUsage())});
 
         PublicKey publicKey = cert.getPublicKey();
-        l.add(new String[]{"Key type", nullNa(publicKey.getAlgorithm())});
-
-        if (publicKey != null && publicKey instanceof RSAPublicKey) {
-            RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
-            String modulus = rsaKey.getModulus().toString(16);
-            l.add(new String[]{"RSA strength", (modulus.length() * 4) + " bits"});
-            //l.add(new String[]{"RSA modulus", modulus});
-            l.add(new String[]{"RSA public exponent", rsaKey.getPublicExponent().toString(16)});
-        } else if (publicKey != null && publicKey instanceof DSAPublicKey) {
-            DSAPublicKey dsaKey = (DSAPublicKey) publicKey;
-            DSAParams params = dsaKey.getParams();
-            l.add(new String[]{"DSA prime (P)", params.getP().toString(16)});
-            l.add(new String[]{"DSA subprime (P)", params.getQ().toString(16)});
-            l.add(new String[]{"DSA base (P)", params.getG().toString(16)});
+        if (publicKey != null) {
+            l.add(new String[]{"Key type", nullNa(publicKey.getAlgorithm())});
+            
+            if (publicKey instanceof RSAPublicKey) {
+                RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
+                String modulus = rsaKey.getModulus().toString(16);
+                l.add(new String[]{"RSA strength", (modulus.length() * 4) + " bits"});
+                //l.add(new String[]{"RSA modulus", modulus});
+                l.add(new String[]{"RSA public exponent", rsaKey.getPublicExponent().toString(16)});
+            } else if (publicKey instanceof DSAPublicKey) {
+                DSAPublicKey dsaKey = (DSAPublicKey) publicKey;
+                DSAParams params = dsaKey.getParams();
+                l.add(new String[]{"DSA prime (P)", params.getP().toString(16)});
+                l.add(new String[]{"DSA subprime (P)", params.getQ().toString(16)});
+                l.add(new String[]{"DSA base (P)", params.getG().toString(16)});
+            }
         }
+
 
         return l;
     }

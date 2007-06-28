@@ -48,7 +48,7 @@ public class WssProcessorUtil {
      */
     public static KerberosSecurityToken makeKerberosToken(KerberosGSSAPReqTicket ticket) {
         byte[] rand = new byte[16];
-        new Random().nextBytes(rand);
+        random.nextBytes(rand);
         String id = "VirtualBinarySecurityToken-1-" + HexUtils.hexDump(rand);
         return new KerberosSecurityTokenImpl(ticket, id);
     }

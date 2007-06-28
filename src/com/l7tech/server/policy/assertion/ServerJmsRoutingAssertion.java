@@ -20,6 +20,7 @@ import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.ExpandVariables;
@@ -119,7 +120,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         String msg = "Failed to establish JMS connection on try #" +
                                 oopses +  ".  Will retry after " + RETRY_DELAY + "ms.";
                         auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, t);
-                        if ( jmsSession != null ) try { jmsSession.close(); } catch ( Exception e ) { }
+                        if ( jmsSession != null ) try { jmsSession.close(); } catch ( Exception e ) {
+                            if (logger.isLoggable(Level.FINE))
+                                logger.log(Level.FINE,
+                                        "Error closing JMS session: " + ExceptionUtils.getMessage(e),
+                                        ExceptionUtils.getDebugException(e)); 
+                        }
                         closeBag();
 
                         jmsSession = null;

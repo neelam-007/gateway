@@ -32,10 +32,7 @@ public class ListHandler extends Handler {
                     logList.add(baos.toString());
                 }
             }
-            else if (level == Level.WARNING) {
-                logList.add(level + ": " + logRecord.getMessage());
-            }
-            else { //(level == Level.INFO) or other wise
+            else { 
                 logList.add(level + ": " + logRecord.getMessage());
             }
         }

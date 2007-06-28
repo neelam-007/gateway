@@ -43,10 +43,10 @@ public abstract class PolicyValidator {
      * Validates the specified assertion tree.
      */
     public PolicyValidatorResult validate(Assertion assertion, PublishedService service, AssertionLicense assertionLicense) throws InterruptedException {
-        assertion.treeChanged();
         if (assertion == null) {
             throw new IllegalArgumentException();
         }
+        assertion.treeChanged();
         PolicyPathResult path = PolicyPathBuilder.getDefault().generate(assertion);
 
         // where to collect the result

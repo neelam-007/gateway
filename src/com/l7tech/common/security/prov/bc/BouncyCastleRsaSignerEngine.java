@@ -8,6 +8,8 @@ package com.l7tech.common.security.prov.bc;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.RsaSignerEngine;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.ResourceUtils;
+
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
@@ -247,12 +249,18 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
 
     private void initClass() throws Exception {
         KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-        InputStream is = new FileInputStream(keyStorePath);
+        InputStream is = null;
+        try {
+            is = new FileInputStream(keyStorePath);
 
-        if (storePass == null)
-            throw new IllegalArgumentException("A CA keystore passphrase must be provided");
-        char[] keyStorePass = storePass.toCharArray();
-        keyStore.load(is, keyStorePass);
+            if (storePass == null)
+                throw new IllegalArgumentException("A CA keystore passphrase must be provided");
+            char[] keyStorePass = storePass.toCharArray();
+            keyStore.load(is, keyStorePass);
+        }
+        finally {
+            ResourceUtils.closeQuietly(is);
+        }
 
         if (privateKeyPassString == null)
             throw new IllegalArgumentException("A CA private key passphrase must be provided");

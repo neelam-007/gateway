@@ -16,10 +16,10 @@ public class FlexKey implements SecretKey {
         }
     }
 
-    public static Alg AES128 = new Alg("AES", 128);
-    public static Alg AES192 = new Alg("AES", 192);
-    public static Alg AES256 = new Alg("AES", 256);
-    public static Alg TRIPLEDES = new Alg("DESede", 192);
+    public static final Alg AES128 = new Alg("AES", 128);
+    public static final Alg AES192 = new Alg("AES", 192);
+    public static final Alg AES256 = new Alg("AES", 256);
+    public static final Alg TRIPLEDES = new Alg("DESede", 192);
 
     private final byte[] bytes;
     private Alg algorithm;

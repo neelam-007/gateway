@@ -9,6 +9,7 @@ import com.l7tech.common.security.RsaSignerEngine;
 
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.SecureRandom;
 import java.util.Calendar;
 import java.util.Random;
 
@@ -16,6 +17,8 @@ import java.util.Random;
  * @author mike
  */
 public class LunaRsaSignerEngine implements RsaSignerEngine {
+    private static final Random random = new SecureRandom();
+
     private final LunaCmu cmu;
     private final LunaCmu.CmuObject caCert;
 
@@ -49,7 +52,7 @@ public class LunaRsaSignerEngine implements RsaSignerEngine {
                 daysValid = days;
         }
 
-        X509Certificate cert =  cmu.certify(pkcs10req, caCert, (int)daysValid, new Random().nextLong(), null);
+        X509Certificate cert =  cmu.certify(pkcs10req, caCert, (int)daysValid, random.nextLong(), null);
         String gotSubj = cert.getSubjectDN().getName();
         if (!(subject.equalsIgnoreCase(gotSubj)))
             throw new IllegalArgumentException("The CSR requested the subject \"" + gotSubj + "\", but only the subject \"" + subject + "\" is permitted");

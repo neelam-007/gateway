@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.io.ObjectInputStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -654,6 +655,14 @@ public class Keytab implements Serializable {
                 | ((data[offset+2]&0xFFL) << 16)
                 | ((data[offset+3]&0xFFL) << 24);
     }
+
+    /**
+     *
+     */
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        networkOrder = true;
+    }    
 
     private static class KeyData implements Serializable {
         private long timestamp;

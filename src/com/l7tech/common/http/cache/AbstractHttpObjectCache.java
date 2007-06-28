@@ -31,20 +31,20 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
      * Caller does not wish to wait for another thread to download the resource,
      * even if the URL has never been tried before and there is no previous cached version (or cached error message).
      */
-    public static WaitMode WAIT_NEVER = new WaitMode();
+    public static final WaitMode WAIT_NEVER = new WaitMode();
 
     /**
      * If another thread is currently downloading the resource, caller wishes to immediately use the previous cached version
      * (or cached error message), unless there is no previous cached version (or cached error message), in which case
      * caller will wait.
      */
-    public static WaitMode WAIT_INITIAL = new WaitMode();
+    public static final WaitMode WAIT_INITIAL = new WaitMode();
 
     /**
      * If another thread is currently downloading the resource, caller wishes to wait until the download finishes,
      * and then get the newest version of the resource.
      */
-    public static WaitMode WAIT_LATEST = new WaitMode();
+    public static final WaitMode WAIT_LATEST = new WaitMode();
 
     // -- Instance fields --
     protected final long maxCacheAge;
@@ -435,9 +435,9 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
      * or to always return immediately even if there is no previous result (in which case the results will be blank,
      * containing netiehr an object nor an error message).
      *
-     * @see WAIT_NEVER
-     * @see WAIT_INITIAL
-     * @see WAIT_LATEST
+     * @see AbstractHttpObjectCache#WAIT_NEVER
+     * @see AbstractHttpObjectCache#WAIT_INITIAL
+     * @see AbstractHttpObjectCache#WAIT_LATEST
      */
     public static class WaitMode {
         private WaitMode() {

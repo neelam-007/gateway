@@ -333,9 +333,6 @@ public class Wsdl {
             public String getLatestImportURI() {
                 return lastResolvedUri;
             }
-
-            public void close() {
-            }
         };
     }
 

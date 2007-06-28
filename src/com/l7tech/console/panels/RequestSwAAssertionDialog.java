@@ -357,10 +357,6 @@ public class RequestSwAAssertionDialog extends JDialog {
 
                 return e1.getName().compareToIgnoreCase(e2.getName());
             }
-
-            public boolean isCellEditable(int row, int col) {
-                return false;
-            }
         });
 
         // add a new column without a column title

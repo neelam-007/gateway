@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.XMLConstants;
@@ -26,10 +28,12 @@ import org.apache.ws.policy.util.StAXPolicyWriter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.DOMResultXMLStreamWriter;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -125,7 +129,12 @@ public class WsspWriter {
 
         // for readability
         wsdl.normalize();
-        try{ XmlUtil.stripWhitespace(wsdl.getDocumentElement()); }catch(Exception e){}
+        try{
+            XmlUtil.stripWhitespace(wsdl.getDocumentElement());
+        } catch (SAXException e) {
+            if (logger.isLoggable(Level.FINE))
+                logger.log(Level.FINE, "Error stripping whitespace from WSDL.", ExceptionUtils.getDebugException(e));
+        }
         XmlUtil.format(wsdl, true);
     }
 
@@ -226,6 +235,8 @@ public class WsspWriter {
     }
 
     //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(WsspWriter.class.getName());
 
     // algorithm suites
     private static final int ALGORITHM_SUITE_BASIC128_RSA15 = 1;

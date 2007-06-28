@@ -18,8 +18,8 @@ import java.util.regex.Pattern;
  * Time: 3:29:19 PM
  */
 public class ConsoleWizardUtils {
-    public static String PREV_COMMAND = "<";
-    public static String QUIT_COMMAND = "quit";
+    public static final String PREV_COMMAND = "<";
+    public static final String QUIT_COMMAND = "quit";
     public static final String QUIT_HEADER = "At any time type \"" + QUIT_COMMAND + "\" to quit";
     public static final String NAV_HEADER = "Press \"" + PREV_COMMAND + "\" to go to the previous step";
 

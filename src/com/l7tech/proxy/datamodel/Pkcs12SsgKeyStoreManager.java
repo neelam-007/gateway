@@ -12,6 +12,7 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.CertLoader;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
@@ -619,7 +620,13 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         } catch (KeyStoreException e) {
             throw new RuntimeException(e); // shouldn't happen
         }
-        ks.load(new FileInputStream(certFile), pass);
+        InputStream in = null;
+        try {
+            in = new FileInputStream(certFile);
+            ks.load(in, pass);
+        } finally {
+            ResourceUtils.closeQuietly(in);        
+        }
         Certificate[] chainToImport = null;
         Key key = null;
         try {
