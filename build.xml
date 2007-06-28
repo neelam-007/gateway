@@ -91,6 +91,13 @@
              classname="org.apache.tools.ant.taskdefs.optional.jdepend.JDependTask"
              classpath="lib/tools/ant-jdepend.jar:lib/tools/jdepend-2.9.jar"/>
 
+    <!--
+      Task definition for FindBugs 
+    -->
+    <taskdef name="findbugs"
+             classname="edu.umd.cs.findbugs.anttask.FindBugsTask"
+             classpath="lib/tools/findbugs-ant.jar"/>
+
     <macrodef name="javac2">
         <attribute name="srcdir"/>
         <attribute name="destdir"/>
@@ -826,11 +833,12 @@
         <checkfail/>
     </target>
 
-    <target name="test.junit" description="Run all JUnit tests" depends="test.work, test.intensive.work, test.modules, test.report, report.jdepend, javadoc">
+    <target name="test.junit" description="Run all JUnit tests" depends="test.work, test.intensive.work, test.modules, test.report, report.jdepend, report.findbugs, javadoc">
         <checkfail/>
     </target>
 
     <target name="report.jdepend" depends="compile">
+        <echo level="info">Generating JDepend report.</echo>
         <mkdir dir="${build.reports}/jdepend"/>
         <mkdir dir="${build.reports}/teamcity"/>
 
@@ -878,6 +886,28 @@
 
         <zip destfile="${build.reports}/teamcity/jdepend.zip" basedir="${build.reports}/jdepend" /> 
     </target>
+
+    <target name="report.findbugs.checkavailable">
+        <available property="findbugs.isavailable" file="${findbugs.home}" type="dir"/>        
+    </target>
+
+    <target name="report.findbugs" depends="compile, report.findbugs.checkavailable" if="findbugs.isavailable">
+        <echo level="info">Generating FindBugs report.</echo>
+        <mkdir dir="${build.reports}/findbugs"/>
+        <mkdir dir="${build.reports}/teamcity"/>
+
+        <findbugs home="${findbugs.home}"
+                  output="html"
+                  outputFile="${build.reports}/findbugs/index.html"
+                  jvmargs="-Xmx512m">
+            <auxClasspath refid="project.classpath" />
+            <sourcePath path="src" />
+            <class location="${build.classes}" />
+        </findbugs>
+
+        <zip destfile="${build.reports}/teamcity/findbugs.zip" basedir="${build.reports}/findbugs" /> 
+    </target>
+
 
     <!--
       Targets to optionally print failure warnings
