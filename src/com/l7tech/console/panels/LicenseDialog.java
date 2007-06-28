@@ -63,12 +63,14 @@ public class LicenseDialog extends JDialog {
      * Find a new license InputStream from the user.
      * @param result callback that will be informed asynchronously of either the resulting inputstream or error.
      */
-    private void findLicenseStream(final Functions.BinaryVoid<InputStream, IOException> result) {
+    private void findLicenseStream(final Functions.BinaryVoid<InputStream, Throwable> result) {
         try {
             AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 public InputStream run() {
                     try {
                         result.call(getLicenseStreamFromFile(), null);
+                    } catch (AccessControlException e) {
+                        result.call(null, e);
                     } catch (IOException e) {
                         result.call(null, e);
                     }
@@ -80,7 +82,7 @@ public class LicenseDialog extends JDialog {
         }
     }
 
-    private void getLicenseStreamFromTextBox(final Functions.BinaryVoid<InputStream, IOException> result) {
+    private void getLicenseStreamFromTextBox(final Functions.BinaryVoid<InputStream, Throwable> result) {
         JDialog textDlg = new JDialog(this, "License XML", true);
         textDlg.setLayout(new BorderLayout());
         textDlg.add(new JLabel("Paste the new license XML below:"), BorderLayout.NORTH);
@@ -163,8 +165,8 @@ public class LicenseDialog extends JDialog {
 
         installButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                findLicenseStream(new Functions.BinaryVoid<InputStream, IOException>() {
-                    public void call(InputStream is, IOException ioe) {
+                findLicenseStream(new Functions.BinaryVoid<InputStream, Throwable>() {
+                    public void call(InputStream is, Throwable ioe) {
                         try {
                             if (ioe != null) throw new CausedIOException(ioe);
                             if (is == null) return;
