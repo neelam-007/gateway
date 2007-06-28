@@ -132,8 +132,9 @@ chmod -f 755 ssg/migration/*.sh
 
 echo Creating Prototype...
 
-echo "i pkginfo" > ../pkgbuild/Prototype 
-echo "i checkinstall" >> ../pkgbuild/Prototype 
+echo "i request" > ../pkgbuild/Prototype
+echo "i pkginfo" >> ../pkgbuild/Prototype
+echo "i checkinstall" >> ../pkgbuild/Prototype
 echo "i preinstall" >> ../pkgbuild/Prototype 
 echo "i postinstall" >> ../pkgbuild/Prototype
 echo "i preremove" >> ../pkgbuild/Prototype

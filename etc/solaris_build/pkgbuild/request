@@ -1,0 +1,78 @@
+#!/bin/sh
+
+expected_java_home="${EXPECTED_JAVA_HOME}"
+expected_java_bin="${expected_java_home}/bin/java"
+expected_java_version="1.6"
+
+MY_JAVA_HOME="${expected_java_home}"
+result=""
+
+#Checks the version of java at the path passed in as an argument
+#	If the argument is a directory, this function will attempt to find java in the bin/ sudirectory
+#	If the argument is not a directory, then it will be used as is to check the version
+#
+#	SIDE EFFECT:
+#		sets result = the location where java was found (suitable for use in JAVA_HOME, i.e. minus the bin/java part)
+# 		or empty if a compatible version of java was not found
+check_java_version() {
+	basepath=${1}
+	result=""
+
+	echo "Trying to find java at ${basepath}"
+	
+	if [ ! -d "${basepath}" ] ; then
+		echo "\n\n\n\tNo Java found at ${basepath}"
+		return
+	else
+		binpath="${basepath}/bin/java"
+		if [ ! -x "${binpath}" ]; then
+			echo "\n\n\n\tNo Java found at ${basepath} (or ${binpath})"
+			return
+		fi
+	fi
+
+	javaver=`${binpath} -version 2>&1 | awk -F\" '/version/ {print $2}' | awk -F. '{print $1 "." $2}'`;
+	echo "\n\n\n\tFound Java ${javaver} at ${binpath}"
+
+	if [ "${javaver}" != ${expected_java_version} ]; then
+		echo "\n\n\n\tJava ${expected_java_version} is required \n"
+	else
+		if [ "${basepath}" = "${binpath}" ] ; then
+			temp=`dirname ${basepath}`
+			result="`dirname ${temp}`"
+		else
+			result="${basepath}"
+		fi
+	fi
+}
+#Gets the location of a compatible (1.6) java installation.
+#	If the expected value of ${expected_java_home} is found, and is actually the right version, that will be used
+# 	If ${expected_java_home} is not found then the user is prompted to enter a path, which is checked with check_java_version
+#	SIDE EFFECT:
+#		Sets MY_JAVA_HOME to the appropriate location
+get_java_location() {
+	result=""
+	while [ "${result}" = "" ]
+	do
+		echo "Please enter the path to a Java ${expected_java_version} installation:"
+		read response
+		check_java_version "${response}"
+	done
+
+	echo "FOUND a compatible java at ${result}"
+	MY_JAVA_HOME=${result}
+}
+
+if [ -x ${expected_java_home} ]; then
+	check_java_version ${expected_java_home}
+	if [ "${result}" = "" ]; then
+		get_java_location
+	fi
+else
+	echo "\n\n\n\tThis package requires Java ${expected_java_version} to be installed."
+	get_java_location
+fi
+
+#write out the location to a file that can be picked up in postinstall
+echo EXPECTED_JAVA_HOME="${MY_JAVA_HOME}" >> $1
+exit 0
