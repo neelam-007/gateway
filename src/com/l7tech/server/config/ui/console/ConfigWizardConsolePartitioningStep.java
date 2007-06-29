@@ -331,7 +331,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                 }
             } else {
                 PartitionInformation.EndpointHolder holder = holders.get(whichEndpointIndex -1);
-                doCollectEndpointInfo(holder);
+                doCollectEndpointInfo(holder, pinfo);
                 PartitionActions.validateSinglePartitionEndpoints(pinfo);
                 finishedEndpointConfig = false;
             }
@@ -339,7 +339,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
         } while (!finishedEndpointConfig);
     }
 
-    private void doCollectEndpointInfo(PartitionInformation.EndpointHolder holder) throws IOException, WizardNavigationException {
+    private void doCollectEndpointInfo(PartitionInformation.EndpointHolder holder, PartitionInformation pinfo) throws IOException, WizardNavigationException {
         String input;
         List<String> prompts;
         Pattern portPattern = Pattern.compile("\\d{1,5}+");
@@ -383,11 +383,16 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
             prompts.add("2) Disable"  + getEolChar());
             prompts.add("Please make a selection: [" + (ftpHolder.isEnabled() ?  "1" : "2" ) +"]");
             input = getData(prompts, "2", new String[] {"1","2"});
+            boolean wasEnabled = holder.isEnabled();
+
             if (StringUtils.equals(input, "2")) {
                 ftpHolder.setEnabled(false);
             }
             else {
                 ftpHolder.setEnabled(true);
+                if (!wasEnabled) {
+                    PartitionActions.validateAllPartitionEndpoints(pinfo, true, false);
+                }
 
                 String[] availableIpAddress = PartitionActions.getAvailableIpAddresses().toArray(new String[0]);
 

@@ -902,31 +902,37 @@ public class PartitionActions {
     }
 
     public static boolean validateAllPartitionEndpoints(PartitionInformation currentPartition, boolean incrementEndpoints) {
+        return validateAllPartitionEndpoints(currentPartition, incrementEndpoints, incrementEndpoints);
+    }
+
+    public static boolean validateAllPartitionEndpoints(PartitionInformation currentPartition, boolean incrementEndpoints, boolean includeDisabled) {
         boolean isOK = validateSinglePartitionEndpoints(currentPartition);
 
         if (isOK) {
             List<PartitionInformation.EndpointHolder> currentEndpoints =
                     new ArrayList<PartitionInformation.EndpointHolder>(currentPartition.getEndpoints());
 
-            Map<String, List<PartitionInformation.IpPortPair>> portMap = PartitionManager.getInstance().getAllPartitionPorts(incrementEndpoints);
+            Map<String, List<PartitionInformation.IpPortPair>> portMap = PartitionManager.getInstance().getAllPartitionPorts(includeDisabled);
             //don't compare against the current partition
             portMap.remove(currentPartition.getPartitionId());
 
             for (PartitionInformation.EndpointHolder currentEndpoint : currentEndpoints) {
-                List<String> matches = findMatchingEndpoints(currentEndpoint, portMap);
-                if (!matches.isEmpty()) {
-                    if (incrementEndpoints) {
-                        incrementPartitionEndpoint(currentEndpoint, portMap);
-                        isOK = true;
-                    } else {
-                        String message = new PartitionInformation.IpPortPair(currentEndpoint).toString() + " is used by partitions: ";
-                        boolean first = true;
-                        for (String match : matches) {
-                            message += (first?"":", ") + match;
-                            first = false;
+                if (currentEndpoint.isEnabled()) {
+                    List<String> matches = findMatchingEndpoints(currentEndpoint, portMap);
+                    if (!matches.isEmpty()) {
+                        if (incrementEndpoints) {
+                            incrementPartitionEndpoint(currentEndpoint, portMap);
+                            isOK = true;
+                        } else {
+                            String message = new PartitionInformation.IpPortPair(currentEndpoint).toString() + " is used by partitions: ";
+                            boolean first = true;
+                            for (String match : matches) {
+                                message += (first ? "" : ", ") + match;
+                                first = false;
+                            }
+                            currentEndpoint.setValidationMessaqe(message);
+                            isOK = false;
                         }
-                        currentEndpoint.setValidationMessaqe(message);
-                        isOK = false;
                     }
                 }
             }

@@ -649,7 +649,12 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
 
         public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
             PartitionInformation.EndpointHolder holder = getEndpointAt(rowIndex);
+            boolean wasEnabled = holder.isEnabled();
             holder.setValueAt(columnIndex, aValue);
+            boolean isNowEnabled = holder.isEnabled();
+            if (!wasEnabled && isNowEnabled) {
+                PartitionActions.validateAllPartitionEndpoints(getSelectedPartition(), true, false);
+            }
             doAfterSetValue();
             fireDataChange();
         }
