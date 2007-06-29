@@ -141,6 +141,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
 
         String tclass = t == null ? null : t.getClass().getName();
         String tmess = t == null ? null : t.getMessage();
+        jobs.remove(jobId);
         return new JobResult<OUT>(status, result, tclass, tmess);
     }
 
