@@ -58,6 +58,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
                         long finished = entry.timeCompleted;
                         if (entry.done && (now - finished) > staleJobMillis) {
                             logger.log(Level.WARNING, "Discarding unclaimed asynchronous job result: " + entry.id);
+                            jobs.remove(entry.id);
                         }
                     }
                 }
