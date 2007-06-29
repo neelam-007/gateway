@@ -10,7 +10,6 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.WeakSet;
-import com.l7tech.console.logging.AwtErrorHandler;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.util.TopComponents;
@@ -19,6 +18,8 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -59,7 +60,14 @@ public class AppletMain extends JApplet implements SheetHolder {
         gatherAppletParameters();
         initializeErrorHandling();
 
-        getApplication().setAutoLookAndFeel();
+        try {
+            String feelName = looksLikeWindows()
+                                ? UIManager.getSystemLookAndFeelClassName()
+                                : UIManager.getCrossPlatformLookAndFeelClassName();
+            UIManager.setLookAndFeel(feelName);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to set system look and feel: " + ExceptionUtils.getMessage(e), e);
+        }
         getApplication().run();
 
         initMainWindowContent();
@@ -85,6 +93,39 @@ public class AppletMain extends JApplet implements SheetHolder {
 
         getLayeredPane().updateUI();
         validate();
+
+        initHelpKeyBinding();
+    }
+
+    private boolean looksLikeWindows() {
+        try {
+            String osn = System.getProperty("os.name");
+            return osn != null && osn.toLowerCase().startsWith("windows");
+        } catch (SecurityException se) {
+            return false;
+        }
+    }
+
+    private void initHelpKeyBinding() {
+        logger.finer("Installing help key binding");
+        KeyStroke accel = KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0);
+        String aname = "showHelpTopics";
+
+        AbstractAction helpAction = new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                logger.fine("Attempting to show help topics root in response to F1 key");
+                showHelpTopicsRoot();
+            }
+        };
+
+        helpAction.putValue(Action.NAME, aname);
+        helpAction.putValue(Action.ACCELERATOR_KEY, accel);
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, aname);
+        getRootPane().getActionMap().put(aname, helpAction);
+        getLayeredPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, aname);
+        getLayeredPane().getActionMap().put(aname, helpAction);
+        ((JComponent)getContentPane()).getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, aname);
+        ((JComponent)getContentPane()).getActionMap().put(aname, helpAction);
     }
 
     private Frame findAppletContainerFrame() {
