@@ -36,7 +36,7 @@ public class ElementTypeProperties {
     /**
      * Constructor for the element-type properties.
      *
-     * @param the dom4j element that contains the properties.
+     * @param element the dom4j element that contains the properties.
      */
     public ElementTypeProperties(Element element) {
         super();
@@ -47,10 +47,10 @@ public class ElementTypeProperties {
     /**
      * Constructor for the service element.
      *
-     * @param isDefault indicates wether the associated service
+     * @param isdefault indicates wether the associated service
      *                  is the default service.
-     * @param the       (local)name for the element-type.
-     * @param the       namespace (URI) for the element-type.
+     * @param localname the (local)name for the element-type.
+     * @param namespace the namespace (URI) for the element-type.
      */
     public ElementTypeProperties(boolean isdefault, String localname, String namespace) {
         super();
@@ -95,7 +95,7 @@ public class ElementTypeProperties {
     /**
      * Gets the (local)name of the element-type.
      *
-     * @retrun the (local)name of the element-type.
+     * @return the (local)name of the element-type.
      */
     public String getLocalname() {
         return element.element("localname").getText();
@@ -104,7 +104,7 @@ public class ElementTypeProperties {
     /**
      * Gets the namespace (URI) of the element-type.
      *
-     * @retrun the namespace (URI) of the element-type.
+     * @return the namespace (URI) of the element-type.
      */
     public String getNamespace() {
         return element.element("namespace").getText();
@@ -113,7 +113,7 @@ public class ElementTypeProperties {
     /**
      * Gets the dom4j element.
      *
-     * @retrun the element.
+     * @return the element.
      */
     public Element getElement() {
         return element;

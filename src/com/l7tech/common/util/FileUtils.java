@@ -152,7 +152,6 @@ public class FileUtils {
      * save to the file was interrupted.
      *
      * @param path
-     * @return
      * @throws FileNotFoundException
      */
     public static LastModifiedFileInputStream loadFileSafely(String path) throws IOException {

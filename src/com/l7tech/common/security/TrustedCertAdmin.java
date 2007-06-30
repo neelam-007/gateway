@@ -4,6 +4,7 @@
 package com.l7tech.common.security;
 
 import com.l7tech.common.AsyncAdminMethods;
+import com.l7tech.common.AsyncAdminMethods.JobId;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import static com.l7tech.common.security.rbac.EntityType.SSG_KEY_ENTRY;
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
@@ -202,8 +203,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param dn the DN to use in the new self-signed cert.  Required.
      * @param keybits number of bits for the new RSA key, ie 512, 768, 1024 or 2048.  Required.
      * @param expiryDays number of days the self-signed cert should be valid.  Required.
-     * @return the job identifier of the key generation job.  Call {@link #getJobStatus} to poll for job completion
-     *         and {@link #getJobResult} to pick up the result in the form of a self-signed X509Certificate.
+     * @return the job identifier of the key generation job.  Call {@link #getJobStatus(com.l7tech.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
+     *         and {@link #getJobResult(JobId)} to pick up the result in the form of a self-signed X509Certificate.
      * @throws RemoteException on remote communication error
      * @throws FindException if there is a problem getting info from the database
      * @throws java.security.GeneralSecurityException if there is a problem generating or signing the cert

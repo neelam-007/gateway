@@ -142,7 +142,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * 
      * @param name the string that is to be this
      *             component's name
-     * @see #getName
+     * @see #getName()
      */
     public void setName(String name) {
         String oldName = getName();

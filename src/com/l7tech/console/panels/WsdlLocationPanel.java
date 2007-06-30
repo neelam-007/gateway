@@ -183,7 +183,7 @@ public class WsdlLocationPanel extends JPanel {
     /**
      * Set the WSDL URL.
      *
-     * @return the URL / path.
+     * @param urlOrPath the URL / path.
      */
     public void setWsdlUrl(String urlOrPath) {
         wsdlUrlTextField.setText(urlOrPath);

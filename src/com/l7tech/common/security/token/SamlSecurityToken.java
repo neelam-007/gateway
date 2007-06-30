@@ -52,16 +52,16 @@ public interface SamlSecurityToken extends X509SigningSecurityToken {
      * */
     void verifyEmbeddedIssuerSignature() throws SignatureException;
 
-    /** @return the name identifier format, or null if there wasn't one. {@see SamlConstants} */
+    /** @return the name identifier format, or null if there wasn't one. {@link com.l7tech.common.security.saml.SamlConstants SamlConstants} */
     String getNameIdentifierFormat();
 
-    /** @return the name qualifier, or null if there wasn't one. {@see SamlConstants} */
+    /** @return the name qualifier, or null if there wasn't one. {@link com.l7tech.common.security.saml.SamlConstants SamlConstants} */
     String getNameQualifier();
 
-    /** @return the name identifier value, or null if there wasn't one. {@see SamlConstants} */
+    /** @return the name identifier value, or null if there wasn't one. {@link com.l7tech.common.security.saml.SamlConstants SamlConstants} */
     String getNameIdentifierValue();
 
-    /** @return the authentication method, or null if there wasn't one. {@see SamlConstants} */
+    /** @return the authentication method, or null if there wasn't one. {@link com.l7tech.common.security.saml.SamlConstants SamlConstants} */
     String getAuthenticationMethod();
 
     boolean isOneTimeUse();

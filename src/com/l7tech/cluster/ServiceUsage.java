@@ -22,7 +22,6 @@ public class ServiceUsage extends NamedEntityImp {
      * Util method to go from ServiceStatistics to ServiceUsage
      * @param stat
      * @param nodeid
-     * @return
      */
     public static ServiceUsage fromStat(ServiceStatistics stat, String nodeid) {
         ServiceUsage output = new ServiceUsage();

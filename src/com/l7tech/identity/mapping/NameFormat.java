@@ -51,7 +51,7 @@ public final class NameFormat implements Serializable {
     private final int num;
     private final String name;
 
-    /** Null is equivalent to {@link SamlConstants.NAMEIDENTIFIER_UNSPECIFIED} */
+    /** Null is equivalent to {@link SamlConstants#NAMEIDENTIFIER_UNSPECIFIED} */
     private final String saml11Uri;
 
     /** Null indicates unchanged from SAML 1.1 (use {@link #saml11Uri} */

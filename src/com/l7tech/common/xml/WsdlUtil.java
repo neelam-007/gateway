@@ -37,7 +37,7 @@ public class WsdlUtil {
      *
      * <p>WARNING! This does not check imports</p>
      *
-     * @param wsdl The wsdl DOM
+     * @param wsdlDocument The wsdl DOM
      * @return true if this is an RPC with no schema (false if null)
      */
     public static boolean isRPCWithNoSchema(Document wsdlDocument) {

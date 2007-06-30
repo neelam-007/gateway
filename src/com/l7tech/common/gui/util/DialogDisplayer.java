@@ -329,7 +329,7 @@ public class DialogDisplayer {
     /**
      * Display a message dialog as a sheet if possible; otherwise as an ordinary dialog.
      *
-     * @see JOptionPane#showMessageDialog
+     * @see JOptionPane#showMessageDialog(Component, Object) JOptionPane#showMessageDialog
      * @param parent    parent component.  required
      * @param mess      message to display.  required
      * @param title     title for the dialog.  required
@@ -344,7 +344,7 @@ public class DialogDisplayer {
     /**
      * Display a message dialog as a sheet if possible; otherwise as an ordinary dialog.
      *
-     * @see JOptionPane#showMessageDialog
+     * @see JOptionPane#showMessageDialog(Component, Object) JOptionPane#showMessageDialog
      * @param parent    parent component.  required
      * @param mess      message to display.  required
      * @param title     title for the dialog.  required

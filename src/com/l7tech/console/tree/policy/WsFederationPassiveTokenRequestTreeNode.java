@@ -14,7 +14,7 @@ import com.l7tech.policy.assertion.Assertion;
  * Tree node for WsFederationPassiveTokenRequest ....
  *
  * @author $Author$
- * @version: $Revision$
+ * @version $Revision$
  */
 public class WsFederationPassiveTokenRequestTreeNode extends LeafAssertionTreeNode {
 

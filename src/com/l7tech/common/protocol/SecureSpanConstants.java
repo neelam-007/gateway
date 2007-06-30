@@ -115,7 +115,7 @@ public class SecureSpanConstants {
     public static final String CERT_VALID = "valid";
 
     /**
-     * @see {@link com.l7tech.server.identity.AuthenticationResult#isCertSignedByStaleCA()}
+     * @see com.l7tech.server.identity.AuthenticationResult#isCertSignedByStaleCA()
      */
     public static final String CERT_STALE = "stale";
 
@@ -188,7 +188,7 @@ public class SecureSpanConstants {
          * When downloading WSDL, this parameter can be used as an alternative to
          * SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID and represents the
          * routing uri property of a published service whose WSDL is desired.
-         * @see {@link com.l7tech.server.WsdlProxyServlet}
+         * @see com.l7tech.server.WsdlProxyServlet
          */
         public static final String PARAM_URI = "uri";
 
@@ -196,7 +196,7 @@ public class SecureSpanConstants {
          * When downloading WSDL, this parameter can be used as an alternative to
          * SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID and represents a
          * soapaction used by the published service whose WSDL is desired.
-         * @see {@link com.l7tech.server.WsdlProxyServlet}
+         * @see com.l7tech.server.WsdlProxyServlet
          */
         public static final String PARAM_SACTION = "soapaction";
 
@@ -204,7 +204,7 @@ public class SecureSpanConstants {
          * When downloading WSDL, this parameter can be used as an alternative to
          * SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID and represents a
          * namespace used by the published service whose WSDL is desired.
-         * @see {@link com.l7tech.server.WsdlProxyServlet}
+         * @see com.l7tech.server.WsdlProxyServlet
          */
         public static final String PARAM_NS = "ns";
 
@@ -214,7 +214,7 @@ public class SecureSpanConstants {
          * PARAM_NS.
          * Omiting this param means use serviceoid. A value of 'res' means use later option.
          *
-         * @see {@link com.l7tech.server.WsdlProxyServlet}
+         * @see com.l7tech.server.WsdlProxyServlet
          */
         public static final String PARAM_MODE = "mode";
 

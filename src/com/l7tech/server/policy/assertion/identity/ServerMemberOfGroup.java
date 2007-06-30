@@ -29,9 +29,8 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
     /**
      * Attempts to resolve a <code>Group</code> from the <code>groupOid</code> and
      * <code>groupName</code> properties, in that order.
-     * @return
-     * @throws com.l7tech.objectmodel.FindException
      * @param context
+     * @throws com.l7tech.objectmodel.FindException
      */
     protected Group getGroup(PolicyEnforcementContext context) throws FindException {
         GroupManager gman = getIdentityProvider(context).getGroupManager();

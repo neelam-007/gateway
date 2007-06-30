@@ -31,7 +31,6 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
      *
      * @param hostname The host name to verify
      * @param sslSession The SSL session
-     * @return
      */
     public boolean verify(String hostname, SSLSession sslSession) {
         boolean verified = false;

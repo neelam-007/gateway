@@ -114,7 +114,6 @@ public class WsiBSPValidator {
     /**
      *
      * @param document
-     * @return
      */
     public boolean isValid(Document document) {
         boolean valid = true;

@@ -86,7 +86,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
     /**
      * Constructs the the XML element node.
      *
-     * @param the XML comment element.
+     * @param viewer the XML comment element.
      */
     public XmlElementNode(Viewer viewer) {
         this.viewer = viewer;
@@ -126,7 +126,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
     /**
      * Constructs the node for the XML element.
      *
-     * @param element the XML element.
+     * @return the XML element.
      */
     public ExchangerElement getElement() {
         return element;

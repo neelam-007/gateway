@@ -30,7 +30,7 @@ abstract class State {
     /**
      * The {@link DataType} of any {@link DataTypePredicate} that has been observed so far in the evaluation.
      * Note that this basically requires that any {@link DataTypePredicate} must come first in the
-     * {@link ComparisonAssertion#predicates} array. 
+     * {@link ComparisonAssertion#getPredicates()} array. 
      */
     protected DataType type;
 

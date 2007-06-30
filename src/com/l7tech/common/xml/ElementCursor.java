@@ -371,7 +371,8 @@ public abstract class ElementCursor {
      * boolean, or a string or number value.
      * <p/>
      * With this method, there is no way to get any more detailed information about the result
-     * than whether or not it matched.  If more details are required use {@link #getXpathResult} instead.
+     * than whether or not it matched.  If more details are required use 
+     * {@link #getXpathResult(CompiledXpath) getXpathResult} instead.
      *
      * @param compiledXpath the xpath to try to match.  Must not be null.
      * @return true if this xpath matches this cursor at its current position.

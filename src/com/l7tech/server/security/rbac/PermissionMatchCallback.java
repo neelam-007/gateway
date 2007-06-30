@@ -6,7 +6,7 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.common.security.rbac.Permission;
 
 /**
- * Used by {@link RoleManager#deleteEntitySpecificRole} to decide whether a given Role can be deleted
+ * Used by {@link RoleManager#deleteEntitySpecificRole(PermissionMatchCallback)} to decide whether a given Role can be deleted
  */
 public interface PermissionMatchCallback {
     /**

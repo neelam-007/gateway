@@ -244,8 +244,6 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
 
     /**
      * Get the stale check count to use (set using a cluster/system property)
-     *
-     * @return
      */
     protected int getStaleCheckCount() {
         return getIntProperty(ServerConfig.PARAM_IO_STALE_CHECK_PER_INTERVAL,0,1000,1);        

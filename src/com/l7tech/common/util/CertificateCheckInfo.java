@@ -83,7 +83,7 @@ public class CertificateCheckInfo implements Serializable {
      * creates one.
      *
      * @param checkInfoHeader the HTTP header to examine.  Must be non-null, and have a header name starting with
-     *                        {@link com.l7tech.common.protocol.SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX}.
+     *                        {@link com.l7tech.common.protocol.SecureSpanConstants.HttpHeaders#CERT_CHECK_PREFIX}.
      * @return a new CertificateCheckInfo, or null if a valid CertificteCheckInfo could not be created
      *         from the specified header.
      */

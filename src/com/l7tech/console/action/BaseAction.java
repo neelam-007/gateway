@@ -20,7 +20,6 @@ import java.util.logging.Level;
  * define the <code>actionPerformed</code> method.
  *
  * @version 1.1
- * @author
  * @see javax.swing.Action
  * @see AbstractAction
  */

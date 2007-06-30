@@ -72,8 +72,8 @@ public class SslUtils {
      * If this returns, the caller should attempt to discover and/or import the server cert.
      *
      * @param server the name of the SSL server we were trying to talk to, ie "the Gatway foo.bar.com"
-     * @throws javax.net.ssl.SSLException if the exception could not be handled.
      * @param e the SSLException that was caught
+     * @throws javax.net.ssl.SSLException if the exception could not be handled.
      */
     public static void handleServerCertProblem(SslPeer sslPeer, String server, Exception e) throws SSLException {
         // Was this server cert untrusted?
@@ -177,7 +177,6 @@ public class SslUtils {
      * @param password
      * @param csr
      * @param caCert  the cert of the CA that is supposed to be signing the request
-     * @return
      * @throws IOException                  if there is a network problem talking to the CSR signing service
      * @throws CertificateException         if the post to the CSR signer results in a status other than 200, 401, or 403
      * @throws NoSuchAlgorithmException     if one of the keys uses an algorithm that isn't installed

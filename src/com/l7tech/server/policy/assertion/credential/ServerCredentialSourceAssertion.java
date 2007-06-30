@@ -47,7 +47,6 @@ public abstract class ServerCredentialSourceAssertion extends AbstractServerAsse
      * Server-side processing for all <code>CredentialSourceAssertion</code>s.
      *
      * @param context
-     * @return
      * @throws IOException
      * @throws PolicyAssertionException
      */

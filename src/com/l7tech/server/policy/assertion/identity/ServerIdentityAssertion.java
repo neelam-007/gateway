@@ -171,7 +171,6 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
      * <code>identityProviderOid</code> property, using a cache if possible.
      *
      * @param context
-     * @return
      * @throws FindException
      */
     protected IdentityProvider getIdentityProvider(PolicyEnforcementContext context) throws FindException {

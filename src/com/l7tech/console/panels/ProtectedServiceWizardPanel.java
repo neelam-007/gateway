@@ -218,9 +218,9 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
      * it should collect them, and then only save them when requested to
      * by this method.
      *
+     * @param settings the object representing wizard panel state
      * @exception IllegalArgumentException if the the data provided
      * by the wizard are not valid.
-     * @param settings the object representing wizard panel state
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (!(settings instanceof PublishServiceWizard.ServiceAndAssertion)) {

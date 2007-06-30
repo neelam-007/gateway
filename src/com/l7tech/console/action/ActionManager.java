@@ -6,7 +6,6 @@ import java.awt.event.ActionEvent;
 /**
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 
  */
 public class ActionManager {
     private static ActionManager instance = new ActionManager();

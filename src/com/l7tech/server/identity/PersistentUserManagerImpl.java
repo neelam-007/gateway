@@ -176,7 +176,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      *
      * @param ipoid The identity provider id
      * @throws DeleteException
-     * @throws ObjectNotFoundException
      */
     @Secured(operation=OperationType.DELETE)
     public void deleteAll(final long ipoid) throws DeleteException {

@@ -41,7 +41,6 @@ public class SecurityContextTokenHandler {
 
     /**
      * Generates a new random session id of 16 bytes.
-     * @return
      */
     public byte[] generateNewSessionId() {
         byte[] sessionid = new byte[SESSION_BYTES];

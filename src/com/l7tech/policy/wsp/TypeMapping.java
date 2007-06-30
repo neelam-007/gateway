@@ -51,7 +51,6 @@ public interface TypeMapping {
      * The returned TypedReference will have a name if one is known.
      *
      * @param source
-     * @return
      */
     TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException;
 

@@ -18,7 +18,7 @@ public abstract class MultiValuedEvaluator<PT extends Predicate> extends Evaluat
     
     /**
      * @param vals the values to evaluate against the {@link com.l7tech.external.assertions.comparison.Predicate}.
-     * @return the truthiness of the predicate <em>irrespective of {@link Predicate#negated}</em>.  Any ${variable}
+     * @return the truthiness of the predicate <em>irrespective of {@link Predicate#isNegated()}</em>.  Any ${variable}
      *         references previously found in the argument should already have been resolved.
      */
     public abstract boolean evaluate(Object[] vals);

@@ -479,8 +479,6 @@ public class KerberosClient {
 
     /**
      * Get a ticket from the given set of Objects that is for the given service.
-     *
-     * @return
      */
     private KerberosTicket getTicket(Set info, GSSName service, GSSManager manager) throws IllegalStateException {
         KerberosTicket ticket = null;

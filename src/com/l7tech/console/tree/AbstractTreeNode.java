@@ -244,7 +244,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     /**
      * Make a popup menu for this node.
      * The menu is constructed from the set of actions returned
-     * by {@link #getActions}.
+     * by {@link #getActions()}.
      *
      * @return the popup menu
      */

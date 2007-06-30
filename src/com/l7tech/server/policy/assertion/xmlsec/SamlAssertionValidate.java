@@ -267,7 +267,6 @@ public class SamlAssertionValidate {
      * has not been signed.
      *
      * @param wssResult
-     * @return
      * @throws InvalidDocumentFormatException
      */
     private X509Certificate getBodySigner(ProcessorResult wssResult)
@@ -466,8 +465,6 @@ public class SamlAssertionValidate {
 
     /**
      * Validate the SAML assertion conditions for v2.x
-     *
-     * @return The overall expiry date if any.
      */
     private void validateConditions(x0Assertion.oasisNamesTcSAML2.ConditionsType conditionsType, Calendar timeNow, Collection validationResults) {
         Saml2SubjectAndConditionValidate.validateConditions(requestWssSaml, conditionsType, timeNow, validationResults);

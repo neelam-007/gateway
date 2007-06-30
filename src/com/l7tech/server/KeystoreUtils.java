@@ -189,7 +189,6 @@ public class KeystoreUtils {
 
     /**
      * Returns the <code>KeyManagerFactory</code> based on SSG SSL Private Key as a source of key material.
-     * @return
      * @throws NoSuchAlgorithmException if the algorithm (X.509) is not available in the default provider
      * @throws UnrecoverableKeyException if the key cannot be recovered (e.g. the given password is wrong).
      * @throws KeyStoreException if keystore operaiton fails
@@ -209,7 +208,6 @@ public class KeystoreUtils {
      * @param path     the keystore file path
      * @param password the keystore password
      * @param keystoreType the keystore type
-     * @return
      * @throws KeyStoreException        if the requested store (default type) is not available
      * @throws IOException              if there is an I/O error or file does not exist
      * @throws NoSuchAlgorithmException if the keystore integrity check algorithm is not available
@@ -236,7 +234,6 @@ public class KeystoreUtils {
      *
      * @param path     the keystore file path
      * @param password the keystore password
-     * @return
      * @throws KeyStoreException        if the requested store (default type) is not available
      * @throws IOException              if there is an I/O error or file does not exist
      * @throws NoSuchAlgorithmException if the keystore integrity check algorithm is not available

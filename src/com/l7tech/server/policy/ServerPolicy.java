@@ -12,7 +12,7 @@ import com.l7tech.server.util.AbstractReferenceCounted;
 import java.io.IOException;
 
 /**
- * Ensures that {@link ServerAssertion#close} can be called safely when no more traffic will arrive by
+ * Ensures that {@link ServerAssertion#close()} can be called safely when no more traffic will arrive by
  * giving out handles that maintain a reference count, and only
  * closing the policy only when the reference count hits zero.
  */

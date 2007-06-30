@@ -63,7 +63,7 @@ public interface UserManager<UT extends User> {
      * @param user
      * @param groupHeaders
      * @throws UpdateException
-     * @throws ObjectNotFoundException
+     * @throws FindException
      */
     void update(UT user, Set<IdentityHeader> groupHeaders ) throws UpdateException, FindException;
 

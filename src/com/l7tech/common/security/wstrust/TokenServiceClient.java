@@ -221,7 +221,6 @@ public class TokenServiceClient {
      * @param appliesToAddress
      * @param wstIssuerAddress
      * @param requireWssSignedResponse
-     * @return
      * @throws IOException
      * @throws GeneralSecurityException
      */

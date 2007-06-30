@@ -50,7 +50,6 @@ interface Pre32TypeMapping {
      * The returned Pre32TypedReference will have a name if one is known.
      *
      * @param source
-     * @return
      */
     Pre32TypedReference thaw(Element source, Pre32WspVisitor visitor) throws Pre32InvalidPolicyStreamException;
 }

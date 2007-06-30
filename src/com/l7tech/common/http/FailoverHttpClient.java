@@ -68,7 +68,6 @@ public class FailoverHttpClient implements GenericHttpClient {
      *
      * @param method
      * @param params
-     * @return
      * @throws GenericHttpException
      */
     public FailoverHttpRequest createFailoverRequest(final GenericHttpMethod method, final GenericHttpRequestParams params)

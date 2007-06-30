@@ -37,7 +37,7 @@ public class WsdlUtils {
      * @throws WSDLFactoryNotTrustedException if the factory cannot be created
      *         because of access control restrictions.
      * @throws WSDLException if a WSDLFactory cannot be created
-     *         (see {@link WSDLFactory#newInstance}).
+     *         (see {@link WSDLFactory#newInstance()}).
      */
     public static WSDLFactory getWSDLFactory() throws WSDLException {
         WSDLFactory factory;

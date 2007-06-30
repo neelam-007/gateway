@@ -36,8 +36,6 @@ public class XmlCommentNode extends XmlElementNode {
 
     /**
      * Constructs the node for the XML element.
-     *
-     * @param element the XML element.
      */
     public XmlCommentNode(Viewer viewer, Comment comment) {
         super(viewer);

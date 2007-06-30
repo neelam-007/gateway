@@ -1024,6 +1024,7 @@
             <link href="http://jetty.mortbay.org/javadoc"/>
             <link href="http://tomcat.apache.org/tomcat-5.5-doc/catalina/docs/api"/>
             <link href="http://www.jfree.org/jfreechart/api/javadoc"/>
+            <tag name="noinspection" enabled="false"/>
         </javadoc>
         <mkdir dir="${build.reports}/teamcity"/>
         <zip destfile="${build.reports}/teamcity/javadoc.zip" basedir="${javadoc.home}" />

@@ -34,7 +34,6 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * Retreive the actual PublishedService object from it's oid.
      *
      * @param oid
-     * @return
      * @throws RemoteException
      */
     public PublishedService findServiceByID(String oid) throws RemoteException, FindException {
@@ -57,7 +56,6 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * saves a published service along with it's policy assertions
      *
      * @param service
-     * @return
      * @throws RemoteException
      */
     public long savePublishedService(PublishedService service)
@@ -70,7 +68,6 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @param service
      * @param docs ignored
-     * @return
      * @throws RemoteException
      */
     public long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> docs)

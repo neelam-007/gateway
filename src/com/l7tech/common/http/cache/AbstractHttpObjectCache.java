@@ -479,7 +479,7 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
     }
 
     /**
-     * Holds the return value of a call to {@link com.l7tech.common.http.cache.HttpObjectCache#fetchCached}.
+     * Holds the return value of a call to {@link com.l7tech.common.http.cache.HttpObjectCache#fetchCached(String, com.l7tech.common.http.cache.AbstractHttpObjectCache.WaitMode) HttpObjectCache#fetchCached}.
      */
     public static class FetchResult<UT> {
         private final int result;

@@ -39,7 +39,7 @@ public class HttpObjectCache<UT> extends AbstractHttpObjectCache<UT> {
      * @param userObjectFactory     strategy for converting the HTTP body into an application-level object.
      *                              The returned object will be cached and returned to other fetchers of this URL
      *                              but is otherwise opaque to HttpObjectCache.
-     * @param defaultWaitMode       default {@link WaitMode} when using {@link #resolveUrl}.  If null, will use {@link WAIT_INITIAL}.
+     * @param defaultWaitMode       default {@link AbstractHttpObjectCache.WaitMode WaitMode} when using {@link #resolveUrl(String) resolveUrl}.  If null, will use {@link AbstractHttpObjectCache#WAIT_INITIAL}.
      */
     public HttpObjectCache(int maxCachedObjects,
                            long recheckAge,

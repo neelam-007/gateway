@@ -105,7 +105,6 @@ public class WspUpgradeUtilFrom21 {
     /**
      * Converts the specified element, which represents a
      * @param in
-     * @return
      * @throws InvalidPolicyStreamException
      */
     static Element translateOldXmlSecurityElement(Element in, WspVisitor visitor) throws InvalidPolicyStreamException {

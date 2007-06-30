@@ -115,7 +115,6 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     /**
      * If this Role is scoped to a particular entity, this property will contain the type of that entity.
      * Otherwise, it will be null.
-     * @return
      */
     public EntityType getEntityType() {
         return entityType;
@@ -140,7 +139,6 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     /**
      * If this Role is scoped to a particular entity, this property will contain the OID of that entity.
      * Otherwise, it will be null.
-     * @return
      */
     public Long getEntityOid() {
         return entityOid;

@@ -823,7 +823,6 @@ public class SoapUtil {
      * some basic SOAP message structure validation
      *
      * @param in the input stream
-     * @return
      * @throws MessageNotSoapException if the xml document does not represent the soap messagr
      * @throws IOException on io parsing error
      * @throws SAXException on oarsing error

@@ -161,7 +161,6 @@ public class UptimeMetrics implements Serializable {
 
     /**
      * Return a string form of this UptimeMetrics object, suitable for use in a log.
-     * @return
      */
     public String toString() {
         return "UptimeMetrics: " + timestamp + ": " + rawUptimeOutput;

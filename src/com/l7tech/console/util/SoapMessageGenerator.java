@@ -196,7 +196,6 @@ public class SoapMessageGenerator {
      * Generate the soap request envelope and the target namespace
      *
      * @param bindingOperation
-     * @return
      * @throws SOAPException
      */
     private Object[] generateEnvelope(BindingOperation bindingOperation)

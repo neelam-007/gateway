@@ -267,7 +267,7 @@ public abstract class Assertion implements Cloneable, Serializable {
          * be removed.
          *
          * @throws IllegalStateException as described by interface
-         * {@see Iterator}
+         * @see Iterator#remove()
          */
         public void remove()
           throws UnsupportedOperationException, IllegalStateException {

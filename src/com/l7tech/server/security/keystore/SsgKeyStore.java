@@ -38,7 +38,7 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * @param chain   the certificate chain to use instead.  Required.  Must contain at least one certificate,
      *                the first one in the array being the subject certificate.
      *                The subject public key must match the public key of the current subject.
-     * @returns immediately returns a Future which returns Boolean.TRUE when successful.
+     * @return immediately returns a Future which returns Boolean.TRUE when successful.
      * @throws InvalidKeyException if the public key does not match the public key of the existing key pair
      * @throws KeyStoreException  if there is a problem reading or writing the keystore
      */

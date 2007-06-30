@@ -53,7 +53,7 @@ public class ExchangerDocumentFactory extends DocumentFactory {
     /**
      * Creates the ExchangerElement.
      *
-     * @param qname, the name of the element.
+     * @param qname the name of the element.
      * @return the Exchanger Element.
      */
     public Element createElement(QName qname) {

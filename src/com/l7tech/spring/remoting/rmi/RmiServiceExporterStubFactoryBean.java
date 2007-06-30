@@ -218,7 +218,6 @@ public class RmiServiceExporterStubFactoryBean
     /**
      * Get the RMI registry for this exporter.
      *
-     * @param registryPort the registry port to use
      * @return the RMI registry
      * @throws RemoteException if the registry couldn't be located or created
      */

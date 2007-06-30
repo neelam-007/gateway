@@ -13,8 +13,8 @@ import com.l7tech.common.http.HttpCookie;
  */
 public interface HttpResponseKnob extends MessageKnob {
     /**
-     * Adds the specified {@link Cookie} to the response
-     * @param cookie the {@link Cookie} to be added. Must not be null.
+     * Adds the specified {@link HttpCookie} to the response
+     * @param cookie the {@link HttpCookie} to be added. Must not be null.
      */
     void addCookie(HttpCookie cookie);
 

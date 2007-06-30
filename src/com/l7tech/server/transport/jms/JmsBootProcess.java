@@ -107,7 +107,7 @@ public class JmsBootProcess extends LifecycleBean {
 
 
     /**
-     * Starts {@link JmsReceiver}s for the initial configuration.  Also starts the {@link EndpointVersionChecker} and {@link ConnectionVersionChecker} to periodically
+     * Starts {@link JmsReceiver}s for the initial configuration.  Also starts the EndpointVersionChecker and ConnectionVersionChecker to periodically
      * check whether endpoints or connections have been created, updated or deleted.
      * <p/>
      * Any exception that is thrown in a JmsReceiver's start() method will be logged but not propagated.
@@ -167,8 +167,8 @@ public class JmsBootProcess extends LifecycleBean {
     }
 
     /**
-     * Attempts to stop all running JMS receivers, then stops the {@link EndpointVersionChecker} and
-     * {@link ConnectionVersionChecker}
+     * Attempts to stop all running JMS receivers, then stops the EndpointVersionChecker and
+     * ConnectionVersionChecker
      */
     protected void doStop() {
         synchronized(receiverLock) {

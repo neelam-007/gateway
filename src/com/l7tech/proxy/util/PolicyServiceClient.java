@@ -317,7 +317,6 @@ public class PolicyServiceClient {
      * @param serverCertificate  required.  used to verify identity of signer of downloaded policy.
      * @param clientCert         optional. if specified along with clientKey, an encrypted response can be processed.
      * @param clientKey          optional. if specified along with getCachedClientCert, an encrypted response can be processed.
-     * @return
      * @throws IOException
      * @throws GeneralSecurityException
      * @throws BadCredentialsException

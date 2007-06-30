@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 /**
  * A predicate in the "scope expression" of a {@link Permission}.
  *
- * Subclasses *must* implement {@link #equals} and {@link #hashCode}, as instances are added
+ * Subclasses *must* implement {@link #equals(Object)} and {@link #hashCode()}, as instances are added
  * to {@link java.util.Set}s.
  */
 public abstract class ScopePredicate extends PersistentEntityImp {

@@ -26,7 +26,6 @@ public interface GroupManager<UT extends User, GT extends Group> {
      * Test whether a given User is a member of the specified Group.
      * @param user
      * @param group
-     * @return
      * @throws FindException
      */
     boolean isMember(User user, GT group) throws FindException;
@@ -88,7 +87,6 @@ public interface GroupManager<UT extends User, GT extends Group> {
     /**
      * Retrieve the Set of Groups to which a particular User belongs.
      * @param user
-     * @return
      * @throws FindException
      */
     Set<IdentityHeader> getGroupHeaders(UT user) throws FindException;
@@ -101,7 +99,6 @@ public interface GroupManager<UT extends User, GT extends Group> {
     /**
      * Retrieve the Set of Users belonging to a particular Group.
      * @param group
-     * @return
      * @throws FindException
      */
     Set<IdentityHeader> getUserHeaders(GT group ) throws FindException;

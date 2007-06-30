@@ -46,7 +46,7 @@ public abstract class GenericHttpResponse implements GenericHttpResponseParams {
      * After close() has been called, the behaviour of this class is not defined.  Any InputStream obtained
      * from {@link #getInputStream} should no longer be used.
      * <p>
-     * However, any {@link HttpHeaders} object returned from {@link #getHeaders} is guaranteed to remain useable even
+     * However, any {@link HttpHeaders} object returned from {@link #getHeaders()} is guaranteed to remain useable even
      * after this request has been closed.    
      * <p>
      * Might throw unavoidable Errors (ie, OutOfMemoryError), but will never throw runtime exceptions.

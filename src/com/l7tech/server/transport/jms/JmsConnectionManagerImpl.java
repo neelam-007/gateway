@@ -78,7 +78,6 @@ public class JmsConnectionManagerImpl
      *
      * @param connection the object to be deleted.
      * @throws DeleteException if the connection, or one of its dependent endpoints, cannot be deleted.
-     * @throws FindException   if the connection, or one of its dependent endpoints, cannot be found.
      */
     public void delete(final JmsConnection connection) throws DeleteException {
         _logger.info("Deleting JmsConnection " + connection);

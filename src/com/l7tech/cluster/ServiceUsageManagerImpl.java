@@ -72,7 +72,6 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
 
     /**
      * Finds the ServiceUsage records for the given {@link com.l7tech.service.PublishedService} OID for all cluster nodes
-     * @return
      * @throws FindException
      */
     @Transactional(readOnly=true)

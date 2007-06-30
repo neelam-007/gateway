@@ -925,7 +925,6 @@ public class Wsdl {
      * The default use if unspecified is 'literal'.
      *
      * @param binding the binding to examine
-     * @return
      * @throws IllegalArgumentException
      * @throws WSDLException            if the input and output for the bindfing operation messages specify different
      *                                  use (mixed encoded and literal)

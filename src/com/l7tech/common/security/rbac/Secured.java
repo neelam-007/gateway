@@ -16,7 +16,7 @@ import java.lang.annotation.Inherited;
  * or any method on the annotated class.
  * <p/>
  * If {@link #types} is specified on a class annotation, it is inherited if unspecified in that class's
- * method annotations.  Conversely, a {@link # types} specified in a method annotation overrides any specified
+ * method annotations.  Conversely, a {@link #types} specified in a method annotation overrides any specified
  * in a class annotation.
  */
 @Documented

@@ -121,7 +121,7 @@ public interface AsyncAdminMethods {
     public static final class JobResult<OUT extends Serializable> implements Serializable {
         private static final long serialVersionUID = 6452392466733202138L;
 
-        /** Final status string, in same format as {@link com.l7tech.common.security.TrustedCertAdmin#getJobStatus}.  Always starts with "inactive:". */
+        /** Final status string, in same format as {@link com.l7tech.common.AsyncAdminMethods#getJobStatus(com.l7tech.common.AsyncAdminMethods.JobId) AsyncAdminMethods#getJobStatus}.  Always starts with "inactive:". */
         public final String status;
 
         /** If the job was successful, this holds the result (which may be null); otherwise it is always null. */

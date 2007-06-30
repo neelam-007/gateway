@@ -43,7 +43,7 @@ class CustomAssertions {
    * Return the <code>CustomAssertionUI</code> for a given assertion or
    * <b>null<b>
    *
-   * @param a the assertion class
+   * @param assertionClassName the assertion class
    * @return the custom assertion UI class or <b>null</b>
    */
   static CustomAssertionUI getUI(String assertionClassName) {

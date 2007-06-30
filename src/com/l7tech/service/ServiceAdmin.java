@@ -41,7 +41,7 @@ public interface ServiceAdmin extends ServiceAdminPublic {
 
     /**
      * Retrieve a chunk of the available {@link PublishedService} headers  This is a version of
-     * {@link #findAllPublishedServices} that allows fetching the result in chunks, perhaps to reduce
+     * {@link #findAllPublishedServices()} that allows fetching the result in chunks, perhaps to reduce
      * latency.
      *
      * @return array of {@link EntityHeader}s for requested subset of {@link PublishedService}s May be empty but never null.

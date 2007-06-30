@@ -179,7 +179,7 @@ public class JmsUtil {
     }
 
     /**
-     * Equivalent to {@link JmsUtil#connect(JmsConnection, null, null)}
+     * Equivalent to {@link JmsUtil#connect(JmsConnection, PasswordAuthentication, JmsPropertyMapper) JmsUtil#connect(JmsConnection, null, null)}
      */
     public static JmsBag connect( JmsConnection connection ) throws JMSException, NamingException, JmsConfigException {
         return connect( connection, null, null );

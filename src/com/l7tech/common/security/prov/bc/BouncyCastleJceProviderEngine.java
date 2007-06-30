@@ -53,7 +53,6 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
      * @param storePass
      * @param privateKeyAlias
      * @param privateKeyPass
-     * @return
      */
     public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
         return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType, "BC" );
@@ -79,7 +78,6 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
      *
      * @param username  the username to put in the cert
      * @param keyPair the public and private keys
-     * @return
      */
     public CertificateRequest makeCsr( String username, KeyPair keyPair ) throws SignatureException, InvalidKeyException {
         return staticMakeCsr( username, keyPair, PROVIDER.getName() );
@@ -102,7 +100,6 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
      *
      * @param username  the username to put in the cert
      * @param keyPair the public and private keys
-     * @return
      */
     public static CertificateRequest staticMakeCsr(String username, KeyPair keyPair, String providerName ) throws InvalidKeyException, SignatureException {
         X509Name subject = new X509Name("cn=" + username);

@@ -39,7 +39,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * @param level the java.util.logging.Level of this record.
      * @param nodeId the ID of the cluster node from which this AuditRecord originates (see com.l7tech.cluster.ClusterStatusAdmin.getClusterStatus())
      * @param clientAddr the IP address of the client that made the request
-     * @param serviceName the name of the service that received the request that generated the AuditRecord
      * @param requestId the unique ID of the request
      * @param status the {@link AssertionStatus} resulting from applying the service policy to this request
      * @param requestXml the text of the request received from the client. Not saved by default.

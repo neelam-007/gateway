@@ -37,9 +37,9 @@ public interface TarariMessageContext {
     /**
      * Get SoapInfo for this RaxDocument, creating it if necessary.
      *
+     * @param soapAction
      * @return a SoapInfo instance.  Never null.
      * @throws SoftwareFallbackException if simultaneous xpath processing could not be performed.
-     * @param soapAction
      */
     SoapInfo getSoapInfo(String soapAction) throws SoftwareFallbackException;
 }

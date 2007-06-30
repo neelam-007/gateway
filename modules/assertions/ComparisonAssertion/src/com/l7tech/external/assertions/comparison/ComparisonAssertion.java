@@ -32,7 +32,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
 
     /**
      * Returns the variables referenced in {@link #leftValue}, as well as any referenced in the
-     * {@link BinaryPredicate#rightValue} values of our {@link #predicates}. (Only {@link BinaryPredicate} supports the
+     * {@link BinaryPredicate#getRightValue()} values of our {@link #predicates}. (Only {@link BinaryPredicate} supports the
      * use of variables on the right-hand side of the equation)
      */
     public String[] getVariablesUsed() {

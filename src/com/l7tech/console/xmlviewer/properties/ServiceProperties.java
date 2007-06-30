@@ -41,7 +41,7 @@ public class ServiceProperties {
     /**
      * Constructor for the service properties.
      *
-     * @param the element that contains the name and location children.
+     * @param element the element that contains the name and location children.
      */
     public ServiceProperties(Element element) {
         super();
@@ -61,8 +61,8 @@ public class ServiceProperties {
     /**
      * Constructor for the service element.
      *
-     * @param the name element of the service.
-     * @param the location element of the service.
+     * @param name the name element of the service.
+     * @param description the location element of the service.
      */
     public ServiceProperties(String name, String description, String iconPath, String location, String argument) {
         super();
@@ -243,7 +243,7 @@ public class ServiceProperties {
     /**
      * Adds an association to the service.
      *
-     * @param isDefault wether this is the default association.
+     * @param isdefault wether this is the default association.
      * @param localname the (local) name of the element-type.
      * @param namespace the namespace (URI) of the element-type.
      * @return the newly created element type properties.

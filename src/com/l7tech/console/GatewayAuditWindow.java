@@ -169,7 +169,6 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
      * <p>This will attempt to display audits relevant to the requested time.</p>
      *
      * @param date the date for records to display.
-     * @throws IOException on error
      */
     public void displayAudits(Date date) {
         LogPanel logPanel = getLogPane();

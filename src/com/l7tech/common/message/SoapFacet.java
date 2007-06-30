@@ -36,7 +36,7 @@ class SoapFacet extends MessageFacet {
 
     /**
      * Create a new SoapFacet for the specified message, wrapping the specified root facet.  SoapFacets can only
-     * be created on messages for which {@link #getSoapInfo} has already returned a non-null value.
+     * be created on messages for which {@link #getSoapInfo()} has already returned a non-null value.
      *
      * @param message  the message being enhanced.  May not be null.
      * @param facet  the previous root facet.  May not be null.  Must contain an XML facet.

@@ -253,7 +253,7 @@ public class WorkSpacePanel extends JPanel {
          * Removes the tab at <code>index</code>. This method is overriden
          * for veto support.
          * 
-         * @see #addTab
+         * @see #addTab(String, Component)
          * @see #insertTab
          */
         public void removeTabAt(int index) {
@@ -307,7 +307,7 @@ public class WorkSpacePanel extends JPanel {
          * Removes all the tabs and their corresponding components
          * from the <code>tabbedpane</code>.
          * 
-         * @see #addTab
+         * @see #addTab(String, Component)
          * @see #removeTabAt
          */
         public void removeAll() {

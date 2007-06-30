@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 /**
- * Implementors are utility classes that attempt to convert any Object into a (possibly identical) value of type {@link #<RT>}.
+ * Implementors are utility classes that attempt to convert any Object into a (possibly identical) value of type RT.
  * @param <RT> is the Result Type
  * @author alex
 */

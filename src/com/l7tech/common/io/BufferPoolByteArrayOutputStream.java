@@ -118,7 +118,7 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      * output stream is discarded. The output stream can be used again,
      * reusing the already allocated buffer space.
      *
-     * @see     java.io.ByteArrayInputStream#count
+     * @see     java.io.ByteArrayInputStream#reset()
      */
     public void reset() {
         count = 0;
@@ -183,7 +183,7 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      *
      * @return  the value of the <code>count</code> field, which is the number
      *          of valid bytes in this output stream.
-     * @see     java.io.ByteArrayOutputStream#count
+     * @see     java.io.ByteArrayOutputStream#size()
      */
     public int size() {
         return count;

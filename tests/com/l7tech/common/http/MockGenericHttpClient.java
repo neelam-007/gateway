@@ -44,7 +44,6 @@ public class MockGenericHttpClient implements GenericHttpClient {
      *
      * @param method
      * @param params
-     * @return
      * @throws GenericHttpException
      */
     public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {

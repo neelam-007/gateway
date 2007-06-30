@@ -28,7 +28,6 @@ public class SingleHostHttpConnectionManagerParams extends HttpConnectionManager
      * This method ignores the given host configuration and returns the default.
      *
      * @param hostConfiguration Ignored, returns {@link #getDefaultMaxConnectionsPerHost}
-     * @return
      */
     public int getMaxConnectionsPerHost(HostConfiguration hostConfiguration) {
         return maxConnectionsPerHost;

@@ -70,7 +70,6 @@ public class BouncyCastleCertificateRequest implements CertificateRequest {
      * @param username
      * @param keyPair
      * @param providerName
-     * @return
      * @throws InvalidKeyException
      * @throws SignatureException
      */

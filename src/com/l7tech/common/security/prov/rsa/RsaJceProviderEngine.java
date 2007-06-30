@@ -153,7 +153,6 @@ public class RsaJceProviderEngine implements JceProviderEngine {
      * @param storePass
      * @param privateKeyAlias
      * @param privateKeyPass
-     * @return
      */
     public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
         return new RsaRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType);
@@ -161,8 +160,6 @@ public class RsaJceProviderEngine implements JceProviderEngine {
 
     /**
      * Generate an RSA public key / private key pair using the current Crypto provider.
-     *
-     * @return
      */
     public KeyPair generateRsaKeyPair(int len) {
         KeyPairGenerator kpg;
@@ -185,7 +182,6 @@ public class RsaJceProviderEngine implements JceProviderEngine {
      *
      * @param username  the username, ie "lyonsm"
      * @param keyPair  the public and private keys
-     * @return
      */
     public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException
     {

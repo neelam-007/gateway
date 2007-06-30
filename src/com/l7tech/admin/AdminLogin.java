@@ -46,11 +46,11 @@ public interface AdminLogin extends Remote {
      * the server.
      *
      * @param username The name of the user.
+     * @param password The password of the user.
      * @return An {@link AdminLoginResult} if the login was successful, or throws. Never null.
      * @throws AccessControlException on access denied for the given credentials
      * @throws LoginException on failed login
      * @throws RemoteException on remote communication error
-     * @param password The password of the user.
      */
     AdminLoginResult login(String username, String password)
             throws RemoteException, AccessControlException, LoginException;

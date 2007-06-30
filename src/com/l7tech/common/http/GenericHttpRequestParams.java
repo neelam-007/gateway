@@ -251,7 +251,7 @@ public class GenericHttpRequestParams {
 
     /**
      * @param followRedirects if true, redirects will be followed automatically.
-     * @see {@link #isFollowRedirects()}
+     * @see #isFollowRedirects()
      */
     public void setFollowRedirects(boolean followRedirects) {
         this.followRedirects = followRedirects;

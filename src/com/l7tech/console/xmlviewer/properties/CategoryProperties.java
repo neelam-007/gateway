@@ -42,7 +42,7 @@ public class CategoryProperties {
     /**
      * Constructor for the category properties.
      *
-     * @param the element that contains the name of the category.
+     * @param element the element that contains the name of the category.
      */
     public CategoryProperties(Element element) {
         super();
@@ -107,7 +107,7 @@ public class CategoryProperties {
     /**
      * Sets the name of the category.
      *
-     * @param the name.
+     * @param name the name.
      */
     public void setName(String name) {
         element.element("name").setText(name);

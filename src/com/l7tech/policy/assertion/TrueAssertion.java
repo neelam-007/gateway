@@ -26,7 +26,6 @@ public class TrueAssertion extends Assertion {
 
     /**
      * Quickly get an existing TrueAssertion with no parent to use as a "do-nothing" policy tree.
-     * @return
      */
     public static TrueAssertion getInstance() {
         return INSTANCE;

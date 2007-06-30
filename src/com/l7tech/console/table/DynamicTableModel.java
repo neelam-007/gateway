@@ -18,7 +18,7 @@ import java.util.*;
  * records is loaded on different thread.<br>
  * </ul>
  * <p/>
- * The loading may be explicitely stopped using {@link#stop()} method.
+ * The loading may be explicitely stopped using {@link #stop()} method.
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0

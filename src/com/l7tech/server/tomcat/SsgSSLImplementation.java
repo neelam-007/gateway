@@ -34,7 +34,7 @@ public class SsgSSLImplementation extends SSLImplementation {
     /**
      * Create an SsgSSLImplementation that delegates to the default instance.
      *
-     * @see SSLImplementation#getInstance
+     * @see SSLImplementation#getInstance()
      */
     public SsgSSLImplementation() {
         try {

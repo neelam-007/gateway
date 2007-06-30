@@ -77,7 +77,7 @@ public class UddiAgentV3 implements UddiAgent {
      * @param namePattern   the exact name or part of the name
      * @param caseSensitive  true if case sensitive, false otherwise.
      * @return WsdlInfo[] an array of WSDL info.
-     * @throws FindException   if there was a problem accessing the requested information.
+     * @throws UddiAgentException   if there was a problem accessing the requested information.
      */
     public WsdlInfo[] getWsdlByServiceName(String inquiryUrl, String namePattern, boolean caseSensitive) throws UddiAgentException {
         checkInit();

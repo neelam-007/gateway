@@ -39,7 +39,6 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * Retreive the actual PublishedService object from it's oid.
      * 
      * @param oid
-     * @return
      * @throws FindException
      */
     public PublishedService findByPrimaryKey(long oid) throws FindException {
@@ -75,7 +74,6 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * saves a published service along with it's policy assertions
      * 
      * @param service
-     * @return
      * @throws SaveException
      */
     public long save(PublishedService service) throws SaveException {

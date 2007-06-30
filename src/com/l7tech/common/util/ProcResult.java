@@ -10,7 +10,7 @@ public class ProcResult {
         this.output = output;
     }
 
-    /** @return the exit status of the process; {@see java.lang.Process}. */
+    /** @return the exit status of the process; {@link java.lang.Process}. */
     public int getExitStatus() {
         return exitStatus;
     }

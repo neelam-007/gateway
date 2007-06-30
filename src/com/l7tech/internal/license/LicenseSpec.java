@@ -41,7 +41,7 @@ public class LicenseSpec {
     }
 
     /**
-     * Create a LicenseSpec for generating a signed license.  If a signed license is generated ({@see LicenseGenerator}),
+     * Create a LicenseSpec for generating a signed license.  If a signed license is generated ({@link LicenseGenerator}),
      * it will be signed with the specified private key, and include a reference to the specified certificate.
      *
      * @param issuerCert  the certificate with which to sign the new license, or null to generate an unsigned license.

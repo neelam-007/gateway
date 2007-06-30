@@ -98,7 +98,7 @@ public abstract class TextEntryPanel extends ValidatedPanel<String> {
         return textField.getText();
     }
 
-    /** Nothing to do here--in this case {@link #textField#getText()} <em>is</em> the model */
+    /** Nothing to do here--in this case {@link TextField#getText()} <em>is</em> the model */
     protected void doUpdateModel() {
     }
 

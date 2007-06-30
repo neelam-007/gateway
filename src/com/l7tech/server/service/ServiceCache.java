@@ -553,16 +553,16 @@ public class ServiceCache
     }
 
     /**
-     * {@see InitializingBean}
      * @throws Exception
+     * @see InitializingBean
      */
     public void afterPropertiesSet() throws Exception {
         this.auditor = new Auditor(this, getApplicationContext(), logger);
     }
 
     /**
-     * {@see DisaposableBean}
      * @throws Exception
+     * @see DisposableBean
      */
     public void destroy() throws Exception {
         checker.cancel();

@@ -35,8 +35,8 @@ public class HybridStashManager implements StashManager {
      * totalled sizes exceed the specified size limit.
      *
      * @param limit   the maximum total number of bytes, for all attachments stashed, to store in RAM.
-     * @param dir     the directory in which to create stash files, should it be necessary; {@see FileStashManager}
-     * @param unique  the unique filename prefix to use for created stash files; {@see FileStashManager}
+     * @param dir     the directory in which to create stash files, should it be necessary; {@link FileStashManager}
+     * @param unique  the unique filename prefix to use for created stash files; {@link FileStashManager}
      */
     public HybridStashManager(int limit, File dir, String unique) {
         if (limit < 1) throw new IllegalArgumentException("limit must be positive");

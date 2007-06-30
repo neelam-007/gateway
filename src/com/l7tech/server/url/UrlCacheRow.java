@@ -41,7 +41,6 @@ public class UrlCacheRow extends NamedEntityImp {
 
     /**
      * The size, in bytes, of a UTF-8 serialization of the content.
-     * @return
      */
     public int getSize() {
         return size;

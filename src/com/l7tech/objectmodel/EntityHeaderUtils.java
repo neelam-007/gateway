@@ -37,7 +37,7 @@ public final class EntityHeaderUtils {
 
     /**
      * Creates and returns an {@link com.l7tech.objectmodel.AnonymousEntityReference} that's as close a reflection of the given
-     * {@link com.l7tech.objectmodel.EntityHeader} as possible.  <code>null</code> is returned only if the {@link com.l7tech.objectmodel.EntityHeader#type}
+     * {@link com.l7tech.objectmodel.EntityHeader} as possible.  <code>null</code> is returned only if the {@link com.l7tech.objectmodel.EntityHeader#getType()}
      * is {@link com.l7tech.objectmodel.EntityType#MAXED_OUT_SEARCH_RESULT}.  Otherwise, this method will create either an
      * {@link com.l7tech.objectmodel.AnonymousEntityReference}, an {@link com.l7tech.identity.AnonymousIdentityReference}, or throw an exception.
      * @param header the EntityHeader to translate

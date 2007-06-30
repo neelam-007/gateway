@@ -54,7 +54,6 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
 
     /**
      * The maximum number of times (default 30) that a nonce can be used.
-     * @return
      */
     public int getMaxNonceCount() {
         return _maxNonceCount;
@@ -71,7 +70,6 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
     /**
      * The maximum interval (in milliseconds, default 30 minutes) during which a particular nonce is
      * valid, irrespective of how many times it has been used.
-     * @return
      */
     public int getNonceTimeout() {
         return _nonceTimeout;

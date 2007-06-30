@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 /**
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 
  */
 public class VetoableActionEvent extends ActionEvent {
     /**

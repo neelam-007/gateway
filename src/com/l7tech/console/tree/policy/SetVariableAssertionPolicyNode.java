@@ -11,8 +11,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * Class ComparisonAssertionPolicyNode is a policy node that corresponds to
- * {@link com.l7tech.policy.assertion.ComparisonAssertion}.
+ * Class SetVariableAssertionPolicyNode is a policy node that corresponds to
+ * {@link com.l7tech.policy.assertion.SetVariableAssertion}.
  */
 public class SetVariableAssertionPolicyNode extends LeafAssertionTreeNode {
     private SetVariableAssertion assertion;

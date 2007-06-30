@@ -47,7 +47,6 @@ public abstract class ExternalReference {
     /**
      * Parse references from an exported policy's exp:References element.
      * @param refElements an ExporterConstants.EXPORTED_REFERENCES_ELNAME element
-     * @return
      */
     public static ExternalReference[] parseReferences(Element refElements) throws InvalidDocumentFormatException {
         // Verify that the passed element is what is expected

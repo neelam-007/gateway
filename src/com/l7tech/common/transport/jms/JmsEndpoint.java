@@ -53,7 +53,6 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
 
     /**
      * May be null.
-     * @return
      */
     public PasswordAuthentication getPasswordAuthentication() {
         return _username != null && _password != null 

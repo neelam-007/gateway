@@ -546,7 +546,7 @@ public class MetricsChartPanel extends ChartPanel {
         final NumberAxis alertsYAxis = new NumberAxis() {
             /**
              * Overrides parent method to prevent any zooming, particularly
-             * autozoom. We need to do this because although {@link #setRange}
+             * autozoom. We need to do this because although {@link #setRange(double,double) setRange}
              * will unset autozoom, its effect is not persistent.
              */
             public void resizeRange(double percent, double anchorValue) {

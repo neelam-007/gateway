@@ -18,7 +18,7 @@ import java.util.*;
  * If the metrics bins come from more than one resolution,
  * then the summary bin has resolution of -1.
  *
- * @auther rmak
+ * @author rmak
  */
 public class MetricsSummaryBin extends MetricsBin {
     /** OID of published services with policy violations. */

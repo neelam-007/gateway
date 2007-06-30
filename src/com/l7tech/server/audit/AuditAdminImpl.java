@@ -366,7 +366,6 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
      * @param startMsgDate The starting date
      * @param endMsgDate The ending date 
      * @param size The maximum number of records to return
-     * @return
      * @throws RemoteException
      * @throws FindException
      */

@@ -1512,7 +1512,6 @@ public class XmlUtil {
     /**
      * Hoist all namespace declarations to the
      * @param element
-     * @return
      */
     public static Element normalizeNamespaces(Element element) {
         // First clone the original to work on the clone
