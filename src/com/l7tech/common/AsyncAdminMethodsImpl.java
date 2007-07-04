@@ -54,12 +54,17 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
                 synchronized (AsyncAdminMethodsImpl.this) {
                     long now = System.currentTimeMillis();
                     Collection<JobEntry> entries = jobs.values();
+                    Collection<JobId> toRemove = new HashSet<JobId>();
                     for (JobEntry entry : entries) {
                         long finished = entry.timeCompleted;
                         if (entry.done && (now - finished) > staleJobMillis) {
-                            logger.log(Level.WARNING, "Discarding unclaimed asynchronous job result: " + entry.id);
-                            jobs.remove(entry.id);
+                            toRemove.add(entry.id);
                         }
+                    }
+
+                    for (JobId jobId : toRemove) {
+                        logger.log(Level.WARNING, "Discarding unclaimed asynchronous job result: " + jobId);
+                        jobs.remove(jobId);
                     }
                 }
             }
