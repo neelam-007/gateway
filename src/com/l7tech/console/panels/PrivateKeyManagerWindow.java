@@ -63,9 +63,18 @@ public class PrivateKeyManagerWindow extends JDialog {
                 if (!timerClients.isEmpty()) {
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
-                            // Deliver tick events on the swing thread
+                            // Deliver tick events on the swing thread, as long as we are connected to the SSG
+                            if (!Registry.getDefault().isAdminContextPresent())
+                                return;
+
                             for (PrivateKeyManagerWindow client : timerClients.keySet())
-                                if (client != null) client.onTimerTick();
+                                if (client != null) {
+                                    try {
+                                        client.onTimerTick();
+                                    } catch (Exception e) {
+                                        logger.log(Level.WARNING, "Unable to check status of background key management jobs: " + ExceptionUtils.getMessage(e), e);
+                                    }
+                                }
                         }
                     });
                 }
