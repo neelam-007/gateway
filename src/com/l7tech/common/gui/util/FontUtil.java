@@ -52,8 +52,11 @@ public class FontUtil {
         c.setFont(newFont);
     }
 
-    private static float getFontSize(Map<TextAttribute,?> attributes) {
-        Float size = (Float)attributes.get(TextAttribute.SIZE);
-        return size == null ? 12.0f : size;
+    private static double getFontSize(Map<TextAttribute,?> attributes) {
+        Object obj = attributes.get(TextAttribute.SIZE);
+        double size = 12.0;
+        if (obj instanceof Number)
+            size = ((Number)obj).doubleValue();
+        return size;
     }
 }
