@@ -24,7 +24,7 @@ public class FontUtil {
      * Resize the font used by the given component.  Example: resizeFont(myLabel, 2.0) makes
      * the label's text twice as big as it is now.
      *
-     * @param c  the component whose font to make boldface.  Required.
+     * @param c  the component whose font to resize.  Required.
      * @param scale  the scaling factor to apply to its current font.  Required.
      */
     public static void resizeFont(Component c, double scale) {
