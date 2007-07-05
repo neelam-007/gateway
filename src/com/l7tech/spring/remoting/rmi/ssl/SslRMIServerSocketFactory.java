@@ -457,7 +457,11 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
             kmf.init(ks, pwd);
             keyManagers = kmf.getKeyManagers();
         } else {
-            X509Certificate[] x509Chain = CertUtils.asX509CertificateArray(ks.getCertificateChain(keyStoreAlias));
+            Certificate[] genericChain = ks.getCertificateChain(keyStoreAlias);
+            if (genericChain == null)
+                throw new KeyStoreException("Unable to create SSL RMI server socket: no certificate chain for alias " + keyStoreAlias);
+
+            X509Certificate[] x509Chain = CertUtils.asX509CertificateArray(genericChain);
 
             Key key = ks.getKey(keyStoreAlias, keyStorePassword.toCharArray());
             if (!(key instanceof PrivateKey))
