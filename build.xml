@@ -3072,6 +3072,10 @@
         </move>
     </target>
 
+    <target name="tar"
+            description="Build TARs for use in Solaris/Tarari builds"
+            depends="ssg-install-full-init,INTERNAL-ssg-install,package.tarari.tar"/>
+
     <target name="ssg-install-full-init">
         <property name="ssg.install.enabled" value="true"/>
         <property name="ssg.install.official" value="true"/>
@@ -3407,6 +3411,16 @@
             </tarfileset>
         </tar>		
         <echo level="info">BUILD COMPLETE - Produced ${tarball}!</echo>
+    </target>
+
+    <!-- Create the TAR used when building the Tarari rpm -->
+    <target name="package.tarari.tar" depends="init">
+        <echo level="info">Creating Tarari Gateway Tar ...</echo>
+        <tar destfile="${build.dir}/tarari.tar.gz" compression="gzip" longfile="gnu">
+            <tarfileset dir="${src.root}" username="root" group="root" mode="644">
+                <include name="etc/tarari-initd"/>
+            </tarfileset>
+        </tar>
     </target>
 
     <!--
