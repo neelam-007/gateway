@@ -1,12 +1,13 @@
 package com.l7tech.server;
 
+import com.l7tech.common.security.SingleCertX509KeyManager;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreInfo;
 import com.l7tech.common.util.ResourceUtils;
 
-import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.KeyManager;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -152,7 +153,7 @@ public class KeystoreUtils {
 
     public X509Certificate[] getSSLCertChain() throws KeyStoreException {
         KeyStore keystore = getSSLKeyStore();
-        String alias = getProps().getProperty(SSL_ALIAS, SSL_ALIAS_DEFAULT);
+        String alias = getSSLAlias();
         X509Certificate[] output = null;
         try {
             java.security.cert.Certificate[] certs = keystore.getCertificateChain(alias);
@@ -167,10 +168,14 @@ public class KeystoreUtils {
         return output;
     }
 
+    public String getSSLAlias() {
+        return getProps().getProperty(SSL_ALIAS, SSL_ALIAS_DEFAULT);
+    }
+
     public PrivateKey getSSLPrivateKey() throws KeyStoreException {
         KeyStore keystore = getSSLKeyStore();
         String sslkeystorepassword = getProps().getProperty(SSL_KSTORE_PASSWD);
-        String alias = getProps().getProperty(SSL_ALIAS, SSL_ALIAS_DEFAULT);
+        String alias = getSSLAlias();
         PrivateKey output = null;
         try {
             output = (PrivateKey)keystore.getKey(alias, sslkeystorepassword.toCharArray());
@@ -188,17 +193,18 @@ public class KeystoreUtils {
     }
 
     /**
-     * Returns the <code>KeyManagerFactory</code> based on SSG SSL Private Key as a source of key material.
+     * Returns the <code>KeyManager</code> array to use based on SSG SSL Private Key as a source of key material.
      * @throws NoSuchAlgorithmException if the algorithm (X.509) is not available in the default provider
      * @throws UnrecoverableKeyException if the key cannot be recovered (e.g. the given password is wrong).
      * @throws KeyStoreException if keystore operaiton fails
      */
-    public KeyManagerFactory getSSLKeyManagerFactory()
-      throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException {
-        // uses SunX509
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(getSSLKeyStore(), getSslKeystorePasswd().toCharArray());
-        return kmf;
+    public KeyManager[] getSSLKeyManagers()
+      throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException
+    {
+        X509Certificate[] chain = getSSLCertChain();
+        PrivateKey privateKey = getSSLPrivateKey();
+        String alias = getSSLAlias();
+        return new KeyManager[] { new SingleCertX509KeyManager(chain, privateKey, alias) };
     }
 
     /**

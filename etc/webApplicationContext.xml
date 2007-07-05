@@ -466,12 +466,12 @@
         </property>
     </bean>
 
-    <bean id="sslKeyManagerFactory" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="sslKeyManagers" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
             <ref local='keystore'/>
         </property>
         <property name="targetMethod">
-            <value>getSSLKeyManagerFactory</value>
+            <value>getSSLKeyManagers</value>
         </property>
     </bean>
 
@@ -502,14 +502,14 @@
     <!--
     set the KeyManagers for use within a cluster
     -->
-    <bean id="setKeyManagerFactoryForNodeToNodeRMI"
+    <bean id="setKeyManagersForNodeToNodeRMI"
           class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="staticMethod">
-            <value>com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory.setKeyManagerFactory</value>
+            <value>com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory.setKeyManagers</value>
         </property>
         <property name="arguments">
             <list>
-                <ref local="sslKeyManagerFactory"/>
+                <ref local="sslKeyManagers"/>
             </list>
         </property>
     </bean>

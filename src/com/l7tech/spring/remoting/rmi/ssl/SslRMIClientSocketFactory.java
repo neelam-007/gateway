@@ -84,13 +84,13 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
     }
 
     /**
-     * Sets the <code>KeyManagerFactory</code> used to determine the clients credentials.
+     * Sets the <code>KeyManager</code> array used to determine the clients credentials.
      *
-     * @param keyManagerFactory the factory to use
+     * @param keyManagers the key managers to use
      * @see javax.net.ssl.KeyManagerFactory
      */
-    public static void setKeyManagerFactory(KeyManagerFactory keyManagerFactory) {
-        SslRMIClientSocketFactory.currentKeyManagerFactory = keyManagerFactory;
+    public static void setKeyManagers(KeyManager[] keyManagers) {
+        SslRMIClientSocketFactory.currentKeyManagers = keyManagers;
     }
 
     /**
@@ -259,7 +259,7 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
     private static final long serialVersionUID = 2L;
     private static final Logger logger = Logger.getLogger(SslRMIClientSocketFactory.class.getName());
 
-    private static KeyManagerFactory currentKeyManagerFactory;
+    private static KeyManager[] currentKeyManagers;
     private static SSLTrustFailureHandler currentTrustFailureHandler;
     private static boolean lazyInitTrustFailureHandler = false;
 
@@ -372,10 +372,9 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
                     TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmalg);
                     tmf.init((KeyStore)null);
                     SSLContext sslContext = SSLContext.getInstance("SSL");
-                    sslContext.init(
-                            currentKeyManagerFactory !=null ? currentKeyManagerFactory.getKeyManagers() : null, 
-                            getTrustManagers(tmf, serverHostname),
-                            null);
+                    sslContext.init(currentKeyManagers,
+                                    getTrustManagers(tmf, serverHostname),
+                                    null);
                     sf = sslContext.getSocketFactory();
                     socketFactoryByHost.put(serverHostname, sf);
                 } catch (Exception e) {

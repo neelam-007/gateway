@@ -53,13 +53,16 @@
         <property name="keyStoreFile">
             <value>${keystoredir}${file.separator}${sslkstorename}</value>
         </property>
+        <property name="keyStoreAlias">
+            <value>${sslkeyalias}</value>
+        </property>
         <property name="keyStorePassword">
             <value>${sslkspasswd}</value>
         </property>
     </bean>
 
     <bean id="rmiClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"
-          depends-on="setKeyManagerFactoryForNodeToNodeRMI, setInternalTrustFailureHandler, setNode2NodeInternalTrustFailureHandler">
+          depends-on="setKeyManagersForNodeToNodeRMI, setInternalTrustFailureHandler, setNode2NodeInternalTrustFailureHandler">
         <property name="host">
             <!-- Extract host name from this nodes cluster node info -->
             <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">

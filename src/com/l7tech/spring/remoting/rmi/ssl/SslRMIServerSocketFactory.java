@@ -1,28 +1,24 @@
 package com.l7tech.spring.remoting.rmi.ssl;
 
+import com.l7tech.common.security.SingleCertX509KeyManager;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.CertUtils;
+
 import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
-import java.net.SocketAddress;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketImplFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-
-import com.l7tech.common.util.ResourceUtils;
+import java.util.logging.Logger;
 
 /**
  * <p>An <code>SslRMIServerSocketFactory</code> instance is used by the RMI
@@ -208,6 +204,14 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
     }
 
     /**
+     * Set the alias within the keystore to use.
+     * @param keyStoreAlias the alias of our server cert, or null to pick one randomly.
+     */
+    public void setKeyStoreAlias(String keyStoreAlias) {
+        this.keyStoreAlias = keyStoreAlias;
+    }
+
+    /**
      * Set the keystore password
      * @param keyStorePassword the keystore password
      */
@@ -377,6 +381,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
 
     private String keyStoreFile;
     private String keyStoreType = KeyStore.getDefaultType();
+    private String keyStoreAlias;
     private String algorithm = "SunX509";
     private String protocol = "TLS";
     private String keyStorePassword;
@@ -446,8 +451,22 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
                 ResourceUtils.closeQuietly(fis);
             }
         }
-        kmf.init(ks, pwd);
-        keyManagers = kmf.getKeyManagers();
+
+        if (keyStoreAlias == null) {
+            logger.log(Level.INFO, "Using default KeyManagers for SSL RMI server socket");
+            kmf.init(ks, pwd);
+            keyManagers = kmf.getKeyManagers();
+        } else {
+            X509Certificate[] x509Chain = CertUtils.asX509CertificateArray(ks.getCertificateChain(keyStoreAlias));
+
+            Key key = ks.getKey(keyStoreAlias, keyStorePassword.toCharArray());
+            if (!(key instanceof PrivateKey))
+                throw new KeyStoreException("Unable to create SSL RMI server socket: key alias " + keyStoreAlias + " does not contain a private key");
+            PrivateKey privateKey = (PrivateKey)key;
+
+            keyManagers = new KeyManager[] { new SingleCertX509KeyManager(x509Chain, privateKey, keyStoreAlias) };
+        }
+
         ctx.init(keyManagers, new TrustManager[]{new SSLServerTrustManager()}, null);
         ssf = ctx.getServerSocketFactory();
         defaultSSLSocketFactory = ssf;

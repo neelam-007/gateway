@@ -116,7 +116,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 keyManagers = new KeyManager[] { new SingleCertX509KeyManager(certChain, privateKey) };
             } else {
                 final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
-                keyManagers = ku.getSSLKeyManagerFactory().getKeyManagers();
+                keyManagers = ku.getSSLKeyManagers();
             }
             SSLContext sslContext = SSLContext.getInstance("SSL");
 

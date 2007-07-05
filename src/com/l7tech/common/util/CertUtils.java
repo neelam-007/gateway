@@ -239,6 +239,25 @@ public class CertUtils {
         return safeChain;
     }
 
+    /**
+     * Produce an X509Certificate array from a Certificate array that contains nothing but X509Certificates.
+     *
+     * @param genericChain a Certificate[] array that contains only X509Certificate instances
+     * @return an X509Certificate[] instance.
+     * @throws CertificateException if there are any non-X.509 certificate in the input array
+     */
+    public static X509Certificate[] asX509CertificateArray(Certificate[] genericChain) throws CertificateException {
+        X509Certificate[] ret = new X509Certificate[genericChain.length];
+        for (int i = 0; i < genericChain.length; ++i) {
+            Certificate cert = genericChain[i];
+            if (!(cert instanceof X509Certificate))
+                throw new CertificateException("Certificate chain contains a non-X.509 certificate");
+            X509Certificate x509Cert = (X509Certificate)cert;
+            ret[i] = x509Cert;
+        }
+        return ret;
+    }
+
     public static X509Certificate[] decodeCertChain(byte[] bytes) throws CertificateException {
         Collection list = getFactory().generateCertificates(new ByteArrayInputStream(bytes));
         ArrayList certs = new ArrayList(list.size());
