@@ -26,10 +26,8 @@ rm -fr %{buildroot}
 
 %prep
 rm -fr %{buildroot}
-mkdir %{buildroot}
-cd %{buildroot}
-tar -xzf /tmp/tarari.tar.gz
-tar -xzf /tmp/tarari-kernel-drivers.tar.gz
+%setup -qc %{buildroot}
+%setup -qDTa 1 %{buildroot}
 
 %build
 mkdir %{buildroot}/etc/init.d/
