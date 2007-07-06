@@ -44,7 +44,7 @@ import java.util.logging.Level;
 /**
  * GenericHttpClient driver for the Apache Commons HTTP client.
  */
-public class CommonsHttpClient implements GenericHttpClient {
+public class CommonsHttpClient implements RerunnableGenericHttpClient {
     private static final Logger logger = Logger.getLogger(CommonsHttpClient.class.getName());
     public static final String PROP_MAX_CONN_PER_HOST = CommonsHttpClient.class.getName() + ".maxConnectionsPerHost";
     public static final String PROP_MAX_TOTAL_CONN = CommonsHttpClient.class.getName() + ".maxTotalConnections";

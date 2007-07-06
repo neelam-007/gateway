@@ -420,18 +420,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
 
             Object connectionId = null;
-            if (!data.isPassthroughHttpAuthentication() &&
-                routedRequestParams.getNtlmAuthentication() == null &&
-                routedRequestParams.getPasswordAuthentication() == null) {
-                routedRequestParams.setContentLength(contentLength);
-            }
-            else if (data.isPassthroughHttpAuthentication() && context.getRequest().isHttpRequest()){
+            if (data.isPassthroughHttpAuthentication() && context.getRequest().isHttpRequest()){
                 connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
             }
-
-            // this will forward soapaction, content-type, cookies, etc based on assertion settings
-            HttpForwardingRuleEnforcer.handleRequestHeaders(routedRequestParams, context, url.getHost(),
-                                                            data.getRequestHeaderRules(), auditor, vars, varNames);
 
             GenericHttpClient httpClient = httpClientFactory.createHttpClient(
                                                                  getMaxConnectionsPerHost(),
@@ -439,6 +430,18 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                                                                  getConnectionTimeout(),
                                                                  getTimeout(),
                                                                  connectionId);
+
+            if (httpClient instanceof RerunnableGenericHttpClient ||
+                (!data.isPassthroughHttpAuthentication() &&
+                routedRequestParams.getNtlmAuthentication() == null &&
+                routedRequestParams.getPasswordAuthentication() == null)) {
+                routedRequestParams.setContentLength(contentLength);
+            }
+
+            // this will forward soapaction, content-type, cookies, etc based on assertion settings
+            HttpForwardingRuleEnforcer.handleRequestHeaders(routedRequestParams, context, url.getHost(),
+                                                            data.getRequestHeaderRules(), auditor, vars, varNames);
+
             GenericHttpClient.GenericHttpMethod method = methodFromRequest(context, routedRequestParams);
 
             // dont add content-type for get and deletes
