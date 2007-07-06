@@ -2,12 +2,11 @@ package com.l7tech.common.xml.saml;
 
 import com.ibm.xml.dsig.IDResolver;
 import com.ibm.xml.dsig.SignatureContext;
-import com.ibm.xml.dsig.Transform;
 import com.ibm.xml.dsig.Validity;
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.KeyInfoElement;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
+import com.l7tech.common.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -25,7 +24,6 @@ import x0Assertion.oasisNamesTcSAML1.*;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
@@ -291,7 +289,6 @@ public class SamlAssertionV1 extends SamlAssertion {
 
             // Validate signature
             final boolean[] resolvedAssertionId = new boolean[1];
-            final boolean[] accessedEnveloping = new boolean[1];
             SignatureContext sigContext = new SignatureContext();
             sigContext.setIDResolver(new IDResolver() {
                 public Element resolveID(Document doc, String s) {
@@ -302,18 +299,8 @@ public class SamlAssertionV1 extends SamlAssertion {
                 }
             });
             sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
-            sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
-                public Transform getTransform(String transform) throws NoSuchAlgorithmException {
-                    if (Transform.ENVELOPED.equals(transform)) {
-                        accessedEnveloping[0] = true;
-                    } else if (Transform.XSLT.equals(transform)
-                            || Transform.XPATH.equals(transform)
-                            || Transform.XPATH2.equals(transform)) {
-                        throw new NoSuchAlgorithmException(transform);    
-                    }
-                    return super.getTransform(transform);
-                }
-            });
+            WssProcessorAlgorithmFactory algFactory = new WssProcessorAlgorithmFactory(null);
+            sigContext.setAlgorithmFactory(algFactory);
             Validity validity = sigContext.verify(signature, signingKey);
 
             if (!validity.getCoreValidity()) {
@@ -328,7 +315,7 @@ public class SamlAssertionV1 extends SamlAssertion {
                 throw new CausedSignatureException("SAML assertion signature does not reference assertion.");
             }
 
-            if (!accessedEnveloping[0]) {
+            if (!algFactory.isSawEnvelopedTransform()) {
                 throw new CausedSignatureException("SAML assertion signature has invalid transform (must be enveloped).");
             }
 

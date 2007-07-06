@@ -1,7 +1,6 @@
 package com.l7tech.common.security.xml.processor;
 
 import com.ibm.xml.dsig.*;
-import com.ibm.xml.dsig.transform.FixedExclusiveC11r;
 import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
@@ -1459,45 +1458,8 @@ public class WssProcessorImpl implements WssProcessor {
                 return SoapUtil.getElementByWsuId(doc, s);
             }
         });
-        sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
-           public Canonicalizer getCanonicalizer(String string) {
-                if (Transform.C14N_EXCLUSIVE.equals(string)) {
-                    // Fixed canonicalizer respects the PrefixList
-                    // See bug 3611
-                    return new FixedExclusiveC11r();
-                }
-                return super.getCanonicalizer(string);
-            }
-
-            public Transform getTransform(String s) throws NoSuchAlgorithmException {
-                if (SoapUtil.TRANSFORM_STR.equals(s)) {
-                    return new STRTransform(cntx.securityTokenReferenceElementToTargetElement);
-                } else if (Transform.XSLT.equals(s)
-                        || Transform.XPATH.equals(s)
-                        || Transform.XPATH2.equals(s)) {
-                    throw new NoSuchAlgorithmException(s);
-                }
-                return super.getTransform(s);
-            }
-
-            public SignatureMethod getSignatureMethod(String alg, Object param) throws NoSuchAlgorithmException, NoSuchProviderException {
-                final SignatureMethod sm = super.getSignatureMethod(alg, param);
-                if (SignatureMethod.RSA.equals(alg)) {
-                    // Wrap with memoized version
-                    return new MemoizedRsaSha1SignatureMethod(sm);
-                }
-                return sm;
-            }
-
-            public void releaseSignatureMethod(SignatureMethod sm) {
-                if (sm instanceof MemoizedRsaSha1SignatureMethod) {
-                    MemoizedRsaSha1SignatureMethod msm = (MemoizedRsaSha1SignatureMethod)sm;
-                    super.releaseSignatureMethod(msm.getDelegate());
-                } else
-                    super.releaseSignatureMethod(sm);
-            }
-
-        });
+        final Map<Node, Node> strToTarget = cntx.securityTokenReferenceElementToTargetElement;
+        sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strToTarget));
         Validity validity = sigContext.verify(sigElement, signingKey);
 
         if (!validity.getCoreValidity()) {
@@ -2030,4 +1992,5 @@ public class WssProcessorImpl implements WssProcessor {
             return element;
         }
     }
+
 }
