@@ -68,7 +68,10 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
         OSSpecificFunctions.KeystoreInfo[] keystores = osFunctions.getAvailableKeystores();
         int x = 1;
+        String activePartitionName = PartitionManager.getInstance().getActivePartition().getPartitionId();
         for (OSSpecificFunctions.KeystoreInfo keystore : keystores) {
+            if (keystore.getType() == KeystoreType.SCA6000_KEYSTORE_NAME && !activePartitionName.equals(PartitionInformation.DEFAULT_PARTITION_NAME))
+                continue;
             ksTypeMap.put(String.valueOf(x), keystore.getType());
             x++;
         }

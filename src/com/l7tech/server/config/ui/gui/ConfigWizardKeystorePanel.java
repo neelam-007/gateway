@@ -1,5 +1,6 @@
 package com.l7tech.server.config.ui.gui;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.KeystoreActions;
 import com.l7tech.server.config.KeystoreActionsListener;
@@ -9,7 +10,6 @@ import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;
@@ -97,13 +97,13 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
     protected void updateView() {
         if (osFunctions == null) init();
 
-        String[] keystores = getKeystores();
+        keystoreType.setModel(new DefaultComboBoxModel(getKeystoreTypes()));
         KeystoreConfigBean ksConfigBean = (KeystoreConfigBean) configBean;
 
         KeystoreType ksType = ksConfigBean.getKeyStoreType();
-        if (ksType == null) {
+         if (ksType == null) {
             //set the HSM one
-            keystoreType.setSelectedItem(OSSpecificFunctions.KeystoreInfo.isHSMEnabled()?KeystoreType.SCA6000_KEYSTORE_NAME:keystores[0]);
+            keystoreType.setSelectedItem(OSSpecificFunctions.KeystoreInfo.isHSMEnabled()?KeystoreType.SCA6000_KEYSTORE_NAME:KeystoreType.DEFAULT_KEYSTORE_NAME);
         } else {
             keystoreType.setSelectedItem(ksType);
             switch (ksType) {
@@ -127,14 +127,8 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
         osFunctions = getParentWizard().getOsFunctions();
 
         setShowDescriptionPanel(false);
-        java.util.List<KeystoreType> kstypes = new ArrayList<KeystoreType>();
 
-        for (OSSpecificFunctions.KeystoreInfo ksInfo : osFunctions.getAvailableKeystores()) {
-            KeystoreType kstype = ksInfo.getType();
-            if (kstype != KeystoreType.NO_KEYSTORE && kstype != KeystoreType.UNDEFINED)
-                kstypes.add(kstype);
-        }
-        keystoreType.setModel(new DefaultComboBoxModel(kstypes.toArray(new KeystoreType[0])));
+        keystoreType.setModel(new DefaultComboBoxModel(getKeystoreTypes()));
         configBean = new KeystoreConfigBean();
         configCommand = new KeystoreConfigCommand(configBean);
 
@@ -146,13 +140,6 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
 
         doKsConfig.addActionListener(doKsConfigActionListener);
         dontDoKsConfig.addActionListener(doKsConfigActionListener);
-
-        String[] keystores = getKeystores();
-        if (keystores == null) {
-            setSkipped(true);
-        } else {
-            updateKeystoreList(keystores, keystores[0]);
-        }
 
         updateKeystorePanel();
 
@@ -172,30 +159,18 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
         }
     }
 
-    private String[] getKeystores() {
-        if (keystoresList == null) {
-            OSSpecificFunctions.KeystoreInfo[] keystoreInfos = osFunctions.getAvailableKeystores();
-            if (keystoreInfos == null) {
-                keystoresList = new String[0];
-            } else {
-                keystoresList = new String[keystoreInfos.length];
-                for (int i = 0; i < keystoreInfos.length; i++) {
-                    KeystoreType type = keystoreInfos[i].getType();
-                    keystoresList[i] = type.getName();
-                }
+    private KeystoreType[] getKeystoreTypes() {
+        java.util.List<KeystoreType> kstypes = new ArrayList<KeystoreType>();
+        String activePartitionName = PartitionManager.getInstance().getActivePartition().getPartitionId();
+        for (OSSpecificFunctions.KeystoreInfo ksInfo : osFunctions.getAvailableKeystores()) {
+            KeystoreType kstype = ksInfo.getType();
+            if (kstype != KeystoreType.NO_KEYSTORE && kstype != KeystoreType.UNDEFINED) {
+                if (kstype == KeystoreType.SCA6000_KEYSTORE_NAME && !activePartitionName.equals(PartitionInformation.DEFAULT_PARTITION_NAME))
+                    continue;
+                kstypes.add(kstype);
             }
         }
-        return keystoresList;
-    }
-
-    private void updateKeystoreList(String[] keystores, String selected) {
-        if (keystoreType.getItemCount() == 0) {
-            for (int i = 0; i < keystores.length; i++) {
-                String keystore = keystores[i];
-                keystoreType.addItem(keystore);
-            }
-        }
-        keystoreType.setSelectedItem(selected);
+        return kstypes.toArray(new KeystoreType[0]);
     }
 
     private void updateKeystorePanel() {
