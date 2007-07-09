@@ -34,6 +34,8 @@ public class KeystoreUtils {
     public static final String ROOT_STORENAME = "rootcakstorename";
     public static final String ROOT_CERTNAME = "rootcacert";
     public static final String ROOT_STOREPASSWD = "rootcakspasswd";
+    public static final String ROOT_ALIAS = "rootcaalias";
+    public static final String ROOT_ALIAS_DEFAULT = "ssgroot";
     public static final String SSL_KSTORE_NAME = "sslkstorename";
     public static final String SSL_KSTORE_PASSWD = "sslkspasswd";
     public static final String SSL_ALIAS = "sslkeyalias";
@@ -97,6 +99,10 @@ public class KeystoreUtils {
 
     public String getRootKeystorePasswd() {
         return getProps().getProperty(ROOT_STOREPASSWD);
+    }
+
+    public String getRootAlias() {
+        return getProps().getProperty(ROOT_ALIAS, ROOT_ALIAS_DEFAULT);
     }
 
     public String getSslKeystorePath() {

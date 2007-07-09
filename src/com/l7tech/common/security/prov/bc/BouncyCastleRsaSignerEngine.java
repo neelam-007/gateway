@@ -37,6 +37,7 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
+    private final Logger logger = Logger.getLogger(getClass().getName());
 
     static {
         // Make sure our provider is installed.  Probably unnecessary.
@@ -75,7 +76,6 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
                                         String privateKeyPass,
                                         String keyStoreType,
                                         String providerName) {
-        initDefaults();
         this.keyStorePath = keyStorePath;
         this.keyStoreType = keyStoreType;
         this.storePass = storePass;
@@ -279,18 +279,4 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         // We only support a ca hierarchy with depth 2.
         caCert = (X509Certificate) certchain[0];
     }
-
-    /**
-     * Sets all the class variables to default values and assign default properties.
-     */
-    private void initDefaults() {
-        //the passwords are not assigned here by default they stay null
-
-        //file path to the keystore
-        keyStorePath = DEFAULT_KEYSTORE_NAME;
-        //the alias given to the private key in the keystore
-        privateKeyAlias = DEFAULT_PRIVATE_KEY_ALIAS;
-    }
-
-    private final Logger logger = Logger.getLogger(getClass().getName());
 }

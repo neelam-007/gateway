@@ -61,6 +61,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         KeystoreUtils ku = (KeystoreUtils)getApplicationContext().getBean("keystore");
         rootkstore = ku.getRootKeystorePath();
         rootkstorepasswd = ku.getRootKeystorePasswd();
+        rootkstorealias = ku.getRootAlias();
         rootkstoretype = ku.getKeyStoreType();
         if (rootkstorepasswd == null || rootkstorepasswd.length() < 1) {
             String msg = "Key store password not found (root CA).";
@@ -215,7 +216,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     }
 
     private RsaCertificateSigner getSigner() {
-        return new RsaCertificateSigner(rootkstore, rootkstorepasswd, "ssgroot", rootkstorepasswd, rootkstoretype);
+        return new RsaCertificateSigner(rootkstore, rootkstorepasswd, rootkstorealias, rootkstorepasswd, rootkstoretype);
     }
 
     private boolean keystorePresent() {
@@ -333,6 +334,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
     private String rootkstore = null;
     private String rootkstorepasswd = null;
+    private String rootkstorealias = null;
     private String rootkstoretype = KeyStore.getDefaultType();
 
     public static final String AUTH_HEADER_NAME = "Authorization";
