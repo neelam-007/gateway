@@ -147,9 +147,10 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private static final String SERVICES_WITH_PROBLEM_TOOLTIP = _resources.getString("servicesWithProblem.tooltip");
 
     // Icons for use in the "services with problem" listbox.
-    private static final ImageIcon ROUTING_FAILURE_ICON = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/ServicesWithRoutingFailure.gif"));
-    private static final ImageIcon POLICY_VIOLATION_ICON = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/ServicesWithPolicyViolation.gif"));
-    private static final ImageIcon BOTH_PROBLEMS_ICON = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/ServicesWithBothProblems.gif"));
+    // Declared non-static only to avoid problem with class dependency check.
+    private final ImageIcon ROUTING_FAILURE_ICON = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/ServicesWithRoutingFailure.gif"));
+    private final ImageIcon POLICY_VIOLATION_ICON = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/ServicesWithPolicyViolation.gif"));
+    private final ImageIcon BOTH_PROBLEMS_ICON = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/ServicesWithBothProblems.gif"));
 
     private DefaultListModel _selectionServicesWithProblemListModel = new DefaultListModel();
     private DefaultListModel _latestServicesWithProblemListModel = new DefaultListModel();
