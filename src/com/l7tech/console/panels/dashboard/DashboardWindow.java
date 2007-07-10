@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.panels.dashboard;
 
@@ -25,6 +25,8 @@ import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
 import javax.swing.Timer;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -62,6 +64,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private JTextField selectionNumPolicyViolationText;
     private JTextField selectionNumSuccessText;
     private JTextField selectionNumTotalText;
+    private JList selectionServicesWithProblemList;
 
     private JLabel latestFromTimeLabel;
     private JLabel latestToTimeLabel;
@@ -75,6 +78,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private JTextField latestNumPolicyViolationText;
     private JTextField latestNumSuccessText;
     private JTextField latestNumTotalText;
+    private JList latestServicesWithProblemList;
 
     private static final Logger _logger = Logger.getLogger(DashboardWindow.class.getName());
 
@@ -140,11 +144,74 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     /** Whether previous attempt to connect to gateway was successful. */
     private boolean _connected = false;
 
+    private static final String SERVICES_WITH_PROBLEM_TOOLTIP = _resources.getString("servicesWithProblem.tooltip");
+
+    // Icons for use in the "services with problem" listbox.
+    private static final ImageIcon ROUTING_FAILURE_ICON = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/ServicesWithRoutingFailure.gif"));
+    private static final ImageIcon POLICY_VIOLATION_ICON = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/ServicesWithPolicyViolation.gif"));
+    private static final ImageIcon BOTH_PROBLEMS_ICON = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/ServicesWithBothProblems.gif"));
+
+    private DefaultListModel _selectionServicesWithProblemListModel = new DefaultListModel();
+    private DefaultListModel _latestServicesWithProblemListModel = new DefaultListModel();
+
+    /** An element in the "services with problem" listbox. */
+    private static class ProblemListElement {
+        private final ImageIcon _icon;
+        private final EntityHeader _publishedService;
+        public ProblemListElement(ImageIcon icon, EntityHeader publishedService) {
+            _icon = icon;
+            _publishedService = publishedService;
+        }
+        public ImageIcon getIcon() {return _icon;}
+        public EntityHeader getPublishedService() {return _publishedService;}
+    }
+
+    /**
+     * Renderer to paint a problem indicator icon next to the service name in
+     * the "services with problem" listbox. The icon indicates either routing
+     * failure only, policy violation only, or both.
+     */
+    private class ProblemListCellRenderer extends DefaultListCellRenderer {
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            ProblemListElement e = (ProblemListElement)value;
+            super.getListCellRendererComponent(list, e.getPublishedService().getName(), index, isSelected, cellHasFocus);
+            setIcon(e.getIcon());
+            return this;
+        }
+    }
+
     public DashboardWindow() throws HeadlessException {
         super(_resources.getString("window.title"));
 
         ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
+
+        final ProblemListCellRenderer problemListCellRenderer = new ProblemListCellRenderer();
+        final Cursor handCursor = new Cursor(Cursor.HAND_CURSOR);
+        selectionServicesWithProblemList.setModel(_selectionServicesWithProblemListModel);
+        selectionServicesWithProblemList.setCellRenderer(problemListCellRenderer);
+        selectionServicesWithProblemList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        selectionServicesWithProblemList.setCursor(handCursor);
+        selectionServicesWithProblemList.setToolTipText(SERVICES_WITH_PROBLEM_TOOLTIP);
+        selectionServicesWithProblemList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                final ProblemListElement selected = (ProblemListElement)selectionServicesWithProblemList.getSelectedValue();
+                if (selected != null) {
+                    publishedServiceCombo.setSelectedItem(selected.getPublishedService());
+                }
+            }
+        });
+        latestServicesWithProblemList.setModel(_latestServicesWithProblemListModel);
+        latestServicesWithProblemList.setCellRenderer(problemListCellRenderer);
+        latestServicesWithProblemList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        latestServicesWithProblemList.setCursor(handCursor);
+        latestServicesWithProblemList.setToolTipText(SERVICES_WITH_PROBLEM_TOOLTIP);
+        latestServicesWithProblemList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                final ProblemListElement selected = (ProblemListElement)latestServicesWithProblemList.getSelectedValue();
+                publishedServiceCombo.setSelectedItem(selected.getPublishedService());
+            }
+        });
 
         rightTabbedPane.setSelectedIndex(LATEST_TAB_INDEX);
         statusLabel.setText("");
@@ -471,6 +538,23 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
                 latestNumPolicyViolationText.setText(Integer.toString(latestBin.getNumPolicyViolation()));
                 latestNumSuccessText.setText(Integer.toString(latestBin.getNumSuccess()));
                 latestNumTotalText.setText(Integer.toString(latestBin.getNumTotal()));
+
+                _latestServicesWithProblemListModel.clear();
+                for (EntityHeader svc : _publishedServices) {   // Loop over sorted set so that the list box will be sorted too.
+                    final boolean hasRF = latestBin.getServicesWithRoutingFailure().contains(svc.getOid());
+                    final boolean hasPV = latestBin.getServicesWithPolicyViolation().contains(svc.getOid());
+                    if (hasRF || hasPV) {
+                        ImageIcon icon = null;
+                        if (hasRF && hasPV) {
+                            icon = BOTH_PROBLEMS_ICON;
+                        } else if (hasRF) {
+                            icon = ROUTING_FAILURE_ICON;
+                        } else {
+                            icon = POLICY_VIOLATION_ICON;
+                        }
+                        _latestServicesWithProblemListModel.addElement(new ProblemListElement(icon, svc));
+                    }
+                }
             }
 
             // -----------------------------------------------------------------
@@ -534,6 +618,8 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
             selectionNumPolicyViolationText.setText("");
             selectionNumSuccessText.setText("");
             selectionNumTotalText.setText("");
+
+            _selectionServicesWithProblemListModel.clear();
         } else {
             selectionFromTimeLabel.setText(TIME_FORMAT.format(new Date(bin.getPeriodStart())));
             selectionToTimeLabel.setText(TIME_FORMAT.format(new Date(bin.getPeriodEnd())));
@@ -547,6 +633,23 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
             selectionNumPolicyViolationText.setText(Integer.toString(bin.getNumPolicyViolation()));
             selectionNumSuccessText.setText(Integer.toString(bin.getNumSuccess()));
             selectionNumTotalText.setText(Integer.toString(bin.getNumTotal()));
+
+            _selectionServicesWithProblemListModel.clear();
+            for (EntityHeader publishedService : _publishedServices) {   // Loop over sorted set so that the list box will be sorted too.
+                final boolean hasRF = bin.getServicesWithRoutingFailure().contains(publishedService.getOid());
+                final boolean hasPV = bin.getServicesWithPolicyViolation().contains(publishedService.getOid());
+                if (hasRF || hasPV) {
+                    ImageIcon icon = null;
+                    if (hasRF && hasPV) {
+                        icon = BOTH_PROBLEMS_ICON;
+                    } else if (hasRF) {
+                        icon = ROUTING_FAILURE_ICON;
+                    } else {
+                        icon = POLICY_VIOLATION_ICON;
+                    }
+                    _selectionServicesWithProblemListModel.addElement(new ProblemListElement(icon, publishedService));
+                }
+            }
         }
 
         if (bringTabToFront) {
