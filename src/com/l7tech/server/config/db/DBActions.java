@@ -853,7 +853,7 @@ public class DBActions {
             return DB_UNKNOWN_FAILURE;
     }
 
-    private void copyDatabase(DBInformation dbInfo, String testDbName) throws SQLException {
+    public void copyDatabase(DBInformation dbInfo, String testDbName) throws SQLException {
         Connection conn = null;
         Statement stmt = null;
         try {
