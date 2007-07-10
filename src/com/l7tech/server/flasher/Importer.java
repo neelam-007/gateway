@@ -5,6 +5,7 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.PartitionActions;
 import com.l7tech.server.config.db.DBActions;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.partition.PartitionInformation;
@@ -47,8 +48,8 @@ public class Importer {
                                                                                true, false);
     public static final CommandLineOption DB_HOST_NAME = new CommandLineOption("-dbh", "database host name");
     public static final CommandLineOption DB_NAME = new CommandLineOption("-db", "database name");
-    public static final CommandLineOption DB_PASSWD = new CommandLineOption("-dbp", "database root password (only needed if database needs to be created)");
-    public static final CommandLineOption DB_USER = new CommandLineOption("-dbu", "database root username (only needed if database needs to be created)");
+    public static final CommandLineOption DB_PASSWD = new CommandLineOption("-dbp", "database root password");
+    public static final CommandLineOption DB_USER = new CommandLineOption("-dbu", "database root username");
     public static final CommandLineOption OS_OVERWRITE = new CommandLineOption("-os",
                                                                                "overwrite os level config files (only allowed in cloning mode and on non-partitioned systems)",
                                                                                false, true);
@@ -65,6 +66,10 @@ public class Importer {
     private DBActions dbActions;
     private MappingUtil.CorrespondanceMap mapping = null;
     private String licenseValueBeforeImport = null;
+    private String rootDBUsername;
+    private String rootDBPasswd;
+    private String dbHost;
+    private String dbName;
 
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
@@ -170,21 +175,50 @@ public class Importer {
             if (partitionName == null) partitionName = "";
             osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
 
+
+            Map<String, String> dbProps = PropertyHelper.getProperties(tempDirectory + File.separator + "hibernate.properties", new String[] {
+                SsgDatabaseConfigBean.PROP_DB_USERNAME,
+                SsgDatabaseConfigBean.PROP_DB_PASSWORD,
+                SsgDatabaseConfigBean.PROP_DB_URL,
+            });
+            databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
+            databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
+            databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+            logger.info("using database url " + databaseURL);
+            logger.info("using database user " + databaseUser);
+            logger.info("using database passwd " + databasePasswd);
+            // get root db username and password
+            rootDBUsername = arguments.get(DB_USER.name);
+            rootDBPasswd = arguments.get(DB_PASSWD.name);
+            if (rootDBUsername == null) {
+                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide options " + DB_USER.name +
+                                " and " + DB_PASSWD.name);
+            }
+            if (rootDBPasswd == null) rootDBPasswd = ""; // totally legit
+
+            // extract db host and name from url
+            dbHost = null;
+            dbName = null;
+            Matcher matcher = Pattern.compile("^.*//(.*)/(.*)\\?.*$").matcher(databaseURL);
+            if (matcher.matches()) {
+                dbHost = matcher.group(1);
+                if (dbHost.indexOf(',') >= 0) {
+                    dbHost = dbHost.substring(0, dbHost.indexOf(','));
+                }
+                dbName = matcher.group(2);
+            }
+            if (StringUtils.isEmpty(dbHost) || StringUtils.isEmpty(dbName)) {
+                logger.warning("cannot parse host and name from " + databaseURL);
+                throw new IOException("cannot resolve host name or database name from jdbc url in " +
+                                      tempDirectory + File.separator + "hibernate.properties");
+            }
+
+
             boolean newDatabaseCreated = false;
             if (fullClone) {
                 logger.info("Checking if we can already connect to target database using image db properties");
                 // if clone mode, check if we can already get connection from the target database
-                Map<String, String> dbProps = PropertyHelper.getProperties(tempDirectory + File.separator + "hibernate.properties", new String[] {
-                    SsgDatabaseConfigBean.PROP_DB_USERNAME,
-                    SsgDatabaseConfigBean.PROP_DB_PASSWORD,
-                    SsgDatabaseConfigBean.PROP_DB_URL,
-                });
-                databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
-                databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
-                databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
-                logger.info("using database url " + databaseURL);
-                logger.info("using database user " + databaseUser);
-                logger.info("using database passwd " + databasePasswd);
+
                 boolean databasepresentandkosher = false;
                 try {
                     Connection c = getConnection();
@@ -204,39 +238,14 @@ public class Importer {
                 }
                 System.out.println("Using database " + databaseURL);
 
+
+
                 // if the database needs to be created, do it
                 if (databasepresentandkosher) {
                     logger.info("The database already exists on this system");
                     System.out.println("Existing target database detected");
                 } else {
                     logger.info("database need to be created");
-                    // get root db username and password
-                    String rootDBUsername = arguments.get(DB_USER.name);
-                    String rootDBPasswd = arguments.get(DB_PASSWD.name);
-                    if (rootDBUsername == null) {
-                        throw new FlashUtilityLauncher.InvalidArgumentException("The target database needs to be " +
-                                        "created but root database username and password are not provided at " +
-                                        "command line. Please provide options " + DB_USER.name +
-                                        " and " + DB_PASSWD.name);
-                    }
-                    if (rootDBPasswd == null) rootDBPasswd = ""; // totally legit
-                    // extract db host and name from url
-                    String dbHost = null;
-                    String dbName = null;
-                    Matcher matcher = Pattern.compile("^.*//(.*)/(.*)\\?.*$").matcher(databaseURL);
-                    if (matcher.matches()) {
-                        dbHost = matcher.group(1);
-                        if (dbHost.indexOf(',') >= 0) {
-                            dbHost = dbHost.substring(0, dbHost.indexOf(','));
-                        }
-                        dbName = matcher.group(2);
-                    }
-                    if (StringUtils.isEmpty(dbHost) || StringUtils.isEmpty(dbName)) {
-                        logger.warning("cannot parse host and name from " + databaseURL);
-                        throw new IOException("cannot resolve host name or database name from jdbc url in " +
-                                              tempDirectory + File.separator + "hibernate.properties");
-                    }
-
                     System.out.print("The target database does not exist. Creating it now ...");
                     try {
                         DBActions.DBActionsResult res = getDBActions(osFunctions).createDb(rootDBUsername, rootDBPasswd,
@@ -254,17 +263,6 @@ public class Importer {
                 }
             } else {
                 logger.info("Migration mode");
-                Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
-                    SsgDatabaseConfigBean.PROP_DB_USERNAME,
-                    SsgDatabaseConfigBean.PROP_DB_PASSWORD,
-                    SsgDatabaseConfigBean.PROP_DB_URL,
-                });
-                databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
-                databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
-                databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
-                logger.info("using database url " + databaseURL);
-                logger.info("using database user " + databaseUser);
-                logger.info("using database passwd " + databasePasswd);
             }
 
             // check that target db is not currently used by an SSG
@@ -315,7 +313,7 @@ public class Importer {
             try {
                 loadDumpFromExplodedImage();
             } catch (SQLException e) {
-                throw new IOException("error loading db dump " + e.getMessage());
+                throw new IOException(e);
             }
 
 
@@ -398,18 +396,11 @@ public class Importer {
         }
     }
 
-    private void loadDumpFromExplodedImage() throws IOException, SQLException {
-        System.out.print("Loading Database [please wait] ..");
-        String dumpFilePath;
-        if (fullClone) {
-            dumpFilePath = tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_CLONE;
-        } else {
-            dumpFilePath = tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_STAGING;
-        }
+    private void doLoadDump(Connection c, String dumpFilePath, String msg) throws IOException, SQLException {
+        System.out.print(msg + " [please wait] ..");
         FileReader fr = new FileReader(dumpFilePath);
         BufferedReader reader = new BufferedReader(fr);
         String tmp;
-        Connection c = getConnection();
         try {
             c.setAutoCommit(false);
             Statement stmt = c.createStatement();
@@ -421,16 +412,78 @@ public class Importer {
                         throw new SQLException("unexpected statement " + tmp);
                     }
                 }
+                // commit at the end if everything updated correctly
+                logger.info("Database dump import loaded succesfully, committing now.");
                 c.commit();
+            } catch (SQLException e) {
+                System.out.println("Error loading database dump. Rolling back now. " + e.getMessage());
+                c.rollback();
+                throw e;
+            } catch (IOException e) {
+                System.out.println("Error loading database dump. Rolling back now. " + e.getMessage());
+                c.rollback();
+                throw e;
             } finally {
                 stmt.close();
                 c.setAutoCommit(true);
             }
         } finally {
+            reader.close();
             fr.close();
-            c.close();
         }
         System.out.println(". DONE");
+    }
+
+    private void loadDumpFromExplodedImage() throws IOException, SQLException {
+
+        String dumpFilePath;
+        if (fullClone) {
+            dumpFilePath = tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_CLONE;
+        } else {
+            dumpFilePath = tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_STAGING;
+        }
+
+        // create temporary database copy to test the import
+        System.out.print("Creating copy of target database for testing import ..");
+        DBInformation dbi = new DBInformation(dbHost, dbName, databaseUser, databasePasswd, rootDBUsername, rootDBPasswd);
+        String testdbname = "TstDB_" + System.currentTimeMillis();
+        getDBActions(osFunctions).copyDatabase(dbi, testdbname);
+        System.out.println(" DONE.");
+
+        try {
+            // load that image on the temp database
+            String msg = "Loading image on temporary database";
+            Connection c = getDBActions(osFunctions).getConnection(dbHost, testdbname, rootDBUsername, rootDBPasswd);
+            try {
+                doLoadDump(c, dumpFilePath, msg);
+            } finally {
+                c.close();
+            }
+        } finally {
+            // delete the temporary database
+            System.out.print("Deleting temporary database .. ");
+            Connection c = getDBActions(osFunctions).getConnection(dbHost, "", rootDBUsername, rootDBPasswd);
+            try {
+                Statement stmt = c.createStatement();
+                try {
+                    stmt.executeUpdate("drop database " + testdbname + ";");
+                    System.out.println(" DONE.");
+                } finally {
+                    stmt.close();
+                }
+            } finally {
+                c.close();
+            }
+        }
+
+        // importing on the real target database
+        String msg = "Loading image on target database";
+        Connection c = getConnection();
+        try {
+            doLoadDump(c, dumpFilePath, msg);
+        } finally {
+            c.close();
+        }
     }
 
     private void copySystemConfigFiles() throws IOException {
