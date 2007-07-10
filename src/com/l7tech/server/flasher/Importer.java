@@ -448,7 +448,7 @@ public class Importer {
         DBInformation dbi = new DBInformation(dbHost, dbName, databaseUser, databasePasswd, rootDBUsername, rootDBPasswd);
         String testdbname = "TstDB_" + System.currentTimeMillis();
         getDBActions(osFunctions).copyDatabase(dbi, testdbname);
-        System.out.println(" DONE.");
+        System.out.println(" DONE");
 
         try {
             // load that image on the temp database
@@ -467,7 +467,7 @@ public class Importer {
                 Statement stmt = c.createStatement();
                 try {
                     stmt.executeUpdate("drop database " + testdbname + ";");
-                    System.out.println(" DONE.");
+                    System.out.println(" DONE");
                 } finally {
                     stmt.close();
                 }
