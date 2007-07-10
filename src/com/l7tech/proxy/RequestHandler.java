@@ -241,7 +241,7 @@ public class RequestHandler extends AbstractHttpHandler {
                             reqPassword.toCharArray(),
                             CredentialFormat.CLEARTEXT,
                             null));
-                interceptor.onReceiveMessage(context);
+                interceptor.onFrontEndRequest(context);
             } catch (Exception e) {
                 interceptor.onMessageError(e);
                 log.log(Level.WARNING, "unable to parse incoming request", e);
@@ -443,7 +443,7 @@ public class RequestHandler extends AbstractHttpHandler {
 
         try {
             messageProcessor.processMessage(context);
-            interceptor.onReceiveReply(context);
+            interceptor.onFrontEndReply(context);
             log.fine("Returning result");
         } catch (HttpChallengeRequiredException e) {
             log.fine("Returning challenge");

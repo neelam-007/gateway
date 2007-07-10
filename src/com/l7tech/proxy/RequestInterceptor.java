@@ -17,16 +17,32 @@ public interface RequestInterceptor {
      * Fired immediately after a message is received from a client, after it is parsed
      * but before it has been transformed or fed to our message processor.
      *
-     * @param context
+     * @param context  the policy application context. required
      */
-    void onReceiveMessage(PolicyApplicationContext context);
+    void onFrontEndRequest(PolicyApplicationContext context);
 
     /**
-     * Fired when a reply is read from the SSG, after it has come back through our message processor.
+     * Fired when an undecorated reply is sent back to the client
      *
-     * @param context
+     * @param context  the policy application context. required
      */
-    void onReceiveReply(PolicyApplicationContext context);
+    void onFrontEndReply(PolicyApplicationContext context);
+
+    /**
+     * Fired when a decorated request is sent to the SSG.
+     * May be fired multiple times for a single request if it is retransmitted (due to policy updates etc).
+     *
+     * @param context  the policy application context. required
+     */
+    void onBackEndRequest(PolicyApplicationContext context);
+
+    /**
+     * Fired when a reply is received from the SSG.
+     * May be fired multiple times for a single request cycle if the request is retransmitted (due to policy updates etc).
+     *
+     * @param context  the policy application context. required
+     */
+    void onBackEndReply(PolicyApplicationContext context);
 
     /**
      * Fired when an error is encountered while reading the message from a client.
@@ -45,18 +61,18 @@ public interface RequestInterceptor {
     /**
      * Fired when a policy is updated.
      *
-     * @param ssg
-     * @param binding
-     * @param policy
+     * @param ssg        the Gateway account whose policy was updated.  Required.
+     * @param binding    the policy attachment key that was updated.  Required.
+     * @param policy     the policy that was saved there.  Required.
      */
     void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Policy policy);
 
     /**
      * Fired when there is an error downloading a policy.
      *
-     * @param ssg
-     * @param binding
-     * @param error
+     * @param ssg        the Gateway account whose policy was updated.  Required.
+     * @param binding    the policy attachment key that was updated.  Required.
+     * @param error      the error that occurred.  Required.
      */
     void onPolicyError(Ssg ssg, PolicyAttachmentKey binding, Throwable error);
 }

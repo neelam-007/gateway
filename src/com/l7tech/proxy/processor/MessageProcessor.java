@@ -33,6 +33,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.Constants;
+import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.FederatedSamlTokenStrategy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Policy;
@@ -657,6 +658,9 @@ public class MessageProcessor {
                 }
             }
 
+            final RequestInterceptor interceptor = context.getRequestInterceptor();
+            if (interceptor != null)
+                interceptor.onBackEndRequest(context);
             httpRequest = httpClient.createRequest(GenericHttpClient.POST, params);
 
             // If failover enabled, set an InputStreamFactory to prevent the failover client from buffering
@@ -779,6 +783,9 @@ public class MessageProcessor {
             response.initialize(Managers.createStashManager(),
                                 outerContentType,
                                 responseBodyAsStream);
+            response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(responseHeaders));
+            if (interceptor != null)
+                interceptor.onBackEndReply(context);
 
             if (response.getKnob(HttpResponseKnob.class) == null) {
                 response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
@@ -904,7 +911,6 @@ public class MessageProcessor {
                 processorResult = null;
             }
 
-            response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(responseHeaders));
             response.getSecurityKnob().setProcessorResult(processorResult);
             response.getHttpResponseKnob().setStatus(status);
             checkStatus(status, responseHeaders, url, ssg);

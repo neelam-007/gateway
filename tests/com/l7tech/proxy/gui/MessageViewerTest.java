@@ -42,16 +42,16 @@ public class MessageViewerTest {
 
         MessageViewer mv = new MessageViewer("Message viewer test");
         mv.setVisible(true);
-        RequestInterceptor ri = mv.getMessageViewerModel();
-        ri.onReceiveMessage(request("<foo><bar/><baz/></foo>", ri));
+        RequestInterceptor ri = mv.getModel();
+        ri.onFrontEndRequest(request("<foo><bar/><baz/></foo>", ri));
         ri.onReplyError(new Exception("BlahException: Blah blah blah!"));
-        ri.onReceiveMessage(request("<foo><bar/><baz/></foo>", ri));
-        ri.onReceiveReply(reply("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", null));
+        ri.onFrontEndRequest(request("<foo><bar/><baz/></foo>", ri));
+        ri.onFrontEndReply(reply("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", null));
         ri.onMessageError(new Exception("DumbException: you r teh dumb"));
-        ri.onReceiveMessage(request("<foo><bar/><baz/></foo>", ri));
-        ri.onReceiveReply(reply("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", null));
-        ri.onReceiveMessage(request("<foo><bar/><baz/></foo>", ri));
-        ri.onReceiveReply(reply("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", null));
+        ri.onFrontEndRequest(request("<foo><bar/><baz/></foo>", ri));
+        ri.onFrontEndReply(reply("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", null));
+        ri.onFrontEndRequest(request("<foo><bar/><baz/></foo>", ri));
+        ri.onFrontEndReply(reply("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", null));
         ri.onPolicyUpdated(new Ssg(22, "whatever"),
                            new PolicyAttachmentKey("http://example.com/schemas/wompfoo",
                                                    "http://example.com/schemas/wompfoo#WompSomeFoos",

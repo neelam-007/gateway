@@ -31,19 +31,21 @@ import java.util.logging.Logger;
 
 /**
  * Keep track of messages that have come and gone.
- *
- * User: mike
- * Date: May 22, 2003
- * Time: 5:03:25 PM
  */
 class MessageViewerModel extends AbstractListModel implements RequestInterceptor {
     private static final Logger log = Logger.getLogger(MessageViewerModel.class.getName());
-    private static final int maxMessages = 32;
+    private static final int maxMessages = 64;
 
-    private List messages = new ArrayList(maxMessages);
+    private List<SavedMessage> messages = new ArrayList<SavedMessage>(maxMessages);
+    private boolean recordFromClient = false;
+    private boolean recordToServer = false;
+    private boolean recordFromServer = false;
+    private boolean recordToClient = false;
+    private boolean recordPolicies = true;
+    private boolean recordErrors = true;
 
     MessageViewerModel() {
-        messages.add(new SavedTextMessage("Listening", ""));
+        messages.add(new SavedTextMessage("Session started      ", ""));
     }
 
     /** Represents an intercept message we are keeping track of. */
@@ -244,16 +246,29 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
 
     /**
      * Get the content of message #idx as an XML string.
-     * @param idx
+     * @param idx message index. Required.
+     * @param reformat if true, XML should be reformatted (if relevant)
+     * @return the component for that message.  Never null.
      */
     public Component getComponentAt(final int idx, boolean reformat) {
-        return ((SavedMessage)messages.get(idx)).getComponent(reformat);
+        return messages.get(idx).getComponent(reformat);
+    }
+
+    /**
+     * Add a simple custom text message to the GUI viewer.
+     * Can be called from any thread.
+     *
+     * @param title  the title of the message.  Required.
+     * @param body   the body of the message.  May be empty but must not be null.
+     */
+    public void addMessage(String title, String body) {
+        appendMessage(new SavedTextMessage(title, body));
     }
 
     /**
      * Add a message to the end of our list.
      * Can be called from any thread.
-     * @param message
+     * @param message the message to add.  Required.
      */
     private void appendMessage(final SavedMessage message) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -271,12 +286,9 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         });
     }
 
-    /**
-     * Fired when a message is received from a client, after it is parsed.
-     * Can be called from any thread.
-     * @param context
-     */
-    public void onReceiveMessage(PolicyApplicationContext context) {
+    // Can be called from any thread
+    public void onFrontEndRequest(PolicyApplicationContext context) {
+        if (!isRecordFromClient()) return;
         HttpHeadersKnob hhk = (HttpHeadersKnob)context.getRequest().getKnobAlways(HttpHeadersKnob.class);
         try {
             appendMessage(new SavedXmlMessage("From Client",
@@ -286,25 +298,50 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             final String msg = "Message Viewer unable to get request as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
             appendMessage(new SavedTextMessage("From Client", msg));
-            return;
         }
     }
 
-    /**
-     * Fired when a reply is read from the SSG, after it is parsed.
-     * Can be called from any thread.
-     * @param context
-     */
-    public void onReceiveReply(PolicyApplicationContext context) {
+    // Can be called from any thread
+    public void onFrontEndReply(PolicyApplicationContext context) {
+        if (!isRecordToClient()) return;
         try {
             final Document responseDoc = context.getResponse().getXmlKnob().getDocumentReadOnly();
             HttpHeadersKnob hhk = (HttpHeadersKnob)context.getResponse().getKnobAlways(HttpHeadersKnob.class);
-            appendMessage(new SavedXmlMessage("From Server", responseDoc, hhk.getHeaders()));
+            appendMessage(new SavedXmlMessage("To Client", responseDoc, hhk.getHeaders()));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get response as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
-            appendMessage(new SavedTextMessage("From Server", msg));
-            return;
+            appendMessage(new SavedTextMessage("To Client", msg));
+        }
+    }
+
+    // Can be called from any thread
+    public void onBackEndRequest(PolicyApplicationContext context) {
+        if (!isRecordToServer()) return;
+        HttpHeadersKnob hhk = (HttpHeadersKnob)context.getRequest().getKnobAlways(HttpHeadersKnob.class);
+        try {
+            appendMessage(new SavedXmlMessage("   To Server",
+                                              context.getRequest().getXmlKnob().getDocumentReadOnly(),
+                                              hhk.getHeaders()));
+        } catch (Exception e) {
+            final String msg = "Message Viewer unable to get request as XML Document: " + e.getMessage();
+            log.log(Level.WARNING, msg, e);
+            appendMessage(new SavedTextMessage("  To Server", msg));
+        }
+    }
+
+    // Can be called from any thread
+    public void onBackEndReply(PolicyApplicationContext context) {
+        if (!isRecordFromServer()) return;
+        try {
+            Document responseDoc = context.getResponse().getXmlKnob().getDocumentReadOnly();
+            HttpHeadersKnob hhk = (HttpHeadersKnob)context.getResponse().getKnobAlways(HttpHeadersKnob.class);
+            responseDoc = XmlUtil.stringToDocument(XmlUtil.nodeToString(responseDoc));
+            appendMessage(new SavedXmlMessage("   From Server", responseDoc, hhk.getHeaders()));
+        } catch (Exception e) {
+            final String msg = "Message Viewer unable to get response as XML Document: " + e.getMessage();
+            log.log(Level.WARNING, msg, e);
+            appendMessage(new SavedTextMessage("   From Server", msg));
         }
     }
 
@@ -313,6 +350,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      * @param t The error that occurred during the request.
      */
     public void onMessageError(final Throwable t) {
+        if (!isRecordErrors()) return;
         final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
         try {
             PrintStream p = new PrintStream(b, true, "UTF-8");
@@ -332,49 +370,98 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      * @param t The error that occurred during the request.
      */
     public void onReplyError(final Throwable t) {
+        if (!isRecordErrors()) return;
         final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
         try {
             PrintStream p = new PrintStream(b, true, "UTF-8");
             t.printStackTrace(p);
             p.flush();
-            appendMessage(new SavedTextMessage("Server Error", b.toString("UTF-8")));
+            appendMessage(new SavedTextMessage("   Server Error", b.toString("UTF-8")));
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);
-            appendMessage(new SavedTextMessage("Server Error", t.getMessage()));
+            appendMessage(new SavedTextMessage("   Server Error", t.getMessage()));
         } finally {
             b.close();
         }
     }
 
-    /**
-     * Fired when a policy is updated.
-     * @param binding
-     * @param policy
-     */
+    // can be called from any thread
     public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Policy policy) {
+        if (!isRecordPolicies()) return;
         ClientAssertion clientAssertion = null;
         try {
             clientAssertion = policy.getClientAssertion();
         } catch (PolicyAssertionException e) {
             // Fallthrough and use null
         }
-        appendMessage(new SavedPolicyMessage("Policy updated", binding, clientAssertion));
+        appendMessage(new SavedPolicyMessage("   Policy updated", binding, clientAssertion));
     }
 
+    // can be called from any thread
     public void onPolicyError(Ssg ssg, PolicyAttachmentKey binding, Throwable error) {
+        if (!isRecordErrors()) return;
         final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
         try {
             PrintStream p = new PrintStream(b, true, "UTF-8");
             error.printStackTrace(p);
             p.flush();
             String mess = b.toString("UTF-8");
-            appendMessage(new PolicyErrorMessage("Policy download error", binding, mess));
+            appendMessage(new PolicyErrorMessage("   Policy download error", binding, mess));
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);
-            appendMessage(new SavedTextMessage("Policy download error", error == null ? "null" : error.getMessage()));
+            appendMessage(new SavedTextMessage("   Policy download error", error == null ? "null" : error.getMessage()));
         } finally {
             b.close();
         }
+    }
+
+
+    public boolean isRecordFromClient() {
+        return recordFromClient;
+    }
+
+    public synchronized void setRecordFromClient(boolean recordFromClient) {
+        this.recordFromClient = recordFromClient;
+    }
+
+    public synchronized boolean isRecordToServer() {
+        return recordToServer;
+    }
+
+    public synchronized void setRecordToServer(boolean recordToServer) {
+        this.recordToServer = recordToServer;
+    }
+
+    public synchronized boolean isRecordFromServer() {
+        return recordFromServer;
+    }
+
+    public synchronized void setRecordFromServer(boolean recordFromServer) {
+        this.recordFromServer = recordFromServer;
+    }
+
+    public synchronized boolean isRecordToClient() {
+        return recordToClient;
+    }
+
+    public synchronized void setRecordToClient(boolean recordToClient) {
+        this.recordToClient = recordToClient;
+    }
+
+    public synchronized boolean isRecordPolicies() {
+        return recordPolicies;
+    }
+
+    public synchronized void setRecordPolicies(boolean recordPolicies) {
+        this.recordPolicies = recordPolicies;
+    }
+
+    public synchronized boolean isRecordErrors() {
+        return recordErrors;
+    }
+
+    public synchronized void setRecordErrors(boolean recordErrors) {
+        this.recordErrors = recordErrors;
     }
 
     /** Remove all saved messages from the list. */

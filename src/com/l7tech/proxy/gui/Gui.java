@@ -491,7 +491,7 @@ public class Gui {
      * Get the RequestInterceptor attached to the Message Viewer window.
      */
     public RequestInterceptor getRequestInterceptor() {
-        return getMessageViewer().getMessageViewerModel();
+        return getMessageViewer().getModel();
     }
 
     /**

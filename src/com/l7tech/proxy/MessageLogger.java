@@ -35,7 +35,7 @@ public class MessageLogger implements RequestInterceptor {
     /**
      * Fired when a message is received from a client, after it is parsed.
      */
-    public void onReceiveMessage(PolicyApplicationContext context) {
+    public void onFrontEndRequest(PolicyApplicationContext context) {
         if (!log.isLoggable(Level.FINE)) return;
         try {
             log.fine("Received client request: " + XmlUtil.nodeToString(context.getRequest().getXmlKnob().getOriginalDocument()));
@@ -44,10 +44,26 @@ public class MessageLogger implements RequestInterceptor {
         }
     }
 
-    public void onReceiveReply(PolicyApplicationContext context) {
+    public void onFrontEndReply(PolicyApplicationContext context) {
         if (!log.isLoggable(Level.FINE)) return;
+        String responseStr = toString(context.getResponse().getMimeKnob());
+        log.fine("Received server response: " + responseStr == null ? "<null>" : responseStr);
+    }
+
+    public void onBackEndRequest(PolicyApplicationContext context) {
+        if (!log.isLoggable(Level.FINE)) return;
+        String str = toString(context.getRequest().getMimeKnob());
+        log.fine("Transmitting decorated request: " + str == null ? "<null>" : str);
+    }
+
+    public void onBackEndReply(PolicyApplicationContext context) {
+        if (!log.isLoggable(Level.FINE)) return;
+        String str = toString(context.getResponse().getMimeKnob());
+        log.fine("Received decorated response: " + str == null ? "<null>" : str);
+    }
+
+    private static String toString(MimeKnob mk) {
         String responseStr = null;
-        MimeKnob mk = context.getResponse().getMimeKnob();
         InputStream is = null;
         BufferPoolByteArrayOutputStream baos = null;
         try {
@@ -65,7 +81,7 @@ public class MessageLogger implements RequestInterceptor {
             if (is != null) try { is.close(); } catch (IOException e) { /* too late to care */ }
             if (baos != null) baos.close();
         }
-        log.fine("Received server response: " + responseStr == null ? "<null>" : responseStr);
+        return responseStr;
     }
 
     /**

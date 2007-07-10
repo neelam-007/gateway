@@ -67,7 +67,7 @@ class MessageViewer extends JFrame {
 
     /**
      * Create a new MessageViewer with the given title.
-     * @param title
+     * @param title  title for the window.  Required.
      */
     MessageViewer(final String title) {
         super(title);
@@ -115,7 +115,6 @@ class MessageViewer extends JFrame {
         final Action hideAction = new AbstractAction() {
                     public void actionPerformed(final ActionEvent e) {
                         MessageViewer.this.setVisible(false);
-                        Gui.getInstance().updateMessageViewerStatus(); // TODO: clean up this hack somehow
                     }
                 };
         hideButton.addActionListener(hideAction);
@@ -148,8 +147,30 @@ class MessageViewer extends JFrame {
         Utilities.centerOnScreen(this);
     }
 
-    /** Get the underlying MessageViewerModel. */
-    MessageViewerModel getMessageViewerModel() {
+    public void setVisible(boolean vis) {
+        final boolean wasVisible = isVisible();
+        super.setVisible(vis);
+        if (wasVisible != vis) {
+            Gui.getInstance().updateMessageViewerStatus(); // TODO: clean up this hack somehow
+
+            final MessageViewerModel mod = getModel();
+            if (vis) mod.addMessage("Recording Started",
+                                    "Message viewer is visible: message traffic is being recorded.\n(Errors and policies are always recorded anyway.)");
+
+            mod.setRecordFromClient(vis);
+            mod.setRecordFromServer(vis);
+            mod.setRecordToClient(vis);
+            mod.setRecordToServer(vis);
+            mod.setRecordErrors(true);
+            mod.setRecordPolicies(true);
+
+            if (!vis) mod.addMessage("Recording Stopped",
+                                     "Message viewer is hidden: message traffic is not being recorded.\n(Errors and policies are always recorded anyway.)");
+        }
+    }
+
+    /* Get the underlying MessageViewerModel. */
+    MessageViewerModel getModel() {
         return messageViewerModel;
     }
 }
