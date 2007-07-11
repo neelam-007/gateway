@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.net.InterfaceAddress;
 import java.net.Inet6Address;
+import java.text.MessageFormat;
 
 /**
  * User: megery
@@ -38,6 +39,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private static final String CONFIGURE_MORE_INTERFACES_PROMPT = "Would you like to configure another interface? [no]: ";
     private static final String NEW_INTERFACE_NAME_PROMPT = "Please enter the name of the new interface (ex: eth5): ";
     private static final String CONFIGURE_NAMESERVERS_PROMPT = "Would you like to configure the nameservers for this interface? [no]";
+    private static final String INVALID_SOMETHING = "\"{0}\" is not a valid {1}";
 
     private NetworkingConfigurationBean netBean;
     private static final Pattern interfaceNamePattern = Pattern.compile("\\S+");
@@ -104,7 +106,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (StringUtils.isEmpty(ipAddress))
             message = MISSING_IP_ADDRESS_MSG;
         else if (!isValidIpAddress(ipAddress))
-            message = ipAddress + "\" is not a valid IP Address";
+            message = MessageFormat.format(INVALID_SOMETHING, ipAddress , "IP Address");
 
         if (message != null)
             errors.add("*** " + message + " ***" + getEolChar());
@@ -119,7 +121,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (StringUtils.isEmpty(netMask))
             message = MISSING_NETMASK_MSG;
         else if (!isValidIpAddress(netMask))
-            message = netMask + "\" is not a valid netmask ";
+            message = MessageFormat.format(INVALID_SOMETHING, netMask , "netmask");
 
         if (message != null)
             errors.add("*** " + message + " ***" + getEolChar());
@@ -134,7 +136,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (StringUtils.isEmpty(gateway))
             message = MISSING_GATEWAY_MSG;
         else if (!isValidIpAddress(gateway))
-            message = gateway + "\" is not a valid gateway address";
+            message = MessageFormat.format(INVALID_SOMETHING, gateway , "gateway address");
 
         if (message != null)
             errors.add("*** " + message + " ***" + getEolChar());
@@ -281,7 +283,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (isYes(shouldConfigNameServers)) {
                 do {
                     nameserversline = getData(
-                            new String[] {"Enter the nameservers to be associated with the \"" + interfaceName + "\" interface (comma separated): "},
+                            new String[] {"Enter the IP Address(es) of the nameserver(s) to be associated with the \"" + interfaceName + "\" interface (comma separated): "},
                             defaultNameserversLine
                         );
 
