@@ -225,7 +225,7 @@ else
     echo "ssgconfig    ALL = NOPASSWD: /opt/sun/sca6000/sbin/scadiag" >> /etc/sudoers
 fi
 
-GATEWAYCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
+GATEWAYCONFIGENTRY=`grep ^gateway /etc/sudoers`
 if [ -n "${GATEWAYCONFIGENTRY}" ]; then
     echo -n ""
     #user already exists in the sudoers file
