@@ -32,7 +32,7 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
         List<NetworkingConfigurationBean.NetworkConfig> netConfigs = netBean.getAllNetworkInterfaces();
         File currentWorkingDir = new File(".");
         File configDir = new File(currentWorkingDir, "configfiles");
-        if (!configDir.mkdir())
+        if (configDir.mkdir())
             logger.info("Created new directory for networking configuration: " + configDir.getAbsolutePath());
 
 
