@@ -23,6 +23,8 @@ use constant ERR_SCAMGR_SPAWN      => 17;
 use constant ERR_CREATING_USER     => 31; 
 use constant ERR_CLEANUP_FAILED    => 88;
 
+my $SWAPON='/sbin/swapon';
+my $SWAPOFF='/sbin/swapoff';
 my $MOUNTPOINT = '/ssg/etc/conf/partitions/default_/var/mnt/usbdrive';
 my $USB_DEVICES = '/proc/bus/usb/devices';
 my $SWAPFILES = '/proc/swaps';
@@ -352,7 +354,7 @@ sub swapoff {
     my @swapfiles = map { /(^\S*)/ ? $1 : $_  } grep {!/^Filename\s/} `cat $SWAPFILES`;
     if (@swapfiles) {
         print "Disabling swapfiles: ", join(" ", @swapfiles), "\n";
-        $? = system 'swapoff', @swapfiles;
+        $? = system $SWAPOFF, @swapfiles;
         checkSubprocess ERR_SWAPOFF, "swapoff";
     }
     \@swapfiles;
@@ -362,7 +364,7 @@ sub swapon($) {
     my $swaps = shift;
     return unless scalar(@$swaps) > 0;    
     print "Reenabling swapfiles: ", join(" ", @$swaps), "\n";
-    $? = system 'swapon', @$swaps;
+    $? = system $SWAPON, @$swaps;
     checkSubprocess ERR_SWAPON, "swapon";
 }
 
