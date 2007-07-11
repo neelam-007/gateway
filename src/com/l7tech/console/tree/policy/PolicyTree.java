@@ -16,7 +16,6 @@ import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
 import com.l7tech.console.util.*;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.SsmApplication;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
@@ -195,14 +194,14 @@ public class PolicyTree extends JTree implements DragSourceListener,
             if (!dropAsFirstContainerChild && targetTreeNode == model.getRoot()) {
                 targetIndex = targetTreeNode.getChildCount();
             }
-            model.insertNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
+            model.rawInsertNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
             return true;
         } else {
             final DefaultMutableTreeNode parent = (DefaultMutableTreeNode)targetTreeNode.getParent();
 
             int index = parent.getIndex(targetTreeNode);
             if (index != -1) {
-                model.insertNodeInto(assertionTreeNodeCopy, parent, index + 1);
+                model.rawInsertNodeInto(assertionTreeNodeCopy, parent, index + 1);
                 return true;
             }
         }
@@ -1119,7 +1118,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         return policyEditorPanel != null && policyEditorPanel.getServiceNode() != null;
     }
 
-    private TreeSelectionModel getTreeSelectionModel() {
+    private TreeSelectionModel  getTreeSelectionModel() {
         return new DefaultTreeSelectionModel(){
             public void addSelectionPath(TreePath path) {
                 TreePath currentPath = getSelectionPath();
