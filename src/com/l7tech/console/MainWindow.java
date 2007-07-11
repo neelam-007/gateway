@@ -1214,8 +1214,8 @@ public class MainWindow extends JFrame implements SheetHolder {
      *
      * @return JTree
      */
-    private JTree getIdentitiesTree() {
-        JTree tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
+    private IdentityProvidersTree getIdentitiesTree() {
+        IdentityProvidersTree tree = (IdentityProvidersTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
         if (tree != null) return tree;
         identityProvidersTree = new IdentityProvidersTree();
         identityProvidersTree.setShowsRootHandles(true);
@@ -1256,6 +1256,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         identitiesRootNode = new IdentitiesRootNode("Identity Providers");
         treeModel = new FilteredTreeModel(null);
         treeModel.setRoot(identitiesRootNode);
+        getIdentitiesTree().setRootNode(identitiesRootNode);
 
         final JTree identitiesTree = getIdentitiesTree();
         identitiesTree.setRootVisible(true);

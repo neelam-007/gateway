@@ -136,6 +136,10 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             public void entityAdded(EntityEvent ev) {
                 populateIdProviders(unresolvedRef.getIdProviderTypeVal());
                 resetProvList();
+                if (providerSelector.getModel().getSize() > 0) {
+                    manualResolvRadio.setSelected(true);
+                    providerSelector.setEnabled(true);
+                }
             }
             public void entityUpdated(EntityEvent ev) {}
             public void entityRemoved(EntityEvent ev) {}

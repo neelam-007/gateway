@@ -135,17 +135,16 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
          * @param ev event describing the action
          */
         public void entityAdded(final EntityEvent ev) {
-            if (node == null) {
-                log.fine("Parent node has not been set - skipping notificaiton.");
-                return;
-            }
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     EntityHeader eh = (EntityHeader)ev.getEntity();
-                    JTree tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
+                    IdentityProvidersTree tree = (IdentityProvidersTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
                     if (tree == null) {
                         log.log(Level.WARNING, "Unable to reach the identity tree.");
                         return;
+                    }
+                    if (node == null) {
+                        node = tree.getRootNode();
                     }
                     if (tree.hasBeenExpanded(new TreePath(node.getPath()))) {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();

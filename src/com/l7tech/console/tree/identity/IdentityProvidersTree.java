@@ -40,6 +40,7 @@ public class IdentityProvidersTree extends JTree implements DragGestureListener,
      */
 
     public static final DataFlavor ASSERTION_DATAFLAVOR;
+    private IdentitiesRootNode rootNode;
 
     static {
         DataFlavor df;
@@ -72,6 +73,15 @@ public class IdentityProvidersTree extends JTree implements DragGestureListener,
      */
     public IdentityProvidersTree() {
         this(null);
+    }
+
+    public void setRootNode(IdentitiesRootNode rootNode) {
+        this.rootNode = rootNode;
+    }
+
+
+    public IdentitiesRootNode getRootNode() {
+        return rootNode;
     }
 
     /**
