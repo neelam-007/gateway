@@ -17,6 +17,7 @@ import java.awt.event.*;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 /**
  * A dialog that lets the administrator specify a list of namespaces with corresponding
@@ -34,13 +35,13 @@ public class NamespaceMapEditor extends JDialog {
     private JPanel mainPanel;
     private JTable namespacesTable;
     private JButton removeButton;
+    private JButton editButton;
     private JButton addButton;
     private JButton okButton;
     private JButton helpButton;
     private JButton cancelButton;
 
-    private java.util.List<String> prefixes = new ArrayList<String>();
-    private java.util.List<String> namespaces = new ArrayList<String>();
+    private TreeMap<String,String> namespaceMap = new TreeMap();
     private java.util.List<String> forbiddenNamespaces = new ArrayList<String>();
     boolean cancelled = false;
 
@@ -71,23 +72,20 @@ public class NamespaceMapEditor extends JDialog {
      */
     public Map<String, String> newNSMap() {
         if (cancelled) return null;
-        Map<String, String> output = new HashMap<String, String>();
-        for (int i = 0; i < prefixes.size(); i++) {
-            output.put(prefixes.get(i), namespaces.get(i));
-        }
+        Map<String, String> output = new HashMap<String, String>(namespaceMap);
         return output;
     }
 
     private void initialize(Map<String, String> predefinedNamespaces, java.util.List<String> forcedNamespaces) {
         if (predefinedNamespaces != null) {
-            prefixes.addAll(predefinedNamespaces.keySet());
-            namespaces.addAll(predefinedNamespaces.values());
+            namespaceMap.putAll(predefinedNamespaces);
         }
         forbiddenNamespaces = forcedNamespaces;
         setContentPane(mainPanel);
         setTitle("Edit Namespaces and Prefixes");
         setTableModel();
         TableUtil.adjustColumnWidth(namespacesTable, 1);
+        namespacesTable.getTableHeader().setReorderingAllowed(false);
         setListeners();
         enableRemoveBasedOnSelection();
     }
@@ -98,12 +96,12 @@ public class NamespaceMapEditor extends JDialog {
                 return 2;
             }
             public int getRowCount() {
-                return prefixes.size();
+                return namespaceMap.size();
             }
             public Object getValueAt(int rowIndex, int columnIndex) {
                 switch (columnIndex) {
-                    case 0: return prefixes.get(rowIndex);
-                    case 1: return namespaces.get(rowIndex);
+                    case 0: return ((Map.Entry)new ArrayList(namespaceMap.entrySet()).get(rowIndex)).getKey();
+                    case 1: return ((Map.Entry)new ArrayList(namespaceMap.entrySet()).get(rowIndex)).getValue();
                 }
                 return "";
             }
@@ -159,6 +157,12 @@ public class NamespaceMapEditor extends JDialog {
             }
         });
 
+        editButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                edit();
+            }
+        });
+
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 remove();
@@ -190,41 +194,29 @@ public class NamespaceMapEditor extends JDialog {
         });
 
         // implement default behavior for esc and enter keys
-        KeyListener defBehaviorKeyListener = new KeyListener() {
-            public void keyPressed(KeyEvent e) {}
-            public void keyReleased(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                    cancel();
-                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    ok();
-                }
-            }
-            public void keyTyped(KeyEvent e) {}
-        };
-        namespacesTable.addKeyListener(defBehaviorKeyListener);
         namespacesTable.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2)
                     edit();
             }
         });
-        removeButton.addKeyListener(defBehaviorKeyListener);
-        addButton.addKeyListener(defBehaviorKeyListener);
-        okButton.addKeyListener(defBehaviorKeyListener);
-        helpButton.addKeyListener(defBehaviorKeyListener);
-        cancelButton.addKeyListener(defBehaviorKeyListener);
+        
+        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     private void enableRemoveBasedOnSelection() {
+        boolean enableContextSpecificButtons;
         // get new selection
         int selectedRow = namespacesTable.getSelectedRow();
-        // decide whether or not the remove button should be enabled
+        // decide whether or not the buttons should be enabled
         if (selectedRow < 0) {
-            removeButton.setEnabled(false);
-            return;
+            enableContextSpecificButtons = false;
+        } else {
+            String selectedNSURI = (String)namespacesTable.getModel().getValueAt(selectedRow, 1);
+            enableContextSpecificButtons = isEditableNamespace(selectedNSURI);
         }
-        String selectedNSURI = namespaces.get(selectedRow);
-        removeButton.setEnabled(isEditableNamespace(selectedNSURI));
+        editButton.setEnabled(enableContextSpecificButtons);
+        removeButton.setEnabled(enableContextSpecificButtons);
     }
 
     private boolean isEditableNamespace(String selectedNSURI) {
@@ -242,15 +234,15 @@ public class NamespaceMapEditor extends JDialog {
         grabber.setInitialPrefix(originalPrefix);
         grabber.setInitialNsUri(originalNsURI);
         grabber.pack();
-        Utilities.centerOnScreen(grabber);        
+        Utilities.centerOnParentWindow(grabber);
         DialogDisplayer.display(grabber, new Runnable() {
             public void run() {
-                if (isInvalidNamespaceEntry(grabber, false)) return;
-                prefixes.remove(originalPrefix) ;
-                namespaces.remove(originalNsURI);
+                if (isInvalidNamespaceEntry(grabber, originalPrefix, originalNsURI)) return;
 
-                prefixes.add(grabber.prefix);
-                namespaces.add(grabber.nsuri);
+                // remove original map entry if prefix has changed
+                if (namespaceMap.put(grabber.prefix, grabber.nsuri) == null)
+                    namespaceMap.remove(originalPrefix) ;
+                
                 updateTable(selectedRow);
             }
         });
@@ -261,14 +253,13 @@ public class NamespaceMapEditor extends JDialog {
 
         final NamespacePrefixQueryForm grabber = new NamespacePrefixQueryForm(this);
         grabber.pack();
-        Utilities.centerOnScreen(grabber);
+        Utilities.centerOnParentWindow(grabber);
         DialogDisplayer.display(grabber, new Runnable() {
             public void run() {
-                if (isInvalidNamespaceEntry(grabber, true))
+                if (isInvalidNamespaceEntry(grabber, null, null))
                     return;
 
-                prefixes.add(grabber.prefix);
-                namespaces.add(grabber.nsuri);
+                namespaceMap.put(grabber.prefix, grabber.nsuri);
                 updateTable(selectedRow);
             }
         });
@@ -284,17 +275,17 @@ public class NamespaceMapEditor extends JDialog {
         enableRemoveBasedOnSelection();
     }
 
-    private boolean isInvalidNamespaceEntry(NamespacePrefixQueryForm grabber, boolean isNewEntry) {
+    private boolean isInvalidNamespaceEntry(NamespacePrefixQueryForm grabber, String ignorePrefix, String ignoreUri) {
         if (grabber.cancelled) return true;
 
         if (grabber.prefix == null || grabber.nsuri == null ||
             grabber.prefix.length() < 1 || grabber.nsuri.length() < 1) {
-            JOptionPane.showMessageDialog(addButton, "The prefix and namespace URI must both be specified");
+            JOptionPane.showMessageDialog(this, "The prefix and namespace URI must both be specified");
             return true;
         }
 
-        if (prefixes.contains(grabber.prefix) && isNewEntry) {
-            JOptionPane.showMessageDialog(addButton, "The prefix " + grabber.prefix + " is already specified.");
+        if (namespaceMap.keySet().contains(grabber.prefix) && !grabber.prefix.equals(ignorePrefix)) {
+            JOptionPane.showMessageDialog(this, "The prefix " + grabber.prefix + " is already specified.");
             return true;
         } else if (grabber.prefix.indexOf("=") >= 0 ||
                    grabber.prefix.indexOf("/") >= 0 ||
@@ -304,16 +295,16 @@ public class NamespaceMapEditor extends JDialog {
                    grabber.prefix.indexOf("?") >= 0 ||
                    grabber.prefix.indexOf("!") >= 0 ||
                    grabber.prefix.indexOf("\"") >= 0) {
-            JOptionPane.showMessageDialog(addButton, grabber.prefix + " is not a valid namespace prefix value.");
+            JOptionPane.showMessageDialog(this, grabber.prefix + " is not a valid namespace prefix value.");
             return true;
         }
 
-        if (namespaces.contains(grabber.nsuri) && isNewEntry) {
-            JOptionPane.showMessageDialog(addButton, "The namespace " + grabber.nsuri + " is already specified.");
+        if (namespaceMap.values().contains(grabber.nsuri) && !grabber.nsuri.equals(ignoreUri)) {
+            JOptionPane.showMessageDialog(this, "The namespace " + grabber.nsuri + " is already specified.");
             return true;
         } else if (grabber.nsuri.indexOf("\'") >= 0 ||
                    grabber.nsuri.indexOf("\"") >= 0) {
-            JOptionPane.showMessageDialog(addButton, grabber.nsuri + " is not a valid namespace value.");
+            JOptionPane.showMessageDialog(this, grabber.nsuri + " is not a valid namespace value.");
             return true;
         }
         return false;
@@ -322,8 +313,7 @@ public class NamespaceMapEditor extends JDialog {
     private void remove() {
         int selectedRow = namespacesTable.getSelectedRow();
         if (selectedRow >= 0) {
-            prefixes.remove(selectedRow);
-            namespaces.remove(selectedRow);
+            namespaceMap.remove(namespacesTable.getModel().getValueAt(selectedRow, 0));
             ((AbstractTableModel) namespacesTable.getModel()).fireTableRowsDeleted(selectedRow, selectedRow);
         }
         if ((selectedRow - 1) >= 0) {
