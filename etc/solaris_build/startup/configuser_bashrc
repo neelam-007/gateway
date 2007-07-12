@@ -37,7 +37,7 @@ do
         echo "3) Use a privileged shell (root)"
         echo "4) Logout (no reboot)"
         echo "5) Reboot the SSG appliance (apply the new configuration)"
-        if [ "${UPDATER_PRESENT}" = "true" ] ; then
+        if [ "${UPDATER_PRESENT}" == "true" ] ; then
             echo "6) Upgrade the SecureSpan Appliance"
         fi
         echo -n "Please make a selection: "
@@ -46,7 +46,7 @@ do
         case $choice in
                 1) 	clear;
                     echo "1) Configure networking"
-                    echo "2) Print current network configuration"
+                    echo "2) Display current network configuration"
                     echo -n "Please make a selection: "
                     read choice
                     case $choice in
@@ -75,21 +75,17 @@ do
                         su root -c "${REBOOT_CMD}"
                     fi
                     clear;;
-                6)  if [ -n ${UPDATER_PRESENT} ] ; then
+                *)  if [ "$choice" == "6" ] && [ "${UPDATER_PRESENT}" == "true" ]; then
                         clear;
                         (${UPDATEWIZARD})
                         echo "Press enter to continue";
                         read;
+                        clear;
                     else
-                        echo "This option requires the SecureSpan Update Utility to be installed."
-                        echo "Please select another option"
+                        isValid="n";
+                        echo "That is not a valid selection";
                         echo "Press enter to continue";
                         read;
-                    fi
-                    clear;;
-                *)  isValid="n";
-                    echo "That is not a valid selection";
-                    echo "Press enter to continue";
-                    read;;
+                    fi;;
         esac
 done
