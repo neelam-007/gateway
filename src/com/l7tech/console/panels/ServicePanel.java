@@ -172,13 +172,13 @@ public class ServicePanel extends WizardStepPanel {
             }
         } catch (MalformedURLException e1) {
             logger.log(Level.INFO, "Could not parse URL.", e1); // this used to do e.printStackTrace() this is slightly better.
-            JOptionPane.showMessageDialog(null,
+            JOptionPane.showMessageDialog(getOwner(),
               "Illegal URL string '" + wsdlUrl + "'\n",
               "Error",
               JOptionPane.ERROR_MESSAGE);
         } catch (IOException e1) {
             logger.log(Level.INFO, "IO Error.", e1); // this used to do e.printStackTrace() this is slightly better.
-            JOptionPane.showMessageDialog(null,
+            JOptionPane.showMessageDialog(getOwner(),
                                           "Unable to parse the WSDL at location '" + wsdlUrl +
                                           "'\n",
                                           "Error",
