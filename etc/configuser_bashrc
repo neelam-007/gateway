@@ -43,7 +43,7 @@ do
         case $choice in
                 1) 	clear;
                     echo "1) Configure networking"
-                    echo "2) Print current network configuration"
+                    echo "2) Display current network configuration"
                     echo -n "Please make a selection: "
                     read choice
                     case $choice in
