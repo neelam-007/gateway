@@ -1,3 +1,6 @@
+/**
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
 import com.l7tech.cluster.ClusterProperty;
@@ -5,10 +8,11 @@ import com.l7tech.common.BuildInfo;
 import static com.l7tech.common.Component.fromId;
 import com.l7tech.common.audit.*;
 import com.l7tech.common.gui.ExceptionDialog;
+import com.l7tech.common.gui.NumberField;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.JTableColumnResizeMouseListener;
 import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.util.HexUtils;
@@ -18,12 +22,13 @@ import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.jcalendar.TimeRangePicker;
 import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
-import net.sf.nachocalendar.CalendarFactory;
-import net.sf.nachocalendar.components.DateField;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -45,14 +50,9 @@ import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-/*
- * This class creates a log panel.
- *
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+/**
+ * A panel for displaying either logs or audit events.
  */
-
 public class LogPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(LogPanel.class.getName());
 
@@ -81,14 +81,13 @@ public class LogPanel extends JPanel {
 
     private static final byte[] FILE_TYPE = new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xD0, (byte)0x0D};
 
-    private static final long MILLIS_IN_HOUR = 1000L * 60L * 60L;
-    private static final long MILLIS_IN_DAY = MILLIS_IN_HOUR * 24L;
-    private static final long MILLIS_IN_WEEK = MILLIS_IN_DAY * 7L;
-    private static final long[] UNIT_FACTOR = {MILLIS_IN_HOUR, MILLIS_IN_DAY, MILLIS_IN_WEEK};
+    private static final long MILLIS_IN_MINUTE = 1000L * 60L;
+    private static final long MILLIS_IN_HOUR = MILLIS_IN_MINUTE * 60L;
 
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
+    private SsmPreferences preferences = TopComponents.getInstance().getPreferences();
 
-    private LogPanelBoundComponents lpbc = new LogPanelBoundComponents();
+    private LogPanelControlPanel controlPanel = new LogPanelControlPanel();
     private int[] tableColumnWidths = new int[20];
     private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
     private String msgFilterNode = "";
@@ -130,12 +129,33 @@ public class LogPanel extends JPanel {
     private JTextArea responseXmlTextArea;
     private final StringBuffer unformattedRequestXml;
     private final StringBuffer unformattedResponseXml;
-    private DateField startDateField;
     private JSplitPane logSplitPane;
     private JSplitPane selectionSplitPane;
     private boolean connected = false;
 
     private final HashMap<Integer, String> cachedAuditMessages = new HashMap<Integer, String>();
+
+    //
+    // Data model for the audit events control panel.
+    //
+    /** Modes of selection when downloading audit events. */
+    private enum RetrievalMode {
+        /** Retrieves a fixed duration past current time. */
+        DURATION,
+        /** Retrieves between a fixed start and end time. */
+        TIME_RANGE
+    };
+    private RetrievalMode retrievalMode;
+    /** Duration in milliseconds (for {@link RetrievalMode#DURATION} mode). */
+    private long durationMillis;
+    /** Whether to auto-refresh (for {@link RetrievalMode#DURATION} mode). */
+    private boolean durationAutoRefresh;
+    /** Start time (for {@link RetrievalMode#TIME_RANGE} mode). */
+    private Date timeRangeStart;
+    /** End time (for {@link RetrievalMode#TIME_RANGE} mode). */
+    private Date timeRangeEnd;
+    /** Time zone (for {@link RetrievalMode#TIME_RANGE} mode). */
+    private TimeZone timeRangeTimeZone;
 
     /**
      * Constructor
@@ -235,64 +255,189 @@ public class LogPanel extends JPanel {
     }
 
     private void init() {
-        ButtonGroup viewButtonGroup = new ButtonGroup();
-        viewButtonGroup.add(lpbc.viewCurrentRadioButton);
-        viewButtonGroup.add(lpbc.viewHistoricRadioButton);
+        final ActionListener l = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableComponents();
+            }
+        };
+        controlPanel.durationButton.addActionListener(l);
+        controlPanel.timeRangeButton.addActionListener(l);
 
-        lpbc.viewCurrentRadioButton.addItemListener(new ItemListener(){
-            public void itemStateChanged(ItemEvent e) {
+        controlPanel.hoursTextField.setDocument(new NumberField(4));
+        controlPanel.minutesTextField.setDocument(new NumberField(2));
+
+        controlPanel.autoRefreshCheckBox.addActionListener(new ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                if (! isAuditType) {
+                    // When used for displaying logs, checkbox change is effective immediately.
+                    durationAutoRefresh = controlPanel.autoRefreshCheckBox.isSelected();
+                    updateLogAutoRefresh();
+                } // else When used for displaying audit events, checkbox change is effective when Apply button is clicked.
+            }
+        });
+
+        controlPanel.applyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                setDataFromControlPanel();
                 updateControlState();
             }
         });
 
-        Utilities.setFont(lpbc.controlPane, new java.awt.Font("Dialog", 0, 11));
+        if (! isAuditType) {
+            retrievalMode = RetrievalMode.DURATION;
+        }
+        applyPreferences();
+    }
 
-        lpbc.autoRefresh.addActionListener(new ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                updateLogAutoRefresh();
+    private void enableOrDisableComponents() {
+        Utilities.setEnabled(controlPanel.mainPanel, connected);
+        if (connected) {
+            Utilities.setEnabled(controlPanel.durationPanel, controlPanel.durationButton.isSelected());
+            controlPanel.timeRangePicker.setEnabled(controlPanel.timeRangeButton.isSelected());
+        }
+    }
+
+    /**
+     * Sets the data model using values in the audit events control panel.
+     */
+    private void setDataFromControlPanel() {
+        if (controlPanel.durationButton.isSelected()) {
+            retrievalMode = RetrievalMode.DURATION;
+        } else if (controlPanel.timeRangeButton.isSelected()) {
+            retrievalMode = RetrievalMode.TIME_RANGE;
+        }
+
+        try {
+            long hours = 0;
+            if (! controlPanel.hoursTextField.getText().isEmpty()) {
+                hours = Long.parseLong(controlPanel.hoursTextField.getText());
             }
-        });
-
-        lpbc.limitUnitComboBox.setModel(new DefaultComboBoxModel(new String[]{"hrs.", "days", "wks."}));
-
-        lpbc.startDatePane.setLayout(new BorderLayout());
-        startDateField = CalendarFactory.createDateField();
-        lpbc.startDatePane.add(startDateField, BorderLayout.CENTER);
-
-        lpbc.startDateComboBox.setModel(new DefaultComboBoxModel(
-                new String[]{"00:00", "03:00", "06:00", "09:00", "12:00", "15:00", "18:00", "21:00"}));
-
-        lpbc.rangeSpinner.setValue(new Integer(24));
-
-        lpbc.updateSelectionButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                updateViewSelection();
+            long minutes = 0;
+            if (! controlPanel.minutesTextField.getText().isEmpty()) {
+                minutes = Long.parseLong(controlPanel.minutesTextField.getText());
             }
-        });
+            durationMillis = hours * MILLIS_IN_HOUR + minutes * MILLIS_IN_MINUTE;
+        } catch (NumberFormatException e) {
+            durationMillis = 0;
+        }
 
-        // select after adding date field to ensure correct initial enabled state
-        lpbc.viewCurrentRadioButton.setSelected(true);
+        durationAutoRefresh = controlPanel.autoRefreshCheckBox.isSelected();
+        timeRangeStart = controlPanel.timeRangePicker.getStartTime();
+        timeRangeEnd = controlPanel.timeRangePicker.getEndTime();
+        timeRangeTimeZone = controlPanel.timeRangePicker.getTimeZone();
+    }
+
+    /**
+     * Populates the control panel using values in the audit events data model.
+     */
+    private void setControlPanelFromData() {
+        if (retrievalMode == RetrievalMode.DURATION) {
+            controlPanel.durationButton.setSelected(true);
+        } else if (retrievalMode == RetrievalMode.TIME_RANGE) {
+            controlPanel.timeRangeButton.setSelected(true);
+        }
+        final long hours = durationMillis / MILLIS_IN_HOUR;
+        final long minutes = ( durationMillis - hours * MILLIS_IN_HOUR ) / MILLIS_IN_MINUTE;
+        controlPanel.hoursTextField.setText(Long.toString(hours));
+        controlPanel.minutesTextField.setText(Long.toString(minutes));
+        controlPanel.autoRefreshCheckBox.setSelected(durationAutoRefresh);
+        controlPanel.timeRangePicker.setStartTime(timeRangeStart);
+        controlPanel.timeRangePicker.setEndTime(timeRangeEnd);
+        controlPanel.timeRangePicker.setTimeZone(timeRangeTimeZone, true);
+        enableOrDisableComponents();
+    }
+
+    /**
+     * Applies application preferences to the current state.
+     *
+     * <p>Default values when preference not available or invalid:
+     * <ul>
+     * <li>retrieval mode - by duration
+     * <li>duration - 3 hours
+     * <li>time range - from now to now
+     * <li>time zone - default time zone on this host machine
+     * </ul>
+     */
+    private void applyPreferences() {
+        if (isAuditType) {
+            retrievalMode = RetrievalMode.DURATION;
+            try {
+                retrievalMode = RetrievalMode.valueOf(preferences.getString(SsmPreferences.AUDIT_WINDOW_RETRIEVAL_MODE));
+            } catch (NullPointerException e) {
+            } catch (IllegalArgumentException e) {
+            }
+
+            durationMillis = 3 * MILLIS_IN_HOUR;
+            try {
+                durationMillis = Long.parseLong(preferences.getString(SsmPreferences.AUDIT_WINDOW_DURATION_MILLIS));
+            } catch (NumberFormatException e) {
+            }
+
+            durationAutoRefresh = true;
+            String s = preferences.getString(SsmPreferences.AUDIT_WINDOW_DURATION_AUTO_REFRESH);
+            if (s != null) {
+                durationAutoRefresh = Boolean.parseBoolean(s);
+            }
+
+            final Date now = new Date();
+            timeRangeStart = now;
+            try {
+                timeRangeStart = new Date(Long.parseLong(preferences.getString(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_START)));
+            } catch (NumberFormatException e) {
+            }
+
+            timeRangeEnd = now;
+            try {
+                timeRangeEnd = new Date(Long.parseLong(preferences.getString(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_END)));
+            } catch (NumberFormatException e) {
+            }
+
+            timeRangeTimeZone = TimeZone.getDefault();
+            final String timeZoneId = preferences.getString(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_TIMEZONE);
+            if (timeZoneId != null) {
+                if (Arrays.asList(TimeZone.getAvailableIDs()).contains(timeZoneId)) {
+                    timeRangeTimeZone = TimeZone.getTimeZone(timeZoneId);
+                }
+            }
+
+            setControlPanelFromData();
+        }
+
+        updateControlState();
+    }
+
+    /**
+     * Saves the current state to application preferences.
+     */
+    private void savePreferences() {
+        if (isAuditType) {
+            if (retrievalMode != null) {
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_RETRIEVAL_MODE, retrievalMode.name());
+            }
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_DURATION_MILLIS, Long.toString(durationMillis));
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_DURATION_AUTO_REFRESH, Boolean.toString(durationAutoRefresh));
+            if (timeRangeStart != null) {
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_START, Long.toString(timeRangeStart.getTime()));
+            }
+            if (timeRangeEnd != null) {
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_END, Long.toString(timeRangeEnd.getTime()));
+            }
+            if (timeRangeTimeZone != null) {
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_TIMEZONE, timeRangeTimeZone.getID());
+            }
+        }
     }
 
     private void updateControlState() {
         clearLogCache();
-        if(connected) {
-            if(lpbc.viewCurrentRadioButton.isSelected()) {
-                Utilities.setEnabled(lpbc.viewCurrentPane, true);
-                Utilities.setEnabled(lpbc.autoRefresh, true); // for logs this is not in the panel
-                Utilities.setEnabled(lpbc.viewHistoricPane, false);
-                refreshLogs();
-            }
-            else {
-                Utilities.setEnabled(lpbc.viewCurrentPane, false);
-                Utilities.setEnabled(lpbc.autoRefresh, false);
-                Utilities.setEnabled(lpbc.viewHistoricPane, true);
-                updateLogAutoRefresh();
-                updateViewSelection();
-            }
-
-            setHint(isAutoRefresh() ? "Auto-Refresh" : null);
+        if (retrievalMode == RetrievalMode.DURATION) {
+            refreshLogs();
+        } else if (retrievalMode == RetrievalMode.TIME_RANGE) {
+            updateLogAutoRefresh();
+            updateViewSelection();
         }
+
+        setHint(isAutoRefreshEffective() ? "Auto-Refresh" : null);
     }
 
     private void clearLogCache() {
@@ -368,15 +513,19 @@ public class LogPanel extends JPanel {
         }
     }
 
-    public boolean isAutoRefresh() {
+    public boolean isAutoRefreshEffective() {
         Window pWin = SwingUtilities.getWindowAncestor(this);
-        return pWin!=null && pWin.isVisible()
-                && lpbc.autoRefresh.isEnabled()
-                && lpbc.autoRefresh.isSelected();
+        if (pWin == null) return false;
+        if (! pWin.isVisible()) return false;
+        if (isAuditType) {
+            return durationAutoRefresh;
+        } else {
+            return controlPanel.autoRefreshCheckBox.isEnabled() && controlPanel.autoRefreshCheckBox.isSelected();
+        }
     }
 
     private void updateLogAutoRefresh() {
-        if (isAutoRefresh()) {
+        if (isAutoRefreshEffective()) {
             setHint("Auto-Refresh");
             getLogsRefreshTimer().start();
         } else {
@@ -386,31 +535,7 @@ public class LogPanel extends JPanel {
     }
 
     private void updateViewSelection() {
-
-        // get selection dates
-        Date selectedDate = (Date) startDateField.getValue();
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(selectedDate);
-        calendar.set(Calendar.MILLISECOND, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.HOUR_OF_DAY, lpbc.startDateComboBox.getSelectedIndex() * 3);
-
-        long range = ((Integer)lpbc.rangeSpinner.getValue()).intValue();
-
-        Date startDate;
-        Date endDate;
-
-        if(range>=0) {
-            startDate = calendar.getTime();
-            endDate = new Date(startDate.getTime() + (range * UNIT_FACTOR[lpbc.limitUnitComboBox.getSelectedIndex()]));
-        }
-        else {
-            endDate = calendar.getTime();
-            startDate = new Date(endDate.getTime() + (range * UNIT_FACTOR[lpbc.limitUnitComboBox.getSelectedIndex()]));
-        }
-
-        refreshLogs(startDate, endDate);
+        refreshLogs(timeRangeStart, timeRangeEnd);
     }
 
     private void updateMsgDetails() {
@@ -694,9 +819,7 @@ public class LogPanel extends JPanel {
         getFilteredLogTableSorter().onConnect();
         updateLogsRefreshTimerDelay();
         clearMsgTable();
-
-        Utilities.setEnabled(lpbc.viewCurrentRadioButton, true);
-        Utilities.setEnabled(lpbc.viewHistoricRadioButton, true);
+        enableOrDisableComponents();
         updateControlState();
     }
 
@@ -718,8 +841,8 @@ public class LogPanel extends JPanel {
         getFilteredLogTableSorter().onDisconnect();
 
         setHint("Disconnected");
-        Utilities.setEnabled(lpbc.controlPane, false);
-        Utilities.setEnabled(lpbc.autoRefresh, false);
+        savePreferences();
+        enableOrDisableComponents();
     }
 
     /**
@@ -913,8 +1036,8 @@ public class LogPanel extends JPanel {
         JPanel microControlPane = new JPanel();
         microControlPane.setLayout(new BoxLayout(microControlPane, BoxLayout.X_AXIS));
 
-        lpbc.autoRefresh.setSelected(true);
-        microControlPane.add(lpbc.autoRefresh);
+        controlPanel.autoRefreshCheckBox.setSelected(true);
+        microControlPane.add(controlPanel.autoRefreshCheckBox);
 
         return microControlPane;
     }
@@ -924,7 +1047,7 @@ public class LogPanel extends JPanel {
      * @return  JPanel
      */
     private JPanel getControlPane(){
-        return lpbc.controlPane;
+        return controlPanel.mainPanel;
     }
 
     /**
@@ -1221,10 +1344,6 @@ public class LogPanel extends JPanel {
         if(logTableSorter == null) {
             logTableSorter = new FilteredLogTableSorter(getLogTableModel(),
                     isAuditType ? GenericLogAdmin.TYPE_AUDIT : GenericLogAdmin.TYPE_LOG);
-
-            if(!isAuditType) {
-                logTableSorter.setTimeOffset(System.currentTimeMillis()); // remove any time limits for logs
-            }
         }
 
         return logTableSorter;
@@ -1281,10 +1400,9 @@ public class LogPanel extends JPanel {
 
     public void refreshView() {
         if(connected) {
-            if(lpbc.viewCurrentRadioButton.isSelected()) {
+            if(retrievalMode == RetrievalMode.DURATION) {
                 refreshLogs();
-            }
-            else {
+            } else {
                 updateViewSelection();
             }
         }
@@ -1296,10 +1414,12 @@ public class LogPanel extends JPanel {
     public void refreshLogs() {
         getLogsRefreshTimer().stop();
 
+        final long duration = isAuditType ? durationMillis : System.currentTimeMillis() /* i.e., unlimited */;
+
         // retrieve the new logs
         Window window = SwingUtilities.getWindowAncestor(this);
         if(window!=null && window.isVisible())
-            ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(this, isAutoRefresh(), nodeId);
+            ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(this, duration, isAutoRefreshEffective(), nodeId);
     }
 
     /**
@@ -1515,7 +1635,8 @@ public class LogPanel extends JPanel {
      * Update the message total.
      */
     public void updateMsgTotal(){
-         getMsgTotal().setText(MSG_TOTAL_PREFIX + msgTable.getRowCount());
+         getMsgTotal().setText(MSG_TOTAL_PREFIX + msgTable.getRowCount() +
+                 (getFilteredLogTableSorter().isTruncated() ? " (truncated)" : ""));
     }
 
     /**
@@ -1526,7 +1647,7 @@ public class LogPanel extends JPanel {
         Calendar cal = Calendar.getInstance();
         cal.setTime(time);
         getLastUpdateTimeLabel().setText("Last Updated: " + sdf.format(cal.getTime()) +
-                (isAutoRefresh() ? " [Auto-Refresh]" : "   "));
+                (isAutoRefreshEffective() ? " [Auto-Refresh]" : "   "));
     }
 
     // This customized renderer can render objects of the type TextandIcon
@@ -1651,25 +1772,23 @@ public class LogPanel extends JPanel {
      * @param range The range in hours around the date (negative for before)
      */
     public void setSelectionDetails(Date date, int range) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        int timeIndex = 1 + (calendar.get(Calendar.HOUR_OF_DAY)/3);
-
-        calendar.set(Calendar.MILLISECOND, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-
-        startDateField.setValue(calendar.getTime());
-        lpbc.viewHistoricRadioButton.setSelected(true);
-        lpbc.startDateComboBox.setSelectedIndex(timeIndex);
-        lpbc.rangeSpinner.setValue(new Integer(range==0 ? 1 : range));
-        lpbc.limitUnitComboBox.setSelectedIndex(0);
+        controlPanel.timeRangeButton.setSelected(true);
+        Date startDate;
+        Date endDate;
+        if (range >= 0) {
+            startDate = date;
+            endDate = new Date(date.getTime() + range * MILLIS_IN_HOUR);
+        } else {
+            startDate = new Date(date.getTime() + range * MILLIS_IN_HOUR);
+            endDate = date;
+        }
+        controlPanel.timeRangePicker.setStartTime(startDate);
+        controlPanel.timeRangePicker.setEndTime(endDate);
         setControlsExpanded(true);
     }
 
     public boolean importView(File file) throws IOException {
-        lpbc.viewHistoricRadioButton.setSelected(true);
+        controlPanel.timeRangeButton.setSelected(true);
 
         InputStream in = null;
         ObjectInputStream ois = null;
@@ -1753,17 +1872,18 @@ public class LogPanel extends JPanel {
         }
     }
 
-    private static class LogPanelBoundComponents {
-        private JPanel controlPane;
-        private JPanel viewHistoricPane;
-        private JPanel viewCurrentPane;
-        private JCheckBox autoRefresh;
-        private JButton updateSelectionButton;
-        private JComboBox startDateComboBox;
-        private JRadioButton viewCurrentRadioButton;
-        private JRadioButton viewHistoricRadioButton;
-        private JPanel startDatePane;
-        private JComboBox limitUnitComboBox;
-        private JSpinner rangeSpinner;
+    /**
+     * Control panel for selecting times of audit events to download.
+     */
+    private static class LogPanelControlPanel {
+        private JPanel mainPanel;
+        private JRadioButton durationButton;
+        private JRadioButton timeRangeButton;
+        private JPanel durationPanel;
+        private JTextField hoursTextField;
+        private JTextField minutesTextField;
+        private JCheckBox autoRefreshCheckBox;
+        private TimeRangePicker timeRangePicker;
+        private JButton applyButton;
     }
 }

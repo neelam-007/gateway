@@ -454,6 +454,7 @@
         <include name="**/jsr173_1.0_api.jar"/>
         <include name="**/xalan-2.7.0.jar"/>
         <include name="**/serializer-xalan-2.7.0.jar"/>
+        <include name="**/jcalendar-1.3.2.jar"/>
         <include name="**/jcommon-1.0.5.jar"/>
         <include name="**/jfreechart-1.0.2.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
@@ -1024,6 +1025,7 @@
             <link href="http://jetty.mortbay.org/javadoc"/>
             <link href="http://tomcat.apache.org/tomcat-5.5-doc/catalina/docs/api"/>
             <link href="http://www.jfree.org/jfreechart/api/javadoc"/>
+            <link href="http://www.toedter.com/en/jcalendar/api"/>
             <tag name="noinspection" enabled="false"/>
         </javadoc>
         <mkdir dir="${build.reports}/teamcity"/>
@@ -1192,6 +1194,7 @@
         <pack-mac jarfile="${build.dir}/managerlibs/hibernate3.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/jaxen-1.1-beta-10.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/jaxrpc.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/jcalendar-1.3.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/jcommon-1.0.5.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/jfreechart-1.0.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/jsr173_1.0_api.jar"/>

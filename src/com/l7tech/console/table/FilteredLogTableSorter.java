@@ -33,8 +33,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private int logType;
     private boolean canceled;
     private boolean displayingFromFile;
-    private long timeOffset = 1000L*60L*60L*3L;
-
+    private boolean truncated;
 
     /**
      * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
@@ -45,17 +44,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         this.logType = logType;
         this.displayingFromFile = false;
         setModel(model);
-    }
-
-    /**
-     * Set the time offset.
-     *
-     * <p>This is used to filter data when a date is not explicitly passed.</p>
-     *
-     * @param offset the offet to use
-     */
-    public void setTimeOffset(long offset) {
-        timeOffset = offset;
     }
 
     /**
@@ -83,6 +71,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      */
     public boolean isAscending() {
         return ascending;
+    }
+
+    /**
+     * @return true if displayed logs are truncated to {@link #MAX_NUMBER_OF_LOG_MESSGAES}.
+     */
+    public boolean isTruncated() {
+        return truncated;
     }
 
     /**
@@ -116,6 +111,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 gatewayLogs = new TreeSet<LogMessage>();
             }
 
+            if (gatewayLogs.size() < MAX_NUMBER_OF_LOG_MESSGAES) {
+                truncated = false;
+            }
+
             // try to remove first to make room
             Iterator setIter = gatewayLogs.iterator();
             int additionalLogCount = newLogs.size() - (MAX_MESSAGE_BLOCK_SIZE/10); // allow for 10% duplicates
@@ -131,6 +130,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             gatewayLogs.addAll(newLogs);
 
             // remove after to ensure correct size
+            final int sizeBefore = gatewayLogs.size();
             setIter = gatewayLogs.iterator();
             for(int i=0; setIter.hasNext(); i++) {
                 // remove the last element
@@ -138,6 +138,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 if(i>=MAX_NUMBER_OF_LOG_MESSGAES) {
                     setIter.remove();
                 }
+            }
+            if (gatewayLogs.size() < sizeBefore) {
+                truncated = true;
             }
 
             // update the logsCache
@@ -406,6 +409,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         sortedData = new Object[0];
         realModel.setRowCount(sortedData.length);
         realModel.fireTableDataChanged();
+        truncated = false;
     }
 
     /**
@@ -438,20 +442,20 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     }
 
     /**
-     * Retreive logs from the cluster.
+     * Retreive logs from the cluster for a given duration in the past.
      *
      * @param logPane   The object reference to the LogPanel.
-     * @param restartTimer  Specifying whether the refresh timer is restarted after the data retrieval.
+     * @param duration  duration in the past to retrieve (in milliseconds)
+     * @param restartTimer  Specifying whether the refresh timer should be restarted.
      * @param nodeId the node to filter requests by (may be null)
      */
-    public void refreshLogs(final LogPanel logPane, final boolean restartTimer, final String nodeId) {
-        // Load the last 3 hours initially
-        Date startDate =  new Date(System.currentTimeMillis()-timeOffset);
+    public void refreshLogs(final LogPanel logPane, final long duration, final boolean restartTimer, final String nodeId) {
+        Date startDate =  new Date(System.currentTimeMillis() - duration);
         doRefreshLogs(logPane, restartTimer, startDate, null, null, nodeId, 0);
     }
 
     /**
-     * Retreive logs from the cluster.
+     * Retreive logs from the cluster for a given time range.
      *
      * @param logPane   The object reference to the LogPanel.
      * @param start The start date for log records.
@@ -516,7 +520,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * Retreive logs from the cluster.
      *
      * @param logPane   The object reference to the LogPanel.
-     * @param restartTimer  Specifying whether the refresh timer is restarted after the data retrieval.
+     * @param restartTimer  Specifying whether the refresh timer should be restarted.
      * @param start The start date for log records.
      * @param end The end date for log records.
      * @param requests  The list of requests for retrieving logs. One request per node.

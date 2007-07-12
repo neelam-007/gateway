@@ -54,6 +54,13 @@ public interface SsmPreferences {
     String LAST_WINDOW_LOC_X = "last.window.location.x";
     String LAST_WINDOW_LOC_Y = "last.window.location.y";
 
+    String AUDIT_WINDOW_RETRIEVAL_MODE = "auditWindow.retrieval.mode";
+    String AUDIT_WINDOW_DURATION_MILLIS = "auditWindow.retrieval.duration.millis";
+    String AUDIT_WINDOW_DURATION_AUTO_REFRESH = "auditWindow.retrieval.duration.autoRefresh";
+    String AUDIT_WINDOW_TIME_RANGE_START = "auditWindow.retrieval.timeRange.startTime";
+    String AUDIT_WINDOW_TIME_RANGE_END = "auditWindow.retrieval.timeRange.endTime";
+    String AUDIT_WINDOW_TIME_RANGE_TIMEZONE = "auditWindow.retrieval.timeRange.timeZone";
+
     /**
      * Update preferences from given properties, optionally
      * appending the properties
