@@ -89,8 +89,15 @@ public class WhirlycacheFactory {
             }
         }
 
-        if (cache == null) // if we are shutting down we can't create new CacheDecorator's so return the dummy cache 
+        if (cache == null) {
+            // if we are shutting down we can't create new CacheDecorator's so return the dummy cache
             cache = NullCache;
+        }  else {
+            // work around for bug 3053 - logging of invalid characters when cache not used
+            Object dummy = new Object();
+            cache.store(dummy, dummy);
+            cache.remove(dummy);
+        }
 
         return cache;
     }
