@@ -12,6 +12,7 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
@@ -23,12 +24,15 @@ import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
@@ -316,6 +320,7 @@ public class WssRoundTripTest extends TestCase {
         martha.decorateMessage(message, reqs);
 
         log.info("Decorated message (*note: pretty-printed):\n\n" + XmlUtil.nodeToFormattedString(message));
+        schemaValidateSamlAssertions(message);
 
         // Serialize to string to simulate network transport
         byte[] decoratedMessage = XmlUtil.nodeToString(message).getBytes();
@@ -541,6 +546,47 @@ public class WssRoundTripTest extends TestCase {
 
     private String canonicalize(Node node) throws IOException {
         return XmlUtil.nodeToString(node);
+    }
+
+    private void schemaValidateSamlAssertions(Document document) {
+        List<Element> elements = new ArrayList();
+        NodeList nl1 = document.getElementsByTagNameNS(SamlConstants.NS_SAML, SamlConstants.ELEMENT_ASSERTION);
+        NodeList nl2 = document.getElementsByTagNameNS(SamlConstants.NS_SAML2, SamlConstants.ELEMENT_ASSERTION);
+        for (int n=0; n<nl1.getLength(); n++) {
+            elements.add((Element) nl1.item(n));
+        }
+        for (int n=0; n<nl2.getLength(); n++) {
+            elements.add((Element) nl2.item(n));
+        }
+
+        for ( Element element : elements ) {
+            org.apache.xmlbeans.XmlObject assertion;
+            try {
+                if ( SamlConstants.NS_SAML.equals(element.getNamespaceURI()) ) {
+                    log.info("Validating SAML v1.1 Assertion");
+                    assertion = x0Assertion.oasisNamesTcSAML1.AssertionDocument.Factory.parse(element).getAssertion();
+                } else {
+                    log.info("Validating SAML v2.0 Assertion");
+                    assertion = x0Assertion.oasisNamesTcSAML2.AssertionDocument.Factory.parse(element).getAssertion();
+                }
+            }
+            catch(org.apache.xmlbeans.XmlException xe) {
+                throw new RuntimeException("Error processing SAML assertion.", xe);
+            }
+
+            List errors = new ArrayList();
+            org.apache.xmlbeans.XmlOptions xo = new org.apache.xmlbeans.XmlOptions();
+            xo.setErrorListener(errors);
+            if (!assertion.validate(xo)) {
+                // TODO remove this when bug 3935 is fixed
+                if (SamlConstants.NS_SAML2.equals(element.getNamespaceURI())) {
+                    log.warning("Ignoring SAML v2.0 validation errors: " + errors);
+                    continue;
+                }
+
+                throw new RuntimeException("Invalid assertion: " + errors);
+            }
+        }
     }
 
     /**
