@@ -347,9 +347,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            String mess = "Problem initializing the HSM - skipping HSM configuration: ";
-            logger.log(Level.SEVERE, mess + e.getMessage(), e);
-            throw e;
+            logger.severe("Problem initializing the HSM - skipping HSM configuration: " + e.getMessage());
+            throw e; //throw it to mark the operation as failed
         }
     }
 
@@ -435,18 +434,16 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 logger.info("Executing \"" + sudoCommand + " " + initializeScript + "\"");
                 ProcResult result = ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(initializeScript, "init", String.valueOf(keystorePassword)), null, true);
                 if (result.getExitStatus() != 0) {
-                    logger.warning(MessageFormat.format("{0} exited with a non zero return code: {1} ({2})",
+                    logger.severe(MessageFormat.format("{0} exited with a non zero return code: {1}",
                             initializeScript,
-                            result.getExitStatus(),
-                            new String(result.getOutput()))
+                            result.getExitStatus())
                     );
-                    throw new IOException("There was an error trying to initialize the HSM: " + new String(result.getOutput()));
+                    throw new IOException("\n" + "The output of the command was: \n" + new String(result.getOutput()));
                 } else {
                     logger.info(MessageFormat.format("Successfully initialized the HSM: {0}", new String(result.getOutput())));
                 }
             } catch (IOException e) {
-                logger.warning("There was an error trying to initialize the HSM: " + e.getMessage());
-                throw e;
+                throw new IOException("There was an error trying to initialize the HSM: " + e.getMessage());
             }
         }
     }
