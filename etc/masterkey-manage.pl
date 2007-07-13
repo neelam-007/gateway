@@ -319,7 +319,7 @@ sub initializeKeystore($) {
                                                                            "New HSM password too weak" }],
          ["Confirm password: "                                    => "$soPass\n"]],
         qr/Board initialization parameters.*Is this correct?.*: /s => "y\n",
-        '-timeout' => 45,
+        '-timeout' => 120,
         qr/new remote access key has been/;
 
     # Restart dialog to reset timout to the default short one
