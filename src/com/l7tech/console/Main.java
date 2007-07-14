@@ -14,6 +14,8 @@ import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.console.util.HeavySsmPreferences;
 import com.l7tech.console.util.SplashScreen;
 import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.console.security.ManagerTrustProvider;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -24,6 +26,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.Security;
 
 /**
  * This class is the SSG console Main entry point.
@@ -51,7 +54,7 @@ public class Main {
                 JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
                 Logger log = Logger.getLogger(getClass().getName());
 
-                ensureNoSecurityManager();
+                configureSecurity();
 
                 initializeUIPreferences();
                 DialogDisplayer.setForceNative(true);
@@ -139,11 +142,16 @@ public class Main {
      *
      * This ensures that we disable downloading of classes using the default
      * RMI mechanism.
+     *
+     * Also adds the security provider for Gateway SSL trust
      */
-    private void ensureNoSecurityManager() {
+    private void configureSecurity() {
         if (System.getSecurityManager() != null) {
             System.setSecurityManager(null);
         }
+
+        // Add security provider for HTTP remoting / RMI
+        Security.addProvider(new ManagerTrustProvider());
     }
 
     private void setInitialEnvironment() {
@@ -162,6 +170,9 @@ public class Main {
 
         // Set property for use by Spring HTTP remoting (its not RMI but uses this to load classes)
         System.setProperty("java.rmi.server.RMIClassLoaderSpi", "com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi");
+
+        // Set trust manager algorithm for HTTP remoting / RMI
+        System.setProperty("com.l7tech.console.trustMananagerFactoryAlgorithm", "L7TA");
     }
 
     /**

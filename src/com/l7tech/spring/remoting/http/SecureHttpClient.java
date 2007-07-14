@@ -1,6 +1,8 @@
 package com.l7tech.spring.remoting.http;
 
 import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
+import com.l7tech.common.util.SyspropUtil;
+
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.ConnectTimeoutException;
@@ -45,6 +47,7 @@ public class SecureHttpClient extends HttpClient {
         params.setSoTimeout(60000);
 
         getHostConfiguration().setHost("127.0.0.1", 80, getProtocol(getSSLSocketFactory()));
+        getParams().setBooleanParameter("http.protocol.expect-continue", Boolean.TRUE);
     }
 
     /**
@@ -114,13 +117,8 @@ public class SecureHttpClient extends HttpClient {
 
     private TrustManager[] getTrustManagers() {
         try {
-            String tmalg = TrustManagerFactory.getDefaultAlgorithm();
-            try {
-                System.getProperty("com.l7tech.console.trustMananagerFactoryAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
-            } catch (AccessControlException e) {
-                // Probably running as applet.  Ignore it and use the default.
-            }
-
+            String tmalg = SyspropUtil.getString("com.l7tech.console.trustMananagerFactoryAlgorithm",
+                    TrustManagerFactory.getDefaultAlgorithm());
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmalg);
             tmf.init((KeyStore)null);
             TrustManager[] trustManagers = tmf.getTrustManagers();
