@@ -17,9 +17,7 @@ import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.action.SecureAction;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityHeader;
@@ -254,7 +252,16 @@ public class PublishServiceWizard extends Wizard {
      */
     private CompositeAssertion
       pruneEmptyCompositeAssertions(CompositeAssertion oom) {
-        if (oom.getChildren().isEmpty()) return null;
+        // fla, added, i have't found how, but the wizard somehow populates all children with null elements
+        // this causes problems later on since we now support returning an empty policy (all with no children)
+        ArrayList children = new ArrayList();
+        for (Object o : oom.getChildren()) {
+            if (o != null && o instanceof Assertion) {
+                children.add(o);
+            }
+        }
+        oom.setChildren(children);
+        if (children.isEmpty()) return oom;
         java.util.Iterator i = oom.preorderIterator();
         for (; i.hasNext();) {
             Assertion a = (Assertion)i.next();
