@@ -5,6 +5,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Collection;
@@ -79,16 +80,16 @@ public class ServicePanel extends WizardStepPanel {
 
             if (sa.getRoutingAssertion() == null) {
                 Port port = wsdl.getSoapPort();
-                // bugzilla #3539
+                // bugzilla #3539 no more bogus routing assertions
                 // sa.setRoutingAssertion(new HttpRoutingAssertion());
                 if (port != null) {
                     String uri = wsdl.getUriFromPort(port);
                     if (uri != null) {
-                        if(uri.startsWith("http") || uri.startsWith("HTTP")) {
+                        if (isHTTPURL(uri)) {
                              sa.setRoutingAssertion(new HttpRoutingAssertion(uri));
                         } else {
                             String tmp = Wsdl.extractBaseURI(publishedService.getWsdlUrl()) + uri;
-                            if (tmp.startsWith("http") || tmp.startsWith("HTTP")) {
+                            if (isHTTPURL(uri)) {
                                  sa.setRoutingAssertion(new HttpRoutingAssertion(tmp));
                             }
                         }
@@ -101,6 +102,17 @@ public class ServicePanel extends WizardStepPanel {
         } catch (Exception e) {
             logger.log(Level.INFO, "Error storing settings.", e); // this used to do e.printStackTrace() this is slightly better.
         }
+    }
+
+    private boolean isHTTPURL(String in) {
+        if (in.length() > 4 && in.substring(0, 4).compareToIgnoreCase("http") == 0) {
+            try {
+                new URL(in);
+                return true;
+            } catch (MalformedURLException e) {
+                return false;
+            }
+        } else return false;
     }
 
     /**
