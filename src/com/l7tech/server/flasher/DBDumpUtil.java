@@ -105,6 +105,7 @@ public class DBDumpUtil {
                             break;
                         case Types.INTEGER:
                         case Types.BIT:
+                        case Types.TINYINT:
                             insertStatementToRecord.append(tdataList.getInt(i));
                             if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                             break;
@@ -129,7 +130,7 @@ public class DBDumpUtil {
                             break;
                         default:
                             logger.severe("unexpected java.sql.Type value " + colType);
-                            throw new RuntimeException("unhandled column type:" + colType);
+                            throw new RuntimeException("unhandled column type: " + colType);
                     }
                 }
                 insertStatementToRecord.append(");\n");
