@@ -133,7 +133,12 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             destroyPrivateKeyButton.setEnabled(false);
             replaceCertificateChainButton.setEnabled(false);
             generateCSRButton.setEnabled(false);
+        } else if ("PKCS11_HARDWARE".equals(subject.getKeystore().type) && ("SSL".equals(subject.getAlias()) || "CA".equals(subject.getAlias()))) {
+            // Prevent the builtin keys from being deleted if this is an HSM keystore
+            // hack for Bug #3830 -- TODO replace this hack with proper key metadata so server can mark keys as undeletable
+            destroyPrivateKeyButton.setEnabled(false);
         }
+
         if (!flags.canDeleteSome())
             destroyPrivateKeyButton.setEnabled(false);
         if (!flags.canUpdateSome())
