@@ -102,18 +102,18 @@ public class SoapMessageProcessingServlet extends HttpServlet {
      * @throws IOException
      */
     public void doPost(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
-        try {
-            licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
-        } catch (LicenseException e) {
-            // New exception to conceal original stack trace from LicenseManager
-            throw new ServletException(new LicenseException(e.getMessage()));
-        }
         this.service(hrequest, hresponse);
     }
 
     protected void service(HttpServletRequest hrequest, HttpServletResponse hresponse)
             throws ServletException, IOException
     {
+        try {
+            licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
+        } catch (LicenseException e) {
+            // New exception to conceal original stack trace from LicenseManager
+            throw new ServletException(new LicenseException(e.getMessage()));
+        }
         if ("/".equals(hrequest.getRequestURI())) {
             try {
                 if (!serviceCache.hasCatchAllService()) {
