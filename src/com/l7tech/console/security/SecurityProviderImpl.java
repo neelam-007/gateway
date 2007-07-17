@@ -336,13 +336,13 @@ public class SecurityProviderImpl extends SecurityProvider
      */
     private SSLTrustFailureHandler getTrustFailureHandler(final StringBuffer hostBuffer) {
         return new SSLTrustFailureHandler() {
-            public boolean handle(CertificateException e, X509Certificate[] chain, String authType) {
+            public boolean handle(CertificateException e, X509Certificate[] chain, String authType, boolean failure) {
                 if (chain == null || chain.length == 0) {
                     return false;
                 }
                 final String peerHost = CertUtils.getCn(chain[0]);
 
-                if(e!=null) serverCertificateChain = chain;
+                if(e!=null && failure) serverCertificateChain = chain;
 
                 if (hostBuffer.length()==0 || hostBuffer.toString().equals(peerHost)) {
                     return true;

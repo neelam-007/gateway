@@ -35,7 +35,7 @@ public final class CertificateTrustedTrustFailureHandler implements SSLTrustFail
      * @param authType the authentication type that was requested
      * @return true to proceed with the ssl connection, false otherwise
      */
-    public boolean handle(CertificateException e, X509Certificate[] chain, String authType) {
+    public boolean handle(CertificateException e, X509Certificate[] chain, String authType, boolean failure) {
         if (chain == null || chain.length == 0) {
             return false;
         }

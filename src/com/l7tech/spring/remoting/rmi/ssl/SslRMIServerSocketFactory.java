@@ -515,7 +515,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
         public void checkClientTrusted(X509Certificate[] chain, String authType)
           throws CertificateException {
             SSLTrustFailureHandler tfh = trustFailureHandler;
-            if(tfh!=null && tfh.handle(null, chain, authType)) {
+            if(tfh!=null && tfh.handle(null, chain, authType, true)) {
                 if(logger.isLoggable(Level.FINE)) {
                     logger.fine("Accepted client certificate.");
                 }

@@ -24,7 +24,8 @@ public interface SSLTrustFailureHandler {
      * @param e the exception that caused the trust failure
      * @param chain the peer certificate chain
      * @param authType the authentication type that was requested
+     * @param trustFailed true if this is a trust failure (else just informational)
      * @return true to proceed with the ssl connection, false otherwise
      */
-    boolean handle(CertificateException e, X509Certificate[] chain, String authType);
+    boolean handle(CertificateException e, X509Certificate[] chain, String authType, boolean trustFailed);
 }

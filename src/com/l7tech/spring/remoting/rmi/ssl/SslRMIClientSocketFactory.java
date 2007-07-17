@@ -320,13 +320,13 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
                     // name by throwing an exception, this is is bit of a hack and can
                     // be removed if we don't want to check the host name for trusted
                     // certificates.
-                    sslTrustFailureHandler.handle(null, chain, authType);
+                    sslTrustFailureHandler.handle(null, chain, authType, false);
                     if (delegate.getAcceptedIssuers().length == 0) {
                         throw new CertificateException("No trusted issuers.");
                     }
                     delegate.checkServerTrusted(chain, authType);
                 } catch (CertificateException e) {
-                    if (!sslTrustFailureHandler.handle(e, chain, authType)) {
+                    if (!sslTrustFailureHandler.handle(e, chain, authType, true)) {
                         throw e;
                     }
                 }

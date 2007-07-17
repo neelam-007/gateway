@@ -126,7 +126,13 @@ public class ManagerTrustManagerFactorySpi extends TrustManagerFactorySpi {
         }
 
         public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
+            X509TrustManager xtm = trustManager;
+            if (xtm == null) {
+                xtm = getX509TrustManager();
+                trustManager = xtm;
+            }
+
+            return xtm.getAcceptedIssuers();
         }
 
         public boolean equals(Object obj) {
