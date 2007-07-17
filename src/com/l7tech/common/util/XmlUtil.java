@@ -221,9 +221,9 @@ public class XmlUtil {
     }
 
     /**
-     * Version of stringToDocument for use when you know that the XML is valid.
+     * Version of stringToDocument for use when you know that the XML is well-formed.
      *
-     * @param inputXmlNotAUrl A known valid XML string.
+     * @param inputXmlNotAUrl A known well-formed XML string.
      * @return the Document
      * @throws IllegalArgumentException if the given string is not XML
      */
