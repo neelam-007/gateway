@@ -136,8 +136,11 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
             //noinspection unchecked
             result = (OUT)entry.result;
             t = entry.resultThrowable;
-            if (t != null && logger.isLoggable(Level.WARNING))
-                logger.log(Level.WARNING, "Asynchronous job " + jobId + " threw an exception: " + ExceptionUtils.getMessage(t), t);
+            if (t != null && logger.isLoggable(Level.WARNING)) {
+                // Log as FINE, since the exception will be made available to whoever picks up the job result
+                // (it isn't our job to handle this here)  (Bug #3981)
+                logger.log(Level.FINE, "Asynchronous job " + jobId + " threw an exception: " + ExceptionUtils.getMessage(t), t);
+            }
         } else {
             // Can't happen
             result = null;
