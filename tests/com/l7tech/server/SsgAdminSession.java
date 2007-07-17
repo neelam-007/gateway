@@ -74,7 +74,7 @@ public class SsgAdminSession {
         NamingURL adminServiceNamingURL = NamingURL.parse(NamingURL.DEFAULT_SCHEME + "://" + hostPort + "/AdminLogin");
         ResettableRmiProxyFactoryBean bean = (ResettableRmiProxyFactoryBean)applicationContext.getBean("&adminLogin");
         SslRMIClientSocketFactory.setTrustFailureHandler(new SSLTrustFailureHandler() {
-            public boolean handle(CertificateException e, X509Certificate[] chain, String authType) {
+            public boolean handle(CertificateException e, X509Certificate[] chain, String authType, boolean failure) {
                 return true;
             }
         });
