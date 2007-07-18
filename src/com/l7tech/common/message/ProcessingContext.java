@@ -44,13 +44,14 @@ public abstract class ProcessingContext {
     /**
      * Returns only one set of credentials.
      *
-     * @throws IllegalStateException if there are multiple set of credentials present in this context
      * @return null if there are no credentials present, a LoginCredentials if there is only one present
      */
     public LoginCredentials getOneSetOfCredentials() {
         if (credentials.size() > 1) {
-            logger.warning("Too many credentials set, throwing IllegalStateException");
-            throw new IllegalStateException("There are more than one set of credentials in this context.");
+            logger.warning("Too many credentials set");
+            // return last one
+            // todo, find out causes of this and fix them
+            return credentials.get(credentials.size()-1);
         } else if (credentials.size() == 0) {
             return null;
         } else {
