@@ -13,6 +13,18 @@ public class GatewayMain {
 
     private static File getServerHome() throws LifecycleException {
         String rootPath = System.getProperty(PROP_SERVER_HOME);
+        if (rootPath == null || rootPath.trim().length() < 1) {
+            // Try using the current directory
+            File cwd = new File(".").getAbsoluteFile();
+            if (cwd.isDirectory()) {
+                File webInf = new File(cwd, "etc/inf/WEB-INF");
+                if (webInf.isDirectory() && new File(webInf, "web.xml").exists()) {
+                    // Current directory it is.
+                    rootPath = cwd.getAbsolutePath();
+                }
+            }
+
+        }
         if (rootPath == null || rootPath.trim().length() < 1)
             throw new LifecycleException("System property not set: " + PROP_SERVER_HOME);
         if (!rootPath.endsWith("/"))
