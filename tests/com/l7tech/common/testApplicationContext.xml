@@ -128,7 +128,7 @@
             <ref local='keystore'/>
         </property>
         <property name="targetMethod">
-            <value>getKeyStoreType</value>
+            <value>getSslKeyStoreType</value>
         </property>
     </bean>
 
