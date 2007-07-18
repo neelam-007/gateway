@@ -6,6 +6,8 @@
 
 package com.l7tech.server;
 
+import com.l7tech.common.util.ExceptionUtils;
+
 /**
  * @author alex
  * @version $Revision$
@@ -15,7 +17,11 @@ public class LifecycleException extends Exception {
         super( message );
     }
 
-    public LifecycleException( String message, Throwable cause ) {
-        super( message, cause );
+    public LifecycleException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public LifecycleException(Throwable cause) {
+        super("Lifecycle error: " + ExceptionUtils.getMessage(cause), cause);
     }
 }

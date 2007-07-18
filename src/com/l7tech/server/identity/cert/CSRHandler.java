@@ -62,7 +62,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         rootkstore = ku.getRootKeystorePath();
         rootkstorepasswd = ku.getRootKeystorePasswd();
         rootkstorealias = ku.getRootAlias();
-        rootkstoretype = ku.getKeyStoreType();
+        rootkstoretype = ku.getRootKeyStoreType();
         if (rootkstorepasswd == null || rootkstorepasswd.length() < 1) {
             String msg = "Key store password not found (root CA).";
             logger.log(Level.SEVERE, msg);

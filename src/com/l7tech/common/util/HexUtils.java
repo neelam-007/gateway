@@ -14,6 +14,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.net.URLEncoder;
 import java.net.URLDecoder;
+import java.net.URL;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -295,6 +296,23 @@ public class HexUtils {
         FileInputStream fis = null;
         try {
             return slurpStream(fis = new FileInputStream(file));
+        } finally {
+            ResourceUtils.closeQuietly(fis);
+        }
+    }
+
+    /**
+     * Read an entire file into memory via a URL.
+     *
+     * @param url  the file to read.  Required.
+     * @return the content of the file.  May be empty but never null.
+     * @throws IOException if the file wasn't found or couldn't be read.
+     * @throws NullPointerException if url is null
+     */
+    public static byte[] slurpUrl(URL url) throws IOException {
+        InputStream fis = null;
+        try {
+            return slurpStream(fis = url.openStream());
         } finally {
             ResourceUtils.closeQuietly(fis);
         }

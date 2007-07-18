@@ -68,6 +68,8 @@ public class ConnectionIdValve extends ValveBase {
         // Set the connection id for the request
         req.setAttribute(ATTRIBUTE_CONNECTION_ID, connectionId.get());
 
+        
+
         // Let servlet do it's thing
         getNext().invoke(req, res);
     }

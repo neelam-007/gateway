@@ -4,7 +4,6 @@
 package com.l7tech.common.security;
 
 import com.l7tech.common.AsyncAdminMethods;
-import com.l7tech.common.AsyncAdminMethods.JobId;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import static com.l7tech.common.security.rbac.EntityType.SSG_KEY_ENTRY;
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;

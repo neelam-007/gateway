@@ -4,14 +4,10 @@ import com.l7tech.common.security.SingleCertX509KeyManager;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.KeystoreInfo;
 import com.l7tech.common.util.ResourceUtils;
 
 import javax.net.ssl.KeyManager;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -36,11 +32,12 @@ public class KeystoreUtils {
     public static final String ROOT_STOREPASSWD = "rootcakspasswd";
     public static final String ROOT_ALIAS = "rootcaalias";
     public static final String ROOT_ALIAS_DEFAULT = "ssgroot";
+    public static final String ROOT_KSTORE_TYPE = "rootkeystoretype";
     public static final String SSL_KSTORE_NAME = "sslkstorename";
     public static final String SSL_KSTORE_PASSWD = "sslkspasswd";
     public static final String SSL_ALIAS = "sslkeyalias";
     public static final String SSL_ALIAS_DEFAULT = "tomcat";
-    public static final String KSTORE_TYPE = "keystoretype";
+    public static final String SSL_KSTORE_TYPE = "keystoretype";
 
     public static final String PS = System.getProperty("file.separator");
     private final ServerConfig serverConfig;
@@ -117,15 +114,15 @@ public class KeystoreUtils {
         return getProps().getProperty(SSL_KSTORE_PASSWD);
     }
 
-    public KeystoreInfo getSslKeystoreInfo() {
-        return new KeystoreInfo(getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(SSL_KSTORE_NAME),
-                                getProps().getProperty(SSL_KSTORE_PASSWD),
-                                getKeyStoreType());
+    public String getSslKeyStoreType() {
+        String type = getProps().getProperty(SSL_KSTORE_TYPE);
+        if ( type == null || type.length() == 0 ) type = KeyStore.getDefaultType();
+        return type;
     }
 
-    public String getKeyStoreType() {
-        String type = getProps().getProperty(KSTORE_TYPE);
-        if ( type == null || type.length() == 0 ) type = KeyStore.getDefaultType();
+    public String getRootKeyStoreType() {
+        String type = getProps().getProperty(ROOT_KSTORE_TYPE);
+        if ( type == null || type.length() == 0 ) type = getSslKeyStoreType();
         return type;
     }
 
@@ -133,7 +130,7 @@ public class KeystoreUtils {
     public KeyStore getSSLKeyStore() throws KeyStoreException {
         FileInputStream fis = null;
         try {
-            KeyStore keyStore = KeyStore.getInstance(getKeyStoreType());
+            KeyStore keyStore = KeyStore.getInstance(getSslKeyStoreType());
             String sslkeystorepath = getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(SSL_KSTORE_NAME);
             String sslkeystorepassword = getProps().getProperty(SSL_KSTORE_PASSWD);
             fis = new FileInputStream(sslkeystorepath);

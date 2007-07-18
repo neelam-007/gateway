@@ -85,7 +85,7 @@ public class KeysTest extends TestCase {
     public void testSsgKestoreProperties() throws Exception {
         Properties props = Keys.createTestSsgKeystoreProperties();
         KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
-        assertTrue(Keys.KEYSTORE_TYPE.equals(ku.getKeyStoreType()));
+        assertTrue(Keys.KEYSTORE_TYPE.equals(ku.getSslKeyStoreType()));
         assertTrue(props.getProperty(KeystoreUtils.ROOT_STOREPASSWD).equals(ku.getRootKeystorePasswd()));
     }
 

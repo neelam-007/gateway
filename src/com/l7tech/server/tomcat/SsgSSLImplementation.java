@@ -17,6 +17,8 @@ import org.apache.tomcat.util.net.SSLImplementation;
 import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.net.ServerSocketFactory;
 
+import javax.net.ssl.SSLSession;
+
 /**
  * SSL implementation that wraps the default SSL factory in an SsgServerSocketFactory.
  *
@@ -106,6 +108,10 @@ public class SsgSSLImplementation extends SSLImplementation {
      */
     public SSLSupport getSSLSupport(Socket socket) {
         return delegate.getSSLSupport(socket);
+    }
+
+    public SSLSupport getSSLSupport(SSLSession session) {
+        return delegate.getSSLSupport(session);
     }
 
     //- PRIVATE

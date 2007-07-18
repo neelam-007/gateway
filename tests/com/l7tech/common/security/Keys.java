@@ -226,11 +226,12 @@ public class Keys {
         keystoreProps.put(KeystoreUtils.SSL_KSTORE_NAME, "ssl.ks");
         keystoreProps.put(KeystoreUtils.SSL_CERT_NAME, "ssl.cer");
         keystoreProps.put(KeystoreUtils.SSL_KSTORE_PASSWD, password);
+        keystoreProps.put(KeystoreUtils.SSL_KSTORE_TYPE, Keys.KEYSTORE_TYPE);
 
         keystoreProps.put(KeystoreUtils.ROOT_STORENAME, "ca.ks");
         keystoreProps.put(KeystoreUtils.ROOT_CERTNAME, "ca.cer");
         keystoreProps.put(KeystoreUtils.ROOT_STOREPASSWD, password);
-        keystoreProps.put(KeystoreUtils.KSTORE_TYPE, Keys.KEYSTORE_TYPE);
+        keystoreProps.put(KeystoreUtils.ROOT_KSTORE_TYPE, Keys.KEYSTORE_TYPE);
         FileOutputStream fo = new FileOutputStream(keystorePropertiesPath);
         keystoreProps.store(fo, "test keystore properties");
         fo.close();
