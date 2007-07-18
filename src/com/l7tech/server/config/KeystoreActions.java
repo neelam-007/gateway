@@ -51,14 +51,11 @@ public class KeystoreActions {
             List<String> answers = listener.promptForKeystoreTypeAndPassword();
             ksType = answers.get(1);
             ksPassword = answers.get(0);
-            System.out.println("got password=" + ksPassword);
-            System.out.println("got kstype=" + ksType);
 
             if (KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName().equals(ksType) && ksPassword != null) {
                 if (!ksPassword.contains(":"))
                     ksPassword = "gateway:"+ksPassword;
             }
-            System.out.println("ksPassword now = " + ksPassword);
         }
 
         KeyStore existingSslKeystore = null;
