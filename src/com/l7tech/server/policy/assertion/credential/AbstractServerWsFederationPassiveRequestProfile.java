@@ -113,7 +113,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
      */
     protected void updateRequestXml(PolicyEnforcementContext context, XmlKnob requestXml, SecurityKnob requestSec, Document requestDoc, SamlAssertion samlAssertion, Assertion credSource) throws Exception {
         WssDecorator deco = new WssDecoratorImpl();
-        context.setCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, credSource.getClass()));
+        context.addCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, credSource.getClass()));
 
         ProcessorResult processorResult = requestSec.getProcessorResult();
         DecorationRequirements decoReq = new DecorationRequirements();

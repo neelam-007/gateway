@@ -98,7 +98,7 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
                 }
                 User authenticatedUser = session.getUsedBy();
                 context.setAuthenticationResult(new AuthenticationResult(authenticatedUser, session.getCredentials().getClientCert(), false));
-                context.setCredentials(session.getCredentials());
+                context.addCredentials(session.getCredentials());
                 context.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
                 auditor.logAndAudit(AssertionMessages.SC_SESSION_FOR_USER, new String[] {authenticatedUser.getLogin()});
                 return AssertionStatus.NONE;

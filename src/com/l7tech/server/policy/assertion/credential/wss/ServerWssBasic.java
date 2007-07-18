@@ -70,7 +70,7 @@ public class ServerWssBasic extends AbstractServerAssertion implements ServerAss
                 char[] pass = ut.getPassword();
                 if (pass == null) pass = new char[0];
                 LoginCredentials creds = LoginCredentials.makePasswordCredentials(user, pass, WssBasic.class);
-                context.setCredentials(creds);
+                context.addCredentials(creds);
                 return AssertionStatus.NONE;
             }
         }

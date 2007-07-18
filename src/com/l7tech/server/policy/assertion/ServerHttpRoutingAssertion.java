@@ -353,7 +353,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 } else
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NO_USER_ID, new String[] {id});
             } else {
-                final String login = context.getCredentials().getLogin();
+                final String login = context.getOneSetOfCredentials().getLogin();
                 if (login != null && login.length() > 0) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_CHAIN_LOGIN, new String[] {login});
                     chainId = login;

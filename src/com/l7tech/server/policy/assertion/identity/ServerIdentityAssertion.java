@@ -57,7 +57,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
      * @param context
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) {
-        LoginCredentials pc = context.getCredentials();
+        LoginCredentials pc = context.getOneSetOfCredentials();
 
         if (pc == null && context.getAuthenticatedUser() == null) {
             // No credentials have been found yet

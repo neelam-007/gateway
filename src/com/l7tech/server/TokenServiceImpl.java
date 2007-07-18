@@ -52,7 +52,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.crypto.SecretKey;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -169,7 +168,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             }
 
             // at this point, we should have credentials
-            LoginCredentials creds = context.getCredentials();
+            LoginCredentials creds = context.getOneSetOfCredentials();
             User authenticatedUser = null;
             if(creds!=null) {
                 authenticatedUser = authenticator.authenticate(creds);
@@ -309,7 +308,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         TcpKnob tcpKnob = context.getRequest().getTcpKnob();
         if (tcpKnob != null)
             clientAddress = tcpKnob.getRemoteAddress();
-        LoginCredentials creds = context.getCredentials();
+        LoginCredentials creds = context.getOneSetOfCredentials();
 
         // Generate the SAML assertion
         SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
@@ -362,7 +361,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         SecureConversationSession newSession;
         try {
             newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor,
-                                                                                             context.getCredentials(),
+                                                                                             context.getOneSetOfCredentials(),
                                                                                              scns);
         } catch (DuplicateSessionException e) {
             throw new TokenServiceException(e);

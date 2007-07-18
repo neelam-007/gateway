@@ -138,7 +138,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
             return AssertionStatus.AUTH_REQUIRED;
         }
 
-        context.setCredentials(LoginCredentials.makePasswordCredentials(login, pass.toCharArray(), XpathCredentialSource.class));
+        context.addCredentials(LoginCredentials.makePasswordCredentials(login, pass.toCharArray(), XpathCredentialSource.class));
 
         return AssertionStatus.NONE;
     }

@@ -196,7 +196,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
      */
     protected void doAttachSamlSenderVouches(PolicyEnforcementContext context, SignerInfo signerInfo)
             throws SAXException, IOException, SignatureException, CertificateException {
-        LoginCredentials svInputCredentials = context.getCredentials();
+        LoginCredentials svInputCredentials = context.getOneSetOfCredentials();
         if (svInputCredentials == null) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_SAML_SV_NOT_AUTH);
         } else {

@@ -31,7 +31,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.logging.Logger;
 import java.security.GeneralSecurityException;
-import javax.crypto.SecretKey;
 
 /**
  * Ensures that a UsernameToken was present in the request, was encrypted, and was signed with the same token that
@@ -106,7 +105,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractServerAsserti
                 char[] pass = utok.getPassword();
                 if (pass == null) pass = new char[0];
                 LoginCredentials creds = LoginCredentials.makePasswordCredentials(user, pass, WssBasic.class);
-                context.setCredentials(creds);
+                context.addCredentials(creds);
 
                 // Configure the eventual response to reuse this EncryptedKey
                 try {

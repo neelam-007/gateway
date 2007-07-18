@@ -14,7 +14,6 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.SecurityContext;
 import com.l7tech.common.util.CausedIOException;
-import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -26,11 +25,9 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.server.identity.AuthenticationResult;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -118,7 +115,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
                     logger.info("Ignoring Kerberos session for another service ('"+requestWssKerberos.getServicePrincipalName()+"', '"+kerberosServiceTicket.getServicePrincipalName()+"').");
                 }
                 else {
-                    context.setCredentials(creds);
+                    context.addCredentials(creds);
 
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_SESSION, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 
@@ -139,7 +136,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
                                                         RequestWssKerberos.class,
                                                         null,
                                                         kerberosServiceTicket);
-            context.setCredentials(loginCreds);
+            context.addCredentials(loginCreds);
 
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 

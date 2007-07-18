@@ -129,7 +129,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
 
         // Try to get non-WSS credentials
         if (originalToken == null) {
-            LoginCredentials creds = context.getCredentials();
+            LoginCredentials creds = context.getOneSetOfCredentials();
             if (creds != null) {
                 Object payload = creds.getPayload();
                 if (payload instanceof XmlSecurityToken) {
@@ -210,7 +210,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             if (rstrObj instanceof SamlAssertion) {
                 SamlAssertion samlAssertion = (SamlAssertion) rstrObj;
                 setCachedSecurityToken(context.getCache(), samlAssertion, getSamlAssertionExpiry(samlAssertion));
-                context.setCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, assertion.getClass()));
+                context.addCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, assertion.getClass()));
                 decoReq.setSenderSamlToken(samlAssertion.asElement(), false);
             } else if (rstrObj instanceof UsernameToken) {
                 UsernameToken ut = (UsernameToken) rstrObj;

@@ -107,7 +107,7 @@ public class PolicyServiceTest extends TestCase {
         response.attachHttpResponseKnob(httpResponseKnob);
 
         PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-        context.setCredentials(loginCredentials);
+        context.addCredentials(loginCredentials);
         if (loginCredentials != null) {
             requestDoc = PolicyServiceClient.createGetPolicyRequest("123");
         }

@@ -92,7 +92,7 @@ public class ServerRequestWssX509Cert extends AbstractServerAssertion implements
         if (gotACertAlready != null) {
             X500Name x500name = new X500Name(gotACertAlready.getSubjectX500Principal().getName());
             String certCN = x500name.getCommonName();
-            context.setCredentials(new LoginCredentials(certCN,
+            context.addCredentials(new LoginCredentials(certCN,
                                                         null,
                                                         CredentialFormat.CLIENTCERT,
                                                         subject.getClass(),

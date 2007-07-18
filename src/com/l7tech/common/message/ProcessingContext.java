@@ -22,7 +22,7 @@ public abstract class ProcessingContext {
     private final Message request;
     private final Message response;
 
-    private LoginCredentials credentials;
+    private List<LoginCredentials> credentials = new ArrayList<LoginCredentials>();
     private final List runOnClose = new ArrayList();
     private boolean isAuthenticationMissing = false;
 
@@ -41,12 +41,39 @@ public abstract class ProcessingContext {
         this.response = response;
     }
 
-    public LoginCredentials getCredentials() {
+    /**
+     * Returns only one set of credentials.
+     *
+     * @throws IllegalStateException if there are multiple set of credentials present in this context
+     * @return null if there are no credentials present, a LoginCredentials if there is only one present
+     */
+    public LoginCredentials getOneSetOfCredentials() {
+        if (credentials.size() > 1) {
+            logger.warning("Too many credentials set, throwing IllegalStateException");
+            throw new IllegalStateException("There are more than one set of credentials in this context.");
+        } else if (credentials.size() == 0) {
+            return null;
+        } else {
+            return credentials.get(0);
+        }
+    }
+
+    public List<LoginCredentials> getCredentials() {
         return credentials;
     }
 
-    public void setCredentials(LoginCredentials credentials) {
-        this.credentials = credentials;
+    public void addCredentials(LoginCredentials credentials) {
+        for (LoginCredentials l : this.credentials) {
+            if (l.getCredentialSourceAssertion() == null && credentials.getCredentialSourceAssertion() == null) {
+                logger.warning("A credential of type null was already added in this context");
+                return;
+            } else if (l.getCredentialSourceAssertion().equals(credentials.getCredentialSourceAssertion().getClass())) {
+                logger.warning("A credential of type " + l.getCredentialSourceAssertion().getName() +
+                               " was already added in this context");
+                return;
+            }
+        }
+        this.credentials.add(credentials);
     }
 
     public final Message getRequest() {

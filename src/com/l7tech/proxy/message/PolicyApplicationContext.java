@@ -155,7 +155,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @param requestCredentials the credentials that arrived with the original request.
      */
     public void setRequestCredentials(LoginCredentials requestCredentials) {
-        setCredentials(requestCredentials);
+        addCredentials(requestCredentials);
         this.requestCredentials = requestCredentials;
     }
 
@@ -379,7 +379,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null) {
             pw = ssg.getRuntime().getCredentialManager().getCredentials(trusted);
             if (pw != null)
-                setCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
+                addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
         }
         return pw;
     }
@@ -389,12 +389,12 @@ public class PolicyApplicationContext extends ProcessingContext {
      *
      * @deprecated Agent code should use getCredentialsForTrustedSsg() or getFederatedCredentials() instead.
      */
-    public LoginCredentials getCredentials() {
+    public LoginCredentials getOneSetOfCredentials() {
         throw new UnsupportedOperationException(); // TODO fix this LSP violation
     }
 
     private PasswordAuthentication getPasswordAuthentication() {
-        LoginCredentials lc = super.getCredentials();
+        LoginCredentials lc = super.getOneSetOfCredentials();
         if (lc == null) return null;
         return new PasswordAuthentication(lc.getLogin(), lc.getCredentials());
     }
@@ -408,7 +408,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     public PasswordAuthentication getNewCredentials() throws OperationCanceledException, HttpChallengeRequiredException {
         PasswordAuthentication pw = ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
         if (pw != null)
-            setCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
+            addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
         return pw;
     }
 
@@ -432,7 +432,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null) {
             pw = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
             if (pw != null)
-                setCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
+                addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
         }
         return pw;
     }

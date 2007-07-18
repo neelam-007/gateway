@@ -128,7 +128,7 @@ public class ServerRequestWssSaml extends AbstractServerAssertion implements Ser
                 return AssertionStatus.AUTH_REQUIRED;
             }
             Collection validateResults = new ArrayList();
-            LoginCredentials credentials = context.getCredentials();
+            LoginCredentials credentials = context.getOneSetOfCredentials();
             assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults);
             if (validateResults.size() > 0) {
                 StringBuffer sb2 = new StringBuffer();
@@ -174,7 +174,7 @@ public class ServerRequestWssSaml extends AbstractServerAssertion implements Ser
               nameIdentifier = samlAssertion.getNameIdentifierValue();
             }
 
-            context.setCredentials(new LoginCredentials(nameIdentifier,
+            context.addCredentials(new LoginCredentials(nameIdentifier,
                                                         null,
                                                         CredentialFormat.SAML,
                                                         SamlAuthenticationStatement.class,

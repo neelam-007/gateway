@@ -54,7 +54,7 @@ public abstract class ServerCredentialSourceAssertion extends AbstractServerAsse
     {
         final HashMap authParams = new HashMap();
         try {
-            LoginCredentials pc = context.getCredentials();
+            LoginCredentials pc = context.getOneSetOfCredentials();
             // bugzilla #1884
             if (pc != null && !pc.getCredentialSourceAssertion().equals(_data.getClass())) {
                 pc = null;
@@ -70,7 +70,7 @@ public abstract class ServerCredentialSourceAssertion extends AbstractServerAsse
                 auditor.logAndAudit(AssertionMessages.AUTH_REQUIRED);
                 return AssertionStatus.AUTH_REQUIRED;
             } else {
-                context.setCredentials( pc );
+                context.addCredentials( pc );
                 return checkCredentials(pc, authParams);
             }
         } catch (CredentialFinderException cfe) {

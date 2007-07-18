@@ -269,14 +269,14 @@ public class ManagerAppletFilter implements Filter {
 
         try {
             final AssertionStatus result = dogfoodPolicy.checkRequest(context);
-            if (result == AssertionStatus.NONE && context.getCredentials() != null) {
-                final LoginCredentials credentials = context.getCredentials();
+            if (result == AssertionStatus.NONE && context.getOneSetOfCredentials() != null) {
+                final LoginCredentials credentials = context.getOneSetOfCredentials();
             
                 AdminLoginResult loginResult =
                         adminLogin.login(credentials.getLogin(), new String(credentials.getCredentials()));
 
                 final User user = loginResult.getUser();
-                hreq.setAttribute(PROP_CREDS, context.getCredentials());
+                hreq.setAttribute(PROP_CREDS, context.getOneSetOfCredentials());
                 hreq.setAttribute(PROP_USER, user);
                 auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_SUCCESS, new String[] { getName(user) });
                 return AuthResult.OK;
