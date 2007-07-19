@@ -3,6 +3,6 @@
  */
 package com.l7tech.common.util;
 
-public interface Closeable {
+public interface Closeable extends java.io.Closeable {
     void close();
 }

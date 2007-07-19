@@ -90,21 +90,6 @@ public final class ResourceUtils {
     }
 
     /**
-     * Close a {@link com.l7tech.common.util.Closeable} without throwing any exceptions.
-     *
-     * @param closeable the object to close.
-     */
-    public static void closeQuietly(com.l7tech.common.util.Closeable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Unexpected error when closing object", e);
-            }
-        }
-    }
-
-    /**
      * Close a {@link java.io.Closeable} without throwing any exceptions.
      *
      * @param closeable the object to close.
