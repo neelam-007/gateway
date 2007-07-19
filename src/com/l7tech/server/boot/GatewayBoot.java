@@ -7,10 +7,14 @@ import com.l7tech.server.LifecycleException;
 import com.l7tech.server.tomcat.ConnectionIdValve;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.tomcat.ClassLoaderLoader;
+import com.l7tech.server.tomcat.LoggingFileDirContext;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
+import org.apache.catalina.Wrapper;
+import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.core.StandardWrapper;
 import org.apache.catalina.startup.Embedded;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -70,10 +74,18 @@ public class GatewayBoot {
         host = embedded.createHost(getListenAddress(), s);
         host.getPipeline().addValve(new ConnectionIdValve());
         host.getPipeline().addValve(new ResponseKillerValve());
+        engine.addChild(host);
 
-        context = (StandardContext)embedded.createContext(s, s);
+        context = (StandardContext)embedded.createContext("", s);
         context.setName("");
-        context.setLoader(new ClassLoaderLoader(getClass().getClassLoader()));
+
+        StandardWrapper dflt = (StandardWrapper)context.createWrapper();
+        dflt.setServletClass(DefaultServlet.class.getName());
+        dflt.setName("default");
+        dflt.setLoadOnStartup(1);
+        context.addChild(dflt);
+        context.addServletMapping("/", "default");
+
         host.addChild(context);
     }
 
