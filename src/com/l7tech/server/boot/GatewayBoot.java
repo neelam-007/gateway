@@ -210,7 +210,19 @@ public class GatewayBoot {
 
     public void addHttpConnector(String address, int port) throws ListenerException {
         Connector c = embedded.createConnector(address, port, "http");
-        // TODO other attributes from server.xml like disableUploadTimeout
+
+        c.setRedirectPort(8443);
+        c.setEnableLookups(false);
+
+        // TODO make these settings configurable in some way
+        c.setAttribute("maxThreads", "150");
+        c.setAttribute("minSpareThreads", "25");
+        c.setAttribute("maxSpareThreads", "75");
+        c.setAttribute("acceptCount", "100");
+        c.setAttribute("connectionTimeout", "20000");
+        c.setAttribute("disableUploadTimeout", "true");
+        c.setAttribute("socketFactory", "com.l7tech.server.tomcat.SsgServerSocketFactory");
+
         embedded.addConnector(c);
         try {
             c.start();
@@ -225,6 +237,7 @@ public class GatewayBoot {
         c.setProperty("SSLEnabled","true");
         c.setAttribute("sslProtocol", "TLS");
         c.setSecure(true);
+        c.setEnableLookups(false);
 
         c.setAttribute("keystoreFile", keyinfo.getSslKeystorePath());
         c.setAttribute("keystorePass", keyinfo.getSslKeystorePasswd());
@@ -232,7 +245,14 @@ public class GatewayBoot {
         c.setAttribute("keyAlias", keyinfo.getSSLAlias());
         c.setAttribute("clientAuth", wantClientAuth  ? "want" : "false");
         c.setAttribute("SSLImplementation", "com.l7tech.server.tomcat.SsgSSLImplementation");
-        // TODO other attributes from server.xml like disableUploadTimeout
+
+        // TODO make these settings configurable in some way
+        c.setAttribute("maxThreads", "150");
+        c.setAttribute("minSpareThreads", "25");
+        c.setAttribute("maxSpareThreads", "75");
+        c.setAttribute("disableUploadTimeout", "true");
+        c.setAttribute("acceptCount", "100");
+
         embedded.addConnector(c);
         try {
             c.start();
