@@ -116,7 +116,7 @@ public class ServerVariables {
         new Variable("request.authenticateduser", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 String user = null;
-                User authenticatedUser = context.getAuthenticatedUser();
+                User authenticatedUser = context.getLastAuthenticatedUser();
                 if (authenticatedUser != null) {
                     user = authenticatedUser.getName();
                     if (user == null) user = authenticatedUser.getId();
@@ -126,7 +126,7 @@ public class ServerVariables {
         }),
         new Variable("request.clientid", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                User user = context.getAuthenticatedUser();
+                User user = context.getLastAuthenticatedUser();
                 String dat = user == null ? null : user.getProviderId() + ":" + user.getId();
                 if (dat != null) return "AuthUser:" + dat;
 

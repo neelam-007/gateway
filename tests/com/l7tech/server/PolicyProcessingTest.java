@@ -435,7 +435,7 @@ public class PolicyProcessingTest extends TestCase {
                 UserBean user = new UserBean();
                 user.setLogin("test");
                 user.setCleartextPassword("password");
-                context.setAuthenticationResult(new AuthenticationResult(user));
+                context.addAuthenticationResult(new AuthenticationResult(user));
             }
 
             status = messageProcessor.processMessage(context);

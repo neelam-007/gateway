@@ -182,7 +182,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     }
                 });
                 if (isAuthAssertion && principalCredentials != null)
-                    context.setAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
+                    context.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
                 return AssertionStatus.NONE;
             } catch (PrivilegedActionException e) {
                 if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
@@ -462,7 +462,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     if (CustomServiceRequest.this.pec.isAuthenticated()) {
                         throw new GeneralSecurityException("already authenticated");
                     }
-                    CustomServiceRequest.this.pec.setAuthenticationResult(AuthenticationResult.AUTHENTICATED_UNKNOWN_USER);
+                    CustomServiceRequest.this.pec.addAuthenticationResult(AuthenticationResult.AUTHENTICATED_UNKNOWN_USER);
                 }
             };
         }

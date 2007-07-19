@@ -78,7 +78,7 @@ public class MessageSummaryAuditFactory {
         // TODO refactor into context.glorkUsernameSomehow()
         authenticated = context.isAuthenticated();
         if ( authenticated ) {
-            User u = context.getAuthenticatedUser();
+            User u = context.getLastAuthenticatedUser();
             if (u == null) {
                 LoginCredentials creds = context.getOneSetOfCredentials();
                 if (creds != null) userName = creds.getLogin();

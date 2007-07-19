@@ -341,7 +341,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         if (!context.isAuthenticated()) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NOT_AUTHENTICATED);
         } else {
-            User clientUser = context.getAuthenticatedUser();
+            User clientUser = context.getLastAuthenticatedUser();
             if (clientUser != null) {
                 String id = clientUser.getLogin();
                 if (id == null || id.length() < 1) id = clientUser.getName();

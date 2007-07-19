@@ -146,7 +146,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
         if (assertion.isGlobal()) {
             logger.finest("checking counter against null user");
         } else {
-            user = context.getAuthenticatedUser();
+            user = context.getLastAuthenticatedUser();
             logger.finest("checking counter against user " + user);
         }
 

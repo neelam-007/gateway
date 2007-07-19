@@ -308,7 +308,7 @@ public class AdminWebServiceFilter implements Filter {
         User user = null;
 
         if(context.isAuthenticated()) {
-            user = context.getAuthenticatedUser();
+            user = context.getLastAuthenticatedUser();
         }
 
         if(user==null) {

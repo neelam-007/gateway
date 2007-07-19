@@ -59,7 +59,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
     public AssertionStatus checkRequest(PolicyEnforcementContext context) {
         LoginCredentials pc = context.getOneSetOfCredentials();
 
-        if (pc == null && context.getAuthenticatedUser() == null) {
+        if (pc == null && context.getLastAuthenticatedUser() == null) {
             // No credentials have been found yet
             if (context.isAuthenticated()) {
                 auditor.logAndAudit(AssertionMessages.AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND);
@@ -74,7 +74,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
         }
 
         if (context.isAuthenticated()) {
-            AuthenticationResult authResult = context.getAuthenticationResult();
+            AuthenticationResult authResult = context.getLastAuthenticationResult();
             // The user was authenticated by a previous IdentityAssertion.
             auditor.logAndAudit(AssertionMessages.ALREADY_AUTHENTICATED);
             return checkUser(authResult, context);
@@ -136,7 +136,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
         if (name == null) name = user.getId();
 
         // Authentication succeeded
-        context.setAuthenticationResult(authResult);
+        context.addAuthenticationResult(authResult);
         auditor.logAndAudit(AssertionMessages.AUTHENTICATED, new String[] {name});
 
         // Make sure this guy matches our criteria

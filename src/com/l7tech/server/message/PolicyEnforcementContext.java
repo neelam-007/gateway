@@ -54,7 +54,8 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private ArrayList<String> incrementedCounters = new ArrayList<String>();
     private final Map<ServerAssertion,ServerAssertion> deferredAssertions = new LinkedHashMap<ServerAssertion, ServerAssertion>();
     private boolean replyExpected;
-    private AuthenticationResult authenticationResult = null;
+    private AuthenticationResult lastAuthenticationResult = null;
+    private List<AuthenticationResult> authenticationResults = new ArrayList<AuthenticationResult>();
     private Level auditLevel;
     private boolean auditSaveRequest;
     private boolean auditSaveResponse;
@@ -113,19 +114,26 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     public boolean isAuthenticated() {
-        return authenticationResult != null;
+        return lastAuthenticationResult != null;
     }
 
-    public void setAuthenticationResult(AuthenticationResult authResult) {
-        this.authenticationResult = authResult;
+    public void addAuthenticationResult(AuthenticationResult authResult) {
+        if (!authenticationResults.contains(authResult)) {
+            authenticationResults.add(authResult);
+        }
+        this.lastAuthenticationResult = authResult;
     }
 
-    public AuthenticationResult getAuthenticationResult() {
-        return authenticationResult;
+    public List<AuthenticationResult> getAllAuthenticationResults() {
+        return authenticationResults;
     }
 
-    public User getAuthenticatedUser() {
-        return authenticationResult == null ? null : authenticationResult.getUser();
+    public AuthenticationResult getLastAuthenticationResult() {
+        return lastAuthenticationResult;
+    }
+
+    public User getLastAuthenticatedUser() {
+        return lastAuthenticationResult == null ? null : lastAuthenticationResult.getUser();
     }
 
     public AuditContext getAuditContext() {

@@ -307,7 +307,7 @@ public class PolicyService extends ApplicationObjectSupport {
         Document policyDoc = null;
         if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
-                User user = context.getAuthenticatedUser();
+                User user = context.getLastAuthenticatedUser();
                 policyDoc = respondToPolicyDownloadRequest(policyId, user, policyGetter, pre32PolicyCompat, false);
             } catch (FilteringException e) {
                 response.initialize(exceptionToFault(e));

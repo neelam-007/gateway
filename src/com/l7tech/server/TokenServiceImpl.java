@@ -194,7 +194,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 return status;
             }
 
-            context.setAuthenticationResult(new AuthenticationResult(authenticatedUser, null, false));
+            context.addAuthenticationResult(new AuthenticationResult(authenticatedUser, null, false));
 
             if (status != AssertionStatus.NONE) {
                 String msg = "The internal policy was not respected " + status;
@@ -639,7 +639,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         User user = null;
 
         if(context.isAuthenticated()) {
-            user = context.getAuthenticatedUser();
+            user = context.getLastAuthenticatedUser();
         }
 
         if(user==null) {
