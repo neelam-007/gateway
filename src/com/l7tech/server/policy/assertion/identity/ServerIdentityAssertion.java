@@ -23,6 +23,7 @@ import org.springframework.context.ApplicationContext;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.List;
 
 /**
  * Subclasses of ServerIdentityAssertion are responsible for verifying that the entity
@@ -57,9 +58,9 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
      * @param context
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) {
-        LoginCredentials pc = context.getOneSetOfCredentials();
+        List<LoginCredentials> pCredentials = context.getCredentials();
 
-        if (pc == null && context.getLastAuthenticatedUser() == null) {
+        if (pCredentials.size() < 1 && context.getLastAuthenticatedUser() == null) {
             // No credentials have been found yet
             if (context.isAuthenticated()) {
                 auditor.logAndAudit(AssertionMessages.AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND);
@@ -73,39 +74,41 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
             return AssertionStatus.AUTH_REQUIRED;
         }
 
-        if (context.isAuthenticated()) {
-            AuthenticationResult authResult = context.getLastAuthenticationResult();
-            // The user was authenticated by a previous IdentityAssertion.
-            auditor.logAndAudit(AssertionMessages.ALREADY_AUTHENTICATED);
-            return checkUser(authResult, context);
-        }
-
         if (identityAssertion.getIdentityProviderOid() == IdentityProviderConfig.DEFAULT_OID) {
             auditor.logAndAudit(AssertionMessages.ID_PROVIDER_ID_NOT_SET);
             throw new IllegalStateException("Can't call checkRequest() when no valid identityProviderOid has been set!");
         }
 
-        try {
-            IdentityProvider provider = getIdentityProvider(context);
-            return validateCredentials(provider, pc, context);
-        } catch (InvalidClientCertificateException icce) {
-            auditor.logAndAudit(AssertionMessages.INVALID_CERT, new String[] {pc.getLogin()});
-            // set some response header so that the CP is made aware of this situation
-            context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
-                                                                  SecureSpanConstants.CERT_INVALID);
-            return authFailed(pc, icce);
-        } catch (MissingCredentialsException mce) {
-            context.setAuthenticationMissing();
-            return authFailed(pc, mce);
-        } catch (AuthenticationException ae) {
-            return authFailed(pc, ae);
-        } catch (FindException fe) {
-            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[0], fe);
-            // fla fix, allow the policy to continue in case the credentials be valid for
-            // another id assertion down the road (fix for bug 374)
-            // throw new IdentityAssertionException( err, fe );
-            return AssertionStatus.AUTH_FAILED;
+        AssertionStatus lastStatus = AssertionStatus.UNDEFINED;
+        for (LoginCredentials pc : pCredentials) {
+            try {
+                IdentityProvider provider = getIdentityProvider(context);
+                lastStatus = validateCredentials(provider, pc, context);
+                if (lastStatus.equals(AssertionStatus.NONE)) {
+                    // successful output point
+                    return lastStatus;
+                }
+            } catch (InvalidClientCertificateException icce) {
+                auditor.logAndAudit(AssertionMessages.INVALID_CERT, new String[] {pc.getLogin()});
+                // set some response header so that the CP is made aware of this situation
+                context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
+                                                                      SecureSpanConstants.CERT_INVALID);
+                lastStatus = authFailed(pc, icce);
+            } catch (MissingCredentialsException mce) {
+                context.setAuthenticationMissing();
+                lastStatus = authFailed(pc, mce);
+            } catch (AuthenticationException ae) {
+                lastStatus = authFailed(pc, ae);
+            } catch (FindException fe) {
+                auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[0], fe);
+                // fla fix, allow the policy to continue in case the credentials be valid for
+                // another id assertion down the road (fix for bug 374)
+                // throw new IdentityAssertionException( err, fe );
+                lastStatus = AssertionStatus.AUTH_FAILED;
+            }
         }
+        auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] { identityAssertion.loggingIdentity() });
+        return lastStatus;
     }
 
     /**
@@ -135,7 +138,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
         if (name == null) name = user.getSubjectDn();
         if (name == null) name = user.getId();
 
-        // Authentication succeeded
+        // Authentication success
         context.addAuthenticationResult(authResult);
         auditor.logAndAudit(AssertionMessages.AUTHENTICATED, new String[] {name});
 
@@ -155,14 +158,13 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
         String logid = identityAssertion.loggingIdentity();
 
         // Preserve old logging behavior until there's a compelling reason to change it 
-        if (identityAssertion instanceof MemberOfGroup)
+        if (identityAssertion instanceof MemberOfGroup) {
             logger.info("could not verify membership of group " + logid + " with credentials from " + name);
-        else if (identityAssertion instanceof SpecificUser)
+        } else if (identityAssertion instanceof SpecificUser) {
             logger.info("could not verify identity " + logid + " with credentials from " + name);
-        else
+        } else {
             logger.info("could not verify " + logid + " with credentials from " + name);
-
-        auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] { logid });
+        }
         return AssertionStatus.AUTH_FAILED;
     }
 

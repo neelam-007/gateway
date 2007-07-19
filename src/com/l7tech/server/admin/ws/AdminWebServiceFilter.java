@@ -186,11 +186,11 @@ public class AdminWebServiceFilter implements Filter {
             // Get credentials from dogfood policy
             status = adminPolicy.checkRequest(context);
             if (status == AssertionStatus.NONE) {
-                if (context.getOneSetOfCredentials() != null) {
+                if (context.getLastCredentials() != null) {
                     try {
                         // Try to authenticate using same rules as SSM login
                         // (i.e. must be assigned to a Role with at least one RBAC permission)
-                        final LoginCredentials credentials = context.getOneSetOfCredentials();
+                        final LoginCredentials credentials = context.getLastCredentials();
                         AdminLoginResult loginResult =
                                 adminLogin.login(credentials.getLogin(), new String(credentials.getCredentials()));
 

@@ -129,7 +129,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
 
         // Try to get non-WSS credentials
         if (originalToken == null) {
-            LoginCredentials creds = context.getOneSetOfCredentials();
+            LoginCredentials creds = context.getLastCredentials();
             if (creds != null) {
                 Object payload = creds.getPayload();
                 if (payload instanceof XmlSecurityToken) {

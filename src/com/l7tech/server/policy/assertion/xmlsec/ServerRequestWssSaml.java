@@ -128,7 +128,7 @@ public class ServerRequestWssSaml extends AbstractServerAssertion implements Ser
                 return AssertionStatus.AUTH_REQUIRED;
             }
             Collection validateResults = new ArrayList();
-            LoginCredentials credentials = context.getOneSetOfCredentials();
+            LoginCredentials credentials = context.getLastCredentials();
             assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults);
             if (validateResults.size() > 0) {
                 StringBuffer sb2 = new StringBuffer();

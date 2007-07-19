@@ -23,6 +23,7 @@ public abstract class ProcessingContext {
     private final Message response;
 
     private List<LoginCredentials> credentials = new ArrayList<LoginCredentials>();
+    private LoginCredentials lastCredentials;
     private final List runOnClose = new ArrayList();
     private boolean isAuthenticationMissing = false;
 
@@ -46,17 +47,8 @@ public abstract class ProcessingContext {
      *
      * @return null if there are no credentials present, a LoginCredentials if there is only one present
      */
-    public LoginCredentials getOneSetOfCredentials() {
-        if (credentials.size() > 1) {
-            logger.warning("Too many credentials set");
-            // return last one
-            // todo, find out causes of this and fix them
-            return credentials.get(credentials.size()-1);
-        } else if (credentials.size() == 0) {
-            return null;
-        } else {
-            return credentials.get(0);
-        }
+    public LoginCredentials getLastCredentials() {
+        return lastCredentials;
     }
 
     public List<LoginCredentials> getCredentials() {
@@ -75,6 +67,7 @@ public abstract class ProcessingContext {
             }
         }
         this.credentials.add(credentials);
+        lastCredentials = credentials;
     }
 
     public final Message getRequest() {

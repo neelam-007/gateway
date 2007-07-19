@@ -65,7 +65,7 @@ public class AssertionMessages extends Messages {
     public static final M ID_PROVIDER_ID_NOT_SET                  = m(4203, Level.WARNING, "Cannot call checkRequest() when no valid identity provider OID has been set!");
     public static final M ID_PROVIDER_NOT_FOUND                   = m(4204, Level.WARNING, "Could not find identity provider!");
     public static final M ID_PROVIDER_NOT_EXIST                   = m(4205, Level.WARNING, "Identity assertion refers to a non-existent identity provider");
-    public static final M AUTHENTICATED                           = m(4206, Level.FINEST, "Authenticated {0}");
+    public static final M AUTHENTICATED                           = m(4206, Level.FINE, "Authentication success {0}");
     public static final M INVALID_CERT                            = m(4207, Level.INFO, "Invalid client certificate for {0}");
     public static final M AUTHENTICATION_FAILED                   = m(4208, Level.INFO, "Authentication failed for {0}");
     public static final M IDASS_NOLOGIN_NOOID                     = m(4209, Level.WARNING, "Assertion not configure properly: both login and UID are null");

@@ -80,7 +80,7 @@ public class MessageSummaryAuditFactory {
         if ( authenticated ) {
             User u = context.getLastAuthenticatedUser();
             if (u == null) {
-                LoginCredentials creds = context.getOneSetOfCredentials();
+                LoginCredentials creds = context.getLastCredentials();
                 if (creds != null) userName = creds.getLogin();
             } else {
                 identityProviderOid = u.getProviderId();
@@ -198,7 +198,7 @@ public class MessageSummaryAuditFactory {
 
     private SecurityTokenType authType(PolicyEnforcementContext context) {
         SecurityTokenType authType = null;
-        LoginCredentials creds = context.getOneSetOfCredentials();
+        LoginCredentials creds = context.getLastCredentials();
         if (creds != null) {
             authType = creds.getType();
         }

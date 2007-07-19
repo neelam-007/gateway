@@ -30,7 +30,7 @@ public class ServerResponseWssSecurityToken extends ServerResponseWssSignature {
 
     protected int addDecorationRequirements(PolicyEnforcementContext context, Document soapmsg, DecorationRequirements wssReq) throws PolicyAssertionException {
         if (assertion.getTokenType() == SecurityTokenType.WSS_USERNAME) {
-            LoginCredentials creds = context.getOneSetOfCredentials();
+            LoginCredentials creds = context.getLastCredentials();
             String name = creds == null ? null : creds.getLogin();
             char[] pass = null;
             if (creds != null && creds.getFormat() == CredentialFormat.CLEARTEXT) {

@@ -54,7 +54,7 @@ public abstract class ServerCredentialSourceAssertion extends AbstractServerAsse
     {
         final HashMap authParams = new HashMap();
         try {
-            LoginCredentials pc = context.getOneSetOfCredentials();
+            LoginCredentials pc = context.getLastCredentials();
             // bugzilla #1884
             if (pc != null && !pc.getCredentialSourceAssertion().equals(_data.getClass())) {
                 pc = null;

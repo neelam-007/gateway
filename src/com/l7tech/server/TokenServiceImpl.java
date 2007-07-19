@@ -168,7 +168,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             }
 
             // at this point, we should have credentials
-            LoginCredentials creds = context.getOneSetOfCredentials();
+            LoginCredentials creds = context.getLastCredentials();
             User authenticatedUser = null;
             if(creds!=null) {
                 authenticatedUser = authenticator.authenticate(creds);
@@ -308,7 +308,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         TcpKnob tcpKnob = context.getRequest().getTcpKnob();
         if (tcpKnob != null)
             clientAddress = tcpKnob.getRemoteAddress();
-        LoginCredentials creds = context.getOneSetOfCredentials();
+        LoginCredentials creds = context.getLastCredentials();
 
         // Generate the SAML assertion
         SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
@@ -361,7 +361,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         SecureConversationSession newSession;
         try {
             newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor,
-                                                                                             context.getOneSetOfCredentials(),
+                                                                                             context.getLastCredentials(),
                                                                                              scns);
         } catch (DuplicateSessionException e) {
             throw new TokenServiceException(e);

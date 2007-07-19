@@ -389,12 +389,12 @@ public class PolicyApplicationContext extends ProcessingContext {
      *
      * @deprecated Agent code should use getCredentialsForTrustedSsg() or getFederatedCredentials() instead.
      */
-    public LoginCredentials getOneSetOfCredentials() {
+    public LoginCredentials getLastCredentials() {
         throw new UnsupportedOperationException(); // TODO fix this LSP violation
     }
 
     private PasswordAuthentication getPasswordAuthentication() {
-        LoginCredentials lc = super.getOneSetOfCredentials();
+        LoginCredentials lc = super.getLastCredentials();
         if (lc == null) return null;
         return new PasswordAuthentication(lc.getLogin(), lc.getCredentials());
     }

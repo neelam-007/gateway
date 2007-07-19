@@ -404,14 +404,14 @@ public class ServerVariables {
         }),
         new Variable("request.username", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                LoginCredentials creds = context.getOneSetOfCredentials();
+                LoginCredentials creds = context.getLastCredentials();
                 if (creds == null) return null;
                 return creds.getName();
             }
         }),
         new Variable("request.password", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                LoginCredentials creds = context.getOneSetOfCredentials();
+                LoginCredentials creds = context.getLastCredentials();
                 if (creds == null) return null;
                 return new String(creds.getCredentials());
             }

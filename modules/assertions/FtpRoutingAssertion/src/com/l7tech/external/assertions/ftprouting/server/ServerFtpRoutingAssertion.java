@@ -159,7 +159,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         String userName = null;
         String password = null;
         if (assertion.getCredentialsSource() == FtpCredentialsSource.PASS_THRU) {
-            final LoginCredentials credentials = context.getOneSetOfCredentials();
+            final LoginCredentials credentials = context.getLastCredentials();
             if (credentials != null) {
                 userName = credentials.getName();
                 password = new String(credentials.getCredentials());

@@ -127,7 +127,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
         GenericHttpRequest loginRequest = null;
         GenericHttpResponse loginResponse = null;
         try {
-            LoginCredentials creds = context.getOneSetOfCredentials();
+            LoginCredentials creds = context.getLastCredentials();
             if (creds == null) {
                 throw new AssertionException(AssertionStatus.AUTH_REQUIRED, AssertionMessages.SAMLBROWSER_CREDENTIALS_NOCREDS);
             }

@@ -146,7 +146,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     throw new PolicyAssertionException(data, "Custom assertion is misconfigured, service '" + service.getName() + "'");
                 }
                 Subject subject = new Subject();
-                LoginCredentials principalCredentials = context.getOneSetOfCredentials();
+                LoginCredentials principalCredentials = context.getLastCredentials();
                 if (principalCredentials != null) {
                     String principalName = principalCredentials.getLogin();
                     auditor.logAndAudit(AssertionMessages.CA_CREDENTIAL_INFO,

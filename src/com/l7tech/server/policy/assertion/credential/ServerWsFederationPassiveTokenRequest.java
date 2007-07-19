@@ -137,7 +137,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
     private UsernameToken getToken(PolicyEnforcementContext context) {
         UsernameToken token = null;
 
-        LoginCredentials creds = context.getOneSetOfCredentials();
+        LoginCredentials creds = context.getLastCredentials();
         if (creds != null) {
             if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
                 token = new UsernameTokenImpl(creds.getLogin(), creds.getCredentials());
