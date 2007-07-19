@@ -146,14 +146,16 @@ class PathValidator {
             }
         }
 
+        if (a instanceof IdentityAssertion) {
+            processAccessControl((IdentityAssertion)a);
+        }
+
         if (a instanceof CompositeAssertion) {
             processComposite((CompositeAssertion)a);
         } else if (a.isCredentialModifier()) {
             processCredentialModifier(a);
         } else if (a.isCredentialSource()) {
             processCredentialSource(a);
-        } else if (a instanceof IdentityAssertion) {
-            processAccessControl((IdentityAssertion)a);
         } else if (a instanceof RoutingAssertion) {
             processRouting((RoutingAssertion)a);
         } else if (isCustom(a)) {
@@ -290,7 +292,7 @@ class PathValidator {
         }
 
         if (seenSpecificUserAssertion && isSpecificUser(a)) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath, "More than one identity in path.", null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "Uncommon use of multiple identities in the same path.", null));
         }
 
         if (seenCustomAuth) {
@@ -309,9 +311,9 @@ class PathValidator {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion must occur before routing.", null));
         }
 
-        if (seenAccessControl && isDefaultActor(a)) {
-            result.addError(new PolicyValidatorResult.
-              Error(a, assertionPath, "Access control already set, this assertion might get ignored.", null));
+        if (seenAccessControl && isDefaultActor(a) || seenCredentialsSinceModified(a)) {
+            result.addWarning(new PolicyValidatorResult.
+              Warning(a, assertionPath, "Uncommon use of multiple access control.", null));
         }
 
         setSeenCredentialsSinceModified(a, false);
@@ -322,14 +324,9 @@ class PathValidator {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion must occur before routing.", null));
         }
 
-        if (seenAccessControl && isDefaultActor(a)) {
-            result.addError(new PolicyValidatorResult.
-              Error(a, assertionPath, "Access control already set, this assertion might get ignored.", null));
-        }
-
-        if (seenCredentialsSinceModified(a)) {
+        if (seenAccessControl && isDefaultActor(a) || seenCredentialsSinceModified(a)) {
             result.addWarning(new PolicyValidatorResult.
-              Warning(a, assertionPath, "You already have a credential assertion.", null));
+              Warning(a, assertionPath, "Uncommon use of multiple access control.", null));
         }
 
         // Dupe checks

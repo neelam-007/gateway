@@ -21,6 +21,7 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.service.PublishedService;
 
 import javax.wsdl.Operation;
@@ -29,6 +30,7 @@ import java.util.logging.Logger;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Arrays;
+import java.util.List;
 import java.text.MessageFormat;
 import java.io.UnsupportedEncodingException;
 
@@ -75,19 +77,29 @@ public class MessageSummaryAuditFactory {
         }
 
         // User info
-        // TODO refactor into context.glorkUsernameSomehow()
         authenticated = context.isAuthenticated();
-        if ( authenticated ) {
-            User u = context.getLastAuthenticatedUser();
-            if (u == null) {
-                LoginCredentials creds = context.getLastCredentials();
-                if (creds != null) userName = creds.getLogin();
-            } else {
-                identityProviderOid = u.getProviderId();
-                userId = u.getId();
-                userName = u.getName();
-                if (userName == null) userName = u.getLogin();
+        if (authenticated) {
+            StringBuffer usernamebuf = new StringBuffer();
+            StringBuffer useridbuf = new StringBuffer();
+            List<AuthenticationResult> allCreds = context.getAllAuthenticationResults();
+            for (AuthenticationResult aARes : allCreds) {
+                String tmp = aARes.getUser().getLogin();
+                if (tmp == null || tmp.length() < 1) {
+                    tmp = aARes.getUser().getName();
+                }
+                if (usernamebuf.length() > 0) usernamebuf.append(", ");
+                usernamebuf.append(tmp);
+                tmp = aARes.getUser().getId();
+                if (tmp != null && tmp.length() > 0) {
+                    if (useridbuf.length() > 0) useridbuf.append(", ");
+                    useridbuf.append(tmp);
+                }
             }
+            if (usernamebuf.length() > 0)
+                userName = usernamebuf.toString();
+            if (useridbuf.length() > 0)
+                userId = useridbuf.toString();
+            // todo, refactor so that we record all authentication types
             authType = authType(context);
         }
 
