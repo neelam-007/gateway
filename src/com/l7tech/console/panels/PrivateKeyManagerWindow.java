@@ -86,14 +86,10 @@ public class PrivateKeyManagerWindow extends JDialog {
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static AsyncAdminMethods.JobId<X509Certificate> activeKeypairJob = null;
     private static String activeKeypairJobAlias = "";
-    private static long activeKeypairJobStarted = 0;
-    private static int activeKeypairJobEstimatedTotalSeconds = 0;
     private static long lastJobPollTime = 0;
     private static long minJobPollInterval = 1011;
     private static TrustedCertAdmin.KeystoreInfo mutableKeystore;
 
-    private JLabel keypairJobProgressLabel;
-    private JProgressBar keypairJobProgressBar;
     private Component keypairJobViewportView;
     private PermissionFlags flags;
     private KeyTable keyTable = null;
@@ -361,8 +357,6 @@ public class PrivateKeyManagerWindow extends JDialog {
 
     private static void setActiveKeypairJob(AsyncAdminMethods.JobId<X509Certificate> keypairJobId, String alias, int secondsToWaitForJobToFinish) {
         activeKeypairJob = keypairJobId;
-        activeKeypairJobStarted = keypairJobId == null ? 0 : System.currentTimeMillis();
-        activeKeypairJobEstimatedTotalSeconds = secondsToWaitForJobToFinish;
         activeKeypairJobAlias = alias;
 
         int minPoll = (secondsToWaitForJobToFinish * 1000) / 30;
@@ -379,25 +373,17 @@ public class PrivateKeyManagerWindow extends JDialog {
             loadPrivateKeys();
     }
 
-    private int getTotalSec() {
-        int totalSec = activeKeypairJobEstimatedTotalSeconds;
-        if (totalSec < 1)
-            totalSec = 1;
-        return totalSec;
-    }
-
     /*
      * Configure the dialog to display either the current cert list, or a please wait panel
      * if the Gateway is currently performing a generate keypair operation for us.
      */
     private List<KeyTableRow> loadPrivateKeys() {
         if (isKeypairJobActive()) {
-            String mess = "        Gateway is generating a new key pair";
-            int totalMillis = getTotalSec() * 1000;
+            String mess = "        Gateway is generating a new key pair (may take up to several minutes)...";
             if (keypairJobViewportView == null) {
                 JPanel panel = new JPanel(new BorderLayout());
-                keypairJobProgressLabel = new JLabel(fmt(mess, 99, 99));
-                keypairJobProgressBar = new JProgressBar();
+                JLabel keypairJobProgressLabel = new JLabel(mess);
+                JProgressBar keypairJobProgressBar = new JProgressBar();
                 JPanel p = new JPanel();
                 p.setLayout(null);
                 p.add(keypairJobProgressLabel);
@@ -410,20 +396,9 @@ public class PrivateKeyManagerWindow extends JDialog {
                 keypairJobProgressBar.setPreferredSize(new Dimension(460, 20));
                 panel.add(p, BorderLayout.CENTER);
                 keypairJobViewportView = panel;
-                keypairJobProgressBar.setIndeterminate(false);
-                keypairJobProgressBar.setMinimum(0);
-                keypairJobProgressBar.setMaximum(totalMillis);
+                keypairJobProgressBar.setIndeterminate(true);
                 keypairJobProgressBar.setStringPainted(false);
             }
-            int elapsedMillis = (int)(System.currentTimeMillis() - activeKeypairJobStarted);
-            keypairJobProgressBar.setValue(elapsedMillis);
-
-            int millisLeft = totalMillis - elapsedMillis;
-            if (millisLeft < 0) millisLeft = 0;
-            int secLeft = millisLeft / 1000;
-            int minLeft = secLeft / 60;
-            secLeft %= 60;
-            keypairJobProgressLabel.setText(fmt(mess, minLeft, secLeft));
 
             keyTableScrollPane.setViewport(null);
             keyTableScrollPane.setViewportView(showingInScrollPane = keypairJobViewportView);
@@ -466,10 +441,6 @@ public class PrivateKeyManagerWindow extends JDialog {
                                           JOptionPane.ERROR_MESSAGE);
             return Collections.emptyList();
         }
-    }
-
-    private String fmt(String mess, int minLeft, int secLeft) {
-        return String.format("%s (est %02d:%02d remaining)...", mess, minLeft, secLeft);
     }
 
     /**
