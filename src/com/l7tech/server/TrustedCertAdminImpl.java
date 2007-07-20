@@ -9,6 +9,7 @@ import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
@@ -17,6 +18,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
@@ -41,6 +43,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     private final SsgKeyStoreManager ssgKeyStoreManager;
 
     public TrustedCertAdminImpl(TrustedCertManager trustedCertManager,
+                                RevocationCheckPolicyManager revocationCheckPolicyManager,
                                 X509Certificate rootCertificate,
                                 X509Certificate sslCertificate,
                                 LicenseManager licenseManager,
@@ -50,6 +53,10 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         this.trustedCertManager = trustedCertManager;
         if (trustedCertManager == null) {
             throw new IllegalArgumentException("trusted cert manager is required");
+        }
+        this.revocationCheckPolicyManager = revocationCheckPolicyManager;
+        if (revocationCheckPolicyManager == null) {
+            throw new IllegalArgumentException("revocation check policy manager is required");
         }
         this.rootCertificate = rootCertificate;
         if (rootCertificate == null) {
@@ -128,6 +135,36 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     public void deleteCert(final long oid) throws FindException, DeleteException, RemoteException {
         checkLicenseHeavy();
         getManager().delete(oid);
+    }
+
+    public List<RevocationCheckPolicy> findAllRevocationCheckPolicies() throws FindException, RemoteException {
+        checkLicense();
+        return new ArrayList<RevocationCheckPolicy>(getRevocationCheckPolicyManager().findAll());
+    }
+
+    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(long oid) throws FindException, RemoteException {
+        checkLicense();
+        return getRevocationCheckPolicyManager().findByPrimaryKey(oid);
+    }
+
+    public long saveRevocationCheckPolicy(RevocationCheckPolicy revocationCheckPolicy) throws SaveException, UpdateException, VersionException, RemoteException {
+        checkLicenseHeavy();
+
+        long oid;
+        RevocationCheckPolicyManager manager = getRevocationCheckPolicyManager();
+        if (revocationCheckPolicy.getOid() == RevocationCheckPolicy.DEFAULT_OID) {
+            oid = manager.save(revocationCheckPolicy);
+        } else {
+            manager.update(revocationCheckPolicy);
+            oid = revocationCheckPolicy.getOid();
+        }
+
+        return oid;
+    }
+
+    public void deleteRevocationCheckPolicy(long oid) throws FindException, DeleteException, RemoteException {
+        checkLicenseHeavy();
+        getRevocationCheckPolicyManager().delete(oid);
     }
 
     public X509Certificate[] retrieveCertFromUrl(String purl) throws IOException, HostnameMismatchException {
@@ -380,7 +417,12 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         return trustedCertManager;
     }
 
+    private RevocationCheckPolicyManager getRevocationCheckPolicyManager() {
+        return revocationCheckPolicyManager;
+    }
+
     private Logger logger = Logger.getLogger(getClass().getName());
     private final TrustedCertManager trustedCertManager;
+    private final RevocationCheckPolicyManager revocationCheckPolicyManager;
 
 }

@@ -99,6 +99,7 @@
                 <idref bean="schemaEntryManager"/>
                 <idref bean="sharedKeyManager"/>
                 <idref bean="keystoreFileManager"/>
+                <idref bean="revocationCheckPolicyManager"/>
             </list>
         </property>
     </bean>

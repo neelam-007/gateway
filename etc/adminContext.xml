@@ -288,6 +288,9 @@
             <ref bean="trustedCertManager"/>
         </constructor-arg>
         <constructor-arg>
+            <ref bean="revocationCheckPolicyManager"/>
+        </constructor-arg>        
+        <constructor-arg>
             <ref bean="rootCertificate"/>
         </constructor-arg>
         <constructor-arg>

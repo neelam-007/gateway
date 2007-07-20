@@ -277,6 +277,18 @@ CREATE TABLE trusted_cert (
   INDEX i_ski (ski)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+DROP TABLE IF EXISTS revocation_check_policy;
+CREATE TABLE revocation_check_policy (
+  objectid bigint(20) NOT NULL,
+  version int(11) default NULL,
+  name varchar(128) NOT NULL,
+  revocation_policy_xml mediumtext,
+  default_policy tinyint default '0',
+  default_success tinyint default '0',
+  PRIMARY KEY  (objectid),
+  UNIQUE KEY rcp_name_idx (name)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 DROP TABLE IF EXISTS fed_user;
 CREATE TABLE fed_user (
   objectid bigint(20) NOT NULL,
@@ -754,11 +766,15 @@ INSERT INTO rbac_permission VALUES (-551,0,-550,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-552,0,-550,'UPDATE',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-553,0,-550,'DELETE',NULL,'CLUSTER_INFO');
 
-INSERT INTO rbac_role VALUES (-600,0,'Manage Certificates (truststore)', null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates.');
+INSERT INTO rbac_role VALUES (-600,0,'Manage Certificates (truststore)', null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.');
 INSERT INTO rbac_permission VALUES (-601,0,-600,'UPDATE',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-602,0,-600,'READ',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-603,0,-600,'DELETE',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-604,0,-600,'CREATE',NULL,'TRUSTED_CERT');
+INSERT INTO rbac_permission VALUES (-605,0,-600,'UPDATE',NULL,'REVOCATION_CHECK_POLICY');
+INSERT INTO rbac_permission VALUES (-606,0,-600,'READ',NULL,'REVOCATION_CHECK_POLICY');
+INSERT INTO rbac_permission VALUES (-607,0,-600,'DELETE',NULL,'REVOCATION_CHECK_POLICY');
+INSERT INTO rbac_permission VALUES (-608,0,-600,'CREATE',NULL,'REVOCATION_CHECK_POLICY');
 
 INSERT INTO rbac_role VALUES (-650,0,'Manage JMS Connections', null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JMS connections.');
 INSERT INTO rbac_permission VALUES (-651,1,-650,'READ',NULL,'JMS_CONNECTION');

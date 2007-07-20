@@ -13,6 +13,7 @@ import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.audit.SystemAuditRecord;
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.xml.schema.SchemaEntry;
@@ -43,6 +44,7 @@ public enum EntityType {
     JMS_CONNECTION("JMS Connection", JmsConnection.class, com.l7tech.objectmodel.EntityType.JMS_CONNECTION, true),
     JMS_ENDPOINT("JMS Endpoint", JmsEndpoint.class, com.l7tech.objectmodel.EntityType.JMS_ENDPOINT, true),
     TRUSTED_CERT("Trusted Certificate", TrustedCert.class, com.l7tech.objectmodel.EntityType.TRUSTED_CERT, true),
+    REVOCATION_CHECK_POLICY("Revocation Check Policy", RevocationCheckPolicy.class, com.l7tech.objectmodel.EntityType.REVOCATION_CHECK_POLICY, true),
     SSG_KEY_ENTRY("Private Key", Entity.class, com.l7tech.objectmodel.EntityType.PRIVATE_KEY, true), // TODO find a good home for SsgKeyEntry.class
     ALERT_TRIGGER("Alert Event", AlertEvent.class, com.l7tech.objectmodel.EntityType.ALERT_TRIGGER, false),
     ALERT_ACTION("Alert Notification", Notification.class, com.l7tech.objectmodel.EntityType.ALERT_ACTION, false),

@@ -5,6 +5,7 @@ package com.l7tech.common.security;
 
 import com.l7tech.common.AsyncAdminMethods;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
+import static com.l7tech.common.security.rbac.EntityType.REVOCATION_CHECK_POLICY;
 import static com.l7tech.common.security.rbac.EntityType.SSG_KEY_ENTRY;
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
 import com.l7tech.common.security.rbac.MethodStereotype;
@@ -83,6 +84,57 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Secured(stereotype= DELETE_BY_ID)
     public void deleteCert(long oid) throws FindException, DeleteException, RemoteException;
+
+    /**
+     * Retrieves all {@link RevocationCheckPolicy}s from the database.
+     *
+     * @return a {@link List} of {@link RevocationCheckPolicy RevocationCheckPolicies}
+     * @throws FindException if there was a server-side problem accessing the requested information
+     * @throws RemoteException on remote communication error
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=REVOCATION_CHECK_POLICY,stereotype=FIND_ENTITIES)
+    public List<RevocationCheckPolicy> findAllRevocationCheckPolicies() throws FindException, RemoteException;
+
+    /**
+     * Retrieves the {@link RevocationCheckPolicy} with the specified oid.
+     *
+     * @param oid the oid of the {@link RevocationCheckPolicy} to retrieve
+     * @return the RevocationCheckPolicy or null if no policy exists with the given oid
+     * @throws FindException if there was a server-side problem accessing the requested information
+     * @throws RemoteException on remote communication error
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=REVOCATION_CHECK_POLICY,stereotype=FIND_BY_PRIMARY_KEY)
+    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(long oid) throws FindException, RemoteException;
+
+    /**
+     * Saves a new or existing {@link RevocationCheckPolicy} to the database.
+     *
+     * <p>If the given policy is flagged as the default policy then all other, policies are
+     * updated so they are not the default.</p>
+     *
+     * @param revocationCheckPolicy the {@link RevocationCheckPolicy} to be saved
+     * @return the object id (oid) of the newly saved policy
+     * @throws SaveException if there was a server-side problem saving the policy
+     * @throws UpdateException if there was a server-side problem updating the policy
+     * @throws VersionException if the updated policy was not up-to-date (updating an old version)
+     * @throws RemoteException on remote communication error
+     */
+    @Secured(types=REVOCATION_CHECK_POLICY,stereotype=SAVE_OR_UPDATE)
+    public long saveRevocationCheckPolicy(RevocationCheckPolicy revocationCheckPolicy) throws SaveException, UpdateException, VersionException, RemoteException;
+
+    /**
+     * Removes the specified {@link RevocationCheckPolicy} from the database.
+     *
+     * @param oid the oid of the {@link RevocationCheckPolicy} to be deleted
+     * @throws FindException if the {@link RevocationCheckPolicy} cannot be found
+     * @throws DeleteException if the {@link RevocationCheckPolicy} cannot be deleted
+     * @throws RemoteException on remote communication error
+     */
+    @Secured(types=REVOCATION_CHECK_POLICY,stereotype= DELETE_BY_ID)
+    public void deleteRevocationCheckPolicy(long oid) throws FindException, DeleteException, RemoteException;
+
 
     public static class HostnameMismatchException extends Exception {
         public HostnameMismatchException(String certName, String hostname) {

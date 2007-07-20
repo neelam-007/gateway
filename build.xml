@@ -1645,6 +1645,7 @@
                 <exclude name="com/l7tech/common/security/prov/pkcs11/**/*"/>
                 <!-- goes in lib/ext -->
                 <exclude name="com/l7tech/common/security/TrustedCert**"/>
+                <exclude name="com/l7tech/common/security/RevocationCheckPolicy**"/>
                 <exclude name="com/l7tech/common/security/CertEntity**"/>
                 <exclude name="com/l7tech/common/security/X509Entity**"/>
                 <exclude name="com/l7tech/common/security/keystore/**/*"/>
@@ -3076,6 +3077,23 @@
 
             <!-- Currently there are no classes restricted to 1.4 (although there are a couple restricted to 1.3) -->
             <exclude name="**/*"/>
+        </javac>
+    </target>
+
+    <!--
+      1.5 compile target - use to check that the manager / xml vpn client still work with 1.5
+    -->
+    <target name="compile15" depends="clean, prepare">
+        <!-- fail if not 1.5 jdk -->        
+        <condition property="compile15.versionOk">
+          <equals arg1="1.5" arg2="${java.specification.version}"/>
+        </condition>
+        <fail unless="compile15.versionOk">You must run this with a 1.5 JDK</fail>
+
+        <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
+            deprecation="on" verbose="off" target="1.5" source="1.5">
+            <classpath refid="project.classpath"/>
+            <exclude name="com/l7tech/server/**/*"/>
         </javac>
     </target>
 

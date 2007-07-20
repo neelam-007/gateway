@@ -373,4 +373,17 @@
         <property name="b64edKey" column="b64edval" type="string"/>
     </class>
 
+    <class name="com.l7tech.common.security.RevocationCheckPolicy" table="revocation_check_policy">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+
+        <property name="name" type="string"/>
+        <property name="revocationCheckPolicyXml" column="revocation_policy_xml" type="string"/>
+        <property name="defaultPolicy" column="default_policy" type="boolean"/>
+        <property name="defaultSuccess" column="default_success" type="boolean"/>
+    </class>
+
 </hibernate-mapping>
