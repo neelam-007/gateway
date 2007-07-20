@@ -58,13 +58,12 @@ public interface StashManager {
      *
      * @param ordinal the ordinal that was used in a previous call to stash().
      * @return the size in bytes of the stashed InputStream; or,
-     *         -1 if no such ordinal was stashed; or,
+     *         -1 if no such ordinal was stashed
      */
     long getSize(int ordinal);
 
     /**
-     * Recall the content of the previously-stashed InputStream given its ordinal number, or null if no such
-     * ordinal is currently stashed in this StashManager.
+     * Recall the content of the previously-stashed InputStream given its ordinal number.
      *
      * @param ordinal the ordinal that was used in a previous call to stash().
      * @return an InputStream ready to play back the exact bytes that were previously stashed, followed by EOF.  Never null.

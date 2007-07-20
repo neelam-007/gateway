@@ -7,14 +7,13 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.BufferPool;
+import com.l7tech.common.util.HexUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 /**
  * A StashManager that can only be used for a single request, and which always buffers all InputStreams in memory.
@@ -65,11 +64,11 @@ public class ByteArrayStashManager implements StashManager {
         while (stashed.size() <= ordinal)
             stashed.add(null);
 
-        StashInfo removed = null;
+        final StashInfo removed;
         if (in != null)
-            removed = (StashInfo) stashed.set(ordinal, new StashInfo(in, offset, length));
+            removed = stashed.set(ordinal, new StashInfo(in, offset, length));
         else
-            removed = (StashInfo) stashed.set(ordinal, null);
+            removed = stashed.set(ordinal, null);
 
         if (removed != null)
             removed.release();
@@ -78,7 +77,7 @@ public class ByteArrayStashManager implements StashManager {
     public void unstash(int ordinal) {
         if (stashed.size() <= ordinal || ordinal < 0)
             return;
-        StashInfo removed = (StashInfo) stashed.set(ordinal, null);
+        StashInfo removed = stashed.set(ordinal, null);
         if (removed != null)
             removed.release();
     }
@@ -122,7 +121,7 @@ public class ByteArrayStashManager implements StashManager {
     public boolean peek(int ordinal) {
         if (stashed.size() <= ordinal || ordinal < 0)
             return false;
-        StashInfo stashInfo = (StashInfo)stashed.get(ordinal);
+        StashInfo stashInfo = stashed.get(ordinal);
         return stashInfo != null;
     }
 
@@ -131,10 +130,9 @@ public class ByteArrayStashManager implements StashManager {
     }
 
     public void close() {
-        ArrayList removed = new ArrayList(stashed);
+        ArrayList<StashInfo> removed = new ArrayList<StashInfo>(stashed);
         stashed.clear();
-        for (Iterator stashIter = removed.iterator(); stashIter.hasNext(); ) {
-            StashInfo stashInfo = (StashInfo) stashIter.next();
+        for (StashInfo stashInfo : removed) {
             if (stashInfo != null)
                 stashInfo.release();
         }
@@ -142,13 +140,13 @@ public class ByteArrayStashManager implements StashManager {
 
     //- PRIVATE
 
-    private final ArrayList stashed = new ArrayList(); // contains byte arrays
+    private final ArrayList<StashInfo> stashed = new ArrayList<StashInfo>();
 
     private StashInfo getStashInfo(int ordinal) throws NoSuchPartException {
         if (stashed.size() <= ordinal || ordinal < 0)
             throw new NoSuchPartException("No part stashed with the ordinal " + ordinal);
 
-        StashInfo stashInfo = (StashInfo) stashed.get(ordinal);
+        StashInfo stashInfo = stashed.get(ordinal);
         if (stashInfo == null)
             throw new NoSuchPartException("No part stashed with the ordinal " + ordinal);
 
