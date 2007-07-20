@@ -2,7 +2,9 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.common.util.Functions;
+import com.l7tech.console.action.EditKeyAliasForAssertion;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -57,6 +59,8 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         final Action pref = getPreferredAction();
         if (pref != null) list.add(pref);
         list.addAll(Arrays.asList(super.getActions()));
+        if (asAssertion() instanceof PrivateKeyable)
+            list.add(new EditKeyAliasForAssertion(this));
         return list.toArray(new Action[0]);
     }
 
