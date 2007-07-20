@@ -1,11 +1,14 @@
 package com.l7tech.server.boot;
 
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.tomcat.ConnectionIdValve;
 import com.l7tech.server.tomcat.ResponseKillerValve;
+import com.l7tech.server.tomcat.ServerXmlParser;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Connector;
@@ -15,12 +18,18 @@ import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Embedded;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.xml.sax.SAXException;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * Object that represents a complete, running Gateway instance.
@@ -102,19 +111,35 @@ public class GatewayBoot {
 
             findApplicationContext();
             startBootProcess();
+
             KeystoreUtils keystoreUtils = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
-            String addr;
-            addr = getListenAddress();
-            startInitialConnectors(addr, keystoreUtils);
+            ServerConfig config = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);
+            ServerXmlParser serverXml = new ServerXmlParser();
+            serverXml.load(findServerXml(config));
+            startInitialConnectors(getListenAddress(), keystoreUtils, serverXml);
+
             itworked = true;
         } catch (org.apache.catalina.LifecycleException e) {
             throw new LifecycleException(e);
         } catch (ListenerException e) {
             throw new LifecycleException(e);
+        } catch (InvalidDocumentFormatException e) {
+            throw new LifecycleException("Unable to get Connector info from server.xml: " + ExceptionUtils.getMessage(e), e);
+        } catch (IOException e) {
+            throw new LifecycleException("Unable to get Connector info from server.xml: " + ExceptionUtils.getMessage(e), e);
+        } catch (SAXException e) {
+            throw new LifecycleException("Unable to get Connector info from server.xml: " + ExceptionUtils.getMessage(e), e);
         } finally {
             if (!itworked)
                 running.set(false);
         }
+    }
+
+    private File findServerXml(ServerConfig config) throws FileNotFoundException {
+        String path = config.getProperty(ServerConfig.PARAM_SERVERXML);
+        if (path == null)
+            throw new FileNotFoundException("No server.xml path configured.");
+        return new File(path);
     }
 
     private String getListenAddress() {
@@ -195,33 +220,57 @@ public class GatewayBoot {
         boot.start();
     }
 
-    private void startInitialConnectors(String address, KeystoreUtils keyinfo) throws ListenerException {
-        // TODO get all this info from the database
-        addHttpConnector(address, 8080);
-        addHttpsConnector(address, 8443, true, keyinfo);
-        addHttpsConnector(address, 9443, false, keyinfo);
+    private void startInitialConnectors(String address, KeystoreUtils keyinfo, ServerXmlParser serverXml) throws ListenerException {
+        List<Map<String,String>> connectors = serverXml.getConnectors();
+        for (Map<String, String> connectorAttrs : connectors) {
+            String portStr = connectorAttrs.remove("port");
+            final int port;
+            try {
+                port = Integer.parseInt(portStr);
+            } catch (NumberFormatException nfe) {
+                throw new ListenerException("Bad Connector port attribute: " + portStr);
+            }
+
+            String scheme = connectorAttrs.remove("scheme");
+            if (scheme == null || "http".equals(scheme)) {
+                addHttpConnector(address, port, connectorAttrs);
+            } else if ("https".equals(scheme)) {
+                addHttpsConnector(address, port, keyinfo, connectorAttrs);
+            } else
+                throw new ListenerException("Unsupported Connector scheme in server.xml: " + scheme);
+        }
     }
 
     private static final class ListenerException extends Exception {
+        public ListenerException(String message) {
+            super(message);
+        }
+
         public ListenerException(String message, Throwable cause) {
             super(message, cause);
         }
     }
 
-    public void addHttpConnector(String address, int port) throws ListenerException {
-        Connector c = embedded.createConnector(address, port, "http");
+    private Map<String, String> getDefaultHttpConnectorAttrs() {
+        Map<String, String> m = new LinkedHashMap<String, String>();
+        m.put("maxThreads", "150");
+        m.put("minSpareThreads", "25");
+        m.put("maxSpareThreads", "75");
+        m.put("acceptCount", "100");
+        m.put("connectionTimeout", "20000");
+        m.put("disableUploadTimeout", "true");
+        m.put("socketFactory", "com.l7tech.server.tomcat.SsgServerSocketFactory");
+        return m;
+    }
 
+    public void addHttpConnector(String address, int port,Map<String, String> overrideAttrs) throws ListenerException {
+        Connector c = embedded.createConnector(address, port, "http");
         c.setRedirectPort(8443);
         c.setEnableLookups(false);
 
-        // TODO make these settings configurable in some way
-        c.setAttribute("maxThreads", "150");
-        c.setAttribute("minSpareThreads", "25");
-        c.setAttribute("maxSpareThreads", "75");
-        c.setAttribute("acceptCount", "100");
-        c.setAttribute("connectionTimeout", "20000");
-        c.setAttribute("disableUploadTimeout", "true");
-        c.setAttribute("socketFactory", "com.l7tech.server.tomcat.SsgServerSocketFactory");
+        Map<String, String> attrs = getDefaultHttpConnectorAttrs();
+        attrs.putAll(overrideAttrs);
+        setConnectorAttributes(c, attrs);
 
         embedded.addConnector(c);
         try {
@@ -231,27 +280,39 @@ public class GatewayBoot {
         }
     }
 
-    public void addHttpsConnector(String address, int port, boolean wantClientAuth, KeystoreUtils keyinfo) throws ListenerException {
+    private Map<String, String> getDefaultHttpsConnectorAttrs(KeystoreUtils keyinfo) {
+        Map<String, String> m = new LinkedHashMap<String, String>();
+        m.put("clientAuth", "want");
+        m.put("sslProtocol", "TLS");
+        m.put("keystoreFile", keyinfo.getSslKeystorePath());
+        m.put("keystorePass", keyinfo.getSslKeystorePasswd());
+        m.put("keystoreType", keyinfo.getSslKeyStoreType());
+        m.put("keyAlias", keyinfo.getSSLAlias());
+        m.put("clientAuth", "want");
+        m.put("SSLImplementation", "com.l7tech.server.tomcat.SsgSSLImplementation");
+        m.put("maxThreads", "150");
+        m.put("minSpareThreads", "25");
+        m.put("maxSpareThreads", "75");
+        m.put("disableUploadTimeout", "true");
+        m.put("acceptCount", "100");
+        return m;
+    }
+
+    public void addHttpsConnector(String address,
+                                  int port,
+                                  KeystoreUtils keyinfo,
+                                  Map<String, String> overrideAttrs)
+            throws ListenerException
+    {
         Connector c = embedded.createConnector(address, port, "https");
         c.setScheme("https");
         c.setProperty("SSLEnabled","true");
-        c.setAttribute("sslProtocol", "TLS");
         c.setSecure(true);
         c.setEnableLookups(false);
 
-        c.setAttribute("keystoreFile", keyinfo.getSslKeystorePath());
-        c.setAttribute("keystorePass", keyinfo.getSslKeystorePasswd());
-        c.setAttribute("keystoreType", keyinfo.getSslKeyStoreType());
-        c.setAttribute("keyAlias", keyinfo.getSSLAlias());
-        c.setAttribute("clientAuth", wantClientAuth  ? "want" : "false");
-        c.setAttribute("SSLImplementation", "com.l7tech.server.tomcat.SsgSSLImplementation");
-
-        // TODO make these settings configurable in some way
-        c.setAttribute("maxThreads", "150");
-        c.setAttribute("minSpareThreads", "25");
-        c.setAttribute("maxSpareThreads", "75");
-        c.setAttribute("disableUploadTimeout", "true");
-        c.setAttribute("acceptCount", "100");
+        Map<String, String> attrs = getDefaultHttpsConnectorAttrs(keyinfo);
+        attrs.putAll(overrideAttrs);
+        setConnectorAttributes(c, attrs);
 
         embedded.addConnector(c);
         try {
@@ -259,5 +320,38 @@ public class GatewayBoot {
         } catch (org.apache.catalina.LifecycleException e) {
             throw new ListenerException("Unable to start HTTPS listener: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    private void setConnectorAttributes(Connector c, Map<String, String> attrs) {
+        for (Map.Entry<String, String> entry : attrs.entrySet())
+            c.setAttribute(entry.getKey(), entry.getValue());
+    }
+
+    /**
+     * Provides access to the embedded Tomcat Engine.  It initially contains a single Host, which itself contains a
+     * single Context.
+     *
+     * @return an Engine instance, as long as the Gateway has been started.
+     */
+    public Engine getEngine() {
+        return engine;
+    }
+
+    /**
+     * Provides access to the embedded Tomcat Host.  It initially contains a single Context.
+     *
+     * @return a Host instance, as long as the Gateway has been started.
+     */
+    public Host getHost() {
+        return host;
+    }
+
+    /**
+     * Provides access to the embedded Tomcat servlet context we are running.
+     *
+     * @return a StandardContext instance, as long as the Gateway has been started.
+     */
+    public StandardContext getContext() {
+        return context;
     }
 }

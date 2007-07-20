@@ -703,20 +703,20 @@ public class XmlUtil {
      * and the name must be undecorated.
      *
      * @param parent the {@link Element} in which to search for children. Must be non-null.
-     * @param nsuri the URI of the namespace to which the children must belong, NOT THE PREFIX!  Must be non-null.
+     * @param nsuri the URI of the namespace to which the children must belong, NOT THE PREFIX!  May be null to request only the default namespace.
      * @param name the name of the elements to find. Must be non-null.
      * @return A {@link List} containing all matching child {@link Element}s. Will be empty if the specified parent contains no matching elements
      */
-    public static List findChildElementsByName( Element parent, String nsuri, String name ) {
-        if ( nsuri == null || name == null ) throw new IllegalArgumentException( "nsuri and name must be non-null!" );
-        List found = new ArrayList();
+    public static List<Element> findChildElementsByName( Element parent, String nsuri, String name ) {
+        if ( name == null ) throw new IllegalArgumentException( "name must be non-null!" );
+        List found = new ArrayList<Element>();
 
         NodeList children = parent.getChildNodes();
         for ( int i = 0; i < children.getLength(); i++ ) {
             Node n = children.item(i);
-            if ( n.getNodeType() == Node.ELEMENT_NODE &&
-                 name.equals( n.getLocalName()) &&
-                 nsuri.equals( n.getNamespaceURI() ) )
+            if ((n.getNodeType() == Node.ELEMENT_NODE) &&
+                name.equals(n.getLocalName()) &&
+                (((nsuri == null) && (n.getNamespaceURI() == null)) || ((nsuri != null) && nsuri.equals(n.getNamespaceURI()))))
                 found.add( n );
         }
 
