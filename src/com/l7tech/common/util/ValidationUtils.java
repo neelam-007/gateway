@@ -2,6 +2,9 @@ package com.l7tech.common.util;
 
 import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collection;
 
 /**
  * Input validation methods.
@@ -112,6 +115,39 @@ public class ValidationUtils {
                 String host = test.getHost();
                 ok = host!=null && host.length()>0;
             } catch (MalformedURLException e) {
+            }
+        }
+        else if (allowEmpty) {
+            ok = true;
+        }
+
+        return ok;
+    }
+
+    /**
+     * Check if an (absolute) URL is valid.
+     *
+     * @param urlText the URL text
+     * @param allowEmpty true to treat an empty string as valid
+     * @param schemes the permitted URL schemes (null for any)
+     * @return true if the url is valid
+     */
+    public static boolean isValidUrl(String urlText, boolean allowEmpty, Collection<String> schemes) {
+        boolean present = false;
+        boolean ok = false;
+
+        present = urlText != null && urlText.length() > 0;
+
+        if (present) {
+            try {
+                URI test = new URI(urlText);
+                String host = test.getHost();
+                if (host!=null && host.length()>0) {
+                    if (schemes == null || schemes.contains(test.getScheme())) {
+                        ok = true;
+                    } 
+                }
+            } catch (URISyntaxException e) {
             }
         }
         else if (allowEmpty) {

@@ -439,6 +439,77 @@ public class Utilities {
         layeredPane.getActionMap().put(KEY_ESCAPE, action);
     }
 
+    /**
+     * Set the button to click when a double click is performed on the list.
+     *
+     * @param list The list.
+     * @param button The button whose action should be performed.
+     */
+    public static void setDoubleClickAction(final JList list, final AbstractButton button) {
+        setDoubleClickAction(list, getDispatchingActionListener(button, button.getActionListeners()), button, button.getActionCommand());
+    }
+
+    /**
+     * Set the button to click when a double click is performed on the list.
+     *
+     * @param list The list.
+     * @param listener The listener for the action
+     * @param source The source for the action
+     * @param command The command for the action
+     */
+    public static void setDoubleClickAction(final JList list, final ActionListener listener, final Object source, final String command) {
+        MouseListener mouseListener = new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int index = list.locationToIndex(e.getPoint());
+                    if ( index >= 0 ) {
+                        Rectangle bounds = list.getCellBounds(index, index);
+                        if ( bounds.contains(e.getPoint()) ) {
+                            ActionEvent actionEvent =
+                                    new ActionEvent( source, ActionEvent.ACTION_PERFORMED, command);
+                            listener.actionPerformed( actionEvent );
+                        }
+                    }
+                 }
+            }
+        };
+        list.addMouseListener(mouseListener);
+    }
+
+    /**
+     * Set the button to click when a double click is performed on the table.
+     *
+     * @param table The table.
+     * @param button The button whose action should be performed.
+     */
+    public static void setDoubleClickAction(final JTable table, final AbstractButton button) {
+        setDoubleClickAction(table, getDispatchingActionListener(button, button.getActionListeners()), button, button.getActionCommand());
+    }
+
+    /**
+     * Set the button to click when a double click is performed on the table.
+     *
+     * @param table The table.
+     * @param listener The listener for the action
+     * @param source The source for the action
+     * @param command The command for the action
+     */
+    public static void setDoubleClickAction(final JTable table, final ActionListener listener, final Object source, final String command) {
+        MouseListener mouseListener = new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int index = table.rowAtPoint(e.getPoint());
+                    if ( index >= 0 ) {
+                        ActionEvent actionEvent =
+                                new ActionEvent( source, ActionEvent.ACTION_PERFORMED, command);
+                        listener.actionPerformed( actionEvent );
+                    }
+                 }
+            }
+        };
+        table.addMouseListener(mouseListener);
+    }
+
     public static void doWithConfirmation(Component parent, String title, String message, Runnable runnable) {
         int result = JOptionPane.showConfirmDialog(
             parent, message, title, JOptionPane.YES_NO_CANCEL_OPTION);
@@ -1060,6 +1131,27 @@ public class Utilities {
             // Very restrictive security manager
             return null;
         }
+    }
+
+    /**
+     * Get an ActionListener that dispatches the action to a list of listeners.
+     *
+     * @param component the component that must be enabled for the dispatch to occur
+     * @param listeners The listeners to pass the event
+     * @return The dispatching listener           
+     */
+    public static ActionListener getDispatchingActionListener(final Component component, final ActionListener[] listeners) {
+        return new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                if ( component.isEnabled() ) {
+                    if (listeners != null) {
+                        for (ActionListener listener : listeners) {
+                            listener.actionPerformed(e);
+                        }
+                    }
+                }
+            }
+        };
     }
 
     private static final Method methodSetIconImages;

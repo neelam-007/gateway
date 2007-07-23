@@ -1,7 +1,6 @@
 package com.l7tech.common.security;
 
 import java.util.List;
-import java.util.Collections;
 import java.util.ArrayList;
 import java.io.Serializable;
 
@@ -56,7 +55,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      * Create an uninitialized RevocationCheckPolicyItem
      */
     public RevocationCheckPolicyItem() {
-        trustedSigners = Collections.unmodifiableList(new ArrayList());
+        trustedSigners = new ArrayList();
     }
 
     /**
@@ -114,12 +113,12 @@ public class RevocationCheckPolicyItem implements Serializable {
     }
 
     /**
-     * Get the immutable list of trusted signers for this item.
+     * Get the list of trusted signers for this item.
      *
      * @return The list of Signers (will not be null)
      */
     public List<Long> getTrustedSigners() {
-        return Collections.unmodifiableList(trustedSigners);
+        return new ArrayList(trustedSigners);
     }
 
     /**
@@ -129,7 +128,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      */
     public void setTrustedSigners(List<Long> trustedSigners) {
         if (trustedSigners == null) {
-            this.trustedSigners = Collections.unmodifiableList(new ArrayList());
+            this.trustedSigners = new ArrayList();
         } else {
             this.trustedSigners = new ArrayList(trustedSigners);
         }

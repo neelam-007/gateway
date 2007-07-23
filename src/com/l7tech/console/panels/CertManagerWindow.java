@@ -8,15 +8,12 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.console.event.WizardAdapter;
-import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.event.CertListener;
+import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
@@ -26,8 +23,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.rmi.RemoteException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -46,6 +41,7 @@ public class CertManagerWindow extends JDialog {
     private JButton closeButton;
     private TrustedCertsTable trustedCertTable = null;
     private JScrollPane certTableScrollPane;
+    private JButton certificateValidationButton;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertManagerWindow.class.getName());
     private final PermissionFlags flags;
@@ -99,30 +95,22 @@ public class CertManagerWindow extends JDialog {
             }
         });
 
-        addButton.addActionListener(new ActionListener() {
-
+        certificateValidationButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-
-                        CertImportMethodsPanel sp = new CertImportMethodsPanel(new CertDetailsPanel(new CertUsagePanel(null)), true);
-
-                        Frame f = TopComponents.getInstance().getTopParent();
-                        Wizard w = new AddCertificateWizard(f, sp);
-                        w.addWizardListener(wizardListener);
-
-                        // register itself to listen to the addEvent
-                        //addEntityListener(listener);
-
-                        w.pack();
-                        Utilities.centerOnScreen(w);
-                        DialogDisplayer.display(w);
-
-                    }
-                });
+                showCertificateValidation();
             }
         });
+
+        addButton.addActionListener( new NewTrustedCertificateAction(new CertListener(){
+            public void certSelected(CertEvent ce) {
+                try {
+                    // reload all certs from server
+                    loadTrustedCerts();
+                } catch (RemoteException re) {
+                    throw new RuntimeException(re);
+                }
+            }
+        }, "Add"));
 
         propertiesButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
@@ -149,6 +137,7 @@ public class CertManagerWindow extends JDialog {
                 DialogDisplayer.display(cpw);
             }
         });
+        Utilities.setDoubleClickAction(trustedCertTable, propertiesButton);
 
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
@@ -237,85 +226,9 @@ public class CertManagerWindow extends JDialog {
         propertiesButton.setEnabled(propsEnabled); // Child dialog should be read-only if !canUpdateAny
     }
 
-    /**
-     * The callback for saving the new cert to the database
-     */
-    private WizardListener wizardListener = new WizardAdapter() {
-        /**
-         * Invoked when the wizard has finished.
-         *
-         * @param we the event describing the wizard finish
-         */
-        public void wizardFinished(WizardEvent we) {
-
-            // update the provider
-            Wizard w = (Wizard)we.getSource();
-
-            Object o = w.getWizardInput();
-
-            if (o instanceof TrustedCert) {
-
-                final TrustedCert tc = (TrustedCert)o;
-                if (tc.isTrustedForSsl() || tc.isTrustedForSigningServerCerts()) {
-                    tc.setVerifyHostname(true);
-                }
-
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-
-                        try {
-                            getTrustedCertAdmin().saveCert(tc);
-
-                            // reload all certs from server
-                            loadTrustedCerts();
-
-                        } catch (SaveException e) {
-                            if (ExceptionUtils.causedBy(e, CertificateExpiredException.class)) {
-                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.expired.error"),
-                                                              resources.getString("save.error.title"),
-                                                              JOptionPane.ERROR_MESSAGE);
-                            } else if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.duplicate.error"),
-                                                              resources.getString("save.error.title"),
-                                                              JOptionPane.ERROR_MESSAGE);
-                            } else if (ExceptionUtils.causedBy(e, CertificateNotYetValidException.class)) {
-                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.notyetvalid.error"),
-                                                              resources.getString("save.error.title"),
-                                                              JOptionPane.ERROR_MESSAGE);
-                            } else {
-                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.save.error"),
-                                                              resources.getString("save.error.title"),
-                                                              JOptionPane.ERROR_MESSAGE);
-                            }
-                        } catch (RemoteException e) {
-                            JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.remote.exception"),
-                                                          resources.getString("save.error.title"),
-                                                          JOptionPane.ERROR_MESSAGE);
-                        } catch (VersionException e) {
-                            JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.version.error"),
-                                                          resources.getString("save.error.title"),
-                                                          JOptionPane.ERROR_MESSAGE);
-                        } catch (UpdateException e) {
-                            if (ExceptionUtils.causedBy(e, CertificateExpiredException.class)) {
-                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.expired.error"),
-                                                              resources.getString("save.error.title"),
-                                                              JOptionPane.ERROR_MESSAGE);
-                            } else if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.duplicate.error"),
-                                                              resources.getString("save.error.title"),
-                                                              JOptionPane.ERROR_MESSAGE);
-                            } else {
-                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.update.error"),
-                                                              resources.getString("save.error.title"),
-                                                              JOptionPane.ERROR_MESSAGE);
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-    };
+    private void showCertificateValidation() {
+        DialogDisplayer.display(new ManageCertificateValidationDialog(this));    
+    }
 
     /**
      * Retrieve the object reference of the Trusted Cert Admin service

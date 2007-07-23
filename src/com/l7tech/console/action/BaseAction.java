@@ -204,6 +204,13 @@ public abstract class BaseAction extends AbstractAction {
     protected abstract void performAction();
 
     /**
+     * Actually perform the action.
+     */
+    protected void performAction(ActionEvent ev) {
+        performAction();
+    }
+
+    /**
      * The method that invokes the action programatically 
      */
     public final void invoke() {
@@ -228,7 +235,7 @@ public abstract class BaseAction extends AbstractAction {
         VetoableActionEvent vev = VetoableActionEvent.create(ev);
         fireActionWillPerform(vev);
         try {
-            performAction();
+            performAction(ev);
             fireActionPerformed(ev);
         }
         catch(Throwable throwable) {
