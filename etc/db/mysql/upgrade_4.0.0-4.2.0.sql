@@ -1,5 +1,5 @@
 ---
---- Script to update mysql ssg database from 4.1 to 4.2
+--- Script to update mysql ssg database from 4.0 to 4.2 (no changes in 4.1)
 ---
 --- Layer 7 Technologies, inc
 ---
