@@ -1,10 +1,7 @@
 package com.l7tech.server.config.commands;
 
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.server.partition.PartitionInformation;
-import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -65,31 +62,12 @@ public class AppServerConfigCommand extends BaseConfigurationCommand {
 
         try {
             updateServerConfig(tomcatServerConfigFile);
-            copyDefaultServerConfig();
             success = true;
         } catch (Exception e) {
             logger.severe("Problem updating the server.xml file with Connection ID Management support");
             logger.severe(e.getMessage());
         }
         return success;
-    }
-
-    private void copyDefaultServerConfig() throws IOException {
-        PartitionInformation pInfo = PartitionManager.getInstance().getActivePartition();
-        if (pInfo.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
-            String sourcePath = pInfo.getOSSpecificFunctions().getTomcatServerConfig();
-            String destinationPath = pInfo.getOSSpecificFunctions().getSsgInstallRoot() + "/tomcat/conf/server.xml";
-
-            logger.info("Copying server.xml from default_ partition to " + destinationPath);
-
-            File source = new File(sourcePath);
-            File destination = new File(destinationPath);
-
-            FileUtils.deleteFileSafely(destination.getAbsolutePath());
-            destination.createNewFile();
-
-            FileUtils.copyFile(source, destination);
-        }
     }
 
     private void updateServerConfig(File tomcatServerConfigFile) throws Exception {

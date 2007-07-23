@@ -37,7 +37,10 @@ import java.util.List;
  */
 public class GatewayBoot {
     protected static final Logger logger = Logger.getLogger(GatewayBoot.class.getName());
+    public static final String SHUTDOWN_FILENAME = "SHUTDOWN.NOW";
+    private static final long SHUTDOWN_POLL_INTERVAL = 1987L;
 
+    private final File ssgHome;
     private final File inf;
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -48,6 +51,7 @@ public class GatewayBoot {
     private ApplicationContext applicationContext;
     private Engine engine;
     private Host host;
+    private ServerConfig config;
 
     /**
      * Create a Gateway instance but do not initialize or start it.
@@ -56,6 +60,7 @@ public class GatewayBoot {
      * @param ssgHome        the home directory of the Gateway instance (ie, "/ssg")
      */
     public GatewayBoot(File ssgHome) {
+        this.ssgHome = ssgHome;
         mustBeADirectory(ssgHome);
         inf = new File(ssgHome, "etc" + File.separator + "inf");
     }
@@ -113,7 +118,6 @@ public class GatewayBoot {
             startBootProcess();
 
             KeystoreUtils keystoreUtils = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
-            ServerConfig config = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);
             ServerXmlParser serverXml = new ServerXmlParser();
             serverXml.load(findServerXml(config));
             startInitialConnectors(getListenAddress(), keystoreUtils, serverXml);
@@ -193,17 +197,28 @@ public class GatewayBoot {
     public void runUntilShutdown() throws LifecycleException {
         init();
         start();
+        waitForShutdown();
+        destroy();
+    }
 
-        // TODO: implement shutdown listener
-        Object w = new Object();
-        synchronized (w) {
+    private void waitForShutdown() {
+        if (config == null)
+            throw new IllegalStateException("Unable to wait for shutdown - no serverConfig available");
+        File configDir = config.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, ssgHome.getAbsolutePath(), false);
+        if (configDir == null || !configDir.isDirectory())
+            throw new IllegalStateException("Config directory not found: " + configDir);
+        File shutFile = new File(configDir, SHUTDOWN_FILENAME);
+
+        do {
             try {
-                w.wait();
+                Thread.sleep(SHUTDOWN_POLL_INTERVAL);
             } catch (InterruptedException e) {
-                logger.info("Main thread interrupted - shutting down");
-                destroy();
+                logger.info("Thread interrupted - treating as shutdown request");
+                break;
             }
-        }
+        } while (!shutFile.exists());
+
+        logger.info("SHUTDOWN.NOW file detected - treating as shutdown request");
     }
 
     private void findApplicationContext() throws LifecycleException {
@@ -213,6 +228,7 @@ public class GatewayBoot {
         applicationContext = WebApplicationContextUtils.getWebApplicationContext(context.getServletContext());
         if (applicationContext == null)
             throw new LifecycleException("Configuration error; could not get application context");
+        config = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);
     }
 
     private void startBootProcess() throws LifecycleException {

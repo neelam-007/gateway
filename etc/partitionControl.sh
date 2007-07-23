@@ -36,16 +36,13 @@ build_paths() {
     CONFIG_FILE="${PARTITION_DIR}/server.xml"
     ENABLED_FILE="${PARTITION_DIR}/enabled"
     FIREWALL_FILE="${PARTITION_DIR}/firewall_rules"
-    CATALINA_PID="${PARTITION_DIR}/ssg.pid"
+    GATEWAY_PID="${PARTITION_DIR}/ssg.pid"
+    GATEWAY_SHUTDOWN="${PARTITION_DIR}/SHUTDOWN.NOW"
 }
 
 do_control() {
     . ${SSG_HOME}/bin/partition_defs.sh true "${PARTITION_COUNT}"
-    (perl ${SSG_HOME}/bin/partition_firewall.pl ${FIREWALL_FILE} ${COMMAND})
-
-    if [ -z "$TOMCAT_HOME" ] ; then
-        TOMCAT_HOME="${SSG_HOME}/tomcat/"
-    fi
+    #(perl ${SSG_HOME}/bin/partition_firewall.pl ${FIREWALL_FILE} ${COMMAND})
 
     if [ "${PARTITION_NAME}"  == "default_" ]; then
         if [ -e  /usr/local/Tarari ]; then
@@ -53,18 +50,20 @@ do_control() {
         fi
     fi
 
-    export JAVA_OPTS="${ORIGINAL_JAVA_OPTS} ${partition_opts} -Djava.security.properties==${PARTITION_DIR}/java.security"
-    export TOMCAT_HOME
-    export CATALINA_OPTS=-Dcom.l7tech.server.partitionName=${PARTITION_NAME}
-    export CATALINA_PID
+    JAVA_OPTS="${ORIGINAL_JAVA_OPTS} ${partition_opts} -Djava.security.properties==${PARTITION_DIR}/java.security -Dcom.l7tech.server.partitionName=${PARTITION_NAME}"
+    export JAVA_OPTS
+    export SSG_HOME
+    export GATEWAY_PID
+    export GATEWAY_SHUTDOWN
 
     if [ "${COMMAND}" == "start" ] ; then
-        if [ -f "${CATALINA_PID}" ]  && [ -d "/proc/$(< ${CATALINA_PID})" ] ; then
+        if [ -f "${GATEWAY_PID}" ]  && [ -d "/proc/$(< ${GATEWAY_PID})" ] ; then
             return 1
         fi
-        (su $SSGUSER -c "${TOMCAT_HOME}/bin/catalina.sh ${COMMAND} -config ${CONFIG_FILE} 2>&1 | logger -t SSG-${PARTITION_NAME}") <&- &>/dev/null &
+        
+        (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND} 2>&1 | logger -t SSG-${PARTITION_NAME}") <&- &>/dev/null &
     else
-        (su $SSGUSER -c "${TOMCAT_HOME}/bin/catalina.sh ${COMMAND} -config ${CONFIG_FILE}") &>/dev/null
+        (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}") &>/dev/null
     fi
 }
 
@@ -113,7 +112,7 @@ build_paths
 
 if [ "${COMMAND}" == "status" ] ; then
     STATUS=1
-    if [ -f "${CATALINA_PID}" ]  && [ -d "/proc/$(< ${CATALINA_PID})" ] ; then
+    if [ -f "${GATEWAY_PID}" ]  && [ -d "/proc/$(< ${GATEWAY_PID})" ] ; then
         STATUS=0
     fi
 

@@ -27,7 +27,7 @@
 
 // this is the jar file to process
 // this could also be a directory containing .class files
-open        "build/ROOT_exploded/WEB-INF/classes/*";
+open        "./build/Gateway.jar";
 
 // we dont want to let zelix determine which classes/methods are unused
 // therefore we are excluding everything from trimming otherwise some
@@ -71,4 +71,4 @@ obfuscate   changeLogFileIn=""
 
 // this lets you specify the output directory. it will contain whatever you added with
 // open statement(s) except it will be the obfuscated copy
-saveAll     archiveCompression=all "./build/obfuscation/gatewayclasses";
+saveAll     archiveCompression=all "./build/obfuscation";

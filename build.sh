@@ -1,8 +1,6 @@
 #!/bin/bash
 # build -- Build Script for UneasyRooster
 #
-# TOMCAT_HOME   - This must point to the home directory of your Tomcat
-#             instance.
 # JAVA_HOME - Determines the version of Java used to compile the build.
 
 # If you have problems sprinkle calls to this around the code and
@@ -13,7 +11,6 @@ SRC_ROOT=`pwd`
 reportenv()
 {
     echo "SRC_ROOT=$SRC_ROOT"
-    echo "TOMCAT_HOME=$TOMCAT_HOME"
     echo "JAVA_HOME=$JAVA_HOME"
     echo "PATH=$PATH"
     echo "CLASSPATH=$CLASSPATH"
@@ -43,18 +40,6 @@ fi
 
 PATH="$JAVA_HOME/bin:$PATH"; export PATH
 JDK_CLASSES="$JAVA_HOME/lib/rt.jar:$JAVA_HOME/lib/tools.jar"
-if [ ! -e "$TOMCAT_HOME/bin/startup.sh" ]; then
-    if [ -z "${TOMCAT_HOME}" ] ; then
-        echo "WARNING! TOMCAT_HOME is not set!"
-    else   
-        echo "WARNING! Invalid TOMCAT_HOME [${TOMCAT_HOME}]"
-        echo ""
-        echo "The Tomcat Server wasn't found in directory ${TOMCAT_HOME}."
-        echo "Please set your environment so that the TOMCAT_HOME variable "
-        echo "refers to the Tomcat home installation directory."
-        echo ""
-    fi
-fi
 
 if [ ! -e $SRC_ROOT/build.sh ]; then
     echo ""
@@ -89,7 +74,7 @@ if [ -z "${ANT_PERFORMANCE}" ] || [ "yes" = "${ANT_PERFORMANCE}" ] || [ "true" =
   OPTIONS_PERF="-listener net.sf.antcontrib.perf.AntPerformanceListener"
 fi
 
-"${JAVA_HOME}/bin/java" -Dtomcat.home="$TOMCAT_HOME" ${JAVA_OPTS} ${OPTIONS_PROPS} org.apache.tools.ant.Main ${OPTIONS_PERF} ${OPTIONS_ARGS}
+"${JAVA_HOME}/bin/java" ${JAVA_OPTS} ${OPTIONS_PROPS} org.apache.tools.ant.Main ${OPTIONS_PERF} ${OPTIONS_ARGS}
 RESULT=${?}
 if [ "${1}" == "package" ] || [ "${1}" == "compile" ] ; then
   if [ ${RESULT} -eq 0 ] ; then

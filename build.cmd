@@ -5,7 +5,6 @@ rem -------
 setlocal
 if "%SRC_ROOT%" == "" goto srcRootMissing
 if "%JAVA_HOME%" == "" goto javaHomeMissing
-if "%TOMCAT_HOME%" == "" goto tomcatHomeMissing
 rem - JDK classes -
 set JDK_CLASSES=%JAVA_HOME%\jre\lib\rt.jar;%JAVA_HOME%\lib\tools.jar
 
@@ -22,7 +21,7 @@ set CLASSPATH=%SRC_ROOT%\lib\ant-contrib.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\xalan-2.5.2.jar;%CLASSPATH%
 rem echo %CLASSPATH%
 rem Execute ANT to perform the requested build target
-java org.apache.tools.ant.Main -Dsrc.root="%SRC_ROOT%" -Dtomcat.home="%TOMCAT_HOME%" %1 %2 %3 %4 %5
+java org.apache.tools.ant.Main -Dsrc.root="%SRC_ROOT%" %1 %2 %3 %4 %5
 goto end
 :javaHomeMissing
 @echo The environment variable JAVA_HOME is not present or invalid. Must point to the
@@ -34,12 +33,5 @@ goto end
 @echo valid source root directory.
 @echo Stop.
 goto end
-:tomcatHomeMissing
-@echo The environment variable TOMCAT_HOME is not present or invalid. Must point to the
-@echo valid tomcat root directory.
-@echo Stop.
-goto end
 :end
 endlocal
-
-

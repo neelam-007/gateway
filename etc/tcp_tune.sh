@@ -3,9 +3,9 @@
 #
 # chkconfig: 2345 99 01
 # description: Layer7's Secure Span Gateway TCP protection
-# processname: tomcat
+# processname: Gateway.jar
 # pidfile: /var/run/ssg.pid
-# config: /ssg/tomcat
+# config: /ssg/etc
 
 # Source function library.
 . /etc/rc.d/init.d/functions

@@ -37,7 +37,7 @@ public class GatewayMain {
 
     public static void main(String[] args) {
         try {
-            new GatewayBoot(getServerHome()).runUntilShutdown();
+            new GatewayBoot(getServerHome()).runUntilShutdown();            
         } catch (LifecycleException e) {
             e.printStackTrace(System.err);
             System.err.println("\n\n\n**** Unable to start the server: " + ExceptionUtils.getMessage(e) + "\n\n\n");

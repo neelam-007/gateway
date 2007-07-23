@@ -62,7 +62,6 @@ mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 mv %{buildroot}/ssg/bin/configuser_bashrc %{buildroot}/home/ssgconfig/.bashrc
 mv %{buildroot}/ssg/etc/conf/*.properties %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/etc/conf/cluster_hostname-dist %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
-mv %{buildroot}/ssg/tomcat/conf/server.xml %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/bin/ssg-java.security %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/java.security
 mv %{buildroot}/ssg/bin/pkcs11_linux.cfg %{buildroot}/ssg/etc/conf/pkcs11.cfg
 # mv %{buildroot}/ssg/libexec/* %{buildroot}/libexec
@@ -105,31 +104,15 @@ chmod 711 %{buildroot}/ssg/libexec/*
 
 # Group writeable directories and files
 
+# The main Gateway jar
+/ssg/Gateway.jar
+
 # Ssg bin
 %dir /ssg/bin
 /ssg/bin/*.txt
 %attr(0755,gateway,gateway) /ssg/bin/iptables*
 %attr(0755,gateway,gateway) /ssg/bin/*.pl
 %attr(0755,gateway,gateway) /ssg/bin/*.sh
-
-# Tomcat
-%dir /ssg/tomcat
-/ssg/tomcat/LICENSE
-/ssg/tomcat/NOTICE
-/ssg/tomcat/RELEASE-NOTES
-/ssg/tomcat/RUNNING.txt
-%dir /ssg/tomcat/bin
-/ssg/tomcat/bin/*.jar
-%attr(0755,gateway,gateway) /ssg/tomcat/bin/*.sh
-/ssg/tomcat/bin/*.xml
-/ssg/tomcat/common
-%config(noreplace) /ssg/tomcat/conf
-%dir /ssg/tomcat/logs
-/ssg/tomcat/server
-/ssg/tomcat/shared
-/ssg/tomcat/temp
-/ssg/tomcat/webapps
-/ssg/tomcat/work
 
 # JDK
 %dir /ssg/jdk
@@ -153,6 +136,7 @@ chmod 711 %{buildroot}/ssg/libexec/*
 # Other stuff
 /ssg/etc/ldapTemplates
 /ssg/etc/sql
+/ssg/etc/inf
 /ssg/lib
 %dir /ssg/logs
 /ssg/modules
@@ -323,7 +307,6 @@ chmod -f 775 /ssg/sysconfigwizard/configfiles
 chmod -f 775 /ssg/sysconfigwizard/*.sh
 
 chmod -Rf 775 /ssg/etc/conf
-chmod -Rf 775 /ssg/tomcat/conf
 chmod -Rf 775 /ssg/jdk/jre/lib/security/
 chmod -Rf 775 /ssg/migration
 /bin/chown -R root.root /ssg/libexec
@@ -388,18 +371,3 @@ if [ "$1" = "0" ] ; then
     chkconfig --del ssg
 fi
 
-%changelog
-* Tue May 29 2007 JWT
-- Add password expiry, but this time in the right place
-* Wed Dec 20 2006 SMJ
-- add ssb-dbstatus service
-* Tue Nov 28 2006 MJE
-- added partition migration step to %post
-* Tue Jan 31 2006 JWT
-- install.pl is gone, other changes to track version 4.0
-* Tue Aug 04 2005 JWT
-- Build 3200 Serial line console modifications
-* Mon May 02 2005 JWT
-- Build 3133 Modifies Issue files to show SSG id
-* Thu Oct 28 2004 JWT
-- Build 3028 First version
