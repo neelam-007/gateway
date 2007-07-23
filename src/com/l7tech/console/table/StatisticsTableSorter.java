@@ -56,7 +56,7 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
      * @throws PatternSyntaxException if the pattern's syntax is invalid
      */
     public void setFilter(String pattern) {
-        if (pattern == null || pattern.isEmpty()) {
+        if (pattern == null || pattern.length()==0) {
             serviceNamePattern = null;
         } else {
             serviceNamePattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);

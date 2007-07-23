@@ -309,11 +309,11 @@ public class LogPanel extends JPanel {
 
         try {
             long hours = 0;
-            if (! controlPanel.hoursTextField.getText().isEmpty()) {
+            if ( controlPanel.hoursTextField.getText().length()!=0 ) {
                 hours = Long.parseLong(controlPanel.hoursTextField.getText());
             }
             long minutes = 0;
-            if (! controlPanel.minutesTextField.getText().isEmpty()) {
+            if ( controlPanel.minutesTextField.getText().length()!=0 ) {
                 minutes = Long.parseLong(controlPanel.minutesTextField.getText());
             }
             durationMillis = hours * MILLIS_IN_HOUR + minutes * MILLIS_IN_MINUTE;
