@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
 import com.l7tech.cluster.ClusterNodeInfo;
@@ -6,7 +9,7 @@ import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.GatewayAuditWindow;
-import com.l7tech.console.panels.dashboard.DashboardWindow;
+import com.l7tech.console.panels.dashboard.ServiceMetricsPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.jfree.*;
 import com.l7tech.objectmodel.EntityHeader;
@@ -164,8 +167,8 @@ public class MetricsChartPanel extends ChartPanel {
     /** Maximum time range to display (in milliseconds). */
     private long _maxTimeRange;
 
-    /** The Dashboard window containing this panel. */
-    private final DashboardWindow _dashboardWindow;
+    /** The ServiceMetricsPanel containing this chart panel. */
+    private final ServiceMetricsPanel _serviceMetricsPanel;
 
     /** Time zone for displaying time values. */
     private TimeZone _timeZone;
@@ -482,17 +485,17 @@ public class MetricsChartPanel extends ChartPanel {
      *                      changed later using {@link #setBinInterval}.
      * @param maxTimeRange  maximum time range to display; can be changed later
      *                      using {@link #setMaxTimeRange}.
-     * @param dashboardWindow   the Dashboard window containing this panel
+     * @param serviceMetricsPanel   the ServiceMetricsPanel containing this chart panel
      */
     public MetricsChartPanel(int resolution,
                              long binInterval,
                              long maxTimeRange,
-                             DashboardWindow dashboardWindow) {
+                             ServiceMetricsPanel serviceMetricsPanel) {
         super(null);
         _resolution = resolution;
         _binInterval = binInterval;
         _maxTimeRange = maxTimeRange;
-        _dashboardWindow = dashboardWindow;
+        _serviceMetricsPanel = serviceMetricsPanel;
 
         // Creates the empty data structures.
         _binsInChart = new TreeMap<Long, MetricsSummaryBin>();
@@ -970,13 +973,13 @@ public class MetricsChartPanel extends ChartPanel {
             }
 
             highlightPeriod(periodStart, periodEnd);
-            _dashboardWindow.setSelectedBin(bin, periodStart, periodEnd, true);
+            _serviceMetricsPanel.setSelectedBin(bin, periodStart, periodEnd, true);
             _selectedPeriodStart = periodStart;
             _selectedPeriodEnd   = periodEnd;
         } else {
             // Out of time axis range. This means to deselect.
             unhighlightPeriod();
-            _dashboardWindow.setSelectedBin(null, -1, -1, false);
+            _serviceMetricsPanel.setSelectedBin(null, -1, -1, false);
             _selectedPeriodStart = -1;
             _selectedPeriodEnd   = -1;
         }
@@ -994,13 +997,13 @@ public class MetricsChartPanel extends ChartPanel {
             // Find the charted bin containing that period.
             final MetricsSummaryBin bin = findBin(periodStart, periodEnd);
             highlightPeriod(periodStart, periodEnd);
-            _dashboardWindow.setSelectedBin(bin, periodStart, periodEnd, true);
+            _serviceMetricsPanel.setSelectedBin(bin, periodStart, periodEnd, true);
             _selectedPeriodStart = periodStart;
             _selectedPeriodEnd   = periodEnd;
         } else {
             // Out of time axis range. This means to deselect.
             unhighlightPeriod();
-            _dashboardWindow.setSelectedBin(null, -1, -1, false);
+            _serviceMetricsPanel.setSelectedBin(null, -1, -1, false);
             _selectedPeriodStart = -1;
             _selectedPeriodEnd   = -1;
         }
@@ -1074,10 +1077,10 @@ public class MetricsChartPanel extends ChartPanel {
                 _gatewayAuditWindow.setTitle(GATEWAY_AUDIT_WINDOW_TITLE + " (" +
                         timeRangeAsString(startDate, endDate, _timeZone) + ")");
 
-                final ClusterNodeInfo nodeSelected = _dashboardWindow.getClusterNodeSelected();
+                final ClusterNodeInfo nodeSelected = _serviceMetricsPanel.getClusterNodeSelected();
                 _gatewayAuditWindow.getLogPane().setMsgFilterNode(nodeSelected == null ? "" : nodeSelected.getName());
 
-                final EntityHeader serviceSelected = _dashboardWindow.getPublishedServiceSelected();
+                final EntityHeader serviceSelected = _serviceMetricsPanel.getPublishedServiceSelected();
                 _gatewayAuditWindow.getLogPane().setMsgFilterService(serviceSelected == null ? "" : serviceSelected.getName());
 
                 _gatewayAuditWindow.displayAudits(records);

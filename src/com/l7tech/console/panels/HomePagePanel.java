@@ -171,7 +171,6 @@ public class HomePagePanel extends JPanel {
 
         if (!isAdmin() || actions.size() < 3) {
             // Give operator or IPS admin something else to look at (otherwise menu is too impoverished-looking)
-            add("ViewClusterStatus32x32.gif", new ViewClusterStatusAction());
             add("AnalyzeGatewayLog32x32.gif", new ViewGatewayAuditsAction());
         }
 

@@ -1,38 +1,38 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.util;
 
-import com.l7tech.common.gui.util.SwingWorker;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.service.PublishedService;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.ServiceUsage;
+import com.l7tech.common.gui.util.SwingWorker;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceAdmin;
 
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.rmi.RemoteException;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-/*
+/**
  * This class retrieves status of all nodes in a cluster.
- *
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
-
 public class ClusterStatusWorker extends SwingWorker {
 
-    private ClusterStatusAdmin clusterStatusService = null;
-    private Hashtable statsList;
-    private Hashtable newNodeList;
-    private Hashtable currentNodeList;
+    private ClusterStatusAdmin clusterStatusService;
+    private Hashtable<Long, ServiceUsage> statsList;
+    private Hashtable<String, GatewayStatus> newNodeList;
+    private Hashtable<String, GatewayStatus> currentNodeList;
     private long clusterRequestCount;
-    private ServiceAdmin serviceManager = null;
-    private java.util.Date currentClusterSystemTime = null;
-    static Logger logger = Logger.getLogger(ClusterStatusWorker.class.getName());
+    private ServiceAdmin serviceManager;
+    private Date currentClusterSystemTime;
+    private static final Logger logger = Logger.getLogger(ClusterStatusWorker.class.getName());
 
     /**
      * Constructor
@@ -41,27 +41,27 @@ public class ClusterStatusWorker extends SwingWorker {
      * @param clusterStatusService   The reference to the remote ClusterStatusService object.
      * @param currentNodeList   The list of nodes in the cluster obtained from the last retrieval.
      */
-    public ClusterStatusWorker(ServiceAdmin manager, ClusterStatusAdmin clusterStatusService, Hashtable currentNodeList){
+    public ClusterStatusWorker(ServiceAdmin manager, ClusterStatusAdmin clusterStatusService, Hashtable<String, GatewayStatus> currentNodeList){
         this.clusterStatusService = clusterStatusService;
         this.serviceManager = manager;
         this.currentNodeList = currentNodeList;
 
-        statsList = new Hashtable();
+        statsList = new Hashtable<Long, ServiceUsage>();
     }
 
     /**
      * Return the new list of the nodes in the cluter
      *
-     * @return  Hashtable  The new node list.
+     * @return The new node list.
      */
-    public Hashtable getNewNodeList(){
+    public Hashtable<String, GatewayStatus> getNewNodeList(){
         return newNodeList;
     }
 
     /**
      * Return the total request count of the cluster
      *
-     * @return long  The total request count of the cluster.
+     * @return The total request count of the cluster.
      */
     public long getClusterRequestCount(){
         return clusterRequestCount;
@@ -70,25 +70,22 @@ public class ClusterStatusWorker extends SwingWorker {
     /**
      * Get Cluster's current system time.
      *
-     * @return java.util.Date  The current system time of the cluster.
+     * @return The current system time of the cluster.
      */
-    public java.util.Date getCurrentClusterSystemTime() {
+    public Date getCurrentClusterSystemTime() {
         return currentClusterSystemTime;
     }
 
     /**
      * Return the list of statistics for the service usages in every nodes of the cluster.
      *
-     * @return  Vector  The list of statistics.
+     * @return The list of statistics.
      */
-    public Vector getStatisticsList(){
-        Vector stats = new Vector();
+    public Vector<ServiceUsage> getStatisticsList(){
+        Vector<ServiceUsage> stats = new Vector<ServiceUsage>();
 
-        if(statsList !=  null){
-            for (Iterator i = statsList.keySet().iterator(); i.hasNext(); ) {
-                ServiceUsage su = (ServiceUsage) statsList.get(i.next());
-                stats.add(su);
-            }
+        if (statsList != null) {
+            stats.addAll(statsList.values());
         }
         return stats;
     }
@@ -96,21 +93,19 @@ public class ClusterStatusWorker extends SwingWorker {
     /**
      * Consturct the value. This function performs the actual work of retrieving statistics.
      *
-     * @return Object  An object with the value constructed by this function.
+     * @return An object with the value constructed by this function.
      */
     public Object construct() {
-
-        if(serviceManager == null || clusterStatusService == null)
-        {
+        if (serviceManager == null || clusterStatusService == null) {
             return null;
         }
 
-        if(currentNodeList == null){
+        if (currentNodeList == null) {
             throw new RuntimeException("The current node list is NULL");
         }
 
         // create a new empty node list
-        newNodeList = new Hashtable();
+        newNodeList = new Hashtable<String, GatewayStatus>();
 
         // retrieve node status
         ClusterNodeInfo[] cluster = new ClusterNodeInfo[0];
@@ -123,7 +118,7 @@ public class ClusterStatusWorker extends SwingWorker {
             throw new RuntimeException("Remote exception when retrieving cluster status from server",e);
         }
 
-        if(cluster == null){
+        if (cluster == null) {
             return null;
         }
 

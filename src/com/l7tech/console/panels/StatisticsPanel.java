@@ -1,9 +1,8 @@
 /*
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.console.table.StatisticsTableSorter;
 import com.l7tech.console.util.ArrowIcon;
@@ -22,21 +21,17 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Logger;
 
-/*
- * This class creates a statistics panel.
+/**
+ * This class creates a cluster statistics panel.
  */
-
 public class StatisticsPanel extends JPanel {
 
     GenericLogAdmin logService = null;
 //    private ServiceAdmin serviceManager = null;
-    private Vector statsList = new Vector();
+    private Vector<StatisticsRecord> statsList = new Vector<StatisticsRecord>();
 
     // IMPORTANT NOTE:
     // 1. need to make sure that NUMBER_OF_SAMPLE_PER_MINUTE has no fraction when REFRESH_INTERVAL is changed
@@ -61,13 +56,16 @@ public class StatisticsPanel extends JPanel {
     private Icon downArrowIcon = new ArrowIcon(1);
     static Logger logger = Logger.getLogger(StatisticsPanel.class.getName());
 
+    /** Snapshot of services usage at counter reset time. Can be null if counting since cluster startup. */
+    private Map<Long, ServiceUsage> serviceUsageAtCounterStart;
+
     public StatisticsPanel() {
         setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         add(getStatTablePane());
         add(getStatTotalTable());
-        setMinimumSize(new java.awt.Dimension(400, 200));
-        setPreferredSize(new java.awt.Dimension(400, 400));
+        setMinimumSize(new java.awt.Dimension(400, 120));
+        setPreferredSize(new java.awt.Dimension(400, 200));
         lastMinuteCompletedCountsCache = new HashMap();
     }
 
@@ -100,11 +98,10 @@ public class StatisticsPanel extends JPanel {
 
 
         ColumnHeaderTooltips htt = new ColumnHeaderTooltips();
-        htt.setToolTip(getStatColumnModel().getColumn(0), "Service name. Updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
-        htt.setToolTip(getStatColumnModel().getColumn(1), "Number of routing failures since the cluster is up. " + "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
-        htt.setToolTip(getStatColumnModel().getColumn(2), "Number of policy violations since the cluster is up. " + "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
-        htt.setToolTip(getStatColumnModel().getColumn(3), "Number of success since the cluster is up. " + "Updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
-        htt.setToolTip(getStatColumnModel().getColumn(4), "Number of success in the past 60 seconds. " + "Updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
+        htt.setToolTip(getStatColumnModel().getColumn(1), "Number of routing failures during the counting period");
+        htt.setToolTip(getStatColumnModel().getColumn(2), "Number of policy violations during the counting period");
+        htt.setToolTip(getStatColumnModel().getColumn(3), "Number of success during the counting period");
+        htt.setToolTip(getStatColumnModel().getColumn(4), "Number of success in the past 60 seconds, updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
 
         getStatTable().getTableHeader().addMouseMotionListener(htt);
 
@@ -249,9 +246,8 @@ public class StatisticsPanel extends JPanel {
         Declared as member field instead of local variable to avoid reinstantiation. */
     private Set selected = new HashSet();
 
-    public void updateStatisticsTable(Vector rawStatsList) {
-
-        statsList = new Vector();
+    public void updateStatisticsTable(Vector<ServiceUsage> rawStatsList) {
+        statsList = new Vector<StatisticsRecord>();
         totalNumRoutingFailure = 0;
         totalNumPolicyViolation = 0;
         totalNumSuccess = 0;
@@ -259,17 +255,24 @@ public class StatisticsPanel extends JPanel {
 
         for (int i = 0; i < rawStatsList.size(); i++) {
 
-            ServiceUsage stats = (ServiceUsage) rawStatsList.get(i);
+            ServiceUsage stats = rawStatsList.get(i);
             long completedCount = stats.getCompleted();
 
             updateStatCache(stats.getServiceid(), completedCount);
             long lastMinuteCompletedCount = getLastMinuteCompletedCount(stats.getServiceid());
 
-            StatisticsRecord statsRec = new StatisticsRecord(stats.getName(),
-                    stats.getRequests(),
-                    stats.getAuthorized(),
-                    completedCount,
-                    lastMinuteCompletedCount);
+            long requests = stats.getRequests();
+            long authorized = stats.getAuthorized();
+            long completed = stats.getCompleted();
+            if (serviceUsageAtCounterStart != null) {
+                ServiceUsage usageAtCounterStart = serviceUsageAtCounterStart.get(stats.getServiceid());
+                if (usageAtCounterStart != null) {
+                    requests -= usageAtCounterStart.getRequests();
+                    authorized -= usageAtCounterStart.getAuthorized();
+                    completed -= usageAtCounterStart.getCompleted();
+                }
+            }
+            StatisticsRecord statsRec = new StatisticsRecord(stats.getName(), requests, authorized, completed, lastMinuteCompletedCount);
 
             statsList.add(statsRec);
             totalNumRoutingFailure += statsRec.getNumRoutingFailure();
@@ -298,11 +301,9 @@ public class StatisticsPanel extends JPanel {
         }
 
         updateRequestsTotal();
-
     }
 
     private void updateRequestsTotal() {
-
        getStatTotalTable().setValueAt(new Long(totalNumRoutingFailure), 0, 1);
        getStatTotalTable().setValueAt(new Long(totalNumPolicyViolation), 0, 2);
        getStatTotalTable().setValueAt(new Long(totalNumSuccess), 0, 3);
@@ -322,7 +323,6 @@ public class StatisticsPanel extends JPanel {
         getStatTotalTable().setValueAt(null, 0, 3);
         getStatTotalTable().setValueAt(null, 0, 4);
         getStatTotalTableModel().fireTableDataChanged();
-
     }
 
     public void updateStatTotalTableColumnModel(ChangeEvent e) {
@@ -459,5 +459,56 @@ public class StatisticsPanel extends JPanel {
         };
         JTableHeader th = tableView.getTableHeader();
         th.addMouseListener(listMouseListener);
+    }
+
+    /**
+     * Sets the service name filter.
+     *
+     * @param pattern   a regular expression pattern to search within service names;
+     *                  empty or null for no filtering
+     * @throws java.util.regex.PatternSyntaxException if the pattern's syntax is invalid
+     */
+    public void setServiceFilter(String pattern) {
+        getStatTableModel().setFilter(pattern);
+        getStatTableModel().fireTableDataChanged();
+    }
+
+    /**
+     * Sets counters to count from the given service usage snapshot.
+     *
+     * @param snapshot  service usage snapshot
+     */
+    public void setCounterStart(Vector<ServiceUsage> snapshot) {
+        // For a snappier UI experience, instead of waiting for the next timer
+        // round to refresh the display, we manually zero the displayed cell values.
+        Vector<StatisticsRecord> zeroStats = new Vector<StatisticsRecord>();
+        for (StatisticsRecord sr : statsList) {
+            zeroStats.add(new StatisticsRecord(sr.getServiceName(), 0, 0, 0, sr.getCompletedCountLastMinute()));
+        }
+        getStatTableModel().setData(zeroStats);
+        getStatTableModel().fireTableDataChanged();
+
+        getStatTotalTable().setValueAt(0, 0, 1);
+        getStatTotalTable().setValueAt(0, 0, 2);
+        getStatTotalTable().setValueAt(0, 0, 3);
+        getStatTotalTableModel().fireTableDataChanged();
+
+        if (serviceUsageAtCounterStart == null) {
+            serviceUsageAtCounterStart = new HashMap<Long, ServiceUsage>();
+        } else {
+            serviceUsageAtCounterStart.clear();
+        }
+
+        for (ServiceUsage su : snapshot) {
+            serviceUsageAtCounterStart.put(su.getServiceid(), su);
+        }
+
+    }
+
+    /**
+     * Sets counters to count from cluster startup.
+     */
+    public void clearCounterStart() {
+        serviceUsageAtCounterStart = null;
     }
 }

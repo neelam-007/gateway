@@ -1,22 +1,20 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.table;
 
 import com.l7tech.cluster.GatewayStatus;
-import com.l7tech.console.ClusterStatusWindow;
+import com.l7tech.console.panels.dashboard.ClusterStatusPanel;
 
 import javax.swing.table.DefaultTableModel;
-import java.util.logging.Logger;
-import java.util.Vector;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Vector;
+import java.util.logging.Logger;
 
-/*
+/**
  * This class encapsulates the data model for the cluster status table with column sorting capability.
- *
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
-
 public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(ClusterStatusTableSorter.class.getName());
     private boolean ascending = true;
@@ -94,17 +92,17 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
      */
     public Object getValueAt(int row, int col) {
         switch (col) {
-            case ClusterStatusWindow.STATUS_TABLE_NODE_STATUS_COLUMN_INDEX:
+            case ClusterStatusPanel.STATUS_TABLE_NODE_STATUS_COLUMN_INDEX:
                 return new Integer(((GatewayStatus) sortedData[row]).getStatus());
-            case ClusterStatusWindow.STATUS_TABLE_NODE_NAME_COLUMN_INDEX:
+            case ClusterStatusPanel.STATUS_TABLE_NODE_NAME_COLUMN_INDEX:
                 return ((GatewayStatus) sortedData[row]).getName();
-            case ClusterStatusWindow.STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX:
+            case ClusterStatusPanel.STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX:
                 return new Integer(((GatewayStatus) sortedData[row]).getLoadSharing());
-            case ClusterStatusWindow.STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX:
+            case ClusterStatusPanel.STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX:
                 return new Integer(((GatewayStatus) sortedData[row]).getRequestRouted());
-            case ClusterStatusWindow.STATUS_TABLE_LOAD_AVERAGE_COLUMN_INDEX:
+            case ClusterStatusPanel.STATUS_TABLE_LOAD_AVERAGE_COLUMN_INDEX:
                 return new Double(((GatewayStatus) sortedData[row]).getAvgLoad());
-            case ClusterStatusWindow.STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX:
+            case ClusterStatusPanel.STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX:
                 // if the node is down, the uptime retrived from the node is outdated and it should be set to zero
                 if(((GatewayStatus) sortedData[row]).getStatus() == 0 ) {
                     return new Long(0);
@@ -112,9 +110,9 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
                 else{
                     return new Long(((GatewayStatus) sortedData[row]).getUptime());
                 }
-            case ClusterStatusWindow.STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX:
+            case ClusterStatusPanel.STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX:
                 return ((GatewayStatus) sortedData[row]).getAddress();
-            case ClusterStatusWindow.STATUS_TABLE_NODE_ID_COLUMN_INDEX:
+            case ClusterStatusPanel.STATUS_TABLE_NODE_ID_COLUMN_INDEX:
                 return ((GatewayStatus) sortedData[row]).getNodeId();
             default:
                 throw new IllegalArgumentException("Bad Column");
@@ -154,35 +152,35 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
             Object elementB = new Object();
 
             switch (column) {
-                case ClusterStatusWindow.STATUS_TABLE_NODE_STATUS_COLUMN_INDEX:
+                case ClusterStatusPanel.STATUS_TABLE_NODE_STATUS_COLUMN_INDEX:
                     elementA = new Integer(((GatewayStatus) a).getStatus());
                     elementB = new Integer(((GatewayStatus) b).getStatus());
                     break;
-                case ClusterStatusWindow.STATUS_TABLE_NODE_NAME_COLUMN_INDEX:
+                case ClusterStatusPanel.STATUS_TABLE_NODE_NAME_COLUMN_INDEX:
                     elementA = ((GatewayStatus) a).getName();
                     elementB = ((GatewayStatus) b).getName();
                     break;
-                case ClusterStatusWindow.STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX:
+                case ClusterStatusPanel.STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX:
                     elementA = new Long(((GatewayStatus) a).getLoadSharing());
                     elementB = new Long(((GatewayStatus) b).getLoadSharing());
                     break;
-                case ClusterStatusWindow.STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX:
+                case ClusterStatusPanel.STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX:
                     elementA = new Long(((GatewayStatus) a).getRequestRouted());
                     elementB = new Long(((GatewayStatus) b).getRequestRouted());
                     break;
-                case ClusterStatusWindow.STATUS_TABLE_LOAD_AVERAGE_COLUMN_INDEX:
+                case ClusterStatusPanel.STATUS_TABLE_LOAD_AVERAGE_COLUMN_INDEX:
                     elementA = new Double(((GatewayStatus) a).getAvgLoad());
                     elementB = new Double(((GatewayStatus) b).getAvgLoad());
                     break;
-                case ClusterStatusWindow.STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX:
+                case ClusterStatusPanel.STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX:
                     elementA = new Long(((GatewayStatus) a).getUptime());
                     elementB = new Long(((GatewayStatus) b).getUptime());
                     break;
-                case ClusterStatusWindow.STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX:
+                case ClusterStatusPanel.STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX:
                     elementA = ((GatewayStatus) a).getAddress();
                     elementB = ((GatewayStatus) b).getAddress();
                     break;
-                case ClusterStatusWindow.STATUS_TABLE_NODE_ID_COLUMN_INDEX:
+                case ClusterStatusPanel.STATUS_TABLE_NODE_ID_COLUMN_INDEX:
                     elementA = ((GatewayStatus) a).getNodeId();
                     elementB = ((GatewayStatus) b).getNodeId();
                     break;

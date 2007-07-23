@@ -1,12 +1,18 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console;
 
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.common.gui.util.*;
-import com.l7tech.common.security.rbac.Permission;
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.SheetHolder;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.panels.EditGatewayNameDialog;
@@ -29,14 +35,11 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
 
-/*
-* This class is a window extended from JFrame to show the cluster status.
-*
-* Copyright (C) 2003 Layer 7 Technologies Inc.
-*
-* $Id$
-*/
-
+/**
+ * This class is a window extended from JFrame to show the cluster status.
+ *
+ * @deprecated Replaced by {@link com.l7tech.console.panels.dashboard.ClusterStatusPanel} since SecureSpan 4.2.
+ */
 public class ClusterStatusWindow extends JFrame implements LogonListener, SheetHolder {
 
     public static final int STATUS_TABLE_NODE_STATUS_COLUMN_INDEX = 0;

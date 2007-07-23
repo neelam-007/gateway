@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels.dashboard;
 
 import com.l7tech.service.MetricsBin;
@@ -12,7 +15,7 @@ import java.util.ResourceBundle;
  * @author rmak
  */
 /* package */ class Resolution {
-    private static final ResourceBundle _resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
+    private static final ResourceBundle _resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.ServiceMetricsPanel");
 
     /** Metrics bin resolution ({@link com.l7tech.service.MetricsBin#RES_FINE}, {@link com.l7tech.service.MetricsBin#RES_HOURLY} or {@link com.l7tech.service.MetricsBin#RES_DAILY}). */
     private final int _resolution;

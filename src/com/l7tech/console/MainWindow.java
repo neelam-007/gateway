@@ -49,12 +49,12 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClassLoader;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.URL;
 
 
 /**
@@ -94,7 +94,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem menuItemPref = null;
     private JMenuItem auditMenuItem = null;
     private JMenuItem fromFileMenuItem = null;
-    private JMenuItem statMenuItem = null;
     private JMenuItem manageJmsEndpointsMenuItem = null;
     private JMenuItem manageKerberosMenuItem = null;
     private JMenuItem manageCertificatesMenuItem = null;
@@ -120,7 +119,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private PublishServiceAction publishServiceAction = null;
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
     private CreateServiceWsdlAction createServiceAction = null;
-    private ViewClusterStatusAction viewClusterStatusAction = null;
     private NewPolicyAction newPolicyAction;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
     private ViewAuditsOrLogsFromFileAction auditOrLogFromFileAction;
@@ -627,7 +625,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         menu.addSeparator();
 
         menu.add(getDashboardMenuItem());
-        menu.add(getStatMenuItem());
         menu.add(getAuditMenuItem());
         menu.add(getFromFileMenuItem());
 
@@ -1442,15 +1439,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         return auditOrLogFromFileAction;
     }
 
-    private Action getClusterStatusAction() {
-        if (viewClusterStatusAction != null) return viewClusterStatusAction;
-        viewClusterStatusAction = new ViewClusterStatusAction();
-        viewClusterStatusAction.setEnabled(false);
-        this.addLogonListener(viewClusterStatusAction);
-        addPermissionRefreshListener(viewClusterStatusAction);
-        return viewClusterStatusAction;
-    }
-
     /**
      * Return the mainJSplitPaneTop property value.
      *
@@ -1645,7 +1633,6 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             menu = new JPopupMenu("Monitor...");
             menu.add(getDashboardMenuItem());
-            menu.add(getStatMenuItem());
             menu.add(getAuditMenuItem());
             menu.add(getFromFileMenuItem());
             Utilities.removeToolTipsFromMenuItems(menu);
@@ -2155,8 +2142,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         // Don't timeout as long as any monitoring window is displaying.
         for (Frame frame : JFrame.getFrames()) {
-            if (frame instanceof ClusterStatusWindow ||
-                frame instanceof GatewayAuditWindow ||
+            if (frame instanceof GatewayAuditWindow ||
                 frame instanceof DashboardWindow) {
                 if (frame.isVisible()) {
                     return;
@@ -2345,14 +2331,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (manageClusterLicensesMenuItem != null) return manageClusterLicensesMenuItem;
         manageClusterLicensesMenuItem = new JMenuItem(getManagerClusterLicensesAction());
         return manageClusterLicensesMenuItem;
-    }
-
-    public JMenuItem getStatMenuItem() {
-
-        if (statMenuItem != null) return statMenuItem;
-        statMenuItem = new JMenuItem(getClusterStatusAction());
-
-        return statMenuItem;
     }
 
     public void updateNodeNameInStatusMessage(String oldName, String newName) {

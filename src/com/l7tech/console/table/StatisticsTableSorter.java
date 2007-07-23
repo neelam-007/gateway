@@ -10,18 +10,19 @@ package com.l7tech.console.table;
 import com.l7tech.logging.StatisticsRecord;
 
 import javax.swing.table.DefaultTableModel;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class StatisticsTableSorter extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(StatisticsTableSorter.class.getName());
     boolean ascending = true;
     int columnToSort = 0;
     int compares;
-    private Vector data;
-    private Object[] sortedData = null;
+    private Pattern serviceNamePattern;
+    private Vector<StatisticsRecord> rawData;
+    private StatisticsRecord[] displayData;
 
     public StatisticsTableSorter() {
     }
@@ -34,8 +35,32 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
         super.setRealModel(model);
     }
 
-    public void setData(Vector data) {
-        this.data = data;
+    /**
+     * Sets the table data.
+     * Filtering will be applied (assigned using {@link #setFilter}.
+     * Needs to call {@link #fireTableDataChanged} afterwards to cause repaint.
+     *
+     * @param data  vector of service statistics
+     */
+    public void setData(Vector<StatisticsRecord> data) {
+        this.rawData = data;
+        sortData(columnToSort, false);
+    }
+
+    /**
+     * Sets the service name filter.
+     * Needs to call {@link #fireTableDataChanged} afterwards to cause repaint.
+     *
+     * @param pattern a regular expression pattern to search within service names;
+     *                      empty or null for no filtering
+     * @throws PatternSyntaxException if the pattern's syntax is invalid
+     */
+    public void setFilter(String pattern) {
+        if (pattern == null || pattern.isEmpty()) {
+            serviceNamePattern = null;
+        } else {
+            serviceNamePattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+        }
         sortData(columnToSort, false);
     }
 
@@ -50,7 +75,7 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
     public void sortData(int column, boolean orderToggle) {
 
         if(orderToggle){
-            ascending = ascending ? false : true;
+            ascending = !ascending;
         }
 
         // always sort in ascending order if the user select a new column
@@ -60,29 +85,52 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
         // save the column index
         columnToSort = column;
 
-        Object[] sorted = data.toArray();
-        Arrays.sort(sorted, new ColumnSorter(columnToSort, ascending));
-        sortedData = sorted;
+        StatisticsRecord[] filtered = null;
+        if (serviceNamePattern != null) {
+            try {
+                List<StatisticsRecord> filteredList = new ArrayList<StatisticsRecord>();
+                for (StatisticsRecord sr : rawData) {
+                    if (serviceNamePattern.matcher(sr.getServiceName()).find()) {
+                        filteredList.add(sr);
+                    }
+                }
+                filtered = filteredList.toArray(new StatisticsRecord[filteredList.size()]);
+            } catch (PatternSyntaxException e) {
+                // Default to no filtering.
+                filtered = rawData.toArray(new StatisticsRecord[rawData.size()]);
+            }
+        } else {
+            // No filtering.
+            filtered = rawData.toArray(new StatisticsRecord[rawData.size()]);
+        }
+        Arrays.sort(filtered, new ColumnSorter(columnToSort, ascending));
+        displayData = filtered;
     }
 
+    @Override
+    public int getRowCount() {
+        return displayData == null ? 0 : displayData.length;
+    }
+
+    @Override
     public Object getValueAt(int row, int col) {
         switch (col) {
             case 0:
-                return ((StatisticsRecord) sortedData[row]).getServiceName();
+                return displayData[row].getServiceName();
             case 1:
-                return new Long(((StatisticsRecord) sortedData[row]).getNumRoutingFailure());
+                return new Long(displayData[row].getNumRoutingFailure());
             case 2:
-                return new Long(((StatisticsRecord) sortedData[row]).getNumPolicyViolation());
+                return new Long(displayData[row].getNumPolicyViolation());
             case 3:
-                return new Long(((StatisticsRecord) sortedData[row]).getNumSuccess());
+                return new Long(displayData[row].getNumSuccess());
             case 4:
-                return new Long(((StatisticsRecord) sortedData[row]).getNumSuccessLastMinute());
+                return new Long(displayData[row].getNumSuccessLastMinute());
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
     }
 
-    public class ColumnSorter implements Comparator {
+    public class ColumnSorter implements Comparator<StatisticsRecord> {
         private boolean ascending;
         private int column;
 
@@ -91,31 +139,31 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
             this.column = column;
         }
 
-        public int compare(Object a, Object b) {
+        public int compare(StatisticsRecord a, StatisticsRecord b) {
 
             Object elementA = null;
             Object elementB = null;
 
             switch (column) {
                 case 0:
-                    elementA = ((StatisticsRecord) a).getServiceName();
-                    elementB = ((StatisticsRecord) b).getServiceName();
+                    elementA = a.getServiceName();
+                    elementB = b.getServiceName();
                     break;
                 case 1:
-                    elementA = new Long(((StatisticsRecord) a).getNumRoutingFailure());
-                    elementB = new Long(((StatisticsRecord) b).getNumRoutingFailure());
+                    elementA = new Long(a.getNumRoutingFailure());
+                    elementB = new Long(b.getNumRoutingFailure());
                     break;
                 case 2:
-                    elementA = new Long(((StatisticsRecord) a).getNumPolicyViolation());
-                    elementB = new Long(((StatisticsRecord) b).getNumPolicyViolation());
+                    elementA = new Long(a.getNumPolicyViolation());
+                    elementB = new Long(b.getNumPolicyViolation());
                     break;
                 case 3:
-                    elementA = new Long(((StatisticsRecord) a).getNumSuccess());
-                    elementB = new Long(((StatisticsRecord) b).getNumSuccess());
+                    elementA = new Long(a.getNumSuccess());
+                    elementB = new Long(b.getNumSuccess());
                     break;
                 case 4:
-                    elementA = new Long(((StatisticsRecord) a).getNumSuccessLastMinute());
-                    elementB = new Long(((StatisticsRecord) b).getNumSuccessLastMinute());
+                    elementA = new Long(a.getNumSuccessLastMinute());
+                    elementB = new Long(b.getNumSuccessLastMinute());
                     break;
                 default:
                     logger.warning("Bad Statistics Table Column: " + column);
@@ -169,11 +217,9 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
                         logger.warning("Unsupported data type for comparison, sorting is not performed.");
                         return 0;
                     }
-
                 }
             }
         }
     }
-
 }
 
