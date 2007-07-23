@@ -73,7 +73,6 @@ public class PartitionInformation{
     private static int DEFAULT_FTP_SSL_PORT_PASSIVECOUNT = 10;
     private static int DEFAULT_NOAUTH_PORT = 9443;
     private static int DEFAULT_RMI_PORT = 2124;
-    private static int DEFAULT_SHUTDOWN_PORT = 8005;
 
 
     public static final String ALLOWED_PARTITION_NAME_PATTERN = "[^\\p{Punct}\\s]{1,128}";
@@ -81,7 +80,6 @@ public class PartitionInformation{
 
     public enum OtherEndpointType {
         RMI_ENDPOINT("Inter-Node Communication Port"),
-        TOMCAT_MANAGEMENT_ENDPOINT("Shutdown Port"),
         ;
 
         private String endpointName;
@@ -239,7 +237,6 @@ public class PartitionInformation{
         OtherEndpointHolder.populateDefaultEndpoints(otherEndpointsList);
         if (partitionId.equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
             getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).setPort(Integer.valueOf(2124));
-            getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).setPort(Integer.valueOf(8005));
         }
     }
 
@@ -267,23 +264,6 @@ public class PartitionInformation{
             String ipAddress = connectorNode.hasAttribute("address") ? connectorNode.getAttribute("address") : "*";
 
             updateEndpoint(ipAddress, portNumber, isSecure, wantClientCert);
-        }
-
-        NodeList nodes = doc.getElementsByTagName("Server");
-
-        if ((nodes != null && nodes.getLength() == 1)) {
-            Element serverElement = (Element) nodes.item(0);
-            if (serverElement != null && serverElement.hasAttribute("port")) {
-                String portValue = null;
-                try {
-                    portValue = serverElement.getAttribute("port");
-                    getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).setPort(Integer.valueOf(portValue));
-                }
-                catch (NumberFormatException nfe) {
-                    logger.warning("Invalid tomcat control port number '"+portValue+"'.");
-                }
-
-            }
         }
     }
 
@@ -589,10 +569,6 @@ public class PartitionInformation{
         public static void populateDefaultEndpoints(List<OtherEndpointHolder> endpoints) {
             OtherEndpointHolder holder = new OtherEndpointHolder(OtherEndpointType.RMI_ENDPOINT);
             holder.setPort(DEFAULT_RMI_PORT);
-            endpoints.add(holder);
-
-            holder = new OtherEndpointHolder(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT);
-            holder.setPort(DEFAULT_SHUTDOWN_PORT);
             endpoints.add(holder);
         }
 

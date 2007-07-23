@@ -295,20 +295,12 @@ public class PartitionActions {
     }
 
     private static void updateOtherEndpoints(PartitionInformation pInfo, boolean logErrors) throws IOException, SAXException {
-        List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
 
         FileOutputStream fos = null;
         try {
-            PartitionInformation.OtherEndpointHolder shutdownEndpoint = PartitionActions.getOtherEndpointByType(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT, otherEndpoints);
-
             Document serverConfigDom = pInfo.getOriginalDom();
             if (serverConfigDom == null) {
                 serverConfigDom = getDomFromServerConfig(pInfo);
-            }
-            NodeList serverNodes = serverConfigDom.getElementsByTagName("Server");
-            for (int i = 0; i < serverNodes.getLength(); i++) {
-                Element serverNode = (Element) serverNodes.item(i);
-                serverNode.setAttribute("port", shutdownEndpoint.getPort().toString());
             }
 
             OSSpecificFunctions foo = pInfo.getOSSpecificFunctions();
@@ -547,8 +539,6 @@ public class PartitionActions {
             os.println("set " + SERVICE_NAME_KEY + "=" + getServiceNameForPartition(pinfo));
             os.println("set " + SERVICE_DISPLAY_NAME_KEY + "=" + "SecureSpan Gateway - " + pinfo.getPartitionId() + " Partition");
             os.println("set " + SERVICE_LOGPREFIX_KEY + "=" + pinfo.getPartitionId() + "_ssg_service.log");
-            os.println("set " + SERVICE_LOG_KEY + "=" + "%TOMCAT_HOME%\\logs\\catalina.out." + pinfo.getPartitionId());
-            os.println("set " + SERVICE_ERRLOG_KEY + "=" + "%TOMCAT_HOME%\\logs\\catalina.err." + pinfo.getPartitionId());
             os.flush();
         } catch (FileNotFoundException e) {
             logger.warning("Error while modifying the windows service configuration for the \"" + pinfo.getPartitionId() + "\" partition. [" + e.getMessage() +"]");
