@@ -5,6 +5,11 @@
 ---
 
 --
+-- Disable FK while manipulating tables
+--
+SET FOREIGN_KEY_CHECKS=0;
+
+--
 -- Table structure for revocation checking policies
 --
 
@@ -29,3 +34,8 @@ INSERT INTO rbac_permission VALUES (-605,0,-600,'UPDATE',NULL,'REVOCATION_CHECK_
 INSERT INTO rbac_permission VALUES (-606,0,-600,'READ',NULL,'REVOCATION_CHECK_POLICY');
 INSERT INTO rbac_permission VALUES (-607,0,-600,'DELETE',NULL,'REVOCATION_CHECK_POLICY');
 INSERT INTO rbac_permission VALUES (-608,0,-600,'CREATE',NULL,'REVOCATION_CHECK_POLICY');
+
+--
+-- Reenable FK at very end of script
+--
+SET FOREIGN_KEY_CHECKS=1;
