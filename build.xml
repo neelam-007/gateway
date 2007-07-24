@@ -1327,6 +1327,14 @@
                 <include name="com/l7tech/server/service/uddi/impl/systinet/**"/>
             </fileset>
         </jar>
+
+        <!-- packaging gateway libs -->
+        <mkdir dir="${build.dir}/gatewaylibs"/>
+        <copy todir="${build.dir}/gatewaylibs">
+            <fileset dir="${build.dir}/lib" casesensitive="yes">
+                <patternset refid="gateway.libs"/>
+            </fileset>
+        </copy>
     </target>
 
     <!--
