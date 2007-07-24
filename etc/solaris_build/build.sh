@@ -45,7 +45,7 @@ rm ../solaris_ssg_bin.tar
 #Minor cleanup, and removal of evil spaces....! DIE!
 echo "Cleanup"
 
-rm -f ssg/tomcat/webapps/ROOT/ssg/webadmin/help/securespan\ manager\ help\ system.log
+rm -f ssg/etc/inf/ssg/webadmin/help/securespan\ manager\ help\ system.log
 rmdir ssg/dist
 rm -rf ssg/jdk
 
@@ -96,7 +96,6 @@ echo "Moving properties to partition Template"
 
 mv ssg/etc/conf/*.properties ssg/etc/conf/partitions/partitiontemplate_/
 mv ssg/etc/conf/cluster_hostname-dist ssg/etc/conf/partitions/partitiontemplate_/
-mv ssg/tomcat/conf/server.xml ssg/etc/conf/partitions/partitiontemplate_/
 
 # put a java.security in the partition template (so we get one for each partition)
 mv ssg/bin/ssg-java.security ssg/etc/conf/partitions/partitiontemplate_/java.security
@@ -123,7 +122,6 @@ chmod -f 775 ssg/sysconfigwizard/lib
 chmod -f 775 ssg/sysconfigwizard/configfiles
 chmod -f 775 ssg/sysconfigwizard/*.sh
 chmod -Rf 775 ssg/etc/conf
-chmod -Rf 775 ssg/tomcat/conf
 chmod -f 755 etc/init.d/*
 chmod -f 755 ssg/bin/*.sh
 chmod -f 755 ssg/bin/*.pl
