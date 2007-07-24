@@ -5,9 +5,7 @@
 // Layer 7 Technologies 2005
 //
 // PREREQS
-// this script should be placed alongside an exploded ROOT.war
-// once it runs sucessfully, the war should be repackaged with
-// the output in ./obfuscatedClasses
+// this script should be placed alongside Gateway.jar
 //
 // extralib:
 // notice the following jars that are needed to be in ./extralib: servlet-api.jar, catalina.jar and org.mortbay.jetty.jar

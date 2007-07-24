@@ -3660,7 +3660,7 @@
 
         <echo>Setting classpaths in zkm scripts</echo>
         <build-zkm filename="client.zkm" propertyPrefix="client"/>
-        <build-zkm filename="ssg.zkm" propertyPrefix="gateway" libDir="build/ROOT_exploded/WEB-INF/lib"
+        <build-zkm filename="ssg.zkm" propertyPrefix="gateway" libDir="build/lib"
                    pathExtra="    &quot;build/lib/servlet-api.jar&quot;${line.separator}    &quot;build/lib/catalina.jar&quot;${line.separator}    &quot;build/layer7-api.jar&quot;${line.separator}    &quot;lib/gateway/tarari/tarari_raxj.jar&quot;${line.separator}"/>
     </target>
 
