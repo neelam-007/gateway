@@ -120,7 +120,7 @@ public class GatewayBoot {
             KeystoreUtils keystoreUtils = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
             ServerXmlParser serverXml = new ServerXmlParser();
             serverXml.load(findServerXml(config));
-            startInitialConnectors(getListenAddress(), keystoreUtils, serverXml);
+            startInitialConnectors(keystoreUtils, serverXml);
 
             itworked = true;
         } catch (org.apache.catalina.LifecycleException e) {
@@ -236,7 +236,7 @@ public class GatewayBoot {
         boot.start();
     }
 
-    private void startInitialConnectors(String address, KeystoreUtils keyinfo, ServerXmlParser serverXml) throws ListenerException {
+    private void startInitialConnectors(KeystoreUtils keyinfo, ServerXmlParser serverXml) throws ListenerException {
         List<Map<String,String>> connectors = serverXml.getConnectors();
         for (Map<String, String> connectorAttrs : connectors) {
             String portStr = connectorAttrs.remove("port");
@@ -249,9 +249,9 @@ public class GatewayBoot {
 
             String scheme = connectorAttrs.remove("scheme");
             if (scheme == null || "http".equals(scheme)) {
-                addHttpConnector(address, port, connectorAttrs);
+                addHttpConnector(port, connectorAttrs);
             } else if ("https".equals(scheme)) {
-                addHttpsConnector(address, port, keyinfo, connectorAttrs);
+                addHttpsConnector(port, keyinfo, connectorAttrs);
             } else
                 throw new ListenerException("Unsupported Connector scheme in server.xml: " + scheme);
         }
@@ -279,8 +279,8 @@ public class GatewayBoot {
         return m;
     }
 
-    public void addHttpConnector(String address, int port,Map<String, String> overrideAttrs) throws ListenerException {
-        Connector c = embedded.createConnector(address, port, "http");
+    public void addHttpConnector(int port,Map<String, String> overrideAttrs) throws ListenerException {
+        Connector c = embedded.createConnector((String)null, port, "http");
         c.setRedirectPort(8443);
         c.setEnableLookups(false);
 
@@ -314,13 +314,12 @@ public class GatewayBoot {
         return m;
     }
 
-    public void addHttpsConnector(String address,
-                                  int port,
+    public void addHttpsConnector(int port,
                                   KeystoreUtils keyinfo,
                                   Map<String, String> overrideAttrs)
             throws ListenerException
     {
-        Connector c = embedded.createConnector(address, port, "https");
+        Connector c = embedded.createConnector((String)null, port, "https");
         c.setScheme("https");
         c.setProperty("SSLEnabled","true");
         c.setSecure(true);
