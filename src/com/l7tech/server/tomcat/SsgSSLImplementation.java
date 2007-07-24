@@ -74,8 +74,8 @@ public class SsgSSLImplementation extends SSLImplementation {
     public ServerSocketFactory getServerSocketFactory() {
         ServerSocketFactory ssf = new SsgServerSocketFactory(delegate.getServerSocketFactory());
 
-        File base = new File(System.getProperty("catalina.base", "/ssg/etc"));
-        File conf = new File(base, "conf");
+        File base = new File(System.getProperty("catalina.base", "/ssg"));
+        File conf = new File(base, "etc/conf");
         File trustStore = new File(conf, "truststore.jks");
 
         ssf.setAttribute("truststorePass", "changeit");
