@@ -3327,7 +3327,11 @@
         <!--  TODO what was this line for? -->
         <!-- <zipfileset dir="${src.root}/src" includes="**/*.aegis.xml" prefix="WEB-INF/classes"/> -->
 
-        <!-- TODO  Figure out where to put SsgSSLImplementation.properties and its empty truststore.jks  -->
+        <copy todir="${install.src.conf}">
+            <fileset dir="${src.root}/etc/tomcat">
+                <include name="truststore.jks"/>
+            </fileset>
+        </copy>
 
         <!-- Create tarball -->
         <property name="tarball" value="${build.dir}/ssg-b${install.build.number}.tar.gz"/>

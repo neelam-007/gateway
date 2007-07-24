@@ -1,23 +1,22 @@
 package com.l7tech.server.tomcat;
 
-import java.net.Socket;
-import java.util.Properties;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.File;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.security.Security;
-import java.security.Provider;
-
+import com.l7tech.common.util.ResourceUtils;
 import org.apache.tomcat.util.net.SSLImplementation;
 import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.net.ServerSocketFactory;
 
 import javax.net.ssl.SSLSession;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.Socket;
+import java.security.Provider;
+import java.security.Security;
+import java.util.Map;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * SSL implementation that wraps the default SSL factory in an SsgServerSocketFactory.
@@ -75,7 +74,15 @@ public class SsgSSLImplementation extends SSLImplementation {
     public ServerSocketFactory getServerSocketFactory() {
         ServerSocketFactory ssf = new SsgServerSocketFactory(delegate.getServerSocketFactory());
 
-        File base = new File(System.getProperty("catalina.base", "/ssg/tomcat"));
+        File base = new File(System.getProperty("catalina.base", "/ssg/etc"));
+        File conf = new File(base, "conf");
+        File trustStore = new File(conf, "truststore.jks");
+
+        ssf.setAttribute("truststorePass", "changeit");
+        ssf.setAttribute("truststoreType", "JKS");
+        ssf.setAttribute("truststoreFile", trustStore.getAbsolutePath());
+        ssf.setAttribute("truststoreAlgorithm", "AXPK");
+
         File propFile = new File(base, "conf/SsgSSLImplementation.properties");
         if (propFile.exists()) {
             logger.config("Loading connector properties from '"+propFile.getAbsolutePath()+"'.");
@@ -84,8 +91,7 @@ public class SsgSSLImplementation extends SSLImplementation {
             try {
                 in = new FileInputStream(propFile);
                 props.load(in);
-                for (Iterator propIter=props.entrySet().iterator(); propIter.hasNext();) {
-                    Map.Entry entry = (Map.Entry) propIter.next();
+                for (Map.Entry<Object, Object> entry : props.entrySet()) {
                     ssf.setAttribute((String)entry.getKey(), entry.getValue());
                 }
             }
@@ -93,11 +99,11 @@ public class SsgSSLImplementation extends SSLImplementation {
                 logger.log(Level.WARNING, "Error reading connector properties.", ioe);
             }
             finally {
-                if (in != null) try {in.close();} catch(IOException ioe){}
+                ResourceUtils.closeQuietly(in);
             }
         }
         else {
-            logger.info("No SSgSSLImplementation properties found ["+propFile.getAbsolutePath()+"]");
+            logger.fine("No SsgSSLImplementation properties found ["+propFile.getAbsolutePath()+"]; using default properties");
         }
 
         return ssf;
