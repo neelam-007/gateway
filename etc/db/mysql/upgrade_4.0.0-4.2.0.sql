@@ -23,7 +23,7 @@ CREATE TABLE revocation_check_policy (
 --
 -- Add RBAC permissions to the 'Manage Certificates (truststore)' role
 --
-UPDATE rbac_role set description = 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.';
+UPDATE rbac_role set description = 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.' where objectid = -600;
 DELETE FROM rbac_permission WHERE objectid in (-605, -606, -607, -608);
 INSERT INTO rbac_permission VALUES (-605,0,-600,'UPDATE',NULL,'REVOCATION_CHECK_POLICY');
 INSERT INTO rbac_permission VALUES (-606,0,-600,'READ',NULL,'REVOCATION_CHECK_POLICY');
