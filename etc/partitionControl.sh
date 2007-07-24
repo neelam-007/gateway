@@ -42,7 +42,7 @@ build_paths() {
 
 do_control() {
     . ${SSG_HOME}/bin/partition_defs.sh true "${PARTITION_COUNT}"
-    #(perl ${SSG_HOME}/bin/partition_firewall.pl ${FIREWALL_FILE} ${COMMAND})
+    (perl ${SSG_HOME}/bin/partition_firewall.pl ${FIREWALL_FILE} ${COMMAND})
 
     if [ "${PARTITION_NAME}"  == "default_" ]; then
         if [ -e  /usr/local/Tarari ]; then
