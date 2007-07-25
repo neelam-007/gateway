@@ -49,6 +49,8 @@
         </property>
     </bean>
 
+    <bean id="masterPasswordManager" class="com.l7tech.common.security.MasterPasswordManager" factory-method="getInstance"></bean>        
+
     <!-- server side identity provider factory -->
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory"></bean>
 
