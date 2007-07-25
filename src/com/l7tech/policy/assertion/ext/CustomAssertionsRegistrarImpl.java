@@ -217,7 +217,7 @@ public class CustomAssertionsRegistrarImpl
         }
         else {
             caClassLoader = new ModuleClassLoader(
-                ModuleClassLoader.class.getClassLoader().getParent(),
+                ModuleClassLoader.class.getClassLoader(),
                 "customassertion",
                 fileName,
                 new File(moduleDirectory),
