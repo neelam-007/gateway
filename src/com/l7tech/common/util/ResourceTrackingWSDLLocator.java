@@ -122,6 +122,11 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
         return delegate.getLatestImportURI();
     }
 
+    public void close() {
+        //todo, fix compile time error caused by conflict between systinet-wasp and new wsdl4j
+        //delegate.close();
+    }
+
     /**
      * WSDL document data and metadata
      */

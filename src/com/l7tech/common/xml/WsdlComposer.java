@@ -460,12 +460,12 @@ public class WsdlComposer {
             }
         }
 
-        List extElem = sourceOperation.getExtensibilityElements();
+        /*List extElem = sourceOperation.getExtensibilityElements();
         if (extElem != null) {
             for (Object o : extElem) {
                 newOperation.addExtensibilityElement((ExtensibilityElement) o);
             }
-        }
+        }*/
 
         return newOperation;
     }
@@ -475,9 +475,9 @@ public class WsdlComposer {
         newFault.setName(sourceFault.getName());
         newFault.setDocumentationElement(sourceFault.getDocumentationElement());
         newFault.setMessage(copyMessage(sourceFault.getMessage()));
-        for (Object o : newFault.getExtensionAttributes().keySet()) {
+        /*for (Object o : newFault.getExtensionAttributes().keySet()) {
             newFault.setExtensionAttribute((QName) o, newFault.getExtensionAttributes().get(o));
-        }
+        }*/
         return newFault;
 
     }
@@ -487,9 +487,9 @@ public class WsdlComposer {
         newOutput.setName(sourceOutput.getName());
         newOutput.setDocumentationElement(sourceOutput.getDocumentationElement());
         newOutput.setMessage(copyMessage(sourceOutput.getMessage()));
-        for (Object o : newOutput.getExtensionAttributes().keySet()) {
+        /*for (Object o : newOutput.getExtensionAttributes().keySet()) {
             newOutput.setExtensionAttribute((QName) o, newOutput.getExtensionAttributes().get(o));
-        }
+        }*/
         return newOutput;
     }
 
@@ -498,9 +498,9 @@ public class WsdlComposer {
         newInput.setName(sourceInput.getName());
         newInput.setDocumentationElement(sourceInput.getDocumentationElement());
         newInput.setMessage(copyMessage(sourceInput.getMessage()));
-        for (Object o : newInput.getExtensionAttributes().keySet()) {
+        /*for (Object o : newInput.getExtensionAttributes().keySet()) {
             newInput.setExtensionAttribute((QName) o, newInput.getExtensionAttributes().get(o));
-        }
+        }*/
         return newInput;
     }
 

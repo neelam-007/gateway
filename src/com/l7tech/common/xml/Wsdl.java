@@ -24,6 +24,7 @@ import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.extensions.ExtensionDeserializer;
 import javax.wsdl.extensions.ExtensionSerializer;
 import javax.wsdl.extensions.AttributeExtensible;
+import javax.wsdl.extensions.soap12.SOAP12Address;
 import javax.wsdl.extensions.http.HTTPBinding;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
@@ -332,6 +333,10 @@ public class Wsdl {
 
             public String getLatestImportURI() {
                 return lastResolvedUri;
+            }
+
+            public void close() {
+                //?
             }
         };
     }
@@ -1018,6 +1023,7 @@ public class Wsdl {
         Service wsdlService = null;
         Port pork;
         Port soapPort = null;
+        Port soap12Port = null;
 
         while (services.hasNext()) {
             int numPorts = 0;
@@ -1044,12 +1050,18 @@ public class Wsdl {
                         if (eel instanceof SOAPAddress) {
                             soapPort = pork;
                             numPorts++;
+                        } else if (eel instanceof SOAP12Address) {
+                            soap12Port = pork;
+                            numPorts++;
                         }
                     }
                 }
             }
             if (numPorts > 1)
                 logger.warning("WSDL " + getDefinition().getTargetNamespace() + " has more than one port, used the first.");
+        }
+        if (soapPort == null) {
+            return soap12Port;
         }
         return soapPort;
     }
@@ -1256,18 +1268,26 @@ public class Wsdl {
         //noinspection unchecked
         List<ExtensibilityElement> elements = wsdlPort.getExtensibilityElements();
         String uri = null;
+        String soap12URI = null;
         int num = 0;
         for (ExtensibilityElement eel : elements) {
             if (eel instanceof SOAPAddress) {
                 SOAPAddress sadd = (SOAPAddress) eel;
                 num++;
                 uri = sadd.getLocationURI();
+            } else if (eel instanceof SOAP12Address) {
+                SOAP12Address sadd = (SOAP12Address) eel;
+                num++;
+                soap12URI = sadd.getLocationURI();
             }
         }
 
         if (num > 1)
             logger.warning("WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements");
 
+        if (uri == null) {
+            return soap12URI;
+        }
         return uri;
     }
 
@@ -1444,11 +1464,6 @@ public class Wsdl {
             return delegate.queryDeserializer(parentType, elementType);
         }
 
-        public int queryExtensionAttributeType(Class parentType, QName attrName) {
-            if (SchemaUtil.isSchema(attrName)) return AttributeExtensible.NO_DECLARED_TYPE;
-            return delegate.queryExtensionAttributeType(parentType, attrName);
-        }
-
         public ExtensionSerializer querySerializer(Class parentType, QName elementType) throws WSDLException {
             if (SchemaUtil.isSchema(elementType)) return delegate.getDefaultSerializer();
             return delegate.querySerializer(parentType, elementType);
@@ -1456,10 +1471,6 @@ public class Wsdl {
 
         public void registerDeserializer(Class parentType, QName elementType, ExtensionDeserializer ed) {
             delegate.registerDeserializer(parentType, elementType, ed);
-        }
-
-        public void registerExtensionAttributeType(Class parentType, QName attrName, int attrType) {
-            delegate.registerExtensionAttributeType(parentType, attrName, attrType);
         }
 
         public void registerSerializer(Class parentType, QName elementType, ExtensionSerializer es) {
