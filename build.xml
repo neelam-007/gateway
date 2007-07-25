@@ -55,6 +55,42 @@
         </fileset>
     </path>
 
+    <path id="project.classpath.fortest">
+        <fileset dir="lib">
+            <!--
+              include bc provider before tarari_jce_provider since that
+              contains old copies of the bc classes.
+            -->
+            <include name="crypto/bc/**/*.jar"/>
+        </fileset>
+
+        <fileset dir="lib">
+            <include name="**/*.jar"/>
+            <!--
+               Issue with multiple parsers.
+               JDK 1.4 ships it's own parses and contributes to the
+               overall parser mess. java.beans.XmlEncoder and other
+               classes  do not like xerces so excluded it from project
+               classpath.
+               fla note: xercesImpl.jar is required by xss4j for xml-enc features.
+            <exclude name="*xerces*"/>
+            -->
+            <!--
+              Exclude since this is not necessary to compile and it includes old
+              versions of some of the xml api classes
+            -->
+            <exclude name="xml4j.jar"/>
+
+            <!-- Exclude build related classes -->
+            <exclude name="**/ant.jar"/>
+            <exclude name="**/ant-*.jar"/>
+
+            <exclude name="**/jaxrpc.jar"/>
+
+            <exclude name="**/0500-wsdl4j_1.6.2.jar"/>
+        </fileset>
+    </path>
+
     <!--
       Classpath for Idea form compiler
     -->
@@ -643,7 +679,7 @@
 
         <!-- paths with dynamic components -->
         <path id="project.test.classpath">
-            <path refid="project.classpath"/>
+            <path refid="project.classpath.fortest"/>
             <pathelement location="${build.classes}"/>
         </path>
 
