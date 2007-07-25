@@ -76,7 +76,7 @@
 
     <path id="compile.classpath">
         <fileset dir="${UneasyRooster.dir}/lib">
-            <include name="0500-wsdl4j.jar"/>
+            <include name="0500-wsdl4j_1.6.2.jar"/>
             <include name="spring-beans.jar"/>
             <include name="spring-context.jar"/>
             <include name="spring-beans.jar"/>
