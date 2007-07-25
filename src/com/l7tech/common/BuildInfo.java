@@ -8,21 +8,19 @@ package com.l7tech.common;
 
 /**
  * Don't commit this class after doing a build, only when you change it on purpose.
- * @author alex
- * @version $Revision$
  */
 public class BuildInfo {
     // All these fields are replaced by the OFFICIAL-build target of the build script! Don't bother modifying them ever!
-    private static final String BUILD_NUMBER = "3420";      // ie, 1014
+    private static final String BUILD_NUMBER = "BNUM";      // ie, 1014
     private static final String PRODUCT_VERSION = "HEAD";   // ie, 3.4b (human readable)
-    private static final String PRODUCT_VERSION_MAJOR = "4"; // ie, 3
-    private static final String PRODUCT_VERSION_MINOR = "2"; // ie, 4
+    private static final String PRODUCT_VERSION_MAJOR = "0"; // ie, 3
+    private static final String PRODUCT_VERSION_MINOR = "0"; // ie, 4
     private static final String PRODUCT_NAME = "Layer 7 SecureSpan Suite";
-    private static final String BUILD_DATE = "20070725";  // ie, 20030916
-    private static final String BUILD_TIME = "103630";  // ie, 153238
-    private static final String BUILD_USER = "flascell";  // ie, alex
-    private static final String BUILD_MACHINE = "buildmachine.l7tech.com"; // ie, locutus.l7tech.com
-    private static final String PRODUCT_VERSION_SUBMINOR = "0"; // ie, 5
+    private static final String BUILD_DATE = "DATE";  // ie, 20030916
+    private static final String BUILD_TIME = "TIME";  // ie, 153238
+    private static final String BUILD_USER = "USER";  // ie, alex
+    private static final String BUILD_MACHINE = "BUILDHOST"; // ie, locutus.l7tech.com
+    private static final String PRODUCT_VERSION_SUBMINOR = ""; // ie, 5
 
     public static String getLongBuildString() {
         StringBuffer string = new StringBuffer();
