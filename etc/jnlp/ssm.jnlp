@@ -23,7 +23,7 @@
         <jar href="lib/odmg.jar"/>
         <jar href="lib/hibernate2.jar"/>
         <jar href="lib/oswego-concurrent.jar"/>
-        <jar href="lib/0500-wsdl4j.jar"/>
+        <jar href="lib/0500-wsdl4j_1.6.2.jar"/>
         <jar href="lib/qname.jar"/>
         <jar href="lib/xercesImpl.jar"/>
         <jar href="lib/xml-apis.jar"/>
