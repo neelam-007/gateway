@@ -32,6 +32,17 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
 
     public static final String CERT_FACTORY_ALGORITHM = "X.509";
 
+    public static enum PolicyUsageType {
+        /** Do not do revocation checking for this cert */
+        NONE,
+
+        /** Use the default RCP for this cert */
+        USE_DEFAULT,
+
+        /** Use the RCP specified by {@link TrustedCert#getRevocationCheckPolicyOid} for this cert */
+        SPECIFIED
+    }         
+
     /**
      * Returns a textual description of this cert's usage. Don't parse it; use the boolean flags instead!
      * @return a textual description of this cert's usage
@@ -66,8 +77,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @throws CloneNotSupportedException  If the object cannot be cloned.
      */
     public Object clone() throws CloneNotSupportedException {
-        TrustedCert tc = (TrustedCert)super.clone();
-        return tc;
+        return super.clone();
     }
 
 
@@ -187,34 +197,65 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         this.subjectDn = subjectDn;
     }
 
-    public boolean equals( Object o ) {
-        if ( this == o ) return true;
-        if ( !(o instanceof TrustedCert) ) return false;
+    /**
+     * @return true if this certificate is a trust anchor, i.e. path validation doesn't need to proceed any higher
+     */
+    public boolean isTrustAnchor() {
+        return trustAnchor;
+    }
 
-        final TrustedCert trustedCert = (TrustedCert) o;
+    /**
+     * @param trustAnchor true if this certificate is a trust anchor, i.e. path validation doesn't need to proceed any higher
+     */
+    public void setTrustAnchor(boolean trustAnchor) {
+        this.trustAnchor = trustAnchor;
+    }
 
+    public PolicyUsageType getRevocationCheckPolicyType() {
+        return revocationCheckPolicyType;
+    }
+
+    public void setRevocationCheckPolicyType(PolicyUsageType revocationCheckPolicyType) {
+        this.revocationCheckPolicyType = revocationCheckPolicyType;
+    }
+    
+    public long getRevocationCheckPolicyOid() {
+        return revocationCheckPolicyOid;
+    }
+
+    public void setRevocationCheckPolicyOid(long oid) {
+        this.revocationCheckPolicyOid = oid;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        if ( trustedForSigningClientCerts != trustedCert.trustedForSigningClientCerts ) return false;
-        if ( trustedAsSamlIssuer != trustedCert.trustedAsSamlIssuer ) return false;
-        if ( trustedAsSamlAttestingEntity != trustedCert.trustedAsSamlAttestingEntity ) return false;
-        if ( trustedForSigningServerCerts != trustedCert.trustedForSigningServerCerts ) return false;
-        if ( trustedForSsl != trustedCert.trustedForSsl ) return false;
-        if ( verifyHostname != trustedCert.verifyHostname ) return false;
-        if ( subjectDn != null ? !subjectDn.equals( trustedCert.subjectDn ) : trustedCert.subjectDn != null ) return false;
+
+        TrustedCert that = (TrustedCert) o;
+
+        if (trustAnchor != that.trustAnchor) return false;
+        if (trustedAsSamlAttestingEntity != that.trustedAsSamlAttestingEntity) return false;
+        if (trustedAsSamlIssuer != that.trustedAsSamlIssuer) return false;
+        if (trustedForSigningClientCerts != that.trustedForSigningClientCerts) return false;
+        if (trustedForSigningServerCerts != that.trustedForSigningServerCerts) return false;
+        if (trustedForSsl != that.trustedForSsl) return false;
+        if (verifyHostname != that.verifyHostname) return false;
+        if (subjectDn != null ? !subjectDn.equals(that.subjectDn) : that.subjectDn != null) return false;
 
         return true;
     }
 
     public int hashCode() {
-        int result;
-        result = super.hashCode();
-        result = 29 * result + (subjectDn != null ? subjectDn.hashCode() : 0);
-        result = 29 * result + (trustedForSsl ? 1 : 0);
-        result = 29 * result + (trustedForSigningClientCerts ? 1 : 0);
-        result = 29 * result + (trustedForSigningServerCerts ? 1 : 0);
-        result = 29 * result + (trustedAsSamlIssuer ? 1 : 0);
-        result = 29 * result + (trustedAsSamlAttestingEntity ? 1 : 0);
-        result = 29 * result + (verifyHostname ? 1 : 0);
+        int result = super.hashCode();
+        result = 31 * result + (subjectDn != null ? subjectDn.hashCode() : 0);
+        result = 31 * result + (trustedForSsl ? 1 : 0);
+        result = 31 * result + (trustedForSigningClientCerts ? 1 : 0);
+        result = 31 * result + (trustedForSigningServerCerts ? 1 : 0);
+        result = 31 * result + (trustedAsSamlIssuer ? 1 : 0);
+        result = 31 * result + (trustedAsSamlAttestingEntity ? 1 : 0);
+        result = 31 * result + (verifyHostname ? 1 : 0);
+        result = 31 * result + (trustAnchor ? 1 : 0);
         return result;
     }
 
@@ -225,4 +266,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     private boolean trustedAsSamlIssuer;
     private boolean trustedAsSamlAttestingEntity;
     private boolean verifyHostname;
+    private boolean trustAnchor;
+    private PolicyUsageType revocationCheckPolicyType;
+    private long revocationCheckPolicyOid;
 }
