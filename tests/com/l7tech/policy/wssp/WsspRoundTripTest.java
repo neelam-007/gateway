@@ -102,7 +102,7 @@ public class WsspRoundTripTest extends TestCase {
         // ... (slow modem)
         // ...
         // Parse the WSDL
-        Wsdl wsdl = Wsdl.newInstance("", wsdlDoc);
+        Wsdl wsdl = Wsdl.newInstance(wsdlDoc.getDocumentElement().getBaseURI(), wsdlDoc);
 
         // Get the effective policy
 
