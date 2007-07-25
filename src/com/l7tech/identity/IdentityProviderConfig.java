@@ -2,8 +2,9 @@ package com.l7tech.identity;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.security.CertificateValidationType;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.io.ByteArrayInputStream;
@@ -23,6 +24,8 @@ import java.util.Map;
  *
  */
 public class IdentityProviderConfig extends NamedEntityImp {
+    public static final String PROP_CERTIFICATE_VALIDATION_TYPE = "certificateValidationType";
+
     public IdentityProviderConfig(IdentityProviderType type) {
         super();
         this.type = type;
@@ -126,6 +129,11 @@ public class IdentityProviderConfig extends NamedEntityImp {
 
     public void setAdminEnabled(boolean adminEnabled) {
         this.adminEnabled = adminEnabled;
+    }
+
+    public CertificateValidationType getCertificateValidationType() {
+        CertificateValidationType cvt = (CertificateValidationType) props.get(PROP_CERTIFICATE_VALIDATION_TYPE);
+        return cvt == null ? CertificateValidationType.CERTIFICATE_ONLY : cvt;
     }
 
     /**
