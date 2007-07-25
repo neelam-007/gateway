@@ -23,7 +23,6 @@ import javax.wsdl.extensions.UnknownExtensibilityElement;
 import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.extensions.ExtensionDeserializer;
 import javax.wsdl.extensions.ExtensionSerializer;
-import javax.wsdl.extensions.AttributeExtensible;
 import javax.wsdl.extensions.soap12.SOAP12Address;
 import javax.wsdl.extensions.http.HTTPBinding;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
