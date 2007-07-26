@@ -4,6 +4,7 @@ import org.apache.tomcat.util.net.ServerSocketFactory;
 
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -11,6 +12,10 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.nio.channels.SocketChannel;
+
+import com.l7tech.common.io.SSLSocketWrapper;
+import com.l7tech.common.io.SocketWrapper;
 
 
 /**
@@ -53,21 +58,63 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
      * @throws IOException on error
      */
     public Socket acceptSocket(ServerSocket serverSocket) throws IOException {
-        Socket accepted = delegate.acceptSocket(serverSocket);
+        final Socket accepted = delegate.acceptSocket(serverSocket);
 
         if (logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "Accepted connection.");
         }
 
-        if (sslCipherNames != null && accepted instanceof SSLSocket) {
+        final Socket wrapped;
+        if (accepted instanceof SSLSocket) {
             SSLSocket sslSocket = (SSLSocket)accepted;
-            logger.log(Level.FINE, "Setting custom cipher suites on SSL connection");
-            sslSocket.setEnabledCipherSuites(sslCipherNames);
+            if (sslCipherNames != null) {
+                logger.log(Level.FINE, "Setting custom cipher suites on SSL connection");
+                sslSocket.setEnabledCipherSuites(sslCipherNames);
+            }
+            wrapped = new SSLSocketWrapper(sslSocket) {
+                boolean dispatched = false;
+
+                public SocketChannel getChannel() {
+                    maybeDispatch();
+                    return super.getChannel();
+                }
+
+                public InputStream getInputStream() throws IOException {
+                    maybeDispatch();
+                    return super.getInputStream();
+                }
+
+                private void maybeDispatch() {
+                    if (!dispatched) {
+                        dispatchingListener.onGetInputStream(accepted);
+                        dispatched = true;
+                    }
+                }
+            };
+        } else {
+            wrapped = new SocketWrapper(accepted) {
+                boolean dispatched = false;
+
+                public SocketChannel getChannel() {
+                    maybeDispatch();
+                    return super.getChannel();
+                }
+
+                public InputStream getInputStream() throws IOException {
+                    maybeDispatch();
+                    return super.getInputStream();
+                }
+
+                private void maybeDispatch() {
+                    if (!dispatched) {
+                        dispatchingListener.onGetInputStream(accepted);
+                        dispatched = true;
+                    }
+                }
+            };
         }
 
-        dispatchingListener.onAccept(accepted);
-
-        return accepted;
+        return wrapped;
     }
 
     /**
@@ -139,7 +186,7 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
      * Invokes delegate
      */
     public static interface Listener {
-        public void onAccept(Socket accepted);
+        public void onGetInputStream(Socket accepted);
     }
 
     //- PRIVATE
@@ -160,11 +207,11 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
             listeners.add(listener);
         }
 
-        public void onAccept(Socket accepted) {
+        public void onGetInputStream(Socket accepted) {
             for (Object listener1 : listeners) {
                 Listener listener = (Listener)listener1;
                 try {
-                    listener.onAccept(accepted);
+                    listener.onGetInputStream(accepted);
                 }
                 catch (Exception e) {
                     logger.log(Level.WARNING, "Unexpected exception in listener.", e);

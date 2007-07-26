@@ -3,6 +3,7 @@ package com.l7tech.spring.remoting.rmi.ssl;
 import com.l7tech.common.security.SingleCertX509KeyManager;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.io.SSLSocketWrapper;
 
 import javax.net.ssl.*;
 import java.io.FileInputStream;

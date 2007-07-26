@@ -40,7 +40,7 @@ public class ConnectionIdValve extends ValveBase {
         connectionSequence = 0;
         connectionId = new ThreadLocal();
         SsgServerSocketFactory.addListener(new SsgServerSocketFactory.Listener(){
-            public void onAccept(Socket accepted) {
+            public void onGetInputStream(Socket accepted) {
                 long id = 0;
                 synchronized(connectionSequenceLock) {
                     id = ++connectionSequence;

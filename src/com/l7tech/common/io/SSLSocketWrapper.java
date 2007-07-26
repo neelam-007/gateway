@@ -1,16 +1,16 @@
-package com.l7tech.spring.remoting.rmi.ssl;
+package com.l7tech.common.io;
 
+import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.SocketAddress;
 import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
-import java.net.SocketImplFactory;
 import java.nio.channels.SocketChannel;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.HandshakeCompletedListener;
 
 /**
  * Delegating wrapper for SSLSockets.
@@ -260,6 +260,14 @@ public class SSLSocketWrapper extends SSLSocket {
 
     public void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
         delegate.setPerformancePreferences(connectionTime, latency, bandwidth);
+    }
+
+    public SSLParameters getSSLParameters() {
+        return delegate.getSSLParameters();
+    }
+
+    public void setSSLParameters(SSLParameters sslParameters) {
+        delegate.setSSLParameters(sslParameters);
     }
 
     //- PRIVATE
