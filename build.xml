@@ -566,7 +566,6 @@
 
         <include name="**/velocity-1.4.jar"/>
         <include name="**/jaxen-1.1-beta-10.jar"/>
-        <include name="**/jms-1.1.jar"/>
         <include name="**/jta.jar"/>
         <include name="**/odmg.jar"/>
         <include name="**/concurrent-1.3.4.jar"/>
@@ -3142,6 +3141,7 @@
         <property name="install.src.bin" value="${install.src.base}/${install.rel.bin}"/>
         <property name="install.src.libexec" value="${install.src.base}/${install.rel.libexec}"/>
         <property name="install.src.lib" value="${install.src.base}/lib"/>
+        <property name="install.src.lib.ext" value="${install.src.lib}/ext"/>
         <property name="install.src.mods" value="${install.src.base}/modules/lib"/>
         <property name="install.src.aarmods" value="${install.src.base}/modules/assertions"/> 
         <property name="install.src.dist" value="${install.src.base}/${install.rel.dist}"/>
@@ -3184,7 +3184,7 @@
         <echo>Making directories...</echo>
         <mkdir dir="${install.src.base}"/>
         <mkdir dir="${install.src.lib}"/>
-        <mkdir dir="${install.src.lib}/ext"/>
+        <mkdir dir="${install.src.lib.ext}"/>
         <mkdir dir="${install.src.mods}"/>
         <mkdir dir="${install.src.aarmods}"/>
         <mkdir dir="${install.src.dist}"/>
@@ -3277,6 +3277,13 @@
         <copy todir="${install.src.lib}" flatten="true">
             <fileset dir="${build.lib}" casesensitive="yes">
                 <patternset refid="gateway.libs"/>
+            </fileset>
+        </copy>
+
+        <!-- Copy JMS lib -->
+        <copy todir="${install.src.lib.ext}" flatten="true">
+            <fileset dir="${build.lib}" casesensitive="yes">
+                <include name="jms-1.1.jar"/>
             </fileset>
         </copy>
 
