@@ -21,6 +21,7 @@ public class GatewayMain {
                 if (webInf.isDirectory() && new File(webInf, "web.xml").exists()) {
                     // Current directory it is.
                     rootPath = cwd.getAbsolutePath();
+                    System.setProperty(PROP_SERVER_HOME, rootPath);
                 }
             }
 

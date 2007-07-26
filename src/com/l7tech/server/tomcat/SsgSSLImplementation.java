@@ -29,6 +29,7 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class SsgSSLImplementation extends SSLImplementation {
+    private static final String PROP_SERVER_HOME = "com.l7tech.server.home";
 
     //- PUBLIC
 
@@ -74,7 +75,7 @@ public class SsgSSLImplementation extends SSLImplementation {
     public ServerSocketFactory getServerSocketFactory() {
         ServerSocketFactory ssf = new SsgServerSocketFactory(delegate.getServerSocketFactory());
 
-        File base = new File(System.getProperty("catalina.base", "/ssg"));
+        File base = new File(System.getProperty(PROP_SERVER_HOME, "/ssg"));
         File conf = new File(base, "etc/conf");
         File trustStore = new File(conf, "truststore.jks");
 
