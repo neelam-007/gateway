@@ -1154,6 +1154,7 @@
                 <include name="**/xml.xsd"/>
                 <include name="**/datatypes.dtd"/>
                 <include name="**/XMLSchema.dtd"/>
+                <include name="**/*.aegis.xml"/>
             </fileset>
         </copy>
     </target>

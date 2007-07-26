@@ -6,7 +6,6 @@
 
     <!--  Spring configuration file
           used by the org.springframework.web.context.ContextLoaderListener
-          TODO figure out how to make the CaWsdmObserverContext.xml load from the classpath but still be optional
     -->
     <context-param>
         <param-name>contextConfigLocation</param-name>
@@ -173,11 +172,19 @@
     <servlet>
         <servlet-name>xfire</servlet-name>
         <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:com/l7tech/server/resources/xfire-servlet.xml</param-value>
+        </init-param>
     </servlet>
 
     <servlet>
         <servlet-name>admin</servlet-name>
         <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:com/l7tech/server/resources/admin-servlet.xml</param-value>
+        </init-param>
     </servlet>
 
     <servlet>
