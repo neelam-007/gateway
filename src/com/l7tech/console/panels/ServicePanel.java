@@ -8,12 +8,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Collection;
-import java.util.ArrayList;
+import java.util.*;
 import javax.swing.*;
 import javax.wsdl.Port;
+import javax.wsdl.Binding;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap.SOAPBinding;
+import javax.xml.namespace.QName;
 
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
@@ -59,7 +63,26 @@ public class ServicePanel extends WizardStepPanel {
      * @return true iff. the WSDL URL in the URL: text field was downloaded successfully.
      */
     public boolean onNextButton() {
-        return processWsdlLocation();
+        boolean res = processWsdlLocation();
+        if (res) {
+            // test for soap bindings
+            Map<QName, Binding> bindings = wsdl.getDefinition().getBindings();
+            if (bindings != null) for (QName qName : bindings.keySet()) {
+                Binding binding = bindings.get(qName);
+                java.util.List<ExtensibilityElement> bindingEels = binding.getExtensibilityElements();
+                for (ExtensibilityElement eel : bindingEels) {
+                    // weird second part if to avoid class path conflict when running from idea where the cp is different than at runtime
+                    if (eel instanceof SOAPBinding && !eel.getClass().getName().equals("com.idoox.wsdl.extensions.soap12.SOAP12Binding")) {
+                        return res;
+                    }
+                }
+            }
+            // tell user soap 1.2 is not supported as of yet
+            DialogDisplayer.showMessageDialog(getOwner(), "This WSDL does not contain a supported SOAP Binding",
+                                                          "No Supported SOAP Binding", JOptionPane.ERROR_MESSAGE, null);
+            return false;
+        }
+        return res;
     }
 
     public void storeSettings(Object settings) throws IllegalStateException {

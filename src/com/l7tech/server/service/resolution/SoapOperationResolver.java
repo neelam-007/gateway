@@ -14,6 +14,7 @@ import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap12.SOAP12Binding;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.soap.SOAPBinding;
@@ -80,13 +81,22 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
             //noinspection unchecked
             List<ExtensibilityElement> bindingEels = binding.getExtensibilityElements();
             SOAPBinding sb = null;
+            // uncomment this when we get mendate to support soap 1.2
+            // SOAP12Binding sb12 = null;
             for (ExtensibilityElement eel : bindingEels) {
                 if (eel instanceof SOAPBinding) {
                     sb = (SOAPBinding) eel;
                     bindingStyle = sb.getStyle();
-                }
+                }/* else if (eel instanceof SOAP12Binding) {
+                    sb12 = (SOAP12Binding) eel;
+                    bindingStyle = sb12.getStyle();
+                }*/
             }
-            if (sb == null) continue nextBinding;
+            if (sb == null) {
+                //if (sb12 == null) {
+                    continue nextBinding;
+                //}
+            }
 
             //noinspection unchecked
             List<BindingOperation> bops = binding.getBindingOperations();
