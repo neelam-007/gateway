@@ -8,7 +8,11 @@
 -->
 
 <hibernate-mapping>
-    <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider" lazy="false">
+    <typedef class="com.l7tech.objectmodel.GenericEnumUserType" name="trustedcert_revocationtype">
+        <param name="enumClass">com.l7tech.common.security.TrustedCert$PolicyUsageType</param>
+    </typedef>
+
+    <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider" lazy="false" discriminator-value="1">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -215,6 +219,9 @@
         <property name="verifyHostname" column="verify_hostname" type="boolean"/>
         <property name="thumbprintSha1" column="thumbprint_sha1" type="string"/>
         <property name="ski" type="string"/>
+        <property name="trustAnchor" column="trust_anchor" type="boolean"/>
+        <property name="revocationCheckPolicyType" column="revocation_type" type="trustedcert_revocationtype"/>
+        <property name="revocationCheckPolicyOid" column="revocation_policy_oid" type="long"/>
     </class>
 
     <subclass name="com.l7tech.identity.fed.FederatedIdentityProviderConfig"

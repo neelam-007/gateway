@@ -7,9 +7,6 @@ import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.panels.CertManagerWindow;
 import com.l7tech.console.util.TopComponents;
 
-import javax.swing.*;
-import java.rmi.RemoteException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -57,19 +54,10 @@ public class ManageCertificatesAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        try {
-            CertManagerWindow cmw = new CertManagerWindow(TopComponents.getInstance().getTopParent());
-            cmw.pack();
-            Utilities.centerOnScreen(cmw);
-            DialogDisplayer.display(cmw);
-        } catch (RemoteException e) {
-            String msg = "Error loading cert manager panel.\n" + e.getMessage();
-            logger.log(Level.INFO, "error loading CertManagerWindow", e);
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), msg,
-                                          "Cannot Manage Certs",
-                                          JOptionPane.ERROR_MESSAGE, null);
-        }
-
+        CertManagerWindow cmw = new CertManagerWindow(TopComponents.getInstance().getTopParent());
+        cmw.pack();
+        Utilities.centerOnScreen(cmw);
+        DialogDisplayer.display(cmw);
     }
 
 }

@@ -10,7 +10,6 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
 
-import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -32,11 +31,11 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert> imple
         throw new RuntimeException("Not implemented");
     }
 
-    public TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, IOException, CertificateException {
+    public TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, CertificateException {
         throw new RuntimeException("Not implemented");
     }
 
-    public TrustedCert getCachedCertByOid(long oid, int maxAge) throws FindException, IOException, CertificateException {
+    public TrustedCert getCachedCertByOid(long oid, int maxAge) throws FindException, CertificateException {
         throw new RuntimeException("Not implemented");
     }
 

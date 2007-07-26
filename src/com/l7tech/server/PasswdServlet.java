@@ -68,12 +68,21 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             return;
         }
         InternalUser internalUser = null;
+        InternalIdentityProvider provider = null;
         for (int i = 0; i < results.length; i++) {
             AuthenticationResult result = results[i];
             User u = result.getUser();
-            if (u.getProviderId() == IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) {
-                internalUser = (InternalUser)u;
-                break;
+            try {
+                IdentityProviderFactory ipf = (IdentityProviderFactory)getApplicationContext().getBean("identityProviderFactory");
+                provider = (InternalIdentityProvider) ipf.getProvider(u.getProviderId());
+
+                if (provider.getConfig().getTypeVal() == IdentityProviderType.INTERNAL.toVal()) {
+                    internalUser = (InternalUser)u;
+                    break;
+                }
+            } catch (FindException e) {
+                logger.log(Level.WARNING, "could not complete operation, returning 500", e);
+                sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             }
         }
         if (internalUser == null) {
@@ -127,8 +136,6 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             newInternalUser.setVersion(internalUser.getVersion());
             newInternalUser.setCleartextPassword(str_newpasswd);
 
-            IdentityProviderFactory ipf = (IdentityProviderFactory)getApplicationContext().getBean("identityProviderFactory");
-            InternalIdentityProvider provider = (InternalIdentityProvider) ipf.getProvider(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
             InternalUserManager userManager = provider.getUserManager();
             userManager.update(newInternalUser);
             logger.fine("Password changed for user " + internalUser.getLogin());

@@ -5,22 +5,27 @@ import com.l7tech.common.gui.util.GuiCertUtil;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.ResolvingComparator;
+import com.l7tech.common.util.Resolver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
 import java.security.AccessController;
@@ -33,7 +38,11 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Collection;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This class provides a dialog for viewing a trusted certificate and its usage.
@@ -63,8 +72,15 @@ public class CertPropertiesWindow extends JDialog {
     private JButton saveButton;
     private JButton cancelButton;
     private JButton exportButton;
+    private JRadioButton revocationCheckDefaultRadioButton;
+    private JRadioButton revocationCheckDisabledRadioButton;
+    private JRadioButton revocationCheckSelectedRadioButton;
+    private JComboBox revocationCheckPolicyComboBox;
+    private JCheckBox certificateIsATrustCheckBox;
+    private JTextPane validationDescriptionText;
 
-    private TrustedCert trustedCert = null;
+    private final TrustedCert trustedCert;
+    private final Collection<RevocationCheckPolicy> revocationCheckPolicies; // null if not provided
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertPropertiesWindow.class.getName());
@@ -77,8 +93,8 @@ public class CertPropertiesWindow extends JDialog {
      * @param tc       The trusted certificate.
      * @param editable TRUE if the properties are editable
      */
-    public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable) {
-        this(owner, tc, editable, true);
+    public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable, Collection<RevocationCheckPolicy> policies) {
+        this(owner, tc, editable, true, policies);
     }
 
     /**
@@ -87,26 +103,58 @@ public class CertPropertiesWindow extends JDialog {
      * @param owner    The parent component.
      * @param tc       The trusted certificate.
      * @param editable TRUE if the properties are editable
-     * @param options  TRUE to display the options tab
+     * @param options  TRUE to display the options and validity tabs
      */
     public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable, boolean options) {
+        this(owner, tc, editable, options, null);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param owner    The parent component.
+     * @param tc       The trusted certificate.
+     * @param editable TRUE if the properties are editable
+     * @param options  TRUE to display the options and validity tabs
+     */
+    public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable, boolean options, Collection<RevocationCheckPolicy> policies) {
         super(owner, resources.getString("cert.properties.dialog.title"), true);
+        this.trustedCert = tc;
+        this.revocationCheckPolicies = policies;
 
         final Authorizer authorizer = Registry.getDefault().getSecurityProvider();
         if (authorizer == null) {
             throw new IllegalStateException("Could not instantiate authorization provider");
         }
+
         AttemptedOperation ao;
         if (tc.getOid() == TrustedCert.DEFAULT_OID) {
             ao = new AttemptedCreate(EntityType.TRUSTED_CERT);
         } else {
             ao = new AttemptedUpdate(EntityType.TRUSTED_CERT, tc);
         }
+        
         editable = editable && authorizer.hasPermission(ao);
-        trustedCert = tc;
         initialize(editable, options);
-        pack();
-        Utilities.centerOnScreen(this);
+    }
+
+    /**
+     * Helper method to load {@link RevocationCheckPolicy RevocationCheckPolicies} from the gateway.
+     *
+     * @return The collection of policies in no particular order (can be empty but not null)
+     * @throws FindException if an error occurs loading the policies
+     */
+    public static Collection<RevocationCheckPolicy> loadRevocationCheckPolicies() throws FindException {
+        Collection<RevocationCheckPolicy> policies = new ArrayList();
+
+        try {
+            TrustedCertAdmin tca = getTrustedCertAdmin();
+            policies = new ArrayList( tca.findAllRevocationCheckPolicies() );
+        } catch (RemoteException re) {
+            throw new RuntimeException(re);
+        }
+
+        return policies;
     }
 
     /**
@@ -115,9 +163,9 @@ public class CertPropertiesWindow extends JDialog {
      * @param editable TRUE if the properties are editable
      * @param options  TRUE to display the options tab
      */
-    private void initialize(boolean editable, boolean options) {
-
-        JRootPane rp = this.getRootPane();
+    private void initialize(final boolean editable, boolean options) {
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
@@ -141,12 +189,26 @@ public class CertPropertiesWindow extends JDialog {
 
         // disable the options tab if not required
         if (!options) {
-            tabPane.setEnabledAt(2, false);
-            tabPane.remove(2);
+            for (int t=3; t>1; t--) {
+                tabPane.setEnabledAt(t, false);
+                tabPane.remove(t);
+            }
             saveButton.setVisible(false);
+        } else {
+            if ( !populateRevocationCheckPolicies() ) {
+                disableAll();    
+            }
         }
 
+        revocationCheckSelectedRadioButton.addChangeListener(new ChangeListener(){
+            public void stateChanged(ChangeEvent e) {
+                setRevocationCheckPolicyComboState(editable);
+            }
+        });
+        revocationCheckPolicyComboBox.setRenderer(new RevocationCheckPolicyRenderer());
+
         populateData();
+        setRevocationCheckPolicyComboState(editable);
 
         verifySslHostnameCheckBox.setEnabled(editable &&
                 (signingServerCertCheckBox.isSelected() || outboundSSLConnCheckBox.isSelected()));
@@ -235,10 +297,14 @@ public class CertPropertiesWindow extends JDialog {
             }
         });
 
-        descriptionText.setText(
-                resources.getString("usage.desc") + 
-                resources.getString("usage.desc.extended"));
+        descriptionText.setText(resources.getString("usage.desc"));
         descriptionText.getCaret().setDot(0);
+
+        validationDescriptionText.setText(resources.getString("usage.desc.validation"));
+        validationDescriptionText.getCaret().setDot(0);
+
+        pack();
+        Utilities.centerOnParentWindow(this);
     }
 
     /**
@@ -256,10 +322,76 @@ public class CertPropertiesWindow extends JDialog {
         outboundSSLConnCheckBox.setEnabled(false);
         samlAttestingEntityCheckBox.setEnabled(false);
         verifySslHostnameCheckBox.setEnabled(false);
+        certificateIsATrustCheckBox.setEnabled(false);
+
+        // radios
+        revocationCheckDefaultRadioButton.setEnabled(false);
+        revocationCheckDisabledRadioButton.setEnabled(false);
+        revocationCheckSelectedRadioButton.setEnabled(false);
+
+        // combos
+        revocationCheckPolicyComboBox.setEnabled(false);
+
         // all buttons except the Export/Cancel button
         saveButton.setEnabled(false);
         cancelButton.setText(resources.getString("closeButton.label"));
         cancelButton.setToolTipText(resources.getString("closeButton.tooltip"));
+    }
+
+    /**
+     * Set the enabled state of the RevocationCheckPolicy drop down list.
+     *
+     * @param editable true if editable
+     */
+    private void setRevocationCheckPolicyComboState(boolean editable) {
+        revocationCheckPolicyComboBox.setEnabled(editable && revocationCheckSelectedRadioButton.isSelected());
+    }
+
+    /**
+     *
+     */
+    private boolean populateRevocationCheckPolicies() {
+        boolean populated = false;
+        java.util.List<RevocationCheckPolicy> policies = new ArrayList();
+
+        if (revocationCheckPolicies != null) {
+            policies.addAll( revocationCheckPolicies );    
+            populated = true;
+        } else {
+            try {
+                TrustedCertAdmin tca = getTrustedCertAdmin();
+                policies.addAll( tca.findAllRevocationCheckPolicies() );
+                populated = true;
+            } catch (RemoteException re) {
+                throw new RuntimeException(re);
+            } catch (FindException fe) {
+                logger.log(Level.WARNING, "Unable to load certificate data from server", fe);
+                JOptionPane.showMessageDialog(this,
+                        resources.getString("cert.load.error"),
+                        resources.getString("load.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
+        Collections.sort(policies, new ResolvingComparator(new Resolver<RevocationCheckPolicy,String>(){
+            public String resolve(RevocationCheckPolicy rcp) {
+                String name = rcp.getName();
+                if (name == null)
+                    name = "";
+                return name.toLowerCase();
+            }
+        }, false));
+
+        DefaultComboBoxModel model = new DefaultComboBoxModel(policies.toArray());
+        revocationCheckPolicyComboBox.setModel(model);
+        if (model.getSize() > 0) {
+            revocationCheckPolicyComboBox.setSelectedIndex(0);
+        } else {
+            // disable if there is nothing to select
+            revocationCheckSelectedRadioButton.setEnabled(false);    
+        }
+        
+        return populated;
     }
 
     /**
@@ -326,7 +458,48 @@ public class CertPropertiesWindow extends JDialog {
 
         samlAttestingEntityCheckBox.setSelected(trustedCert.isTrustedAsSamlAttestingEntity());
 
+        // populate validation
+
+        certificateIsATrustCheckBox.setSelected(trustedCert.isTrustAnchor());
+
         verifySslHostnameCheckBox.setSelected(trustedCert.isVerifyHostname());
+
+        TrustedCert.PolicyUsageType policyUsageType = trustedCert.getRevocationCheckPolicyType();
+        if (policyUsageType == null)
+            policyUsageType = TrustedCert.PolicyUsageType.USE_DEFAULT;
+        switch (policyUsageType) {
+            case USE_DEFAULT:
+                revocationCheckDefaultRadioButton.setSelected(true);
+                break;
+            case NONE:
+                revocationCheckDisabledRadioButton.setSelected(true);
+                break;
+            case SPECIFIED:
+                revocationCheckSelectedRadioButton.setSelected(true);
+                break;
+        }
+
+        if (trustedCert.getRevocationCheckPolicyOid() != null) {
+            revocationCheckPolicyComboBox.setSelectedItem(findRevocationCheckPolicyByOid(trustedCert.getRevocationCheckPolicyOid()));
+        }
+    }
+
+    /**
+     *
+     */
+    private RevocationCheckPolicy findRevocationCheckPolicyByOid(long oid) {
+        RevocationCheckPolicy policy = null;
+
+        ComboBoxModel model = (DefaultComboBoxModel) revocationCheckPolicyComboBox.getModel();
+        for (int i=0; i<model.getSize(); i++) {
+            RevocationCheckPolicy current = (RevocationCheckPolicy) model.getElementAt(i);
+            if (current.getOid() == oid) {
+                policy = current;
+                break;
+            }
+        }
+
+        return policy;
     }
 
     /**
@@ -361,6 +534,18 @@ public class CertPropertiesWindow extends JDialog {
             tc.setTrustedForSsl(outboundSSLConnCheckBox.isSelected());
             tc.setTrustedAsSamlAttestingEntity(samlAttestingEntityCheckBox.isSelected());
             tc.setVerifyHostname(verifySslHostnameCheckBox.isSelected() && verifySslHostnameCheckBox.isEnabled());
+
+            tc.setTrustAnchor(certificateIsATrustCheckBox.isSelected());
+            if (revocationCheckSelectedRadioButton.isSelected()) {
+                tc.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.SPECIFIED);
+                tc.setRevocationCheckPolicyOid(((RevocationCheckPolicy)revocationCheckPolicyComboBox.getSelectedItem()).getOid());
+            } else if (revocationCheckDisabledRadioButton.isSelected()) {
+                tc.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.NONE);
+                tc.setRevocationCheckPolicyOid(null);
+            } else {
+                tc.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.USE_DEFAULT);
+                tc.setRevocationCheckPolicyOid(null);
+            }
         }
     }
 
@@ -370,9 +555,44 @@ public class CertPropertiesWindow extends JDialog {
      * @return TrustedCertAdmin  The object reference.
      * @throws RuntimeException if the object reference of the Trusted Cert Admin service is not found.
      */
-    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
+    private static TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
         TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
         return tca;
     }
 
+    /**
+     * Renderer for  RevocationCheckPolicys
+     */
+    private static final class RevocationCheckPolicyRenderer extends JLabel implements ListCellRenderer {
+        public Component getListCellRendererComponent( JList list,
+                                                       Object value,
+                                                       int index,
+                                                       boolean isSelected,
+                                                       boolean cellHasFocus)
+        {
+            RevocationCheckPolicy revocationCheckPolicy = (RevocationCheckPolicy) value;
+
+            String label = revocationCheckPolicy.getName();
+            if (revocationCheckPolicy.isDefaultPolicy())  {
+                label += " [Default]";
+            }
+
+            setText(label);
+
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                setForeground(list.getSelectionForeground());
+                setOpaque(true);
+            } else {
+                setBackground(list.getBackground());
+                setForeground(list.getForeground());
+                setOpaque(false);
+            }
+
+            setEnabled(list.isEnabled());
+            setFont(list.getFont());
+
+            return this;
+        }
+    }    
 }

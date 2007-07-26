@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.Locale;
+import java.util.Collection;
 import java.text.MessageFormat;
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -37,11 +38,16 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
      * @param parent The parent Dialog
      * @param readOnly True if this dialog is read-only.
      * @param revocationCheckPolicy The policy to edit
+     * @param policies Collection of all RevocationCheckPolicies (may be null, used when viewing trusted certs)
      */
-    public RevocationCheckPolicyPropertiesDialog(Dialog parent, boolean readOnly, RevocationCheckPolicy revocationCheckPolicy) {
+    public RevocationCheckPolicyPropertiesDialog(Dialog parent,
+                                                 boolean readOnly,
+                                                 RevocationCheckPolicy revocationCheckPolicy,
+                                                 Collection<RevocationCheckPolicy> policies) {
         super(parent, resources.getString(RES_TITLE), true);
         this.readOnly = readOnly;
         this.revocationCheckPolicy = revocationCheckPolicy;
+        this.policies = policies;
         init();
     }
 
@@ -51,11 +57,16 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
      * @param parent The parent Frame
      * @param readOnly True if this dialog is read-only.
      * @param revocationCheckPolicy The policy to edit
+     * @param policies Collection of all RevocationCheckPolicies (may be null, used when viewing trusted certs)
      */
-    public RevocationCheckPolicyPropertiesDialog(Frame parent, boolean readOnly, RevocationCheckPolicy revocationCheckPolicy) {
+    public RevocationCheckPolicyPropertiesDialog(Frame parent,
+                                                 boolean readOnly,
+                                                 RevocationCheckPolicy revocationCheckPolicy,
+                                                 Collection<RevocationCheckPolicy> policies) {
         super(parent, resources.getString(RES_TITLE), true);
         this.readOnly = readOnly;
         this.revocationCheckPolicy = revocationCheckPolicy;
+        this.policies = policies;
         init();
     }
 
@@ -101,6 +112,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
 
     private final boolean readOnly;
     private final RevocationCheckPolicy revocationCheckPolicy;
+    private final Collection<RevocationCheckPolicy> policies;
     private DefaultListModel policyItemModel;
     private boolean oked;
 
@@ -248,7 +260,8 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
     private void addPolicyItem() {
         final RevocationCheckPolicyItem item = new RevocationCheckPolicyItem();
         item.setAllowIssuerSignature(true);
-        final RevocationCheckPolicyItemPropertiesDialog editor = new RevocationCheckPolicyItemPropertiesDialog(this, readOnly, item);
+        final RevocationCheckPolicyItemPropertiesDialog editor =
+                new RevocationCheckPolicyItemPropertiesDialog(this, readOnly, item, policies);
         DialogDisplayer.display(editor, new Runnable(){
             public void run() {
                 if (editor.wasOk()) {
@@ -281,7 +294,8 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
         if ( index >= 0 ) {
             RevocationCheckPolicyItem item = (RevocationCheckPolicyItem) policyItemModel.getElementAt(index);
             if ( item != null ) {
-                RevocationCheckPolicyItemPropertiesDialog editor = new RevocationCheckPolicyItemPropertiesDialog(this, readOnly, item);
+                RevocationCheckPolicyItemPropertiesDialog editor =
+                        new RevocationCheckPolicyItemPropertiesDialog(this, readOnly, item, policies);
                 DialogDisplayer.display(editor, new Runnable() {
                     public void run() {
                         for ( ListDataListener ldl : policyItemModel.getListDataListeners() ) {

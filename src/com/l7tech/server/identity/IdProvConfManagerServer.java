@@ -7,7 +7,6 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.dao.DataAccessException;
@@ -41,13 +40,6 @@ public class IdProvConfManagerServer
         this.roleManager = roleManager;
     }
 
-    public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {
-        if (oid == INTERNALPROVIDER_SPECIAL_OID)
-            return internalProvider.getConfig();
-        else
-            return super.findByPrimaryKey(oid);
-    }
-
     /**
      * @param oid the identity provider id to look for
      * @return the identoty provider for a given id, or <code>null</code>
@@ -64,26 +56,25 @@ public class IdProvConfManagerServer
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
-        // we should not accept saving an internal type
+
+        // For the moment don't allow the name etc to be changed
         if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) {
-            logger.warning("Attempt to save internal id provider");
-            throw new SaveException("this type of config cannot be saved");
+            fixInternalConfig(identityProviderConfig);
         }
 
         return super.save(identityProviderConfig);
     }
 
     public void update(IdentityProviderConfig identityProviderConfig) throws UpdateException {
-        // we should not accept saving an internal type
+        // For the moment don't allow the name etc to be changed
         if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) {
-            logger.warning("Attempt to update internal id provider");
-            throw new UpdateException("this type of config cannot be updated");
-        }
-
-        try {
-            roleManager.renameEntitySpecificRole(ID_PROVIDER_CONFIG, identityProviderConfig, replaceRoleName);
-        } catch (FindException e) {
-            throw new UpdateException("Couldn't find Role to rename", e);
+            fixInternalConfig(identityProviderConfig);
+        } else {
+            try {
+                roleManager.renameEntitySpecificRole(ID_PROVIDER_CONFIG, identityProviderConfig, replaceRoleName);
+            } catch (FindException e) {
+                throw new UpdateException("Couldn't find Role to rename", e);
+            }
         }
 
         try {
@@ -114,13 +105,11 @@ public class IdProvConfManagerServer
 
     public Collection<IdentityProviderConfig> findAll() throws FindException {
         Collection<IdentityProviderConfig> out = new ArrayList<IdentityProviderConfig>(super.findAll());
-        out.add(internalProvider.getConfig());
         return out;
     }
 
     public Collection<IdentityProviderConfig> findAll(int offset, int windowSize) throws FindException {
         Collection<IdentityProviderConfig> out = new ArrayList<IdentityProviderConfig>(super.findAll(offset, windowSize));
-        out.add(internalProvider.getConfig());
         return out;
     }
 
@@ -161,19 +150,13 @@ public class IdProvConfManagerServer
         return out;
     }
 
-    protected InternalIdentityProvider internalProvider;
     private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
 
     private IdentityProviderFactory identityProviderFactory;
 
-    protected void initDao() throws Exception {
-        // construct the internal id provider
-        IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
+    private void fixInternalConfig(IdentityProviderConfig cfg) {
         cfg.setName("Internal Identity Provider");
         cfg.setDescription("Internal Identity Provider");
-        cfg.setOid(INTERNALPROVIDER_SPECIAL_OID);
-        internalProvider = (InternalIdentityProvider)identityProviderFactory.makeProvider(cfg);
-
     }
 
     /**

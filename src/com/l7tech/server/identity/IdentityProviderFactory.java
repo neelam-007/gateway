@@ -37,6 +37,7 @@ public class IdentityProviderFactory
         implements InitializingBean, BeanPostProcessor, ApplicationContextAware {
     private AbstractBeanFactory abstractBeanFactory;
     private ApplicationContext springContext;
+    private IdentityProviderConfigManager identityProviderConfigManager;
 
     public Collection<IdentityProvider> findAllIdentityProviders(IdentityProviderConfigManager manager) throws FindException {
         List<IdentityProvider> providers = new ArrayList<IdentityProvider>();
@@ -69,16 +70,16 @@ public class IdentityProviderFactory
      * If possible it will be a cached version, but in all cases it will be up-to-date
      * with respect to the database, because the version is always checked.
      *
-     * @param identityProviderOid the OID of the IdentityProviderConfig record ({@link com.l7tech.server.identity.IdProvConfManagerServer#INTERNALPROVIDER_SPECIAL_OID} for the Internal ID provider)
+     * @param identityProviderOid the OID of the IdentityProviderConfig record
      * @return the IdentityProvider, or null if it's not in the database (either it was deleted or never existed)
      * @throws FindException
      */
     public synchronized IdentityProvider getProvider(long identityProviderOid) throws FindException {
-        IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)springContext.getBean("identityProviderConfigManager");
+        IdentityProviderConfigManager configManager = getIdentityProviderConfigurationManager();
         Long oid = new Long(identityProviderOid);
 
         IdentityProvider cachedProvider = providers.get(oid);
-        if (cachedProvider != null && identityProviderOid != IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) {
+        if (cachedProvider != null) {
             Integer dbVersion = configManager.getVersion(identityProviderOid);
             if (dbVersion == null) {
                 // It's been deleted
@@ -292,6 +293,24 @@ public class IdentityProviderFactory
         return bean;
     }
 
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.springContext = applicationContext;
+    }
+
+    /**
+     * Avoid too many calls to getBean 
+     */
+    private IdentityProviderConfigManager getIdentityProviderConfigurationManager() {
+        IdentityProviderConfigManager manager = identityProviderConfigManager;
+
+        if ( manager == null) {
+            manager = (IdentityProviderConfigManager) springContext.getBean(IDENTITY_PROVIDER_CONFIG_MANAGER_BEAN_NAME);
+            identityProviderConfigManager = manager;
+        }
+
+        return manager;
+    }
+
     // note these need to be singletons so that they can be invalidates in case of deletion
     private static Map<Long, IdentityProvider> providers = new HashMap<Long, IdentityProvider>();
 
@@ -299,11 +318,8 @@ public class IdentityProviderFactory
 
     private static final Logger logger = Logger.getLogger(IdentityProviderFactory.class.getName());
 
+    private static final String IDENTITY_PROVIDER_CONFIG_MANAGER_BEAN_NAME = "identityProviderConfigManager";
     private static final String INTERNAL_PROVIDER_BEAN_NAME = "internalIdentityProvider";
     private static final String FEDERATED_PROVIDER_BEAN_NAME = "federatedIdentityProvider";
     private static final String LDAP_PROVIDER_BEAN_NAME = "ldapIdentityProvider";
-
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.springContext = applicationContext;
-    }
 }

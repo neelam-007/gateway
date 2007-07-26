@@ -89,7 +89,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         try {
             long oid;
             checkLicense();
-            if (identityProviderConfig.getOid() > 0) {
+            if (identityProviderConfig.getOid() != IdentityProviderConfig.DEFAULT_OID) {
                 IdentityProviderConfigManager manager = getIdProvCfgMan();
                 IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
                 originalConfig.copyFrom(identityProviderConfig);

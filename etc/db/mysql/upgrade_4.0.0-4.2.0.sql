@@ -28,12 +28,25 @@ CREATE TABLE revocation_check_policy (
 --
 -- Add RBAC permissions to the 'Manage Certificates (truststore)' role
 --
-UPDATE rbac_role set description = 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.' where objectid = -600;
+UPDATE rbac_role SET description = 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.' WHERE objectid = -600;
 DELETE FROM rbac_permission WHERE objectid in (-605, -606, -607, -608);
 INSERT INTO rbac_permission VALUES (-605,0,-600,'UPDATE',NULL,'REVOCATION_CHECK_POLICY');
 INSERT INTO rbac_permission VALUES (-606,0,-600,'READ',NULL,'REVOCATION_CHECK_POLICY');
 INSERT INTO rbac_permission VALUES (-607,0,-600,'DELETE',NULL,'REVOCATION_CHECK_POLICY');
 INSERT INTO rbac_permission VALUES (-608,0,-600,'CREATE',NULL,'REVOCATION_CHECK_POLICY');
+
+--
+-- Update TrustedCert table
+--
+ALTER TABLE trusted_cert ADD COLUMN trust_anchor tinyint default 1,
+                         ADD COLUMN revocation_type varchar(128) NOT NULL DEFAULT 'USE_DEFAULT',
+                         ADD COLUMN revocation_policy_oid bigint(20),
+                         ADD FOREIGN KEY (revocation_policy_oid) REFERENCES revocation_check_policy (objectid);
+
+--
+-- Add DB entry for internal provider (configuration now editable)
+--
+INSERT INTO identity_provider (objectid,name,description,type,properties,version) VALUES (-2,'Internal Identity Provider','Internal Identity Provider',1,'<java version="1.6.0_01" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>adminEnabled</string><boolean>true</boolean></void></object></java>',0);
 
 --
 -- Reenable FK at very end of script

@@ -7,6 +7,7 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.RevocationCheckPolicy;
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
 import com.l7tech.console.event.CertListener;
 import com.l7tech.console.event.CertEvent;
@@ -26,6 +27,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,16 +36,19 @@ import java.util.logging.Logger;
  */
 public class CertManagerWindow extends JDialog {
 
+    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
+    private static Logger logger = Logger.getLogger(CertManagerWindow.class.getName());
+
     private JPanel mainPanel;
     private JButton addButton;
     private JButton removeButton;
     private JButton propertiesButton;
     private JButton closeButton;
-    private TrustedCertsTable trustedCertTable = null;
     private JScrollPane certTableScrollPane;
     private JButton certificateValidationButton;
-    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
-    private static Logger logger = Logger.getLogger(CertManagerWindow.class.getName());
+
+    private TrustedCertsTable trustedCertTable = null;
+    private Collection<RevocationCheckPolicy> revocationCheckPolicies;
     private final PermissionFlags flags;
 
     /**
@@ -51,7 +56,7 @@ public class CertManagerWindow extends JDialog {
      *
      * @param owner The parent component
      */
-    public CertManagerWindow(Frame owner) throws RemoteException {
+    public CertManagerWindow(Frame owner) {
         super(owner, resources.getString("dialog.title"), true);
 
         flags = PermissionFlags.get(TRUSTED_CERT);
@@ -103,12 +108,8 @@ public class CertManagerWindow extends JDialog {
 
         addButton.addActionListener( new NewTrustedCertificateAction(new CertListener(){
             public void certSelected(CertEvent ce) {
-                try {
-                    // reload all certs from server
-                    loadTrustedCerts();
-                } catch (RemoteException re) {
-                    throw new RuntimeException(re);
-                }
+                // reload all certs from server
+                loadTrustedCerts();
             }
         }, "Add"));
 
@@ -116,25 +117,26 @@ public class CertManagerWindow extends JDialog {
             public void actionPerformed(ActionEvent event) {
                 int sr = trustedCertTable.getSelectedRow();
                 TrustedCert tc = (TrustedCert)trustedCertTable.getTableSorter().getData(sr);
-                TrustedCert updatedTrustedCert = null;
 
                 // retrieve the latest version
                 try {
-                    updatedTrustedCert = getTrustedCertAdmin().findCertByPrimaryKey(tc.getOid());
+                    TrustedCert updatedTrustedCert = getTrustedCertAdmin().findCertByPrimaryKey(tc.getOid());
+                    trustedCertTable.getTableSorter().updateData(sr, updatedTrustedCert);
+                    CertPropertiesWindow cpw =
+                            new CertPropertiesWindow(
+                                    CertManagerWindow.this,
+                                    updatedTrustedCert,
+                                    flags.canUpdateSome(), // TODO do a permission check for *this* cert
+                                    getRevocationCheckPolicies());
+
+                    DialogDisplayer.display(cpw);
                 } catch (FindException e) {
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.find.error"),
                                                   resources.getString("view.error.title"),
                                                   JOptionPane.ERROR_MESSAGE);
                 } catch (RemoteException e) {
-                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.remote.exception"),
-                                                  resources.getString("view.error.title"),
-                                                  JOptionPane.ERROR_MESSAGE);
+                    throw new RuntimeException(e);
                 }
-
-                trustedCertTable.getTableSorter().updateData(sr, updatedTrustedCert);
-                CertPropertiesWindow cpw = new CertPropertiesWindow(CertManagerWindow.this, updatedTrustedCert, flags.canUpdateSome()); // TODO do a permission check for *this* cert
-
-                DialogDisplayer.display(cpw);
             }
         });
         Utilities.setDoubleClickAction(trustedCertTable, propertiesButton);
@@ -171,9 +173,7 @@ public class CertManagerWindow extends JDialog {
                                                       resources.getString("save.error.title"),
                                                       JOptionPane.ERROR_MESSAGE);
                     } catch (RemoteException e) {
-                        JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.remote.exception"),
-                                                      resources.getString("save.error.title"),
-                                                      JOptionPane.ERROR_MESSAGE);
+                        throw new RuntimeException(e);
                     }
                 }
             }
@@ -187,7 +187,7 @@ public class CertManagerWindow extends JDialog {
     /**
      * Load the certs from the database
      */
-    private void loadTrustedCerts() throws RemoteException {
+    private void loadTrustedCerts() {
         java.util.List<TrustedCert> certList;
         try {
             certList = getTrustedCertAdmin().findAllCerts();
@@ -207,6 +207,27 @@ public class CertManagerWindow extends JDialog {
             JOptionPane.showMessageDialog(CertManagerWindow.this, msg,
                                           resources.getString("load.error.title"),
                                           JOptionPane.ERROR_MESSAGE);
+        } catch (RemoteException re) {
+            throw new RuntimeException(re);
+        }
+    }
+
+    private Collection<RevocationCheckPolicy> getRevocationCheckPolicies() throws FindException {
+         Collection<RevocationCheckPolicy> policies = revocationCheckPolicies;
+
+        if ( revocationCheckPolicies == null ) {
+            policies = loadRevocationCheckPolicies();
+            revocationCheckPolicies = policies;
+        }
+
+        return policies;
+    }
+
+    private Collection<RevocationCheckPolicy> loadRevocationCheckPolicies() throws FindException {
+        try {
+            return getTrustedCertAdmin().findAllRevocationCheckPolicies();
+        } catch (RemoteException re) {
+            throw new RuntimeException(re);
         }
     }
 

@@ -24,12 +24,10 @@ import java.util.Map;
  *
  */
 public class IdentityProviderConfig extends NamedEntityImp {
-    public static final String PROP_CERTIFICATE_VALIDATION_TYPE = "certificateValidationType";
 
     public IdentityProviderConfig(IdentityProviderType type) {
         super();
         this.type = type;
-        if (type == IdentityProviderType.INTERNAL) adminEnabled = true;
     }
 
     public IdentityProviderConfig() {
@@ -124,16 +122,25 @@ public class IdentityProviderConfig extends NamedEntityImp {
     }
 
     public boolean isAdminEnabled() {
-        return adminEnabled;
+        Boolean b = (Boolean) getProperty(ADMIN_ENABLED);
+        return b != null && b.booleanValue();
     }
 
+
     public void setAdminEnabled(boolean adminEnabled) {
-        this.adminEnabled = adminEnabled;
+        setProperty(ADMIN_ENABLED, adminEnabled);
     }
 
     public CertificateValidationType getCertificateValidationType() {
-        CertificateValidationType cvt = (CertificateValidationType) props.get(PROP_CERTIFICATE_VALIDATION_TYPE);
-        return cvt == null ? CertificateValidationType.CERTIFICATE_ONLY : cvt;
+        return (CertificateValidationType) props.get(PROP_CERTIFICATE_VALIDATION_TYPE);
+    }
+
+    public void setCertificateValidationType(CertificateValidationType validationType) {
+        if ( validationType == null ) {
+            props.remove(PROP_CERTIFICATE_VALIDATION_TYPE);
+        } else {
+            props.put(PROP_CERTIFICATE_VALIDATION_TYPE, validationType);
+        }
     }
 
     /**
@@ -155,9 +162,12 @@ public class IdentityProviderConfig extends NamedEntityImp {
     // ************************************************
     // PRIVATES
     // ************************************************
+
+    private static final String ADMIN_ENABLED = "adminEnabled";
+    private static final String PROP_CERTIFICATE_VALIDATION_TYPE = "certificateValidationType";
+
     protected String description;
     private String propsXml;
     protected IdentityProviderType type;
     private Map<String, Object> props = new HashMap<String, Object>();
-    private boolean adminEnabled = false;
 }

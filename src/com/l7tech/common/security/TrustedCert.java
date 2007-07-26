@@ -219,11 +219,11 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         this.revocationCheckPolicyType = revocationCheckPolicyType;
     }
     
-    public long getRevocationCheckPolicyOid() {
+    public Long getRevocationCheckPolicyOid() {
         return revocationCheckPolicyOid;
     }
 
-    public void setRevocationCheckPolicyOid(long oid) {
+    public void setRevocationCheckPolicyOid(Long oid) {
         this.revocationCheckPolicyOid = oid;
     }
 
@@ -268,5 +268,5 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     private boolean verifyHostname;
     private boolean trustAnchor;
     private PolicyUsageType revocationCheckPolicyType;
-    private long revocationCheckPolicyOid;
+    private Long revocationCheckPolicyOid;
 }

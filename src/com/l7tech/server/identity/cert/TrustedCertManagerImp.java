@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
@@ -168,10 +167,6 @@ public class TrustedCertManagerImp
             } catch (FindException e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
                 throw new CertificateException(e.getMessage());
-            } catch (IOException e) {
-                final String msg = "Couldn't decode stored certificate";
-                logger.log(Level.SEVERE, msg, e);
-                throw new CertificateException(msg);
             }
 
             // Check that signer is trusted
@@ -186,10 +181,6 @@ public class TrustedCertManagerImp
             X509Certificate caTrustCert = caTrust.getCertificate();
 
             CertUtils.cachedVerify(serverCertChain[0], caTrustCert.getPublicKey());
-        } catch (IOException e) {
-            final String msg = "Couldn't decode stored CA certificate with DN '" + issuerDn + "'";
-            logger.log(Level.SEVERE, msg, e);
-            throw new CertificateException(msg);
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
             throw new CertificateException(e.getMessage(), e);
@@ -214,7 +205,7 @@ public class TrustedCertManagerImp
     }
 
     @Transactional(readOnly=true)
-    public TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, IOException, CertificateException {
+    public TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, CertificateException {
         Lock read = cacheLock.readLock();
         Lock write = null;
         try {
@@ -244,7 +235,7 @@ public class TrustedCertManagerImp
     }
 
     @Transactional(readOnly=true)
-    public TrustedCert getCachedCertByOid(long o, int maxAge) throws FindException, IOException, CertificateException {
+    public TrustedCert getCachedCertByOid(long o, int maxAge) throws FindException, CertificateException {
         try {
             return getCachedEntity(o, maxAge);
         } catch (CacheVeto e) {

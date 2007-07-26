@@ -26,6 +26,7 @@ import javax.swing.table.AbstractTableModel;
 import com.l7tech.common.security.RevocationCheckPolicyItem;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.MaxLengthDocument;
@@ -53,12 +54,17 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
      * @param parent The parent Dialog
      * @param readOnly True if this dialog is read-only
      * @param revocationCheckPolicyItem The item to edit
+     * @param policies Collection of all current RevocationCheckPolicies (used when viewing trusted certs, may be null)
      */
-    public RevocationCheckPolicyItemPropertiesDialog(Dialog parent, boolean readOnly, RevocationCheckPolicyItem revocationCheckPolicyItem) {
+    public RevocationCheckPolicyItemPropertiesDialog(Dialog parent,
+                                                     boolean readOnly,
+                                                     RevocationCheckPolicyItem revocationCheckPolicyItem,
+                                                     Collection<RevocationCheckPolicy> policies) {
         super(parent, resources.getString(RES_TITLE), true);
         this.readOnly = readOnly;
         this.revocationCheckPolicyItem = revocationCheckPolicyItem;
         this.trustedCertificates = new ArrayList();
+        this.policies = policies;
         init();
     }
 
@@ -68,12 +74,17 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
      * @param parent The parent Frame
      * @param readOnly True if this dialog is read-only
      * @param revocationCheckPolicyItem The item to edit
+     * @param policies Collection of all current RevocationCheckPolicies (used when viewing trusted certs, may be null)
      */
-    public RevocationCheckPolicyItemPropertiesDialog(Frame parent, boolean readOnly, RevocationCheckPolicyItem revocationCheckPolicyItem) {
+    public RevocationCheckPolicyItemPropertiesDialog(Frame parent,
+                                                     boolean readOnly,
+                                                     RevocationCheckPolicyItem revocationCheckPolicyItem,
+                                                     Collection<RevocationCheckPolicy> policies) {
         super(parent, resources.getString(RES_TITLE), true);
         this.readOnly = readOnly;
         this.revocationCheckPolicyItem = revocationCheckPolicyItem;
         this.trustedCertificates = new ArrayList();
+        this.policies = policies;
         init();
     }
 
@@ -135,6 +146,7 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
     private static final Collection<String> URL_SCHEMES_CRL = Arrays.asList("http", "https", "ldap", "ldaps");
     private static final Collection<String> URL_SCHEMES_OCSP = Arrays.asList("http", "https");
 
+    private final Collection<RevocationCheckPolicy> policies;
     private final RevocationCheckPolicyItem revocationCheckPolicyItem;
     private final List<TrustedCert> trustedCertificates;
     private final boolean readOnly;
@@ -309,7 +321,7 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
     private void onProperties() {
         int row = trustedCertsTable.getSelectedRow();
         if (row >= 0) {
-            CertPropertiesWindow cpw = new CertPropertiesWindow(this, trustedCertificates.get(row), false);
+            CertPropertiesWindow cpw = new CertPropertiesWindow(this, trustedCertificates.get(row), false, policies);
             DialogDisplayer.display(cpw);
         }
     }
@@ -388,7 +400,10 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
     private void sortTrustedCerts() {
         Collections.sort(trustedCertificates, new ResolvingComparator(new Resolver<TrustedCert, String>(){
             public String resolve(TrustedCert key) {
-                return key.getName();
+                String name = key.getName();
+                if (name == null)
+                    name = "";
+                return name.toLowerCase();
             }
         }, false));        
     }

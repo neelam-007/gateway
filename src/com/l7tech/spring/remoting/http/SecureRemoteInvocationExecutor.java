@@ -106,7 +106,8 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
                             com.mchange.util.AssertException.class,
                             com.mchange.v2.ser.UnsupportedVersionException.class,
                             com.mchange.v2.util.ResourceClosedException.class,
-                            //
+                            // mysql exceptions
+                            com.mysql.jdbc.exceptions.MySQLNonTransientException.class,
                 },
                 sendStackToClient);
 

@@ -111,7 +111,7 @@ public class GroupBean implements Group, Serializable {
     private String uniqueId;
     private String name;
     private String description;
-    private long providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+    private long providerId;
     private Map<String, String> properties;
     private int version;
 }

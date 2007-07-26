@@ -133,7 +133,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws RemoteException on remote communication error
      */
     @Secured(types=REVOCATION_CHECK_POLICY,stereotype= DELETE_BY_ID)
-    public void deleteRevocationCheckPolicy(long oid) throws FindException, DeleteException, RemoteException;
+    public void deleteRevocationCheckPolicy(long oid) throws FindException, DeleteException, ConstraintViolationException, RemoteException;
 
 
     public static class HostnameMismatchException extends Exception {

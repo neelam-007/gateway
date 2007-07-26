@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.Collections;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
@@ -31,6 +32,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.VersionException;
+import com.l7tech.objectmodel.ConstraintViolationException;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.ClusterProperty;
 
@@ -292,7 +294,8 @@ public class ManageCertificateValidationDialog extends JDialog {
      */
     private void addRevocationCheckPolicy() {
         final RevocationCheckPolicy check = new RevocationCheckPolicy();
-        final RevocationCheckPolicyPropertiesDialog editor = new RevocationCheckPolicyPropertiesDialog(this, false, check);
+        final RevocationCheckPolicyPropertiesDialog editor =
+                new RevocationCheckPolicyPropertiesDialog(this, false, check, getRevocationCheckPolicies());
         DialogDisplayer.display(editor, new Runnable(){
             public void run() {
                 if (editor.wasOk()) {
@@ -326,6 +329,11 @@ public class ManageCertificateValidationDialog extends JDialog {
             try {
                 getTrustedCertAdmin().deleteRevocationCheckPolicy(revocationCheckPolicy.getOid());
                 model.remove(row);
+            } catch (ConstraintViolationException cve) {
+                String msg = resources.getString("error.revocationpolicyinuse.text");
+                JOptionPane.showMessageDialog(ManageCertificateValidationDialog.this, msg,
+                                              resources.getString("error.revocationpolicyinuse.title"),
+                                              JOptionPane.WARNING_MESSAGE);
             } catch (ObjectModelException ome) {
                 String msg = resources.getString("error.revocationpolicydelete.text");
                 logger.log(Level.WARNING, msg, ome);
@@ -345,7 +353,8 @@ public class ManageCertificateValidationDialog extends JDialog {
         final int row = policyList.getSelectedIndex();
         final RevocationCheckPolicy check = (RevocationCheckPolicy) policyList.getModel().getElementAt(row);
         if (check != null) {
-            final RevocationCheckPolicyPropertiesDialog editor = new RevocationCheckPolicyPropertiesDialog(this, !flags.canUpdateAll(), check);
+            final RevocationCheckPolicyPropertiesDialog editor =
+                    new RevocationCheckPolicyPropertiesDialog(this, !flags.canUpdateAll(), check, getRevocationCheckPolicies());
             DialogDisplayer.display(editor, new Runnable(){
                 public void run() {
                     if (editor.wasOk()) {
@@ -402,9 +411,12 @@ public class ManageCertificateValidationDialog extends JDialog {
         java.util.List<RevocationCheckPolicy> certList;
         try {
             certList = new ArrayList(getTrustedCertAdmin().findAllRevocationCheckPolicies());
-            Collections.sort(certList, new ResolvingComparator(new Resolver<Object, String>(){
-                public String resolve(Object key) {
-                    return ((RevocationCheckPolicy)key).getName();
+            Collections.sort(certList, new ResolvingComparator(new Resolver<RevocationCheckPolicy, String>(){
+                public String resolve(RevocationCheckPolicy rcp) {
+                    String name = rcp.getName();
+                    if (name == null)
+                        name = "";
+                    return name.toLowerCase();
                 }
             }, false));
 
@@ -422,6 +434,17 @@ public class ManageCertificateValidationDialog extends JDialog {
         } catch (RemoteException re) {
             throw new RuntimeException(re);
         }
+    }
+
+    private Collection<RevocationCheckPolicy> getRevocationCheckPolicies() {
+        List<RevocationCheckPolicy> revocationCheckPolicies = new ArrayList();
+
+        ListModel model = policyList.getModel();
+        for (int i=0; i<model.getSize(); i++) {
+            revocationCheckPolicies.add((RevocationCheckPolicy) model.getElementAt(i));    
+        }
+
+        return revocationCheckPolicies;
     }
 
     /**

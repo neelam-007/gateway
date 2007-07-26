@@ -14,8 +14,6 @@ import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 
@@ -46,13 +44,6 @@ public interface AdminContext {
      * @throws RemoteException   on remote communication error
      */
     IdentityAdmin getIdentityAdmin() throws RemoteException, SecurityException;
-
-    /**
-     * @return the {@link com.l7tech.identity.IdentityProviderConfig} object for the internal identity provider
-     * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
-     */
-    IdentityProviderConfig getInternalProviderConfig() throws RemoteException, SecurityException, FindException;
 
     /**
      * @return the service managerr

@@ -138,10 +138,6 @@ public class FederatedIdentityProviderImpl
                 final String msg = "Couldn't find issuer cert";
                 logger.log(Level.SEVERE, msg, e);
                 throw new ClientCertManager.VetoSave(msg);
-            } catch ( IOException e ) {
-                final String msg = "Couldn't parse CA cert";
-                logger.log( Level.WARNING, msg, e );
-                throw new ClientCertManager.VetoSave(msg);
             } catch ( CertificateException e ) {
                 logger.log( Level.INFO, e.getMessage(), e );
             }
@@ -194,8 +190,6 @@ public class FederatedIdentityProviderImpl
                 validTrustedCertOids.add(oid);
             } catch (FindException e) {
                 logger.log(Level.SEVERE, msg + ", which could not be found", e);
-            } catch (IOException e) {
-                logger.log(Level.WARNING, msg + ", which could not be parsed", e);
             } catch (CertificateException e) {
                 logger.log(Level.WARNING, msg + ", which is not valid", e);
             }

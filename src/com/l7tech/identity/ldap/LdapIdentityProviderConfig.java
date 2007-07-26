@@ -94,19 +94,6 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         setProperty(CUSTOM_USER_SEARCH_FILTER, filter);
     }
 
-
-    @Override
-    public boolean isAdminEnabled() {
-        Boolean b = (Boolean) getProperty(ADMIN_ENABLED);
-        return b != null && b.booleanValue();
-    }
-
-
-    @Override
-    public void setAdminEnabled(boolean adminEnabled) {
-        setProperty(ADMIN_ENABLED, adminEnabled);
-    }
-
     /**
      * overrides the search filter for user objects
      * currently unused
@@ -276,5 +263,4 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     private static final String BIND_DN = "ldapBindDN";
     private static final String BIND_PASS = "ldapBindPass";
     private static final String BASE_TEMPLATE = "originalTemplateName";
-    private static final String ADMIN_ENABLED = "adminEnabled";
 }

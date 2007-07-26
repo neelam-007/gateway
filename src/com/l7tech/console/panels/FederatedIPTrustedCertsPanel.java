@@ -9,6 +9,7 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.event.*;
@@ -33,6 +34,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This class provides the step panel for the Federated Identity Provider dialog.
@@ -51,6 +53,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     private boolean limitationsAccepted = true;
 
     private TrustedCertsTable trustedCertTable = null;
+    private Collection<RevocationCheckPolicy> revocationCheckPolicies;
     private X509Certificate ssgcert = null;
     private Collection<FederatedIdentityProviderConfig> fedIdProvConfigs = new ArrayList<FederatedIdentityProviderConfig>();
 
@@ -107,9 +110,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
                 cert = getTrustedCertAdmin().findCertByPrimaryKey(oid);
                 if (cert != null) certs.add(cert);
             } catch (RemoteException re) {
-                JOptionPane.showMessageDialog(this, resources.getString("cert.remote.exception"),
-                        resources.getString("load.error.title"),
-                        JOptionPane.ERROR_MESSAGE);
+                throw new RuntimeException(re);
             } catch (FindException e) {
                 JOptionPane.showMessageDialog(this, resources.getString("cert.find.error"),
                         resources.getString("load.error.title"),
@@ -274,8 +275,16 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
-                    CertPropertiesWindow cpw = new CertPropertiesWindow(getOwner(), (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
-                    DialogDisplayer.display(cpw);
+                    try {
+                        CertPropertiesWindow cpw = new CertPropertiesWindow(getOwner(), (TrustedCert) trustedCertTable.getTableSorter().getData(row), false, true, getRevocationCheckPolicies());
+                        DialogDisplayer.display(cpw);
+                    } catch (FindException fe) {
+                        logger.log(Level.WARNING, "Unable to load certificate data from server", fe);
+                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                resources.getString("cert.load.error"),
+                                resources.getString("load.error.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                    }
                 }
             }
         });
@@ -388,6 +397,25 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         }
         logger.finest("The cert appears to be related!");
         return true;
+    }
+
+    private Collection<RevocationCheckPolicy> getRevocationCheckPolicies() throws FindException {
+         Collection<RevocationCheckPolicy> policies = revocationCheckPolicies;
+
+        if ( revocationCheckPolicies == null ) {
+            policies = loadRevocationCheckPolicies();
+            revocationCheckPolicies = policies;
+        }
+
+        return policies;
+    }
+
+    private Collection<RevocationCheckPolicy> loadRevocationCheckPolicies() throws FindException {
+        try {
+            return getTrustedCertAdmin().findAllRevocationCheckPolicies();
+        } catch (RemoteException re) {
+            throw new RuntimeException(re);
+        }
     }
 
     private WizardListener wizardListener = new WizardAdapter() {

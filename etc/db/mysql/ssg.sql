@@ -40,7 +40,7 @@ CREATE TABLE identity_provider (
 -- Dumping data for table 'identity_provider'
 --
 
-
+INSERT INTO identity_provider (objectid,name,description,type,properties,version) VALUES (-2,'Internal Identity Provider','Internal Identity Provider',1,'<java version="1.6.0_01" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>adminEnabled</string><boolean>true</boolean></void></object></java>',0);
 
 --
 -- Table structure for table 'internal_group'
@@ -251,6 +251,18 @@ CREATE TABLE jms_endpoint(
   primary key(objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+DROP TABLE IF EXISTS revocation_check_policy;
+CREATE TABLE revocation_check_policy (
+  objectid bigint(20) NOT NULL,
+  version int(11) default NULL,
+  name varchar(128) NOT NULL,
+  revocation_policy_xml mediumtext,
+  default_policy tinyint default '0',
+  default_success tinyint default '0',
+  PRIMARY KEY  (objectid),
+  UNIQUE KEY rcp_name_idx (name)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 --
 -- Table structure for table 'trusted_cert'
 --
@@ -270,23 +282,15 @@ CREATE TABLE trusted_cert (
   verify_hostname tinyint(1) default '0',
   thumbprint_sha1 varchar(64),
   ski varchar(64),
+  trust_anchor tinyint default 1,
+  revocation_type varchar(128) NOT NULL DEFAULT 'USE_DEFAULT',
+  revocation_policy_oid bigint(20),
   primary key(objectid),
   unique (subject_dn),
   unique (name),
   INDEX i_thumb (thumbprint_sha1),
-  INDEX i_ski (ski)
-) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
-
-DROP TABLE IF EXISTS revocation_check_policy;
-CREATE TABLE revocation_check_policy (
-  objectid bigint(20) NOT NULL,
-  version int(11) default NULL,
-  name varchar(128) NOT NULL,
-  revocation_policy_xml mediumtext,
-  default_policy tinyint default '0',
-  default_success tinyint default '0',
-  PRIMARY KEY  (objectid),
-  UNIQUE KEY rcp_name_idx (name)
+  INDEX i_ski (ski),
+  FOREIGN KEY (revocation_policy_oid) REFERENCES revocation_check_policy (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS fed_user;

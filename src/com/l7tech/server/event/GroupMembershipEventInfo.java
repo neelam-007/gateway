@@ -25,14 +25,12 @@ import org.springframework.context.ApplicationContext;
  */
 public class GroupMembershipEventInfo {
     public GroupMembershipEventInfo(final GroupMembership gm, String verb, ApplicationContext springContext) {
-        long providerOid;
         Class userClass, groupClass;
+        long providerOid = gm.getThisGroupProviderOid();
         if ((gm instanceof FederatedGroupMembership)) {
-            providerOid = gm.getThisGroupProviderOid();
             userClass = FederatedUser.class;
             groupClass = FederatedGroup.class;
         } else {
-            providerOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
             userClass = InternalUser.class;
             groupClass = InternalGroup.class;
         }

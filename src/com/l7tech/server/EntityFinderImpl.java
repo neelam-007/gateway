@@ -89,8 +89,6 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } else {
                 throw new IllegalArgumentException("EntityHeader is an IdentityHeader, but type is neither USER nor GROUP");
             }
-        } else if (header.getType() == EntityType.ID_PROVIDER_CONFIG && header.getOid() == IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) {
-            return identityProviderFactory.getProvider(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID).getConfig();
         }
         return find(EntityHeaderUtils.getEntityClass(header), header.getStrId());
     }

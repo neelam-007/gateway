@@ -140,11 +140,7 @@ public class InternalIdentityProviderImpl
         return HttpDigest.REALM;
     }
 
-    public void test() throws InvalidIdProviderCfgException {
-        if (config.getOid() != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) {
-            logger.warning("Testing an internal id provider with no good oid. Throwing InvalidIdProviderCfgException");
-            throw new InvalidIdProviderCfgException("This internal ID provider config is not valid.");
-        }
+    public void test() {
     }
 
     public void preSaveClientCert(InternalUser user, X509Certificate[] certChain ) throws ClientCertManager.VetoSave {

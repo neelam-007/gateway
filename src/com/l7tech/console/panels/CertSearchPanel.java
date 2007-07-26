@@ -7,6 +7,7 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListener;
@@ -27,7 +28,9 @@ import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Collection;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.io.IOException;
 
 /**
@@ -52,6 +55,7 @@ public class CertSearchPanel extends JDialog {
     private JScrollPane certScrollPane;
     private JLabel descriptionLabel;
     private TrustedCertsTable trustedCertTable = null;
+    private Collection<RevocationCheckPolicy> revocationCheckPolicies;
     private EventListenerList listenerList = new EventListenerList();
 
     private final static String STARTS_WITH = "Starts with";
@@ -81,10 +85,12 @@ public class CertSearchPanel extends JDialog {
         this.keyRequired = keyRequired; 
         initialize();
         pack();
-        Utilities.centerOnScreen(this);
+        Utilities.centerOnParentWindow(this);
     }
 
     private void initialize() {
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
@@ -169,8 +175,16 @@ public class CertSearchPanel extends JDialog {
                 CertPropertiesWindow cpw;
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
-                    cpw = new CertPropertiesWindow(CertSearchPanel.this, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
-                    DialogDisplayer.display(cpw);
+                    try {
+                        cpw = new CertPropertiesWindow(CertSearchPanel.this, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false, getRevocationCheckPolicies());
+                        DialogDisplayer.display(cpw);
+                    } catch (FindException fe) {
+                        logger.log(Level.WARNING, "Unable to load certificate data from server", fe);
+                        JOptionPane.showMessageDialog(CertSearchPanel.this,
+                                resources.getString("cert.load.error"),
+                                resources.getString("load.error.title"), 
+                                JOptionPane.ERROR_MESSAGE);
+                    }
                 }
             }
         });
@@ -266,10 +280,6 @@ public class CertSearchPanel extends JDialog {
                         }
                     }
 
-                } catch (RemoteException re) {
-                    JOptionPane.showMessageDialog(CertSearchPanel.this, resources.getString("cert.remote.exception"),
-                            resources.getString("load.error.title"),
-                            JOptionPane.ERROR_MESSAGE);
                 } catch (FindException e) {
                     JOptionPane.showMessageDialog(CertSearchPanel.this, resources.getString("cert.find.error"),
                             resources.getString("load.error.title"),
@@ -282,14 +292,37 @@ public class CertSearchPanel extends JDialog {
         });
     }
 
-    private java.util.List<TrustedCert> findTrustedCerts() throws RemoteException, FindException {
-        return getTrustedCertAdmin().findAllCerts();
+    private Collection<RevocationCheckPolicy> getRevocationCheckPolicies() throws FindException {
+         Collection<RevocationCheckPolicy> policies = revocationCheckPolicies;
+
+        if ( revocationCheckPolicies == null ) {
+            policies = loadRevocationCheckPolicies();
+            revocationCheckPolicies = policies;
+        }
+
+        return policies;
+    }
+
+    private Collection<RevocationCheckPolicy> loadRevocationCheckPolicies() throws FindException {
+        try {
+            return getTrustedCertAdmin().findAllRevocationCheckPolicies();
+        } catch (RemoteException re) {
+            throw new RuntimeException(re);
+        }
+    }
+
+    private java.util.List<TrustedCert> findTrustedCerts() throws FindException {
+        try {
+            return getTrustedCertAdmin().findAllCerts();
+        } catch (RemoteException re) {
+            throw new RuntimeException(re);
+        }
     }
 
     /**
      * Load the certs from the SSG
      */
-    private java.util.List<TrustedCert> findPrivateKeyCerts() throws RemoteException, FindException {
+    private java.util.List<TrustedCert> findPrivateKeyCerts() throws FindException {
         java.util.List<TrustedCert> certList = new ArrayList();
         try {
             TrustedCert sslCertHolder = new TrustedCert();
@@ -369,9 +402,5 @@ public class CertSearchPanel extends JDialog {
      */
     private static String getPrefix(boolean key) {
         return key ?  "keyed" : "";
-    }
-
-    private void createUIComponents() {
-        // TODO: place custom component creation code here
     }
 }

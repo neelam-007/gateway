@@ -43,7 +43,7 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
      * @return the TrustedCert with the specified Subject DN, or null if no such cert exists.
      * @throws FindException if the TrustedCert cannot be found.
      */
-    TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, IOException, CertificateException;
+    TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, CertificateException;
 
     /**
      * Retrieves the TrustedCert with the specified oid from a cache,
@@ -58,7 +58,7 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
      * @return the TrustedCert with the specified Subject DN, or null if no such cert exists.
      * @throws FindException if the TrustedCert cannot be found.
      */
-    TrustedCert getCachedCertByOid(long oid, int maxAge) throws FindException, IOException, CertificateException;
+    TrustedCert getCachedCertByOid(long oid, int maxAge) throws FindException, CertificateException;
 
     /**
      * Logs a good warning message for a cert that will expire soon

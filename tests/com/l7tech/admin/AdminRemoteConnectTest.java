@@ -58,7 +58,6 @@ public class AdminRemoteConnectTest extends TestCase {
         AdminContext ai = loginResult.getAdminContext();
         System.out.println("the interface is "+ai);
         System.out.println("the version is "+ai.getVersion());
-        System.out.println(ai.getInternalProviderConfig());
     }
 
     public void testScratch() throws Exception {

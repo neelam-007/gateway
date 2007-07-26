@@ -17,9 +17,6 @@ import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 import org.springframework.beans.factory.InitializingBean;
@@ -79,14 +76,6 @@ public class AdminContextImpl
 
     public IdentityAdmin getIdentityAdmin() throws RemoteException, SecurityException {
         return identityAdmin;
-    }
-
-    public IdentityProviderConfig getInternalProviderConfig()
-      throws RemoteException, SecurityException, FindException {
-        try {
-            return identityAdmin.findIdentityProviderConfigByID(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-        } finally {
-        }
     }
 
     public ServiceAdmin getServiceAdmin() throws RemoteException, SecurityException {
