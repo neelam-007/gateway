@@ -6,14 +6,15 @@
 
     <!--  Spring configuration file
           used by the org.springframework.web.context.ContextLoaderListener
+          TODO figure out how to make the CaWsdmObserverContext.xml load from the classpath but still be optional
     -->
     <context-param>
         <param-name>contextConfigLocation</param-name>
         <param-value>
-            /WEB-INF/dataAccessContext.xml
-            /WEB-INF/webApplicationContext.xml
-            /WEB-INF/adminContext.xml
-            /WEB-INF/rbacEnforcementContext.xml
+            classpath:com/l7tech/server/resources/dataAccessContext.xml
+            classpath:com/l7tech/server/resources/webApplicationContext.xml
+            classpath:com/l7tech/server/resources/adminContext.xml
+            classpath:com/l7tech/server/resources/rbacEnforcementContext.xml
             classpath:org/codehaus/xfire/spring/xfire.xml
             /WEB-INF/CaWsdmObserverContext*.xml
         </param-value>

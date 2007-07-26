@@ -3343,12 +3343,6 @@
 
         <copy todir="${install.src.web-inf}">
             <fileset dir="${src.root}/etc" includes="web.xml"/>
-            <fileset dir="${src.root}/etc" includes="webApplicationContext.xml" />
-            <fileset dir="${src.root}/etc" includes="dataAccessContext.xml" />
-            <fileset dir="${src.root}/etc" includes="adminContext.xml" />
-            <fileset dir="${src.root}/etc" includes="rbacEnforcementContext.xml" />
-            <fileset dir="${src.root}/etc/admin/ws/xfire" includes="xfire-servlet.xml" />
-            <fileset dir="${src.root}/etc/admin" includes="admin-servlet.xml" />
         </copy>
 
         <copy todir="${install.src.inf}/ssg/webadmin">
