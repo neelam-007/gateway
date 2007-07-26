@@ -3183,6 +3183,7 @@
         <echo>Making directories...</echo>
         <mkdir dir="${install.src.base}"/>
         <mkdir dir="${install.src.lib}"/>
+        <mkdir dir="${install.src.lib}/ext"/>
         <mkdir dir="${install.src.mods}"/>
         <mkdir dir="${install.src.aarmods}"/>
         <mkdir dir="${install.src.dist}"/>

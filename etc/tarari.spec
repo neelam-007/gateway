@@ -33,8 +33,8 @@ rm -fr %{buildroot}
 mkdir %{buildroot}/etc/init.d/
 
 mv %{buildroot}/etc/tarari-initd %{buildroot}/etc/init.d/tarari
-mkdir -p %{buildroot}/ssg/tomcat/shared/lib
-cp %{buildroot}/usr/local/Tarari/lib/tarari_raxj.jar %{buildroot}/ssg/tomcat/shared/lib/
+mkdir -p %{buildroot}/ssg/lib/ext
+cp %{buildroot}/usr/local/Tarari/lib/tarari_raxj.jar %{buildroot}/ssg/lib/ext
 
 rm -rf %{buildroot}/usr/local/Tarari/test/
 rm -rf %{buildroot}/usr/local/Tarari/src
@@ -48,7 +48,7 @@ rm -rf %{buildroot}/usr/local/Tarari/docs
 /usr/local/Tarari/*
 
 %defattr(-,gateway,gateway)
-/ssg/tomcat/shared/lib/tarari_raxj.jar
+/ssg/lib/ext/tarari_raxj.jar
 
 %pre
 
