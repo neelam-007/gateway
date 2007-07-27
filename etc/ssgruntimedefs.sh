@@ -1,8 +1,6 @@
-#!/bin/sh
-# /etc/profile.d/ssgruntimedefs.sh
+#!/bin/bash
 # LAYER 7 TECHNOLOGIES
 # Defines JAVA_HOME, etc
-# at the moment
 
 SSG_HOME=/ssg
 
@@ -71,7 +69,6 @@ export CATALINA_PID
 export ALL_PARTITIONS
 export PARTITION_COUNT
 
-# define tomcat home
 export PATH
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SSG_HOME/lib
 
