@@ -4,7 +4,7 @@
 #Control script to start or stop an individual partition.
 ##################################################################################
 
-/ssg/bin/ssgruntimedefs.sh
+. /ssg/bin/ssgruntimedefs.sh
 
 ORIGINAL_JAVA_OPTS=${JAVA_OPTS}
 
