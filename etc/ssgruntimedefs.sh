@@ -1,12 +1,10 @@
 #!/bin/sh
 # /etc/profile.d/ssgruntimedefs.sh
 # LAYER 7 TECHNOLOGIES
-# Defines JAVA_HOME, TOMCAT_HOME, etc
+# Defines JAVA_HOME, etc
 # at the moment
 
 SSG_HOME=/ssg
-
-TOMCAT_HOME=/ssg/tomcat
 
 default_java_opts="-server -Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxConnectionsPerHost=750 -Djava.net.preferIPv4Stack=true "
 default_java_opts="$default_java_opts -Dsun.rmi.dgc.server.gcInterval=3600000 -Dsun.rmi.dgc.client.gcInterval=3600000 "
@@ -68,7 +66,6 @@ unset default_java_opts
 
 export SSG_HOME
 export JAVA_HOME
-export TOMCAT_HOME
 export JAVA_OPTS
 export CATALINA_PID
 export ALL_PARTITIONS
