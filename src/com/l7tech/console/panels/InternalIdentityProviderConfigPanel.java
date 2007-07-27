@@ -79,7 +79,7 @@ public class InternalIdentityProviderConfigPanel extends WizardStepPanel {
      * @return  String  The descritpion of the step.
      */
     public String getDescription() {
-        return "Modification of the Internal Identity Provider is not " +
+        return "Modification of the Internal Identity Provider name is not " +
                 "allowed. The data shown above is for viewing purposes only.";
     }
 
