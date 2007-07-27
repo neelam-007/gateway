@@ -385,7 +385,13 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
                                                        boolean cellHasFocus)
         {
             RevocationCheckPolicyItem revocationCheckPolicyItem = (RevocationCheckPolicyItem) value;
-            RevocationCheckPolicyItem.Type type = revocationCheckPolicyItem.getType();
+            RevocationCheckPolicyItem.Type type = null;
+            String url = null;
+
+            if ( revocationCheckPolicyItem != null ) {
+                type = revocationCheckPolicyItem.getType();
+                url = revocationCheckPolicyItem.getUrl();
+            }
 
             String labelKey = RES_ITEM_CRLFROMCERT;
             if (type != null) {
@@ -405,7 +411,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
                 }
             }
 
-            setText(MessageFormat.format(resources.getString(labelKey), revocationCheckPolicyItem.getUrl()));
+            setText(MessageFormat.format(resources.getString(labelKey), url));
 
             if (isSelected) {
                 setBackground(list.getSelectionBackground());

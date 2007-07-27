@@ -572,9 +572,12 @@ public class CertPropertiesWindow extends JDialog {
         {
             RevocationCheckPolicy revocationCheckPolicy = (RevocationCheckPolicy) value;
 
-            String label = revocationCheckPolicy.getName();
-            if (revocationCheckPolicy.isDefaultPolicy())  {
-                label += " [Default]";
+            String label = "";
+            if ( revocationCheckPolicy != null ) {
+                label = revocationCheckPolicy.getName();
+                if (revocationCheckPolicy.isDefaultPolicy())  {
+                    label += " [Default]";
+                }
             }
 
             setText(label);
