@@ -4,11 +4,11 @@
 // Layer 7 Technologies, Feb 2007
 //
 
-// @@CP_VALUE@@ is to be replaced by ${stringed-cpath}
+// CP_VALUE is to be replaced by ${stringed-cpath}
 // it represents the class path necessary for the classes to be obfuscated
 classpath "@@CP_VALUE@@";
 
-// @@OBF_TARGET@@ is the location of the class files to obfuscate such as WhichModuleAssertion/build/classes/*
+// OBF_TARGET is the location of the class files to obfuscate such as WhichModuleAssertion/build/classes/*
 // this could also be a directory containing .class files
 open      "@@OBF_TARGET@@";
 

@@ -1339,6 +1339,7 @@
             </indexjars>
             <fileset dir="${build.classes}">
                 <!-- Tool, Manager, Client, Config Wizard and Test classes -->
+                <exclude name="com/l7tech/common/gui/**/*"/>
                 <exclude name="com/l7tech/internal/**/*"/>
                 <exclude name="com/l7tech/console/**/*"/>
                 <exclude name="com/l7tech/test/**/*"/>
@@ -1348,6 +1349,7 @@
                 <exclude name="com/l7tech/proxy/Main*.class"/>
                 <exclude name="com/l7tech/proxy/RequestHandler*.class"/>
                 <exclude name="com/l7tech/server/config/**"/>
+                <exclude name="com/l7tech/server/flasher/**"/>
 
                 <!-- UDDI implementations (these should be packaged as modules) -->
                 <exclude name="com/l7tech/server/service/uddi/impl/**"/>
@@ -3679,7 +3681,7 @@
             <pathconvert property="@{propertyPrefix}.zkm.libs.path" targetos="unix" pathsep="${line.separator}" refid="@{propertyPrefix}.lib.fileset">
                 <mapper type="regexp" from=".*[/\\](.*)\.jar" to="    &quot;build/lib/\1.jar&quot;"/>
             </pathconvert>
-            <copy file="${src.root}/etc/obfuscation/@{filename}" tofile="${build.etc}/@{filename}">
+            <copy file="${src.root}/etc/obfuscation/@{filename}" tofile="${build.etc}/@{filename}" overwrite="true">
                 <filterset>
                   <filter token="JARFILE_FILE_LINES" value="classpath${line.separator}${@{propertyPrefix}.zkm.libs.path}${line.separator}@{pathExtra};"/>
                 </filterset>
@@ -3691,17 +3693,10 @@
       Initialization for obfuscation
     -->
     <target name="obfuscate.init" if="obfuscate" depends="package.api">
-        <!--
-            Patternset used for gateway libs
-        -->
-        <patternset id="gateway.libs">
-            <include name="*"/>
-        </patternset>
-
         <echo>Setting classpaths in zkm scripts</echo>
         <build-zkm filename="client.zkm" propertyPrefix="client"/>
         <build-zkm filename="ssg.zkm" propertyPrefix="gateway" libDir="build/lib"
-                   pathExtra="    &quot;build/lib/servlet-api.jar&quot;${line.separator}    &quot;build/lib/catalina.jar&quot;${line.separator}    &quot;build/layer7-api.jar&quot;${line.separator}    &quot;lib/gateway/tarari/tarari_raxj.jar&quot;${line.separator}"/>
+                   pathExtra="    &quot;lib/gateway/tarari/tarari_raxj.jar&quot;${line.separator}"/>
     </target>
 
     <target name="obfuscate.manager.init" if="obfuscate">

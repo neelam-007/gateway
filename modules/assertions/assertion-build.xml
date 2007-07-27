@@ -166,7 +166,7 @@
     <target name="-compile" depends="checkobf, reallycompile" if="localobfuscate">
         <!-- obfuscation will only occur if the please_obfuscate file is present -->
         <property name="stringed-cpath" refid="compile.classpath"/>
-        <copyfile src="../moduleassertion.zkm" dest="${moduleName}.zkm"/>
+        <copy file="../moduleassertion.zkm" tofile="${moduleName}.zkm" overwrite="true"/>
         <replace file="${moduleName}.zkm" token="@@CP_VALUE@@" value="${stringed-cpath}"/>
         <replace file="${moduleName}.zkm" token="@@OBF_TARGET@@" value="${build.classes}/*"/>
         <replace file="${moduleName}.zkm" token="@@OBF_OUTPUT@@" value="${build.classes}"/>
