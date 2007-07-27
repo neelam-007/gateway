@@ -9,6 +9,7 @@ import com.l7tech.console.panels.CreateFederatedIPWizard;
 import com.l7tech.console.panels.FederatedIPGeneralPanel;
 import com.l7tech.console.panels.FederatedIPTrustedCertsPanel;
 import com.l7tech.console.panels.Wizard;
+import com.l7tech.console.panels.IdentityProviderCertificateValidationConfigPanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
@@ -75,7 +76,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
 
                 Frame f = TopComponents.getInstance().getTopParent();
 
-                FederatedIPGeneralPanel configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(null));
+                FederatedIPGeneralPanel configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(new IdentityProviderCertificateValidationConfigPanel(null)));
                 CreateFederatedIPWizard w = new CreateFederatedIPWizard(f, configPanel);
                 //FederatedIdentityProviderWindow w = new FederatedIdentityProviderWindow(f);
 
