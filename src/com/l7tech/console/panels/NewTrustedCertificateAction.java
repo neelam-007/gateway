@@ -143,6 +143,7 @@ public class NewTrustedCertificateAction extends SecureAction {
                 if (tc.isTrustedForSsl() || tc.isTrustedForSigningServerCerts()) {
                     tc.setVerifyHostname(true);
                 }
+                tc.setTrustAnchor(true);
 
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {

@@ -81,11 +81,13 @@ public abstract class NodeAction extends SecureAction {
      * @return the identity provider or null if not found
      */
     public IdentityProviderConfig getIdentityProviderConfig(EntityHeaderNode node) {
-        long providerId = -1;
+        long providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
 
-        EntityHeader header = node.getEntityHeader();
-        if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
-            providerId = header.getOid();
+        if (node != null) {
+            EntityHeader header = node.getEntityHeader();
+            if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
+                providerId = header.getOid();
+            }
         }
 
         try {

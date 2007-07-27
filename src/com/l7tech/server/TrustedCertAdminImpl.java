@@ -111,6 +111,19 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, RemoteException {
         checkLicenseHeavy();
         long oid;
+
+        // validate settings
+        if (cert.getRevocationCheckPolicyType() == null) {
+            cert.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.USE_DEFAULT);
+        } else if (cert.getRevocationCheckPolicyType() == TrustedCert.PolicyUsageType.SPECIFIED &&
+                cert.getRevocationCheckPolicyOid()==null) {
+            if (cert.getOid() == TrustedCert.DEFAULT_OID) {
+                throw new SaveException("A revocation checking policy must be specified for this revocation checking type.");
+            } else {
+                throw new UpdateException("A revocation checking policy must be specified for this revocation checking type.");
+            }
+        }
+
         if (cert.getOid() == TrustedCert.DEFAULT_OID) {
             // check that cert with same dn not already exist
             // because the sql error thrown by hibernate makes it impossible
