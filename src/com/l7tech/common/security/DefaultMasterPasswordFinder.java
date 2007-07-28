@@ -13,6 +13,8 @@ import java.util.Random;
 
 /**
  * A MasterPasswordFinder that knows how to read an obfuscated master password from a config file.
+ * This finder is uncached -- it will always open and read the config file whenever someone asks for
+ * the master password.
  */
 public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
     public static final String PROP_MASTER_PASSWORD_PATH = "com.l7tech.masterPasswordPath";
@@ -50,6 +52,8 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
     /**
      * Unobfuscate a password.
      * This is a utility method provided for use by MasterPasswordFinder implementations.
+     * If this method is changed in the future, it must retain the ability to unobfuscate
+     * passwords saved in the original $L7O$ format.
      *
      * @param obfuscated the obfuscated password.  Required.
      * @return the unobfuscated string

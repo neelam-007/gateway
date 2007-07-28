@@ -907,6 +907,7 @@
             <test name="com.l7tech.policy.assertion.OversizedTextAssertionTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.RegexAssertionTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.MasterPasswordManagerTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.tomcat.VirtualDirContextTest" haltonfailure="no"/>
 
             <!--
               Add possibly-slow intensive nightly tests here **
@@ -2756,10 +2757,9 @@
             </fileset>
         </copy>
 
-        <!-- the web.xml -->
+        <!-- war file web.xml files -->
         <copy todir="${build.etc}">
             <fileset dir="${src.root}/etc">
-                <include name="web.xml"/>
                 <include name="testweb.xml"/>
             </fileset>
         </copy>
@@ -3165,7 +3165,6 @@
         <property name="install.src.uddi.properties" value="${install.src.conf}/uddi.properties"/>
         <property name="install.src.server.xml" value="${install.src.partitionTemplate}/server.xml"/>
         <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
-        <property name="install.src.web-inf" value="${install.src.inf}/WEB-INF"/>
         <property name="install.src.ldap" value="${install.src.base}/${install.rel.ldap}"/>
         <property name="install.src.var" value="${install.src.base}/var"/>
         <property name="install.src.var.attachments" value="${install.src.var}/attachments"/>
@@ -3212,7 +3211,6 @@
         <mkdir dir="${install.src.inf}/ssg/webadmin"/>
         <mkdir dir="${install.src.inf}/ssg/webadmin/lib"/>
         <mkdir dir="${install.src.inf}/ssg/webadmin/help"/>
-        <mkdir dir="${install.src.web-inf}"/>
     </target>
 
     <!--
@@ -3352,10 +3350,6 @@
             <fileset dir="${src.root}/src/com/l7tech/common/resources" includes="wsil2xhtml.xml"/>
         </copy>
 
-        <copy todir="${install.src.web-inf}">
-            <fileset dir="${src.root}/etc" includes="web.xml"/>
-        </copy>
-
         <copy todir="${install.src.inf}/ssg/webadmin">
             <fileset dir="${build.dir}" includes="Manager.jar*"/>
         </copy>
@@ -3365,9 +3359,6 @@
         <copy todir="${install.src.inf}/ssg/webadmin/lib">
             <fileset dir="${build.dir}/managerlibs" includes="*" />
         </copy>
-
-        <!--  TODO what was this line for? -->
-        <!-- <zipfileset dir="${src.root}/src" includes="**/*.aegis.xml" prefix="WEB-INF/classes"/> -->
 
         <copy todir="${install.src.conf}">
             <fileset dir="${src.root}/etc/tomcat">

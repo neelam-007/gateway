@@ -1,14 +1,14 @@
 package com.l7tech.server.boot;
 
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.tomcat.ConnectionIdValve;
-import com.l7tech.server.tomcat.ResponseKillerValve;
-import com.l7tech.server.tomcat.ServerXmlParser;
+import com.l7tech.server.tomcat.*;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Connector;
@@ -16,13 +16,16 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardWrapper;
 import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Embedded;
+import org.apache.naming.resources.FileDirContext;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.xml.sax.SAXException;
 
+import javax.naming.directory.DirContext;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,6 +33,7 @@ import java.util.logging.Logger;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.MissingResourceException;
 
 /**
  * Object that represents a complete, running Gateway instance.
@@ -39,6 +43,7 @@ public class GatewayBoot {
     protected static final Logger logger = Logger.getLogger(GatewayBoot.class.getName());
     public static final String SHUTDOWN_FILENAME = "SHUTDOWN.NOW";
     private static final long SHUTDOWN_POLL_INTERVAL = 1987L;
+    private static final String RESOURCE_PREFIX = "com/l7tech/server/resources/";
 
     private final File ssgHome;
     private final File inf;
@@ -78,6 +83,7 @@ public class GatewayBoot {
 
         embedded = new Embedded();
         engine = embedded.createEngine();
+        engine.setName("ssg");
         engine.setDefaultHost(getListenAddress());
         embedded.addEngine(engine);
 
@@ -89,6 +95,7 @@ public class GatewayBoot {
 
         context = (StandardContext)embedded.createContext("", s);
         context.setName("");
+        context.setResources(makeResources(inf));
 
         StandardWrapper dflt = (StandardWrapper)context.createWrapper();
         dflt.setServletClass(DefaultServlet.class.getName());
@@ -98,6 +105,51 @@ public class GatewayBoot {
         context.addServletMapping("/", "default");
 
         host.addChild(context);
+    }
+
+    /**
+     * Build the hybrid virtual/real DirContext that gets WEB-INF virtually from the class path
+     * but everything else from disk
+     *
+     * @param inf  the /ssg/etc/inf directory.  required
+     * @return     a new DirContext that will contain a virtual WEB-INF in addition to the real contents of /ssg/etc/inf/ssg
+     */
+    private DirContext makeResources(File inf) {
+        // Splice the real on-disk ssg/ subdirectory into our virtual filesystem under /ssg
+        File ssgFile = new File(inf, "ssg");
+        FileDirContext ssgFileContext = new FileDirContext();
+        ssgFileContext.setDocBase(ssgFile.getAbsolutePath());
+        VirtualDirContext ssgContext = new VirtualDirContext("ssg", ssgFileContext);
+
+        // Set up our virtual WEB-INF subdirectory and virtual favicon and index.html
+        VirtualDirEntry webXml = loadEntry("web.xml");
+        VirtualDirContext webInfContext = new VirtualDirContext("WEB-INF", webXml);
+        VirtualDirEntry favicon = loadEntry("favicon.ico");
+        VirtualDirEntry indexhtml = loadEntry("index.html");
+
+        // Splice it all together
+        return new VirtualDirContext("VirtualInf", webInfContext, favicon, indexhtml, ssgContext);
+    }
+
+    /**
+     * Create a VirtualDirEntry out of an item in the server resources classpath.
+     *
+     * @param name the local name, ie "web.xml".  We will try to load com/l7tech/server/resources/web.xml
+     * @return a VirtualDirEntry.  never null
+     */
+    private VirtualDirEntry loadEntry(String name) {
+        InputStream is = null;
+        try {
+            String fullname = RESOURCE_PREFIX + name;
+            is = getClass().getClassLoader().getResourceAsStream(fullname);
+            if (is == null)
+                throw new MissingResourceException("Missing resource: " + fullname, getClass().getName(), fullname);
+            return new VirtualDirEntryImpl(name, HexUtils.slurpStream(is));
+        } catch (IOException e) {
+            throw (MissingResourceException)new MissingResourceException("Error reading resource: " + name, getClass().getName(), name).initCause(e);
+        } finally {
+            ResourceUtils.closeQuietly(is);
+        }
     }
 
     public void start() throws LifecycleException {

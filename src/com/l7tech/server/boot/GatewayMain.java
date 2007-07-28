@@ -17,8 +17,8 @@ public class GatewayMain {
             // Try using the current directory
             File cwd = new File(".").getAbsoluteFile();
             if (cwd.isDirectory()) {
-                File webInf = new File(cwd, "etc/inf/WEB-INF");
-                if (webInf.isDirectory() && new File(webInf, "web.xml").exists()) {
+                File inf = new File(cwd, "etc/inf");
+                if (inf.isDirectory()) {
                     // Current directory it is.
                     rootPath = cwd.getAbsolutePath();
                     System.setProperty(PROP_SERVER_HOME, rootPath);
