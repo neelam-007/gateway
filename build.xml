@@ -3340,11 +3340,6 @@
             </fileset>
         </copy>
 
-        <copy todir="${install.src.inf}">
-            <fileset dir="${src.root}/web" includes="*"/>
-            <fileset dir="${src.root}/etc" includes="favicon.ico"/>
-        </copy>
-
         <copy todir="${install.src.inf}/ssg">
             <fileset dir="${src.root}/web" includes="*"/>
             <fileset dir="${src.root}/src/com/l7tech/common/resources" includes="wsil2xhtml.xml"/>
