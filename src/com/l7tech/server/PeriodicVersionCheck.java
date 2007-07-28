@@ -51,7 +51,8 @@ public abstract class PeriodicVersionCheck extends TimerTask {
             }
 
             // actual check logic
-            List<Long> updatesAndAdditions = new ArrayList<Long>();
+            List<Long> creates = new ArrayList<Long>();
+            List<Long> updates = new ArrayList<Long>();
             List<Long> deletions = new ArrayList<Long>();
 
             // 1. check that all that is in db is present in cache and that version is same
@@ -61,13 +62,13 @@ public abstract class PeriodicVersionCheck extends TimerTask {
 
                 if (cachedVersion == null) {
                     logger.fine("Entity " + oid + " is new.");
-                    updatesAndAdditions.add(oid);
+                    creates.add(oid);
                 } else {
                     // check actual version
                     Integer dbversion = dbversions.get(oid);
 
                     if (!dbversion.equals(cachedVersion)) {
-                        updatesAndAdditions.add(oid);
+                        updates.add(oid);
                         logger.fine("Entity " + oid + " has been updated.");
                     }
                 }
@@ -82,10 +83,25 @@ public abstract class PeriodicVersionCheck extends TimerTask {
             }
 
             // 3. make the updates
-            if (updatesAndAdditions.isEmpty() && deletions.isEmpty()) {
+            if (creates.isEmpty() && updates.isEmpty() && deletions.isEmpty()) {
                 // nothing to do. we're done
             } else {
-                for (Long updatedOid : updatesAndAdditions) {
+                for (Long createdOid : creates) {
+                    if (checkAddOrUpdate(createdOid, 0)) {
+                        PersistentEntity createdEntity;
+                        try {
+                            createdEntity = manager.findEntity(createdOid);
+                        } catch (FindException e) {
+                            createdEntity = null;
+                            logger.log(Level.WARNING, "Entity that was created cannot be retrieved", e);
+                        }
+                        if (createdEntity != null) {
+                            create(createdEntity);
+                        } // otherwise, next version check shall delete this service from cache
+                    }
+                }
+
+                for (Long updatedOid : updates) {
                     Integer newVersion = dbversions.get(updatedOid);
                     if (checkAddOrUpdate(updatedOid, newVersion)) {
                         PersistentEntity updatedEntity;
@@ -93,14 +109,14 @@ public abstract class PeriodicVersionCheck extends TimerTask {
                             updatedEntity = manager.findEntity(updatedOid.longValue());
                         } catch (FindException e) {
                             updatedEntity = null;
-                            logger.log(Level.WARNING, "Entity that was updated or created " +
-                                    "cannot be retrieved", e);
+                            logger.log(Level.WARNING, "Entity that was updated cannot be retrieved", e);
                         }
                         if (updatedEntity != null) {
-                            addOrUpdate(updatedEntity);
+                            update(updatedEntity);
                         } // otherwise, next version check shall delete this service from cache
                     }
                 }
+                
                 for (Long key : deletions) {
                     remove(key);
                 }
@@ -128,11 +144,15 @@ public abstract class PeriodicVersionCheck extends TimerTask {
         return loadEntity;
     }
 
-    private void addOrUpdate(PersistentEntity updatedEntity) {
+    private void update(PersistentEntity updatedEntity) {
         cachedVersionMap.put(new Long(updatedEntity.getOid()), new Integer(updatedEntity.getVersion()));
-        onSave(updatedEntity);
+        onUpdate(updatedEntity);
     }
 
+    private void create(PersistentEntity createdEntity) {
+        cachedVersionMap.put(createdEntity.getOid(), createdEntity.getVersion());
+        onCreate(createdEntity);
+    }
 
     /**
      * Override to be notified of deleted entities.
@@ -166,7 +186,16 @@ public abstract class PeriodicVersionCheck extends TimerTask {
      *
      * @param updatedEntity the updated Entity
      */
-    protected void onSave(PersistentEntity updatedEntity) {}
+    protected void onUpdate(PersistentEntity updatedEntity) {}
+
+    /**
+     * Override to be passed created entities.
+     *
+     * <p>This implementation does nothing.</p>
+     *
+     * @param createdEntity the created Entity
+     */
+    protected void onCreate(PersistentEntity createdEntity) {}
 
     public long getFrequency() {
         return DEFAULT_FREQUENCY;

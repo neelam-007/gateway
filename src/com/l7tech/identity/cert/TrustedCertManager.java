@@ -8,9 +8,10 @@ package com.l7tech.identity.cert;
 
 import com.l7tech.common.security.CertificateExpiry;
 import com.l7tech.common.security.TrustedCert;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.FindException;
 
-import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;

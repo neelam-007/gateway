@@ -9,15 +9,11 @@
      * too many places.
      -->
     <bean id="serverConfig" class="com.l7tech.server.ServerConfigStub">
-        <property name="clusterPropertyCache">
-            <ref bean="clusterPropertyCache"/>
-        </property>
+        <property name="clusterPropertyCache" ref="clusterPropertyCache"/>
     </bean>
 
    <bean id="clusterPropertyCache" class="com.l7tech.cluster.ClusterPropertyCache">
-        <property name="clusterPropertyManager">
-            <ref bean="clusterPropertyManager"/>
-        </property>
+        <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
     </bean>
 
     <!-- server side identity provider factory (same as the prod)-->
@@ -26,9 +22,7 @@
 
     <!-- test identity configuration manager -->
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.TestIdentityProviderConfigManager">
-        <property name="identityProviderFactory">
-            <ref bean='identityProviderFactory'/>
-        </property>
+        <property name="identityProviderFactory" ref="identityProviderFactory"/>
     </bean>
 
 <!--
@@ -40,12 +34,8 @@
 
     <!--  test service admin -->
     <bean id="serviceAdmin" class="com.l7tech.service.ServiceAdminStub">
-        <property name="policyValidator">
-            <ref bean="policyValidator"/>
-        </property>
-        <property name="serviceManager">
-            <ref bean="serviceManager"/>
-        </property>
+        <property name="policyValidator" ref="policyValidator"/>
+        <property name="serviceManager" ref="serviceManager"/>
     </bean>
 
     <!-- server side service manager -->
@@ -61,9 +51,7 @@
 
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.service.ServiceManagerStub">
-        <property name="serviceCache">
-            <ref bean='serviceCache'/>
-        </property>
+        <property name="serviceCache" ref="serviceCache"/>
     </bean>
 
     <!-- test config uses the policy validator without persistence -->
@@ -72,9 +60,7 @@
 
     <!-- server side policy factory -->
     <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
-        <constructor-arg>
-            <ref bean="licenseManager"/>
-        </constructor-arg>
+        <constructor-arg ref="licenseManager"/>
     </bean>
 
     <!-- server side trusted cert manager -->
@@ -95,9 +81,7 @@
 
     <!-- server side HTTP routing client trust manager -->
     <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
-        <property name="trustedCertManager">
-            <ref bean="trustedCertManager"/>
-        </property>
+        <property name="trustedCertManager" ref="trustedCertManager"/>
     </bean>
     <!-- server side HTTP routing hostname verifier -->
     <bean id="hostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
@@ -111,70 +95,54 @@
 
     <!-- create test keys -->
     <bean id="testKeys" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="staticMethod">
-            <value>com.l7tech.common.security.Keys.createTestSsgKeystoreProperties</value>
-        </property>
+        <property name="staticMethod" value="com.l7tech.common.security.Keys.createTestSsgKeystoreProperties"/>
     </bean>
 
     <!-- ssl config  -->
     <bean id="keystore" class="com.l7tech.server.KeystoreUtils" depends-on="testKeys">
-        <constructor-arg>
-            <ref bean="serverConfig"/>
-        </constructor-arg>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <bean id="sslKeystoreType" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
             <ref local='keystore'/>
         </property>
-        <property name="targetMethod">
-            <value>getSslKeyStoreType</value>
-        </property>
+        <property name="targetMethod" value="getSslKeyStoreType"/>
     </bean>
 
     <bean id="sslKeystorePassword" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
             <ref local='keystore'/>
         </property>
-        <property name="targetMethod">
-            <value>getSslKeystorePasswd</value>
-        </property>
+        <property name="targetMethod" value="getSslKeystorePasswd"/>
     </bean>
 
     <bean id="sslKeystoreFile" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
             <ref local='keystore'/>
         </property>
-        <property name="targetMethod">
-            <value>getSslKeystorePath</value>
-        </property>
+        <property name="targetMethod" value="getSslKeystorePath"/>
     </bean>
 
     <bean id="sslKeystoreCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
             <ref local='keystore'/>
         </property>
-        <property name="targetMethod">
-            <value>getSslCert</value>
-        </property>
+        <property name="targetMethod" value="getSslCert"/>
     </bean>
 
     <bean id="sslKeystorePrivateKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
             <ref local='keystore'/>
         </property>
-        <property name="targetMethod">
-            <value>getSSLPrivateKey</value>
-        </property>
+        <property name="targetMethod" value="getSSLPrivateKey"/>
     </bean>
 
     <bean id="rootCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
             <ref local='keystore'/>
         </property>
-        <property name="targetMethod">
-            <value>getRootCert</value>
-        </property>
+        <property name="targetMethod" value="getRootCert"/>
     </bean>
 
     <!-- server Wss Decorator -->
@@ -183,19 +151,13 @@
 
     <!-- server Message Processor -->
     <bean id="messageProcessor" class="com.l7tech.server.TestMessageProcessor">
-        <constructor-arg>
-            <ref bean="serviceCache"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="wssDecorator"/>
-        </constructor-arg>
+        <constructor-arg ref="serviceCache"/>
+        <constructor-arg ref="wssDecorator"/>
     </bean>
 
     <!-- server side policy filter manager  -->
     <bean id="policyFilterManager" class="com.l7tech.server.policy.filter.FilterManager">
-        <constructor-arg>
-            <ref bean="identityProviderConfigManager"/>
-        </constructor-arg>
+        <constructor-arg ref="identityProviderConfigManager"/>
         <constructor-arg>
             <list>
                 <value>com.l7tech.server.policy.filter.IdentityRule</value>
@@ -206,7 +168,7 @@
 
 
     <bean id="auditContext" class="org.springframework.aop.framework.ProxyFactoryBean">
-        <property name="proxyInterfaces"><value>com.l7tech.server.audit.AuditContextStubInt</value></property>
+        <property name="proxyInterfaces" value="com.l7tech.server.audit.AuditContextStubInt"/>
         <property name="targetSource">
             <ref local="auditContextTargetSource"/>
         </property>
@@ -216,9 +178,7 @@
     </bean>
 
     <bean id="auditContextTargetSource" class="org.springframework.aop.target.ThreadLocalTargetSource">
-        <property name="targetBeanName">
-            <value>auditContextTarget</value>
-        </property>
+        <property name="targetBeanName" value="auditContextTarget"/>
     </bean>
 
     <bean id="securityTokenResolver" class="com.l7tech.common.security.xml.SimpleSecurityTokenResolver">
@@ -228,9 +188,7 @@
     </bean>
     
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager">
-        <constructor-arg>
-            <ref bean="serverConfig"/>
-        </constructor-arg>
+        <constructor-arg ref="serverConfig"/>
         <constructor-arg>
             <null/>
         </constructor-arg>
@@ -272,5 +230,7 @@
         <constructor-arg ref="keystore"/>
     </bean>
 
-    <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>    
+    <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>
+
+    <bean id="crlCache" class="com.l7tech.server.TestCrlCache"/>
 </beans>

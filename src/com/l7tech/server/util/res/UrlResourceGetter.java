@@ -5,7 +5,7 @@
 
 package com.l7tech.server.util.res;
 
-import com.l7tech.common.http.cache.UrlResolver;
+import com.l7tech.common.urlcache.UrlResolver;
 
 import java.io.IOException;
 import java.text.ParseException;

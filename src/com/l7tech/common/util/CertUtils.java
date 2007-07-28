@@ -1,41 +1,40 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.util;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.security.CertificateExpiry;
 import com.whirlycott.cache.Cache;
+import org.apache.harmony.security.asn1.ASN1Integer;
 import org.apache.harmony.security.asn1.ASN1Sequence;
 import org.apache.harmony.security.asn1.ASN1Type;
-import org.apache.harmony.security.asn1.ASN1Integer;
+import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.x509.CRLDistPoint;
+import org.bouncycastle.asn1.x509.DistributionPoint;
+import org.bouncycastle.asn1.x509.DistributionPointName;
+import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
+import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.*;
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.cert.Certificate;
 import java.security.cert.*;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPrivateKeySpec;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.math.BigInteger;
 
 /**
- *
  * @author mike
  * @version 1.0
  */
@@ -46,6 +45,8 @@ public class CertUtils {
     public static final String PEM_RSAKEY_END_MARKER = "-----END RSA PRIVATE KEY-----";
     public static final String PEM_DSAKEY_BEGIN_MARKER = "-----BEGIN DSA PRIVATE KEY-----";
     public static final String PEM_DSAKEY_END_MARKER = "-----END DSA PRIVATE KEY-----";
+    public static final String PEM_CRL_BEGIN_MARKER = "-----BEGIN X509 CRL-----";
+    public static final String PEM_CRL_END_MARKER = "-----END X509 CRL-----";
 
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static final String PROPBASE = CertUtils.class.getName();
@@ -186,7 +187,7 @@ public class CertUtils {
         vc.onVerified();
     }
 
-    /** Decode the specified cert bytes, which may be either PEM or DER but which must be exactly 1 cert. */
+    /** Decode the specified cert bytes, which may be either PEM or DER but which must be exactly 1 certzzz. */
     public static X509Certificate decodeCert(byte[] bytes) throws CertificateException {
         // Detect PEM early, since the Sun cert parser is piss-poor unreliable at doing so on its own
         if (looksLikePem(bytes)) try {
@@ -395,6 +396,50 @@ public class CertUtils {
         return privateKey;
     }
 
+    /**
+     * @return an array of zero or more CRL URLs from the certificate
+     */
+    public static String[] getCrlUrls(X509Certificate cert) throws IOException {
+        Set urls = new HashSet();
+        byte[] distibutionPointBytes = cert.getExtensionValue(X509_OID_CRL_DISTRIBUTION_POINTS);
+        if (distibutionPointBytes != null && distibutionPointBytes.length > 0) {
+            ASN1Encodable asn1 = X509ExtensionUtil.fromExtensionValue(distibutionPointBytes);
+            DERObject obj = asn1.getDERObject();
+            CRLDistPoint distPoint = CRLDistPoint.getInstance(obj);
+            DistributionPoint[] points = distPoint.getDistributionPoints();
+            //noinspection ForLoopReplaceableByForEach
+            for (int i = 0; i < points.length; i++) {
+                DistributionPoint point = points[i];
+                DistributionPointName dpn = point.getDistributionPoint();
+                obj = dpn.getName().toASN1Object();
+                org.bouncycastle.asn1.ASN1Sequence seq = org.bouncycastle.asn1.ASN1Sequence.getInstance(obj);
+                DERTaggedObject tag = (DERTaggedObject) seq.getObjectAt(0);
+                DERObject foo = tag.getObject();
+                if (foo instanceof DEROctetString) {
+                    DEROctetString derOctetString = (DEROctetString) foo;
+                    distibutionPointBytes = derOctetString.getOctets();
+                    //noinspection unchecked
+                    urls.add(new String(distibutionPointBytes, "ISO8859-1"));
+                }
+            }
+        }
+
+        byte[] netscapeCrlUrlBytes = cert.getExtensionValue(X509_OID_NETSCAPE_CRL_URL);
+        if (netscapeCrlUrlBytes != null && netscapeCrlUrlBytes.length > 0) {
+            ASN1Encodable asn1 = X509ExtensionUtil.fromExtensionValue(netscapeCrlUrlBytes);
+            if (asn1 instanceof DERString) {
+                //noinspection unchecked
+                urls.add(((DERString) asn1).getString());
+            } else {
+                throw new IOException("Netscape CRL URL extension value is not a String");
+            }
+        }
+        //noinspection unchecked
+        return (String[])urls.toArray(new String[0]);
+    }
+
+    public static final String X509_OID_CRL_DISTRIBUTION_POINTS = "2.5.29.31";
+    public static final String X509_OID_NETSCAPE_CRL_URL = "2.16.840.1.113730.1.4";
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
     public static final String X509_OID_AUTHORITYKEYID = "2.5.29.35";
 
@@ -580,7 +625,7 @@ public class CertUtils {
         PublicKey publicKey = cert.getPublicKey();
         if (publicKey != null) {
             l.add(new String[]{"Key type", nullNa(publicKey.getAlgorithm())});
-            
+
             if (publicKey instanceof RSAPublicKey) {
                 RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
                 String modulus = rsaKey.getModulus().toString(16);
@@ -836,6 +881,13 @@ public class CertUtils {
         byte[] ext = cert.getExtensionValue(X509_OID_AUTHORITYKEYID);
         if (ext == null) return null;
         return stripAsnPrefix(ext, 6);
+    }
+
+    public static AuthorityKeyIdentifierStructure getAKIStructure(X509Certificate cert) throws IOException {
+        if (cert.getVersion() < 3) return null;
+        byte[] aki = cert.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
+        if (aki == null) return null;
+        return new AuthorityKeyIdentifierStructure(aki);
     }
 
     private static byte[] stripAsnPrefix(byte[] derEncodedValue, int bytesToStrip) {

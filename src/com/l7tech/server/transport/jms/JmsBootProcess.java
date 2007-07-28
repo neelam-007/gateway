@@ -32,7 +32,7 @@ public class JmsBootProcess extends LifecycleBean {
     private final JmsEndpointManager endpointManager;
     private final JmsPropertyMapper jmsPropertyMapper;
 
-    private Object receiverLock = new Object();
+    private final Object receiverLock = new Object();
     private Set<JmsReceiver> activeReceivers = new HashSet<JmsReceiver>();
 
     private static final Logger logger = Logger.getLogger(JmsBootProcess.class.getName());
@@ -80,9 +80,14 @@ public class JmsBootProcess extends LifecycleBean {
             endpointDeleted( removedOid );
         }
 
-        protected void onSave( PersistentEntity updatedEntity ) {
-            logger.info( "Endpoint " + updatedEntity.getOid() + " created or updated!" );
+        protected void onUpdate( PersistentEntity updatedEntity ) {
+            logger.info( "Endpoint " + updatedEntity.getOid() + " updated!" );
             endpointUpdated( (JmsEndpoint)updatedEntity );
+        }
+
+        protected void onCreate( PersistentEntity createdEntity ) {
+            logger.info( "Endpoint " + createdEntity.getOid() + " created!" );
+            endpointUpdated( (JmsEndpoint)createdEntity );
         }
     }
 
@@ -99,9 +104,15 @@ public class JmsBootProcess extends LifecycleBean {
             connectionDeleted( removedOid );
         }
 
-        protected void onSave( PersistentEntity updatedEntity ) {
-            logger.info( "Connection " + updatedEntity.getOid() + " created or updated!" );
+        protected void onUpdate( PersistentEntity updatedEntity ) {
+            logger.info( "Connection " + updatedEntity.getOid() + " updated!" );
             connectionUpdated( (JmsConnection)updatedEntity );
+        }
+
+        @Override
+        protected void onCreate(PersistentEntity createdEntity) {
+            logger.info( "Connection " + createdEntity.getOid() + " created!" );
+            connectionUpdated( (JmsConnection)createdEntity );
         }
     }
 

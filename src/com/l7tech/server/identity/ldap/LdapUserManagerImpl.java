@@ -1,15 +1,17 @@
 package com.l7tech.server.identity.ldap;
 
+import com.l7tech.identity.UserBean;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.UserMappingConfig;
-import com.l7tech.identity.UserBean;
-import com.l7tech.objectmodel.*;
-import com.sun.jndi.ldap.LdapURL;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import java.util.*;
+import java.util.Collection;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,13 +44,13 @@ public class LdapUserManagerImpl implements LdapUserManager {
             context = identityProvider.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
 
-            if (!identityProvider.isValidEntryBasedOnUserAccountControlAttribute(attributes)) {
+            if (!identityProvider.isValidEntryBasedOnUserAccountControlAttribute(dn, attributes)) {
                 // This is warning level because it could
                 // be caused by a locked out user trying to
                 // get in using certificate granted by ssg.
                 logger.warning("User " + dn + " is locked or disabled. Returning null.");
                 return null;
-            } else if (identityProvider.checkExpiredMSADAccount(attributes)) {
+            } else if (identityProvider.checkExpiredMSADAccount(dn, attributes)) {
                 logger.warning("Account " + dn + " is expired. Returning null.");
                 return null;
             }
@@ -213,13 +215,6 @@ public class LdapUserManagerImpl implements LdapUserManager {
         return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }
 
-    /**
-     * throws UnsupportedOperationException
-     */
-    public Collection<IdentityHeader> findAllHeaders(int offset, int windowSize) {
-        throw new UnsupportedOperationException();
-    }
-
     public Collection<IdentityHeader> search(String searchString) throws FindException {
         return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }
@@ -236,30 +231,6 @@ public class LdapUserManagerImpl implements LdapUserManager {
         return user;
     }
 
-    /**
-     * like findAllHeaders but returns LdapUser objects instead of EntityHeader objects
-     */
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        Collection<IdentityHeader> headers = findAllHeaders(offset, windowSize);
-        Collection<LdapUser> output = new ArrayList<LdapUser>();
-        for (IdentityHeader header : headers) {
-            output.add(findByPrimaryKey(header.getStrId()));
-        }
-        return output;
-    }
-
-    public Integer getVersion(long oid) throws FindException {
-        return new Integer(0);
-    }
-
-    public Map findVersionMap() throws FindException {
-        return Collections.EMPTY_MAP;
-    }
-
-    public Entity getCachedEntity(long o, int maxAge) {
-        throw new UnsupportedOperationException();
-    }
-
     public boolean authenticateBasic(String dn, String passwd) {
         if (passwd == null || passwd.length() < 1) {
             logger.info("User: " + dn + " refused authentication because empty password provided.");
@@ -270,35 +241,9 @@ public class LdapUserManagerImpl implements LdapUserManager {
             ldapurl = identityProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
         }
         while (ldapurl != null) {
-            UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
-            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-            env.put(Context.PROVIDER_URL, ldapurl);
-            env.put(Context.SECURITY_AUTHENTICATION, "simple");
-            env.put(Context.SECURITY_PRINCIPAL, dn);
-            //todo: consider using sasl features, to avoid sending passwords in clear
-            //todo: could be determined during ldap provider setup phase
-            //todo: see http://java.sun.com/products/jndi/tutorial/ldap/security/sasl.html
-            //todo: sasl is not supported by all directories, we could also use ssl to avoid
-            //todo: sending anything in clear env.put(Context.SECURITY_PROTOCOL, "ssl");
-            env.put(Context.SECURITY_CREDENTIALS, passwd);
-            env.put("com.sun.jndi.ldap.connect.timeout", LdapIdentityProvider.LDAP_CONNECT_TIMEOUT);
-
-            try {
-                LdapURL url = new LdapURL(ldapurl);
-                if (url.useSsl()) {
-                    env.put("java.naming.ldap.factory.socket", LdapClientSslSocketFactory.class.getName());
-                    env.put(Context.SECURITY_PROTOCOL, "ssl");
-                }
-            } catch (NamingException e) {
-                logger.log(Level.WARNING, "Malformed LDAP URL", e);
-                return false;
-            }
-
-            env.lock();
-
             DirContext userCtx;
             try {
-                userCtx = new InitialDirContext(env);
+                userCtx = LdapUtils.getLdapContext(ldapurl, dn, passwd, LdapIdentityProvider.LDAP_CONNECT_TIMEOUT, LdapIdentityProvider.LDAP_POOL_IDLE_TIMEOUT);
                 // Close the context when we're done
                 userCtx.close();
                 logger.info("User: " + dn + " authenticated successfully in provider " + ldapIdentityProviderConfig.getName());

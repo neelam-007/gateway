@@ -1,14 +1,15 @@
 package com.l7tech.server.identity.cert;
 
-import java.util.Collection;
-
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.HibernateEntityManager;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.common.security.RevocationCheckPolicy;
+import com.l7tech.objectmodel.*;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Restrictions;
+
+import java.sql.SQLException;
+import java.util.Collection;
 
 /**
  * Manager for Revocation Check Policies.
@@ -78,10 +79,7 @@ public class RevocationCheckPolicyManagerImpl
 
     private static final String TABLE_NAME = "rcp";
 
-    /**
-     * Update any policies flagged as default.
-     */
-    private void updateDefault(long oid, RevocationCheckPolicy revocationCheckPolicy) throws FindException, UpdateException {
+    public void updateDefault(long oid, RevocationCheckPolicy revocationCheckPolicy) throws FindException, UpdateException {
         // set default
         if ( revocationCheckPolicy.isDefaultPolicy() ) {
             Collection<RevocationCheckPolicy> policies =  findAll();
@@ -92,5 +90,16 @@ public class RevocationCheckPolicyManagerImpl
                 }
             }
         }
+    }
+
+    private final DetachedCriteria getDefaultCriteria =
+            DetachedCriteria.forClass(getImpClass()).add(Restrictions.eq("defaultPolicy", Boolean.TRUE));
+
+    public RevocationCheckPolicy getDefaultPolicy() throws FindException {
+        return (RevocationCheckPolicy) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                return getDefaultCriteria.getExecutableCriteria(session).uniqueResult();
+            }
+        });
     }
 }

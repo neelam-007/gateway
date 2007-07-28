@@ -27,9 +27,9 @@ import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -188,11 +188,11 @@ public class TrustedCertManagerImp
     }
 
 
-    public Class getImpClass() {
+    public Class<TrustedCert> getImpClass() {
         return TrustedCert.class;
     }
 
-    public Class getInterfaceClass() {
+    public Class<TrustedCert> getInterfaceClass() {
         return TrustedCert.class;
     }
 

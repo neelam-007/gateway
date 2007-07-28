@@ -1,7 +1,11 @@
 package com.l7tech.server.identity.internal;
 
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.identity.*;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.MissingCredentialsException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
@@ -45,6 +49,7 @@ public class InternalIdentityProviderImpl
     private InternalGroupManager groupManager;
     private CertificateAuthenticator certificateAuthenticator;
     private ApplicationContext springContext;
+    private Auditor auditor;
 
     public InternalIdentityProviderImpl(IdentityProviderConfig config) {
         this.config = config;
@@ -87,7 +92,7 @@ public class InternalIdentityProviderImpl
 
             CredentialFormat format = pc.getFormat();
             if (format.isClientCert() || format == CredentialFormat.SAML) {
-                ar = certificateAuthenticator.authenticateX509Credentials(pc, dbUser);
+                ar = certificateAuthenticator.authenticateX509Credentials(pc, dbUser, config.getCertificateValidationType(), auditor);
             } else {
                 ar = autenticatePasswordCredentials(pc, dbUser);
             }
@@ -161,5 +166,6 @@ public class InternalIdentityProviderImpl
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.springContext = applicationContext;
+        this.auditor = new Auditor(this, applicationContext, logger);
     }
 }

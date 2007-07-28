@@ -24,19 +24,20 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.lang.ref.WeakReference;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * The default {@link EntityManager} implementation for Hibernate-managed {@link PersistentEntity persistent entities}.
  * @author alex
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-@Secured
-public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT extends EntityHeader>
+public abstract class HibernateEntityManager<ET extends PersistentEntity, HT extends EntityHeader>
         extends HibernateDaoSupport
-        implements EntityManager<ET, EHT>
+        implements EntityManager<ET, HT>
 {
     public static final String EMPTY_STRING = "";
     public static final String F_OID = "oid";
@@ -74,13 +75,13 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         return findEntity(oid);
     }
 
-    protected List findMatching(final Map<String, Object> map) throws FindException {
+    protected List<ET> findMatching(final Map<String, Object> map) throws FindException {
         for (Object o : map.values()) {
             if (o == null) return Collections.emptyList();
         }
 
         try {
-            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            return (List<ET>)getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
                     for (Map.Entry<String,?> entry: map.entrySet()) {
@@ -98,7 +99,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         switch(getUniqueType()) {
             case NAME:
                 if (entity instanceof NamedEntity) {
-                    //noinspection unchecked
                     NamedEntity namedEntity = (NamedEntity) entity;
                     Map<String,Object> map = new HashMap<String, Object>();
                     map.put("name", namedEntity.getName());
@@ -162,7 +162,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         try {
             if (getUniqueType() != UniqueType.NONE) {
                 final Map<String, Object> newMap = getUniqueAttributeMap(entity);
-                List others;
+                List<ET> others;
                 try {
                     others = findMatching(newMap);
                 } catch (FindException e) {
@@ -170,10 +170,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
                 }
 
                 if (!others.isEmpty()) {
-                    //noinspection ForLoopReplaceableByForEach
-                    for (Iterator i = others.iterator(); i.hasNext();) {
-                        //noinspection unchecked
-                        ET other = (ET) i.next();
+                    for (ET other : others) {
                         if (!entity.getId().equals(other.getId()) || !entity.getClass().equals(other.getClass())) {
                             throw new UpdateException(describeAttributes(newMap) + " must be unique");
                         }
@@ -200,7 +197,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_VERSION_BY_OID);
                     q.setLong(0, oid);
-                    return (Integer)q.uniqueResult();
+                    return q.uniqueResult();
                 }
             });
         } catch (Exception e) {
@@ -212,13 +209,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
     @Secured(operation=OperationType.READ)
     public ET findEntity(final long oid) throws FindException {
         try {
-            //noinspection unchecked
             return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_BY_OID);
                     q.setLong(0, oid);
-                    //noinspection unchecked
-                    return (ET)q.uniqueResult();
+                    return q.uniqueResult();
                 }
             });
         } catch (Exception e) {
@@ -265,26 +260,26 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
     }
 
     @Transactional(readOnly=true)
-    public Collection<EHT> findAllHeaders() throws FindException {
+    public Collection<HT> findAllHeaders() throws FindException {
         Collection<ET> entities = findAll();
-        List<EHT> headers = new ArrayList<EHT>();
+        List<HT> headers = new ArrayList<HT>();
         for (Object entity1 : entities) {
             PersistentEntity entity = (PersistentEntity) entity1;
             String name = null;
             if (entity instanceof NamedEntity) name = ((NamedEntity) entity).getName();
             if (name == null) name = "";
             final long id = entity.getOid();
-            //noinspection unchecked
-            headers.add((EHT) newHeader(id, name));
+            headers.add(newHeader(id, name));
         }
         return Collections.unmodifiableList(headers);
     }
 
     /**
      * Override this method to customize how EntityHeaders get created
+     * (if {@link HT} is a subclass of {@link EntityHeader} it's mandatory) 
      */
-    protected EntityHeader newHeader(long id, String name) {
-        return new EntityHeader(Long.toString(id), getEntityType(), name, EMPTY_STRING);
+    protected HT newHeader(long id, String name) {
+        return (HT) new EntityHeader(Long.toString(id), getEntityType(), name, EMPTY_STRING);
     }
 
     /**
@@ -295,7 +290,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
     protected void addFindAllCriteria(Criteria allHeadersCriteria) {
     }
 
-    public Collection<EHT> findAllHeaders(int offset, int windowSize) throws FindException {
+    public Collection<HT> findAllHeaders(int offset, int windowSize) throws FindException {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
@@ -303,7 +298,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
     @Secured(operation=OperationType.READ)
     public Collection<ET> findAll() throws FindException {
         try {
-            //noinspection unchecked
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria allHeadersCriteria = session.createCriteria(getImpClass());
@@ -339,7 +333,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    //noinspection unchecked
                     ET entity = (ET)session.get(et.getClass(), et.getOid());
                     if (entity == null) {
                         session.delete(et);
@@ -361,9 +354,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         CacheInfo cacheInfo;
         try {
             read.acquire();
-            cacheInfo = cacheInfoByOid.get(objectid);
+            WeakReference<CacheInfo<ET>> ref = cacheInfoByOid.get(objectid);
             read.release(); read = null;
-
+            cacheInfo = ref == null ? null : ref.get();
             return cacheInfo != null && cacheInfo.timestamp + maxAge >= System.currentTimeMillis();
         } catch (InterruptedException e) {
             logger.log(Level.SEVERE, "Interrupted while acquiring cache lock", e);
@@ -384,8 +377,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         Sync read = cacheLock.readLock();
         try {
             read.acquire();
-            CacheInfo cinfo = cacheInfoByName.get(name);
+            WeakReference<CacheInfo<ET>> ref = cacheInfoByName.get(name);
             read.release(); read = null;
+            CacheInfo<ET> cinfo = ref == null ? null : ref.get();
 
             if (cinfo != null) return freshen(cinfo, maxAge);
 
@@ -421,13 +415,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
 
         try {
-            //noinspection unchecked
             return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
                     crit.add(Restrictions.eq(F_NAME, name));
-                    //noinspection unchecked
-                    return (ET)crit.uniqueResult();
+                    return crit.uniqueResult();
                 }
             });
         } catch (HibernateException e) {
@@ -457,12 +449,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         CacheInfo<ET> cacheInfo;
         try {
             read.acquire();
-            cacheInfo = cacheInfoByOid.get(objectid);
+            WeakReference<CacheInfo<ET>> ref = cacheInfoByOid.get(objectid);
             read.release(); read = null;
-
+            cacheInfo = ref == null ? null : ref.get();
             if (cacheInfo == null) {
                 // Might be new, or might be first run
-                //noinspection unchecked
                 entity = (ET)new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
                     public Object doInTransaction(TransactionStatus transactionStatus) {
                         try {
@@ -554,17 +545,18 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         Sync write = cacheLock.writeLock();
         try {
             read.acquire();
-            CacheInfo<ET> info = cacheInfoByOid.get(oid);
+            WeakReference<CacheInfo<ET>> ref = cacheInfoByOid.get(oid);
             read.release(); read = null;
+            CacheInfo<ET> info = ref == null ? null : ref.get();
 
             if (info == null) {
                 info = new CacheInfo<ET>();
 
                 write.acquire();
-                cacheInfoByOid.put(oid, info);
+                final WeakReference<CacheInfo<ET>> newref = new WeakReference<CacheInfo<ET>>(info);
+                cacheInfoByOid.put(oid, newref);
                 if (thing instanceof NamedEntity) {
-                    //noinspection unchecked
-                    cacheInfoByName.put(((NamedEntity)thing).getName(), info);
+                    cacheInfoByName.put(((NamedEntity)thing).getName(), newref);
                 }
                 write.release(); write = null;
             } else {
@@ -600,11 +592,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
      */
     protected ET findByPrimaryKey(final Class impClass, final long oid) throws FindException {
         try {
-            //noinspection unchecked
             return (ET) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    //noinspection unchecked
-                    return (ET)session.load(impClass, Long.valueOf(oid));
+                    return session.load(impClass, Long.valueOf(oid));
                 }
             });
         } catch (Exception e) {
@@ -652,8 +642,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private ReadWriteLock cacheLock = new ReentrantWriterPreferenceReadWriteLock();
-    private Map<Long, CacheInfo<ET>> cacheInfoByOid = new HashMap<Long, CacheInfo<ET>>();
-    private Map<String, CacheInfo> cacheInfoByName = new HashMap<String, CacheInfo>();
+    private Map<Long, WeakReference<CacheInfo<ET>>> cacheInfoByOid = new HashMap<Long, WeakReference<CacheInfo<ET>>>();
+    private Map<String, WeakReference<CacheInfo<ET>>> cacheInfoByName = new HashMap<String, WeakReference<CacheInfo<ET>>>();
 
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;

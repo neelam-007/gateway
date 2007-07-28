@@ -5,7 +5,7 @@
 
 package com.l7tech.server.util.res;
 
-import com.l7tech.common.http.cache.UrlResolver;
+import com.l7tech.common.urlcache.UrlResolver;
 import com.l7tech.common.util.TextUtils;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.policy.MessageUrlResourceInfo;

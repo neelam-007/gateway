@@ -1,12 +1,15 @@
 package com.l7tech.common.util;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.NamingEnumeration;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Connection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility class for working with resources.
@@ -108,11 +111,34 @@ public final class ResourceUtils {
         }
     }
 
+    public static void closeQuietly(Context context) {
+        if (context == null) return;
+
+        try {
+            context.close();
+        } catch (NamingException e) {
+            logger.log(Level.INFO, "JNDI error when closing JNDI Context.", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unexpected error when closing JNDI Context", e);
+        }
+    }
+
+    public static void closeQuietly(NamingEnumeration answer) {
+        if (answer == null) return;
+
+        try {
+            answer.close();
+        } catch (NamingException e) {
+            logger.log(Level.INFO, "JNDI error when closing JNDI NamingEnumeration.", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unexpected error when closing JNDI NamingEnumeration", e);
+        }
+    }
+
     //- PRIVATE
 
     /**
      * The logger for the class
      */
     private static final Logger logger = Logger.getLogger(ResourceUtils.class.getName());
-
 }

@@ -6,8 +6,8 @@ package com.l7tech.server.identity.fed;
 
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
@@ -17,7 +17,6 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -61,8 +60,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
 
         // check if the SAML Assertion signer is trusted
         try {
-            TrustedCert samlSignerTrust = null;
-            samlSignerTrust = trustedCertManager.getCachedCertBySubjectDn(samlSignerDn, MAX_CACHE_AGE);
+            TrustedCert samlSignerTrust = trustedCertManager.getCachedCertBySubjectDn(samlSignerDn, MAX_CACHE_AGE);
             final String untrusted = "SAML assertion  was signed by '" + samlSignerDn + "', which is not trusted";
             if (samlSignerTrust == null) {
                 throw new BadCredentialsException(untrusted);
@@ -122,7 +120,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
 
         // if there is a subject cert, check if the CA (cert issuer) is trusted
         if (subjectCertificate != null && certIssuerDn != null) {
-            TrustedCert certIssuerTrust = null;
+            TrustedCert certIssuerTrust;
             try {
                 certIssuerTrust = trustedCertManager.getCachedCertBySubjectDn(certIssuerDn, MAX_CACHE_AGE);
                 if (certIssuerTrust != null) {
@@ -131,7 +129,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                         if (!certIssuerTrust.isTrustedForSigningClientCerts())
                             throw new BadCredentialsException("Subject certificate '" + certSubjectDn + "' was signed by '" +
                               certIssuerDn + "', which is not trusted for signing client certificates");
-                        X509Certificate certIssuerCert = null;
+                        X509Certificate certIssuerCert;
                         try {
                             certIssuerCert = certIssuerTrust.getCertificate();
                             CertUtils.cachedVerify(subjectCertificate, certIssuerCert.getPublicKey());
@@ -164,15 +162,15 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         try {
             FederatedUser u = null;
             if (SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat) || niFormat == null) {
-                u = (FederatedUser)getUserManager().findBySubjectDN(niValue);
-                if (u == null) u = (FederatedUser)getUserManager().findByEmail(niValue);
-                if (u == null) u = (FederatedUser)getUserManager().findByLogin(niValue);
+                u = getUserManager().findBySubjectDN(niValue);
+                if (u == null) u = getUserManager().findByEmail(niValue);
+                if (u == null) u = getUserManager().findByLogin(niValue);
             } else if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
-                u = (FederatedUser)getUserManager().findByEmail(niValue);
+                u = getUserManager().findByEmail(niValue);
             } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
-                u = (FederatedUser)getUserManager().findBySubjectDN(niValue);
+                u = getUserManager().findBySubjectDN(niValue);
             } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat)) {
-                u = (FederatedUser)getUserManager().findByLogin(niValue);
+                u = getUserManager().findByLogin(niValue);
             }
             if (u == null) {
                 if (certOidSet.isEmpty()) return null; // Virtual groups not supported with no trusted certs

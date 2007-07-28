@@ -1,18 +1,14 @@
 package com.l7tech.server.security.cert;
 
-import java.security.cert.CertPathValidatorException;
-import java.security.cert.Certificate;
-import java.security.cert.PKIXCertPathChecker;
-import java.security.cert.PKIXParameters;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509Certificate;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.security.CertificateValidationResult;
+
+import java.security.cert.*;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.l7tech.common.security.CertificateValidationResult;
 
 /**
  * PKIXCertPathChecker that performs revocation checking.
@@ -28,18 +24,19 @@ import com.l7tech.common.security.CertificateValidationResult;
  * @author Steve Jones
  */
 public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
-
     //- PUBLIC
 
     /**
      * Create a path checker with the given anchor.
      *
      * @param factory The factory for RevocationCheckers
-     * @param params The parameters provide access to {@link TrustAnchor TrustAnchors}
+     * @param params The parameters provide access to {@link java.security.cert.TrustAnchor TrustAnchors}
+     * @param auditor
      */
-    public RevocationCheckingPKIXCertPathChecker(final RevocationCheckerFactory factory, final PKIXParameters params) {
+    public RevocationCheckingPKIXCertPathChecker(final RevocationCheckerFactory factory, final PKIXParameters params, Auditor auditor) {
         this.revocationCheckerFactory = factory;
         this.trustAnchors = params.getTrustAnchors();
+        this.auditor = auditor;
     }
 
     /**
@@ -75,7 +72,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
 
         // Get the revocation checker for the issuer
         RevocationChecker revocationChecker = revocationCheckerFactory.getRevocationChecker(issuerCertificate);
-        CertificateValidationResult status = revocationChecker.getRevocationStatus(x509Certificate);
+        CertificateValidationResult status = revocationChecker.getRevocationStatus(x509Certificate, auditor);
         if (!status.equals(CertificateValidationResult.OK)) {
             throw new CertPathValidatorException("Revocation check failed for certificate '"+x509Certificate.getSubjectDN()+"'.");    
         }
@@ -121,5 +118,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
 
     private final RevocationCheckerFactory revocationCheckerFactory;
     private final Set<TrustAnchor> trustAnchors;
+    private final Auditor auditor;
+
     private X509Certificate prevX509Certificate;
 }

@@ -1,6 +1,8 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
@@ -19,7 +21,6 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class EntityVersionChecker implements ApplicationContextAware, InitializingBean, DisposableBean {
-
     //- PUBLIC
 
     /**
@@ -110,18 +111,20 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
     /**
      * Publish invalidation information for the given entityies
      */
-    private void performInvalidation(Class entityType, List oids) {
+    private void performInvalidation(final Class<? extends Entity> entityType, final List<Long> oids, final List<Character> ops) {
         if(!oids.isEmpty()) {
+            if (oids.size() != ops.size()) throw new IllegalArgumentException("oids and ops must be equal in size");
             long[] oidArray = new long[oids.size()];
-            Iterator oidIter = oids.iterator();
+            char[] opsArray = new char[oids.size()];
             for (int i = 0; i < oidArray.length; i++) {
-                oidArray[i] = ((Long) oidIter.next()).longValue();
+                oidArray[i] = oids.get(i);
+                opsArray[i] = ops.get(i);
             }
 
             if(logger.isLoggable(Level.FINE))
-                logger.fine("Invalidating entities of type '"+entityType.getName()+"' ids are "+oids+".");
+                logger.fine("Invalidating entities of type '"+entityType.getName()+"'; ids are "+oids+".");
 
-            applicationContext.publishEvent(new EntityInvalidationEvent(this, entityType, oidArray));
+            applicationContext.publishEvent(new EntityInvalidationEvent(this, entityType, oidArray, opsArray));
         }
     }
 
@@ -163,8 +166,9 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      * Version check task for an EntityManager
      */
     private class EntityInvalidationVersionCheck extends PeriodicVersionCheck {
-        private final Class entityType;
-        private List<Long> invalidationList;
+        private final Class<? extends Entity> entityType;
+        private List<Long> invalidationOids;
+        private List<Character> invalidationOps;
 
         private EntityInvalidationVersionCheck(EntityManager manager) throws Exception {
             super(manager);
@@ -172,23 +176,36 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
         }
 
         public void run() {
-            invalidationList = new ArrayList<Long>();
+            invalidationOids = new ArrayList<Long>();
+            invalidationOps = new ArrayList<Character>();
             super.run();
-            performInvalidation(entityType, invalidationList);
-            invalidationList = null;
+            performInvalidation(entityType, invalidationOids, invalidationOps);
+            invalidationOids = null;
+            invalidationOps = null;
         }
 
+        @Override
         protected void onDelete(long removedOid) {
-            if(invalidationList!=null) {
-                invalidationList.add(Long.valueOf(removedOid));
+            if(invalidationOids !=null) {
+                invalidationOids.add(Long.valueOf(removedOid));
+                invalidationOps.add(EntityInvalidationEvent.DELETE);
             }
         }
 
-        protected boolean preSave(long updatedOid, int updatedVersion) {
-            if(invalidationList!=null) {
-                invalidationList.add(Long.valueOf(updatedOid));
+        @Override
+        protected void onUpdate(PersistentEntity updatedEntity) {
+            if(invalidationOids !=null) {
+                invalidationOids.add(updatedEntity.getOid());
+                invalidationOps.add(EntityInvalidationEvent.UPDATE);
             }
-            return false;
+        }
+
+        @Override
+        protected void onCreate(PersistentEntity createdEntity) {
+            if(invalidationOids !=null) {
+                invalidationOids.add(createdEntity.getOid());
+                invalidationOps.add(EntityInvalidationEvent.CREATE);
+            }
         }
     }
 }

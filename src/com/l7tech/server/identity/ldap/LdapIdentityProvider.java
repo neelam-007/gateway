@@ -20,11 +20,11 @@ public interface LdapIdentityProvider extends IdentityProvider<LdapUser, LdapGro
     /**
      * LDAP connection attempts will fail after 5 seconds' wait
      */
-    String LDAP_CONNECT_TIMEOUT = Integer.toString(5 * 1000);
+    static final int LDAP_CONNECT_TIMEOUT = 5 * 1000;
     /**
      * An unused LDAP connection will be closed after 30 seconds of inactivity
      */
-    String LDAP_POOL_IDLE_TIMEOUT = Integer.toString(30 * 1000);
+    static final int LDAP_POOL_IDLE_TIMEOUT = 30 * 1000;
     String DESCRIPTION_ATTRIBUTE_NAME = "description";
 
     String userSearchFilterWithParam(String param);
@@ -37,9 +37,9 @@ public interface LdapIdentityProvider extends IdentityProvider<LdapUser, LdapGro
 
     IdentityHeader searchResultToHeader(SearchResult sr);
 
-    boolean isValidEntryBasedOnUserAccountControlAttribute(Attributes attributes);
+    boolean isValidEntryBasedOnUserAccountControlAttribute(String userDn, Attributes attributes);
 
-    boolean checkExpiredMSADAccount(Attributes attributes);
+    boolean checkExpiredMSADAccount(String userDn, Attributes attributes);
 
     String getLastWorkingLdapUrl();
 

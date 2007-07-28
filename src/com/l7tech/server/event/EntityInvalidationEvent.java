@@ -3,6 +3,7 @@ package com.l7tech.server.event;
 import org.springframework.context.ApplicationEvent;
 
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.Entity;
 
 /**
  * Event raised when a database change is detected.
@@ -13,6 +14,9 @@ import com.l7tech.objectmodel.PersistentEntity;
  * @version $Revision$
  */
 public class EntityInvalidationEvent extends ApplicationEvent {
+    public static final char DELETE = 'D';
+    public static final char UPDATE = 'U';
+    public static final char CREATE = 'C';
 
     //- PUBLIC
 
@@ -22,16 +26,26 @@ public class EntityInvalidationEvent extends ApplicationEvent {
      * @param source      The source of invalidation (not usually of interest)
      * @param entityClass The class of entity being invalidated (this will be the interface if any)
      * @param entityIds   The ids of the invalidated entities
+     * @param entityOps   The operations that were detected against the entities whose OIDs are in entityIds; 'C' = created, 'U' = updated, 'D' = deleted
      */
-    public EntityInvalidationEvent(Object source, Class entityClass, long[] entityIds) {
+    public EntityInvalidationEvent(final Object source,
+                                   final Class<? extends Entity> entityClass,
+                                   final long[] entityIds, 
+                                   final char[] entityOps)
+    {
         super(source);
         if(entityClass==null) throw new IllegalArgumentException("entityClass must not be null");
-        if(!PersistentEntity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException("entityClass must be a PersistentEntity");
+        if(!PersistentEntity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException("PersistentEntity must be assignable from entityClass");
         if(entityIds==null) throw new IllegalArgumentException("entityIds must not be null");
 
         this.entityClass = entityClass;
-        this.entityIds = new long[entityIds.length];
-        System.arraycopy(entityIds,0,this.entityIds,0,entityIds.length);
+        long[] myEntityIds = new long[entityIds.length];
+        System.arraycopy(entityIds,0,myEntityIds,0,entityIds.length);
+        this.entityIds = myEntityIds;
+
+        char[] myEntityOps = new char[entityOps.length];
+        System.arraycopy(entityOps,0,myEntityOps,0,entityOps.length);
+        this.entityOperations = myEntityOps;
     }
 
     /**
@@ -39,7 +53,7 @@ public class EntityInvalidationEvent extends ApplicationEvent {
      *
      * @return The Entity sub-class
      */
-    public Class getEntityClass() {
+    public Class<? extends Entity> getEntityClass() {
         return entityClass;
     }
 
@@ -54,8 +68,19 @@ public class EntityInvalidationEvent extends ApplicationEvent {
         return entityIds;
     }
 
+    /**
+     * Get the list of codes for the operations detected against the entities whose OIDs are in {@link #getEntityIds}.
+     * @return the operation codes (not null)
+     */
+    public char[] getEntityOperations() {
+        char[] entityOps = new char[this.entityOperations.length];
+        System.arraycopy(this.entityOperations,0,entityOps,0,this.entityOperations.length);
+        return entityOps;
+    }
+
     //- PRIVATE
 
-    private final Class entityClass;
+    private final Class<? extends Entity> entityClass;
     private final long[] entityIds;
+    private final char[] entityOperations;
 }

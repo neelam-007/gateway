@@ -1,8 +1,9 @@
 package com.l7tech.server.security.cert;
 
-import java.security.cert.X509Certificate;
-
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.CertificateValidationResult;
+
+import java.security.cert.X509Certificate;
 
 /**
  * Interface for revocation checker implementations.
@@ -21,7 +22,8 @@ public interface RevocationChecker {
      * since they don't perform any path building.</p>
      *
      * @param certificate The certificate to check.
+     * @param auditor
      * @return the revocation status for the certificate
      */
-    CertificateValidationResult getRevocationStatus(X509Certificate certificate);
+    CertificateValidationResult getRevocationStatus(X509Certificate certificate, Auditor auditor);
 }

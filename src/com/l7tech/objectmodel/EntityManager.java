@@ -57,9 +57,9 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
 
     ET findEntity(long l) throws FindException;
 
-    Class getImpClass();
+    Class<? extends Entity> getImpClass();
 
-    Class getInterfaceClass();
+    Class<? extends Entity> getInterfaceClass();
 
     EntityType getEntityType();
 

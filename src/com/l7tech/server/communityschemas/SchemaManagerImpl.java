@@ -3,8 +3,8 @@
  */
 package com.l7tech.server.communityschemas;
 
-import com.l7tech.common.http.cache.AbstractHttpObjectCache;
-import com.l7tech.common.http.cache.HttpObjectCache;
+import com.l7tech.common.urlcache.AbstractUrlObjectCache;
+import com.l7tech.common.urlcache.HttpObjectCache;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.LSInputImpl;
@@ -443,7 +443,7 @@ public class SchemaManagerImpl implements SchemaManager {
             return makeLsInput(url, schemaDoc);
 
         // Not a global schema -- do a remote schema load    TODO url whitelist goes here somewhere
-        AbstractHttpObjectCache.FetchResult<String> result =
+        AbstractUrlObjectCache.FetchResult<String> result =
                 httpStringCache.fetchCached(url, HttpObjectCache.WAIT_LATEST);
 
         schemaDoc = result.getUserObject();

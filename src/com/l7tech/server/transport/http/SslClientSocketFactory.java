@@ -1,9 +1,8 @@
 /**
  * Copyright (C) 2006 Layer 7 Technologies Inc.
  */
-package com.l7tech.server.identity.ldap;
+package com.l7tech.server.transport.http;
 
-import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -16,31 +15,34 @@ import java.util.Comparator;
 import java.util.logging.Logger;
 
 /**
+ * {@link SSLSocketFactory} implementation used by {@link com.l7tech.server.identity.ldap.LdapIdentityProvider}s and
+ * {@link com.l7tech.server.policy.assertion.alert.ServerEmailAlertAssertion} to provide a bridge between the bizarro
+ * {@link SSLSocketFactory#getDefault} mechanism and our non-singleton {@link SslClientTrustManager}.
  * @author alex
  */
-public class LdapClientSslSocketFactory extends SSLSocketFactory implements Comparator {
-    private static final Logger logger = Logger.getLogger(LdapClientSslSocketFactory.class.getName());
+public class SslClientSocketFactory extends SSLSocketFactory implements Comparator {
+    private static final Logger logger = Logger.getLogger(SslClientSocketFactory.class.getName());
     private final SSLContext sslContext;
     private static X509TrustManager trustManager;
 
-    synchronized static void setTrustManager(X509TrustManager trustManager) {
+    public synchronized static void setTrustManager(X509TrustManager trustManager) {
         logger.info("Got SSL Client TrustManager");
         if (trustManager == null) throw new NullPointerException();
-        LdapClientSslSocketFactory.trustManager = trustManager;
+        SslClientSocketFactory.trustManager = trustManager;
     }
 
     private static class SingletonHolder {
-        private static LdapClientSslSocketFactory singleton = new LdapClientSslSocketFactory();
+        private static SslClientSocketFactory singleton = new SslClientSocketFactory();
     }
 
     /**
-     * This bizarre thing is just the way JNDI does it
+     * This is bizarre but it's Just The Way It Is(tm)
      */
-    public static SocketFactory getDefault() {
+    public static SSLSocketFactory getDefault() {
         return SingletonHolder.singleton;
     }
 
-    private LdapClientSslSocketFactory() {
+    private SslClientSocketFactory() {
         logger.info("Initializing LDAP client SSL context");
         try {
             if (trustManager == null) throw new IllegalStateException("TrustManager must be set before first use");
@@ -54,11 +56,11 @@ public class LdapClientSslSocketFactory extends SSLSocketFactory implements Comp
     /**
      * Check socket factories for equivalence.
      *
-     * <p>This factory is the same as any other LdapClientSslSocketFactory</p>
+     * <p>This factory is the same as any other SslClientSocketFactory</p>
      *
      * <p>This method is used with connection pooling, if removed connections will not be pooled.</p>
      *
-     * <p>NOTE: the actual objects passed are Strings ie. "com.l7tech.server.identity.ldap.LdapClientSslSocketFactory" </p>
+     * <p>NOTE: the actual objects passed are Strings ie. "com.l7tech.server.transport.http.SslClientSocketFactory" </p>
      */
     public int compare(Object o1, Object o2) {
         return o1!=null && o2!=null && o1.equals(o2) ? 0 : -1;

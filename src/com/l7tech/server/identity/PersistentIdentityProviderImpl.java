@@ -10,7 +10,6 @@ import com.l7tech.identity.PersistentGroup;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.mapping.IdentityMapping;
-import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;

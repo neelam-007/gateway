@@ -3,8 +3,11 @@ package com.l7tech.server.identity.ldap;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -27,12 +30,15 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
+import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.sun.jndi.ldap.LdapURL;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import javax.net.ssl.X509TrustManager;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -52,7 +58,11 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
  */
-public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityProvider {
+public class LdapIdentityProviderImpl
+        implements LdapIdentityProvider, InitializingBean, ApplicationContextAware
+{
+    private Auditor auditor;
+
     public LdapIdentityProviderImpl(IdentityProviderConfig config) {
         this.config = (LdapIdentityProviderConfig)config;
         if (this.config.getLdapUrl() == null || this.config.getLdapUrl().length < 1) {
@@ -70,11 +80,6 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
 
     public void setCertificateAuthenticator(CertificateAuthenticator certificateAuthenticator) {
         this.certificateAuthenticator = certificateAuthenticator;
-    }
-
-    public void setTrustManager(X509TrustManager trustManager) {
-        this.trustManager = trustManager;
-        LdapClientSslSocketFactory.setTrustManager(trustManager);
     }
 
     public void initializeFallbackMechanism() {
@@ -225,7 +230,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
             return DigestAuthenticator.authenticateDigestCredentials(pc, realUser);
         } else {
             if (format == CredentialFormat.CLIENTCERT || format == CredentialFormat.SAML) {
-                return certificateAuthenticator.authenticateX509Credentials(pc, realUser);
+                return certificateAuthenticator.authenticateX509Credentials(pc, realUser, config.getCertificateValidationType(), auditor);
             } else {
                 String msg = "Attempt to authenticate using unsupported method on this provider: " + pc.getFormat();
                 logger.log(Level.SEVERE, msg);
@@ -362,18 +367,9 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
         } finally {
             if (context != null) {
                 if (answer != null) {
-                    try {
-                        answer.close();
-                    }
-                    catch(NamingException ne) {
-                        logger.log(Level.WARNING, "Caught NamingException while closing LDAP answer", ne);
-                    }
+                    ResourceUtils.closeQuietly(answer);
                 }
-                try {
-                    context.close();
-                } catch (NamingException e) {
-                    logger.log(Level.WARNING, "Caught NamingException while closing LDAP Context", e);
-                }
+                ResourceUtils.closeQuietly(context);
             }
         }
         return output;
@@ -506,7 +502,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
             try {
                 LdapURL url = new LdapURL(ldapurl);
                 if (url.useSsl()) {
-                    env.put("java.naming.ldap.factory.socket", LdapClientSslSocketFactory.class.getName());
+                    env.put("java.naming.ldap.factory.socket", SslClientSocketFactory.class.getName());
                     env.put(Context.SECURITY_PROTOCOL, "ssl");
                 }
             } catch (NamingException e) {
@@ -536,154 +532,142 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
     }
 
     public void test() throws InvalidIdProviderCfgException {
-        // make sure we can connect
-        DirContext context;
+        DirContext context = null;
         try {
-            context = getBrowseContext();
-        } catch (NamingException e) {
-            // note. i am not embedding the NamingException because it sometimes
-            // contains com.sun.jndi.ldap.LdapCtx which does not implement serializable
-            String msg = "Cannot connect to this directory.";
-            logger.log(Level.INFO, "ldap config test failure " + msg, e);
-            throw new InvalidIdProviderCfgException(msg, e);
-        }
-
-        NamingEnumeration answer = null;
-        String filter;
-        SearchControls sc = new SearchControls();
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-
-        // make sure the base DN is valid and contains at least one entry
-        try {
-            answer = context.search(config.getSearchBase(), "(objectClass=*)", sc);
-        } catch (NamingException e) {
-            String msg = "Cannot search using base: " + config.getSearchBase();
-            logger.log(Level.INFO, "ldap config test failure " + msg, e);
-
-            // cleanup and leave test with exception
+            // make sure we can connect
             try {
-                if (answer != null) answer.close();
-            } catch (NamingException e2) {
-                logger.finest("Could not close answer " + e2.getMessage());
-            }
-            try {
-                context.close();
-            } catch (NamingException e2) {
-                logger.finest("Could not close context " + e2.getMessage());
-            }
-
-            throw new InvalidIdProviderCfgException(msg);
-        }
-
-        // check user mappings. make sure they work
-        boolean atLeastOneUser = false;
-        UserMappingConfig[] userTypes = config.getUserMappings();
-        Collection<UserMappingConfig> offensiveUserMappings = new ArrayList<UserMappingConfig>();
-        Collection<UserMappingConfig> userMappingsWithoutLoginAttribute = new ArrayList<UserMappingConfig>();
-        for (UserMappingConfig userType : userTypes) {
-            if (userType.getLoginAttrName() == null || userType.getLoginAttrName().length() < 1) {
-                userMappingsWithoutLoginAttribute.add(userType);
-                continue;
-            }
-            filter = "(|" +
-                    "(&" +
-                    "(objectClass=" + userType.getObjClass() + ")" +
-                    "(" + userType.getLoginAttrName() + "=*)" +
-                    ")" +
-                    "(&" +
-                    "(objectClass=" + userType.getObjClass() + ")" +
-                    "(" + userType.getNameAttrName() + "=*)" +
-                    ")" +
-                    ")";
-            try {
-                answer = context.search(config.getSearchBase(), filter, sc);
-                while (answer.hasMore()) {
-                    SearchResult sr = (SearchResult) answer.next();
-                    EntityHeader header = searchResultToHeader(sr);
-                    // if we successfully constructed a header, add it to result list
-                    if (header != null) {
-                        atLeastOneUser = true;
-                        break;
-                    }
-                }
-                answer.close();
+                context = getBrowseContext();
             } catch (NamingException e) {
-                offensiveUserMappings.add(userType);
-                logger.log(Level.FINE, "error testing user mapping" + userType.getObjClass(), e);
+                // note. i am not embedding the NamingException because it sometimes
+                // contains com.sun.jndi.ldap.LdapCtx which does not implement serializable
+                String msg = "Cannot connect to this directory.";
+                logger.log(Level.INFO, "ldap config test failure " + msg, e);
+                throw new InvalidIdProviderCfgException(msg, e);
             }
-        }
 
-        // check group mappings. make sure they work
-        GroupMappingConfig[] groupTypes = config.getGroupMappings();
-        Collection<GroupMappingConfig> offensiveGroupMappings = new ArrayList<GroupMappingConfig>();
-        boolean atLeastOneGroup = false;
-        for (GroupMappingConfig groupType : groupTypes) {
-            filter = "(&" +
-                    "(objectClass=" + groupType.getObjClass() + ")" +
-                    "(" + groupType.getNameAttrName() + "=*)" +
-                    ")";
+            String filter;
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+            // make sure the base DN is valid and contains at least one entry
             try {
-                answer = context.search(config.getSearchBase(), filter, sc);
-                while (answer.hasMore()) {
-                    SearchResult sr = (SearchResult) answer.next();
-                    EntityHeader header = searchResultToHeader(sr);
-                    // if we successfully constructed a header, add it to result list
-                    if (header != null) {
-                        atLeastOneGroup = true;
-                        break;
-                    }
-                }
-                answer.close();
+                context.search(config.getSearchBase(), "(objectClass=*)", sc);
             } catch (NamingException e) {
-                offensiveGroupMappings.add(groupType);
-                logger.log(Level.FINE, "error testing group mapping" + groupType.getObjClass(), e);
+                String msg = "Cannot search using base: " + config.getSearchBase();
+                logger.log(Level.INFO, "ldap config test failure " + msg, e);
+                throw new InvalidIdProviderCfgException(msg);
             }
-        }
-        try {
-            context.close();
-        } catch (NamingException e) {
-            logger.log(Level.INFO, "error closing context", e);
-        }
 
-        // merge all errors in a special report
-        StringBuffer error = new StringBuffer();
+            // check user mappings. make sure they work
+            boolean atLeastOneUser = false;
+            UserMappingConfig[] userTypes = config.getUserMappings();
+            Collection<UserMappingConfig> offensiveUserMappings = new ArrayList<UserMappingConfig>();
+            Collection<UserMappingConfig> userMappingsWithoutLoginAttribute = new ArrayList<UserMappingConfig>();
+            for (UserMappingConfig userType : userTypes) {
+                if (userType.getLoginAttrName() == null || userType.getLoginAttrName().length() < 1) {
+                    userMappingsWithoutLoginAttribute.add(userType);
+                    continue;
+                }
+                filter = "(|" +
+                        "(&" +
+                        "(objectClass=" + userType.getObjClass() + ")" +
+                        "(" + userType.getLoginAttrName() + "=*)" +
+                        ")" +
+                        "(&" +
+                        "(objectClass=" + userType.getObjClass() + ")" +
+                        "(" + userType.getNameAttrName() + "=*)" +
+                        ")" +
+                        ")";
 
-        if (userMappingsWithoutLoginAttribute.size() > 0) {
-            if (error.length() > 0) error.append('\n');
-            error.append("The following user mapping(s) do not define login attribute.");
-            for (UserMappingConfig userMappingConfig : userMappingsWithoutLoginAttribute) {
-                error.append(" ").append(userMappingConfig.getObjClass());
+                NamingEnumeration answer = null;
+                try {
+                    answer = context.search(config.getSearchBase(), filter, sc);
+                    while (answer.hasMore()) {
+                        SearchResult sr = (SearchResult) answer.next();
+                        EntityHeader header = searchResultToHeader(sr);
+                        // if we successfully constructed a header, add it to result list
+                        if (header != null) {
+                            atLeastOneUser = true;
+                            break;
+                        }
+                    }
+                } catch (NamingException e) {
+                    offensiveUserMappings.add(userType);
+                    logger.log(Level.FINE, "error testing user mapping" + userType.getObjClass(), e);
+                } finally {
+                    if (answer != null) ResourceUtils.closeQuietly(answer);
+                }
             }
-        }
 
-        if (offensiveUserMappings.size() > 0 || offensiveGroupMappings.size() > 0) {
-            if (error.length() > 0) error.append('\n');
-            error.append("The following mappings caused errors:");
-            for (UserMappingConfig offensiveUserMapping : offensiveUserMappings) {
-                error.append(" User mapping ").append(offensiveUserMapping.getObjClass());
+            // check group mappings. make sure they work
+            GroupMappingConfig[] groupTypes = config.getGroupMappings();
+            Collection<GroupMappingConfig> offensiveGroupMappings = new ArrayList<GroupMappingConfig>();
+            boolean atLeastOneGroup = false;
+            for (GroupMappingConfig groupType : groupTypes) {
+                filter = "(&" +
+                        "(objectClass=" + groupType.getObjClass() + ")" +
+                        "(" + groupType.getNameAttrName() + "=*)" +
+                        ")";
+                NamingEnumeration answer = null;
+                try {
+                    answer = context.search(config.getSearchBase(), filter, sc);
+                    while (answer.hasMore()) {
+                        SearchResult sr = (SearchResult) answer.next();
+                        EntityHeader header = searchResultToHeader(sr);
+                        // if we successfully constructed a header, add it to result list
+                        if (header != null) {
+                            atLeastOneGroup = true;
+                            break;
+                        }
+                    }
+                } catch (NamingException e) {
+                    offensiveGroupMappings.add(groupType);
+                    logger.log(Level.FINE, "error testing group mapping" + groupType.getObjClass(), e);
+                } finally {
+                    if (answer != null) ResourceUtils.closeQuietly(answer);
+                }
             }
-            for (GroupMappingConfig offensiveGroupMapping : offensiveGroupMappings) {
-                error.append(" Group mapping ").append(offensiveGroupMapping.getObjClass());
 
+            // merge all errors in a special report
+            StringBuffer error = new StringBuffer();
+
+            if (userMappingsWithoutLoginAttribute.size() > 0) {
+                if (error.length() > 0) error.append('\n');
+                error.append("The following user mapping(s) do not define login attribute.");
+                for (UserMappingConfig userMappingConfig : userMappingsWithoutLoginAttribute) {
+                    error.append(" ").append(userMappingConfig.getObjClass());
+                }
             }
+
+            if (offensiveUserMappings.size() > 0 || offensiveGroupMappings.size() > 0) {
+                if (error.length() > 0) error.append('\n');
+                error.append("The following mappings caused errors:");
+                for (UserMappingConfig offensiveUserMapping : offensiveUserMappings) {
+                    error.append(" User mapping ").append(offensiveUserMapping.getObjClass());
+                }
+                for (GroupMappingConfig offensiveGroupMapping : offensiveGroupMappings) {
+                    error.append(" Group mapping ").append(offensiveGroupMapping.getObjClass());
+                }
+            }
+
+            if (!atLeastOneUser) {
+                if (error.length() > 0) error.append('\n');
+                error.append("This configuration did not yield any users");
+            }
+
+            if (!atLeastOneGroup && groupTypes.length > 0) {
+                if (error.length() > 0) error.append('\n');
+                error.append("This configuration did not yield any group");
+            }
+
+            if (error.length() > 0) {
+                logger.fine("Test produced following error(s): " + error.toString());
+                throw new InvalidIdProviderCfgException(error.toString());
+            } else
+                logger.finest("this ldap config was tested successfully");
+        } finally {
+            if (context != null) ResourceUtils.closeQuietly(context);
         }
-
-        if (!atLeastOneUser) {
-            if (error.length() > 0) error.append('\n');
-            error.append("This configuration did not yield any users");
-        }
-
-        if (!atLeastOneGroup && groupTypes.length > 0) {
-            if (error.length() > 0) error.append('\n');
-            error.append("This configuration did not yield any group");
-        }
-
-
-        if (error.length() > 0) {
-            logger.fine("Test produced following error(s): " + error.toString());
-            throw new InvalidIdProviderCfgException(error.toString());
-        } else
-            logger.finest("this ldap config was tested successfully");
     }
 
     public void preSaveClientCert(LdapUser user, X509Certificate[] certChain) throws ClientCertManager.VetoSave {
@@ -709,12 +693,8 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
      *                   as failure to set an essential property) or if initialization fails.
      */
     public void afterPropertiesSet() throws Exception {
-        if (clientCertManager == null) {
-            throw new IllegalArgumentException("The Client Certificate Manager is required");
-        }
-        if (trustManager == null) {
-            throw new IllegalArgumentException("The SSL Client TrustManager is required");
-        }
+        if (clientCertManager == null) throw new IllegalStateException("The Client Certificate Manager is required");
+        if (auditor == null) throw new IllegalStateException("Auditor has not been initialized");
         initializeFallbackMechanism();
     }
 
@@ -731,7 +711,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
      * <p/>
      * See bugzilla #1116, #1466 for the justification of this check.
      */
-    public boolean isValidEntryBasedOnUserAccountControlAttribute(Attributes attibutes) {
+    public boolean isValidEntryBasedOnUserAccountControlAttribute(String userDn, Attributes attibutes) {
         final long DISABLED_FLAG = 0x00000002;
         final long LOCKED_FLAG = 0x00000010;
         final long EXPIRED_FLAG = 0x00800000; // add a check for this flag in an attempt to fix 1466
@@ -754,13 +734,13 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
             }
             if (value != null) {
                 if ((value.longValue() & DISABLED_FLAG) == DISABLED_FLAG) {
-                    logger.info("Disabled flag encountered. This account is disabled.");
+                    auditor.logAndAudit(SystemMessages.AUTH_USER_DISABLED, userDn);
                     return false;
                 } else if ((value.longValue() & LOCKED_FLAG) == LOCKED_FLAG) {
-                    logger.info("Locked flag encountered. This account is locked.");
+                    auditor.logAndAudit(SystemMessages.AUTH_USER_LOCKED, userDn);
                     return false;
                 }  else if ((value.longValue() & EXPIRED_FLAG) == EXPIRED_FLAG) {
-                    logger.info("Expired flag encountered. This account has expired.");
+                    auditor.logAndAudit(SystemMessages.AUTH_USER_EXPIRED, userDn);
                     return false;
                 }
             }
@@ -777,7 +757,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
      *
      * @return true is account is expired, false otherwise
      */
-    public boolean checkExpiredMSADAccount(Attributes attibutes) {
+    public boolean checkExpiredMSADAccount(String userDn, Attributes attibutes) {
         Attribute accountExpiresAttr = attibutes.get("accountExpires");
         if (accountExpiresAttr != null && accountExpiresAttr.size() > 0) {
             Object found = null;
@@ -796,7 +776,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
                         BigInteger result = thisvalue.subtract(fileTimeConversionfactor).
                                                             divide(fileTimeConversionfactor2);
                         if (System.currentTimeMillis() > result.longValue()) {
-                            logger.info("The account is expired according to accountExpiresAttr value");
+                            auditor.logAndAudit(SystemMessages.AUTH_USER_EXPIRED, userDn);
                             return true;
                         }
                     }
@@ -826,11 +806,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
         for (UserMappingConfig userType : userTypes) {
             String userclass = userType.getObjClass();
             if (LdapUtils.attrContainsCaseIndependent(objectclasses, userclass)) {
-                if (!isValidEntryBasedOnUserAccountControlAttribute(atts)) {
-                    logger.fine("Account " + dn + " is disabled or blocked.");
-                    return null;
-                } else if (checkExpiredMSADAccount(atts)) {
-                    logger.fine("Account " + dn + " is expired.");
+                if (!isValidEntryBasedOnUserAccountControlAttribute(dn, atts) || checkExpiredMSADAccount(dn, atts)) {
                     return null;
                 }
                 Object tmp;
@@ -905,9 +881,12 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
         return lmap;
     }
 
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.auditor = new Auditor(this, applicationContext, logger);
+    }
+
     private static final Logger logger = Logger.getLogger(LdapIdentityProviderImpl.class.getName());
 
-    private X509TrustManager trustManager;
     private ServerConfig serverConfig;
     private LdapIdentityProviderConfig config;
     private LdapAttributeMapping kerberosLdapAttributeMapping;

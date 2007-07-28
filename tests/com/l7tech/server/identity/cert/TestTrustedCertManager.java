@@ -44,7 +44,6 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert> imple
     }
 
     public void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException {
-        throw new RuntimeException("Not implemented");
     }
 
     public List findByThumbprint(String thumbprint) throws FindException {

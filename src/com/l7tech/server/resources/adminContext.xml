@@ -7,13 +7,12 @@
  -->
 
 
+<!--suppress PlaceholderValuesInspection -->
 <beans>
     <!-- the internal rmi/ssl trust failue handler that allows connection to self -->
     <bean id="internalSslTrustFailureHandler"
           class="com.l7tech.spring.remoting.rmi.ssl.CertificateTrustedTrustFailureHandler">
-        <constructor-arg>
-            <ref bean="sslKeystoreCertificate"/>
-        </constructor-arg>
+        <constructor-arg ref="sslKeystoreCertificate"/>
     </bean>
 
     <!--
@@ -22,9 +21,8 @@
     -->
     <bean id="setInternalTrustFailureHandler"
           class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="staticMethod">
-            <value>com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory.setTrustFailureHandler</value>
-        </property>
+        <property name="staticMethod"
+                  value="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory.setTrustFailureHandler"/>
         <property name="arguments">
             <list>
                 <ref local="internalSslTrustFailureHandler"/>
@@ -34,9 +32,8 @@
     <!-- Handler for SSL RMI Client certificates -->
     <bean id="setNode2NodeInternalTrustFailureHandler"
           class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="staticMethod">
-            <value>com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory.setTrustFailureHandler</value>
-        </property>
+        <property name="staticMethod"
+                  value="com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory.setTrustFailureHandler"/>
         <property name="arguments">
             <list>
                 <ref local="internalSslTrustFailureHandler"/>
@@ -47,18 +44,10 @@
     <!-- admin services, Rmi socket factories -->
     <bean id="rmiServerSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory"
           depends-on="setNode2NodeInternalTrustFailureHandler">
-        <property name="keyStoreType">
-            <value>${keystoretype}</value>
-        </property>
-        <property name="keyStoreFile">
-            <value>${keystoredir}${file.separator}${sslkstorename}</value>
-        </property>
-        <property name="keyStoreAlias">
-            <value>${sslkeyalias}</value>
-        </property>
-        <property name="keyStorePassword">
-            <value>${sslkspasswd}</value>
-        </property>
+        <property name="keyStoreType" value="${keystoretype}"/>
+        <property name="keyStoreFile" value="${keystoredir}${file.separator}${sslkstorename}"/>
+        <property name="keyStoreAlias" value="${sslkeyalias}"/>
+        <property name="keyStorePassword" value="${sslkspasswd}"/>
     </bean>
 
     <bean id="rmiClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"
@@ -69,17 +58,11 @@
                 <property name="targetObject">
                     <!-- Get this nodes info -->
                     <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-                        <property name="targetObject">
-                            <ref bean="clusterInfoManager"/>
-                        </property>
-                        <property name="targetMethod">
-                            <value>getSelfNodeInf</value>
-                        </property>
+                        <property name="targetObject" ref="clusterInfoManager"/>
+                        <property name="targetMethod" value="getSelfNodeInf"/>
                     </bean>
                 </property>
-                <property name="targetMethod">
-                    <value>getAddress</value>
-                </property>
+                <property name="targetMethod" value="getAddress"/>
             </bean>
         </property>
     </bean>
@@ -93,65 +76,44 @@
 
     <bean id="rmiRegistryInit" class="com.l7tech.spring.remoting.rmi.RmiRegistryInitializer" depends-on="systemProperties">
         <property name="port">
+            <!--suppress InjectionValueTypeInspection -->
             <ref local="rmiPort"/>
         </property>
-        <property name="clientSocketFactory">
-            <ref bean="rmiClientSocketFactory"/>
-        </property>
-        <property name="serverSocketFactory">
-            <ref bean="rmiServerSocketFactory"/>
-        </property>
+        <property name="clientSocketFactory" ref="rmiClientSocketFactory"/>
+        <property name="serverSocketFactory" ref="rmiServerSocketFactory"/>
     </bean>
 
     <bean id="rmiRegistry" class="org.springframework.remoting.rmi.RmiRegistryFactoryBean" depends-on="rmiRegistryInit">
         <property name="port">
+            <!--suppress InjectionValueTypeInspection -->
             <ref local="rmiPort"/>
         </property>
-        <property name="clientSocketFactory">
-            <ref bean="rmiClientSocketFactory"/>
-        </property>
-        <property name="serverSocketFactory">
-            <ref bean="rmiServerSocketFactory"/>
-        </property>
+        <property name="clientSocketFactory" ref="rmiClientSocketFactory"/>
+        <property name="serverSocketFactory" ref="rmiServerSocketFactory"/>
     </bean>
 
     <!--    shared export properties, inherited with parent= -->
     <bean id="sharedClusterExportProperties" abstract="true" depends-on="rmiRegistryInit">
-        <property name="registry">
-            <ref bean="rmiRegistry"/>
-        </property>
+        <property name="registry" ref="rmiRegistry"/>
         <property name="servicePort">
+            <!--suppress InjectionValueTypeInspection -->
             <ref local="rmiPort"/>
         </property>
-        <property name="clientSocketFactory">
-            <ref bean="rmiClientSocketFactory"/>
-        </property>
-        <property name="serverSocketFactory">
-            <ref bean="rmiServerSocketFactory"/>
-        </property>
-        <property name="stubRemoteInvocationFactory">
-            <ref bean="adminSessionInvocationFactory"/>
-        </property>
+        <property name="clientSocketFactory" ref="rmiClientSocketFactory"/>
+        <property name="serverSocketFactory" ref="rmiServerSocketFactory"/>
+        <property name="stubRemoteInvocationFactory" ref="adminSessionInvocationFactory"/>
         <property name="remoteInvocationExecutor">
             <bean class="com.l7tech.spring.remoting.rmi.ClusterRemoteInvocationExecutor">
-                <constructor-arg>
-                    <ref bean="clusterInfoManager"/>
-                </constructor-arg>
+                <constructor-arg ref="clusterInfoManager"/>
             </bean>
         </property>
     </bean>
 
     <!-- cluster login exporter -->
     <bean class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedClusterExportProperties">
-        <property name="serviceName">
-            <value>ClusterLogin</value>
-        </property>
-        <property name="service">
-            <ref bean="clusterLogin"/>
-        </property>
-        <property name="serviceInterface">
-            <value>com.l7tech.cluster.ClusterLogin</value>
-        </property>
+        <property name="serviceName" value="ClusterLogin"/>
+        <property name="service" ref="clusterLogin"/>
+        <property name="serviceInterface" value="com.l7tech.cluster.ClusterLogin"/>
     </bean>
     <!-- cluster login servant -->
     <bean id="clusterLogin" class="com.l7tech.cluster.rmi.ClusterLoginImpl"/>
@@ -159,15 +121,9 @@
     <!-- cluster context exporter -->
     <bean id="clusterContextRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"
           parent="sharedClusterExportProperties">
-        <property name="service">
-            <ref bean="clusterContext"/>
-        </property>
-        <property name="serviceInterface">
-            <value>com.l7tech.cluster.ClusterContext</value>
-        </property>
-        <property name="singleton">
-            <value>false</value>
-        </property>
+        <property name="service" ref="clusterContext"/>
+        <property name="serviceInterface" value="com.l7tech.cluster.ClusterContext"/>
+        <property name="singleton" value="false"/>
     </bean>
     <!-- cluster context servant -->
     <bean id="clusterContext" class="com.l7tech.cluster.rmi.ClusterContextImpl">
@@ -179,12 +135,8 @@
     <!-- cluster audit exporter -->
     <bean id="clusterLogRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"
           parent="sharedClusterExportProperties">
-        <property name="service">
-            <ref bean="auditAdmin"/>
-        </property>
-        <property name="serviceInterface">
-            <value>com.l7tech.logging.GenericLogAdmin</value>
-        </property>
+        <property name="service" ref="auditAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.logging.GenericLogAdmin"/>
     </bean>
 
     <!-- admin session tracker -->
@@ -205,40 +157,20 @@
 
     <!-- identity admin servant -->
     <bean id="identityAdmin_UNSECURED" class="com.l7tech.server.identity.IdentityAdminImpl">
-        <constructor-arg>
-            <ref bean="licenseManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="roleManager"/>
-        </constructor-arg>
-        <property name="identityProviderConfigManager">
-            <ref bean="identityProviderConfigManager"/>
-        </property>
-        <property name="clientCertManager">
-            <ref bean="clientCertManager"/>
-        </property>
-        <property name="identityProviderFactory">
-            <ref bean='identityProviderFactory'/>
-        </property>
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="roleManager"/>
+        <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
+        <property name="clientCertManager" ref="clientCertManager"/>
+        <property name="identityProviderFactory" ref="identityProviderFactory"/>
     </bean>
 
     <!-- audit admin servant -->
     <bean id="auditAdmin_UNSECURED" class="com.l7tech.server.audit.AuditAdminImpl">
-        <property name="auditRecordManager">
-            <ref bean="auditRecordManager"/>
-        </property>
-        <property name="logRecordManager">
-            <ref bean="logRecordManager"/>
-        </property>
-        <property name="keystore">
-            <ref bean="keystore"/>
-        </property>
-        <property name="serverConfig">
-            <ref bean="serverConfig"/>
-        </property>
-        <property name="clusterPropertyManager">
-            <ref bean="clusterPropertyManager"/>
-        </property>
+        <property name="auditRecordManager" ref="auditRecordManager"/>
+        <property name="logRecordManager" ref="logRecordManager"/>
+        <property name="keystore" ref="keystore"/>
+        <property name="serverConfig" ref="serverConfig"/>
+        <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
     </bean>
 
     <!-- service admin servant -->
@@ -258,12 +190,8 @@
 
     <!-- schema admin servant -->
     <bean id="schemaAdmin_UNSECURED" class="com.l7tech.server.communityschemas.SchemaAdminImpl">
-        <constructor-arg>
-            <ref bean="licenseManager"/>
-        </constructor-arg>
-        <property name="schemaEntryManager">
-            <ref bean="schemaEntryManager"/>
-        </property>
+        <constructor-arg ref="licenseManager"/>
+        <property name="schemaEntryManager" ref="schemaEntryManager"/>
     </bean>
 
     <!-- jms admin servant -->
@@ -284,32 +212,18 @@
 
     <!-- trusted cert admin servant -->
     <bean id="trustedCertAdmin_UNSECURED" class="com.l7tech.server.TrustedCertAdminImpl">
-        <constructor-arg>
-            <ref bean="trustedCertManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="revocationCheckPolicyManager"/>
-        </constructor-arg>        
-        <constructor-arg>
-            <ref bean="rootCertificate"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="sslKeystoreCertificate"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="licenseManager"/>
-        </constructor-arg>
+        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="revocationCheckPolicyManager"/>
+        <constructor-arg ref="rootCertificate"/>
+        <constructor-arg ref="sslKeystoreCertificate"/>
+        <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
     </bean>
 
     <!-- custom assertions admin servant -->
     <bean id="customAssertionsAdmin" class="com.l7tech.policy.assertion.ext.rmi.CustomAssertionsRegistrarImpl">
-        <constructor-arg>
-            <ref bean="licenseManager"/>
-        </constructor-arg>
-        <property name="delegate">
-            <ref bean="customAssertionRegistrar"/>
-        </property>
+        <constructor-arg ref="licenseManager"/>
+        <property name="delegate" ref="customAssertionRegistrar"/>
     </bean>
 
     <!-- kerberos admin servant -->
@@ -328,14 +242,8 @@
 
     <!-- RBAC admin impl -->
     <bean id="rbacAdmin_UNSECURED" class="com.l7tech.server.security.rbac.RbacAdminImpl">
-        <constructor-arg>
-            <ref bean="roleManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="licenseManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="entityFinder"/>
-        </constructor-arg>
+        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="entityFinder"/>
     </bean>
 </beans>

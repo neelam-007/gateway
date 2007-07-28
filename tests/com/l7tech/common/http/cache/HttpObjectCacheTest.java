@@ -6,9 +6,10 @@
 package com.l7tech.common.http.cache;
 
 import com.l7tech.common.http.*;
-import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_LATEST;
-import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_NEVER;
+import static com.l7tech.common.urlcache.HttpObjectCache.WAIT_LATEST;
+import static com.l7tech.common.urlcache.HttpObjectCache.WAIT_NEVER;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.urlcache.HttpObjectCache;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;

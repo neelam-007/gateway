@@ -1,16 +1,19 @@
 package com.l7tech.server.security.cert;
 
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.SystemMessages;
+import com.l7tech.common.security.CertificateValidationResult;
+import com.l7tech.common.security.RevocationCheckPolicy;
+import com.l7tech.common.security.RevocationCheckPolicyItem;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
+import com.l7tech.objectmodel.FindException;
+
+import java.io.IOException;
+import java.security.cert.*;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -18,33 +21,21 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import com.l7tech.common.security.CertificateValidationResult;
-import com.l7tech.common.security.RevocationCheckPolicy;
-import com.l7tech.common.security.RevocationCheckPolicyItem;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.objectmodel.FindException;
-
 /**
  * Factory for building RevocationCheckers.
  *
  * @author Steve Jones
  */
 public class RevocationCheckerFactory {
-
     //- PUBLIC
 
     /**
      * Create a RevocationCheckerFactory that will obtain data from the given providers
-     *
-     * @param revocationCheckPolicyProvider Provider for {@link RevocationCheckPolicy RevocationCheckPolicies}
-     * @param trustedCertProvider Provider for {@link TrustedCert TrustedCerts}
      */
-    public RevocationCheckerFactory(final RevocationCheckPolicyProvider revocationCheckPolicyProvider,
-                                    final TrustedCertProvider trustedCertProvider) {
+    public RevocationCheckerFactory(CertValidationProcessor processor, CrlCache crlCache) {
         // managers
-        this.revocationCheckPolicyProvider = revocationCheckPolicyProvider;
-        this.trustedCertProvider = trustedCertProvider;
+        this.certValidationProcessor = processor;
+        this.crlCache = crlCache;
 
         // initialize maps and map lock
         this.mapLock = new ReentrantReadWriteLock();
@@ -72,8 +63,10 @@ public class RevocationCheckerFactory {
             }
 
             if (checker == null) {
-                TrustedCert trustedCert = getTrustedCert(certificate);
-                RevocationCheckPolicy policy = getRevocationCheckPolicy(trustedCert);
+                TrustedCert trustedCert = certValidationProcessor.getTrustedCertEntry(certificate);
+                RevocationCheckPolicy policy = trustedCert == null ?
+                        certValidationProcessor.getDefaultPolicy() :
+                        certValidationProcessor.getRevocationCheckPolicy(trustedCert);
                 checker = buildChecker(key, policy);
 
                 mapLock.writeLock().lock();
@@ -114,7 +107,7 @@ public class RevocationCheckerFactory {
     public void invalidateRevocationCheckPolicy(long revocationCheckPolicyOid) {
         invalidateForProvider(
                 revocationCheckPolicyOid,
-                revocationCheckPolicyProvider,
+                null,
                 keysByRevocationCheckPolicyOid);
     }
 
@@ -130,29 +123,26 @@ public class RevocationCheckerFactory {
     public void invalidateTrustedCert(long trustedCertOid) {
         invalidateForProvider(
                 trustedCertOid,
-                trustedCertProvider,
+                new Functions.Unary<X509Certificate, Long>() {
+                    public X509Certificate call(Long oid) {
+                        final TrustedCert cert = certValidationProcessor.getTrustedCertByOid(oid);
+                        if (cert == null) return null;
+                        try {
+                            return cert.getCertificate();
+                        } catch (CertificateException e) {
+                            throw new RuntimeException(e); // Can't happen
+                        }
+                    }
+                },
                 keysByTrustedCertOid);
-    }
-
-    public interface Provider<T> {
-        T findByPrimaryKey(long key) throws FindException, CertificateException;
-    }
-
-    public interface RevocationCheckPolicyProvider extends Provider<RevocationCheckPolicy> {
-        RevocationCheckPolicy findByPrimaryKey(long key) throws FindException;
-        RevocationCheckPolicy getDefaultPolicy() throws FindException;
-    }
-
-    public interface TrustedCertProvider extends Provider<TrustedCert> {
-        TrustedCert getCachedCertBySubjectDn(String subjectDn) throws FindException, CertificateException;
     }
 
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(RevocationCheckerFactory.class.getName());
 
-    private final RevocationCheckPolicyProvider revocationCheckPolicyProvider;
-    private final TrustedCertProvider trustedCertProvider;
+    private final CertValidationProcessor certValidationProcessor;
+    private final CrlCache crlCache;
 
     private final ReadWriteLock mapLock;
     private Map<CertKey,CompositeRevocationChecker> checkersByCert;
@@ -180,7 +170,7 @@ public class RevocationCheckerFactory {
      * For trusted certs this will also invalidate by certificate key in case
      * we already have a cached revocation checker for the certificate .
      */
-    private void invalidateForProvider(long oid, Provider<?> provider, Map<Long,Set<CertKey>> keysForProvider) {
+    private void invalidateForProvider(long oid, Functions.Unary<X509Certificate, Long> certGetter, Map<Long,Set<CertKey>> keysForProvider) {
         List<Long> providerMappingsToPurge = new ArrayList();
         List<CertKey> certKeysToPurge = new ArrayList();
 
@@ -196,17 +186,14 @@ public class RevocationCheckerFactory {
         if (keys != null) { // invalidate for update / delete
             providerMappingsToPurge.add(Long.valueOf(oid));
             certKeysToPurge.addAll(keys);
-        } else if ( provider instanceof TrustedCertProvider) { // invalidate for new or unused
+        } else if (certGetter != null) { // invalidate for new or unused
             try {
-                TrustedCertProvider tcProvider = (TrustedCertProvider) provider;
-                TrustedCert trustedCert = tcProvider.findByPrimaryKey(oid);
-                if (trustedCert != null) {
-                    certKeysToPurge.add(new CertKey(trustedCert.getCertificate()));
+                X509Certificate cert = certGetter.call(oid);
+                if (cert != null) {
+                    certKeysToPurge.add(new CertKey(cert));
                 }
-            } catch (FindException fe) {
+            } catch (Exception fe) {
                 logger.log(Level.WARNING, "Error finding trusted certificate '"+oid+"' for invalidation.", fe);
-            } catch (CertificateException ce) {
-                logger.log(Level.WARNING, "Error getting trusted certificate '"+oid+"' for invalidation.", ce);
             }
         }
 
@@ -222,44 +209,13 @@ public class RevocationCheckerFactory {
     }
 
     /**
-     * Get the TrustedCert entry for the given certificate.
-     *
-     * @param certificate
-     * @return The TrustedCert entry or null if there is none
-     * @throws FindException On DB error
-     * @throws CertificateException On error with cert
-     */
-    private TrustedCert getTrustedCert(final X509Certificate certificate) throws FindException, CertificateException {
-        return trustedCertProvider.getCachedCertBySubjectDn(certificate.getIssuerDN().toString());
-    }
-
-    /**
-     * Get the RevocationCheckPolicy for the given trusted cert (or the default/none)
-     *
-     * @param trustedCert which may be null
-     * @return the RevocationCheckPolicy to use (may be null)
-     * @throws FindException On DB error
-     */
-    private RevocationCheckPolicy getRevocationCheckPolicy(final TrustedCert trustedCert) throws FindException {
-        //TODO implement when the hibernate mapping is in place
-        //revocationCheckPolicyProvider.findByPrimaryKey(trustedCert.get???);
-        //revocationCheckPolicyProvider.getDefaultPolicy()
-
-        // Policy to use when NONE
-        //RevocationCheckPolicy noCheckingPolicy = new RevocationCheckPolicy();
-        //noCheckingPolicy.setDefaultSuccess(true);
-
-        throw new FindException("Not implemented");
-    }
-
-    /**
      * Load the certificates for the given list of trusted cert oids
      */
     private X509Certificate[] loadCerts(List<Long> tcOids) throws FindException, CertificateException {
         List<X509Certificate> certs = new ArrayList();
 
-        for ( Long oid : tcOids ) {
-            TrustedCert tc = trustedCertProvider.findByPrimaryKey(oid);
+        for (Long oid : tcOids) {
+            TrustedCert tc = certValidationProcessor.getTrustedCertByOid(oid);
             if (tc != null) {
                 certs.add(tc.getCertificate());
             }
@@ -290,10 +246,10 @@ public class RevocationCheckerFactory {
                     try {
                         switch (type) {
                             case CRL_FROM_CERTIFICATE:
-                                revocationCheckers.add(new CRLRevocationChecker(null, Pattern.compile(url), issuer, certs));
+                                revocationCheckers.add(new CRLRevocationChecker(null, Pattern.compile(url), issuer, certs, crlCache, certValidationProcessor));
                                 break;
                             case CRL_FROM_URL:
-                                revocationCheckers.add(new CRLRevocationChecker(url, null, issuer, certs));
+                                revocationCheckers.add(new CRLRevocationChecker(url, null, issuer, certs, crlCache, certValidationProcessor));
                                 break;
                             case OCSP_FROM_CERTIFICATE:
                                 revocationCheckers.add(new OCSPRevocationChecker(null, Pattern.compile(url), issuer, certs));
@@ -353,7 +309,7 @@ public class RevocationCheckerFactory {
             this.revocationCheckers = Collections.unmodifiableList(revocationCheckers);
         }
 
-        public CertificateValidationResult getRevocationStatus(final X509Certificate certificate) {
+        public CertificateValidationResult getRevocationStatus(final X509Certificate certificate, Auditor auditor) {
             CertificateValidationResult result = CertificateValidationResult.REVOKED;
 
             if ( certificate != null ) {
@@ -361,13 +317,14 @@ public class RevocationCheckerFactory {
 
                 checking:
                 for ( RevocationChecker checker : revocationCheckers ) {
-                    working = checker.getRevocationStatus( certificate );
+                    working = checker.getRevocationStatus( certificate, auditor);
 
                     switch ( working ) {
                         case CANT_BUILD_PATH:
                             // Can't build path is not valid here, so change to revoked
                             working = CertificateValidationResult.REVOKED;
                         case REVOKED:
+                            // FALLTHROUGH
                         case OK:
                             break checking;
                     }
@@ -413,18 +370,95 @@ public class RevocationCheckerFactory {
         protected X509Certificate[] getTrustedIssuers() {
             return trustedIssuers;
         }
+
+        protected abstract String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException;
+
+        protected abstract String what();
+
+        protected String getValidUrl(X509Certificate certificate, Auditor auditor) {
+            String staticUrl = getUrl();
+            if (staticUrl != null) {
+                auditor.logAndAudit(SystemMessages.CERTVAL_REV_USING_STATIC_URL, what(), staticUrl);
+                return staticUrl;
+            } else {
+                Pattern pat = getUrlPattern();
+                String[] urlsFromCert;
+                final String subjectDn = certificate.getSubjectDN().getName();
+                try {
+                    urlsFromCert = getUrlsFromCert(certificate, auditor);
+                } catch (IOException e) {
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_CANT_GET_URLS_FROM_CERT, what(), subjectDn);
+                    return null;
+                }
+
+                if (urlsFromCert == null || urlsFromCert.length == 0) {
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_NO_URL, what(), subjectDn);
+                    return null;
+                }
+
+                for (String url : urlsFromCert) {
+                    if (pat.matcher(url).matches()) {
+                        auditor.logAndAudit(SystemMessages.CERTVAL_REV_URL_MATCH, what(), urlsFromCert[0], subjectDn);
+                        return url;
+                    }
+                }
+
+                auditor.logAndAudit(SystemMessages.CERTVAL_REV_URL_MISMATCH, what(), subjectDn);
+                return null;
+            }
+        }
     }
 
     /**
      *
      */
     private static final class CRLRevocationChecker extends AbstractRevocationChecker {
-        private CRLRevocationChecker(String url, Pattern regex, boolean allowIssuerSignature, X509Certificate[] trustedIssuers) {
+        private final CrlCache crlCache;
+        private final CertValidationProcessor certRevocationProcessor;
+
+        private CRLRevocationChecker(String url, Pattern regex, boolean allowIssuerSignature, X509Certificate[] trustedIssuers, CrlCache crlCache, CertValidationProcessor processor) {
             super(url, regex, allowIssuerSignature, trustedIssuers);
+            this.crlCache = crlCache;
+            this.certRevocationProcessor = processor;
         }
 
-        public CertificateValidationResult getRevocationStatus(X509Certificate certificate) {
-            return CertificateValidationResult.REVOKED;
+        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, Auditor auditor) {
+            final String crlUrl = getValidUrl(certificate, auditor);
+            if (crlUrl == null) {
+                // {@link getCrlUrl()} already audited the reason
+                return CertificateValidationResult.UNKNOWN;
+            }
+            try {
+                X509CRL crl = crlCache.getCrl(crlUrl, auditor);
+                final String crlIssuerDn = crl.getIssuerDN().getName();
+                TrustedCert tc = certRevocationProcessor.getTrustedCertBySubjectDn(crlIssuerDn);
+                if (tc == null) {
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_ISSUER_NOT_FOUND, crlIssuerDn);
+                    return CertificateValidationResult.UNKNOWN;
+                }
+                // TODO compare AKI extension from CRL if present
+                final RevocationCheckPolicy rcp = certRevocationProcessor.getRevocationCheckPolicy(tc);
+                // TODO lookup the CRL signing cert somehow?
+                // TODO verify whether this CRL is authoritative with respect to this cert?
+                if (crl.isRevoked(certificate))
+                    return CertificateValidationResult.REVOKED;
+                else
+                    return CertificateValidationResult.OK;
+            } catch (CRLException e) {
+                auditor.logAndAudit(SystemMessages.CERTVAL_REV_CRL_INVALID, crlUrl, ExceptionUtils.getMessage(e));
+                return CertificateValidationResult.UNKNOWN;
+            } catch (IOException e) {
+                auditor.logAndAudit(SystemMessages.CERTVAL_REV_RETRIEVAL_FAILED, crlUrl, ExceptionUtils.getMessage(e));
+                return CertificateValidationResult.UNKNOWN;
+            }
+        }
+
+        protected String what() {
+            return "CRL";
+        }
+
+        protected String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException {
+            return crlCache.getCrlUrlsFromCertificate(certificate, auditor);
         }
     }
 
@@ -436,7 +470,16 @@ public class RevocationCheckerFactory {
             super(url, regex, allowIssuerSignature, trustedIssuers);
         }
 
-        public CertificateValidationResult getRevocationStatus(X509Certificate certificate) {
+        protected String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException {
+            // TODO get OCSP URL(s) from cert
+            return null;
+        }
+
+        protected String what() {
+            return "OCSP";
+        }
+
+        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, Auditor auditor) {
             return CertificateValidationResult.REVOKED;
         }
     }
@@ -445,7 +488,7 @@ public class RevocationCheckerFactory {
         private RevokedChecker() {
             super(null, null, null);
         }
-        public CertificateValidationResult getRevocationStatus(X509Certificate certificate) {
+        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, Auditor auditor) {
             return CertificateValidationResult.REVOKED;
         }
     }

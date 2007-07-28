@@ -101,7 +101,7 @@ public class FederatedIdentityProviderImpl
     }
 
     public void preSaveClientCert(FederatedUser user, X509Certificate[] clientCertChain ) throws ClientCertManager.VetoSave {
-        FederatedUser u = (FederatedUser)userManager.cast(user);
+        FederatedUser u = userManager.cast(user);
         final String userDn = u.getSubjectDn();
         final String clientCertDn = clientCertChain[0].getSubjectDN().getName();
         if (!userDn.equals(clientCertDn))
