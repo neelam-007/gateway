@@ -19,6 +19,7 @@ import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
@@ -91,6 +92,9 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     // Widgets specific to MODE_SPECIFY_URL
     private JTextField specifyUrlField;
+    private JPanel globalURLTab;
+    private JComboBox globalSchemaCombo;
+    private JButton editGlobalXMLSchemasButton;
 
     // Other fields
     private UIAccessibility uiAccessibility;
@@ -107,10 +111,12 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     // Combo box strings that also serve as mode identifiers
     private final String MODE_SPECIFY = resources.getString("specifyItem.label");
     private final String MODE_SPECIFY_URL = resources.getString("specifyUrlItem.label");
+    private final String MODE_GLOBAL = resources.getString("globalItem.label");
     //private final String MODE_FETCH_XSI_URL = resources.getString("messageUrlItem.label");
     private final String[] MODES = new String[] {
             MODE_SPECIFY,
             MODE_SPECIFY_URL,
+            MODE_GLOBAL
             //MODE_FETCH_XSI_URL,  // TODO implement later on
     };
 
@@ -151,10 +157,12 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         // Surgery on IDEA form -- remove tabs, and hook up the drop-down to switch subpanes instead
         innerTabHolder.remove(specifyTab);
         innerTabHolder.remove(specifyUrlTab);
+        innerTabHolder.remove(globalURLTab);
         innerPanel.removeAll();
         innerPanel.setLayout(new BoxLayout(innerPanel, BoxLayout.Y_AXIS));
         innerPanel.add(specifyTab);
         innerPanel.add(specifyUrlTab);
+        innerPanel.add(globalURLTab);
         specifyUrlTab.setVisible(false);
 
         // Attach XML editor
@@ -188,6 +196,11 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         readFromWsdlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 readFromWsdl();
+            }
+        });
+        editGlobalXMLSchemasButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                launchGlobalSchemasDlg();
             }
         });
 
@@ -228,6 +241,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 updateModeComponents();
             }
         });
+
+        reloadGlobalSchemaList();
     }
 
     private void modelToView() {
@@ -271,11 +286,17 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         if (MODE_SPECIFY_URL.equals(mode)) {
             specifyUrlTab.setVisible(true);
             specifyTab.setVisible(false);
-        } else {
-            // Assume specify stylesheet
-            if (!MODE_SPECIFY.equals(mode)) log.warning("Unexpected fetch mode, assuming specify: " + mode);
+            globalURLTab.setVisible(false);
+        } else if (MODE_SPECIFY.equals(mode)) {
             specifyTab.setVisible(true);
             specifyUrlTab.setVisible(false);
+            globalURLTab.setVisible(false);
+        } else if (MODE_GLOBAL.equals(mode)) {
+            globalURLTab.setVisible(true);
+            specifyUrlTab.setVisible(false);
+            specifyTab.setVisible(false);
+        } else {
+            throw new RuntimeException("unhandled schema validation mode: " + mode);
         }
         Border border = borderPanel.getBorder();
         if (border instanceof TitledBorder) {
@@ -283,6 +304,36 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             tb.setTitle(BORDER_TITLE_PREFIX + " " + mode);
         }
         innerPanel.revalidate();
+    }
+
+    private void launchGlobalSchemasDlg() {
+        GlobalSchemaDialog dlg = new GlobalSchemaDialog(this);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                reloadGlobalSchemaList();
+            }
+        });
+    }
+
+    private void reloadGlobalSchemaList() {
+        Registry reg = Registry.getDefault();
+        if (reg == null || reg.getSchemaAdmin() == null) {
+            throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
+        }
+        try {
+            Collection<SchemaEntry> allschemas = reg.getSchemaAdmin().findAllSchemas();
+            ArrayList<String> schemaNames = new ArrayList<String>();
+            if (allschemas != null) {
+                for (SchemaEntry s : allschemas) {
+                    schemaNames.add(s.getName());
+                }
+            }
+            globalSchemaCombo.setModel(new DefaultComboBoxModel(schemaNames.toArray(new String[]{})));
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Cannot get global schemas", e);
+        }
     }
 
     /**
