@@ -19,7 +19,8 @@ public class AssertionResourceType implements Serializable {
     public static final AssertionResourceType STATIC = new AssertionResourceType(next++, "STATIC", "Static document");
     public static final AssertionResourceType SINGLE_URL = new AssertionResourceType(next++, "SINGLE_URL", "Read document from single URL");
     public static final AssertionResourceType MESSAGE_URL = new AssertionResourceType(next++, "MESSAGE_URL", "Read document using URL from message");
-    private static final AssertionResourceType[] VALUES = {STATIC, SINGLE_URL, MESSAGE_URL};
+    public static final AssertionResourceType GLOBAL_RESOURCE = new AssertionResourceType(next++, "GLOBAL_RES", "Read document from a global resource shared across policies");
+    private static final AssertionResourceType[] VALUES = {STATIC, SINGLE_URL, MESSAGE_URL, GLOBAL_RESOURCE};
 
     private final int num;
     private final String name;
