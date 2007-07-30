@@ -413,7 +413,9 @@ public class ServerVariables {
             public Object get(String name, PolicyEnforcementContext context) {
                 LoginCredentials creds = context.getLastCredentials();
                 if (creds == null) return null;
-                return new String(creds.getCredentials());
+                final char[] pass = creds.getCredentials();
+                if (pass == null || pass.length == 0) return null;
+                return new String(pass);
             }
         })
     };
