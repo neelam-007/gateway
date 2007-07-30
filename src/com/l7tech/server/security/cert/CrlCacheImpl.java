@@ -13,6 +13,8 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.WhirlycacheFactory;
 import com.l7tech.server.util.HttpClientFactory;
+import com.l7tech.server.util.ServerCertUtils;
+
 import com.whirlycott.cache.Cache;
 
 import java.io.BufferedReader;
@@ -191,7 +193,7 @@ public class CrlCacheImpl implements CrlCache {
         String[] urls = (String[]) certCache.retrieve(subjectDn);
 
         if (urls == null) {
-            urls = CertUtils.getCrlUrls(subjectCert);
+            urls = ServerCertUtils.getCrlUrls(subjectCert);
             certCache.store(subjectDn, urls);
         }
         return urls;

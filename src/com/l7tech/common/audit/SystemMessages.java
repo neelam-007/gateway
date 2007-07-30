@@ -58,6 +58,8 @@ public class SystemMessages extends Messages {
     public static final M CERTVAL_CERT_EXPIRED                = m(2049, Level.WARNING, "Certificate {0} has expired");
     public static final M CERTVAL_CERT_NOT_YET_VALID          = m(2050, Level.WARNING, "Certificate {0} is not yet valid");
 
+    public static final M CERTVAL_OCSP_ERROR                  = m(2060, Level.WARNING, "Error during OCSP check for responder ''{0}'': {1}");
+
     public static final M AUTH_USER_DISABLED = m(2100, Level.INFO, "User {0} is disabled.");
     public static final M AUTH_USER_LOCKED   = m(2101, Level.INFO, "User {0} is locked.");
     public static final M AUTH_USER_EXPIRED  = m(2102, Level.INFO, "User {0} has expired.");

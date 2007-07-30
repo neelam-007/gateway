@@ -9,13 +9,6 @@ import com.whirlycott.cache.Cache;
 import org.apache.harmony.security.asn1.ASN1Integer;
 import org.apache.harmony.security.asn1.ASN1Sequence;
 import org.apache.harmony.security.asn1.ASN1Type;
-import org.bouncycastle.asn1.*;
-import org.bouncycastle.asn1.x509.CRLDistPoint;
-import org.bouncycastle.asn1.x509.DistributionPoint;
-import org.bouncycastle.asn1.x509.DistributionPointName;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -59,6 +52,12 @@ public class CertUtils {
     public static final String FINGERPRINT_RAW_HEX = "rawhex";
     public static final String FINGERPRINT_BASE64 = "b64";
 
+    public static final String X509_OID_CRL_DISTRIBUTION_POINTS = "2.5.29.31";
+    public static final String X509_OID_NETSCAPE_CRL_URL = "2.16.840.1.113730.1.4";
+    public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
+    public static final String X509_OID_AUTHORITYKEYID = "2.5.29.35";
+    public static final String X509_OID_AUTHORITY_INFORMATION_ACCESS = "1.3.6.1.5.5.7.1.1";
+    
     interface DnParser {
         Map dnToAttributeMap(String dn);
     }
@@ -395,53 +394,6 @@ public class CertUtils {
 
         return privateKey;
     }
-
-    /**
-     * @return an array of zero or more CRL URLs from the certificate
-     */
-    public static String[] getCrlUrls(X509Certificate cert) throws IOException {
-        Set urls = new HashSet();
-        byte[] distibutionPointBytes = cert.getExtensionValue(X509_OID_CRL_DISTRIBUTION_POINTS);
-        if (distibutionPointBytes != null && distibutionPointBytes.length > 0) {
-            ASN1Encodable asn1 = X509ExtensionUtil.fromExtensionValue(distibutionPointBytes);
-            DERObject obj = asn1.getDERObject();
-            CRLDistPoint distPoint = CRLDistPoint.getInstance(obj);
-            DistributionPoint[] points = distPoint.getDistributionPoints();
-            //noinspection ForLoopReplaceableByForEach
-            for (int i = 0; i < points.length; i++) {
-                DistributionPoint point = points[i];
-                DistributionPointName dpn = point.getDistributionPoint();
-                obj = dpn.getName().toASN1Object();
-                org.bouncycastle.asn1.ASN1Sequence seq = org.bouncycastle.asn1.ASN1Sequence.getInstance(obj);
-                DERTaggedObject tag = (DERTaggedObject) seq.getObjectAt(0);
-                DERObject foo = tag.getObject();
-                if (foo instanceof DEROctetString) {
-                    DEROctetString derOctetString = (DEROctetString) foo;
-                    distibutionPointBytes = derOctetString.getOctets();
-                    //noinspection unchecked
-                    urls.add(new String(distibutionPointBytes, "ISO8859-1"));
-                }
-            }
-        }
-
-        byte[] netscapeCrlUrlBytes = cert.getExtensionValue(X509_OID_NETSCAPE_CRL_URL);
-        if (netscapeCrlUrlBytes != null && netscapeCrlUrlBytes.length > 0) {
-            ASN1Encodable asn1 = X509ExtensionUtil.fromExtensionValue(netscapeCrlUrlBytes);
-            if (asn1 instanceof DERString) {
-                //noinspection unchecked
-                urls.add(((DERString) asn1).getString());
-            } else {
-                throw new IOException("Netscape CRL URL extension value is not a String");
-            }
-        }
-        //noinspection unchecked
-        return (String[])urls.toArray(new String[0]);
-    }
-
-    public static final String X509_OID_CRL_DISTRIBUTION_POINTS = "2.5.29.31";
-    public static final String X509_OID_NETSCAPE_CRL_URL = "2.16.840.1.113730.1.4";
-    public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
-    public static final String X509_OID_AUTHORITYKEYID = "2.5.29.35";
 
     private static final String[] KEY_USAGES = {
         "Digital Signature",
@@ -881,13 +833,6 @@ public class CertUtils {
         byte[] ext = cert.getExtensionValue(X509_OID_AUTHORITYKEYID);
         if (ext == null) return null;
         return stripAsnPrefix(ext, 6);
-    }
-
-    public static AuthorityKeyIdentifierStructure getAKIStructure(X509Certificate cert) throws IOException {
-        if (cert.getVersion() < 3) return null;
-        byte[] aki = cert.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
-        if (aki == null) return null;
-        return new AuthorityKeyIdentifierStructure(aki);
     }
 
     private static byte[] stripAsnPrefix(byte[] derEncodedValue, int bytesToStrip) {

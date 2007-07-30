@@ -9,7 +9,9 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
+import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.util.ServerCertUtils;
 
 import java.io.IOException;
 import java.security.cert.*;
@@ -252,10 +254,10 @@ public class RevocationCheckerFactory {
                                 revocationCheckers.add(new CRLRevocationChecker(url, null, issuer, certs, crlCache, certValidationProcessor));
                                 break;
                             case OCSP_FROM_CERTIFICATE:
-                                revocationCheckers.add(new OCSPRevocationChecker(null, Pattern.compile(url), issuer, certs));
+                                revocationCheckers.add(new OCSPRevocationChecker(null, Pattern.compile(url), issuer, certs, certValidationProcessor));
                                 break;
                             case OCSP_FROM_URL:
-                                revocationCheckers.add(new OCSPRevocationChecker(url, null, issuer, certs));
+                                revocationCheckers.add(new OCSPRevocationChecker(url, null, issuer, certs, certValidationProcessor));
                                 break;
                             default:
                                 logger.log(Level.WARNING, "Ignoring unknown revocation checking type ''{0}''.", type.name());
@@ -466,13 +468,24 @@ public class RevocationCheckerFactory {
      *
      */
     private static final class OCSPRevocationChecker extends AbstractRevocationChecker {
-        private OCSPRevocationChecker(String url, Pattern regex, boolean allowIssuerSignature, X509Certificate[] trustedIssuers) {
+        private static final String OID_AIA_OCSP = "1.3.6.1.5.5.7.48.1";
+        private final CertValidationProcessor certValidationProcessor;
+
+        private OCSPRevocationChecker(final String url,
+                                      final Pattern regex,
+                                      final boolean allowIssuerSignature,
+                                      final X509Certificate[] trustedIssuers,
+                                      final CertValidationProcessor certValidationProcessor) {
             super(url, regex, allowIssuerSignature, trustedIssuers);
+            this.certValidationProcessor = certValidationProcessor;
         }
 
         protected String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException {
-            // TODO get OCSP URL(s) from cert
-            return null;
+            try {
+                return ServerCertUtils.getAuthorityInformationAccessUris(certificate, OID_AIA_OCSP);
+            } catch (CertificateException ce) {
+                throw new IOException("Error extracting OCSP urls from certificate.", ce);
+            }
         }
 
         protected String what() {
@@ -480,7 +493,40 @@ public class RevocationCheckerFactory {
         }
 
         public CertificateValidationResult getRevocationStatus(X509Certificate certificate, Auditor auditor) {
-            return CertificateValidationResult.REVOKED;
+            CertificateValidationResult result = CertificateValidationResult.REVOKED;
+            String url = getValidUrl(certificate, auditor);
+            X509Certificate issuerCertificate = null;
+
+            try {
+                String issuerDn = certificate.getIssuerDN().getName();
+                TrustedCert tc = certValidationProcessor.getTrustedCertBySubjectDn(issuerDn);
+                if (tc == null) {
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_ISSUER_NOT_FOUND, issuerDn);
+                    return CertificateValidationResult.UNKNOWN;
+                }
+                issuerCertificate = tc.getCertificate();
+            } catch (CertificateException ce) {
+                auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_ERROR, new String[]{url, ExceptionUtils.getMessage(ce)}, ce);
+            }
+
+            if ( issuerCertificate != null ) {
+                try {
+                    //TODO caching of OCSP responses, reuse of HTTP client, HTTPS.
+                    String issuerDn = certificate.getIssuerDN().getName();
+                    TrustedCert tc = certValidationProcessor.getTrustedCertBySubjectDn(issuerDn);
+                    if (tc == null) {
+                        auditor.logAndAudit(SystemMessages.CERTVAL_REV_ISSUER_NOT_FOUND, issuerDn);
+                        return CertificateValidationResult.UNKNOWN;
+                    }
+                    OCSPClient ocsp = new OCSPClient(new CommonsHttpClient(), url, issuerCertificate, getAllowIssuerSignature(), getTrustedIssuers());
+                    OCSPClient.OCSPStatus status = ocsp.getRevocationStatus(certificate, true, true);
+                    result = status.getResult();
+                } catch (OCSPClient.OCSPClientException oce) {
+                    auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_ERROR, new String[]{url, ExceptionUtils.getMessage(oce)}, oce);
+                }
+            }
+
+            return result;
         }
     }
 
