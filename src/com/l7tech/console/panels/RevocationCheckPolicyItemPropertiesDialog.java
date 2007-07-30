@@ -226,6 +226,8 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
             }
         }, createButton.getText()));
 
+        Utilities.equalizeButtonSizes(new JButton[]{okButton, cancelButton});
+
         typeComboBox.setModel(new DefaultComboBoxModel(RevocationCheckPolicyItem.Type.values()));
         typeComboBox.setRenderer(new RevocationCheckPolicyItemTypeRenderer());
         typeComboBox.addActionListener(new ActionListener(){

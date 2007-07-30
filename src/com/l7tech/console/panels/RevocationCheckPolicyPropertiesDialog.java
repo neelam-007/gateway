@@ -188,6 +188,8 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
             }
         });
 
+        Utilities.equalizeButtonSizes(new JButton[]{okButton, cancelButton});
+
         policyItemList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 enableOrDisableControls();

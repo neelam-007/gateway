@@ -168,6 +168,8 @@ public class ManageCertificateValidationDialog extends JDialog {
             }
         });
 
+        Utilities.equalizeButtonSizes(new JButton[]{validationPropertiesButton, addButton, removeButton, propertiesButton, closeButton});
+
         DefaultTableModel dtm = new DefaultTableModel(new String[]{
                 resources.getString(RES_HEADER_TYPE),
                 resources.getString(RES_HEADER_OPTION)
