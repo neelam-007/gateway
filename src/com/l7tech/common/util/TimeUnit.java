@@ -5,8 +5,11 @@ package com.l7tech.common.util;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author alex
@@ -17,8 +20,9 @@ public final class TimeUnit implements Serializable, Comparable {
     public static final TimeUnit SECONDS = new TimeUnit(next++, "seconds", "s", 1000);
     public static final TimeUnit MINUTES = new TimeUnit(next++, "minutes", "m", 1000 * 60);
     public static final TimeUnit HOURS = new TimeUnit(next++, "hours", "h", 1000 * 60 * 60);
+    public static final TimeUnit DAYS = new TimeUnit(next++, "days", "d", 1000 * 60 * 60 * 24);
 
-    public static final TimeUnit[] ALL = new TimeUnit[] { MILLIS, SECONDS, MINUTES, HOURS };
+    public static final TimeUnit[] ALL = new TimeUnit[] { MILLIS, SECONDS, MINUTES, HOURS, DAYS };
 
     private final int num;
     private final String name;
@@ -71,6 +75,40 @@ public final class TimeUnit implements Serializable, Comparable {
 
     public static TimeUnit fromAbbreviation(String value) {
         return (TimeUnit)valuesByAbbrev.get(value);
+    }
+
+    private static final Pattern numberPattern = Pattern.compile("(-?\\d*\\.?\\d*)(\\p{Lower})*");
+
+    /**
+     * Parses a time duration expressed as a number (which may contain periods, commas or spaces) followed by a one- or
+     * two-letter, case-insensitive unit abbreviation, e.g. "60s" is 60 seconds, resulting in 60000.
+     * @param value the string to be parsed
+     * @param unsuffixedUnit the TimeUnit to assume is in use when no unit suffix is present
+     * @return the equivalent duration in milliseconds
+     */
+    public static long parse(String value, TimeUnit unsuffixedUnit) throws NumberFormatException {
+        if (value == null) throw new NullPointerException();
+        if (value.length() == 0) throw new NumberFormatException("Empty strings are not supported");
+        if (value.length() > 20) throw new NumberFormatException("Strings with more than 20 characters are not supported");
+
+        Matcher mat = numberPattern.matcher(value.toLowerCase().replace(",", "").replace(" ", ""));
+        if (!mat.matches() && mat.groupCount() != 2)
+            throw new NumberFormatException("Value doesn't match expected format");
+
+        final String snum = mat.group(1);
+
+        final TimeUnit unit;
+        String maybeUnit = mat.group(2);
+        TimeUnit tu = (TimeUnit) valuesByAbbrev.get(maybeUnit);
+        if (tu == null) tu = unsuffixedUnit;
+        unit = tu;
+
+        BigDecimal bd = new BigDecimal(snum); // OK to throw NFE
+        return (long) (bd.doubleValue() * unit.multiplier);
+    }
+
+    public static long parse(String value) {
+        return parse(value, MILLIS);
     }
 
     // This method is invoked reflectively by WspEnumTypeMapping
