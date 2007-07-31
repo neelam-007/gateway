@@ -6,7 +6,9 @@ trap doLogout INT
 SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
 CONFWIZARD="/ssg/configwizard/ssgconfig.sh"
 UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh"
+MASTERKEYMANAGE="/ssg/libexec/masterkey-manage.pl"
 GETROOT="su -"
+MASTER_KEY_BACKUP_FILE_NAME="ssg_mkey.bak"
 
 checkForUpdater() {
     if [ -e "/ssg/updatewizard/ssgupdatewizard.sh" ] ; then
@@ -16,11 +18,21 @@ checkForUpdater() {
     fi
 }
 
+checkForSca() {
+    SCADIAG="/opt/sun/sca6000/sbin/scadiag"
+    if [ -s "${SCADIAG}" ] ; then
+        SCA_PRESENT="true"
+    else
+        SCA_PRESENT=""
+    fi
+}
+
 doLogout() {
     exit
 }
 
 checkForUpdater
+checkForSca
 isValid="n"
 while [ "$isValid" != "y" ]
 do
@@ -34,9 +46,16 @@ do
         echo "3) Use a privileged shell (root)"
         echo "4) Logout (no reboot)"
         echo "5) Reboot the SSG appliance (apply the new configuration)"
-        if [ "${UPDATER_PRESENT}" == "true" ] ; then
-            echo "6) Upgrade the SecureSpan Appliance"
+
+        if [ "${SCA_PRESENT}" == "true" ] ; then
+            echo "6) Back up the Master Key to USB flash drive"
         fi
+
+        if [ "${UPDATER_PRESENT}" == "true" ] ; then
+            echo "7) Upgrade the SecureSpan Appliance"
+        fi
+
+        
         echo -n "Please make a selection: "
         read choice
 
@@ -71,7 +90,33 @@ do
                         sudo /sbin/reboot
                     fi
                     clear;;
-                *)  if [ "$choice" == "6" ] && [ "${UPDATER_PRESENT}" == "true" ]; then
+                *)  if [ "$choice" == "6" ] && [ "${SCA_PRESENT}" == "true" ]; then
+                        clear;
+                        echo "Checking for USB drive"
+                        (sudo ${MASTERKEYMANAGE} probe &> /dev/null);
+                        if [ ${?} != 0 ] ; then
+                            echo ""
+                            echo "The USB drive could not be found. Please attach the USB drive and try again."
+                            echo "Press enter to continue."
+                            read;
+                        else
+                            echo -n "Found the USB drive. Continuing..."
+                            echo -n "Enter the keystore password:"
+                            read ksPassword;
+                            echo -n "Enter the master key backup password:"
+                            read masterKeyBackupPassword;
+                            (sudo ${MASTERKEYMANAGE} backup ${ksPassword} ${MASTER_KEY_BACKUP_FILE_NAME} ${masterKeyBackupPassword});
+                            if [ ${?} != 0 ] ; then
+                                echo ""
+                                echo "The master key backup did not succeed. See the error message above for details."
+                            else
+                                echo ""
+                                echo "The master key backup was successfull."
+                            fi
+                            echo "Press enter to continue."
+                            read;
+                        fi
+                    elif [ "$choice" == "7" ] && [ "${UPDATER_PRESENT}" == "true" ]; then
                         clear;
                         (${UPDATEWIZARD})
                         echo "Press enter to continue";
