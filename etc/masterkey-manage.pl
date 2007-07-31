@@ -96,7 +96,7 @@ sub findProductNamePrefix() {
  
     my $content = slurpFile($USBDRIVE_PP);
 
-    $content =~ s/^\s+|\s+$//g;
+    $content =~ s/^\s+|\s+$//g if defined($content);
     if ($content) {
         print "Using overridden USB device Product name prefix: $content\n";
     } else {
