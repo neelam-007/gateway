@@ -36,7 +36,7 @@ public class WhirlycacheFactory {
      * @param name    the unique name of the new cache instance.  Must be unique and not null.
      * @param size    the maximum number of items to keep in the cache.  The cache may be allowed to exceed this number
      *                in between runs of the tuner.
-     * @param tunerInterval  minutes in between runs of the tuner process.  Don't run too frequently, but keep in mind that only
+     * @param tunerInterval  seconds in between runs of the tuner process.  Don't run too frequently, but keep in mind that only
      *                       the tuner will remove items from the cache if it exceeds its limit.
      * @param replacementPolicy  the replacement policy.  Must be one of {@link #POLICY_FIFO}, {@link #POLICY_LRU}, or {@link #POLICY_LFU}.
      * @return a new Cache instance.  Never null.
@@ -64,7 +64,7 @@ public class WhirlycacheFactory {
      * @param name    the unique name of the new cache instance.  Must be unique and not null.
      * @param size    the maximum number of items to keep in the cache.  The cache may be allowed to exceed this number
      *                in between runs of the tuner.
-     * @param tunerInterval  minutes in between runs of the tuner process.  Don't run too frequently, but keep in mind that only
+     * @param tunerInterval  seconds in between runs of the tuner process.  Don't run too frequently, but keep in mind that only
      *                       the tuner will remove items from the cache if it exceeds its limit.
      * @param maintenancePolicy   a custom maintenance policy for this cache.  Must not be null.
      * @return a new Cache instance.  Never null.
