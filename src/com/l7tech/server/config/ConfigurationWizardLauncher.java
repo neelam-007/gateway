@@ -9,9 +9,10 @@ import com.l7tech.server.partition.PartitionManager;
  */
 public class ConfigurationWizardLauncher {
     private static final String EOL_CHAR = System.getProperty("line.separator");
-    private static final String PARTITION_UPGRADE = "-partitionMigrate";
-    private static final String GRAPHICAL_MODE = "-graphical";
-    private static final String CONSOLE_MODE = "-console";
+    public static final String PARTITION_UPGRADE = "-partitionMigrate";
+    public static final String GRAPHICAL_MODE = "-graphical";
+    public static final String CONSOLE_MODE = "-console";
+    public static final String EXPORT_SHARED_KEY = "-exportsharedkey";
 
     private static final String USAGE_STATEMENT = "usage: ConfigurationWizardLauncher [-console | -graphical]" + EOL_CHAR +
                         "If no parameter is specified, graphical mode is assumed" + EOL_CHAR +
@@ -35,6 +36,8 @@ public class ConfigurationWizardLauncher {
             ConsoleConfigWizardLauncher.launch(newArgs);
         } else if (PARTITION_UPGRADE.equalsIgnoreCase(launchType)) {
             PartitionManager.doMigration();
+        } else if (EXPORT_SHARED_KEY.equalsIgnoreCase(launchType)) {
+            SharedKeyGetter.main(newArgs);
         } else if (null == launchType || "".equals(launchType) || GRAPHICAL_MODE.equalsIgnoreCase(launchType)) {
             GuiConfigWizardLauncher.launch(newArgs);
         }

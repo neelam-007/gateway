@@ -30,6 +30,7 @@ public abstract class UnixSpecificFunctions extends OSSpecificFunctions {
         }
         pathToJdk = "jdk/";
         partitionControlScriptName = "partitionControl.sh";
+        configWizardLauncher = installRoot + "configwizard/ssgconfig.sh";
         doSpecialSetup();
     }
 

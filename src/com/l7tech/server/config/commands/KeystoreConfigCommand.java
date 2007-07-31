@@ -6,6 +6,7 @@ import com.l7tech.common.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.common.security.prov.luna.LunaCmu;
 import com.l7tech.common.util.*;
 import com.l7tech.server.config.*;
+import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.db.DBActions;
@@ -119,19 +120,40 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void updateSharedKey(KeystoreConfigBean ksBean) throws Exception {
-        byte[] sharedKeyData = ksBean.getSharedKeyData();
+        SharedKeyGetter getter = new SharedKeyGetter();
+        byte[] sharedKeyData = getter.getAndDecryptStashedSharedKey();
         logger.info("Updating the shared key if necessary");
         if (sharedKeyData == null || sharedKeyData.length == 0) {
             logger.info("No shared key found. No need to update it.");
         } else {
             //get the new keystore
-            KeystoreActions ka = new KeystoreActions(getOsFunctions());
-            KeyStore ks = ka.loadExistingKeyStore(
-                    new File(getOsFunctions().getKeystoreDir()+KeyStoreConstants.SSL_KEYSTORE_FILE),
-                    false,
-                    null);
+            KeystoreType type = ksBean.getKeyStoreType();
 
-            Certificate[] chain = ks.getCertificateChain(KeyStoreConstants.SSL_ALIAS);
+            KeyStore newKs = KeyStore.getInstance(type.shortTypeName());
+            InputStream is = null;
+            try {
+                is = new FileInputStream(new File(getOsFunctions().getKeystoreDir()+KeyStoreConstants.SSL_KEYSTORE_FILE));
+                Exception caught = null;
+                try {
+                    newKs.load(is, ksBean.getKsPassword());
+                } catch (IOException e) {
+                    caught = e;
+                } catch (NoSuchAlgorithmException e) {
+                    caught = e;
+                } catch (CertificateException e) {
+                    caught = e;
+                } finally {
+                    if (caught != null) {
+                        logger.severe(MessageFormat.format("Error while opening the keystore to decrypt the shared key: {0}", caught.getMessage()));
+                        throw caught;
+                    }
+                }
+            } finally {
+                ResourceUtils.closeQuietly(is);
+            }
+
+
+            Certificate[] chain = newKs.getCertificateChain(KeyStoreConstants.SSL_ALIAS);
             Key newKey = chain[0].getPublicKey();
 
             DBInformation dbInfo = sharedWizardInfo.getDbinfo();
@@ -144,7 +166,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                     stmt = conn.createStatement();
                     String pubKeyId = EncryptionUtil.computeCustomRSAPubKeyID((RSAPublicKey) newKey);
                     String encryptedSharedData = EncryptionUtil.rsaEncAndB64(sharedKeyData, newKey);
-                    stmt.executeQuery(MessageFormat.format("insert into shared_keys (encodingid, b64edval) values {0},{1}",pubKeyId, encryptedSharedData));
+                    String sql = "insert into shared_keys (encodingid, b64edval) values \"" + pubKeyId + "\",\"" + encryptedSharedData + "\"";
+                    stmt.executeUpdate(sql);
                 } catch (SQLException e) {
                     logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
                     throw e;
@@ -384,7 +407,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         } catch (ScaException e) {
             logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
             throw e;
-        } catch (KeystoreActions.KeystoreActionsException e) {
+        } catch (KeystoreActionsException e) {
             logger.severe("Error while restoring a keystore to the HSM. Could not get the keydata from the database: " + e.getMessage());
             throw e;
         } catch (Exception e) {
@@ -398,7 +421,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return new MyScaManager();
     }
 
-    private void backupHsmMasterkey(KeystoreConfigBean ksBean) throws IOException, KeystoreActions.KeystoreActionsException {
+    private void backupHsmMasterkey(KeystoreConfigBean ksBean) throws IOException, KeystoreActionsException {
         if (getOsFunctions().isUnix()) {
             if (ksBean.isShouldBackupMasterKey()) {
                 final char[] keystorePassword = ksBean.getKsPassword();
@@ -492,7 +515,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void insertKeystoreIntoDatabase(ScaManager scaManager) throws ScaException, KeystoreActions.KeystoreActionsException {
+    private void insertKeystoreIntoDatabase(ScaManager scaManager) throws ScaException, KeystoreActionsException {
         try {
             byte[] keyData = scaManager.loadKeydata();
             DBInformation dbinfo = sharedWizardInfo.getDbinfo();
@@ -500,18 +523,18 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         } catch (ScaException e) {
             logger.severe("Could not load the keystore information from the disk: " + e.getMessage());
             throw e;
-        } catch (KeystoreActions.KeystoreActionsException e) {
+        } catch (KeystoreActionsException e) {
             logger.severe(e.getMessage());
             throw e;
         }
     }
 
-    private void putKeydataInDatabase(DBInformation dbinfo, byte[] keyData) throws KeystoreActions.KeystoreActionsException {
+    private void putKeydataInDatabase(DBInformation dbinfo, byte[] keyData) throws KeystoreActionsException {
         KeystoreActions ka = new KeystoreActions(getOsFunctions());
         ka.putKeydataInDatabase(dbinfo, keyData);
     }
 
-    private byte[] getKeydataFromDatabase(DBInformation dbinfo) throws KeystoreActions.KeystoreActionsException {
+    private byte[] getKeydataFromDatabase(DBInformation dbinfo) throws KeystoreActionsException {
         KeystoreActions ka = new KeystoreActions(getOsFunctions());
         return ka.getKeydataFromDatabase(dbinfo);
 

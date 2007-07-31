@@ -4,6 +4,7 @@ import com.l7tech.server.config.*;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 
@@ -118,7 +119,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         String defaultValue = "1";
         String[] prompts = new String[] {
             "1) Initialize Keystore" + getEolChar(),
-            "2) Restore Keystore Backup" + getEolChar(),
+            "2) Import Existing Keystore" + getEolChar(),
             "Please make a selection: [" + defaultValue + "] ",
         };
         String input = getData(prompts, defaultValue, new String[] {"1", "2"});
@@ -134,7 +135,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 try {
                     ka.probeUSBBackupDevice();
                     askAgain = false;
-                } catch (KeystoreActions.KeystoreActionsException e) {
+                } catch (KeystoreActionsException e) {
                     printText("*** Cannot backup key: " + e.getMessage() + " ***" + getEolChar() + getEolChar());
                     askAgain = true;
                 }
@@ -279,9 +280,9 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                     ((KeystoreConfigBean)configBean).setSharedKeyBytes(existingSharedKey);
                 }
                 ok = true;
-            } catch (KeystoreActions.KeystoreActionsException e) {
+            } catch (KeystoreActionsException e) {
                 ok = false;
-                printText("Error while updating the cluster shared key\n" + e.getCause().getClass().getName() + "\n" + e.getMessage());
+                printText("Error while updating the cluster shared key\n" + e.getMessage());
             }
         } else {
             ok = true;       

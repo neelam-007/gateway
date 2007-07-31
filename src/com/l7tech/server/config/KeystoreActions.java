@@ -1,33 +1,30 @@
 package com.l7tech.server.config;
 
-import com.l7tech.common.util.EncryptionUtil;
-import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.ProcResult;
 import com.l7tech.common.util.ProcUtils;
-import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
-import com.l7tech.server.config.beans.KeystoreConfigBean;
+import com.l7tech.server.config.exceptions.KeystoreActionsException;
+import com.l7tech.server.config.exceptions.WrongKeystorePasswordException;
 import org.apache.commons.lang.StringUtils;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.*;
-import java.security.*;
-import java.security.cert.CertificateException;
-import java.security.interfaces.RSAPublicKey;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.security.Provider;
+import java.security.Security;
 import java.sql.*;
 import java.text.MessageFormat;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.net.URLClassLoader;
-import java.net.URL;
-import java.net.MalformedURLException;
 
 /**
  * User: megery
@@ -43,61 +40,34 @@ public class KeystoreActions {
         this.osFunctions = osFunctions;
     }
 
-    public KeyStore loadExistingKeyStore(File keystoreFile, boolean shouldTryAgain, KeystoreActionsListener listener) throws KeystoreActionsException {
-        String ksPassword = null;
-        String ksType = null;
+    private byte[] spawnSubProcessAndGetSharedKey(String ksType, char[] ksPassword, File keystoreFile) throws KeystoreActionsException, IOException {
+        DBInformation dbInfo = SharedWizardInfo.getInstance().getDbinfo();
+        String launcher = osFunctions.getConfigWizardLauncher();
+        String ksPath = keystoreFile.getAbsolutePath();
+        String[] args = ProcUtils.args(
+                ConfigurationWizardLauncher.EXPORT_SHARED_KEY,
+                new String(ksPassword),
+                ksType,
+                ksPath,
+                dbInfo.getHostname(),
+                dbInfo.getDbName(),
+                dbInfo.getUsername(),
+                dbInfo.getPassword());
 
-        if (listener != null) {
-            List<String> answers = listener.promptForKeystoreTypeAndPassword();
-            ksType = answers.get(1);
-            ksPassword = answers.get(0);
+        ProcResult result = ProcUtils.exec(
+                null,
+                new File(launcher),
+                args, null, true);
 
-            if (KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName().equals(ksType) && ksPassword != null) {
-                if (!ksPassword.contains(":"))
-                    ksPassword = "gateway:"+ksPassword;
-            }
+        byte[] sharedKey = null;
+        if (result.getExitStatus() == 0) {
+            sharedKey = result.getOutput();
+        } else if (result.getExitStatus() == 1) {
+            throw new WrongKeystorePasswordException(MessageFormat.format("Attempt to retrieve the cluster shared key using the provided keystore type and password failed. - {0}", new String(result.getOutput())));
+        } else {
+            throw new KeystoreActionsException(MessageFormat.format("Attempting to retrieve the cluster shared key resulted in the following error code and message: {0}, {1}", result.getExitStatus(), new String(result.getOutput())));
         }
-
-        KeyStore existingSslKeystore = null;
-        try {
-            existingSslKeystore = KeyStore.getInstance(ksType);
-            InputStream is = null;
-            try {
-                if (KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
-                    is = null;
-                } else {
-                    is = new FileInputStream(keystoreFile);
-                }
-                existingSslKeystore.load(is, ksPassword.toCharArray());
-            } catch (FileNotFoundException e) {
-                throw new KeystoreActionsException(MessageFormat.format("Could not find the file \"{0}\". Cannot open the keystore", keystoreFile.getAbsolutePath()), e);
-            } catch (NoSuchAlgorithmException e) {
-                throw new KeystoreActionsException(MessageFormat.format("Could not load the keystore at \"{0}\". Unable to find an appropriate algorithm.", keystoreFile.getAbsolutePath()), e);
-            } catch (IOException e) {
-                if (e.getCause() instanceof UnrecoverableKeyException) {
-                    logger.warning("Could not load the keystore. Possibly the wrong password.");
-                    if (shouldTryAgain) {
-                        if (listener != null) {
-                            existingSslKeystore = loadExistingKeyStore(keystoreFile, false, listener);
-                        } else {
-                            throw new KeystoreActionsException("Could not load the keystore with the given password");
-                        }
-                    } else {
-                        throw new KeystoreActionsException("Could not load the keystore. Possibly the wrong password.");
-                    }
-                } else {
-                    throw new KeystoreActionsException(MessageFormat.format("Could not open the keystore \"{0}\": {1}", keystoreFile.getAbsolutePath(), e.getMessage()), e);
-                }
-            } catch (CertificateException e) {
-                throw new KeystoreActionsException(MessageFormat.format("Could not load the keystore at \"{0}\". At least one of the certificates is invalid. ({1})", keystoreFile.getAbsolutePath(), e.getMessage()));
-            } finally{
-                ResourceUtils.closeQuietly(is);
-            }
-        } catch (KeyStoreException e) {
-            throw new KeystoreActionsException(MessageFormat.format("Error while accessing the keystore as type {0} : {1}", ksType, e.getMessage()), e);
-        }
-
-        return existingSslKeystore;
+        return sharedKey;
     }
 
     public void prepareJvmForNewKeystoreType(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException {
@@ -208,16 +178,19 @@ public class KeystoreActions {
     }
 
     public byte[] getSharedKey(KeystoreActionsListener listener) throws KeystoreActionsException {
-        byte[] sharedKey = null;
 
         String ksType = null;
         char[] ksPassword = null;
         String ksDir = null;
         String ksFilename = null;
 
+        byte[] sharedKey = null;
         try {
             Map<String, String> props = PropertyHelper.getProperties(osFunctions.getKeyStorePropertiesFile(), new String[]{
-                KeyStoreConstants.PROP_KS_TYPE, KeyStoreConstants.PROP_SSL_KS_PASS
+                    KeyStoreConstants.PROP_KS_TYPE,
+                    KeyStoreConstants.PROP_SSL_KS_PASS,
+                    KeyStoreConstants.PROP_KEYSTORE_DIR,
+                    KeyStoreConstants.PROP_SSL_KEYSTORE_FILE
             });
             ksType = props.get(KeyStoreConstants.PROP_KS_TYPE);
             ksPassword = props.get(KeyStoreConstants.PROP_SSL_KS_PASS).toCharArray();
@@ -238,74 +211,57 @@ public class KeystoreActions {
             String msg = MessageFormat.format("An existing keystore was found at {0}. Attempting to back up shared key.", existingKeystoreFile.getAbsolutePath());
             if (listener != null) listener.printKeystoreInfoMessage(msg);
             logger.info(msg);
-            KeyStore existingKeystore = loadExistingKeyStore(new File(ksDir, ksFilename), true, listener);
-            try {
-                sharedKey = fetchDecryptedSharedKeyFromDatabase(SharedWizardInfo.getInstance().getDbinfo(), existingKeystore, ksPassword);
-            } catch (NoSuchAlgorithmException e) {
-                logger.severe("Error loading existing keystore: " + e.getMessage());
-                throw new KeystoreActionsException("Error loading existing keystore: " + e.getMessage());
-            } catch (UnrecoverableKeyException e) {
-                logger.severe("Error loading existing keystore: " + e.getMessage());
-                throw new KeystoreActionsException("Error loading existing keystore: " + e.getMessage());
-            } catch (KeyStoreException e) {
-                logger.severe("Error loading existing keystore: " + e.getMessage());
-                throw new KeystoreActionsException("Error loading existing keystore: " + e.getMessage());
+            sharedKey = getExistingSharedKey(new File(ksDir, ksFilename), ksType, ksPassword, true, listener);
+            if (sharedKey != null) {
+                if (sharedKey.length == 0) {
+                    logger.info("No shared key was found in the database. No need to back it up.");
+                } else {
+                    logger.info("Found a shared key in the database. Backing it up.");
+                }
             }
         }
 
         return sharedKey;
     }
 
-    private byte[] fetchDecryptedSharedKeyFromDatabase(DBInformation dbInfo, KeyStore existingKeystore, char[] ksPassword) throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException, KeystoreActionsException {
+    private byte[] getExistingSharedKey(File keystoreFile, String ksType, char[] ksPassword, boolean tryAgain, KeystoreActionsListener listener) throws KeystoreActionsException {
         byte[] sharedKey = null;
-        Key privateKey = existingKeystore.getKey(KeyStoreConstants.SSL_ALIAS, ksPassword);
-        java.security.cert.Certificate[] chain = existingKeystore.getCertificateChain(KeyStoreConstants.SSL_ALIAS);
-        if (chain == null || chain.length ==0) {
-            throw new KeystoreActionsException(MessageFormat.format("Attempt to fetch the certificate from the keystore failed. No {0} alias could be found", KeyStoreConstants.SSL_ALIAS));
-        }
-        PublicKey publicKey = chain[0].getPublicKey();
-        String pubKeyId = EncryptionUtil.computeCustomRSAPubKeyID((RSAPublicKey) publicKey);
-        Connection conn = null;
-        Statement stmt = null;
-
-        String errMsg = null;
         try {
-            DBActions dba = new DBActions();
-            conn = dba.getConnection(dbInfo);
-            stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("select b64edval from shared_keys where encodingid = \"" + pubKeyId + "\"");
-
-            String keyData = null;
-            while(rs.next()) {
-                keyData = rs.getString("b64edval");
-            }
-            if (StringUtils.isEmpty(keyData)) {
-                logger.info("No encrypted shared key found for the current SSL key. No need to save it.");
-            } else {
-                sharedKey = EncryptionUtil.deB64AndRsaDecrypt(keyData, privateKey);
-            }
-        } catch (ClassNotFoundException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
-        } catch (SQLException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
-        } catch (BadPaddingException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
+            sharedKey = retrieveExistingSharedKeyBytes(ksType, ksPassword, keystoreFile, tryAgain, listener);
         } catch (IOException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
-        } catch (IllegalBlockSizeException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
-        } catch (InvalidKeyException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
-        } catch (NoSuchPaddingException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
-        } finally{
-            ResourceUtils.closeQuietly(conn);
-            ResourceUtils.closeQuietly(stmt);
+            logger.severe("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
+            throw new KeystoreActionsException("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
+        } catch (KeystoreActionsException e) {
+            logger.severe("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
+            throw new KeystoreActionsException("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
+        }
+        return sharedKey;
+    }
+
+    private byte[] retrieveExistingSharedKeyBytes(String ksType, char[] ksPassword, File keystoreFile, boolean shouldTryAgain, KeystoreActionsListener listener) throws KeystoreActionsException, IOException {
+        if (ksType == null || ksPassword == null) {
+            if (listener != null) {
+                List<String> answers = listener.promptForKeystoreTypeAndPassword();
+                ksType = answers.get(1);
+                ksPassword = answers.get(0).toCharArray();
+            }
         }
 
-        if (errMsg != null) {
-            logger.severe(errMsg);
-            throw new KeystoreActionsException(errMsg);
+        byte[] sharedKey = null;
+        if (ksType != null || ksPassword != null) {
+            try {
+                sharedKey = spawnSubProcessAndGetSharedKey(ksType, ksPassword, keystoreFile);
+            } catch (WrongKeystorePasswordException passwdEx) {
+                if (shouldTryAgain) {
+                    if (listener != null) {
+                        return retrieveExistingSharedKeyBytes(null, null, keystoreFile, false, listener);
+                    } else {
+                        throw new WrongKeystorePasswordException("Could not load the keystore with the given password and type");
+                    }
+                } else {
+                    throw new WrongKeystorePasswordException("Could not load the keystore with the given password and type");
+                }
+            }
         }
         return sharedKey;
     }
@@ -416,20 +372,6 @@ public class KeystoreActions {
         } finally {
             ResourceUtils.closeQuietly(preparedStmt);
             ResourceUtils.closeQuietly(conn);
-        }
-    }
-
-    public class KeystoreActionsException extends Exception {
-        public KeystoreActionsException(String message) {
-            super(message);
-        }
-
-        public KeystoreActionsException(String message, Throwable cause) {
-            super(message, cause);
-        }
-
-        public KeystoreActionsException(Throwable cause) {
-            super(cause);
         }
     }
 }

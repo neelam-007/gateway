@@ -24,6 +24,7 @@ public abstract class OSSpecificFunctions {
 
     // configuration files/directories to be queried, modified or created
     protected String installRoot;
+    protected String configWizardLauncher;
     protected String ssgInstallFilePath;
     protected String hostsFile;
     protected String clusterHostFile;
@@ -79,6 +80,11 @@ public abstract class OSSpecificFunctions {
         doOsSpecificSetup();
         makeFilenames();
         hasPartitions = checkIsPartitioned();
+    }
+
+
+    public String getConfigWizardLauncher() {
+        return configWizardLauncher;
     }
 
     private boolean checkIsPartitioned() {

@@ -442,6 +442,10 @@ public class DBActions {
         return DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
     }
 
+    public Connection getConnection(String dburl) throws SQLException {
+        return DriverManager.getConnection(dburl);
+    }
+
 //
 // PRIVATE METHODS
 //

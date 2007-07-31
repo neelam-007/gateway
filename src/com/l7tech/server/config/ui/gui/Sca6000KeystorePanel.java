@@ -2,6 +2,7 @@ package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.server.config.KeyStoreConstants;
 import com.l7tech.server.config.KeystoreActions;
+import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 
 import javax.swing.*;
@@ -101,7 +102,7 @@ public class Sca6000KeystorePanel extends KeystorePanel {
                     try {
                         ka.probeUSBBackupDevice();
                         ok = true;
-                    } catch (KeystoreActions.KeystoreActionsException e) {
+                    } catch (KeystoreActionsException e) {
                         JOptionPane.showMessageDialog(this.getTopLevelAncestor(), "Cannot backup key: " + e.getMessage());
                     }
                 }

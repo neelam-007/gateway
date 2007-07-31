@@ -6,6 +6,7 @@ import com.l7tech.server.config.KeystoreActions;
 import com.l7tech.server.config.KeystoreActionsListener;
 import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.partition.PartitionInformation;
@@ -212,12 +213,9 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
             if (ksPanel.validateInput(ksBean)) {
                 KeystoreActions ka = new KeystoreActions(osFunctions);
                 try {
-                    byte[] existingSharedKey = ka.getSharedKey(this);
-                    if (existingSharedKey != null) {
-                        ksBean.setSharedKeyBytes(existingSharedKey);
-                    }
+                    ka.getSharedKey(this);
                     shouldDisable = false;
-                } catch (KeystoreActions.KeystoreActionsException e) {
+                } catch (KeystoreActionsException e) {
                     shouldDisable = true;
                     showErrorMessage("Error while updating the cluster shared key\n" + e.getMessage());
                 }

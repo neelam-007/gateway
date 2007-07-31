@@ -58,6 +58,7 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
                 installRoot = "C:/Program Files/Layer 7 Technologies/SecureSpan Gateway/";
             }
         }
+        configWizardLauncher = installRoot + "configwizard/ssgconfig.cmd";
 
         List<KeystoreInfo> infos = new ArrayList<KeystoreInfo>();
         infos.add(new KeystoreInfo(KeystoreType.DEFAULT_KEYSTORE_NAME));

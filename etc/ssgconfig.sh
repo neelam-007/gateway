@@ -35,5 +35,11 @@ if [ -z "${launchtype}" ] || [ ${launchtype} == "-graphical" ]; then
         launchtype="-console"
     fi
 fi
-launch_wizard "${launchtype}"
+
+if [ ${launchtype} == "-exportsharedkey" ]; then
+    ${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
+else
+    launch_wizard "${launchtype}"
+fi
+
 
