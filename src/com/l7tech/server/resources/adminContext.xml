@@ -127,9 +127,7 @@
     </bean>
     <!-- cluster context servant -->
     <bean id="clusterContext" class="com.l7tech.cluster.rmi.ClusterContextImpl">
-        <constructor-arg>
-            <ref local="clusterLogRemote"/>
-        </constructor-arg>
+        <constructor-arg ref="clusterLogRemote"/>
     </bean>
 
     <!-- cluster audit exporter -->
