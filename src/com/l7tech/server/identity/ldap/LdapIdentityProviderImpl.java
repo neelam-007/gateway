@@ -488,8 +488,8 @@ public class LdapIdentityProviderImpl
             // when getting javax.naming.CommunicationException at
             env.put(Context.PROVIDER_URL, ldapurl);
             env.put("com.sun.jndi.ldap.connect.pool", "true");
-            env.put("com.sun.jndi.ldap.connect.timeout", LDAP_CONNECT_TIMEOUT);
-            env.put("com.sun.jndi.ldap.connect.pool.timeout", LDAP_POOL_IDLE_TIMEOUT);
+            env.put("com.sun.jndi.ldap.connect.timeout", Integer.toString(LDAP_CONNECT_TIMEOUT));
+            env.put("com.sun.jndi.ldap.connect.pool.timeout", Integer.toString(LDAP_POOL_IDLE_TIMEOUT));
             env.put( Context.REFERRAL, "follow" );
             String dn = config.getBindDN();
             if (dn != null && dn.length() > 0) {
