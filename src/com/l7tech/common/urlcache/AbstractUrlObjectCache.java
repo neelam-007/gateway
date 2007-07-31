@@ -4,6 +4,7 @@
 package com.l7tech.common.urlcache;
 
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.mime.ContentTypeHeader;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -462,18 +463,46 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
         }
     }
 
+    /**
+     * Source for generation of user objects.
+     */
+    public interface UserObjectSource {
+        /**
+         * Get the content type of this source.
+         *
+         * @return The content type (can be null if not known)
+         */
+        ContentTypeHeader getContentType();
+
+        /**
+         * Get the contents of the URL as a String.
+         *
+         * @return The String data
+         * @throws IOException if an error occurs.
+         */
+        String getString() throws IOException;
+
+        /**
+         * Get the contents of the URL as a String.
+         *
+         * @return The String data
+         * @throws IOException if an error occurs.
+         */
+        byte[] getBytes() throws IOException;
+    }
+
     public interface UserObjectFactory<UT> {
         /**
          * Create a user object from the specified response.  The response may have any status code, and may or
          * may not have a non-empty InputStream.
          *
          * @param url       the URL that was fetched to obtain this response.  Never null.
-         * @param response  The successful response, already slurped and converted to a String.  Never null.
+         * @param response  The successful response, already slurped.  Never null.
          * @return the user Object to enter into the cache.  Should not be null; throw IOException instead.
          * @throws java.io.IOException if this response was not accepted for caching, in which case this request will
          *                     be treated as a failure.
          */
-        UT createUserObject(String url, String response) throws IOException;
+        UT createUserObject(String url, UserObjectSource response) throws IOException;
     }
 
     /**

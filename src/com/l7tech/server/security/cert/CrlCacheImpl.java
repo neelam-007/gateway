@@ -9,6 +9,7 @@ import com.l7tech.common.urlcache.AbstractUrlObjectCache;
 import com.l7tech.common.urlcache.HttpObjectCache;
 import com.l7tech.common.urlcache.LdapUrlObjectCache;
 import com.l7tech.common.util.*;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.util.ServerCertUtils;
@@ -61,16 +62,31 @@ public class CrlCacheImpl implements CrlCache {
     }
 
     private static class CrlHttpObjectFactory implements AbstractUrlObjectCache.UserObjectFactory<X509CRL> {
-        public X509CRL createUserObject(String url, String response) throws IOException {
-            BufferedReader br = new BufferedReader(new StringReader(response));
-            StringBuilder base64 = new StringBuilder();
-            if (!br.readLine().trim().equals(CertUtils.PEM_CRL_BEGIN_MARKER)) throw new IllegalArgumentException("First line doesn't look like PEM");
-            String line;
-            while (!(line = br.readLine().trim()).equals(CertUtils.PEM_CRL_END_MARKER)) {
-                base64.append(line).append("\n");
+        public X509CRL createUserObject(String url, AbstractUrlObjectCache.UserObjectSource response) throws IOException {
+            ContentTypeHeader cth = response.getContentType();
+            String encoding = "UTF-8";
+            if (cth != null && cth.isText()) {
+                encoding = cth.getEncoding();
             }
 
-            byte[] der = HexUtils.decodeBase64(base64.toString());
+            byte[] data = response.getBytes();
+            byte[] pemPrefix = "-----".getBytes(encoding);
+            byte[] der = null;
+
+            if ( ArrayUtils.compareArrays(data, 0, pemPrefix, 0, pemPrefix.length) ) {
+                BufferedReader br = new BufferedReader(new StringReader(new String(data,encoding)));
+                StringBuilder base64 = new StringBuilder();
+                if (!br.readLine().trim().equals(CertUtils.PEM_CRL_BEGIN_MARKER)) throw new IllegalArgumentException("First line doesn't look like PEM");
+                String line;
+                while (!(line = br.readLine().trim()).equals(CertUtils.PEM_CRL_END_MARKER)) {
+                    base64.append(line).append("\n");
+                }
+
+                der = HexUtils.decodeBase64(base64.toString());
+            } else {
+                der = data;
+            }
+
             try {
                 return (X509CRL)CertUtils.getFactory().generateCRL(new ByteArrayInputStream(der));
             } catch (CRLException e) {

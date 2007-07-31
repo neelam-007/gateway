@@ -5,6 +5,10 @@
 package com.l7tech.common.urlcache;
 
 import com.l7tech.common.http.*;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SyspropUtil;
+
 import org.apache.commons.collections.LRUMap;
 
 import java.util.concurrent.locks.Lock;
@@ -22,10 +26,13 @@ import java.net.URL;
  */
 public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
     private static final Logger logger = Logger.getLogger(HttpObjectCache.class.getName());
+    private static final String SYSPROP_MAX_CRL_SIZE = "com.l7tech.server.pkix.crlMaxSize"; 
+    private static final int DEFAULT_MAX_CRL_SIZE = 1024 * 1024 * 1;
 
     protected final GenericHttpClientFactory httpClientFactory;
     protected final UserObjectFactory<UT> userObjectFactory;
     protected final LRUMap cache;
+    protected final int maxCrlSize;
 
     /**
      * Create a cache that will keep user objects associated with URLs.
@@ -50,6 +57,7 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
         this.httpClientFactory = httpClientFactory;
         this.userObjectFactory = userObjectFactory;
         this.cache = new LRUMap(maxCachedObjects);
+        this.maxCrlSize = SyspropUtil.getInteger(SYSPROP_MAX_CRL_SIZE, DEFAULT_MAX_CRL_SIZE);
 
         if (httpClientFactory == null || userObjectFactory == null) throw new NullPointerException();
     }
@@ -106,7 +114,26 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
             // Save server-provided last-modified date
             HttpHeaders headers = resp.getHeaders();
             String modified = headers.getFirstValue(HttpConstants.HEADER_LAST_MODIFIED);
-            UT userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), resp.getAsString());
+            final GenericHttpResponse sourceResponse = resp;
+            UT userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), new UserObjectSource(){
+                public byte[] getBytes() throws IOException {
+                    byte[] slurped = HexUtils.slurpStream(sourceResponse.getInputStream(), maxCrlSize+1);
+
+                    if ( slurped.length > maxCrlSize ) {
+                        throw new IOException("CRL exceeds maximum size " + maxCrlSize + " bytes.");
+                    }
+
+                    return slurped;
+                }
+
+                public ContentTypeHeader getContentType() {
+                    return sourceResponse.getContentType();
+                }
+
+                public String getString() throws IOException {
+                    return sourceResponse.getAsString();
+                }
+            });
             if (userObject != null) {
                 if (logger.isLoggable(Level.FINER)) logger.finer("Downloaded new object from URL '" + urlStr + "'");
                 return new DatedUserObject<UT>(userObject, modified);

@@ -6,11 +6,13 @@ package com.l7tech.server.policy.assertion.xml;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.urlcache.HttpObjectCache;
+import com.l7tech.common.urlcache.AbstractUrlObjectCache;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
@@ -82,7 +84,8 @@ public class ServerXslTransformation
 
     private static final HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory =
                 new HttpObjectCache.UserObjectFactory<CompiledStylesheet>() {
-                    public CompiledStylesheet createUserObject(String url, String response) throws IOException {
+                    public CompiledStylesheet createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
+                        String response = responseSource.getString();                        
                         try {
                             return StylesheetCompiler.compileStylesheet(response);
                         } catch (ParseException e) {
@@ -111,9 +114,19 @@ public class ServerXslTransformation
         ResourceObjectFactory<CompiledStylesheet> resourceObjectfactory =
                 new ResourceObjectFactory<CompiledStylesheet>()
                 {
-                    public CompiledStylesheet createResourceObject(String resourceString) throws ParseException {
+                    public CompiledStylesheet createResourceObject(final String resourceString) throws ParseException {
                         try {
-                            return cacheObjectFactory.createUserObject("", resourceString);
+                            return cacheObjectFactory.createUserObject("", new AbstractUrlObjectCache.UserObjectSource(){
+                                public byte[] getBytes() throws IOException {
+                                    throw new IOException("Not supported");
+                                }
+                                public ContentTypeHeader getContentType() {
+                                    return null;
+                                }
+                                public String getString() {
+                                    return resourceString;
+                                }
+                            });
                         } catch (IOException e) {
                             throw (ParseException)new ParseException("Unable to parse stylesheet: " +
                                     ExceptionUtils.getMessage(e), 0).initCause(e);

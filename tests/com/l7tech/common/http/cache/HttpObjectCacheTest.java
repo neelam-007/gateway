@@ -10,6 +10,8 @@ import static com.l7tech.common.urlcache.HttpObjectCache.WAIT_LATEST;
 import static com.l7tech.common.urlcache.HttpObjectCache.WAIT_NEVER;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.urlcache.HttpObjectCache;
+import com.l7tech.common.urlcache.AbstractUrlObjectCache;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -63,7 +65,7 @@ public class HttpObjectCacheTest extends TestCase {
         final String userObjStr = "Howza!";
         final UserObj userObj = new UserObj(userObjStr);
         HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
-            public UserObj createUserObject(String url, String response) {
+            public UserObj createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) {
                 return new UserObj(userObjStr);
             }
         };
@@ -277,7 +279,7 @@ public class HttpObjectCacheTest extends TestCase {
                                                                                      "blarglebliff")}));
 
         HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
-            public UserObj createUserObject(String url, String response) {
+            public UserObj createUserObject(String url, AbstractUrlObjectCache.UserObjectSource response) {
                 return new UserObj(userObjStr);
             }
         };
