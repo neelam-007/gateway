@@ -69,8 +69,9 @@ public class ServiceManagerImp
         try {
             resolutionManager.recordResolutionParameters(service);
         } catch (DuplicateObjectException e) {
-            String msg = "cannot save service. duplicate resolution parameters";
-            logger.log(Level.INFO, msg, e);
+            String msg = "Error saving service. Duplicate resolution parameters";
+            logger.info(msg + " " + e.getMessage());
+            logger.log(Level.FINE, msg, e);
             throw e;
         } catch (UpdateException e) {
             String msg = "cannot save service's resolution parameters.";
