@@ -13,6 +13,7 @@ import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.security.cert.CertValidationProcessor;
 
 import java.security.cert.X509Certificate;
 import java.util.Set;
@@ -22,11 +23,12 @@ import java.util.Set;
  * @version $Revision$
  */
 public class FederatedAuthorizationHandler {
-    FederatedAuthorizationHandler( FederatedIdentityProvider provider, TrustedCertManager trustedCertManager,
-                                   ClientCertManager clientCertManager, Set certOidSet ) {
+    FederatedAuthorizationHandler(FederatedIdentityProvider provider, TrustedCertManager trustedCertManager,
+                                  ClientCertManager clientCertManager, CertValidationProcessor certValidationProcessor, Set certOidSet) {
         this.provider = provider;
         this.trustedCertManager = trustedCertManager;
         this.clientCertManager = clientCertManager;
+        this.certValidationProcessor = certValidationProcessor;
         this.certOidSet = certOidSet;
         this.providerConfig = (FederatedIdentityProviderConfig) provider.getConfig();
     }
@@ -48,15 +50,16 @@ public class FederatedAuthorizationHandler {
     }
 
     protected FederatedUserManager getUserManager() {
-        return (FederatedUserManager)provider.getUserManager();
+        return provider.getUserManager();
     }
 
     protected FederatedGroupManager getGroupManager() {
-        return (FederatedGroupManager)provider.getGroupManager();
+        return provider.getGroupManager();
     }
 
     protected final FederatedIdentityProvider provider;
     protected final TrustedCertManager trustedCertManager;
+    protected final CertValidationProcessor certValidationProcessor;
     protected final Set certOidSet;
     protected final FederatedIdentityProviderConfig providerConfig;
     protected final ClientCertManager clientCertManager;

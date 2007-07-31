@@ -19,9 +19,7 @@
 
     <!-- SSG boot process -->
     <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties serviceWsdlImportChecker">
-        <property name="serverConfig">
-            <ref local="serverConfig"/>
-        </property>
+        <property name="serverConfig" ref="serverConfig"/>
     </bean>
 
     <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms.JmsBootProcess">
@@ -118,12 +116,8 @@
     <!-- server side Cluster Info manager -->
     <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerImpl" depends-on="systemProperties">
         <property name="sessionFactory" ref="sessionFactory"/>
-        <property name="serverConfig">
-            <ref local="serverConfig"/>
-        </property>
-        <property name="keystore">
-            <ref local="keystore"/>
-        </property>
+        <property name="serverConfig" ref="serverConfig"/>
+        <property name="keystore" ref="keystore"/>
     </bean>
     <!-- server side Service Usage  manager -->
     <bean id="serviceUsageManager" class="com.l7tech.cluster.ServiceUsageManagerImpl">
@@ -148,9 +142,7 @@
         <constructor-arg>
             <list>
                 <bean class="com.l7tech.server.service.SafeWsdlPublishedServiceDecorator">
-                    <constructor-arg>
-                        <ref local="serviceDocumentManager"/>
-                    </constructor-arg>
+                    <constructor-arg ref="serviceDocumentManager"/>
                 </bean>
             </list>
         </constructor-arg>
@@ -179,12 +171,8 @@
 
     <!-- server side HTTP routing hostname verifier -->
     <bean id="hostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
-        <constructor-arg>
-            <ref local="serverConfig"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref local="trustedCertManager"/>
-        </constructor-arg>
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="trustedCertManager"/>
     </bean>
     <!-- server side HTTP routing HTTP client factory -->
     <bean id="httpRoutingHttpClientFactory"
@@ -210,9 +198,7 @@
         <constructor-arg>
             <list>
                 <bean class="com.l7tech.server.service.SafeWsdlPublishedServiceDecorator">
-                    <constructor-arg>
-                        <ref local="serviceDocumentManager"/>
-                    </constructor-arg>
+                    <constructor-arg ref="serviceDocumentManager"/>
                 </bean>
             </list>
         </constructor-arg>
@@ -291,12 +277,8 @@
 
     <!-- server side log manager -->
     <bean id="logRecordManager" class="com.l7tech.server.audit.LogRecordManager">
-        <constructor-arg>
-            <ref local="clusterInfoManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref local="logRecordRingBuffer"/>
-        </constructor-arg>
+        <constructor-arg ref="clusterInfoManager"/>
+        <constructor-arg ref="logRecordRingBuffer"/>
     </bean>
 
     <!-- server side audit record manager -->
@@ -436,33 +418,18 @@
     </bean>
 
     <bean id="messageProcessingAuditListener" class="com.l7tech.server.audit.MessageProcessingAuditListener">
-        <constructor-arg>
-            <ref local="messageSummaryAuditFactory"/>
-        </constructor-arg>
-
-        <constructor-arg>
-            <ref local="auditContext"/>
-        </constructor-arg>
+        <constructor-arg ref="messageSummaryAuditFactory"/>
+        <constructor-arg ref="auditContext"/>
     </bean>
 
     <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener">
-        <constructor-arg>
-            <ref local="clusterNodeId"/>
-        </constructor-arg>
-
-        <constructor-arg>
-            <ref local="auditContext"/>
-        </constructor-arg>
+        <constructor-arg ref="clusterNodeId"/>
+        <constructor-arg ref="auditContext"/>
     </bean>
 
     <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener">
-        <constructor-arg>
-            <ref local="clusterNodeId"/>
-        </constructor-arg>
-
-        <constructor-arg>
-            <ref local="auditContext"/>
-        </constructor-arg>
+        <constructor-arg ref="clusterNodeId"/>
+        <constructor-arg ref="auditContext"/>
     </bean>
 
     <bean id="counterIDManager" class="com.l7tech.server.sla.CounterIDManagerImpl">
@@ -470,9 +437,7 @@
     </bean>
 
     <bean id="schemaManager" class="com.l7tech.server.communityschemas.SchemaManagerImpl" depends-on="clusterPropertyManager">
-        <constructor-arg>
-            <ref local="httpClientFactory"/>
-        </constructor-arg>
+        <constructor-arg ref="httpClientFactory"/>
         <constructor-arg>
             <bean class="com.l7tech.server.util.ManagedTimer">
                 <constructor-arg value="Schema cache maintenance"/>
@@ -530,9 +495,7 @@
     ClusterInfoManager around
     -->
     <bean id="clusterNodeId" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject">
-            <ref local='clusterInfoManager'/>
-        </property>
+        <property name="targetObject" ref='clusterInfoManager'/>
         <property name="targetMethod" value="thisNodeId"/>
     </bean>
 
@@ -651,27 +614,13 @@
     </bean>
 
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
-        <constructor-arg>
-            <ref local="auditContext"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref local="clusterPropertyManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref local="messageProcessor"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref local="soapFaultManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref local="stashManagerFactory"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref local="licenseManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref local="keystore"/>
-        </constructor-arg>
+        <constructor-arg ref="auditContext"/>
+        <constructor-arg ref="clusterPropertyManager"/>
+        <constructor-arg ref="messageProcessor"/>
+        <constructor-arg ref="soapFaultManager"/>
+        <constructor-arg ref="stashManagerFactory"/>
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="keystore"/>
         <constructor-arg>
             <bean class="org.springframework.beans.factory.config.PropertiesFactoryBean"
                   depends-on="serverConfig">
@@ -705,6 +654,7 @@
 
     <bean id="crlCache" class="com.l7tech.server.security.cert.CrlCacheImpl">
         <constructor-arg ref="httpClientFactory"/>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <bean id="certValidationProcessor" class="com.l7tech.server.security.cert.CertValidationProcessorImpl">

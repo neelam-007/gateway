@@ -9,17 +9,18 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
+import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedUser;
-import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.PersistentIdentityProviderImpl;
-import org.springframework.transaction.annotation.Transactional;
+import com.l7tech.server.security.cert.CertValidationProcessor;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -165,6 +166,10 @@ public class FederatedIdentityProviderImpl
         this.groupManager = groupManager;
     }
 
+    public void setCertValidationProcessor(CertValidationProcessor certValidationProcessor) {
+        this.certValidationProcessor = certValidationProcessor;
+    }
+
     /**
      * Subclasses can override this for custom initialization behavior.
      * Gets called after population of this instance's bean properties.
@@ -195,8 +200,8 @@ public class FederatedIdentityProviderImpl
             }
         }
 
-        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, validTrustedCertOids);
-        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, validTrustedCertOids);
+        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, validTrustedCertOids);
+        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, validTrustedCertOids);
     }
 
     private X509AuthorizationHandler x509Handler;
@@ -206,6 +211,7 @@ public class FederatedIdentityProviderImpl
     private FederatedUserManager userManager;
     private FederatedGroupManager groupManager;
     private TrustedCertManager trustedCertManager;
+    private CertValidationProcessor certValidationProcessor;
 
     private final Set<Long> validTrustedCertOids = new HashSet<Long>();
 

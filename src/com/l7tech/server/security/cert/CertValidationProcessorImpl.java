@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.security.cert;
 
+import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.security.CertificateValidationResult;
@@ -22,6 +23,9 @@ import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.security.*;
 import java.security.cert.*;
 import java.text.MessageFormat;
@@ -286,6 +290,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                 Set<TrustAnchor> tempAnchors = new HashSet<TrustAnchor>();
                 tempAnchors.addAll(trustAnchorsByDn.values());
                 PKIXBuilderParameters pbp = new PKIXBuilderParameters(tempAnchors, sel);
+                pbp.setRevocationEnabled(false); // We'll do our own
                 if (checkRevocation)
                     pbp.addCertPathChecker(new RevocationCheckingPKIXCertPathChecker(revocationCheckerFactory, pbp, auditor));
                 pbp.addCertStore(certStore);
@@ -325,6 +330,12 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                                 throw new IllegalStateException("Unexpected invalidation operation: '" + op + "'");
                         }
                     }
+
+                    try {
+                        initializeCertStoreAndTrustAnchors(trustedCertManager.findAll());
+                    } catch (FindException e) {
+                        throw new RuntimeException(e); // TODO
+                    }
                 } finally {
                     lock.writeLock().unlock();
                 }
@@ -355,6 +366,16 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                 } finally {
                     lock.writeLock().unlock();
                 }
+            } else if (ClusterProperty.class.isAssignableFrom(eie.getEntityClass())) {
+                lock.writeLock().lock();
+                try {
+                    // TODO check whether the ClusterProperty that changed is the one we're interested in
+                    initializeCertStoreAndTrustAnchors(trustedCertManager.findAll());
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "Couldn't load TrustedCerts", e);
+                } finally {
+                    lock.writeLock().unlock();
+                }
             }
         }
     }
@@ -364,6 +385,34 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         Map<String, TrustAnchor> anchors = new HashMap<String, TrustAnchor>();
         Set<X509Certificate> nonAnchors = new HashSet<X509Certificate>();
         anchors.put(caCert.getSubjectDN().getName(), new TrustAnchor(caCert, null));
+
+        if ("true".equals(serverConfig.getProperty("pkixValidation.jdkCaCertsAreTrustAnchors"))) {
+            TrustManagerFactory tmf;
+            try {
+                tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                tmf.init((KeyStore)null);
+            } catch (NoSuchAlgorithmException e) {
+                logger.log(Level.SEVERE, e.toString(), e);
+                throw new RuntimeException(e);
+            } catch (KeyStoreException e) {
+                logger.log(Level.SEVERE, e.toString(), e);
+                throw new RuntimeException(e);
+            }
+            TrustManager[] defaultTrustManagers = tmf.getTrustManagers();
+            X509TrustManager x509tm = null;
+            for (TrustManager tm : defaultTrustManagers) {
+                if (tm instanceof X509TrustManager) {
+                    if (x509tm != null) throw new IllegalStateException("Found two X509TrustManagers");
+                    x509tm = (X509TrustManager) tm;
+                }
+            }
+            if (x509tm == null) throw new IllegalStateException("Couldn't find an X509TrustManager");
+            X509Certificate[] extraAnchors = x509tm.getAcceptedIssuers();
+            for (X509Certificate certificate : extraAnchors) {
+                anchors.put(certificate.getSubjectDN().getName(), new TrustAnchor(certificate, null));
+            }
+        }
+
         for (TrustedCert tce : tces) {
             try {
                 if (tce.isTrustAnchor()) {
@@ -407,11 +456,6 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         CertValidationCacheEntry entry = trustedCertsByOid.remove(oid);
         if (entry == null) return;
         trustedCertsByDn.remove(entry.subjectDn);
-        try {
-            initializeCertStoreAndTrustAnchors(trustedCertManager.findAll());
-        } catch (FindException e) {
-            throw new RuntimeException(e); // TODO
-        }
     }
 
     /** Caller must hold write lock */
@@ -420,10 +464,5 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         CertValidationCacheEntry entry = new CertValidationCacheEntry(tce);
         trustedCertsByDn.put(tce.getSubjectDn(), entry);
         trustedCertsByOid.put(tce.getOid(), entry);
-        try {
-            initializeCertStoreAndTrustAnchors(trustedCertManager.findAll());
-        } catch (FindException e) {
-            throw new RuntimeException(e); // TODO
-        }
     }
 }

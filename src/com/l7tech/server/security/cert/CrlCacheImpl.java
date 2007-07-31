@@ -8,13 +8,10 @@ import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.urlcache.AbstractUrlObjectCache;
 import com.l7tech.common.urlcache.HttpObjectCache;
 import com.l7tech.common.urlcache.LdapUrlObjectCache;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.common.util.*;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.util.ServerCertUtils;
-
 import com.whirlycott.cache.Cache;
 
 import java.io.BufferedReader;
@@ -42,12 +39,16 @@ public class CrlCacheImpl implements CrlCache {
 
     private final LdapUrlObjectCache<X509CRL> ldapUrlObjectCache;
     private final HttpObjectCache<X509CRL> httpObjectCache;
+    private final ServerConfig serverConfig;
+    private static final int ONE_HOUR = TimeUnit.HOURS.getMultiplier();
 
-    public CrlCacheImpl(HttpClientFactory httpClientFactory) throws Exception {
+    public CrlCacheImpl(HttpClientFactory httpClientFactory, ServerConfig serverConfig) throws Exception {
         this.crlCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".crlCache", 100, 1800, WhirlycacheFactory.POLICY_LRU);
         this.certCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".certCache", 1000, 1800, WhirlycacheFactory.POLICY_LRU);
 
         // TODO support configuration of login, password and LDAP timeouts
+        this.serverConfig = serverConfig;
+
         ldapUrlObjectCache = new LdapUrlObjectCache<X509CRL>(300000, AbstractUrlObjectCache.WAIT_LATEST, null, null, 5000, 30000, true);
         httpObjectCache = new HttpObjectCache<X509CRL>(300000, 30000, httpClientFactory, new CrlHttpObjectFactory(), AbstractUrlObjectCache.WAIT_INITIAL);
     }
@@ -112,6 +113,12 @@ public class CrlCacheImpl implements CrlCache {
                     throw new CRLException("Unsupported CRL URL scheme: " + crlUrl);
                 }
 
+                if (crl == null) {
+                    // TODO come up with a better reason string than "null"
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_RETRIEVAL_FAILED, "CRL", crlUrl, "null");
+                    throw new CRLException("Unable to download CRL from " + crlUrl);
+                }
+
                 read.unlock(); read = null; // Upgrade to write lock
                 write = crlCacheEntry.lock.writeLock();
                 write.lock();
@@ -162,7 +169,7 @@ public class CrlCacheImpl implements CrlCache {
         }
     }
 
-    private static class CrlCacheEntry {
+    private class CrlCacheEntry {
         private X509CRL crl;
         private long timestamp;
         private long refresh;
@@ -183,7 +190,9 @@ public class CrlCacheImpl implements CrlCache {
         public synchronized void setCrl(X509CRL crl) {
             this.crl = crl;
             this.timestamp = System.currentTimeMillis();
-            this.refresh = crl.getNextUpdate().getTime();
+            final Date nextUpdate = crl.getNextUpdate();
+            this.refresh = nextUpdate != null ? nextUpdate.getTime() :
+                    serverConfig.getLongPropertyCached("pkixCRL.expiry", ONE_HOUR, 30000);
         }
     }
 

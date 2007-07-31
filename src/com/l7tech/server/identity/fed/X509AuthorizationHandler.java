@@ -18,6 +18,7 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.X509Config;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.security.cert.CertValidationProcessor;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -35,8 +36,8 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
-    X509AuthorizationHandler( FederatedIdentityProvider provider, TrustedCertManager trustedCertManager, ClientCertManager clientCertManager, Set certOidSet ) {
-        super(provider, trustedCertManager, clientCertManager, certOidSet);
+    X509AuthorizationHandler(FederatedIdentityProvider provider, TrustedCertManager trustedCertManager, ClientCertManager clientCertManager, CertValidationProcessor certValidationProcessor, Set certOidSet) {
+        super(provider, trustedCertManager, clientCertManager, certValidationProcessor, certOidSet);
     }
 
     User authorize( LoginCredentials pc ) throws IOException, AuthenticationException, FindException {

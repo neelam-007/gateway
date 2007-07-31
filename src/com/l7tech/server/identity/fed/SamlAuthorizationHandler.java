@@ -16,6 +16,7 @@ import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.security.cert.CertValidationProcessor;
 
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
@@ -28,8 +29,8 @@ import java.util.logging.Logger;
  * @author alex
  */
 public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
-    SamlAuthorizationHandler(FederatedIdentityProvider provider, TrustedCertManager trustedCertManager, ClientCertManager clientCertManager, Set certOidSet) {
-        super(provider, trustedCertManager, clientCertManager, certOidSet);
+    SamlAuthorizationHandler(FederatedIdentityProvider provider, TrustedCertManager trustedCertManager, ClientCertManager clientCertManager, CertValidationProcessor certValidationProcessor, Set certOidSet) {
+        super(provider, trustedCertManager, clientCertManager, certValidationProcessor, certOidSet);
     }
 
     User authorize(LoginCredentials pc) throws AuthenticationException {
