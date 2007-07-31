@@ -289,6 +289,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                 if (checkRevocation)
                     pbp.addCertPathChecker(new RevocationCheckingPKIXCertPathChecker(revocationCheckerFactory, pbp, auditor));
                 pbp.addCertStore(certStore);
+                pbp.setRevocationEnabled(false); // turn off built in revocation checking
                 return pbp;
             } catch (InvalidAlgorithmParameterException e) {
                 throw new RuntimeException(e); // Can't happen
