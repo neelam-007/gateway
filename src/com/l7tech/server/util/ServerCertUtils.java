@@ -2,6 +2,8 @@ package com.l7tech.server.util;
 
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509CRL;
+import java.security.cert.X509Extension;
 import java.io.IOException;
 import java.util.Set;
 import java.util.HashSet;
@@ -151,9 +153,18 @@ public class ServerCertUtils {
 
     public static AuthorityKeyIdentifierStructure getAKIStructure(X509Certificate cert) throws IOException {
         if (cert.getVersion() < 3) return null;
-        byte[] aki = cert.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
+        return doGetAKIStructure(cert);
+    }
+    
+    public static AuthorityKeyIdentifierStructure getAKIStructure(X509CRL crl) throws IOException {
+        if (crl.getVersion() < 2) return null;
+        return doGetAKIStructure(crl);
+    }
+
+    private static AuthorityKeyIdentifierStructure doGetAKIStructure(X509Extension x509Extendable) throws IOException {
+        byte[] aki = x509Extendable.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
         if (aki == null) return null;
         return new AuthorityKeyIdentifierStructure(aki);
     }
-    
+
 }

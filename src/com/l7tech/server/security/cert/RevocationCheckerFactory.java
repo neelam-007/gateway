@@ -9,6 +9,7 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.util.ServerCertUtils;
@@ -22,6 +23,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.math.BigInteger;
+
+import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.DERIA5String;
 
 /**
  * Factory for building RevocationCheckers.
@@ -433,25 +440,62 @@ public class RevocationCheckerFactory {
             try {
                 X509CRL crl = crlCache.getCrl(crlUrl, auditor);
                 final String crlIssuerDn = crl.getIssuerDN().getName();
-                TrustedCert tc = certRevocationProcessor.getTrustedCertBySubjectDn(crlIssuerDn);
-                if (tc == null) {
-                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_ISSUER_NOT_FOUND, crlIssuerDn);
+
+                // Check certificate scope
+                // TODO additional scoping based on the CRLs Issuing Distribution Point extension
+                if ( !crl.getIssuerX500Principal().equals(certificate.getIssuerX500Principal()) ) {
+                    auditor.logAndAudit(SystemMessages.CERTVAL_CRL_SCOPE, certificate.getSubjectDN().toString(), crlUrl);
                     return CertificateValidationResult.UNKNOWN;
                 }
-                // TODO compare AKI extension from CRL if present
+
+                TrustedCert tc = certRevocationProcessor.getTrustedCertBySubjectDn(crlIssuerDn);
+                if (tc == null) {
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_ISSUER_NOT_FOUND, what(), crlIssuerDn);
+                    return CertificateValidationResult.REVOKED;
+                }
+
+                // TODO check CRL signature using Authority Key Identifier extension
+                AuthorityKeyIdentifierStructure akis = ServerCertUtils.getAKIStructure(crl);
+                if (akis != null) {
+                    BigInteger signerCertSerial = akis.getAuthorityCertSerialNumber();
+                    if ( signerCertSerial != null ) {
+                        GeneralNames names = akis.getAuthorityCertIssuer();
+                        for ( GeneralName name : names.getNames() ) {
+                            logger.log(Level.WARNING, "Got general name ''{0}'' for CRL signer.", RevocationCheckerFactory.toString(name));
+                        }
+                    } else {
+                        String ski = "NULL";
+                        byte[] skiBytes =  akis.getKeyIdentifier();
+                        if (skiBytes != null) {
+                            ski = HexUtils.encodeBase64(skiBytes, true);
+                        }
+                        logger.log(Level.WARNING, "Lookup of CRL signer by SKI not supported, ski is ''{0}''.", ski);
+                        return CertificateValidationResult.REVOKED;
+                    }
+                }
+
+                // verify the signature
+                try {
+                    //Note that this is cached in the CRL object
+                    crl.verify(tc.getCertificate().getPublicKey());
+                }
+                catch (Exception e) {
+                    logger.log(Level.WARNING, "Verification of CRL signature failed '"+crlIssuerDn+"'.", e);
+                    return CertificateValidationResult.REVOKED;
+                }
+
                 final RevocationCheckPolicy rcp = certRevocationProcessor.getRevocationCheckPolicy(tc);
-                // TODO lookup the CRL signing cert somehow?
-                // TODO verify whether this CRL is authoritative with respect to this cert?
+
                 if (crl.isRevoked(certificate))
                     return CertificateValidationResult.REVOKED;
                 else
                     return CertificateValidationResult.OK;
             } catch (CRLException e) {
                 auditor.logAndAudit(SystemMessages.CERTVAL_REV_CRL_INVALID, crlUrl, ExceptionUtils.getMessage(e));
-                return CertificateValidationResult.UNKNOWN;
+                return CertificateValidationResult.REVOKED;
             } catch (IOException e) {
                 auditor.logAndAudit(SystemMessages.CERTVAL_REV_RETRIEVAL_FAILED, crlUrl, ExceptionUtils.getMessage(e));
-                return CertificateValidationResult.UNKNOWN;
+                return CertificateValidationResult.REVOKED;
             }
         }
 
@@ -462,6 +506,49 @@ public class RevocationCheckerFactory {
         protected String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException {
             return crlCache.getCrlUrlsFromCertificate(certificate, auditor);
         }
+    }
+
+    private static String toString(final GeneralName generalName) {
+        String name = "";
+        /*
+           GeneralName ::= CHOICE {
+                otherName                       [0]     OtherName,
+                rfc822Name                      [1]     IA5String,
+                dNSName                         [2]     IA5String,
+                x400Address                     [3]     ORAddress,
+                directoryName                   [4]     Name,
+                ediPartyName                    [5]     EDIPartyName,
+                uniformResourceIdentifier       [6]     IA5String,
+                iPAddress                       [7]     OCTET STRING,
+                registeredID                    [8]     OBJECT IDENTIFIER }
+         */
+        if ( generalName == null ) {
+            switch ( generalName.getTagNo() ) {
+                case 1:
+                    {
+                        DERIA5String nameIA5String = (DERIA5String) generalName.getName();
+                        name = nameIA5String.getString();
+                    }
+                    break;
+                case 2:
+                    {
+                        DERIA5String nameIA5String = (DERIA5String) generalName.getName();
+                        name = nameIA5String.getString();
+                    }
+                    break;
+                case 6:
+                    {
+                        DERIA5String nameIA5String = (DERIA5String) generalName.getName();
+                        name = nameIA5String.getString();
+                    }
+                    break;
+                default:
+                    logger.log(Level.WARNING, "Unknown name type ''{0}''.", generalName.getTagNo());
+                    break;
+            }
+        }
+
+        return name;
     }
 
     /**

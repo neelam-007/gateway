@@ -219,7 +219,12 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     public TrustedCert getTrustedCertByOid(long oid) {
         lock.readLock().lock();
         try {
-            return trustedCertsByOid.get(oid).tce;
+            TrustedCert trustedCert = null;
+            CertValidationCacheEntry certValidationCacheEntry = trustedCertsByOid.get(oid);
+            if ( certValidationCacheEntry != null ) {
+                trustedCert = certValidationCacheEntry.tce;
+            }
+            return trustedCert;
         } finally {
             lock.readLock().unlock();
         }
@@ -228,7 +233,12 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     public TrustedCert getTrustedCertBySubjectDn(String subjectDn) {
         lock.readLock().lock();
         try {
-            return trustedCertsByDn.get(subjectDn).tce;
+            TrustedCert trustedCert = null;
+            CertValidationCacheEntry certValidationCacheEntry = trustedCertsByDn.get(subjectDn);
+            if ( certValidationCacheEntry != null ) {
+                trustedCert = certValidationCacheEntry.tce;
+            }
+            return trustedCert;
         } finally {
             lock.readLock().unlock();
         }
