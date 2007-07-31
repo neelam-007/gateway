@@ -558,6 +558,8 @@
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="jmsEndpointManager"/>
+                <ref bean="trustedCertManager"/>
+                <ref bean="revocationCheckPolicyManager"/>
             </list>
         </property>
         <property name="timer">
