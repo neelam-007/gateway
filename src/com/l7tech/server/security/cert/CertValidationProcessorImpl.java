@@ -3,7 +3,6 @@
  */
 package com.l7tech.server.security.cert;
 
-import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.security.CertificateValidationResult;
@@ -34,12 +33,16 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * @author alex
  */
-public class CertValidationProcessorImpl implements CertValidationProcessor, ApplicationListener {
+public class CertValidationProcessorImpl implements CertValidationProcessor, ApplicationListener, PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(CertValidationProcessorImpl.class.getName());
+
+    private static final String PROP_USE_DEFAULT_ANCHORS = "pkixTrust.useDefaultAnchors";
 
     private final X509Certificate caCert;
     private final TrustedCertManager trustedCertManager;
@@ -117,7 +120,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
 
         this.trustedCertsByDn = myDnCache;
         this.trustedCertsByOid = myOidCache;
-        initializeCertStoreAndTrustAnchors(tces);
+        initializeCertStoreAndTrustAnchors(tces, Boolean.valueOf(serverConfig.getProperty(PROP_USE_DEFAULT_ANCHORS)));
     }
 
     /**
@@ -294,13 +297,25 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                 if (checkRevocation)
                     pbp.addCertPathChecker(new RevocationCheckingPKIXCertPathChecker(revocationCheckerFactory, pbp, auditor));
                 pbp.addCertStore(certStore);
-                pbp.setRevocationEnabled(false); // turn off built in revocation checking
                 return pbp;
             } catch (InvalidAlgorithmParameterException e) {
                 throw new RuntimeException(e); // Can't happen
             }
         } finally {
             lock.readLock().unlock();
+        }
+    }
+
+    public void propertyChange(PropertyChangeEvent event) {
+        if (PROP_USE_DEFAULT_ANCHORS.equals(event.getPropertyName())) {
+            lock.writeLock().lock();
+            try {
+                initializeCertStoreAndTrustAnchors(trustedCertManager.findAll(), Boolean.valueOf((String)event.getNewValue()));
+            } catch (FindException e) {
+                logger.log(Level.WARNING, "Couldn't load TrustedCerts", e);
+            } finally {
+                lock.writeLock().unlock();
+            }
         }
     }
 
@@ -332,7 +347,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                     }
 
                     try {
-                        initializeCertStoreAndTrustAnchors(trustedCertManager.findAll());
+                        initializeCertStoreAndTrustAnchors(trustedCertManager.findAll(), Boolean.valueOf(serverConfig.getProperty(PROP_USE_DEFAULT_ANCHORS)));
                     } catch (FindException e) {
                         throw new RuntimeException(e); // TODO
                     }
@@ -366,27 +381,17 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                 } finally {
                     lock.writeLock().unlock();
                 }
-            } else if (ClusterProperty.class.isAssignableFrom(eie.getEntityClass())) {
-                lock.writeLock().lock();
-                try {
-                    // TODO check whether the ClusterProperty that changed is the one we're interested in
-                    initializeCertStoreAndTrustAnchors(trustedCertManager.findAll());
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, "Couldn't load TrustedCerts", e);
-                } finally {
-                    lock.writeLock().unlock();
-                }
             }
         }
     }
 
     /** Caller must hold write lock (or be the constructor) */
-    private void initializeCertStoreAndTrustAnchors(Collection<TrustedCert> tces) {
+    private void initializeCertStoreAndTrustAnchors(Collection<TrustedCert> tces, boolean includeDefaults) {
         Map<String, TrustAnchor> anchors = new HashMap<String, TrustAnchor>();
         Set<X509Certificate> nonAnchors = new HashSet<X509Certificate>();
         anchors.put(caCert.getSubjectDN().getName(), new TrustAnchor(caCert, null));
 
-        if ("true".equals(serverConfig.getProperty("pkixValidation.jdkCaCertsAreTrustAnchors"))) {
+        if ( includeDefaults ) {
             TrustManagerFactory tmf;
             try {
                 tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());

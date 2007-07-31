@@ -32,6 +32,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author alex
  */
 public class CrlCacheImpl implements CrlCache {
+
+    private static final int ONE_HOUR = TimeUnit.HOURS.getMultiplier();
+    private static final int RETRIEVAL_OFFSET = TimeUnit.MINUTES.getMultiplier(); // try to fetch new CRL one minute before expiry
+
+    private static final String PROP_EXPIRY_DEFAULT = "pkixCRL.expiry";
+    private static final String PROP_EXPIRY_MIN = "pkixCRL.minExpiryAge";
+    private static final String PROP_EXPIRY_MAX = "pkixCRL.maxExpiryAge";
+
     /** Cache&lt;String, CrlCacheEntry&gt; where String is a CRL URL */
     private final Cache crlCache;
     /** Cache&lt;X509Certificate, CertCacheEntry&gt; */
@@ -40,7 +48,6 @@ public class CrlCacheImpl implements CrlCache {
     private final LdapUrlObjectCache<X509CRL> ldapUrlObjectCache;
     private final HttpObjectCache<X509CRL> httpObjectCache;
     private final ServerConfig serverConfig;
-    private static final int ONE_HOUR = TimeUnit.HOURS.getMultiplier();
 
     public CrlCacheImpl(HttpClientFactory httpClientFactory, ServerConfig serverConfig) throws Exception {
         this.crlCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".crlCache", 100, 1800, WhirlycacheFactory.POLICY_LRU);
@@ -190,9 +197,44 @@ public class CrlCacheImpl implements CrlCache {
         public synchronized void setCrl(X509CRL crl) {
             this.crl = crl;
             this.timestamp = System.currentTimeMillis();
-            final Date nextUpdate = crl.getNextUpdate();
-            this.refresh = nextUpdate != null ? nextUpdate.getTime() :
-                    serverConfig.getLongPropertyCached("pkixCRL.expiry", ONE_HOUR, 30000);
+            this.refresh = getNextUpdate(timestamp, crl.getNextUpdate());
+        }
+
+        private long getNextUpdate(final long timeNow, final Date updateDate) {
+            long nextUpdate;
+
+            if ( updateDate == null ) {
+                nextUpdate = timeNow + getDefaultExpiry();
+            } else {
+                long updateTime = updateDate.getTime() - RETRIEVAL_OFFSET;
+                long updatePeriod = updateTime - timeNow;
+
+                if ( updatePeriod > getMaxExpiry() ) {
+                    nextUpdate = timeNow + getMaxExpiry();
+                } else if ( updatePeriod < getMinExpiry() ) {
+                    nextUpdate = timeNow + getMinExpiry();                        
+                } else {
+                    nextUpdate = updateTime;
+                }
+            }
+
+            return nextUpdate;
+        }
+
+        private long getDefaultExpiry() {
+            return getExpiry(PROP_EXPIRY_DEFAULT);
+        }
+
+        private long getMinExpiry() {
+            return getExpiry(PROP_EXPIRY_MIN);
+        }
+
+        private long getMaxExpiry() {
+            return getExpiry(PROP_EXPIRY_MAX);
+        }
+
+        private long getExpiry(String name) {
+            return serverConfig.getTimeUnitPropertyCached(name, ONE_HOUR, 30000);
         }
     }
 

@@ -7,6 +7,7 @@ package com.l7tech.server;
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.cluster.ClusterPropertyCache;
 import com.l7tech.cluster.ClusterPropertyListener;
+import com.l7tech.common.util.TimeUnit;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -663,6 +664,18 @@ public class ServerConfig implements ClusterPropertyListener {
             val = Long.parseLong(strval);
         } catch (NumberFormatException e) {
             logger.warning("Parameter " + propName + " value '" + strval + "' not a valid long integer; using " + emergencyDefault + " instead");
+            val = emergencyDefault;
+        }
+        return val;
+    }
+
+    public long getTimeUnitPropertyCached(String propName, long emergencyDefault, long maxAge) {
+        String strval = getPropertyCached(propName, maxAge);
+        long val;
+        try {
+            val = TimeUnit.parse(strval, TimeUnit.MINUTES);
+        } catch (NumberFormatException e) {
+            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid timeunit; using " + emergencyDefault + " instead");
             val = emergencyDefault;
         }
         return val;
