@@ -299,6 +299,7 @@ public class WspConstants {
         new AbstractClassTypeMapping(AssertionResourceInfo.class, "resourceInfo"),
         new BeanTypeMapping(StaticResourceInfo.class, "staticResourceInfo"),
         new BeanTypeMapping(SingleUrlResourceInfo.class, "singleUrlResourceInfo"),
+        new BeanTypeMapping(GlobalResourceInfo.class, "globalResourceInfo"),
         new BeanTypeMapping(MessageUrlResourceInfo.class, "messageUrlResourceInfo"),
         new BeanTypeMapping(HttpPassthroughRule.class, "httpPassthroughRule"),
         new ArrayTypeMapping(new HttpPassthroughRule[0], "httpPassthroughRules"),

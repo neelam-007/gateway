@@ -24,6 +24,7 @@ import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionResourceType;
+import com.l7tech.policy.assertion.GlobalResourceInfo;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.service.PublishedService;
 import org.apache.xml.serialize.OutputFormat;
@@ -261,8 +262,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 SingleUrlResourceInfo suri = (SingleUrlResourceInfo)ri;
                 specifyUrlField.setText(suri.getUrl());
             }
-        } else {
-            if (!AssertionResourceType.STATIC.equals(rit)) log.warning("Unknown AssertionResourceType, assuming static: " + rit);
+        } else if (AssertionResourceType.STATIC.equals(rit)) {
             cbSchemaLocation.setSelectedItem(MODE_SPECIFY);
 
             if (ri instanceof StaticResourceInfo) {
@@ -274,6 +274,22 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                     editor.setLineNumber(1);
                 }
             }
+        } else if (AssertionResourceType.GLOBAL_RESOURCE.equals(rit)) {
+            cbSchemaLocation.setSelectedItem(MODE_GLOBAL);
+
+            if (ri instanceof GlobalResourceInfo) {
+                GlobalResourceInfo gri = (GlobalResourceInfo)ri;
+                DefaultComboBoxModel model = (DefaultComboBoxModel)globalSchemaCombo.getModel();
+                for (int i = 0; i < model.getSize(); i++) {
+                    String comboBoxItem = (String)model.getElementAt(i);
+                    if (gri.getId() != null && gri.getId().equals(comboBoxItem)) {
+                        globalSchemaCombo.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
+        } else {
+            throw new RuntimeException("Unhandled AssertionResourceType " + rit);
         }
     }
 
@@ -468,6 +484,18 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     /** @return true iff. info was committed successfully */
+    private boolean commitGlobalTab() {
+        GlobalResourceInfo gri = new GlobalResourceInfo();
+        if (globalSchemaCombo.getSelectedItem() == null) {
+            throw new RuntimeException("the combo has nothing selected?");
+            // this shouldn't happen (unless bug)
+        }
+        gri.setId(globalSchemaCombo.getSelectedItem().toString());
+        schemaValidationAssertion.setResourceInfo(gri);
+        return true;
+    }
+
+    /** @return true iff. info was committed successfully */
     private boolean commitSpecifyTab() {
         // check that whatever is captured is an xml document, a schema and has a tns
         String contents = uiAccessibility.getEditor().getText();
@@ -529,11 +557,14 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         if (MODE_SPECIFY_URL.equals(mode)) {
             if (!commitSpecifyUrlTab())
                 return;
-        } else {
-            // Assume it's static
-            if (!MODE_SPECIFY.equals(mode)) logger.warning("Unknown fetch mode: " + mode);
+        } else if (MODE_SPECIFY.equals(mode)) {
             if (!commitSpecifyTab())
                 return;
+        } else if (MODE_GLOBAL.equals(mode)) {
+            if (!commitGlobalTab())
+                return;
+        } else {
+            throw new RuntimeException("Unhandled mode " + mode);
         }
 
         // save new schema

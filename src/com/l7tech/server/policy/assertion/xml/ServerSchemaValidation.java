@@ -16,6 +16,7 @@ import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.GlobalResourceInfo;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
@@ -59,10 +60,11 @@ public class ServerSchemaValidation
     private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
 
     private final Auditor auditor;
-    private final ResourceGetter<String> resourceGetter;
-    private final String registeredGlobalSchemaUrl;
+    private ResourceGetter<String> resourceGetter;
+    private String registeredGlobalSchemaUrl;
     private final SchemaManager schemaManager;
     private final String[] varsUsed;
+    private String globalSchemaID = null;
 
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) throws ServerPolicyException {
         super(data);
@@ -72,6 +74,13 @@ public class ServerSchemaValidation
 
 
         AssertionResourceInfo resourceInfo = assertion.getResourceInfo();
+
+        if (resourceInfo instanceof GlobalResourceInfo) {
+            // no voodoo necessary, the community schemas are automatically loaded by the schema manager
+            globalSchemaID = ((GlobalResourceInfo)resourceInfo).getId();
+            return;
+        }
+
         if (resourceInfo instanceof MessageUrlResourceInfo)
             throw new ServerPolicyException(assertion, "MessageUrlResourceInfo is not yet supported.");
 
@@ -146,9 +155,14 @@ public class ServerSchemaValidation
         SchemaHandle ps = null;
         try {
             XmlKnob xmlKnob = message.getXmlKnob();
-            Map vars = context.getVariableMap(varsUsed, auditor);
-            String schemaUrl = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
-            ps = schemaManager.getSchemaByUrl(schemaUrl);
+
+            if (globalSchemaID != null) {
+                ps = schemaManager.getSchemaByUrl(globalSchemaID);
+            } else {
+                Map vars = context.getVariableMap(varsUsed, auditor);
+                String schemaUrl = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
+                ps = schemaManager.getSchemaByUrl(schemaUrl);
+            }
 
             SchemaValidationErrorHandler reporter = new SchemaValidationErrorHandler();
             SAXException validationException = null;
@@ -355,7 +369,7 @@ public class ServerSchemaValidation
 
     public void close() {
         if (setClosed()) return;
-        resourceGetter.close();
+        if (resourceGetter != null) resourceGetter.close();
         if (registeredGlobalSchemaUrl != null) schemaManager.unregisterSchema(registeredGlobalSchemaUrl);
     }
 }

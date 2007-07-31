@@ -61,6 +61,11 @@ public class AssertionResourceType implements Serializable {
         return name;
     }
 
+    public String toString() {
+        if (name == null) return "Undefined AssertionResourceType";
+        return name;
+    }
+
     public static EnumTranslator getEnumTranslator() {
         return new EnumTranslator() {
             public Object stringToObject(String s) throws IllegalArgumentException {
