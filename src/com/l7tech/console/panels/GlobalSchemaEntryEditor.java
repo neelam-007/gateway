@@ -304,6 +304,9 @@ public class GlobalSchemaEntryEditor extends JDialog {
                 return;
             }
             uiAccessibility.getEditor().setText(printedSchema);
+            if (schemanametxt.getText() == null || schemanametxt.getText().length() < 1) {
+                schemanametxt.setText(dlg.getSelectedFile().getName());
+            }
         } else {
             displayError("An XML Schema could not be read from " + filename, null);
         }
