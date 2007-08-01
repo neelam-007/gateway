@@ -6,11 +6,11 @@ import com.l7tech.common.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.common.security.prov.luna.LunaCmu;
 import com.l7tech.common.util.*;
 import com.l7tech.server.config.*;
-import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
+import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.security.keystore.sca.ScaException;
 import com.l7tech.server.security.keystore.sca.ScaManager;
@@ -34,8 +34,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -120,8 +120,12 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void updateSharedKey(KeystoreConfigBean ksBean) throws Exception {
-        SharedKeyGetter getter = new SharedKeyGetter();
-        byte[] sharedKeyData = getter.getAndDecryptStashedSharedKey();
+        byte[] sharedKeyData = null;
+        sharedKeyData = ksBean.getSharedKeyData();
+        if (sharedKeyData == null) {
+            SharedKeyGetter getter = new SharedKeyGetter();
+            sharedKeyData = getter.getAndDecryptStashedSharedKey();
+        }
         logger.info("Updating the shared key if necessary");
         if (sharedKeyData == null || sharedKeyData.length == 0) {
             logger.info("No shared key found. No need to update it.");
@@ -160,14 +164,15 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             try {
                 DBActions dba = new DBActions();
                 Connection conn = null;
-                Statement stmt = null;
+                PreparedStatement stmt = null;
                 try {
                     conn = dba.getConnection(dbInfo);
-                    stmt = conn.createStatement();
                     String pubKeyId = EncryptionUtil.computeCustomRSAPubKeyID((RSAPublicKey) newKey);
                     String encryptedSharedData = EncryptionUtil.rsaEncAndB64(sharedKeyData, newKey);
-                    String sql = "insert into shared_keys (encodingid, b64edval) values \"" + pubKeyId + "\",\"" + encryptedSharedData + "\"";
-                    stmt.executeUpdate(sql);
+                    stmt = conn.prepareStatement("insert into shared_keys (encodingid, b64edval) values ?,?");
+                    stmt.setString(1,pubKeyId);
+                    stmt.setString(2,encryptedSharedData);
+                    stmt.executeUpdate();
                 } catch (SQLException e) {
                     logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
                     throw e;
@@ -551,7 +556,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         PrivateKey caPrivateKey;
 
         KeyStore theHsmKeystore = KeyStore.getInstance(kstype);
-        logger.info("Connecting to " + kstype + " keystore using password: " + new String(fullKeystoreAccessPassword));
+        logger.info("Connecting to " + kstype + " keystore.");
         theHsmKeystore.load(null,fullKeystoreAccessPassword);
 
 

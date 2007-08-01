@@ -31,7 +31,6 @@ launch_wizard(){
 
 if [ -z "${launchtype}" ] || [ ${launchtype} == "-graphical" ]; then
     if [ -z "${DISPLAY}" ]; then
-        echo "No DISPLAY variable set, running in console only mode"
         launchtype="-console"
     fi
 fi
