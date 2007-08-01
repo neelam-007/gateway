@@ -209,11 +209,14 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         if (!dontDoKsConfig.isSelected()) {
             pinfo.setShouldDisable(false);
-            KeystorePanel ksPanel = (KeystorePanel) whichKeystorePanel;
+            KeystorePanel ksPanel = whichKeystorePanel;
             if (ksPanel.validateInput(ksBean)) {
                 KeystoreActions ka = new KeystoreActions(osFunctions);
                 try {
-                    ka.getSharedKey(this);
+                    byte[] sharedKey = ka.getSharedKey(this);
+                    if (sharedKey != null) {
+                        ksBean.setSharedKeyBytes(sharedKey);
+                    }
                     shouldDisable = false;
                 } catch (KeystoreActionsException e) {
                     shouldDisable = true;
@@ -241,10 +244,6 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
     private void showErrorMessage(String s) {
         errorMessage.setText(s);
         errorMessage.setVisible(true);
-    }
-
-    private void hideErrorMessage() {
-        errorMessage.setVisible(false);
     }
 
 

@@ -59,7 +59,7 @@ public class KeystoreActions {
                 new File(launcher),
                 args, null, true);
 
-        byte[] sharedKey = null;
+        byte[] sharedKey;
         if (result.getExitStatus() == 0) {
             sharedKey = result.getOutput();
         } else if (result.getExitStatus() == 1) {
@@ -95,7 +95,7 @@ public class KeystoreActions {
     private void prepareProviders(String[] securityProviders) throws IllegalAccessException, InstantiationException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
         for (String providerName : securityProviders) {
             try {
-                Provider p = null;
+                Provider p;
                 if (providerName.contains(" ")) {
                     String[] splitz = providerName.split(" ");
                     logger.info("Adding " + splitz[0]);
@@ -225,9 +225,9 @@ public class KeystoreActions {
     }
 
     private byte[] getExistingSharedKey(File keystoreFile, String ksType, char[] ksPassword, boolean tryAgain, KeystoreActionsListener listener) throws KeystoreActionsException {
-        byte[] sharedKey = null;
+        byte[] sharedKey;
         try {
-            sharedKey = retrieveExistingSharedKeyBytes(ksType, ksPassword, keystoreFile, tryAgain, listener);
+            sharedKey = reallyGetExistingSharedKey(ksType, ksPassword, keystoreFile, tryAgain, listener);
         } catch (IOException e) {
             logger.severe("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
             throw new KeystoreActionsException("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
@@ -238,7 +238,7 @@ public class KeystoreActions {
         return sharedKey;
     }
 
-    private byte[] retrieveExistingSharedKeyBytes(String ksType, char[] ksPassword, File keystoreFile, boolean shouldTryAgain, KeystoreActionsListener listener) throws KeystoreActionsException, IOException {
+    private byte[] reallyGetExistingSharedKey(String ksType, char[] ksPassword, File keystoreFile, boolean shouldTryAgain, KeystoreActionsListener listener) throws KeystoreActionsException, IOException {
         if (ksType == null || ksPassword == null) {
             if (listener != null) {
                 List<String> answers = listener.promptForKeystoreTypeAndPassword();
@@ -254,7 +254,7 @@ public class KeystoreActions {
             } catch (WrongKeystorePasswordException passwdEx) {
                 if (shouldTryAgain) {
                     if (listener != null) {
-                        return retrieveExistingSharedKeyBytes(null, null, keystoreFile, false, listener);
+                        return reallyGetExistingSharedKey(null, null, keystoreFile, false, listener);
                     } else {
                         throw new WrongKeystorePasswordException("Could not load the keystore with the given password and type");
                     }
@@ -264,13 +264,6 @@ public class KeystoreActions {
             }
         }
         return sharedKey;
-    }
-
-    public void backupHsm() {
-    }
-
-    public void restoreHsm() {
-
     }
 
     public void probeUSBBackupDevice() throws KeystoreActionsException {

@@ -169,27 +169,29 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                     conn = dba.getConnection(dbInfo);
                     String pubKeyId = EncryptionUtil.computeCustomRSAPubKeyID((RSAPublicKey) newKey);
                     String encryptedSharedData = EncryptionUtil.rsaEncAndB64(sharedKeyData, newKey);
-                    stmt = conn.prepareStatement("insert into shared_keys (encodingid, b64edval) values ?,?");
+                    logger.info(MessageFormat.format("inserting encrypted shared key into the db ({0},{1})",pubKeyId, encryptedSharedData));
+                    stmt = conn.prepareStatement("insert into shared_keys (encodingid, b64edval) values (?,?)");
                     stmt.setString(1,pubKeyId);
                     stmt.setString(2,encryptedSharedData);
-                    stmt.executeUpdate();
+                    stmt.execute();
+                    logger.info("successfully updated the shared key in the database.");
                 } catch (SQLException e) {
                     logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
                     throw e;
                 } catch (BadPaddingException e) {
-                    logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
+                    logger.warning(MessageFormat.format("Error while encrypting the shared key. Cannot proceed. ({0}:{1})", e.getClass().getName(), e.getMessage()));
                     throw e;
                 } catch (NoSuchAlgorithmException e) {
-                    logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
+                    logger.warning(MessageFormat.format("Error while encrypting the shared key. Cannot proceed. ({0}:{1})", e.getClass().getName(), e.getMessage()));
                     throw e;
                 } catch (IllegalBlockSizeException e) {
-                    logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
+                    logger.warning(MessageFormat.format("Error while encrypting the shared key. Cannot proceed. ({0}:{1})", e.getClass().getName(), e.getMessage()));
                     throw e;
                 } catch (InvalidKeyException e) {
-                    logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
+                    logger.warning(MessageFormat.format("Error while encrypting the shared key. Cannot proceed. ({0}:{1})", e.getClass().getName(), e.getMessage()));
                     throw e;
                 } catch (NoSuchPaddingException e) {
-                    logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
+                    logger.warning(MessageFormat.format("Error while encrypting the shared key. Cannot proceed. ({0}:{1})", e.getClass().getName(), e.getMessage()));
                     throw e;
                 } finally {
                     ResourceUtils.closeQuietly(stmt);

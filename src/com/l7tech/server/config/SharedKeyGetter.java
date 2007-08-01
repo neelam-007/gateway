@@ -16,10 +16,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.interfaces.RSAPublicKey;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.MessageFormat;
 
 /**
@@ -62,17 +59,12 @@ public class SharedKeyGetter {
 
     public int retrieveSharedKeyFromDbAndStash(String ksPassword, String ksType, String keystoreFile, String dbHost, String dbName, String dbUsername, String dbPasssword) {
         int status = 0;
-        KeystoreType whichKeystoreType = KeystoreType.DEFAULT_KEYSTORE_NAME;
-        if (KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
-            whichKeystoreType = KeystoreType.SCA6000_KEYSTORE_NAME;
-            if (ksPassword != null && !ksPassword.contains(":"))
+        KeystoreType whichKeystoreType = getKeystoreType(ksType);
+        if (whichKeystoreType == KeystoreType.SCA6000_KEYSTORE_NAME &&
+            ksPassword != null && !ksPassword.contains(":")) {
                 ksPassword = "gateway:"+ksPassword;
-        } else if (KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
-            whichKeystoreType = KeystoreType.DEFAULT_KEYSTORE_NAME;
-        } else if (KeystoreType.LUNA_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
-            whichKeystoreType = KeystoreType.LUNA_KEYSTORE_NAME;
         }
-        
+
         KeyStore existingSslKeystore = null;
         byte[] sharedKey = null;
         String errMsg = null;
@@ -89,9 +81,9 @@ public class SharedKeyGetter {
                 }
                 existingSslKeystore.load(is, ksPassword.toCharArray());
                 DBInformation dbinfo = new DBInformation(dbHost, dbName, dbUsername, dbPasssword, "", "");
-                sharedKey = fetchDecryptedSharedKeyFromDatabase(dbinfo, existingSslKeystore, ksPassword.toCharArray());
+                sharedKey = fetchRawSharedKeyFromDatabase(dbinfo, existingSslKeystore, ksPassword.toCharArray());
                 try {
-                    putAndEncryptStashedSharedKey(sharedKey);
+                    obfuscateAndStashSharedKey(sharedKey);
                 } catch (IOException e) {
                     errMsg = MessageFormat.format("Could not save the shared key. Cannot proceed because data loss will occur. [{0}]", e.getMessage());
                     status = 99;
@@ -149,7 +141,32 @@ public class SharedKeyGetter {
         return status;
     }
 
-    private byte[] fetchDecryptedSharedKeyFromDatabase(DBInformation dbInfo, KeyStore existingKeystore, char[] ksPassword) throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException, KeystoreActionsException {
+    private KeystoreType getKeystoreType(String ksType) {
+        KeystoreType whichKeystoreType = KeystoreType.DEFAULT_KEYSTORE_NAME;
+        if (KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
+            whichKeystoreType = KeystoreType.SCA6000_KEYSTORE_NAME;
+        } else if (KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
+            whichKeystoreType = KeystoreType.DEFAULT_KEYSTORE_NAME;
+        } else if (KeystoreType.LUNA_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
+            whichKeystoreType = KeystoreType.LUNA_KEYSTORE_NAME;
+        }
+        return whichKeystoreType;
+    }
+
+    /**
+     * Returns the raw shared key from the database. This has been decrypted using the private key in the keystore and
+     * is not base64 encoded.
+     * @param dbInfo Database information needed to connect
+     * @param existingKeystore the keystore from which to fetch the relevant keypair
+     * @param ksPassword the password used to protect the keystore/private key
+     * @return the raw key data that has been decrypted using the private key in the keystore and
+     * is not base64 encoded.
+     * @throws NoSuchAlgorithmException
+     * @throws UnrecoverableKeyException
+     * @throws KeyStoreException
+     * @throws KeystoreActionsException
+     */
+    private byte[] fetchRawSharedKeyFromDatabase(DBInformation dbInfo, KeyStore existingKeystore, char[] ksPassword) throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException, KeystoreActionsException {
         byte[] sharedKey = null;
         Key privateKey = existingKeystore.getKey(KeyStoreConstants.SSL_ALIAS, ksPassword);
         java.security.cert.Certificate[] chain = existingKeystore.getCertificateChain(KeyStoreConstants.SSL_ALIAS);
@@ -159,15 +176,15 @@ public class SharedKeyGetter {
         PublicKey publicKey = chain[0].getPublicKey();
         String pubKeyId = EncryptionUtil.computeCustomRSAPubKeyID((RSAPublicKey) publicKey);
         Connection conn = null;
-        Statement stmt = null;
+        PreparedStatement stmt = null;
 
         String errMsg = null;
         try {
             DBActions dba = new DBActions();
             conn = dba.getConnection(dbInfo);
-            stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("select b64edval from shared_keys where encodingid = \"" + pubKeyId + "\"");
-
+            stmt = conn.prepareStatement("select b64edval from shared_keys where encodingid = ?");
+            stmt.setString(1, pubKeyId);
+            ResultSet rs = stmt.executeQuery();
             String keyData = null;
             while(rs.next()) {
                 keyData = rs.getString("b64edval");
@@ -175,6 +192,7 @@ public class SharedKeyGetter {
             if (StringUtils.isEmpty(keyData)) {
                 sharedKey = new byte[0];
             } else {
+                //raw key data
                 sharedKey = EncryptionUtil.deB64AndRsaDecrypt(keyData, privateKey);
             }
         } catch (ClassNotFoundException e) {
@@ -182,15 +200,15 @@ public class SharedKeyGetter {
         } catch (SQLException e) {
             errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
         } catch (BadPaddingException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
+            errMsg = MessageFormat.format("Error while decrypting the shared key. Cannot proceed. ({0}:{1})", e.getClass().getName(), e.getMessage());
         } catch (IOException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
+            errMsg = MessageFormat.format("Error while decrypting the shared key. Cannot proceed. ({0}:{1})", e.getClass().getName(), e.getMessage());
         } catch (IllegalBlockSizeException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
+            errMsg = MessageFormat.format("Error while decrypting the shared key. Cannot proceed. ({0}:{1})", e.getClass().getName(), e.getMessage());
         } catch (InvalidKeyException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
+            errMsg = MessageFormat.format("Error while decrypting the shared key. Cannot proceed. ({0}:{1})", e.getClass().getName(), e.getMessage());
         } catch (NoSuchPaddingException e) {
-            errMsg = MessageFormat.format("Could not connect to the database to retrieve the encrypted shared key. Cannot proceed. ({0})", e.getMessage());
+            errMsg = MessageFormat.format("Error while decrypting the shared key. Cannot proceed. ({0}:{1})", e.getClass().getName(), e.getMessage());
         } finally{
             ResourceUtils.closeQuietly(conn);
             ResourceUtils.closeQuietly(stmt);
@@ -230,17 +248,17 @@ public class SharedKeyGetter {
         return obfuscatedSharedKey;
     }
 
-    private void putAndEncryptStashedSharedKey(byte[] sharedKey) throws IOException {
+    private void obfuscateAndStashSharedKey(byte[] sharedKey) throws IOException {
         if (sharedKey == null || sharedKey.length == 0) return;
         byte[] obfuscatedSharedKey = obfuscateSharedKey(sharedKey);
-        putStashedSharedKey(obfuscatedSharedKey);
+        stashSharedKey(obfuscatedSharedKey);
     }
 
     private byte[] obfuscateSharedKey(byte[] sharedKey) {
         return sharedKey;
     }
 
-    private void putStashedSharedKey(byte[] sharedKeyBytes) throws IOException {
+    private void stashSharedKey(byte[] sharedKeyBytes) throws IOException {
         File sharedKeyFile = new File(SHARED_KEY_FILE_NAME);
         OutputStream os = null;
         try {
