@@ -8,6 +8,8 @@ package com.l7tech.common.audit;
 import com.l7tech.common.Component;
 
 import java.util.logging.Level;
+import java.io.OutputStream;
+import java.io.IOException;
 
 /**
  * SystemAuditRecords are generated for system-level events that are not necessarily triggered by a particular
@@ -73,4 +75,9 @@ public class SystemAuditRecord extends AuditRecord {
     private String action;
     private int componentId;
     private boolean alwaysAudit;
+
+    public void serializeSignableProperties(OutputStream out) throws IOException {
+        super.serializeSignableProperties(out);
+        if (action != null) out.write(action.getBytes());
+    }
 }

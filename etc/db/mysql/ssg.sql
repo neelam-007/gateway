@@ -364,6 +364,7 @@ CREATE TABLE audit_main (
   ip_address varchar(32),
   user_name varchar(255),
   user_id varchar(255),
+  signature varchar(175),
   provider_oid bigint(20) NOT NULL DEFAULT -1,
   PRIMARY KEY  (objectid),
   KEY idx_time (time),

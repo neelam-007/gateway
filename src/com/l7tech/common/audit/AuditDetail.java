@@ -7,9 +7,7 @@ package com.l7tech.common.audit;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.Arrays;
 
 /**
@@ -158,5 +156,12 @@ public class AuditDetail extends PersistentEntityImp implements Serializable {
         result = 29 * result + (exception != null ? exception.hashCode() : 0);
         result = 29 * result + ordinal;
         return result;
+    }
+
+    public void serializeSignableProperties(OutputStream out) throws IOException {
+        if (exception != null) out.write(exception.getBytes());
+        if (params != null) for (String param : params) {
+            if (param != null) out.write(param.getBytes());
+        }
     }
 }

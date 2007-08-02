@@ -7,6 +7,8 @@
 package com.l7tech.common.audit;
 
 import java.util.logging.Level;
+import java.io.OutputStream;
+import java.io.IOException;
 
 /**
  * An {@link AuditRecord} that describes a single administrative action.
@@ -106,4 +108,9 @@ public class AdminAuditRecord extends AuditRecord {
     protected long entityOid;
     /** a character indicating the type of event that generated this record. */
     protected char action;
+
+    public void serializeSignableProperties(OutputStream out) throws IOException {
+        super.serializeSignableProperties(out);
+        if (entityClassname != null) out.write(entityClassname.getBytes());
+    }
 }

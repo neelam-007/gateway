@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.common.util.HexUtils;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -30,6 +31,7 @@ import java.util.logging.Level;
 public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, PersistentEntity {
     private long oid;
     private int version;
+    private String signature;
 
     /** OID of the IdentityProvider that the requesting user, if any, belongs to.  -1 indicates unknown. */
     protected long identityProviderOid = IdentityProviderConfig.DEFAULT_OID;
@@ -184,5 +186,24 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         details = new LinkedHashSet<AuditDetail>(details);
         out.defaultWriteObject();
+    }
+
+    public void serializeSignableProperties(OutputStream out) throws IOException {
+        if (userName != null) out.write(userName.getBytes());
+        if (userId != null) out.write(userId.getBytes());
+        if (name != null) out.write(name.getBytes());
+        if (ipAddress != null) out.write(ipAddress.getBytes());
+        for (AuditDetail ad : details) {
+            ad.serializeSignableProperties(out);
+        }
+    }
+
+
+    public String getSignature() {
+        return signature;
+    }
+
+    public void setSignature(String signature) {
+        this.signature = signature;
     }
 }

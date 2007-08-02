@@ -386,6 +386,7 @@
     <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" singleton="false">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
+        <property name="keystore" ref="keystore"/>
     </bean>
 
     <!-- server side Status Update Manager -->

@@ -6,12 +6,18 @@ package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.*;
 import com.l7tech.common.Component;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.KeystoreUtils;
 
+import javax.crypto.Cipher;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Holds the transient state of the audit system for the current thread.
@@ -41,6 +47,7 @@ public class AuditContextImpl implements AuditContext {
     private static final Logger logger = Logger.getLogger(AuditContextImpl.class.getName());
     private volatile int ordinal = 0;
     private final ServerConfig serverConfig;
+    private KeystoreUtils keystore;
 
     public AuditContextImpl(ServerConfig serverConfig, AuditRecordManager auditRecordManager) {
         if (serverConfig == null) {
@@ -76,6 +83,15 @@ public class AuditContextImpl implements AuditContext {
         if(getUseAssociatedLogsThreshold() && severity.intValue() > highestLevelYetSeen.intValue()) {
             highestLevelYetSeen = severity;
         }
+    }
+
+
+    public KeystoreUtils getKeystore() {
+        return keystore;
+    }
+
+    public void setKeystore(KeystoreUtils keystore) {
+        this.keystore = keystore;
     }
 
     private List<AuditDetail> getDetailList(Object source) {
@@ -175,6 +191,8 @@ public class AuditContextImpl implements AuditContext {
 
             currentRecord.setDetails(detailsToSave);
             currentRecord.setLevel(highestLevelYetSeen);
+            // todo, sign the record only if necessary by testing a cluster variable
+            signRecord(currentRecord);
             auditRecordManager.save(currentRecord);
         } catch (SaveException e) {
             logger.log(Level.SEVERE, "Couldn't save audit records", e);
@@ -189,6 +207,28 @@ public class AuditContextImpl implements AuditContext {
             details.clear();
             highestLevelYetSeen = Level.ALL;
             ordinal = 0;
+        }
+    }
+
+    private void signRecord(AuditRecord signatureSubject) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-512");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] siginput;
+            try {
+                signatureSubject.serializeSignableProperties(baos);
+                siginput = digest.digest(baos.toByteArray());
+            } finally {
+                baos.close();
+            }
+            PrivateKey pk = keystore.getSSLPrivateKey();
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
+            rsaCipher.init(Cipher.ENCRYPT_MODE, pk);
+            byte[] encrypteddata = rsaCipher.doFinal(siginput);
+            String signature = HexUtils.encodeBase64(encrypteddata);
+            signatureSubject.setSignature(signature);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "ERROR GENERATING AUDIT SIGNATURE", e);
         }
     }
 

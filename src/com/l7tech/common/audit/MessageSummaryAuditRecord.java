@@ -15,6 +15,8 @@ import com.l7tech.common.security.token.SecurityTokenType;
 import java.util.logging.Level;
 import java.util.Set;
 import java.util.Iterator;
+import java.io.OutputStream;
+import java.io.IOException;
 
 /**
  * An {@link AuditRecord} that describes the processing of a single message.
@@ -282,4 +284,12 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     /** Used to lazily populate operationName if it is not yet set. */
     private Object operationNameHaver;
+
+    public void serializeSignableProperties(OutputStream out) throws IOException {
+        super.serializeSignableProperties(out);
+        if (operationName != null) out.write(operationName.getBytes());
+
+        if (requestXml != null) out.write(requestXml.getBytes());
+        if (responseXml != null) out.write(responseXml.getBytes());
+    }
 }
