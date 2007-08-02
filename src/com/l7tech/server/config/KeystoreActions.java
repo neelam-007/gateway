@@ -331,7 +331,8 @@ public class KeystoreActions {
             }
             if (databytes == null)
                 throw new KeystoreActionsException("Could not fetch the keystore information from the database. No keydata was found in the database");
-            logger.info("Got the keystore info from the db: " + new String(databytes));
+
+            logger.info("Retrieved the exsiting keystore info from the db.");
         } catch (SQLException e) {
             throw new KeystoreActionsException("Could not fetch the keystore information from the database. " + e.getMessage());
         } catch (ClassNotFoundException e) {

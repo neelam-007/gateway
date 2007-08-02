@@ -360,7 +360,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             scaManager.wipeKeydata();
             initializeHSM(ksBean.getKsPassword());
             ka.prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
-            makeHSMKeys(new File(ksDir), fullPassword);
+            makeHSMKeys(new File(ksDir), fullPassword, false);
 
             insertKeystoreIntoDatabase(scaManager);
             backupHsmMasterkey(ksBean);
@@ -374,10 +374,11 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         } catch (ScaException e) {
             logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
             throw e;
-        } catch (Exception e) {
-            logger.severe("Problem initializing the HSM - skipping HSM configuration: " + e.getMessage());
-            throw e; //throw it to mark the operation as failed
         }
+//        } catch (Exception e) {
+//            logger.severe("Problem initializing the HSM - skipping HSM configuration: " + e.getMessage());
+//            throw e; //throw it to mark the operation as failed
+//        }
     }
 
     private void doRestoreHsm(char[] fullKsPassword, KeystoreConfigBean ksBean, String ksDir, File javaSecFile, File newJavaSecFile, File keystorePropertiesFile, File tomcatServerConfigFile, File sslKeyStoreFile, File systemPropertiesFile) throws Exception {
@@ -389,20 +390,25 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
             final byte[] databytes = getKeydataFromDatabase(dbinfo);
 
+            scaManager.startSca();
             //zero the board
             zeroHsm();
 
             //delete keydata dir
+            logger.info("Cleaning up existing keydata directory.");
             scaManager.wipeKeydata();
+            logger.info("Successfully cleaned up existing keydata directory.");
 
             //restore the master key
             restoreHsmMasterkey(fullKsPassword, ksBean.getMasterKeyBackupPassword());
 
             //replace keydata dir
+            logger.info("Building new keydata directory.");
             scaManager.saveKeydata(databytes);
-            
-            ka.prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
+            logger.info("Successfully built new keydata directory.");
 
+            ka.prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
+            makeHSMKeys(new File(ksDir), fullKsPassword, true);
             updateJavaSecurity(javaSecFile, newJavaSecFile, KeystoreConfigBean.HSM_SECURITY_PROVIDERS);
 
             //General Keystore Setup
@@ -416,8 +422,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.severe("Error while restoring a keystore to the HSM. Could not get the keydata from the database: " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            String mess = "Problem restoring the keystore to the HSM - skipping HSM configuration: ";
-            logger.log(Level.SEVERE, mess + e.getMessage(), e);
+            logger.severe(MessageFormat.format("Problem restoring the keystore to the HSM - skipping HSM configuration: {0} - {1}", e.getClass().getName(), e.getMessage()));
             throw e;
         }
     }
@@ -480,6 +485,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private void restoreHsmMasterkey(final char[] keystorePassword, final char[] backupPassword) throws IOException {
         if (getOsFunctions().isUnix()) {
+            logger.info("Attempting to restore the master key.");
             final String sudoCommand = SUDO_COMMAND;
             final String restoreScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
             try {
@@ -494,7 +500,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                     );
                     throw new IOException("There was an error trying to restore the HSM master key: " + new String(result.getOutput()));
                 } else {
-                    logger.info("Successfully restore the HSM master key");
+                    logger.info("Successfully restored the HSM master key");
                 }
             } catch (IOException e) {
                 logger.warning("There was an error trying to restore the HSM master key: " + e.getMessage());
@@ -549,9 +555,13 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     }
 
-    private void makeHSMKeys(File keystoreDir, char[] fullKeystoreAccessPassword) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, SignatureException, InvalidKeyException {
+    private void makeHSMKeys(File keystoreDir, char[] fullKeystoreAccessPassword, boolean isRestoreHsm) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, SignatureException, InvalidKeyException, UnrecoverableEntryException {
         if ( !keystoreDir.exists() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' does not exist" );
         if ( !keystoreDir.isDirectory() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' is not a directory" );
+
+        File caCertFile = new File(keystoreDir,KeyStoreConstants.CA_CERT_FILE);
+        File sslCertFile = new File(keystoreDir,KeyStoreConstants.SSL_CERT_FILE);
+
         String kstype = "PKCS11";
 
         //TODO try to refactor SetKeys to understand HSM-speak instead of just PKCS12 and then there's no need to reinvent things here.
@@ -563,32 +573,37 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         logger.info("Connecting to " + kstype + " keystore.");
         theHsmKeystore.load(null,fullKeystoreAccessPassword);
 
+        if (isRestoreHsm) {
+            //get ca cert from the HSM
+            KeyStore.Entry caEntry = theHsmKeystore.getEntry(KeyStoreConstants.CA_ALIAS, new KeyStore.PasswordProtection(fullKeystoreAccessPassword));
+            caCert = (X509Certificate) ((KeyStore.PrivateKeyEntry)caEntry).getCertificateChain()[0];
 
-        logger.info("Generating RSA keypair for CA cert");
-        KeyPair cakp = JceProvider.generateRsaKeyPair();
-        caPrivateKey = cakp.getPrivate();
+            //get ssl cert from the HSM
+            KeyStore.Entry sslEntry = theHsmKeystore.getEntry(KeyStoreConstants.SSL_ALIAS, new KeyStore.PasswordProtection(fullKeystoreAccessPassword));
+            sslCert = (X509Certificate) ((KeyStore.PrivateKeyEntry)sslEntry).getCertificateChain()[0];
+        } else {
+            logger.info("Generating RSA keypair for CA cert");
+            KeyPair cakp = JceProvider.generateRsaKeyPair();
+            caPrivateKey = cakp.getPrivate();
+            logger.info("Generating self-signed CA cert");
+            caCert = BouncyCastleRsaSignerEngine.makeSelfSignedRootCertificate(
+                    KeyStoreConstants.CA_DN_PREFIX + sharedWizardInfo.getHostname(),
+                    KeyStoreConstants.CA_VALIDITY_DAYS, cakp);
+            
+            logger.info("Storing CA cert in HSM");
+            theHsmKeystore.setKeyEntry(KeyStoreConstants.CA_ALIAS, caPrivateKey, fullKeystoreAccessPassword, new X509Certificate[] { caCert } );
 
-        logger.info("Generating self-signed CA cert");
-        caCert = BouncyCastleRsaSignerEngine.makeSelfSignedRootCertificate(
-                KeyStoreConstants.CA_DN_PREFIX + sharedWizardInfo.getHostname(),
-                KeyStoreConstants.CA_VALIDITY_DAYS, cakp);
+            logger.info("Generating RSA keypair for SSL cert" );
+            KeyPair sslkp = JceProvider.generateRsaKeyPair();
 
-        logger.info("Storing CA cert in HSM");
-        theHsmKeystore.setKeyEntry(KeyStoreConstants.CA_ALIAS, caPrivateKey, fullKeystoreAccessPassword, new X509Certificate[] { caCert } );
+            logger.info("Generating SSL cert");
+            sslCert = BouncyCastleRsaSignerEngine.makeSignedCertificate(KeyStoreConstants.SSL_DN_PREFIX + sharedWizardInfo.getHostname(),
+                                                                           KeyStoreConstants.SSL_VALIDITY_DAYS,
+                                                                           sslkp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
 
-        logger.info("Generating RSA keypair for SSL cert" );
-        KeyPair sslkp = JceProvider.generateRsaKeyPair();
-
-        logger.info("Generating SSL cert");
-        sslCert = BouncyCastleRsaSignerEngine.makeSignedCertificate(KeyStoreConstants.SSL_DN_PREFIX + sharedWizardInfo.getHostname(),
-                                                                       KeyStoreConstants.SSL_VALIDITY_DAYS,
-                                                                       sslkp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
-
-        logger.info("Storing SSL cert in HSM");
-        theHsmKeystore.setKeyEntry(KeyStoreConstants.SSL_ALIAS, sslkp.getPrivate(), fullKeystoreAccessPassword, new X509Certificate[] { sslCert, caCert } );
-
-        File caCertFile = new File(keystoreDir,KeyStoreConstants.CA_CERT_FILE);
-        File sslCertFile = new File(keystoreDir,KeyStoreConstants.SSL_CERT_FILE);
+            logger.info("Storing SSL cert in HSM");
+            theHsmKeystore.setKeyEntry(KeyStoreConstants.SSL_ALIAS, sslkp.getPrivate(), fullKeystoreAccessPassword, new X509Certificate[] { sslCert, caCert } );
+        }
 
         createDummyKeystorse(keystoreDir);
         exportCerts(caCert, caCertFile, sslCert, sslCertFile);

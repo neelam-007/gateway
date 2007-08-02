@@ -114,17 +114,52 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
     }
 
     private void doHSMPrompts() throws IOException, WizardNavigationException {
-        printText("\n-- Configure Hardware Security Module (HSM) --\n");
+        boolean askAgain = false;
+        do {
+            printText("\n-- Configure Hardware Security Module (HSM) --\n");
 
-        String defaultValue = "1";
-        String[] prompts = new String[] {
-            "1) Initialize Keystore" + getEolChar(),
-            "2) Import Existing Keystore" + getEolChar(),
-            "Please make a selection: [" + defaultValue + "] ",
-        };
-        String input = getData(prompts, defaultValue, new String[] {"1", "2"});
-        keystoreBean.setInitializeHSM((input != null && "1".equals(input)));
-        boolean askAgain = true;
+            String defaultValue = "1";
+            String[] prompts = new String[] {
+                "1) Initialize Keystore" + getEolChar(),
+                "2) Import Existing Keystore" + getEolChar(),
+                "Please make a selection: [" + defaultValue + "] ",
+            };
+            String input = getData(prompts, defaultValue, new String[] {"1", "2"});
+            keystoreBean.setInitializeHSM((input != null && "1".equals(input)));
+            if (keystoreBean.isInitializeHSM()) {
+                    askInitialiseHSMQuestions();
+            } else {
+                askAgain = !askRestoreHSMQuestions();
+            }
+        } while (askAgain);
+
+    }
+
+    private boolean askRestoreHSMQuestions() throws IOException, WizardNavigationException {
+        boolean success = false;
+        keystoreBean.setShouldBackupMasterKey(false);
+        String backupPassword = getMatchingPasswords(
+                "Enter the master key backup password: ",
+                null,
+                KeyStoreConstants.PASSWORD_LENGTH);
+
+        keystoreBean.setMasterKeyBackupPassword(backupPassword.toCharArray());
+        KeystoreActions ka = new KeystoreActions(osFunctions);
+        try {
+            ka.probeUSBBackupDevice();
+            doKeystorePasswordPrompts("Enter the existing HSM Password",
+                    "Please enter the existing HSM Password: ",
+                    null);
+            success = true;
+        } catch (KeystoreActionsException e) {
+            printText("*** Cannot proceed with importing existing keystore: " + e.getMessage() + " ***" + getEolChar() + getEolChar());
+            success = false;
+        }
+        return success;
+    }
+
+    private void askInitialiseHSMQuestions() throws IOException, WizardNavigationException {
+        boolean askAgain;
         do {
             String shouldBackup = getData(new String[] {"Back Up Master Key to USB Drive After Initialization? [y]"}, "y");
             if (isYes(shouldBackup)) {
@@ -145,10 +180,9 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 askAgain = false;
             }
         } while (askAgain);
-
         doKeystorePasswordPrompts("Set the HSM Password",
-                                  "Enter the HSM password: ",
-                                  keystoreBean.isInitializeHSM()?"Confirm the HSM password: ":null);
+                              "Enter the HSM password: ",
+                              keystoreBean.isInitializeHSM()?"Confirm the HSM password: ":null);
     }
 
     private void askLunaKeystoreQuestions() throws IOException, WizardNavigationException {
@@ -286,7 +320,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 printText("Error while updating the cluster shared key\n" + e.getMessage());
             }
         } else {
-            ok = true;       
+            ok = true;
         }
         return ok;
     }

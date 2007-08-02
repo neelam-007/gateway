@@ -91,26 +91,40 @@ public class Sca6000KeystorePanel extends KeystorePanel {
         boolean ok = false;
         KeystoreActions ka = new KeystoreActions(ksBean.getOsFunctions());
         if (pwPanel.validateInput(initializeKeystore.isSelected())) {
-            if(isShouldBackupMasterKey()) {
-                //prompt for masterkeybackup password
-                JPasswordField pFld = new JPasswordField();
-                String passwordMsg = "Enter a password to protect the master key backup";
-                int action = JOptionPane.showConfirmDialog(this, new Object[]{passwordMsg, pFld},"Enter Password", JOptionPane.OK_CANCEL_OPTION);
-                if (action >= 0) {
-                    ksBean.setMasterKeyBackupPassword(pFld.getPassword());
-                    //prompt for the GDDC
-                    try {
-                        ka.probeUSBBackupDevice();
-                        ok = true;
-                    } catch (KeystoreActionsException e) {
-                        JOptionPane.showMessageDialog(this.getTopLevelAncestor(), "Cannot backup key: " + e.getMessage());
+            if (initializeKeystore.isSelected()) {
+                if(isShouldBackupMasterKey()) {
+                    //prompt for masterkeybackup password
+                    JPasswordField pFld = new JPasswordField();
+                    String passwordMsg = "Enter a password to protect the master key backup";
+                    int action = JOptionPane.showConfirmDialog(this, new Object[]{passwordMsg, pFld},"Enter Password", JOptionPane.OK_CANCEL_OPTION);
+                    if (action == JOptionPane.OK_OPTION) {
+                        ksBean.setMasterKeyBackupPassword(pFld.getPassword());
+                        //prompt for the GDDC
+                        try {
+                            ka.probeUSBBackupDevice();
+                            ok = true;
+                        } catch (KeystoreActionsException e) {
+                            JOptionPane.showMessageDialog(this.getTopLevelAncestor(), "Cannot backup key: " + e.getMessage());
+                        }
                     }
                 }
             } else {
-                ok = true;
+                JPasswordField pFld = new JPasswordField();
+                String passwordMsg = "Enter the master key backup password";
+                int action = JOptionPane.showConfirmDialog(this, new Object[]{passwordMsg, pFld},"Enter Password", JOptionPane.OK_CANCEL_OPTION);
+                if (action == JOptionPane.OK_OPTION) {
+                    ksBean.setMasterKeyBackupPassword(pFld.getPassword());
+                    //prompt for the GDDC
+                    try {
+                       ka.probeUSBBackupDevice();
+                        ok = true;
+                    } catch (KeystoreActionsException e) {
+                        JOptionPane.showMessageDialog(this.getTopLevelAncestor(), "Cannot proceed with importing existing keystore: " + e.getMessage());
+                    }
+                }
             }
         } else {
-            ok = false;
+            return false;
         }
         return ok;
     }
