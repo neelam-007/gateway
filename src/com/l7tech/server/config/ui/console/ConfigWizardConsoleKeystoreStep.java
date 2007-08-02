@@ -3,8 +3,8 @@ package com.l7tech.server.config.ui.console;
 import com.l7tech.server.config.*;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
-import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.exceptions.KeystoreActionsException;
+import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 
@@ -275,9 +275,10 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         if (ksBean.isDoKeystoreConfig()) {
             KeystoreActions ka = new KeystoreActions(osFunctions);
             try {
-                byte[] existingSharedKey = ka.getSharedKey(this);
-                if (existingSharedKey != null) {
-                    ((KeystoreConfigBean)configBean).setSharedKeyBytes(existingSharedKey);
+                byte[] existingRawSharedKey = ka.getSharedKey(this);
+                if (existingRawSharedKey != null) {
+//                    logger.info(MessageFormat.format("After validate - Got a shared key: {0}, Length: {1}", HexUtils.hexDump(existingRawSharedKey), existingRawSharedKey.length));
+                    ((KeystoreConfigBean)configBean).setSharedKeyBytes(existingRawSharedKey);
                 }
                 ok = true;
             } catch (KeystoreActionsException e) {

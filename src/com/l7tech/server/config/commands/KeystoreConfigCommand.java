@@ -122,14 +122,12 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private void updateSharedKey(KeystoreConfigBean ksBean) throws Exception {
         byte[] sharedKeyData = null;
         sharedKeyData = ksBean.getSharedKeyData();
-        if (sharedKeyData == null) {
-            SharedKeyGetter getter = new SharedKeyGetter();
-            sharedKeyData = getter.getAndDecryptStashedSharedKey();
-        }
+//        probe}
         logger.info("Updating the shared key if necessary");
         if (sharedKeyData == null || sharedKeyData.length == 0) {
             logger.info("No shared key found. No need to update it.");
         } else {
+//            logger.info(MessageFormat.format("The shared key that will be added is {0}, Length = {1}", HexUtils.hexDump(sharedKeyData), sharedKeyData.length));
             //get the new keystore
             KeystoreType type = ksBean.getKeyStoreType();
 
@@ -169,7 +167,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                     conn = dba.getConnection(dbInfo);
                     String pubKeyId = EncryptionUtil.computeCustomRSAPubKeyID((RSAPublicKey) newKey);
                     String encryptedSharedData = EncryptionUtil.rsaEncAndB64(sharedKeyData, newKey);
-                    logger.info(MessageFormat.format("inserting encrypted shared key into the db ({0},{1})",pubKeyId, encryptedSharedData));
+                    logger.info("inserting encrypted shared key into the db");
                     stmt = conn.prepareStatement("insert into shared_keys (encodingid, b64edval) values (?,?)");
                     stmt.setString(1,pubKeyId);
                     stmt.setString(2,encryptedSharedData);
@@ -436,8 +434,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 final String sudoCommand = SUDO_COMMAND;
                 final String masterKeyBackupScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
                 try {
-                    logger.info("Executing \"" + masterKeyBackupScript + "\"");
-                    ProcResult result = ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(masterKeyBackupScript, "backup", String.valueOf(keystorePassword), MASTER_KEY_BACKUP_FILE_NAME, String.valueOf(masterKeyBackupPassword)), null, true);
+                    String[] args = ProcUtils.args(masterKeyBackupScript, "backup", String.valueOf(keystorePassword), MASTER_KEY_BACKUP_FILE_NAME, String.valueOf(masterKeyBackupPassword));
+                    logger.info(MessageFormat.format("Executing {0} {1} {2} {3} {4} {5}",sudoCommand,masterKeyBackupScript, "backup", "<keystorePassword>", MASTER_KEY_BACKUP_FILE_NAME, "<masterKeyBackupPassword>"));
+                    ProcResult result = ProcUtils.exec(null, new File(sudoCommand), args, null, true);
                     if (result.getExitStatus() != 0) {
                         logger.warning(MessageFormat.format("{0} exited with a non zero return code: {1} ({2})",
                                 masterKeyBackupScript,
@@ -461,8 +460,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             final String initializeScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
             final String sudoCommand = SUDO_COMMAND;
             try {
-                logger.info("Executing \"" + sudoCommand + " " + initializeScript + "\"");
-                ProcResult result = ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(initializeScript, "init", String.valueOf(keystorePassword)), null, true);
+                logger.info(MessageFormat.format("Executing {0} {1} {2} {3}", sudoCommand, initializeScript, "init", "<keystorePassword>"));
+                String[] args = ProcUtils.args(initializeScript, "init", String.valueOf(keystorePassword));
+                ProcResult result = ProcUtils.exec(null, new File(sudoCommand), args, null, true);
                 if (result.getExitStatus() != 0) {
                     logger.severe(MessageFormat.format("{0} exited with a non zero return code: {1}",
                             initializeScript,
@@ -470,7 +470,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                     );
                     throw new IOException("\n" + "The output of the command was: \n" + new String(result.getOutput()));
                 } else {
-                    logger.info(MessageFormat.format("Successfully initialized the HSM: {0}", new String(result.getOutput())));
+                    logger.info("Successfully initialized the HSM");
                 }
             } catch (IOException e) {
                 throw new IOException("There was an error trying to initialize the HSM: " + e.getMessage());
@@ -483,8 +483,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             final String sudoCommand = SUDO_COMMAND;
             final String restoreScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
             try {
-                logger.info("Executing \"" + sudoCommand + " " + restoreScript + "\"");
-                ProcResult result = ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(restoreScript, "restore", String.valueOf(keystorePassword), MASTER_KEY_BACKUP_FILE_NAME, String.valueOf(backupPassword)), null, true);
+                String[] args = ProcUtils.args(restoreScript, "restore", String.valueOf(keystorePassword), MASTER_KEY_BACKUP_FILE_NAME, String.valueOf(backupPassword));
+                logger.info(MessageFormat.format("Executing {0} {1} {2} {3} {4} {5}",sudoCommand, restoreScript, "restore", "<keystorePassword>", MASTER_KEY_BACKUP_FILE_NAME, "<backupPassword>"));
+                ProcResult result = ProcUtils.exec(null, new File(sudoCommand), args, null, true);
                 if (result.getExitStatus() != 0) {
                     logger.warning(MessageFormat.format("{0} exited with a non zero return code: {1} ({2})",
                             restoreScript,
@@ -507,8 +508,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             String sudoCommand = SUDO_COMMAND;
             String zeroCommand = getOsFunctions().getSsgInstallRoot() + ZERO_HSM_COMMAND;
             try {
-                logger.info("Executing \"" + SUDO_COMMAND + " " + ZERO_HSM_COMMAND + "\"");
-                ProcResult result = ProcUtils.exec(null, new File(sudoCommand), ProcUtils.args(zeroCommand), null, true);
+                String[] args = ProcUtils.args(zeroCommand);
+                logger.info(MessageFormat.format("Executing {0} {1}", sudoCommand, zeroCommand));
+                ProcResult result = ProcUtils.exec(null, new File(sudoCommand), args, null, true);
                 if (result.getExitStatus() == 0) {
                     logger.info("Successfully zeroed the HSM");
                 } else {

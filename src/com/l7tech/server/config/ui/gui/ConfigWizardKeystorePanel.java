@@ -213,9 +213,9 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel implements 
             if (ksPanel.validateInput(ksBean)) {
                 KeystoreActions ka = new KeystoreActions(osFunctions);
                 try {
-                    byte[] sharedKey = ka.getSharedKey(this);
-                    if (sharedKey != null) {
-                        ksBean.setSharedKeyBytes(sharedKey);
+                    byte[] rawExistingSharedKey = ka.getSharedKey(this);
+                    if (rawExistingSharedKey != null) {
+                        ksBean.setSharedKeyBytes(rawExistingSharedKey);
                     }
                     shouldDisable = false;
                 } catch (KeystoreActionsException e) {

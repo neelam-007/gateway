@@ -4,6 +4,7 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.ProcResult;
 import com.l7tech.common.util.ProcUtils;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
@@ -40,6 +41,15 @@ public class KeystoreActions {
         this.osFunctions = osFunctions;
     }
 
+    /**
+     * Spawns a subprocess to get and decrypt the shared key from the DB. The subprocess returns the sharedkey as a base64 encoded byte array
+     * @param ksType the type of the keystore that contains the private key to decrypt the shared key
+     * @param ksPassword the password used to protect the keystore/private key
+     * @param keystoreFile the keystore that contains the private key to decrypt the shared key
+     * @return the raw bytes of the shared key, non base64 encoded.
+     * @throws KeystoreActionsException if the subprocess returned other than a 0 error code. The message for this exception will contain the text that was output by the subprocess.
+     * @throws IOException if the subprocess could not be spawned
+     */
     private byte[] spawnSubProcessAndGetSharedKey(String ksType, char[] ksPassword, File keystoreFile) throws KeystoreActionsException, IOException {
         DBInformation dbInfo = SharedWizardInfo.getInstance().getDbinfo();
         String launcher = osFunctions.getConfigWizardLauncher();
@@ -59,15 +69,19 @@ public class KeystoreActions {
                 new File(launcher),
                 args, null, true);
 
-        byte[] sharedKey;
+        byte[] base64sharedKey;
         if (result.getExitStatus() == 0) {
-            sharedKey = result.getOutput();
+            base64sharedKey = result.getOutput();
         } else if (result.getExitStatus() == 1) {
             throw new WrongKeystorePasswordException(MessageFormat.format("Attempt to retrieve the cluster shared key using the provided keystore type and password failed. - {0}", new String(result.getOutput())));
         } else {
             throw new KeystoreActionsException(MessageFormat.format("Attempting to retrieve the cluster shared key resulted in the following error code and message: {0}, {1}", result.getExitStatus(), new String(result.getOutput())));
         }
-        return sharedKey;
+
+        byte[] rawKey = HexUtils.decodeBase64(new String(base64sharedKey), true);
+//        logger.info(MessageFormat.format("KeystoreActions.spawnSubProcessAndGetSharedKey - Shared Key: {0} Length: {1}",HexUtils.hexDump(rawKey),String.valueOf(rawKey.length)));
+
+        return rawKey;
     }
 
     public void prepareJvmForNewKeystoreType(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException {
@@ -177,6 +191,18 @@ public class KeystoreActions {
         Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
     }
 
+    /**
+     * returns the raw bytes of the shared key, if there was one in the database.
+     *
+     * The shared key is a random sequence of bytes
+     * that is encrypted for the ssl private key and base64 encoded.
+     *
+     * If a record is found in the database with the public key id corresponding to the current SSL public key, then that
+     * records key data will be returned.
+     * @param listener the optional keystore listener to allow callbacks for user input
+     * @return the raw bytes of the shared key, if there was one in the database.
+     * @throws KeystoreActionsException if there was an error while trying to get or decrypt the shared key.
+     */
     public byte[] getSharedKey(KeystoreActionsListener listener) throws KeystoreActionsException {
 
         String ksType = null;
@@ -217,6 +243,7 @@ public class KeystoreActions {
                     logger.info("No shared key was found in the database. No need to back it up.");
                 } else {
                     logger.info("Found a shared key in the database. Backing it up.");
+//                    logger.info(MessageFormat.format("KeystoreActions.getSharedKey - Shared Key = {0}, Shared Key Length {1}", HexUtils.hexDump(sharedKey), String.valueOf(sharedKey.length)));
                 }
             }
         }
@@ -224,6 +251,7 @@ public class KeystoreActions {
         return sharedKey;
     }
 
+    //returns raw key
     private byte[] getExistingSharedKey(File keystoreFile, String ksType, char[] ksPassword, boolean tryAgain, KeystoreActionsListener listener) throws KeystoreActionsException {
         byte[] sharedKey;
         try {
@@ -235,9 +263,11 @@ public class KeystoreActions {
             logger.severe("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
             throw new KeystoreActionsException("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
         }
+//        logger.info(MessageFormat.format("KeystoreActions.getExistingSharedKey - shared key: {0}", HexUtils.hexDump(sharedKey)));
         return sharedKey;
     }
 
+    //returns raw key
     private byte[] reallyGetExistingSharedKey(String ksType, char[] ksPassword, File keystoreFile, boolean shouldTryAgain, KeystoreActionsListener listener) throws KeystoreActionsException, IOException {
         if (ksType == null || ksPassword == null) {
             if (listener != null) {
@@ -263,6 +293,7 @@ public class KeystoreActions {
                 }
             }
         }
+//        logger.info(MessageFormat.format("KeystoreActions.reallyGetExistingSharedKey - shared key: {0}", HexUtils.hexDump(sharedKey)));
         return sharedKey;
     }
 

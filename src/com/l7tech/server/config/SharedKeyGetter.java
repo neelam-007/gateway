@@ -11,13 +11,21 @@ import org.apache.commons.lang.StringUtils;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.interfaces.RSAPublicKey;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.MessageFormat;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
 
 /**
  * User: megery
@@ -25,11 +33,11 @@ import java.text.MessageFormat;
  * Time: 2:53:55 PM
  */
 public class SharedKeyGetter {
-    public static final String SHARED_KEY_FILE_NAME = "sharedkey";
-
     byte[] output = null;
 
     public static void main(String[] args) {
+        LogManager.getLogManager().getLogger("").setLevel(Level.OFF);
+
         if (args.length < 7) {
             System.out.println("Not enough arguments to proceed.");
             System.out.println(usage());
@@ -45,8 +53,15 @@ public class SharedKeyGetter {
 
         SharedKeyGetter getter = new SharedKeyGetter();
         int result = getter.retrieveSharedKeyFromDbAndStash(ksPassword, ksType, ksFile, dbHost, dbName, dbUsername, dbPasssword);
-        System.out.print(new String(getter.getOutput()));
+        byte[] output = getter.getOutput();
+
+        System.out.print(HexUtils.encodeBase64(output,true));
         System.exit(result);
+    }
+
+
+    public SharedKeyGetter() {
+        this.output = null;
     }
 
     private byte[] getOutput() {
@@ -82,12 +97,12 @@ public class SharedKeyGetter {
                 existingSslKeystore.load(is, ksPassword.toCharArray());
                 DBInformation dbinfo = new DBInformation(dbHost, dbName, dbUsername, dbPasssword, "", "");
                 sharedKey = fetchRawSharedKeyFromDatabase(dbinfo, existingSslKeystore, ksPassword.toCharArray());
-                try {
-                    obfuscateAndStashSharedKey(sharedKey);
-                } catch (IOException e) {
-                    errMsg = MessageFormat.format("Could not save the shared key. Cannot proceed because data loss will occur. [{0}]", e.getMessage());
-                    status = 99;
-                }
+//                try {
+//                    obfuscateAndStashSharedKey(sharedKey);
+//                } catch (IOException e) {
+//                    errMsg = MessageFormat.format("Could not save the shared key. Cannot proceed because data loss will occur. [{0}]", e.getMessage());
+//                    status = 99;
+//                }
             } catch (FileNotFoundException e) {
                 errMsg = MessageFormat.format("Could not find the file \"{0}\". Cannot open the keystore", keystoreFile);
                 status = 2;
@@ -220,53 +235,53 @@ public class SharedKeyGetter {
         return sharedKey;
     }
 
-    public byte[] getAndDecryptStashedSharedKey() throws IOException {
-        //read the obfuscated shared key from the disk
-        byte[] obfuscatedSharedKey = getStashedSharedKey();
+//    public byte[] getAndDecryptStashedSharedKey() throws IOException {
+//        //read the obfuscated shared key from the disk
+//        byte[] obfuscatedSharedKey = getStashedSharedKey();
+//
+//        if (obfuscatedSharedKey == null) return null;
+//        //decrypt the sharedKey
+//        return deObfuscateSharedKey(obfuscatedSharedKey);
+//    }
 
-        if (obfuscatedSharedKey == null) return null;
-        //decrypt the sharedKey
-        return deObfuscateSharedKey(obfuscatedSharedKey);
-    }
+//    private byte[] getStashedSharedKey() throws IOException {
+//        File sharedKeyFile = new File(SHARED_KEY_FILE_NAME);
+//        byte[] sharedKeyBytes = null;
+//        if (sharedKeyFile.exists()) { //then there was a shared key that was backed up
+//            InputStream is = null;
+//            try {
+//                is = new FileInputStream(sharedKeyFile);
+//                sharedKeyBytes = HexUtils.slurpStream(is);
+//            } finally {
+//                ResourceUtils.closeQuietly(is);
+//            }
+//        }
+//        return sharedKeyBytes;
+//    }
 
-    private byte[] getStashedSharedKey() throws IOException {
-        File sharedKeyFile = new File(SHARED_KEY_FILE_NAME);
-        byte[] sharedKeyBytes = null;
-        if (sharedKeyFile.exists()) { //then there was a shared key that was backed up
-            InputStream is = null;
-            try {
-                is = new FileInputStream(sharedKeyFile);
-                sharedKeyBytes = HexUtils.slurpStream(is);
-            } finally {
-                ResourceUtils.closeQuietly(is);
-            }
-        }
-        return sharedKeyBytes;
-    }
+//    private byte[] deObfuscateSharedKey(byte[] obfuscatedSharedKey) {
+//        return obfuscatedSharedKey;
+//    }
 
-    private byte[] deObfuscateSharedKey(byte[] obfuscatedSharedKey) {
-        return obfuscatedSharedKey;
-    }
+//    private void obfuscateAndStashSharedKey(byte[] sharedKey) throws IOException {
+//        if (sharedKey == null || sharedKey.length == 0) return;
+//        byte[] obfuscatedSharedKey = obfuscateSharedKey(sharedKey);
+//        stashSharedKey(obfuscatedSharedKey);
+//    }
 
-    private void obfuscateAndStashSharedKey(byte[] sharedKey) throws IOException {
-        if (sharedKey == null || sharedKey.length == 0) return;
-        byte[] obfuscatedSharedKey = obfuscateSharedKey(sharedKey);
-        stashSharedKey(obfuscatedSharedKey);
-    }
+//    private byte[] obfuscateSharedKey(byte[] sharedKey) {
+//        return sharedKey;
+//    }
 
-    private byte[] obfuscateSharedKey(byte[] sharedKey) {
-        return sharedKey;
-    }
-
-    private void stashSharedKey(byte[] sharedKeyBytes) throws IOException {
-        File sharedKeyFile = new File(SHARED_KEY_FILE_NAME);
-        OutputStream os = null;
-        try {
-            os = new FileOutputStream(sharedKeyFile);
-            HexUtils.spewStream(sharedKeyBytes, os);
-            os.flush();
-        } finally {
-            ResourceUtils.closeQuietly(os);
-        }
-    }
+//    private void stashSharedKey(byte[] sharedKeyBytes) throws IOException {
+//        File sharedKeyFile = new File(SHARED_KEY_FILE_NAME);
+//        OutputStream os = null;
+//        try {
+//            os = new FileOutputStream(sharedKeyFile);
+//            HexUtils.spewStream(sharedKeyBytes, os);
+//            os.flush();
+//        } finally {
+//            ResourceUtils.closeQuietly(os);
+//        }
+//    }
 }
