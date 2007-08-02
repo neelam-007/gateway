@@ -103,13 +103,19 @@ public interface AuditAdmin extends GenericLogAdmin {
 
     /**
      * Create a context for downloading audit records.  The context will expire after ten minutes of inactivity.
-     * @param chunkSizeInBytes number of bytes per download chunk.  If zero, default of 8192 will be used.
+     * @param fromTime          minimum audit event time (milliseconds from epoch) to filter; -1 for no minimum
+     * @param toTime            maximum audit event time (milliseconds from epoch) to filter; -1 for no maximum
+     * @param serviceOids       OIDs of services (thus filtering to service events only); null for no service filtering
+     * @param chunkSizeInBytes  number of bytes per download chunk.  If zero, default of 8192 will be used.
      * @return a OpaqueId for passing to downloadNextChunk().  never null.
      * @throws RemoteException if there is a problem preparing the download context.
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
-    OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException;
+    OpaqueId downloadAllAudits(long fromTime,
+                               long toTime,
+                               long[] serviceOids,
+                               int chunkSizeInBytes) throws RemoteException;
 
     /** Represents a chunk of audits being downloaded. */
     public static final class DownloadChunk implements Serializable {
@@ -126,7 +132,7 @@ public interface AuditAdmin extends GenericLogAdmin {
 
     /**
      * Download the next chunk of audit records.
-     * @param context the {@link OpaqueId} that was returned by a previous call to {@link #downloadAllAudits(int)}
+     * @param context the {@link OpaqueId} that was returned by a previous call to {@link #downloadAllAudits}
      * @return the next {@link DownloadChunk}, or null if the last chunk has already been sent.
      * @throws RemoteException if there is a problem preparing the chunk.
      */

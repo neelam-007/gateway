@@ -1,0 +1,426 @@
+/*
+ * Copyright (C) 2007 Layer 7 Technologies Inc.
+ */
+package com.l7tech.console.panels;
+
+import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.OpaqueId;
+import com.l7tech.console.MainWindow;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.jcalendar.TimeRangePicker;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceAdmin;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.rmi.RemoteException;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * A window that let user choose audit events to download.
+ *
+ * <p>This is a window rather than a dialog because:
+ * <ul>
+ *  <li>this can be a long running task and therefore should not be modal (which
+ *  would block the use of the parent window)
+ *  <li>because not modal, it can be hidden behind other windows and therefore
+ *  needs its own icon on the desktop task bar
+ * </ul>
+ *
+ * <p>The window is obtained using the {@link #getInstance} method. It enforces
+ * at most one audit download at any time; because that can be
+ * database/CPU/network instensive.
+ *
+ * @since SecureSpan 4.2
+ * @author rmak
+ */
+public class DownloadAuditEventsWindow extends JFrame {
+    private JPanel mainPanel;
+    private JPanel selectionPanel;
+    private JRadioButton allRadioButton;
+    private JRadioButton timeRangeRadioButton;
+    private TimeRangePicker timeRangePicker;
+    private JComboBox publishedServiceComboBox;
+    private JTextField fileTextField;
+    private JButton browseButton;
+    private JLabel progressLabel;
+    private JProgressBar progressBar;
+    private JButton downloadButton;
+    private JButton cancelOrCloseButton;
+
+    /** Life cycle states of this window. */
+    private enum State {
+        /** User is configuring parameters. */
+        CONFIGURE,
+        /** Download is in progress. */
+        DOWNLOAD,
+        /** Download is being cancelled; performing cleanup. */
+        CANCEL,
+        /** Download is completed, failed or cancelled; waiting for user to close the window. */
+        DONE
+    };
+
+    private static final Logger logger = Logger.getLogger(DownloadAuditEventsWindow.class.getName());
+    private static final String WINDOW_TITLE_BASE = "Download Audit Events";
+
+    /** Combo box item to represent all published services selected. */
+    private static final EntityHeader ALL_PUBLISHED_SERVICES = new EntityHeader() {
+        @Override
+        public String toString() {
+            return "All";
+        }
+    };
+
+    /** The current window. Not exactly a singleton because it can be
+        re-instantiated many times. */
+    private static DownloadAuditEventsWindow instance;
+
+    private com.l7tech.common.gui.util.SwingWorker downloadWorker;
+
+    /** The file where audit events are saved to. */
+    private File outputFile;
+
+    /** Current state. */
+    private State state = State.CONFIGURE;
+
+    /**
+     * Returns the audit download window; which may already be in progress.
+     *
+     * @return the audit download window
+     */
+    public static synchronized DownloadAuditEventsWindow getInstance() {
+        if (instance == null) {
+            instance = new DownloadAuditEventsWindow();
+        }
+        return instance;
+    }
+
+    /**
+     * @throws RuntimeException if failed to get list of published services from
+     *         Gateway; with root exception in cause
+     */
+    private DownloadAuditEventsWindow() {
+        super(WINDOW_TITLE_BASE);
+
+        ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+        setIconImage(imageIcon.getImage());
+
+        final ActionListener l = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableComponents();
+            }
+        };
+        allRadioButton.addActionListener(l);
+        timeRangeRadioButton.addActionListener(l);
+
+        populatePublishedServiceComboBox();
+
+        fileTextField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { enableOrDisableComponents(); }
+            public void removeUpdate(DocumentEvent e) { enableOrDisableComponents(); }
+            public void changedUpdate(DocumentEvent e) { enableOrDisableComponents(); }
+        });
+
+        browseButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onBrowse();
+            }
+        });
+
+        progressLabel.setText(" ");
+        progressBar.setVisible(false);
+
+        downloadButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onDownload();
+            }
+        });
+
+        cancelOrCloseButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onCancelOrClose();
+            }
+        });
+
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                onCancelOrClose();
+            }
+        });
+
+        enableOrDisableComponents();
+
+        getContentPane().add(mainPanel);
+        pack();
+        Utilities.centerOnScreen(this);
+        setVisible(true);
+    }
+
+    /**
+     * @throws RuntimeException if failed to get list of published services from
+     *         Gateway; with root exception in cause
+     */
+    private void populatePublishedServiceComboBox() {
+        try {
+            final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
+            final EntityHeader[] publishedServices;
+                publishedServices = serviceAdmin.findAllPublishedServices();
+
+            for (EntityHeader service : publishedServices) {
+                final PublishedService ps = serviceAdmin.findServiceByID(service.getStrId());
+                if (ps != null) {
+                    service.setName(ps.displayName());
+                }
+            }
+
+            Arrays.sort(publishedServices, new Comparator<EntityHeader>() {
+                public int compare(EntityHeader eh1, EntityHeader eh2) {
+                    String name1 = eh1.getName();
+                    String name2 = eh2.getName();
+                    if (name1 == null) name1 = "";
+                    if (name2 == null) name2 = "";
+                    return name1.toLowerCase().compareTo(name2.toLowerCase());
+                }
+            });
+
+            final EntityHeader[] comboItems = new EntityHeader[publishedServices.length + 1];
+            System.arraycopy(publishedServices, 0, comboItems, 1, publishedServices.length);
+            comboItems[0] = ALL_PUBLISHED_SERVICES;
+
+            publishedServiceComboBox.setModel(new DefaultComboBoxModel(comboItems));
+        } catch (RemoteException e) {
+            throw new RuntimeException("Cannot get list of published services from Gateway.", e);
+        } catch (FindException e) {
+            throw new RuntimeException("Cannot get list of published services from Gateway.", e);
+        }
+    }
+
+    private void enableOrDisableComponents() {
+        Utilities.setEnabled(selectionPanel, state == State.CONFIGURE);
+        timeRangePicker.setEnabled(state == State.CONFIGURE && timeRangeRadioButton.isSelected());
+        downloadButton.setEnabled(state == State.CONFIGURE && !fileTextField.getText().trim().isEmpty());
+    }
+
+    /**
+     * Handles browse button click.
+     */
+    private void onBrowse() {
+        final JFileChooser chooser = new JFileChooser(fileTextField.getText());
+        chooser.setDialogTitle("Save Audit Events As");
+        chooser.setDialogType(JFileChooser.SAVE_DIALOG);
+        chooser.setMultiSelectionEnabled(false);
+        final FileNameExtensionFilter fileFilter = new FileNameExtensionFilter("ZIP archives (*.zip)", "zip");
+        chooser.setFileFilter(fileFilter);
+        final int result = chooser.showSaveDialog(DownloadAuditEventsWindow.this);
+        if (result != JFileChooser.APPROVE_OPTION)
+            return;
+
+        File filePath = chooser.getSelectedFile();
+        if (filePath == null)
+            return;
+
+        // Adds "zip" extension if ZIP filter is selected, the selected file
+        // does not exist and the name does not end with ZIP (case insensitive).
+        if (chooser.getFileFilter() == fileFilter &&
+            !filePath.exists() &&
+            !filePath.getName().toLowerCase().endsWith(".zip")) {
+            filePath = new File(filePath.getPath() + ".zip");
+        }
+
+        fileTextField.setText(filePath.getAbsolutePath());
+    }
+
+    /**
+     * Handles download button click.
+     */
+    private void onDownload() {
+        outputFile = new File(fileTextField.getText());
+        if (outputFile.exists()) {
+            String[] options = { "Overwrite", "Cancel" };
+            int result = JOptionPane.showOptionDialog(this,
+                                                      "The file\n" +
+                                                      "    " + outputFile.toString() + "\n" +
+                                                      "already exists.  Overwrite?",
+                                                      "Overwrite File",
+                                                      JOptionPane.YES_NO_OPTION,
+                                                      JOptionPane.WARNING_MESSAGE,
+                                                      null, options, options[1]);
+            if (result == 1)
+                return;
+        }
+
+        final long fromTime = timeRangeRadioButton.isSelected() ? timeRangePicker.getStartTime().getTime() : -1;
+        final long toTime = timeRangeRadioButton.isSelected() ? timeRangePicker.getEndTime().getTime() : -1;
+
+        final EntityHeader service = (EntityHeader) publishedServiceComboBox.getModel().getSelectedItem();
+        final long[] serviceOids = service == ALL_PUBLISHED_SERVICES ? null : new long[]{service.getOid()};
+
+        try {
+            final FileOutputStream outputStream = new FileOutputStream(outputFile);
+
+            state = State.DOWNLOAD;
+            enableOrDisableComponents();
+            progressBar.setVisible(true);
+            progressBar.setIndeterminate(true);
+            progressLabel.setText("Preparing data on server ...");
+
+            downloadWorker = new com.l7tech.common.gui.util.SwingWorker() {
+                private long numDownloaded;
+
+                /**
+                 * @return Boolean.TRUE if download completed successfully;
+                 *         null if interrupted;
+                 *         Throwable if error
+                 */
+                @Override
+                public Object construct() {
+                    try {
+                        final AuditAdmin auditAdmin = Registry.getDefault().getAuditAdmin();
+                        OpaqueId downloadId = auditAdmin.downloadAllAudits(fromTime, toTime, serviceOids, 0);
+                        AuditAdmin.DownloadChunk chunk;
+                        final Thread currentThread = Thread.currentThread();
+                        while (isAlive() && !currentThread.isInterrupted() && (chunk = auditAdmin.downloadNextChunk(downloadId)) != null) {
+                            if (chunk.chunk != null && chunk.chunk.length > 0) {
+                                logger.log(Level.INFO, "Downloaded chunk of audit records: " + chunk.auditsDownloaded + "/" + chunk.approxTotalAudits + "  chunkSize=" + chunk.chunk.length + " bytes");
+                                outputStream.write(chunk.chunk);
+
+                                numDownloaded = chunk.auditsDownloaded;
+                                final long n = chunk.auditsDownloaded;
+                                final long total = chunk.approxTotalAudits;
+                                final int percent = (int)Math.round(100. * n / total);
+                                SwingUtilities.invokeLater(new Runnable() {
+                                    public void run() {
+                                        int max;
+                                        int value;
+                                        if (total > Integer.MAX_VALUE) {
+                                            // Scales down from long to int proportionally.
+                                            final double scale = (double)Integer.MAX_VALUE / total;
+                                            max = (int)(scale * total);
+                                            value = (int)(scale * n);
+                                        } else {
+                                            max = (int)total;
+                                            value = (int)n;
+                                        }
+                                        progressBar.setIndeterminate(false);
+                                        progressBar.setMinimum(0);
+                                        progressBar.setMaximum(max);
+                                        progressBar.setValue(value);
+                                        progressLabel.setText("Downloaded " + n + " of " + total + " audit records (" + percent + "%)");
+                                        setTitle(WINDOW_TITLE_BASE + " (" + percent + "%)");
+                                    }
+                                });
+                            } else if (chunk.chunk != null) {
+                                logger.log(Level.INFO, "Audit download still being prepared on server side; will try again.");
+                            }
+                        }
+
+                        outputStream.close();
+
+                        if (currentThread.isInterrupted() || !isAlive()) {
+                            return null;
+                        }
+
+                        return Boolean.TRUE;
+                    } catch (RemoteException e) {
+                        return e;
+                    } catch (IOException e) {
+                        return e;
+                    }
+                }
+
+                @Override
+                public void finished() {
+                    final Object result = get();
+                    if (result == Boolean.TRUE) {
+                        progressLabel.setText("Download completed. (" + numDownloaded + " audit records)");
+                        setTitle(WINDOW_TITLE_BASE + " (Completed)");
+                    } else if (result == null) {
+                        if (outputFile != null && outputFile.exists()) {
+                            try {
+                                outputFile.delete();
+                            } catch (SecurityException e) {
+                                JOptionPane.showMessageDialog(DownloadAuditEventsWindow.this,
+                                        "Cannot delete partially downloaded file:\n    " + outputFile.getAbsolutePath() + "\n" + e.getMessage(),
+                                        "Cancel Download", JOptionPane.WARNING_MESSAGE);
+                            }
+                        }
+                        progressLabel.setText("Download cancelled.");
+                        setTitle(WINDOW_TITLE_BASE + " (Cancelled)");
+                    } else if (result instanceof Throwable) {
+                        JOptionPane.showMessageDialog(DownloadAuditEventsWindow.this,
+                                "Download failed:\n    " + ((Throwable)result).getMessage(),
+                                "Download Failure", JOptionPane.WARNING_MESSAGE);
+                        progressLabel.setText("Download failed.");
+                        setTitle(WINDOW_TITLE_BASE + " (Failed)");
+                    }
+
+                    progressBar.setValue(0);
+                    progressBar.setIndeterminate(false);
+                    progressBar.setVisible(false);
+                    state = State.DONE;
+                    cancelOrCloseButton.setText("Close");
+                    cancelOrCloseButton.setEnabled(true);
+                }
+            };
+
+            downloadWorker.start();
+        } catch (FileNotFoundException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Cannot write to file:\n    " + outputFile.getAbsolutePath() + "\n" + e.getMessage(),
+                    "Download Failure", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+    }
+
+    /**
+     * Handles cancel/close button click.
+     */
+    private void onCancelOrClose() {
+        if (state == State.DOWNLOAD) {
+            String[] options = { "Abort", "Don't Abort" };
+            int result = JOptionPane.showOptionDialog(this,
+                                                      "Download in progress. Abort?",
+                                                      "Abort Confirmation",
+                                                      JOptionPane.YES_NO_OPTION,
+                                                      JOptionPane.WARNING_MESSAGE,
+                                                      null, options, options[1]);
+            if (result == 0) {
+                cancelOrCloseButton.setEnabled(false);
+                progressLabel.setText("Cancelling download...");
+                progressBar.setIndeterminate(true);
+                downloadWorker.interrupt();
+                state = State.CANCEL;
+            }
+        } else if (state == State.CANCEL) {
+            // Already cancelling. Nothing to do but wait for cancel to finish.
+        } else {
+            // Only in CONFIGURE and DONE states do we close the window.
+            dispose();
+        }
+    }
+
+    @Override
+    public void dispose() {
+        instance = null;    // Let the next call to getInstance() instantiate afresh.
+        super.dispose();
+    }
+}

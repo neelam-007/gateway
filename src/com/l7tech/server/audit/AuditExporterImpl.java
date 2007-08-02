@@ -13,10 +13,9 @@ import com.l7tech.common.audit.Messages;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.objectmodel.CompressedStringType;
-
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
@@ -33,33 +32,26 @@ import java.io.PrintStream;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.sql.*;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import java.util.List;
-import java.util.ArrayList;
-import java.text.MessageFormat;
 
 /**
  * Simple utility to export signed audit records.
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class AuditExporterImpl extends HibernateDaoSupport implements AuditExporter {
-    private static final String SQL =
-            "select audit_main.*, audit_admin.*, audit_message.*, audit_system.*,\n" +
-            "GROUP_CONCAT(distinct 'ADMID:', audit_detail.message_id, '/-/_/-/', (select GROUP_CONCAT(value ORDER BY position asc SEPARATOR '/-/_/-/') from audit_detail_params where\n" +
-            "audit_detail_params.audit_detail_oid=audit_detail.objectid) ORDER BY ordinal SEPARATOR '/-/_/-/') as audit_associated_logs\n" +
-            "from audit_main\n" +
-            "left outer join audit_admin on audit_main.objectid=audit_admin.objectid\n" +
-            "left outer join audit_message on audit_main.objectid=audit_message.objectid\n" +
-            "left outer join audit_system on audit_main.objectid=audit_system.objectid\n" +
-            "left outer join audit_detail on audit_main.objectid=audit_detail.audit_oid GROUP BY audit_main.objectid";
 
+    private static final Logger logger = Logger.getLogger(AuditExporterImpl.class.getName());
     private static final String DETAILS_TO_EXPAND = "audit_associated_logs";
     private static final String AUDITDETAILMESSAGEID = "ADMID:";
     private static final String SEPARATOR = "/-/_/-/";
     private static final int FETCH_SIZE_ROWS = Integer.MIN_VALUE;
-    private static final String COUNT_SQL = "select count(*) from audit_main"; // TODO replace with faster query that counts index instead
     private static final String SIG_XML = "<audit:AuditMetadata xmlns:audit=\"http://l7tech.com/ns/2004/Oct/08/audit\" />";
     private static final char DELIM = ':';
     private static final Pattern badCharPattern = Pattern.compile("([^\\040-\\0176]|\\\\|\\" + DELIM + ")");
@@ -70,6 +62,88 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
 
     static String quoteMeta(String raw) {
         return badCharPattern.matcher(raw).replaceAll("\\\\$1");
+    }
+
+    /**
+     * Composes the SQL statement to download audit records.
+     *
+     * @param fromTime      minimum audit event time (milliseconds from epoch) to filter; -1 for no minimum
+     * @param toTime        maximum audit event time (milliseconds from epoch) to filter; -1 for no maximum
+     * @param serviceOids   OIDs of services (thus filtering to service events only); null for no service filtering
+     * @return SQL statement; never null
+     */
+    private static String composeSql(long fromTime, long toTime, long[] serviceOids) {
+        final StringBuilder s = new StringBuilder(
+            "SELECT audit_main.*, audit_admin.*, audit_message.*, audit_system.*, " +
+            "GROUP_CONCAT(DISTINCT 'ADMID:', audit_detail.message_id, '/-/_/-/', (SELECT GROUP_CONCAT(value ORDER BY position ASC SEPARATOR '/-/_/-/') FROM audit_detail_params WHERE " +
+            "audit_detail_params.audit_detail_oid = audit_detail.objectid) ORDER BY ordinal SEPARATOR '/-/_/-/') AS audit_associated_logs " +
+            "FROM audit_main " +
+            "LEFT OUTER JOIN audit_admin ON audit_main.objectid = audit_admin.objectid " +
+            "LEFT OUTER JOIN audit_message ON audit_main.objectid = audit_message.objectid " +
+            "LEFT OUTER JOIN audit_system ON audit_main.objectid = audit_system.objectid " +
+            "LEFT OUTER JOIN audit_detail ON audit_main.objectid = audit_detail.audit_oid");
+        s.append(composeWhereClause(fromTime, toTime, serviceOids));
+        s.append(" GROUP BY audit_main.objectid");
+        return s.toString();
+    }
+
+    /**
+     * Composes the SQL statement for counting number of audit records eligible for download.
+     *
+     * @param fromTime      minimum audit event time (milliseconds from epoch) to filter; -1 for no minimum
+     * @param toTime        maximum audit event time (milliseconds from epoch) to filter; -1 for no maximum
+     * @param serviceOids   OIDs of services (thus filtering to service events only); null for no service filtering
+     * @return SQL statement; never null
+     */
+    private static String composeCountSql(long fromTime, long toTime, long[] serviceOids) {
+        final StringBuilder s = new StringBuilder("SELECT COUNT(*) FROM audit_main");
+        if (serviceOids != null && serviceOids.length > 0) {
+            s.append(", audit_message");
+        }
+        s.append(composeWhereClause(fromTime, toTime, serviceOids));
+        if (serviceOids != null && serviceOids.length > 0) {
+            s.append(" AND audit_main.objectid = audit_message.objectid");
+        }
+        return s.toString();
+    }
+
+    /**
+     * Composes the SQL WHERE clause based on the given contraints.
+     *
+     * @param fromTime      minimum audit event time (milliseconds from epoch) to filter; -1 for no minimum
+     * @param toTime        maximum audit event time (milliseconds from epoch) to filter; -1 for no maximum
+     * @param serviceOids   OIDs of services (thus filtering to service events only); null for no service filtering
+     * @return SQL WHERE clause; may be empty but never null
+     */
+    private static String composeWhereClause(long fromTime, long toTime, long[] serviceOids) {
+        final StringBuilder s = new StringBuilder();
+
+        if (fromTime != -1) {
+            s.append("audit_main.time >= ");
+            s.append(fromTime);
+        }
+
+        if (toTime != -1) {
+            if (s.length() > 0) s.append(" AND ");
+            s.append("audit_main.time <= ");
+            s.append(toTime);
+        }
+
+        if (serviceOids != null && serviceOids.length > 0) {
+            if (s.length() > 0) s.append(" AND ");
+            s.append("audit_message.service_oid IN (");
+            for (int i = 0; i < serviceOids.length; ++ i) {
+                if (i != 0) s.append(", ");
+                s.append(serviceOids[i]);
+            }
+            s.append(")");
+        }
+
+        if (s.length() > 0) {
+            s.insert(0, " WHERE ");
+        }
+
+        return s.toString();
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -93,10 +167,18 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * field delimiter..
      * The row contains the column names; subsequent rows contain a dump of all the audit records.
      * No signature or other metadata is emitted.
-     * @param rawOut the OutputStream to which the colon-delimited dump will be written.
+     *
+     * @param fromTime      minimum audit event time (milliseconds from epoch) to filter; -1 for no minimum
+     * @param toTime        maximum audit event time (milliseconds from epoch) to filter; -1 for no maximum
+     * @param serviceOids   OIDs of services (thus filtering to service events only); null for no service filtering
+     * @param rawOut        the OutputStream to which the colon-delimited dump will be written.
      * @return the time in milliseconds of the most-recent audit record exported.
      */
-    private ExportedInfo exportAllAudits(OutputStream rawOut) throws SQLException, IOException, HibernateException, InterruptedException {
+    private ExportedInfo exportAllAudits(long fromTime,
+                                         long toTime,
+                                         long[] serviceOids,
+                                         OutputStream rawOut)
+            throws SQLException, IOException, HibernateException, InterruptedException {
         Connection conn = null;
         Statement st = null;
         ResultSet rs = null;
@@ -113,17 +195,21 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             st = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
             st.setFetchSize(FETCH_SIZE_ROWS);
 
-            rs = st.executeQuery(COUNT_SQL);
+            final String countSql = composeCountSql(fromTime, toTime, serviceOids);
+            if (logger.isLoggable(Level.FINE)) logger.fine("countSql = " + countSql);
+            rs = st.executeQuery(countSql);
 
-            if (rs == null) throw new SQLException("Unable to obtain audit count with query: " + COUNT_SQL);
+            if (rs == null) throw new SQLException("Unable to obtain audit count with query: " + countSql);
             rs.next();
             final long ante = rs.getLong(1);
             rs.close();
             rs = null;
             synchronized (this) { approxNumToExport = ante; }
 
-            rs = st.executeQuery(SQL);
-            if (rs == null) throw new SQLException("Unable to obtain audits with query: " + SQL);
+            final String sql = composeSql(fromTime, toTime, serviceOids);
+            if (logger.isLoggable(Level.FINE)) logger.fine("sql = " + sql);
+            rs = st.executeQuery(sql);
+            if (rs == null) throw new SQLException("Unable to obtain audits with query: " + sql);
             ResultSetMetaData md = rs.getMetaData();
 
             int timecolumn = 3; // initial guess
@@ -325,14 +411,13 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         parent.appendChild(XmlUtil.createTextNode(parent, "\n"));
     }
 
-    /**
-     * Export all audit events from the database to the specified OutputStream as a Zip file, including a signature.
-     * @param fileOut OutputStream to which the Zip file will be written.
-     */
     @Transactional(propagation=Propagation.REQUIRED,readOnly=true,rollbackFor={},noRollbackFor=Throwable.class)
-    public void exportAuditsAsZipFile(OutputStream fileOut,
-                                             X509Certificate signingCert,
-                                             PrivateKey signingKey)
+    public void exportAuditsAsZipFile(long fromTime,
+                                      long toTime,
+                                      long[] serviceOids,
+                                      OutputStream fileOut,
+                                      X509Certificate signingCert,
+                                      PrivateKey signingKey)
             throws IOException, SQLException, HibernateException, SignatureException, InterruptedException
     {
         final long startTime = System.currentTimeMillis();
@@ -344,7 +429,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             zipOut.setComment(BuildInfo.getBuildString() + " - Exported Audit Records - Created " + dateString);
             ZipEntry ze = new ZipEntry("audit.dat");
             zipOut.putNextEntry(ze);
-            ExportedInfo exportedInfo = exportAllAudits(zipOut);
+            ExportedInfo exportedInfo = exportAllAudits(fromTime, toTime, serviceOids, zipOut);
             long highestTime = exportedInfo.getLatestTime();
             zipOut.flush();
             buffOut.flush();

@@ -4,6 +4,8 @@
 
 package com.l7tech.server.audit;
 
+import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditRecord;
@@ -17,17 +19,14 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.cluster.ClusterPropertyManager;
-import com.l7tech.cluster.ClusterProperty;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.io.InterruptedIOException;
 import java.rmi.RemoteException;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
@@ -136,11 +135,17 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         private final PipedOutputStream pos = new PipedOutputStream();
         private final PipedInputStream pis = new PipedInputStream(pos);
         private final Timer timer = new Timer("DownloadContextTimer", true);
+        private final long fromTime;
+        private final long toTime;
+        private final long[] serviceOids;
         private final int chunkLength;
         private final Thread producerThread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    auditExporter.exportAuditsAsZipFile(pos,
+                    auditExporter.exportAuditsAsZipFile(fromTime,
+                                                        toTime,
+                                                        serviceOids,
+                                                        pos,
                                                         sslCert,
                                                         sslPrivateKey);
                 } catch (InterruptedException e) {
@@ -157,8 +162,17 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         private volatile Throwable producerException = null;
         private long lastUsed = System.currentTimeMillis();
 
-        private DownloadContext(int chunkLength, AuditExporter exporter, X509Certificate sslCert, PrivateKey sslPrivateKey) throws IOException {
+        private DownloadContext(long fromTime,
+                                long toTime,
+                                long[] serviceOids,
+                                int chunkLength,
+                                AuditExporter exporter,
+                                X509Certificate sslCert,
+                                PrivateKey sslPrivateKey) throws IOException {
             if (chunkLength < 1) chunkLength = DEFAULT_DOWNLOAD_CHUNK_LENGTH;
+            this.fromTime = fromTime;
+            this.toTime = toTime;
+            this.serviceOids = serviceOids;
             this.chunkLength = chunkLength;
             this.sslCert = sslCert;
             this.sslPrivateKey = sslPrivateKey;
@@ -331,10 +345,13 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         }
     }
 
-    public OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException {
+    public OpaqueId downloadAllAudits(long fromTime,
+                                      long toTime,
+                                      long[] serviceOids,
+                                      int chunkSizeInBytes) throws RemoteException {
         try {
             final DownloadContext downloadContext;
-            downloadContext = new DownloadContext(0, (AuditExporter)applicationContext.getBean("auditExporter"), keystore.getSslCert(), keystore.getSSLPrivateKey());
+            downloadContext = new DownloadContext(fromTime, toTime, serviceOids, 0, (AuditExporter)applicationContext.getBean("auditExporter"), keystore.getSslCert(), keystore.getSSLPrivateKey());
             downloadContext.checkForException();
             downloadContexts.put(downloadContext.getOpaqueId(), downloadContext);
             return downloadContext.getOpaqueId();

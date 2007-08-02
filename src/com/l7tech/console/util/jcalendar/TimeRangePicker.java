@@ -3,8 +3,6 @@
  */
 package com.l7tech.console.util.jcalendar;
 
-import com.l7tech.common.gui.util.Utilities;
-
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -208,8 +206,11 @@ public class TimeRangePicker extends JComponent implements PropertyChangeListene
 
     @Override
     public void setEnabled(boolean b) {
-        Utilities.setEnabled(mainPanel, b);
-        super.setEnabled(b);
+        _startChooser.setEnabled(b);
+        _endChooser.setEnabled(b);
+        _timeZoneComboBox.setEnabled(b);
+        _timeZoneLabel.setEnabled(b);
+
     }
 
     // Implements PropertyChangeListener.

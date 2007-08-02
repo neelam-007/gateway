@@ -46,7 +46,7 @@ public class AuditExporterTest extends TestCase {
         FileOutputStream fileOut = null;
         try {
             fileOut = new FileOutputStream("AuditExporterTest.zip");
-            new AuditExporterImpl().exportAuditsAsZipFile(fileOut,
+            new AuditExporterImpl().exportAuditsAsZipFile(-1, -1, null, fileOut,
                                                       TestDocuments.getDotNetServerCertificate(),
                                                       TestDocuments.getDotNetServerPrivateKey());
         } finally {

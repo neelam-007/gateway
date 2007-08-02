@@ -292,7 +292,9 @@ public class LogPanel extends JPanel {
     private void enableOrDisableComponents() {
         Utilities.setEnabled(controlPanel.mainPanel, connected);
         if (connected) {
-            Utilities.setEnabled(controlPanel.durationPanel, controlPanel.durationButton.isSelected());
+            controlPanel.hoursTextField.setEnabled(controlPanel.durationButton.isSelected());
+            controlPanel.minutesTextField.setEnabled(controlPanel.durationButton.isSelected());
+            controlPanel.autoRefreshCheckBox.setEnabled(controlPanel.durationButton.isSelected());
             controlPanel.timeRangePicker.setEnabled(controlPanel.timeRangeButton.isSelected());
         }
     }
