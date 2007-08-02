@@ -18,6 +18,8 @@ import com.l7tech.service.ServiceAdmin;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -54,11 +56,13 @@ import java.util.logging.Logger;
 public class DownloadAuditEventsWindow extends JFrame {
     private JPanel mainPanel;
     private JPanel selectionPanel;
-    private JRadioButton allRadioButton;
-    private JRadioButton timeRangeRadioButton;
+    private JRadioButton allTimeRadioButton;
+    private JRadioButton selectedTimeRadioButton;
     private TimeRangePicker timeRangePicker;
-    private JComboBox publishedServiceComboBox;
-    private JTextField fileTextField;
+    private JRadioButton allPublishedServiceRadioButton;
+    private JRadioButton selectedPublishedServiceRadioButton;
+    private JList publishedServiceList;
+    private JTextField filePathTextField;
     private JButton browseButton;
     private JLabel progressLabel;
     private JProgressBar progressBar;
@@ -127,12 +131,14 @@ public class DownloadAuditEventsWindow extends JFrame {
                 enableOrDisableComponents();
             }
         };
-        allRadioButton.addActionListener(l);
-        timeRangeRadioButton.addActionListener(l);
+        allTimeRadioButton.addActionListener(l);
+        selectedTimeRadioButton.addActionListener(l);
+        allPublishedServiceRadioButton.addActionListener(l);
+        selectedPublishedServiceRadioButton.addActionListener(l);
 
-        populatePublishedServiceComboBox();
+        initPublishedServiceList();
 
-        fileTextField.getDocument().addDocumentListener(new DocumentListener() {
+        filePathTextField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { enableOrDisableComponents(); }
             public void removeUpdate(DocumentEvent e) { enableOrDisableComponents(); }
             public void changedUpdate(DocumentEvent e) { enableOrDisableComponents(); }
@@ -179,12 +185,12 @@ public class DownloadAuditEventsWindow extends JFrame {
      * @throws RuntimeException if failed to get list of published services from
      *         Gateway; with root exception in cause
      */
-    private void populatePublishedServiceComboBox() {
+    private void initPublishedServiceList() {
         try {
             final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
-            final EntityHeader[] publishedServices;
-                publishedServices = serviceAdmin.findAllPublishedServices();
+            final EntityHeader[] publishedServices = serviceAdmin.findAllPublishedServices();
 
+            // Uses the more descriptive name (including URI) for display.
             for (EntityHeader service : publishedServices) {
                 final PublishedService ps = serviceAdmin.findServiceByID(service.getStrId());
                 if (ps != null) {
@@ -192,6 +198,7 @@ public class DownloadAuditEventsWindow extends JFrame {
                 }
             }
 
+            // Sorts alphabetically by name.
             Arrays.sort(publishedServices, new Comparator<EntityHeader>() {
                 public int compare(EntityHeader eh1, EntityHeader eh2) {
                     String name1 = eh1.getName();
@@ -202,29 +209,39 @@ public class DownloadAuditEventsWindow extends JFrame {
                 }
             });
 
-            final EntityHeader[] comboItems = new EntityHeader[publishedServices.length + 1];
-            System.arraycopy(publishedServices, 0, comboItems, 1, publishedServices.length);
-            comboItems[0] = ALL_PUBLISHED_SERVICES;
-
-            publishedServiceComboBox.setModel(new DefaultComboBoxModel(comboItems));
+            final DefaultListModel model = new DefaultListModel();
+            for (EntityHeader service : publishedServices) {
+                model.addElement(service);
+            }
+            publishedServiceList.setModel(model);
         } catch (RemoteException e) {
             throw new RuntimeException("Cannot get list of published services from Gateway.", e);
         } catch (FindException e) {
             throw new RuntimeException("Cannot get list of published services from Gateway.", e);
         }
+
+        publishedServiceList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        publishedServiceList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                enableOrDisableComponents();
+            }
+        });
     }
 
     private void enableOrDisableComponents() {
         Utilities.setEnabled(selectionPanel, state == State.CONFIGURE);
-        timeRangePicker.setEnabled(state == State.CONFIGURE && timeRangeRadioButton.isSelected());
-        downloadButton.setEnabled(state == State.CONFIGURE && !fileTextField.getText().trim().isEmpty());
+        timeRangePicker.setEnabled(state == State.CONFIGURE && selectedTimeRadioButton.isSelected());
+        publishedServiceList.setEnabled(state == State.CONFIGURE && selectedPublishedServiceRadioButton.isSelected());
+        downloadButton.setEnabled(state == State.CONFIGURE
+                && (allPublishedServiceRadioButton.isSelected() || publishedServiceList.getSelectedValues().length > 0)
+                && !filePathTextField.getText().trim().isEmpty());
     }
 
     /**
      * Handles browse button click.
      */
     private void onBrowse() {
-        final JFileChooser chooser = new JFileChooser(fileTextField.getText());
+        final JFileChooser chooser = new JFileChooser(filePathTextField.getText());
         chooser.setDialogTitle("Save Audit Events As");
         chooser.setDialogType(JFileChooser.SAVE_DIALOG);
         chooser.setMultiSelectionEnabled(false);
@@ -246,14 +263,14 @@ public class DownloadAuditEventsWindow extends JFrame {
             filePath = new File(filePath.getPath() + ".zip");
         }
 
-        fileTextField.setText(filePath.getAbsolutePath());
+        filePathTextField.setText(filePath.getAbsolutePath());
     }
 
     /**
      * Handles download button click.
      */
     private void onDownload() {
-        outputFile = new File(fileTextField.getText());
+        outputFile = new File(filePathTextField.getText());
         if (outputFile.exists()) {
             String[] options = { "Overwrite", "Cancel" };
             int result = JOptionPane.showOptionDialog(this,
@@ -268,11 +285,17 @@ public class DownloadAuditEventsWindow extends JFrame {
                 return;
         }
 
-        final long fromTime = timeRangeRadioButton.isSelected() ? timeRangePicker.getStartTime().getTime() : -1;
-        final long toTime = timeRangeRadioButton.isSelected() ? timeRangePicker.getEndTime().getTime() : -1;
+        final long fromTime = allTimeRadioButton.isSelected() ? -1 : timeRangePicker.getStartTime().getTime();
+        final long toTime = allTimeRadioButton.isSelected() ? -1 : timeRangePicker.getEndTime().getTime();
 
-        final EntityHeader service = (EntityHeader) publishedServiceComboBox.getModel().getSelectedItem();
-        final long[] serviceOids = service == ALL_PUBLISHED_SERVICES ? null : new long[]{service.getOid()};
+        final Object[] selected = publishedServiceList.getSelectedValues();
+        final int numSelected= selected.length;
+        final long[] serviceOids = allPublishedServiceRadioButton.isSelected() ? null : new long[numSelected];
+        if (selectedPublishedServiceRadioButton.isSelected()) {
+            for (int i = 0; i < numSelected; ++ i) {
+                serviceOids[i] = ((EntityHeader)selected[i]).getOid();
+            }
+        }
 
         try {
             final FileOutputStream outputStream = new FileOutputStream(outputFile);
