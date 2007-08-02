@@ -403,7 +403,7 @@ public class DownloadAuditEventsWindow extends JFrame {
                                                       JOptionPane.YES_NO_OPTION,
                                                       JOptionPane.WARNING_MESSAGE,
                                                       null, options, options[1]);
-            if (result == 0) {
+            if (result == 0 && state == State.DOWNLOAD /* make sure still in progress */) {
                 cancelOrCloseButton.setEnabled(false);
                 progressLabel.setText("Cancelling download...");
                 progressBar.setIndeterminate(true);
