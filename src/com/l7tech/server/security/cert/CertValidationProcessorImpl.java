@@ -6,7 +6,6 @@ package com.l7tech.server.security.cert;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.security.CertificateValidationResult;
-import static com.l7tech.common.security.CertificateValidationResult.CANT_BUILD_PATH;
 import static com.l7tech.common.security.CertificateValidationResult.OK;
 import com.l7tech.common.security.CertificateValidationType;
 import static com.l7tech.common.security.CertificateValidationType.CERTIFICATE_ONLY;
@@ -25,16 +24,15 @@ import org.springframework.context.ApplicationListener;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.security.*;
 import java.security.cert.*;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**
  * @author alex
@@ -185,35 +183,35 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                                                              Auditor auditor)
             throws SignatureException, CertificateException
     {
-        final CertValidationCacheEntry issuerCacheEntry;
-        lock.readLock().lock();
-        try {
-            issuerCacheEntry = trustedCertsByDn.get(issuerDn);
-            if (issuerCacheEntry == null) {
-                auditor.logAndAudit(SystemMessages.CERTVAL_CANT_FIND_ISSUER, issuerDn, subjectDn);
-                return CANT_BUILD_PATH;
-            }
-        } finally {
-            lock.readLock().unlock();
-        }
-
-        X509Certificate issuerCert = issuerCacheEntry.cert;
-        try {
-            // Note, this is not path validation per se; we always verify the signature on the end entity cert, so its
-            // CA has to be known.
-            CertUtils.cachedVerify(endEntityCertificate, issuerCert.getPublicKey());
-            // We do these here because they would normally be done as part of path validation, which we're skipping
-            endEntityCertificate.checkValidity();
-            issuerCacheEntry.cert.checkValidity();
-            auditor.logAndAudit(SystemMessages.CERTVAL_CHECKED);
+//        final CertValidationCacheEntry issuerCacheEntry;
+//        lock.readLock().lock();
+//        try {
+//            issuerCacheEntry = trustedCertsByDn.get(issuerDn);
+//            if (issuerCacheEntry == null) {
+//                auditor.logAndAudit(SystemMessages.CERTVAL_CANT_FIND_ISSUER, issuerDn, subjectDn);
+//                return CANT_BUILD_PATH;
+//            }
+//        } finally {
+//            lock.readLock().unlock();
+//        }
+//
+//        X509Certificate issuerCert = issuerCacheEntry.cert;
+//        try {
+//            // Note, this is not path validation per se; we always verify the signature on the end entity cert, so its
+//            // CA has to be known.
+//            CertUtils.cachedVerify(endEntityCertificate, issuerCert.getPublicKey());
+//            // We do these here because they would normally be done as part of path validation, which we're skipping
+//            endEntityCertificate.checkValidity();
+//            issuerCacheEntry.cert.checkValidity();
+//            auditor.logAndAudit(SystemMessages.CERTVAL_CHECKED);
             return OK;
-        } catch (InvalidKeyException e1) {
-            throw new CertificateException(MessageFormat.format("Couldn't verify signature of issuer {0} on end entity {1}", issuerDn, subjectDn), e1);
-        } catch (NoSuchAlgorithmException e11) {
-            throw new RuntimeException(e11); // Can't happen
-        } catch (NoSuchProviderException e12) {
-            throw new RuntimeException(e12); // Can't happen
-        }
+//        } catch (InvalidKeyException e1) {
+//            throw new CertificateException(MessageFormat.format("Couldn't verify signature of issuer {0} on end entity {1}", issuerDn, subjectDn), e1);
+//        } catch (NoSuchAlgorithmException e11) {
+//            throw new RuntimeException(e11); // Can't happen
+//        } catch (NoSuchProviderException e12) {
+//            throw new RuntimeException(e12); // Can't happen
+//        }
     }
 
     public TrustedCert getTrustedCertByOid(long oid) {
