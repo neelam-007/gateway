@@ -98,9 +98,16 @@
         <property name="staticMethod" value="com.l7tech.common.security.Keys.createTestSsgKeystoreProperties"/>
     </bean>
 
+    <bean id="masterPasswordManager" class="com.l7tech.common.security.MasterPasswordManagerStub">
+        <constructor-arg>
+            <value>test_mp_12345</value>
+        </constructor-arg>
+    </bean>
+
     <!-- ssl config  -->
     <bean id="keystore" class="com.l7tech.server.KeystoreUtils" depends-on="testKeys">
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="masterPasswordManager"/>
     </bean>
 
     <bean id="sslKeystoreType" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
