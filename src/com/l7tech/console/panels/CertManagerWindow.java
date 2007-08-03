@@ -248,7 +248,12 @@ public class CertManagerWindow extends JDialog {
     }
 
     private void showCertificateValidation() {
-        DialogDisplayer.display(new ManageCertificateValidationDialog(this));    
+        DialogDisplayer.display(new ManageCertificateValidationDialog(this), new Runnable() {
+            public void run() {
+                // invalidate cache policies in case there are any new ones                
+                revocationCheckPolicies = null;
+            }
+        });
     }
 
     /**
