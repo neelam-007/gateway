@@ -16,11 +16,11 @@ import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.transport.ftp.FtpTestException;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.external.assertions.ftprouting.FtpCredentialsSource;
 import com.l7tech.external.assertions.ftprouting.FtpFileNameSource;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
 import com.l7tech.external.assertions.ftprouting.FtpSecurity;
-import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -35,6 +35,7 @@ import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,7 +61,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     private static final Logger _logger = Logger.getLogger(ServerFtpRoutingAssertion.class.getName());
     private static final Random _random = new Random(System.currentTimeMillis());
     private final Auditor _auditor;
-    private final TrustedCertManager _trustedCertManager;
+    private final X509TrustManager _trustManager;
     private final SsgKeyStoreManager _ssgKeyStoreManager;
 
 
@@ -77,15 +78,15 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
      * better exception message.
      */
     private static class CertificateVerifier implements FtpsCertificateVerifier {
-        private final TrustedCertManager _trustedCertManager;
+        private final X509TrustManager _trustManager;
         private final String _hostName;
         private boolean _authorized = false;
         private FtpException _exception;
 
-        public CertificateVerifier(TrustedCertManager trustedCertManager, String hostName) {
-            assert(trustedCertManager != null);
+        public CertificateVerifier(X509TrustManager trustManager, String hostName) {
+            assert(trustManager != null);
             assert(hostName != null);
-            _trustedCertManager = trustedCertManager;
+            _trustManager = trustManager;
             _hostName = hostName;
         }
 
@@ -114,7 +115,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 }
             }
             try {
-                _trustedCertManager.checkSslTrust(x509certs);
+                _trustManager.checkServerTrusted(x509certs, CertUtils.extractAuthType(sslSession.getCipherSuite()));
                 _authorized = true;
                 _exception = null;
             } catch (CertificateException e) {
@@ -134,7 +135,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     public ServerFtpRoutingAssertion(FtpRoutingAssertion assertion, ApplicationContext applicationContext) {
         super(assertion, applicationContext, _logger);
         _auditor = new Auditor(this, applicationContext, _logger);
-        _trustedCertManager = (TrustedCertManager)applicationContext.getBean("trustedCertManager", TrustedCertManager.class);
+        _trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager", X509TrustManager.class);
         _ssgKeyStoreManager = (SsgKeyStoreManager)applicationContext.getBean("ssgKeyStoreManager", SsgKeyStoreManager.class);
 
     }
@@ -240,7 +241,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                                             assertion.getDirectory(),
                                             assertion.getTimeout(),
                                             null,
-                                            _trustedCertManager,
+                                            _trustManager,
                                             _ssgKeyStoreManager);
         try {
             ftps.upload(is, fileName);
@@ -309,7 +310,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
      * @param directory             remote directory to "cd" into; supply empty string if no "cd" wanted
      * @param timeout               connection timeout in milliseconds
      * @param debugStream           an opened stream to receive server responses; can be null
-     * @param trustedCertManager    must not be null if isVerifyServerCert is true
+     * @param trustManager          must not be null if isVerifyServerCert is true
      * @param ssgKeyStoreManager    must not be null if useClientCert is true
      * @return a new Ftps object in connected state
      * @throws FtpException if failure
@@ -326,9 +327,9 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                                           String directory,
                                           int timeout,
                                           PrintStream debugStream,
-                                          TrustedCertManager trustedCertManager,
+                                          X509TrustManager trustManager,
                                           SsgKeyStoreManager ssgKeyStoreManager) throws FtpException {
-        assert(!isVerifyServerCert || trustedCertManager != null);
+        assert(!isVerifyServerCert || trustManager != null);
         assert(hostName != null);
         assert(userName != null);
         assert(password != null);
@@ -344,7 +345,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
         CertificateVerifier certificateVerifier = null;
         if (isVerifyServerCert) {
-            certificateVerifier = new CertificateVerifier(trustedCertManager, hostName);
+            certificateVerifier = new CertificateVerifier(trustManager, hostName);
             ftps.setFtpsCertificateVerifier(certificateVerifier);
         }
 
@@ -485,7 +486,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
      * @param clientCertKeyAlias    key alias in keystore to use if useClientCert is true; must not be null if useClientCert is true
      * @param directory             remote directory to "cd" into; supply empty string if no "cd" wanted
      * @param timeout               connection timeout in milliseconds
-     * @param trustedCertManager    must not be null if isVerifyServerCert is true
+     * @param trustManager          must not be null if isVerifyServerCert is true
      * @param ssgKeyStoreManager    must not be null if useClientCert is true
      * @throws FtpTestException if connection test failed
      */
@@ -501,7 +502,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                                       String clientCertKeyAlias,
                                       String directory,
                                       int timeout,
-                                      TrustedCertManager trustedCertManager,
+                                      X509TrustManager trustManager,
                                       SsgKeyStoreManager ssgKeyStoreManager) throws FtpTestException {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final PrintStream debugStream = new PrintStream(baos);
@@ -521,7 +522,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                                          directory,
                                          timeout,
                                          debugStream,
-                                         trustedCertManager,
+                                         trustManager,
                                          ssgKeyStoreManager);
             } else {
                 ftp = newFtpConnection(hostName,

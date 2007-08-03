@@ -8,6 +8,7 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
@@ -29,8 +30,13 @@ import java.util.logging.Logger;
  * @author alex
  */
 public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
-    SamlAuthorizationHandler(FederatedIdentityProvider provider, TrustedCertManager trustedCertManager, ClientCertManager clientCertManager, CertValidationProcessor certValidationProcessor, Set certOidSet) {
-        super(provider, trustedCertManager, clientCertManager, certValidationProcessor, certOidSet);
+    SamlAuthorizationHandler(FederatedIdentityProvider provider,
+                             TrustedCertManager trustedCertManager,
+                             ClientCertManager clientCertManager,
+                             CertValidationProcessor certValidationProcessor,
+                             Auditor auditor,
+                             Set certOidSet) {
+        super(provider, trustedCertManager, clientCertManager, certValidationProcessor, auditor, certOidSet);
     }
 
     User authorize(LoginCredentials pc) throws AuthenticationException {
@@ -72,6 +78,8 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             } else if (!certOidSet.contains(new Long(samlSignerTrust.getOid()))) {
                 throw new BadCredentialsException(untrusted + " for this Federated Identity Provider");
             }
+
+            validateCertificate( signerCertificate, false );                    
         } catch (FindException e) {
             final String msg = "Couldn't find TrustedCert entry for assertion signer";
             logger.log(Level.SEVERE, msg, e);
@@ -107,6 +115,8 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                     if (!certOidSet.contains(new Long(attestingEntityCertificateTrust.getOid()))) {
                         throw new BadCredentialsException("The certificate '" + attestingEntityDN + " is not trusted as Attesting Entity" + " for this Federated Identity Provider");
                     }
+
+                    validateCertificate( attestingEntityCertificate, false );                    
                 }
             } catch (FindException e) {
                 final String msg = "Couldn't find TrustedCert entry for Attesting Entity Certificate";
@@ -134,6 +144,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                         try {
                             certIssuerCert = certIssuerTrust.getCertificate();
                             CertUtils.cachedVerify(subjectCertificate, certIssuerCert.getPublicKey());
+                            validateCertificate( subjectCertificate, true );                    
                         } catch (CertificateException e) {
                             throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
                         } catch (GeneralSecurityException e) {

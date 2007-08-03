@@ -72,7 +72,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
 
         // Get the revocation checker for the issuer
         RevocationChecker revocationChecker = revocationCheckerFactory.getRevocationChecker(issuerCertificate);
-        CertificateValidationResult status = revocationChecker.getRevocationStatus(x509Certificate, auditor);
+        CertificateValidationResult status = revocationChecker.getRevocationStatus(x509Certificate, issuerCertificate, auditor);
         if (!status.equals(CertificateValidationResult.OK)) {
             throw new CertPathValidatorException("Revocation check failed for certificate '"+x509Certificate.getSubjectDN()+"'.");    
         }

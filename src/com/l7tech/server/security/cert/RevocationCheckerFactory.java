@@ -1,34 +1,47 @@
 package com.l7tech.server.security.cert;
 
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.SystemMessages;
-import com.l7tech.common.security.CertificateValidationResult;
-import com.l7tech.common.security.RevocationCheckPolicy;
-import com.l7tech.common.security.RevocationCheckPolicyItem;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.Functions;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.util.ServerCertUtils;
-
 import java.io.IOException;
-import java.security.cert.*;
-import java.util.*;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
+import java.security.cert.CRLException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.math.BigInteger;
 
+import com.whirlycott.cache.Cache;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.DERIA5String;
+
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.SystemMessages;
+import com.l7tech.common.security.CertificateValidationResult;
+import com.l7tech.common.security.CertificateValidationType;
+import com.l7tech.common.security.RevocationCheckPolicy;
+import com.l7tech.common.security.RevocationCheckPolicyItem;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
+import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.util.ServerCertUtils;
 
 /**
  * Factory for building RevocationCheckers.
@@ -36,21 +49,25 @@ import org.bouncycastle.asn1.DERIA5String;
  * @author Steve Jones
  */
 public class RevocationCheckerFactory {
+    
     //- PUBLIC
 
     /**
      * Create a RevocationCheckerFactory that will obtain data from the given providers
      */
-    public RevocationCheckerFactory(CertValidationProcessor processor, CrlCache crlCache) {
+    public RevocationCheckerFactory(CertValidationProcessor processor, CrlCache crlCache, OCSPCache ocspCache) {
         // managers
         this.certValidationProcessor = processor;
         this.crlCache = crlCache;
+        this.ocspCache = ocspCache;
 
         // initialize maps and map lock
+        // use Whirlycache for checkers by cert as this could be large
         this.mapLock = new ReentrantReadWriteLock();
-        this.checkersByCert = new HashMap();
         this.keysByTrustedCertOid = new HashMap();
         this.keysByRevocationCheckPolicyOid = new HashMap();
+        this.checkersByCert =
+                WhirlycacheFactory.createCache("RevocationPolicyCache", 1000, 66, WhirlycacheFactory.POLICY_LRU);
     }
 
     /**
@@ -66,7 +83,7 @@ public class RevocationCheckerFactory {
 
             mapLock.readLock().lock();
             try {
-                checker = checkersByCert.get(key);
+                checker = (CompositeRevocationChecker) checkersByCert.retrieve(key);
             } finally {
                 mapLock.readLock().unlock();
             }
@@ -80,7 +97,7 @@ public class RevocationCheckerFactory {
 
                 mapLock.writeLock().lock();
                 try {
-                    checkersByCert.put(key, checker);
+                    checkersByCert.store(key, checker);
 
                     if (trustedCert != null)
                         addChecker(keysByTrustedCertOid, trustedCert.getOid(), checker);
@@ -152,11 +169,12 @@ public class RevocationCheckerFactory {
 
     private final CertValidationProcessor certValidationProcessor;
     private final CrlCache crlCache;
+    private final OCSPCache ocspCache;
 
     private final ReadWriteLock mapLock;
-    private Map<CertKey,CompositeRevocationChecker> checkersByCert;
-    private Map<Long,Set<CertKey>> keysByTrustedCertOid;
-    private Map<Long,Set<CertKey>> keysByRevocationCheckPolicyOid;
+    private final Cache checkersByCert;
+    private final Map<Long,Set<CertKey>> keysByTrustedCertOid;
+    private final Map<Long,Set<CertKey>> keysByRevocationCheckPolicyOid;
 
     /**
      * Add info to the map, caller is responsible for getting a write lock
@@ -180,8 +198,8 @@ public class RevocationCheckerFactory {
      * we already have a cached revocation checker for the certificate .
      */
     private void invalidateForProvider(long oid, Functions.Unary<X509Certificate, Long> certGetter, Map<Long,Set<CertKey>> keysForProvider) {
-        List<Long> providerMappingsToPurge = new ArrayList();
-        List<CertKey> certKeysToPurge = new ArrayList();
+        Set<Long> providerMappingsToPurge = new HashSet();
+        Set<CertKey> certKeysToPurge = new HashSet();
 
         // find checker for trusted cert
         Set<CertKey> keys = null;
@@ -206,11 +224,17 @@ public class RevocationCheckerFactory {
             }
         }
 
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "Clearing cached revocation checkers for certificate keys {0}.", certKeysToPurge);
+        }
+
         // purge
         mapLock.writeLock().lock();
         try {
             keysForProvider.keySet().removeAll(providerMappingsToPurge);
-            checkersByCert.keySet().removeAll(certKeysToPurge);
+            for (CertKey key : certKeysToPurge) {
+                checkersByCert.remove(key);
+            }
         } finally {
             mapLock.writeLock().unlock();
         }
@@ -261,10 +285,10 @@ public class RevocationCheckerFactory {
                                 revocationCheckers.add(new CRLRevocationChecker(url, null, issuer, certs, crlCache, certValidationProcessor));
                                 break;
                             case OCSP_FROM_CERTIFICATE:
-                                revocationCheckers.add(new OCSPRevocationChecker(null, Pattern.compile(url), issuer, certs, certValidationProcessor));
+                                revocationCheckers.add(new OCSPRevocationChecker(null, Pattern.compile(url), issuer, certs, ocspCache, certValidationProcessor));
                                 break;
                             case OCSP_FROM_URL:
-                                revocationCheckers.add(new OCSPRevocationChecker(url, null, issuer, certs, certValidationProcessor));
+                                revocationCheckers.add(new OCSPRevocationChecker(url, null, issuer, certs, ocspCache, certValidationProcessor));
                                 break;
                             default:
                                 logger.log(Level.WARNING, "Ignoring unknown revocation checking type ''{0}''.", type.name());
@@ -298,6 +322,10 @@ public class RevocationCheckerFactory {
         public int hashCode() {
             return hashCode;
         }
+
+        public String toString() {
+            return "CertKey[dn='"+certificate.getSubjectDN().toString()+"']";
+        }
     }
 
     /**
@@ -318,7 +346,7 @@ public class RevocationCheckerFactory {
             this.revocationCheckers = Collections.unmodifiableList(revocationCheckers);
         }
 
-        public CertificateValidationResult getRevocationStatus(final X509Certificate certificate, Auditor auditor) {
+        public CertificateValidationResult getRevocationStatus(final X509Certificate certificate, X509Certificate issuer, Auditor auditor) {
             CertificateValidationResult result = CertificateValidationResult.REVOKED;
 
             if ( certificate != null ) {
@@ -326,12 +354,13 @@ public class RevocationCheckerFactory {
 
                 checking:
                 for ( RevocationChecker checker : revocationCheckers ) {
-                    working = checker.getRevocationStatus( certificate, auditor);
+                    working = checker.getRevocationStatus(certificate, issuer, auditor);
 
                     switch ( working ) {
                         case CANT_BUILD_PATH:
                             // Can't build path is not valid here, so change to revoked
                             working = CertificateValidationResult.REVOKED;
+                            // FALLTHROUGH
                         case REVOKED:
                             // FALLTHROUGH
                         case OK:
@@ -341,6 +370,8 @@ public class RevocationCheckerFactory {
 
                 if ( CertificateValidationResult.UNKNOWN.equals(working) ) {
                     result = resultForUnknown;    
+                } else {
+                    result = working;
                 }
             }
 
@@ -356,12 +387,18 @@ public class RevocationCheckerFactory {
         private final Pattern regex;
         private final boolean allowIssuerSignature;
         private final X509Certificate[] trustedIssuers;
+        private final CertValidationProcessor certValidationProcessor;
 
-        protected AbstractRevocationChecker(String url, Pattern regex, boolean allowIssuerSignature, X509Certificate[] trustedIssuers) {
+        protected AbstractRevocationChecker(final String url,
+                                            final Pattern regex,
+                                            final boolean allowIssuerSignature,
+                                            final X509Certificate[] trustedIssuers,
+                                            final CertValidationProcessor certValidationProcessor) {
             this.url = url;
             this.regex = regex;
             this.allowIssuerSignature = allowIssuerSignature;
             this.trustedIssuers = trustedIssuers;
+            this.certValidationProcessor = certValidationProcessor;
         }
 
         protected String getUrl() {
@@ -380,10 +417,96 @@ public class RevocationCheckerFactory {
             return trustedIssuers;
         }
 
+        public CertValidationProcessor getCertValidationProcessor() {
+            return certValidationProcessor;
+        }
+
+        /**
+         * Extract the (CRL or OCSP) URL from the given certificate.
+         *
+         * @param certificate The certificate (not null)
+         * @param auditor The auditor to use (not null)
+         * @return The URLs from the certificate.
+         * @throws IOException if an error occurs
+         */
         protected abstract String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException;
 
+        /**
+         * Get a descriptive name for this type of revocation checker (e.g. "CRL" or "OCSP") 
+         */
         protected abstract String what();
 
+        /**
+         * Attempt to locate a authorized signing certificate.
+         *
+         * @param issuer The issuer certificate
+         * @param signerCerts A list of candidate certificates (may be empty)
+         * @param auditor The auditor to use
+         * @param checker A checker for additional "issuer" permitted certificates
+         * @return The authorized certificate, or null if not authorized
+         */
+        protected X509Certificate getAuthorizedSigner(final X509Certificate issuer,
+                                                      final X509Certificate[] signerCerts,
+                                                      final Auditor auditor,
+                                                      final Functions.Unary<Boolean,X509Certificate> checker) {
+            X509Certificate signer = null;
+
+            if ( signerCerts.length == 0 ) {
+                if ( allowIssuerSignature ) {
+                    signer = issuer;
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_SIGNER_IS_ISSUER, what(), signer.getSubjectDN().toString());
+                }
+            } else {
+                for ( X509Certificate signerCert : signerCerts ) {
+                    // check ok for signing
+                    if (logger.isLoggable(Level.FINER)) {
+                        logger.log(Level.FINER, "Checking signer certificate ''{0}''.",
+                                signerCert.getSubjectDN());
+                    }
+
+                    // is this the issuer?
+                    if ( issuer.getSerialNumber().equals(signerCert.getSerialNumber()) &&
+                         issuer.getIssuerDN().getName().equals(signerCert.getIssuerDN().getName())) {
+                        if ( allowIssuerSignature ) {
+                            signer = issuer;
+                            auditor.logAndAudit(SystemMessages.CERTVAL_REV_SIGNER_IS_ISSUER, what(), signer.getSubjectDN().toString());
+                            break;
+                        }
+                    }
+
+                    // is this an allowed cert?
+                   for ( X509Certificate trustedSigner : trustedIssuers ) {
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.FINEST, "Checking against trusted signer certificate ''{0}''.",
+                                    trustedSigner.getSubjectDN());
+                        }
+
+                        if ( trustedSigner.getSerialNumber().equals(signerCert.getSerialNumber()) &&
+                             trustedSigner.getIssuerDN().getName().equals(signerCert.getIssuerDN().getName())) {
+                            signer = trustedSigner;
+                            auditor.logAndAudit(SystemMessages.CERTVAL_REV_SIGNER_IS_TRUSTED, what(), signer.getSubjectDN().toString());                            
+                            break;
+                        }
+                    }
+
+                    if (allowIssuerSignature && checker != null && checker.call(signerCert)) {
+                        signer = signerCert;
+                        auditor.logAndAudit(SystemMessages.CERTVAL_REV_SIGNER_IS_ISSUER_DELE, what(), signer.getSubjectDN().toString());
+                        break;
+                    }
+                }
+            }
+
+            return signer;
+        }
+
+        /**
+         * Get the URL to use for a revocation check (perhaps from the given certificate).
+         *
+         * @param certificate The certificate whose revocation status is of interest
+         * @param auditor The auditor to use
+         * @return The url or null on error (in which case a message is audited)
+         */
         protected String getValidUrl(X509Certificate certificate, Auditor auditor) {
             String staticUrl = getUrl();
             if (staticUrl != null) {
@@ -407,6 +530,16 @@ public class RevocationCheckerFactory {
 
                 for (String url : urlsFromCert) {
                     if (pat.matcher(url).matches()) {
+                        try {
+                            URI uri = new URI(url);
+                            if (!uri.isAbsolute()) {
+                                throw new URISyntaxException(url, "Relative URI");
+                            }
+                        } catch (URISyntaxException use) {
+                            auditor.logAndAudit(SystemMessages.CERTVAL_REV_URL_INVALID, what(), url);
+                            continue; // could be other valid URLs
+                        }
+
                         auditor.logAndAudit(SystemMessages.CERTVAL_REV_URL_MATCH, what(), urlsFromCert[0], subjectDn);
                         return url;
                     }
@@ -419,19 +552,27 @@ public class RevocationCheckerFactory {
     }
 
     /**
+     * RevocationChecker that uses CRLs.
      *
+     * This revocation checker will return UNKNOWN for the status if the
+     * Certificate being checked is not covered by the CRL.
+     *
+     * This revocation checker will return UNKNOWN for the status if the CRL
+     * URL is from the Certificate being checked and there is no URL that
+     * matches the defined URL pattern.
+     *
+     * If a CRL cannot be retrieved or is invalid then REVOKED is returned
+     * (fail closed)
      */
     private static final class CRLRevocationChecker extends AbstractRevocationChecker {
         private final CrlCache crlCache;
-        private final CertValidationProcessor certRevocationProcessor;
 
         private CRLRevocationChecker(String url, Pattern regex, boolean allowIssuerSignature, X509Certificate[] trustedIssuers, CrlCache crlCache, CertValidationProcessor processor) {
-            super(url, regex, allowIssuerSignature, trustedIssuers);
+            super(url, regex, allowIssuerSignature, trustedIssuers, processor);
             this.crlCache = crlCache;
-            this.certRevocationProcessor = processor;
         }
 
-        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, Auditor auditor) {
+        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuerCertificate, Auditor auditor) {
             final String crlUrl = getValidUrl(certificate, auditor);
             if (crlUrl == null) {
                 // {@link getCrlUrl()} already audited the reason
@@ -442,59 +583,77 @@ public class RevocationCheckerFactory {
                 final String crlIssuerDn = crl.getIssuerDN().getName();
 
                 // Check certificate scope
-                // TODO additional scoping based on the CRLs Issuing Distribution Point extension
+                // Extend this check if we want to add support for the Issuing Distribution Point extension.
                 if ( !crl.getIssuerX500Principal().equals(certificate.getIssuerX500Principal()) ) {
                     auditor.logAndAudit(SystemMessages.CERTVAL_CRL_SCOPE, certificate.getSubjectDN().toString(), crlUrl);
                     return CertificateValidationResult.UNKNOWN;
                 }
 
-                TrustedCert tc = certRevocationProcessor.getTrustedCertBySubjectDn(crlIssuerDn);
-                if (tc == null) {
-                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_ISSUER_NOT_FOUND, what(), crlIssuerDn);
-                    return CertificateValidationResult.REVOKED;
-                }
-
-                // TODO check CRL signature using Authority Key Identifier extension
+                CertValidationProcessor certValidationProcessor =  getCertValidationProcessor();
+                X509Certificate crlCertificate;
+                // Check CRL signature using Authority Key Identifier extension to id signer cert (if present)
                 AuthorityKeyIdentifierStructure akis = ServerCertUtils.getAKIStructure(crl);
                 if (akis != null) {
-                    BigInteger signerCertSerial = akis.getAuthorityCertSerialNumber();
-                    if ( signerCertSerial != null ) {
-                        GeneralNames names = akis.getAuthorityCertIssuer();
-                        for ( GeneralName name : names.getNames() ) {
-                            logger.log(Level.WARNING, "Got general name ''{0}'' for CRL signer.", RevocationCheckerFactory.toString(name));
+                    String keyIdentifier = ServerCertUtils.getAKIKeyIdentifier(akis);
+                    if ( keyIdentifier != null) {
+                        crlCertificate = certValidationProcessor.getCertificateBySKI(keyIdentifier);
+                        if (crlCertificate == null) {
+                            auditor.logAndAudit(SystemMessages.CERTVAL_REV_ISSUER_NOT_FOUND, what(), "SKI:"+keyIdentifier);
+                            return CertificateValidationResult.REVOKED;
                         }
                     } else {
-                        String ski = "NULL";
-                        byte[] skiBytes =  akis.getKeyIdentifier();
-                        if (skiBytes != null) {
-                            ski = HexUtils.encodeBase64(skiBytes, true);
+                        String certIssuerDn = ServerCertUtils.getAKIAuthorityCertIssuer(akis);
+                        BigInteger certSerial = ServerCertUtils.getAKIAuthorityCertSerialNumber(akis);
+
+                        if (certIssuerDn == null || certSerial==null) {
+                            throw new CRLException("CRL Authority Key Identifier must have both a serial number and issuer name.");
                         }
-                        logger.log(Level.WARNING, "Lookup of CRL signer by SKI not supported, ski is ''{0}''.", ski);
+
+                        crlCertificate = certValidationProcessor.getCertificateByIssuerDnAndSerial(certIssuerDn, certSerial);
+                        if (crlCertificate == null) {
+                            auditor.logAndAudit(SystemMessages.CERTVAL_REV_ISSUER_NOT_FOUND, what(),
+                                    "IssuerDN:"+certIssuerDn+";Serial:"+certSerial);
+                            return CertificateValidationResult.REVOKED;
+                        }
+                    }
+                } else {
+                    crlCertificate = certValidationProcessor.getCertificateBySubjectDn(crlIssuerDn);
+                    if (crlCertificate == null) {
+                        auditor.logAndAudit(SystemMessages.CERTVAL_REV_ISSUER_NOT_FOUND, what(), crlIssuerDn);
                         return CertificateValidationResult.REVOKED;
                     }
                 }
 
                 // verify the signature
-                try {
-                    //Note that this is cached in the CRL object
-                    crl.verify(tc.getCertificate().getPublicKey());
-                }
-                catch (Exception e) {
-                    logger.log(Level.WARNING, "Verification of CRL signature failed '"+crlIssuerDn+"'.", e);
-                    return CertificateValidationResult.REVOKED;
+                X509Certificate signer = getAuthorizedSigner(issuerCertificate, new X509Certificate[]{crlCertificate}, auditor, null);
+                if ( signer != null ) {
+                    try {
+                        //Note that this is cached in the CRL object
+                        crl.verify(signer.getPublicKey());
+                    }
+                    catch (Exception e) {
+                        logger.log(Level.WARNING, "Verification of CRL signature failed '"+crlIssuerDn+"'.", e);
+                        return CertificateValidationResult.REVOKED;
+                    }
+                } else {
+                    throw new CausedIOException("No authorized signer found for CRL.");
                 }
 
-                final RevocationCheckPolicy rcp = certRevocationProcessor.getRevocationCheckPolicy(tc);
-
-                if (crl.isRevoked(certificate))
+                if (crl.isRevoked(certificate)) {
+                    logger.log(Level.WARNING, "Certificate is revoked '"+certificate.getSubjectDN()+"'.");
                     return CertificateValidationResult.REVOKED;
-                else
+                } else {
+                    logger.log(Level.FINE, "Certificate is good '"+certificate.getSubjectDN()+"'.");
                     return CertificateValidationResult.OK;
+                }
+            } catch (CertificateException e) {
+                auditor.logAndAudit(SystemMessages.CERTVAL_REV_CRL_INVALID, crlUrl, ExceptionUtils.getMessage(e));
+                return CertificateValidationResult.REVOKED;
             } catch (CRLException e) {
                 auditor.logAndAudit(SystemMessages.CERTVAL_REV_CRL_INVALID, crlUrl, ExceptionUtils.getMessage(e));
                 return CertificateValidationResult.REVOKED;
             } catch (IOException e) {
-                auditor.logAndAudit(SystemMessages.CERTVAL_REV_RETRIEVAL_FAILED, crlUrl, ExceptionUtils.getMessage(e));
+                auditor.logAndAudit(SystemMessages.CERTVAL_REV_RETRIEVAL_FAILED, what(), crlUrl, ExceptionUtils.getMessage(e));
                 return CertificateValidationResult.REVOKED;
             }
         }
@@ -508,63 +667,32 @@ public class RevocationCheckerFactory {
         }
     }
 
-    private static String toString(final GeneralName generalName) {
-        String name = "";
-        /*
-           GeneralName ::= CHOICE {
-                otherName                       [0]     OtherName,
-                rfc822Name                      [1]     IA5String,
-                dNSName                         [2]     IA5String,
-                x400Address                     [3]     ORAddress,
-                directoryName                   [4]     Name,
-                ediPartyName                    [5]     EDIPartyName,
-                uniformResourceIdentifier       [6]     IA5String,
-                iPAddress                       [7]     OCTET STRING,
-                registeredID                    [8]     OBJECT IDENTIFIER }
-         */
-        if ( generalName == null ) {
-            switch ( generalName.getTagNo() ) {
-                case 1:
-                    {
-                        DERIA5String nameIA5String = (DERIA5String) generalName.getName();
-                        name = nameIA5String.getString();
-                    }
-                    break;
-                case 2:
-                    {
-                        DERIA5String nameIA5String = (DERIA5String) generalName.getName();
-                        name = nameIA5String.getString();
-                    }
-                    break;
-                case 6:
-                    {
-                        DERIA5String nameIA5String = (DERIA5String) generalName.getName();
-                        name = nameIA5String.getString();
-                    }
-                    break;
-                default:
-                    logger.log(Level.WARNING, "Unknown name type ''{0}''.", generalName.getTagNo());
-                    break;
-            }
-        }
-
-        return name;
-    }
-
     /**
+     * Revocation checker that uses OCSP.
      *
+     * This revocation checker will return UNKNOWN for the status if the
+     * Certificate being checked is not covered by the OCSP responder.
+     *
+     * This revocation checker will return UNKNOWN for the status if the OCSP
+     * URL is from the Certificate being checked and there is no URL that
+     * matches the defined URL pattern.
+     *
+     * If the OCSP responder is unreachable or there is an error response then
+     * REVOKED is returned (fail closed)
      */
     private static final class OCSPRevocationChecker extends AbstractRevocationChecker {
         private static final String OID_AIA_OCSP = "1.3.6.1.5.5.7.48.1";
-        private final CertValidationProcessor certValidationProcessor;
+
+        private final OCSPCache ocspCache;
 
         private OCSPRevocationChecker(final String url,
                                       final Pattern regex,
                                       final boolean allowIssuerSignature,
                                       final X509Certificate[] trustedIssuers,
+                                      final OCSPCache ocspCache,
                                       final CertValidationProcessor certValidationProcessor) {
-            super(url, regex, allowIssuerSignature, trustedIssuers);
-            this.certValidationProcessor = certValidationProcessor;
+            super(url, regex, allowIssuerSignature, trustedIssuers, certValidationProcessor);
+            this.ocspCache = ocspCache;
         }
 
         protected String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException {
@@ -579,38 +707,55 @@ public class RevocationCheckerFactory {
             return "OCSP";
         }
 
-        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, Auditor auditor) {
+        public CertificateValidationResult getRevocationStatus(final X509Certificate certificate,
+                                                               final X509Certificate issuerCertificate,
+                                                               final Auditor auditor) {
             CertificateValidationResult result = CertificateValidationResult.REVOKED;
-            String url = getValidUrl(certificate, auditor);
-            X509Certificate issuerCertificate = null;
+            final String url = getValidUrl(certificate, auditor);
 
             try {
-                String issuerDn = certificate.getIssuerDN().getName();
-                TrustedCert tc = certValidationProcessor.getTrustedCertBySubjectDn(issuerDn);
-                if (tc == null) {
-                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_ISSUER_NOT_FOUND, issuerDn);
-                    return CertificateValidationResult.UNKNOWN;
-                }
-                issuerCertificate = tc.getCertificate();
-            } catch (CertificateException ce) {
-                auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_ERROR, new String[]{url, ExceptionUtils.getMessage(ce)}, ce);
-            }
+                OCSPClient.OCSPCertificateAuthorizer authorizer = new OCSPClient.OCSPCertificateAuthorizer(){
+                    public X509Certificate getAuthorizedSigner(final OCSPClient ocsp, final X509Certificate[] certificates) {
+                        return OCSPRevocationChecker.this.getAuthorizedSigner(issuerCertificate, certificates, auditor, new Functions.Unary<Boolean,X509Certificate>(){
+                            public Boolean call(final X509Certificate x509Certificate) {
+                                Boolean isPermittedSigner = Boolean.FALSE;
 
-            if ( issuerCertificate != null ) {
-                try {
-                    //TODO caching of OCSP responses, reuse of HTTP client, HTTPS.
-                    String issuerDn = certificate.getIssuerDN().getName();
-                    TrustedCert tc = certValidationProcessor.getTrustedCertBySubjectDn(issuerDn);
-                    if (tc == null) {
-                        auditor.logAndAudit(SystemMessages.CERTVAL_REV_ISSUER_NOT_FOUND, issuerDn);
-                        return CertificateValidationResult.UNKNOWN;
+                                try {
+                                    if (ocsp.isPermittedByIssuer(x509Certificate)) {
+                                        if (ocsp.shouldCheckRevocation(x509Certificate)) {
+                                            try {
+                                                CertificateValidationResult cvr = getCertValidationProcessor().check(
+                                                        new X509Certificate[]{x509Certificate},
+                                                        null,
+                                                        CertificateValidationType.REVOCATION,
+                                                        null,
+                                                        auditor);
+                                                if (cvr == CertificateValidationResult.OK) {
+                                                    isPermittedSigner = Boolean.TRUE;
+                                                } else {
+                                                    auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_SIGNER_CERT_REVOKED, url, x509Certificate.getSubjectDN().toString());                                                                                                    
+                                                }
+                                            } catch (GeneralSecurityException gse) {
+                                                auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_SIGNER_CERT_REVOKED, url, x509Certificate.getSubjectDN().toString());                                                
+                                            }
+                                        } else {
+                                            isPermittedSigner = Boolean.TRUE;
+                                        }
+                                    }
+                                } catch (OCSPClient.OCSPClientException oce) {
+                                    logger.log(Level.WARNING, "Error checking if certificate '" + x509Certificate.getSubjectDN() +
+                                            "' is permitted to sign OCSP responses.", oce);
+                                }
+
+                                return isPermittedSigner;
+                            }
+                        });
                     }
-                    OCSPClient ocsp = new OCSPClient(new CommonsHttpClient(), url, issuerCertificate, getAllowIssuerSignature(), getTrustedIssuers());
-                    OCSPClient.OCSPStatus status = ocsp.getRevocationStatus(certificate, true, true);
-                    result = status.getResult();
-                } catch (OCSPClient.OCSPClientException oce) {
-                    auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_ERROR, new String[]{url, ExceptionUtils.getMessage(oce)}, oce);
-                }
+                };
+                OCSPClient.OCSPStatus status = ocspCache.getOCSPStatus(url, certificate, issuerCertificate, authorizer);
+                result = status.getResult();
+            } catch (OCSPClient.OCSPClientException oce) {
+                auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_ERROR, new String[]{url, ExceptionUtils.getMessage(oce)}, oce);
             }
 
             return result;
@@ -621,7 +766,7 @@ public class RevocationCheckerFactory {
         private RevokedChecker() {
             super(null, null, null);
         }
-        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, Auditor auditor) {
+        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuer, Auditor auditor) {
             return CertificateValidationResult.REVOKED;
         }
     }

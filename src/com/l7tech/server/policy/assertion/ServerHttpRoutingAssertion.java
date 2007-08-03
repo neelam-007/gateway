@@ -120,7 +120,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
             SSLContext sslContext = SSLContext.getInstance("SSL");
 
-            final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("trustManager");
+            final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager");
             hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
             sslContext.init(keyManagers, new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();

@@ -4,6 +4,10 @@
 package com.l7tech.common.security;
 
 /**
+ * CertificateValidationType enumeration.
+ *
+ * <p>Items are ordered from least to most secure.</p>
+ *
  * @author alex
 */
 public enum CertificateValidationType {

@@ -107,7 +107,7 @@ public class CrlCacheImpl implements CrlCache {
         CrlCacheEntry crlCacheEntry = (CrlCacheEntry) crlCache.retrieve(crlUrl);
         try {
             if (crlCacheEntry == null) {
-                auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_MISS, crlUrl);
+                auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_MISS, "CRL", crlUrl);
                 crlCacheEntry = new CrlCacheEntry();
                 crlCache.store(crlUrl, crlCacheEntry);
                 crl = null;
@@ -119,10 +119,10 @@ public class CrlCacheImpl implements CrlCache {
                 read.lock();
 
                 if (crlCacheEntry.refresh < System.currentTimeMillis()) {
-                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_STALE, crlUrl, new Date(crlCacheEntry.refresh).toString());
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_STALE, "CRL", crlUrl, new Date(crlCacheEntry.refresh).toString());
                     crl = null;
                 } else {
-                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_FRESH, crlUrl, new Date(crlCacheEntry.refresh).toString());
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_FRESH, "CRL", crlUrl, new Date(crlCacheEntry.refresh).toString());
                     crl = crlCacheEntry.getCrl();
                 }
             }
@@ -134,12 +134,6 @@ public class CrlCacheImpl implements CrlCache {
                     crl = getCrlFromHttp(crlUrl);
                 } else {
                     throw new CRLException("Unsupported CRL URL scheme: " + crlUrl);
-                }
-
-                if (crl == null) {
-                    // TODO come up with a better reason string than "null"
-                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_RETRIEVAL_FAILED, "CRL", crlUrl, "null");
-                    throw new CRLException("Unable to download CRL from " + crlUrl);
                 }
 
                 read.unlock(); read = null; // Upgrade to write lock
@@ -160,10 +154,19 @@ public class CrlCacheImpl implements CrlCache {
 
     private X509CRL getCrlFromHttp(String crlUrl) throws IOException {
         AbstractUrlObjectCache.FetchResult<X509CRL> fr = httpObjectCache.fetchCached(crlUrl, AbstractUrlObjectCache.WAIT_INITIAL);
-        if (fr.getResult() != AbstractUrlObjectCache.RESULT_DOWNLOAD_FAILED) {
-            return fr.getUserObject();
+        if (fr.getResult() == AbstractUrlObjectCache.RESULT_DOWNLOAD_SUCCESS ||
+            fr.getResult() == AbstractUrlObjectCache.RESULT_USED_CACHED ) {
+            X509CRL crl = fr.getUserObject();
+            if (crl == null) {
+                throw new CausedIOException("Unable to access CRL from HTTP cache, status is: " + fr.getResult());
+            }
+            return crl;
         } else {
-            throw fr.getException();
+            IOException ioe = fr.getException();
+            if (ioe == null) {
+                throw new CausedIOException("Unable to access CRL from HTTP cache, status is: " + fr.getResult());
+            }
+            throw ioe;
         }
     }
 

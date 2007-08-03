@@ -9,6 +9,7 @@ package com.l7tech.server.identity.fed;
 import com.l7tech.common.security.CertificateExpiry;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
@@ -36,8 +37,13 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
-    X509AuthorizationHandler(FederatedIdentityProvider provider, TrustedCertManager trustedCertManager, ClientCertManager clientCertManager, CertValidationProcessor certValidationProcessor, Set certOidSet) {
-        super(provider, trustedCertManager, clientCertManager, certValidationProcessor, certOidSet);
+    X509AuthorizationHandler(FederatedIdentityProvider provider,
+                             TrustedCertManager trustedCertManager,
+                             ClientCertManager clientCertManager,
+                             CertValidationProcessor certValidationProcessor,
+                             Auditor auditor,
+                             Set certOidSet) {
+        super(provider, trustedCertManager, clientCertManager, certValidationProcessor, auditor, certOidSet);
     }
 
     User authorize( LoginCredentials pc ) throws IOException, AuthenticationException, FindException {
@@ -118,11 +124,14 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
             checkCertificateMatch( u, requestCert );
         }
 
+        validateCertificate( requestCert, true );
+
         if ( u == null ) {
             // Make a fake user so that a VirtualGroup can still resolve it
             u = new FederatedUser(providerConfig.getOid(), null);
             u.setSubjectDn(subjectDn);
         }
+        
         return u;
     }
 

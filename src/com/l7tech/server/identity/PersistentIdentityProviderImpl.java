@@ -14,6 +14,9 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.KeystoreUtils;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.util.Collection;
@@ -24,8 +27,9 @@ import java.util.TreeSet;
  * @version $Revision$
  */
 public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, GT extends PersistentGroup, UMT extends PersistentUserManager<UT>, GMT extends PersistentGroupManager<UT, GT>>
-        implements InitializingBean, PersistentIdentityProvider<UT, GT, UMT, GMT>
+        implements ApplicationContextAware, InitializingBean, PersistentIdentityProvider<UT, GT, UMT, GMT>
 {
+    protected ApplicationContext applicationContext;
     protected ClientCertManager clientCertManager;
     protected KeystoreUtils keystore;
 
@@ -73,5 +77,9 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
         if (clientCertManager == null) {
             throw new IllegalArgumentException("The Client Certificate Manager is required");
         }
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 }

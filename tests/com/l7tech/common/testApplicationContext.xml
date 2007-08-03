@@ -81,7 +81,22 @@
 
     <!-- server side HTTP routing client trust manager -->
     <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
-        <property name="trustedCertManager" ref="trustedCertManager"/>
+        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="certValidationProcessor"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.security.cert.CertValidationProcessor$Facility" factory-method="valueOf">
+                <constructor-arg><value>OTHER</value></constructor-arg>
+            </bean>
+        </constructor-arg>
+    </bean>
+    <bean id="routingTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="certValidationProcessor"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.security.cert.CertValidationProcessor$Facility" factory-method="valueOf">
+                <constructor-arg><value>ROUTING</value></constructor-arg>
+            </bean>
+        </constructor-arg>
     </bean>
     <!-- server side HTTP routing hostname verifier -->
     <bean id="hostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
@@ -212,7 +227,12 @@
         </constructor-arg>
     </bean>
 
-    <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory"/>
+    <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
+        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="trustManager"/>
+        <constructor-arg ref="hostnameVerifier"/>
+    </bean>
+
     <!-- server side HTTP routing HTTP client factory -->
     <bean id="httpRoutingHttpClientFactory"
           class="com.l7tech.server.util.TestingHttpClientFactory"/>
@@ -240,4 +260,6 @@
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>
 
     <bean id="crlCache" class="com.l7tech.server.TestCrlCache"/>
+
+    <bean id="certValidationProcessor" class="com.l7tech.server.security.cert.TestCertValidationProcessor"/>
 </beans>

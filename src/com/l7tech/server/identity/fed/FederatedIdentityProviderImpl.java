@@ -6,6 +6,7 @@ package com.l7tech.server.identity.fed;
 
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
@@ -181,6 +182,9 @@ public class FederatedIdentityProviderImpl
         if (trustedCertManager == null) {
             throw new IllegalArgumentException("The Trusted Certificate Manager is required");
         }
+        if (certValidationProcessor == null) {
+            throw new IllegalArgumentException("The Certificate Validation Processor is required");
+        }
 
         long[] certOids = providerConfig.getTrustedCertOids();
         for (long certOid : certOids) {
@@ -200,10 +204,12 @@ public class FederatedIdentityProviderImpl
             }
         }
 
-        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, validTrustedCertOids);
-        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, validTrustedCertOids);
+        this.auditor = new Auditor(this, applicationContext, logger);
+        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
+        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
     }
 
+    private Auditor auditor;
     private X509AuthorizationHandler x509Handler;
     private SamlAuthorizationHandler samlHandler;
 

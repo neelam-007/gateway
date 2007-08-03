@@ -1,34 +1,38 @@
 package com.l7tech.server.util;
 
-import java.security.cert.X509Certificate;
+import java.io.IOException;
+import java.math.BigInteger;
 import java.security.cert.CertificateException;
 import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
 import java.security.cert.X509Extension;
-import java.io.IOException;
-import java.util.Set;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Set;
+import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERString;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DEREncodable;
 import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERString;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.x509.AccessDescription;
+import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.DistributionPoint;
 import org.bouncycastle.asn1.x509.DistributionPointName;
-import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
-import org.bouncycastle.asn1.x509.AccessDescription;
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
+import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
 
 /**
  * Certificate utility methods that require server only classes.
@@ -159,6 +163,69 @@ public class ServerCertUtils {
     public static AuthorityKeyIdentifierStructure getAKIStructure(X509CRL crl) throws IOException {
         if (crl.getVersion() < 2) return null;
         return doGetAKIStructure(crl);
+    }
+
+    /**
+     * Get the Base64 encoded key identifier for the authorities certificate.
+     *
+     * @param akis The structure from which to get the key identifier
+     * @return The key identifier or null if there is none
+     */
+    public static String getAKIKeyIdentifier(AuthorityKeyIdentifierStructure akis) {
+        String ski = null;
+
+        byte[] skiBytes =  akis.getKeyIdentifier();
+        if (skiBytes != null) {
+            ski = HexUtils.encodeBase64(skiBytes, true);
+        }
+
+        return ski;
+    }
+
+    /**
+     * Get the serial number for the authorities certificate.
+     *
+     * @param akis The structure from which to get the serial number
+     * @return The serial number or null if there is none
+     */
+    public static BigInteger getAKIAuthorityCertSerialNumber(AuthorityKeyIdentifierStructure akis) {
+        BigInteger serial = null;
+
+        serial = akis.getAuthorityCertSerialNumber();
+
+        return serial;
+    }
+
+    /**
+     * Get the Issuer DN for the authorities certificate (issuer of the authorities certificate).
+     *
+     * @param akis The structure from which to get the serial number
+     * @return The Issuer DN or null if there is none
+     * @throws CertificateException if the issuerDn is present but invalid.
+     */
+    public static String getAKIAuthorityCertIssuer(AuthorityKeyIdentifierStructure akis) throws CertificateException {
+        String issuerDn = null;
+
+        GeneralNames names = akis.getAuthorityCertIssuer();
+        if (names != null) {
+            for ( GeneralName name : names.getNames() ) {
+                if (name.getTagNo()==4) { // need a directory name
+                    try {
+                        X500Principal x500Name = new X500Principal(name.getName().getDERObject().getDEREncoded());
+                        issuerDn = x500Name.toString();
+                    }
+                    catch(IllegalArgumentException iae) {
+                        throw new CertificateException("Could not parse issuer as directory name.", iae);
+                    }
+                }
+            }
+
+            if ( issuerDn == null ) {
+                throw new CertificateException("Could not find issuer as directory name.");
+            }
+        }
+
+        return issuerDn;
     }
 
     private static AuthorityKeyIdentifierStructure doGetAKIStructure(X509Extension x509Extendable) throws IOException {

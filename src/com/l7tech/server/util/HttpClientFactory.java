@@ -11,9 +11,6 @@ import com.l7tech.server.KeystoreUtils;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import javax.net.ssl.*;
 import java.security.GeneralSecurityException;
@@ -22,11 +19,13 @@ import java.security.GeneralSecurityException;
  * A GenericHttpClientFactory that runs in the SSG server context, and creates clients that will automatically
  * configure requests to use the appropriate SSL context factory for requests to SSL URLs.
  */
-public class HttpClientFactory implements GenericHttpClientFactory, ApplicationContextAware {
+public class HttpClientFactory implements GenericHttpClientFactory {
     private final Object initLock = new Object();
     private SSLContext sslContext;
-    private HostnameVerifier hostnameVerifier;
-    private ApplicationContext spring;
+
+    private final KeystoreUtils keystore;
+    private final X509TrustManager trustManager;
+    private final HostnameVerifier hostnameVerifier;
 
     private static final MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
     static {
@@ -35,21 +34,16 @@ public class HttpClientFactory implements GenericHttpClientFactory, ApplicationC
         params.setMaxTotalConnections(1000);
     }
 
-    private ThreadLocal<GenericHttpClient> localHttpClient = new ThreadLocal<GenericHttpClient>() {
-        protected GenericHttpClient initialValue() {
-            return createHttpClient();
-        }
-    };
+    public HttpClientFactory(final KeystoreUtils keystore,
+                             final X509TrustManager trustManager,
+                             final HostnameVerifier hostnameVerifier) {
+        if (keystore==null) throw new IllegalArgumentException("keystore must not be null");
+        if (trustManager==null) throw new IllegalArgumentException("trustManager must not be null");
+        if (hostnameVerifier==null) throw new IllegalArgumentException("hostnameVerifier must not be null");
 
-    public HttpClientFactory() {
-    }
-
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.spring = applicationContext;
-    }
-
-    public GenericHttpClient getThreadLocalHttpClient() {
-        return localHttpClient.get();
+        this.keystore = keystore;
+        this.trustManager = trustManager;
+        this.hostnameVerifier = hostnameVerifier;
     }
 
     public GenericHttpClient createHttpClient() {
@@ -70,7 +64,7 @@ public class HttpClientFactory implements GenericHttpClientFactory, ApplicationC
                 if ("https".equalsIgnoreCase(proto)) {
                     try {
                         params.setSslSocketFactory(getSslContext().getSocketFactory());
-                        params.setHostnameVerifier(getHostnameVerifier());
+                        params.setHostnameVerifier(hostnameVerifier);
                     } catch (GeneralSecurityException e) {
                         // TODO is it OK to continue with the default trust manager?
                         throw new GenericHttpException(e);
@@ -91,33 +85,16 @@ public class HttpClientFactory implements GenericHttpClientFactory, ApplicationC
      *                                   configuration is incomplete or invalid (keystores, truststores, and whatnot)
      */
     private SSLContext getSslContext() throws GeneralSecurityException {
-        ApplicationContext applicationContext = spring;
         synchronized(initLock) {
             // no harm done if multiple threads try to create it the very first time.  s'all good.
             if (sslContext != null) return sslContext;
             SSLContext sc = SSLContext.getInstance("SSL");
-            KeystoreUtils keystore = (KeystoreUtils)applicationContext.getBean("keystore");
-            X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("trustManager");
             KeyManager[] keyman = keystore.getSSLKeyManagers();
             sc.init(keyman, new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
                                                    HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
             sc.getClientSessionContext().setSessionTimeout(timeout);
             return sslContext = sc;
-        }
-    }
-
-    /**
-     * Get the process-wide shared hostname verifier, creating it if necessary.
-     *
-     * @return The HostnameVerifier. Never null.
-     */
-    private HostnameVerifier getHostnameVerifier() {
-        ApplicationContext applicationContext = spring;
-        synchronized(initLock) {
-            if (hostnameVerifier != null) return hostnameVerifier;
-            HostnameVerifier verifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
-            return hostnameVerifier = verifier;
         }
     }
 }

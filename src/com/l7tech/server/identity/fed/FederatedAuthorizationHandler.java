@@ -7,7 +7,11 @@
 package com.l7tech.server.identity.fed;
 
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.security.CertificateValidationResult;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.InvalidClientCertificateException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
@@ -16,6 +20,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.security.SignatureException;
 import java.util.Set;
 
 /**
@@ -23,12 +29,18 @@ import java.util.Set;
  * @version $Revision$
  */
 public class FederatedAuthorizationHandler {
-    FederatedAuthorizationHandler(FederatedIdentityProvider provider, TrustedCertManager trustedCertManager,
-                                  ClientCertManager clientCertManager, CertValidationProcessor certValidationProcessor, Set certOidSet) {
+    
+    FederatedAuthorizationHandler(final FederatedIdentityProvider provider,
+                                  final TrustedCertManager trustedCertManager,
+                                  final ClientCertManager clientCertManager,
+                                  final CertValidationProcessor certValidationProcessor,
+                                  final Auditor auditor,
+                                  final Set certOidSet) {
         this.provider = provider;
         this.trustedCertManager = trustedCertManager;
         this.clientCertManager = clientCertManager;
         this.certValidationProcessor = certValidationProcessor;
+        this.auditor = auditor;
         this.certOidSet = certOidSet;
         this.providerConfig = (FederatedIdentityProviderConfig) provider.getConfig();
     }
@@ -49,6 +61,32 @@ public class FederatedAuthorizationHandler {
         }
     }
 
+    protected void validateCertificate(final X509Certificate certificate, boolean isClient) throws AuthenticationException {
+        try {
+            CertificateValidationResult cvr = certValidationProcessor.check(
+                            new X509Certificate[]{certificate},
+                            null,
+                            providerConfig.getCertificateValidationType(),
+                            CertValidationProcessor.Facility.IDENTITY,
+                            auditor);
+
+            if ( cvr != CertificateValidationResult.OK ) {
+                exceptionForType("Certificate path validation and/or revocation checking failed", null, isClient);
+            }
+        } catch (CertificateException ce) {
+            exceptionForType("Certificate path validation and/or revocation checking error", ce, isClient);
+        } catch (SignatureException se) {
+            exceptionForType("Certificate path validation and/or revocation checking error", se, isClient);
+        }
+    }
+
+    protected void exceptionForType(String message, Throwable thrown, boolean isClient) throws AuthenticationException {
+        if (isClient)
+            throw new InvalidClientCertificateException(message, thrown);
+        else
+            throw new AuthenticationException(message, thrown);        
+    }
+
     protected FederatedUserManager getUserManager() {
         return provider.getUserManager();
     }
@@ -60,6 +98,7 @@ public class FederatedAuthorizationHandler {
     protected final FederatedIdentityProvider provider;
     protected final TrustedCertManager trustedCertManager;
     protected final CertValidationProcessor certValidationProcessor;
+    protected final Auditor auditor;
     protected final Set certOidSet;
     protected final FederatedIdentityProviderConfig providerConfig;
     protected final ClientCertManager clientCertManager;

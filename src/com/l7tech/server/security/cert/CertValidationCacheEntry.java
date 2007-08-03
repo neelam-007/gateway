@@ -5,9 +5,9 @@ package com.l7tech.server.security.cert;
 
 import com.l7tech.common.security.TrustedCert;
 
-import java.security.cert.CertPath;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.math.BigInteger;
 
 /**
  * @author alex
@@ -16,13 +16,17 @@ class CertValidationCacheEntry {
     final TrustedCert tce;
     final X509Certificate cert;
     final String subjectDn;
-
-    private CertPath path;
+    final String ski;
+    final String issuerDn;
+    final BigInteger serial;
 
     CertValidationCacheEntry(TrustedCert tce) throws CertificateException {
         this.tce = tce;
         this.cert = tce.getCertificate();
         this.subjectDn = tce.getSubjectDn();
+        this.ski = tce.getSki();
+        this.issuerDn = this.cert.getIssuerDN().toString();
+        this.serial = this.cert.getSerialNumber();
     }
 
     public boolean equals(Object o) {

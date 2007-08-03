@@ -8,7 +8,7 @@ import java.security.cert.X509Certificate;
 /**
  * Interface for revocation checker implementations.
  *
- * <p>A checker will perform revocation checking for a particular issuer.</p>
+ * <p>A checker will perform revocation checking for one or more issuers.</p>
  *
  * @author Steve Jones
  */
@@ -22,8 +22,9 @@ public interface RevocationChecker {
      * since they don't perform any path building.</p>
      *
      * @param certificate The certificate to check.
-     * @param auditor
+     * @param issuer The certificate for the issuer of the certificate to check.
+     * @param auditor The auditor to use for any audit messages
      * @return the revocation status for the certificate
      */
-    CertificateValidationResult getRevocationStatus(X509Certificate certificate, Auditor auditor);
+    CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuer, Auditor auditor);
 }

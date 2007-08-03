@@ -89,4 +89,18 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
      * @param ski the base64'd SKI value to search for. May be null.
      */
     List findBySki(String ski) throws FindException;
+
+    /**
+     * Subclass of certificate exception thrown when a certificate is not known.
+     */
+    public static final class UnknownCertificateException extends CertificateException {
+
+        public UnknownCertificateException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public UnknownCertificateException(String msg) {
+            super(msg);
+        }
+    }
 }

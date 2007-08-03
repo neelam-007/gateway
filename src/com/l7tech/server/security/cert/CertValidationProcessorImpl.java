@@ -3,6 +3,46 @@
  */
 package com.l7tech.server.security.cert;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.math.BigInteger;
+import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertPathBuilderException;
+import java.security.cert.CertStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.Arrays;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.beans.factory.InitializingBean;
+
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.security.CertificateValidationResult;
@@ -18,26 +58,13 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
-
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.security.*;
-import java.security.cert.*;
-import java.util.*;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
+ * Implementation for CertValidationProcessor
+ *
  * @author alex
  */
-public class CertValidationProcessorImpl implements CertValidationProcessor, ApplicationListener, PropertyChangeListener {
+public class CertValidationProcessorImpl implements CertValidationProcessor, ApplicationListener, PropertyChangeListener, InitializingBean {
     private static final Logger logger = Logger.getLogger(CertValidationProcessorImpl.class.getName());
 
     private static final String PROP_USE_DEFAULT_ANCHORS = "pkixTrust.useDefaultAnchors";
@@ -45,130 +72,112 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     private final X509Certificate caCert;
     private final TrustedCertManager trustedCertManager;
     private final RevocationCheckPolicyManager revocationCheckPolicyManager;
-    private final RevocationCheckerFactory revocationCheckerFactory;
     private final ServerConfig serverConfig;
+    private final RevocationCheckPolicy permissiveRcp;
+    private CrlCache crlCache;
+    private OCSPCache ocspCache;
+    private RevocationCheckerFactory revocationCheckerFactory;
 
+    // lock and locked items
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Map<String, CertValidationCacheEntry> trustedCertsBySKI;
     private final Map<String, CertValidationCacheEntry> trustedCertsByDn;
+    private final Map<IDNSerialKey, CertValidationCacheEntry> trustedCertsByIssuerDnAndSerial;
     private final Map<Long, CertValidationCacheEntry> trustedCertsByOid;
     private final Map<Long, RevocationCheckPolicy> revocationPoliciesByOid;
-
     private Map<String, TrustAnchor> trustAnchorsByDn;
     private CertStore certStore;
-
+    private boolean cacheIsDirty = false;
     private RevocationCheckPolicy currentDefaultRevocationPolicy;
-    private final RevocationCheckPolicy permissiveRcp;
+    // end locked items
 
     public CertValidationProcessorImpl(final TrustedCertManager trustedCertManager,
                                        final RevocationCheckPolicyManager revocationCheckPolicyManager,
-                                       final CrlCache crlCache,
                                        final X509Certificate caCert,
                                        final ServerConfig serverConfig)
     {
-        if (trustedCertManager == null || revocationCheckPolicyManager == null || crlCache == null || caCert == null || serverConfig == null) throw new NullPointerException("A required component is missing");
+        if (trustedCertManager == null || revocationCheckPolicyManager == null || caCert == null || serverConfig == null) throw new NullPointerException("A required component is missing");
         this.trustedCertManager = trustedCertManager;
         this.revocationCheckPolicyManager = revocationCheckPolicyManager;
-        this.revocationCheckerFactory = new RevocationCheckerFactory(this, crlCache);
+        //this.revocationCheckerFactory = new RevocationCheckerFactory(this, crlCache, ocspCache);
         this.caCert = caCert;
         this.permissiveRcp = new RevocationCheckPolicy();
         this.permissiveRcp.setDefaultSuccess(true);
         this.serverConfig = serverConfig;
 
-        Collection<RevocationCheckPolicy> rcps;
-        try {
-            rcps = revocationCheckPolicyManager.findAll();
-        } catch (FindException e) {
-            throw new RuntimeException("Unable to find RevocationCheckPolicies", e);
-        }
+        Map<String, CertValidationCacheEntry> myDnCache = new HashMap();
+        Map<IDNSerialKey, CertValidationCacheEntry> myIssuerDnCache = new HashMap();
+        Map<Long, CertValidationCacheEntry> myOidCache = new HashMap();
+        Map<String, CertValidationCacheEntry> mySkiCache = new HashMap();
+        Map<Long, RevocationCheckPolicy> myRCPByIdCache = new HashMap();
 
-        // Set up initial RevocationCheckPolicy caches
-        Map<Long, RevocationCheckPolicy> myRcpsByOid = new HashMap<Long, RevocationCheckPolicy>();
-        RevocationCheckPolicy defaultRcp = null;
-        for (RevocationCheckPolicy rcp : rcps) {
-            if (rcp.isDefaultPolicy()) {
-                if (defaultRcp != null) throw new IllegalStateException("Multiple RevocationCheckPolicies are flagged as default");
-                defaultRcp = rcp;
-            }
-            myRcpsByOid.put(rcp.getOid(), rcp);
-        }
-        if (defaultRcp == null) defaultRcp = new RevocationCheckPolicy(); // Always fails
-        this.currentDefaultRevocationPolicy = defaultRcp;
-        this.revocationPoliciesByOid = myRcpsByOid;
-
-        // Setup initial TrustedCert caches
-        Collection<TrustedCert> tces;
-        try {
-            tces = trustedCertManager.findAll();
-        } catch (FindException e) {
-            throw new RuntimeException("Unable to find Trusted Certs", e);
-        }
-
-        Map<String, CertValidationCacheEntry> myDnCache = new HashMap<String, CertValidationCacheEntry>();
-        Map<Long, CertValidationCacheEntry> myOidCache = new HashMap<Long, CertValidationCacheEntry>();
-
-        for (TrustedCert tce : tces) {
-            try {
-                final CertValidationCacheEntry entry = new CertValidationCacheEntry(tce);
-                myDnCache.put(tce.getSubjectDn(), entry);
-                myOidCache.put(tce.getOid(), entry);
-            } catch (CertificateException e) {
-                logger.log(Level.WARNING, "Couldn't load TrustedCert #{0} ({1}): " + ExceptionUtils.getMessage(e), new Object[] { tce.getOid(), tce.getSubjectDn() });
-            }
-        }
+        populateCaches(myDnCache, myIssuerDnCache, myOidCache, mySkiCache, myRCPByIdCache);
 
         this.trustedCertsByDn = myDnCache;
+        this.trustedCertsByIssuerDnAndSerial = myIssuerDnCache;
         this.trustedCertsByOid = myOidCache;
-        initializeCertStoreAndTrustAnchors(tces, Boolean.valueOf(serverConfig.getProperty(PROP_USE_DEFAULT_ANCHORS)));
+        this.trustedCertsBySKI = mySkiCache;
+        this.revocationPoliciesByOid = myRCPByIdCache;
     }
 
     /**
-     * TODO can we pass a chain here in the case of outbound connections to make our job easier?
+     * 
      */
-    public CertificateValidationResult check(final X509Certificate endEntityCertificate,
+    public CertificateValidationResult check(final X509Certificate[] endEntityCertificatePath,
+                                             final CertificateValidationType minValType,
                                              final CertificateValidationType requestedValType,
                                              final Facility facility,
                                              final Auditor auditor)
             throws CertificateException, SignatureException
     {
-        if (endEntityCertificate == null || auditor == null) throw new NullPointerException("a required parameter is missing");
+        if (endEntityCertificatePath == null || auditor == null) throw new NullPointerException("a required parameter is missing");
         if (requestedValType == null && facility == null) throw new NullPointerException("Either requestedValType or facility must be provided");
+        if (endEntityCertificatePath.length==0 || endEntityCertificatePath[0]==null) throw new IllegalArgumentException("invalid certificate path");
 
+        final X509Certificate endEntityCertificate = endEntityCertificatePath[0];
         final CertificateValidationType valType;
         if (requestedValType == null) {
             final String syspropname = "pkixValidation." + facility.name().toLowerCase();
             String stype = serverConfig.getPropertyCached(syspropname);
             if (stype == null) {
                 logger.warning(syspropname + " system property unavailable, using default " + CERTIFICATE_ONLY);
-                valType = CERTIFICATE_ONLY;
+                valType = getAcceptedValidationLevel(CERTIFICATE_ONLY, minValType);
             } else if ("validate".equalsIgnoreCase(stype)) {
-                valType = CertificateValidationType.CERTIFICATE_ONLY;
+                valType = getAcceptedValidationLevel(CertificateValidationType.CERTIFICATE_ONLY, minValType);
             } else if ("validatepath".equalsIgnoreCase(stype)) {
-                valType = CertificateValidationType.PATH_VALIDATION;
+                valType = getAcceptedValidationLevel(CertificateValidationType.PATH_VALIDATION, minValType);
             } else if ("revocation".equalsIgnoreCase(stype)) {
-                valType = CertificateValidationType.REVOCATION;
+                valType = getAcceptedValidationLevel(CertificateValidationType.REVOCATION, minValType);
             } else {
-                throw new IllegalArgumentException(syspropname + " system property contained an invalid cert validation type " + stype);
+                auditor.logAndAudit(SystemMessages.CERTVAL_INVALID_SETTING, syspropname, stype);
+                valType = getAcceptedValidationLevel(CertificateValidationType.REVOCATION, minValType);
             }
         } else {
-            valType = requestedValType;
+            valType = getAcceptedValidationLevel(requestedValType, minValType);
         }
 
         String subjectDn = endEntityCertificate.getSubjectDN().getName();
-        String issuerDn = endEntityCertificate.getIssuerDN().getName();
 
         if (valType == CERTIFICATE_ONLY)
-            return checkCertificateOnly(endEntityCertificate, subjectDn, issuerDn, auditor);
+            return checkCertificateOnly(endEntityCertificate, subjectDn, auditor);
 
         // Time to build a path
-        final PKIXBuilderParameters pbp = makePKIXBuilderParameters(endEntityCertificate,
+        final PKIXBuilderParameters pbp = makePKIXBuilderParameters(endEntityCertificatePath,
                                                                     valType == CertificateValidationType.REVOCATION,
                                                                     auditor);
         try {
-            CertPathBuilderResult builderResult = CertPathBuilder.getInstance("PKIX").build(pbp);
-            builderResult.getCertPath();
+            CertPathBuilder builder = CertPathBuilder.getInstance("PKIX");
+            builder.build(pbp);
+            auditor.logAndAudit(SystemMessages.CERTVAL_CHECKED);            
             return OK;
         } catch (CertPathBuilderException e) {
-            auditor.logAndAudit(SystemMessages.CERTVAL_CANT_BUILD_PATH, new String[] { subjectDn, ExceptionUtils.getMessage(e) }, e);
+            if (ExceptionUtils.causedBy(e, CertificateExpiredException.class)) {
+                auditor.logAndAudit(SystemMessages.CERTVAL_CERT_EXPIRED, subjectDn);
+            } else if (ExceptionUtils.causedBy(e, CertificateNotYetValidException.class)) {
+                auditor.logAndAudit(SystemMessages.CERTVAL_CERT_NOT_YET_VALID, subjectDn);
+            } else {
+                auditor.logAndAudit(SystemMessages.CERTVAL_CANT_BUILD_PATH, new String[] { subjectDn, ExceptionUtils.getMessage(e) }, e.getCause());
+            }
             return CertificateValidationResult.CANT_BUILD_PATH;
         } catch (InvalidAlgorithmParameterException e) {
             throw new CertificateException("Unable to build Cert Path", e);
@@ -177,41 +186,57 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
-    private CertificateValidationResult checkCertificateOnly(X509Certificate endEntityCertificate,
-                                                             String subjectDn,
-                                                             String issuerDn,
-                                                             Auditor auditor)
+    public void afterPropertiesSet() {
+        if ( revocationCheckerFactory!=null )
+            throw new IllegalStateException("already initialized");
+        revocationCheckerFactory = new RevocationCheckerFactory(this, crlCache, ocspCache);
+    }
+
+    public void setCrlCache(CrlCache crlCache) {
+        this.crlCache = crlCache;
+    }
+
+    public void setOcspCache(OCSPCache ocspCache) {
+        this.ocspCache = ocspCache;
+    }
+
+    private CertificateValidationType getAcceptedValidationLevel(final CertificateValidationType type,
+                                                                 final CertificateValidationType minType) {
+        CertificateValidationType resultType = type;
+
+        if (minType != null) {
+            if ( minType.compareTo(type) > 0) {
+                resultType = minType;    
+            }
+        }
+
+        return resultType;
+    }
+
+    /**
+     * Check that certificate is valid, any other checking (e.g. cert equals
+     * known cert for user, cert is signed by the correct CA, etc) must be
+     * performed by the caller as part of their authentication check.
+     */
+    private CertificateValidationResult checkCertificateOnly(final X509Certificate endEntityCertificate,
+                                                             final String subjectDn,
+                                                             final Auditor auditor)
             throws SignatureException, CertificateException
     {
-//        final CertValidationCacheEntry issuerCacheEntry;
-//        lock.readLock().lock();
-//        try {
-//            issuerCacheEntry = trustedCertsByDn.get(issuerDn);
-//            if (issuerCacheEntry == null) {
-//                auditor.logAndAudit(SystemMessages.CERTVAL_CANT_FIND_ISSUER, issuerDn, subjectDn);
-//                return CANT_BUILD_PATH;
-//            }
-//        } finally {
-//            lock.readLock().unlock();
-//        }
-//
-//        X509Certificate issuerCert = issuerCacheEntry.cert;
-//        try {
-//            // Note, this is not path validation per se; we always verify the signature on the end entity cert, so its
-//            // CA has to be known.
-//            CertUtils.cachedVerify(endEntityCertificate, issuerCert.getPublicKey());
-//            // We do these here because they would normally be done as part of path validation, which we're skipping
-//            endEntityCertificate.checkValidity();
-//            issuerCacheEntry.cert.checkValidity();
-//            auditor.logAndAudit(SystemMessages.CERTVAL_CHECKED);
-            return OK;
-//        } catch (InvalidKeyException e1) {
-//            throw new CertificateException(MessageFormat.format("Couldn't verify signature of issuer {0} on end entity {1}", issuerDn, subjectDn), e1);
-//        } catch (NoSuchAlgorithmException e11) {
-//            throw new RuntimeException(e11); // Can't happen
-//        } catch (NoSuchProviderException e12) {
-//            throw new RuntimeException(e12); // Can't happen
-//        }
+        // note that if the cert is invalid we won't actually get here
+        // since this is checked when the credentials are gathered.
+        try {
+            endEntityCertificate.checkValidity();
+        } catch (CertificateExpiredException cee) {
+            auditor.logAndAudit(SystemMessages.CERTVAL_CERT_EXPIRED, subjectDn);
+            throw cee;
+        } catch (CertificateNotYetValidException cnyve) {
+            auditor.logAndAudit(SystemMessages.CERTVAL_CERT_NOT_YET_VALID, subjectDn);
+            throw cnyve;
+        }
+
+        auditor.logAndAudit(SystemMessages.CERTVAL_CHECKED);
+        return CertificateValidationResult.OK;
     }
 
     public TrustedCert getTrustedCertByOid(long oid) {
@@ -228,15 +253,99 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
-    public TrustedCert getTrustedCertBySubjectDn(String subjectDn) {
+    /**
+     * Get an X.509 certificate by subject distinguished name.
+     *
+     * <p>This will check all trusted certs and also any JDK trust anchors if
+     * they are being trusted.</p>
+     *
+     * <p>The gateways CA certificate is also a candidate.</p>
+     *
+     * @param subjectDn The Subject DN
+     * @return The certificate or null if not found.
+     */
+    public X509Certificate getCertificateBySubjectDn(String subjectDn) {
         lock.readLock().lock();
         try {
-            TrustedCert trustedCert = null;
+            X509Certificate cert = null;
             CertValidationCacheEntry certValidationCacheEntry = trustedCertsByDn.get(subjectDn);
             if ( certValidationCacheEntry != null ) {
-                trustedCert = certValidationCacheEntry.tce;
+                cert = certValidationCacheEntry.cert;
+            } else {
+                TrustAnchor ta = trustAnchorsByDn.get(subjectDn);
+                if ( ta != null ) {
+                    cert = ta.getTrustedCert();
+                }
             }
-            return trustedCert;
+            return cert;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Get an X.509 certificate by issuer distinguished name and serial number.
+     *
+     * <p>This will check all trusted certs and also any JDK trust anchors if
+     * they are being trusted.</p>
+     *
+     * <p>The gateways CA certificate is also a candidate.</p>
+     *
+     * @param issuerDn The Issuer DN
+     * @param serial The serial number
+     * @return The certificate or null if not found.
+     */
+    public X509Certificate getCertificateByIssuerDnAndSerial(String issuerDn, BigInteger serial) {
+        lock.readLock().lock();
+        try {
+            X509Certificate cert = null;
+            IDNSerialKey key = new IDNSerialKey(issuerDn, serial);
+            CertValidationCacheEntry certValidationCacheEntry = trustedCertsByIssuerDnAndSerial.get(key);
+            if ( certValidationCacheEntry != null ) {
+                cert = certValidationCacheEntry.cert;
+            } else {
+                for ( TrustAnchor ta : trustAnchorsByDn.values() ) {
+                    X509Certificate taCert = ta.getTrustedCert();
+                    if (key.matches(taCert)) {
+                        cert = taCert;
+                        break;
+                    }
+                }
+            }
+            return cert;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Get an X.509 certificate by subject key identifier.
+     *
+     * <p>This will check all trusted certs and also any JDK trust anchors if
+     * they are being trusted.</p>
+     *
+     * <p>The gateways CA certificate is also a candidate.</p>
+     *
+     * @param base64SKI The Subject Key Identifier (from cert extension or generated)
+     * @return The certificate or null if not found.
+     */
+    public X509Certificate getCertificateBySKI(String base64SKI) {
+        lock.readLock().lock();
+        try {
+            X509Certificate cert = null;
+            CertValidationCacheEntry certValidationCacheEntry = trustedCertsBySKI.get(base64SKI);
+            if ( certValidationCacheEntry != null ) {
+                cert = certValidationCacheEntry.cert;
+            } else {
+                for ( TrustAnchor ta : trustAnchorsByDn.values() ) {
+                    X509Certificate taCert = ta.getTrustedCert();
+                    if ( base64SKI.equals(CertUtils.getSki(taCert)) ) {
+                        cert = ta.getTrustedCert();
+                        break;
+                    }
+                }
+            }
+            return cert;
         } finally {
             lock.readLock().unlock();
         }
@@ -287,16 +396,12 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
-    public RevocationCheckPolicy getPermissivePolicy() {
-        return permissiveRcp;
-    }
-
-    private PKIXBuilderParameters makePKIXBuilderParameters(X509Certificate endEntityCertificate, boolean checkRevocation, Auditor auditor) {
+    private PKIXBuilderParameters makePKIXBuilderParameters(X509Certificate[] endEntityCertificatePath, boolean checkRevocation, Auditor auditor) {
         X509CertSelector sel;
         lock.readLock().lock();
         try {
             sel = new X509CertSelector();
-            sel.setCertificate(endEntityCertificate);
+            sel.setCertificate(endEntityCertificatePath[0]);
             try {
                 Set<TrustAnchor> tempAnchors = new HashSet<TrustAnchor>();
                 tempAnchors.addAll(trustAnchorsByDn.values());
@@ -305,8 +410,12 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                 if (checkRevocation)
                     pbp.addCertPathChecker(new RevocationCheckingPKIXCertPathChecker(revocationCheckerFactory, pbp, auditor));
                 pbp.addCertStore(certStore);
+                pbp.addCertStore(CertStore.getInstance("Collection",
+                        new CollectionCertStoreParameters(Arrays.asList(endEntityCertificatePath))));
                 return pbp;
             } catch (InvalidAlgorithmParameterException e) {
+                throw new RuntimeException(e); // Can't happen
+            } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e); // Can't happen
             }
         } finally {
@@ -318,6 +427,11 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         if (PROP_USE_DEFAULT_ANCHORS.equals(event.getPropertyName())) {
             lock.writeLock().lock();
             try {
+                if (logger.isLoggable(Level.FINE) ) {
+                    logger.log(Level.FINE,
+                            "Updating trust anchors due to cluster property change, use default anchors is now {0}.",
+                            event.getNewValue());
+                }
                 initializeCertStoreAndTrustAnchors(trustedCertManager.findAll(), Boolean.valueOf((String)event.getNewValue()));
             } catch (FindException e) {
                 logger.log(Level.WARNING, "Couldn't load TrustedCerts", e);
@@ -329,66 +443,162 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent eie = (EntityInvalidationEvent) applicationEvent;
-            if (TrustedCert.class.isAssignableFrom(eie.getEntityClass())) {
-                try {
-                    lock.writeLock().lock();
-                    nextOid: for (int i = 0; i < eie.getEntityIds().length; i++) {
-                        long oid = eie.getEntityIds()[i];
-                        char op = eie.getEntityOperations()[i];
-                        switch(op) {
-                            case EntityInvalidationEvent.CREATE:
-                            case EntityInvalidationEvent.UPDATE:
-                                try {
-                                    addTrustedCertToCaches(trustedCertManager.findByPrimaryKey(oid));
-                                    break;
-                                } catch (Exception e) {
-                                    logger.log(Level.WARNING, "Couldn't load recently created or updated TrustedCert #" + oid, e);
-                                    continue nextOid;
-                                }
-                            case EntityInvalidationEvent.DELETE:
-                                removeTrustedCertFromCaches(oid);
-                                break;
-                            default:
-                                throw new IllegalStateException("Unexpected invalidation operation: '" + op + "'");
-                        }
-                    }
+            boolean isDirty = false;
+            lock.readLock().lock();
+            try {
+                isDirty = cacheIsDirty;
+            } finally {
+                lock.readLock().unlock();
+            }
 
-                    try {
-                        initializeCertStoreAndTrustAnchors(trustedCertManager.findAll(), Boolean.valueOf(serverConfig.getProperty(PROP_USE_DEFAULT_ANCHORS)));
-                    } catch (FindException e) {
-                        throw new RuntimeException(e); // TODO
-                    }
-                } finally {
-                    lock.writeLock().unlock();
-                }
-            } else if (RevocationCheckPolicy.class.isAssignableFrom(eie.getEntityClass())) {
+            if ( !isDirty ) {
+                // incremental update
+                processEntityInvalidationEvent((EntityInvalidationEvent) applicationEvent);
+            } else {
+                // full reload
+                lock.writeLock().lock();
                 try {
-                    lock.writeLock().lock();
-                    nextOid: for (int i = 0; i < eie.getEntityIds().length; i++) {
-                        long oid = eie.getEntityIds()[i];
-                        char op = eie.getEntityOperations()[i];
-                        switch(op) {
-                            case EntityInvalidationEvent.CREATE:
-                            case EntityInvalidationEvent.UPDATE:
-                                try {
-                                    addRCPToCaches(revocationCheckPolicyManager.findByPrimaryKey(oid));
-                                    break;
-                                } catch (Exception e) {
-                                    logger.log(Level.WARNING, "Couldn't load recently created or updated RevocationCheckPolicy #" + oid, e);
-                                    continue nextOid;
-                                }
-                            case EntityInvalidationEvent.DELETE:
-                                removeRCPFromCaches(oid);
-                                break;
-                            default:
-                                throw new IllegalStateException("Unexpected invalidation operation: '" + op + "'");
-                        }
-                    }
-                    if (currentDefaultRevocationPolicy == null) throw new IllegalStateException("Default revocation policy deleted and not replaced");
+                    populateCaches(trustedCertsByDn,
+                            trustedCertsByIssuerDnAndSerial,
+                            trustedCertsByOid,
+                            trustedCertsBySKI,
+                            revocationPoliciesByOid);
                 } finally {
                     lock.writeLock().unlock();
                 }
+            }
+        }
+    }
+
+    private void populateCaches(Map<String, CertValidationCacheEntry> myDnCache,
+                                Map<IDNSerialKey, CertValidationCacheEntry> myIssuerDnCache,
+                                Map<Long, CertValidationCacheEntry> myOidCache,
+                                Map<String, CertValidationCacheEntry> mySkiCache,
+                                Map<Long, RevocationCheckPolicy> myRcpsByOid) {
+        logger.info("(Re-)Populating certificate validation caches.");
+
+        // clear existing data
+        myDnCache.clear();
+        myIssuerDnCache.clear();
+        myOidCache.clear();
+        mySkiCache.clear();
+        myRcpsByOid.clear();
+
+
+        // Set up initial RevocationCheckPolicy caches
+        Collection<RevocationCheckPolicy> rcps;
+        try {
+            rcps = revocationCheckPolicyManager.findAll();
+        } catch (FindException e) {
+            throw new RuntimeException("Unable to find RevocationCheckPolicies", e);
+        }
+
+        RevocationCheckPolicy defaultRcp = null;
+        for (RevocationCheckPolicy rcp : rcps) {
+            if (rcp.isDefaultPolicy()) {
+                if (defaultRcp != null) throw new IllegalStateException("Multiple RevocationCheckPolicies are flagged as default");
+                defaultRcp = rcp;
+            }
+            myRcpsByOid.put(rcp.getOid(), rcp);
+        }
+        if (defaultRcp == null) defaultRcp = new RevocationCheckPolicy(); // Always fails
+        this.currentDefaultRevocationPolicy = defaultRcp;
+
+        // Setup initial TrustedCert caches
+        Collection<TrustedCert> tces;
+        try {
+            tces = trustedCertManager.findAll();
+        } catch (FindException e) {
+            throw new RuntimeException("Unable to find Trusted Certs", e);
+        }
+
+        for (TrustedCert tce : tces) {
+            try {
+                final CertValidationCacheEntry entry = new CertValidationCacheEntry(tce);
+                myDnCache.put(tce.getSubjectDn(), entry);
+                myOidCache.put(tce.getOid(), entry);
+                mySkiCache.put(tce.getSki(), entry);
+                // last since it may throw on invalid data
+                myIssuerDnCache.put(new IDNSerialKey(entry.issuerDn, entry.serial), entry);
+            } catch (CertificateException e) {
+                logger.log(Level.WARNING, "Couldn't load TrustedCert #{0} ({1}): " + ExceptionUtils.getMessage(e), new Object[] { tce.getOid(), tce.getSubjectDn() });
+            } catch (IllegalArgumentException e) {
+                logger.log(Level.WARNING, "Couldn't load TrustedCert #{0} ({1}): " + ExceptionUtils.getMessage(e), new Object[] { tce.getOid(), tce.getSubjectDn() });
+            }
+        }
+
+        initializeCertStoreAndTrustAnchors(tces, Boolean.valueOf(serverConfig.getProperty(PROP_USE_DEFAULT_ANCHORS)));
+
+        cacheIsDirty = false;
+    }
+
+    private void processEntityInvalidationEvent(final EntityInvalidationEvent eie) {
+        if (TrustedCert.class.isAssignableFrom(eie.getEntityClass())) {
+            lock.writeLock().lock();
+            try {
+                nextOid: for (int i = 0; i < eie.getEntityIds().length; i++) {
+                    long oid = eie.getEntityIds()[i];
+                    char op = eie.getEntityOperations()[i];
+                    switch(op) {
+                        case EntityInvalidationEvent.CREATE:
+                        case EntityInvalidationEvent.UPDATE:
+                            if (logger.isLoggable(Level.FINE) ) {
+                                logger.log(Level.FINE, "Updating cache due to trusted certificate add/update, OID is {0}.", oid);
+                            }
+                            try {
+                                addTrustedCertToCaches(trustedCertManager.findByPrimaryKey(oid));
+                                break;
+                            } catch (Exception e) {
+                                cacheIsDirty = true;
+                                logger.log(Level.WARNING, "Couldn't load recently created or updated TrustedCert #" + oid, e);
+                                continue nextOid;
+                            }
+                        case EntityInvalidationEvent.DELETE:
+                            if (logger.isLoggable(Level.FINE) ) {
+                                logger.log(Level.FINE, "Updating cache due to trusted certificate deletion, OID is {0}.", oid);
+                            }
+                            removeTrustedCertFromCaches(oid);
+                            break;
+                        default:
+                            throw new IllegalStateException("Unexpected invalidation operation: '" + op + "'");
+                    }
+                }
+            } finally {
+                lock.writeLock().unlock();
+            }
+        } else if (RevocationCheckPolicy.class.isAssignableFrom(eie.getEntityClass())) {
+            lock.writeLock().lock();
+            try {
+                nextOid: for (int i = 0; i < eie.getEntityIds().length; i++) {
+                    long oid = eie.getEntityIds()[i];
+                    char op = eie.getEntityOperations()[i];
+                    switch(op) {
+                        case EntityInvalidationEvent.CREATE:
+                        case EntityInvalidationEvent.UPDATE:
+                            if (logger.isLoggable(Level.FINE) ) {
+                                logger.log(Level.FINE, "Updating cache due to revocation check policy add/update, OID is {0}.", oid);
+                            }
+                            try {
+                                addRCPToCaches(revocationCheckPolicyManager.findByPrimaryKey(oid));
+                                break;
+                            } catch (Exception e) {
+                                cacheIsDirty = true;
+                                logger.log(Level.WARNING, "Couldn't load recently created or updated RevocationCheckPolicy #" + oid, e);
+                                continue nextOid;
+                            }
+                        case EntityInvalidationEvent.DELETE:
+                            if (logger.isLoggable(Level.FINE) ) {
+                                logger.log(Level.FINE, "Updating cache due to revocation check policy deletion, OID is {0}.", oid);
+                            }
+                            removeRCPFromCaches(oid);
+                            break;
+                        default:
+                            throw new IllegalStateException("Unexpected invalidation operation: '" + op + "'");
+                    }
+                }
+                if (currentDefaultRevocationPolicy == null) throw new IllegalStateException("Default revocation policy deleted and not replaced");
+            } finally {
+                lock.writeLock().unlock();
             }
         }
     }
@@ -458,9 +668,13 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
 
     /** Caller must hold write lock */
     private void addRCPToCaches(RevocationCheckPolicy policy) {
-        revocationCheckerFactory.invalidateRevocationCheckPolicy(policy.getOid());
-        if (policy.isDefaultPolicy()) currentDefaultRevocationPolicy = policy; // TODO if the bit has been cleared this won't catch it
+        if ( policy.isDefaultPolicy() ) {
+            currentDefaultRevocationPolicy = policy;
+        } else if (currentDefaultRevocationPolicy!=null && currentDefaultRevocationPolicy.getOid()==policy.getOid()) {
+            currentDefaultRevocationPolicy = null;
+        }
         revocationPoliciesByOid.put(policy.getOid(), policy);
+        revocationCheckerFactory.invalidateRevocationCheckPolicy(policy.getOid());
     }
 
     /** Caller must hold write lock */
@@ -469,13 +683,114 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         CertValidationCacheEntry entry = trustedCertsByOid.remove(oid);
         if (entry == null) return;
         trustedCertsByDn.remove(entry.subjectDn);
+        trustedCertsBySKI.remove(entry.ski);
+        trustedCertsByIssuerDnAndSerial.remove(new IDNSerialKey(entry.issuerDn, entry.serial));
     }
 
     /** Caller must hold write lock */
     private void addTrustedCertToCaches(TrustedCert tce) throws CertificateException {
-        revocationCheckerFactory.invalidateTrustedCert(tce.getOid());
+        // add to trusted cert cache
         CertValidationCacheEntry entry = new CertValidationCacheEntry(tce);
         trustedCertsByDn.put(tce.getSubjectDn(), entry);
+        trustedCertsBySKI.put(entry.ski, entry);
         trustedCertsByOid.put(tce.getOid(), entry);
+        trustedCertsByIssuerDnAndSerial.put(new IDNSerialKey(entry.issuerDn, entry.serial), entry);
+        if ( logger.isLoggable(Level.FINE) ) {
+            logger.log(Level.FINE, "Added certificate ''{0}'', to anchors store.", entry.subjectDn);
+        }
+
+        // update TrustAnchors and known certs
+        Map<String, TrustAnchor> anchors = new HashMap<String, TrustAnchor>(trustAnchorsByDn);
+        if ( tce.isTrustAnchor() ) {
+            TrustAnchor old = anchors.put(tce.getSubjectDn(), new TrustAnchor(entry.cert, null));
+            if ( logger.isLoggable(Level.FINE) ) {
+                logger.log(Level.FINE, "Added certificate ''{0}'', to anchors store, replaced ''{1}''.",
+                        new Object[]{entry.subjectDn, old==null?"<NULL>":old.getTrustedCert().getSubjectDN()});
+            }
+        } else {
+            boolean removed = anchors.remove(tce.getSubjectDn())!=null;
+            if ( logger.isLoggable(Level.FINE) ) {
+                logger.log(Level.FINE, "Removed certificate ''{0}'', from anchors store ({1}).",
+                        new Object[]{entry.subjectDn, removed});
+            }
+        }
+        trustAnchorsByDn = Collections.unmodifiableMap(anchors);
+
+        try {
+            Set<Certificate> nonAnchors = new HashSet<Certificate>(certStore.getCertificates(null));
+            if ( tce.isTrustAnchor() ) {
+                boolean removed = nonAnchors.remove(entry.cert);
+                if ( logger.isLoggable(Level.FINE) ) {
+                    logger.log(Level.FINE, "Removed certificate ''{0}'', from non-anchors store ({1}).",
+                            new Object[]{entry.subjectDn, removed});
+                }
+            } else {
+                boolean added = nonAnchors.add(entry.cert);
+                if ( logger.isLoggable(Level.FINE) ) {
+                    logger.log(Level.FINE, "Added certificate ''{0}'', to non-anchors store ({1}).",
+                            new Object[]{entry.subjectDn, added});
+                }
+            }
+            this.certStore = CertStore.getInstance("Collection", new CollectionCertStoreParameters(Collections.unmodifiableSet(nonAnchors)));
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e); // Can't happen (we think!)
+        }
+
+        //
+        revocationCheckerFactory.invalidateTrustedCert(tce.getOid());
+    }
+
+    private static final class IDNSerialKey {
+        private final String issuerDn;
+        private final BigInteger serial;
+
+        IDNSerialKey(String issuerDn, BigInteger serial) {
+            if (issuerDn == null) throw new IllegalArgumentException("issuerDn must not be null");
+            if (serial == null) throw new IllegalArgumentException("serial must not be null");
+            this.issuerDn = issuerDn;
+            this.serial = serial;
+        }
+
+        String getIssuerDn() {
+            return issuerDn;
+        }
+
+        BigInteger getSerial() {
+            return serial;
+        }
+
+        boolean matches(X509Certificate certificate) {
+            boolean match = false;
+            String issuerDn = certificate.getIssuerDN().toString();
+            BigInteger serial = certificate.getSerialNumber();
+
+            if ( issuerDn != null && serial != null) {
+                if ( issuerDn.equals(getIssuerDn()) &&
+                     serial.equals(getSerial())) {
+                    match = true;
+                }
+            }
+
+            return match;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            IDNSerialKey that = (IDNSerialKey) o;
+
+            if (!issuerDn.equals(that.issuerDn)) return false;
+            if (!serial.equals(that.serial)) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            int result;
+            result = issuerDn.hashCode();
+            result = 31 * result + serial.hashCode();
+            return result;
+        }
     }
 }

@@ -15,6 +15,12 @@ public class Auditor {
     private final Object source;
     private final Logger logger;
 
+    protected Auditor(Logger logger) {
+        this.source = null;
+        this.context = null;
+        this.logger = logger;
+    }
+
     public Auditor(Object source, ApplicationContext context, Logger logger) {
         if(source  == null) throw new IllegalArgumentException("Event source is NULL. Cannot add AuditDetail to the audit record.");
         if(context == null) throw new IllegalArgumentException("ApplicationContext is NULL. Cannot add AuditDetail to the audit record.");
@@ -29,19 +35,7 @@ public class Auditor {
 
         if (logger == null) return;
 
-        if (logger.isLoggable(msg.getLevel())) {
-            LogRecord rec = new AuditHackLogRecord(msg);
-            rec.setLoggerName(logger.getName());
-            if (e != null) rec.setThrown(e);
-            if (params != null) rec.setParameters(params);
-            if (JdkLoggerConfigurator.serviceNameAppenderState()) {
-                String serviceName = getServiceName();
-                if (serviceName != null && serviceName.length() > 0) {
-                    rec.setMessage(rec.getMessage() + " @ " + serviceName);
-                }
-            }
-            logger.log(rec);
-        }
+        log(msg, params, e);
     }
 
     private String getServiceName() {
@@ -58,6 +52,22 @@ public class Auditor {
 
     public void logAndAudit(AuditDetailMessage msg) {
         logAndAudit(msg, null, null);
+    }
+
+    protected void log(AuditDetailMessage msg, String[] params, Throwable e) {
+        if (logger.isLoggable(msg.getLevel())) {
+            LogRecord rec = new AuditHackLogRecord(msg);
+            rec.setLoggerName(logger.getName());
+            if (e != null) rec.setThrown(e);
+            if (params != null) rec.setParameters(params);
+            if (JdkLoggerConfigurator.serviceNameAppenderState()) {
+                String serviceName = getServiceName();
+                if (serviceName != null && serviceName.length() > 0) {
+                    rec.setMessage(rec.getMessage() + " @ " + serviceName);
+                }
+            }
+            logger.log(rec);
+        }
     }
 
     // Don't look at this, this is a nasty hack so that the log records created here don't have Auditor.logAndAudit as their source class and method names.

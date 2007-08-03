@@ -173,7 +173,7 @@ public class TrustedCertManagerImp
             TrustedCert caTrust = getCachedCertBySubjectDn(issuerDn, 30000);
 
             if (caTrust == null)
-                throw new CertificateException("Couldn't find CA cert with DN '" + issuerDn + "'");
+                throw new UnknownCertificateException("Couldn't find CA cert with DN '" + issuerDn + "'");
 
             if (!caTrust.isTrustedForSigningServerCerts())
                 throw new CertificateException("CA Cert with DN '" + issuerDn + "' found but not trusted for signing SSL Server Certs");

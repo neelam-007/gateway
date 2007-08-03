@@ -7,83 +7,72 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.identity.cert.TrustedCertManager;
-import org.springframework.beans.factory.InitializingBean;
+import com.l7tech.server.security.cert.CertValidationProcessor;
+import com.l7tech.common.security.CertificateValidationType;
+import com.l7tech.common.security.CertificateValidationResult;
+import com.l7tech.common.audit.LogOnlyAuditor;
 
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Level;
+import java.security.SignatureException;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class SslClientTrustManager implements X509TrustManager, InitializingBean {
-    private TrustedCertManager trustedCertManager;
+public class SslClientTrustManager implements X509TrustManager {
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private final TrustedCertManager trustedCertManager;
+    private final CertValidationProcessor certValidationProcessor;
+    private final CertValidationProcessor.Facility facility;
 
-    public SslClientTrustManager() {
-        TrustManagerFactory tmf = null;
-        try {
-            tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            tmf.init((KeyStore)null);
-        } catch (NoSuchAlgorithmException e) {
-            logger.log(Level.SEVERE, e.toString(), e);
-            throw new RuntimeException(e);
-        } catch (KeyStoreException e) {
-            logger.log(Level.SEVERE, e.toString(), e);
-            throw new RuntimeException(e);
-        }
-        TrustManager[] defaultTrustManagers = tmf.getTrustManagers();
-        X509TrustManager delegate = null;
-        for (int i = 0; i < defaultTrustManagers.length; i++) {
-            if (defaultTrustManagers[i] instanceof X509TrustManager) {
-                delegate = (X509TrustManager)defaultTrustManagers[i];
-                break;
-            }
-        }
+    public SslClientTrustManager(final TrustedCertManager trustedCertManager,
+                                 final CertValidationProcessor certValidationProcessor,
+                                 final CertValidationProcessor.Facility facility) {
+        if (trustedCertManager == null)  throw new IllegalArgumentException("Trusted Cert Manager is required");
+        if (certValidationProcessor == null)  throw new IllegalArgumentException("Cert Validation Processor is required");
+        if (facility == null)  throw new IllegalArgumentException("Facility is required");
 
-        if (delegate == null) throw new RuntimeException("Couldn't locate an X509TrustManager implementation");
-
-        this.delegate = delegate;
+        this.trustedCertManager = trustedCertManager;
+        this.certValidationProcessor = certValidationProcessor;
+        this.facility = facility;
     }
 
     public X509Certificate[] getAcceptedIssuers() {
         throw new UnsupportedOperationException("This trust manager can only be used for outbound SSL connections");
     }
 
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType) throws CertificateException {
+    public void checkClientTrusted(final X509Certificate[] x509Certificates, final String authType) throws CertificateException {
         throw new UnsupportedOperationException("This trust manager can only be used for outbound SSL connections");
     }
 
-    public void checkServerTrusted(X509Certificate[] certs, String authType) throws CertificateException {
-        final X509Certificate serverCert = certs[0];
+    public void checkServerTrusted(final X509Certificate[] certs, final String authType) throws CertificateException {
+        boolean isCartel = false;
         try {
-            // Try cartel first
-            delegate.checkServerTrusted(certs, authType);
-            logger.fine("SSL server cert was issued to '" + serverCert.getSubjectDN().getName() + "' by a globally recognized CA" );
-            return;
-        } catch ( CertificateException unused ) {
-            serverCert.checkValidity();
             trustedCertManager.checkSslTrust(certs);
+        } catch (TrustedCertManager.UnknownCertificateException uce) {
+            // this is ok, as long as it is a cert from a known CA
+            isCartel = true;
         }
-    }
 
-    public void setTrustedCertManager(TrustedCertManager trustedCertManager) {
-        this.trustedCertManager = trustedCertManager;
-    }
+        try {
+            // minimum permissable validation is PATH_VALIDATION, since we're
+            // not otherwise validating the certificate.
+            CertificateValidationResult result =
+                    certValidationProcessor.check(certs, CertificateValidationType.PATH_VALIDATION, null, facility, new LogOnlyAuditor(logger));
 
-    private final X509TrustManager delegate;
-    private final Logger logger = Logger.getLogger(this.getClass().getName());
-
-    public void afterPropertiesSet() throws Exception {
-        if (trustedCertManager == null) {
-            throw new IllegalArgumentException("Trusted Cert Manager is required");
+            if ( result != CertificateValidationResult.OK ) {
+                throw new CertificateException("Certificate path validation and/or revocation checking failed");
+            }
+            
+            if (isCartel && logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "SSL server cert was issued to ''{0}'' by a globally recognized CA", certs[0].getSubjectDN().getName());
+            }
+        } catch (SignatureException se) {
+            throw new CertificateException("Certificate path validation and/or revocation checking error", se);            
         }
     }
 }

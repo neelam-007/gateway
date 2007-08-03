@@ -24,6 +24,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -786,6 +788,23 @@ public class CertUtils {
             default:
                 throw new IllegalArgumentException("DN '" + dn + "' has more than one CN value");
         }
+    }
+
+    /**
+     * Extract the key exchange algorithm portion of an SSL cipher suite name.
+     *
+     * @param cipherSuiteName The name such as "TLS_RSA_EXPORT_WITH_RC4_40_MD5"
+     * @return The key exchange algorithm such as "RSA_EXPORT"
+     * @throws IllegalArgumentException if the cipher suite name is invalid
+     * @see javax.net.ssl.X509TrustManager#checkServerTrusted
+     */
+    public static String extractAuthType(final String cipherSuiteName)  {
+        Pattern pattern = Pattern.compile("(?:SSL|TLS)_(.*?)_WITH_.*");
+        Matcher matcher = pattern.matcher(cipherSuiteName);
+        if ( matcher.matches() ) {
+            return matcher.group(1);
+        }
+        throw new IllegalArgumentException("Invalid cipher suite name '"+cipherSuiteName+"'.");
     }
 
     /**

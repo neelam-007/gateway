@@ -94,7 +94,12 @@ public class CertificateAuthenticator {
         logger.fine("Request cert serial# is " + requestCert.getSerialNumber().toString());
         if (CertUtils.certsAreEqual(requestCert, dbCert)) {
             try {
-                CertificateValidationResult cvr = certValidationProcessor.check(requestCert, validationType, CertValidationProcessor.Facility.IDENTITY, auditor);
+                CertificateValidationResult cvr = certValidationProcessor.check(
+                        new X509Certificate[]{requestCert},
+                        null,
+                        validationType,
+                        CertValidationProcessor.Facility.IDENTITY,
+                        auditor);
                 if (cvr != CertificateValidationResult.OK) {
                     throw new InvalidClientCertificateException("Certificate path validation and/or revocation checking failed");
                 }

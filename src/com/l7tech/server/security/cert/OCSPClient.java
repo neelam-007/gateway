@@ -13,6 +13,7 @@ import java.security.cert.X509Certificate;
 import java.util.Random;
 import java.util.Vector;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,14 +64,12 @@ public class OCSPClient {
      * @param httpClient The HTTP client to use for making requests (required)
      * @param url The url to send requests to (required)
      * @param issuer The certificate of the CA (required)
-     * @param allowIssuer True to allow issuer or issuer designated signer for OCSP responses
-     * @param signers Additional permitted signers (may be null)
+     * @param certificateAuthorizer The authorizer for response signing
      */
     public OCSPClient(final GenericHttpClient httpClient,
                       final String url,
                       final X509Certificate issuer,
-                      final boolean allowIssuer,
-                      final X509Certificate[] signers) {
+                      final OCSPCertificateAuthorizer certificateAuthorizer) {
         if (httpClient == null) throw new IllegalArgumentException("httpClient is required");
         if (url == null) throw new IllegalArgumentException("url is required");
         if (issuer == null) throw new IllegalArgumentException("issuer is required");
@@ -78,8 +77,7 @@ public class OCSPClient {
         this.httpClient = httpClient;
         this.url = url;
         this.issuerCertificate = issuer;
-        this.allowIssuer = allowIssuer;
-        this.signers = signers==null ? new X509Certificate[0] : signers;
+        this.certificateAuthorizer = certificateAuthorizer;
     }
 
     /**
@@ -103,6 +101,74 @@ public class OCSPClient {
         status = doRevocationCheck(certificate, nonce, signed);
 
         return status;
+    }
+
+    /**
+     * Check if the given certificate is allowed to sign OCSP responses.
+     *
+     * <p>This checks if the issuer allows the given certificate to sign OCSP responses
+     * on its behalf.</p>
+     *
+     * @param certificate The certificate to check.
+     * @return true if permitted and certificate is valid.
+     * @throws OCSPClientException if the certificate is invalid
+     */
+    public boolean isPermittedByIssuer(final X509Certificate certificate) throws OCSPClientException {
+        boolean permitted = false;
+
+        // Is this cert created by the issuer for OCSP responses?
+        try {
+            List<String> extendedUsages = certificate.getExtendedKeyUsage();
+            if ( extendedUsages!=null && extendedUsages.contains(OID_EXT_KEY_USE_OCSPSIGN) ) {
+                certificate.checkValidity();
+                CertUtils.cachedVerify(certificate, issuerCertificate.getPublicKey());
+                permitted = true;            
+            }
+        } catch (GeneralSecurityException gse) {
+            throw new OCSPClientException("Error verifying OCSP response signer certificate.", gse);
+        }
+
+        return permitted;
+    }
+
+    /**
+     * Should a revocation check be performed for the given certificate.
+     *
+     * <p>This is only applicable for certs that are @{link #isPermittedByIssuer permitted by issuer}.</p>
+     *
+     * @param certificate The certificate to check.
+     * @return true if a revocation check should be performed.
+     * @throws OCSPClientException if the certificate is invalid
+     */
+    public boolean shouldCheckRevocation(final X509Certificate certificate) throws OCSPClientException {
+        boolean checkRevocation = true;
+
+        try {
+            // If nocheck is set on the cert then we don't need to check revocation
+            List<String> extendedUsages = certificate.getExtendedKeyUsage();
+            if ( extendedUsages!=null && extendedUsages.contains(OID_EXT_KEY_USE_OCSP_NOCHECK) ) {
+                checkRevocation = false;
+            }
+        } catch (GeneralSecurityException gse) {
+            throw new OCSPClientException("Error examining OCSP nocheck certificate extension.", gse);
+        }
+
+        return checkRevocation;
+    }
+
+    /**
+     * Interface implemented to authorize certificates that sign OCSP responses.
+     */
+    public static interface OCSPCertificateAuthorizer {
+
+        /**
+         * Locate an authorized signer from the certificates listed in the OCSP response.
+         *
+         * @param client The OCSPClient making the check (not null)
+         * @param certificates The certificates to check (may be empty but not null)
+         * @return The authorized signer, or null if none
+         */
+        X509Certificate getAuthorizedSigner(OCSPClient client, X509Certificate[] certificates);
     }
 
     /**
@@ -163,6 +229,7 @@ public class OCSPClient {
     private static final String CONTENT_TYPE_OCSP_RESPONSE = "application/ocsp-response";
 
     private static final String OID_EXT_KEY_USE_OCSPSIGN = "1.3.6.1.5.5.7.3.9";
+    private static final String OID_EXT_KEY_USE_OCSP_NOCHECK = "1.3.6.1.5.5.7.48.1.5";
 
     /**
      * Secure random used for nonce generation
@@ -174,8 +241,7 @@ public class OCSPClient {
     private final GenericHttpClient httpClient;
     private final String url;
     private final X509Certificate issuerCertificate;
-    private final boolean allowIssuer;
-    private final X509Certificate[] signers;
+    private final OCSPCertificateAuthorizer certificateAuthorizer;
 
     /**
      * Check the revocation status of the given cert using the specified url 
@@ -188,7 +254,7 @@ public class OCSPClient {
         try {
             CertificateID certId = new CertificateID(CertificateID.HASH_SHA1, issuerCertificate, certificate.getSerialNumber());
             OCSPReq request = generateOCSPRequest(certId,  nonce);
-            status = sendRequest(url, request, certId, issuerCertificate, signed);
+            status = sendRequest(url, request, certId, signed);
         } catch ( OCSPException oe ) {
             throw new OCSPClientException("Error generating OCSP request for certificate.", oe);
         }
@@ -237,7 +303,6 @@ public class OCSPClient {
     private OCSPStatus sendRequest(final String ocspResponderUrl,
                                    final OCSPReq request,
                                    final CertificateID certId,
-                                   final X509Certificate issuerCert,
                                    final boolean signed) throws OCSPClientException {
         OCSPStatus status = new OCSPStatus(0, CertificateValidationResult.REVOKED);
         RerunnableHttpRequest httpRequest;
@@ -279,7 +344,7 @@ public class OCSPClient {
             }
 
             OCSPResp ocspResponse = new OCSPResp(httpResponse.getInputStream());
-            status = handleResponse(ocspResponse, certId, issuerCert, signed);
+            status = handleResponse(ocspResponse, certId, signed);
             
         } catch (IOException ioe) {
             throw new OCSPClientException("HTTP error processing OCSP request for responder '"+ocspResponderUrl+"'.", ioe);
@@ -293,7 +358,6 @@ public class OCSPClient {
      */
     private OCSPStatus handleResponse(final OCSPResp ocspResponse,
                                       final CertificateID certId,
-                                      final X509Certificate issuerCert,
                                       final boolean signed) throws OCSPClientException
     {
         OCSPStatus status = null;
@@ -308,7 +372,7 @@ public class OCSPClient {
         // 
         switch ( responseStatus ) {
             case 0: // successful (so process to check revocation status for certificate)
-                status = processOCSPResponse(ocspResponse, certId, issuerCert, signed);
+                status = processOCSPResponse(ocspResponse, certId, signed);
                 break;
             case 1: // bad request
                 throw new OCSPClientException("OCSP Response Error [1]: Bad Request");
@@ -333,7 +397,6 @@ public class OCSPClient {
      */
     private OCSPStatus processOCSPResponse(final OCSPResp ocspResponse,
                                            final CertificateID certId,
-                                           final X509Certificate issuerCert,
                                            final boolean signed) throws OCSPClientException
     {
         OCSPStatus status = null;
@@ -354,7 +417,7 @@ public class OCSPClient {
         }
 
         // validate the signature
-        validateSignature(basicOcspResp, issuerCert, signed);
+        validateSignature(basicOcspResp, signed);
 
         // validate response time (producedAt appears to be infrormational, thisUpdate requires validation
         // to ensure it is "sufficiently recent" [RFC 2560 section 3.2])
@@ -400,7 +463,6 @@ public class OCSPClient {
      * Ensure that the signature on the OCSP response is valid and present (if required)
      */
     private void validateSignature(final BasicOCSPResp basicOcspResp,
-                                   final X509Certificate issuer,
                                    final boolean requireSignature) throws OCSPClientException {
         String sigAlg = basicOcspResp.getSignatureAlgName();
         X509Certificate signer = null;
@@ -415,53 +477,9 @@ public class OCSPClient {
         }
 
         //
-        if ( signerCerts.length == 0 ) {
-            if ( allowIssuer ) {
-                signer = issuer;
-            }          
-        } else {
-            for ( X509Certificate signerCert : signerCerts ) {
-                // check ok for signing
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.log(Level.FINER, "Checking signer certificate ''{0}''.", signerCert.getSubjectDN());
-                }
-
-                // is this the issuer?
-                if ( issuer.getSerialNumber().equals(signerCert.getSerialNumber()) &&
-                     issuer.getIssuerDN().getName().equals(signerCert.getIssuerDN().getName())) {
-                    if ( allowIssuer ) {
-                        signer = issuer;
-                        break;
-                    }
-                }
-
-                // is this an allowed cert?
-                for ( X509Certificate trustedSigner : signers ) {
-                    if ( trustedSigner.getSerialNumber().equals(signerCert.getSerialNumber()) &&
-                         trustedSigner.getIssuerDN().getName().equals(signerCert.getIssuerDN().getName())) {
-                        signer = trustedSigner;
-                        break;
-                    }
-                }
-
-                // is this cert created by the issuer for OCSP responses?
-                // check this last since the OCSP signer may be trusted, in which case we don't
-                // need to check the signature
-                try {
-                    if ( signerCert.getExtendedKeyUsage().contains(OID_EXT_KEY_USE_OCSPSIGN) ) {
-                        CertUtils.cachedVerify(signerCert, issuerCertificate.getPublicKey());
-                        signer = signerCert;
-                        break;
-                    }
-                } catch (GeneralSecurityException gse) {
-                    throw new OCSPClientException("Error verifying OCSP response signer certificate.", gse);
-                }
-            }
-        }
-
-        //TODO support for nocheck
-        // If nocheck is set on the cert then we don't need to check revocation
-        //OCSPObjectIdentifiers.id_pkix_ocsp_nocheck
+        if (signerCerts == null)
+            signerCerts = new X509Certificate[0];
+        signer = certificateAuthorizer.getAuthorizedSigner(this, signerCerts);
 
         // Perform signature validation
         try {
