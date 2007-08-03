@@ -234,7 +234,7 @@ public class DownloadAuditEventsWindow extends JFrame {
         publishedServiceList.setEnabled(state == State.CONFIGURE && selectedPublishedServiceRadioButton.isSelected());
         downloadButton.setEnabled(state == State.CONFIGURE
                 && (allPublishedServiceRadioButton.isSelected() || publishedServiceList.getSelectedValues().length > 0)
-                && !filePathTextField.getText().trim().isEmpty());
+                && filePathTextField.getText().trim().length() != 0);
     }
 
     /**
