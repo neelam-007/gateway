@@ -302,9 +302,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             String mess = "problem generating keys or keystore - skipping keystore configuration: ";
             logger.log(Level.SEVERE, mess + e.getMessage(), e);
             throw e;
-        }                                                                                                                           
+        }
     }
-    
+
     private void doHSMConfig(KeystoreConfigBean ksBean) throws Exception {
         final char[] shortPasswd = ksBean.getKsPassword();
         final char[] fullKsPassword = ("gateway:" + new String(shortPasswd)).toCharArray();
@@ -343,7 +343,11 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         if (ksBean.isInitializeHSM()) {
             doInitializeHsm(fullKsPassword, ksBean, ksDir, javaSecFile, newJavaSecFile, keystorePropertiesFile, tomcatServerConfigFile, sslKeyStoreFile, systemPropertiesFile);
         } else {
-            doRestoreHsm(fullKsPassword, ksBean, ksDir, javaSecFile, newJavaSecFile, keystorePropertiesFile, tomcatServerConfigFile, sslKeyStoreFile, systemPropertiesFile);
+            try {
+                doRestoreHsm(fullKsPassword, ksBean, ksDir, javaSecFile, newJavaSecFile, keystorePropertiesFile, tomcatServerConfigFile, sslKeyStoreFile, systemPropertiesFile);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Caught exception:", e);
+            }
         }
     }
 
@@ -399,13 +403,13 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             scaManager.wipeKeydata();
             logger.info("Successfully cleaned up existing keydata directory.");
 
-            //restore the master key
-            restoreHsmMasterkey(fullKsPassword, ksBean.getMasterKeyBackupPassword());
-
             //replace keydata dir
             logger.info("Building new keydata directory.");
             scaManager.saveKeydata(databytes);
             logger.info("Successfully built new keydata directory.");
+
+            //restore the master key
+            restoreHsmMasterkey(fullKsPassword, ksBean.getMasterKeyBackupPassword());
 
             ka.prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
             makeHSMKeys(new File(ksDir), fullKsPassword, true);
@@ -420,9 +424,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             throw e;
         } catch (KeystoreActionsException e) {
             logger.severe("Error while restoring a keystore to the HSM. Could not get the keydata from the database: " + e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.severe(MessageFormat.format("Problem restoring the keystore to the HSM - skipping HSM configuration: {0} - {1}", e.getClass().getName(), e.getMessage()));
             throw e;
         }
     }
@@ -572,7 +573,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         KeyStore theHsmKeystore = KeyStore.getInstance(kstype);
         logger.info("Connecting to " + kstype + " keystore.");
         theHsmKeystore.load(null,fullKeystoreAccessPassword);
-
         if (isRestoreHsm) {
             //get ca cert from the HSM
             KeyStore.Entry caEntry = theHsmKeystore.getEntry(KeyStoreConstants.CA_ALIAS, new KeyStore.PasswordProtection(fullKeystoreAccessPassword));
@@ -589,7 +589,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             caCert = BouncyCastleRsaSignerEngine.makeSelfSignedRootCertificate(
                     KeyStoreConstants.CA_DN_PREFIX + sharedWizardInfo.getHostname(),
                     KeyStoreConstants.CA_VALIDITY_DAYS, cakp);
-            
+
             logger.info("Storing CA cert in HSM");
             theHsmKeystore.setKeyEntry(KeyStoreConstants.CA_ALIAS, caPrivateKey, fullKeystoreAccessPassword, new X509Certificate[] { caCert } );
 
@@ -612,7 +612,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private void createDummyKeystorse(File keystoreDir) throws IOException {
         File dummmyCaKeystore = new File(keystoreDir, KeyStoreConstants.CA_KEYSTORE_FILE);
         File dummySslKeystore = new File(keystoreDir, KeyStoreConstants.SSL_KEYSTORE_FILE);
-        
+
         truncateKeystores(dummmyCaKeystore, dummySslKeystore);
     }
 
@@ -724,6 +724,11 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private void exportCerts(X509Certificate caCert, File caCertFile, X509Certificate sslCert, File sslCertFile) throws CertificateEncodingException {
         logger.info("Exporting DER-encoded CA certificate");
+        if (caCert == null || sslCert == null) {
+            logger.severe("Could not export certificates. The certificates were not found.");
+            return;
+        }
+
         byte[] caCertBytes = caCert.getEncoded();
         FileOutputStream caFos = null;
         boolean caCertOk = false;
@@ -838,7 +843,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             throw e;
         } catch (ConfigurationException e) {
             logger.severe(MessageFormat.format("Error while updating the file: {0}. ({1})", systemPropertiesFile.getAbsolutePath(), e.getMessage()));
-            throw new CausedIOException(e);            
+            throw new CausedIOException(e);
         } finally {
             ResourceUtils.closeQuietly(is);
             ResourceUtils.closeQuietly(os);
