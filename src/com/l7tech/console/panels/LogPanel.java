@@ -295,6 +295,7 @@ public class LogPanel extends JPanel {
         controlPanel.applyButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 setDataFromControlPanel();
+                savePreferences();
                 updateControlState();
             }
         });
@@ -859,7 +860,6 @@ public class LogPanel extends JPanel {
         getFilteredLogTableSorter().onDisconnect();
 
         setHint("Disconnected");
-        savePreferences();
         enableOrDisableComponents();
     }
 
