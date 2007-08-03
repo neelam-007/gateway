@@ -85,4 +85,24 @@ public class MasterPasswordManagerTest extends TestCase {
         assertEquals(cleartext, decrypted);
     }
 
+    private void show(String password, String obf) {
+        System.out.println(password + "\t OBF-->\t " + obf);
+    }
+
+    private void show(MasterPasswordManager mpm, String plaintextPassword) {
+        String enc = mpm.encryptPassword(plaintextPassword.toCharArray());
+        System.out.println(plaintextPassword + "\t ENC-->\t " + enc);
+    }
+
+    public void testGenerateTestPasswords() throws Exception {
+        String master = "master";
+        String masterObf = DefaultMasterPasswordFinder.obfuscate(master);
+        show(master, masterObf);
+        System.out.println();
+
+        MasterPasswordManager mpm = new MasterPasswordManager(staticFinder(master));
+        show(mpm, "tralala");
+        show(mpm, "7layer");
+        show(mpm, "password");
+    }
 }

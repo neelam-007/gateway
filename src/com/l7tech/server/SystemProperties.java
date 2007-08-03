@@ -1,15 +1,15 @@
 package com.l7tech.server;
 
-import java.io.IOException;
-import java.io.File;
-import java.io.InputStream;
-import java.io.FileInputStream;
-import java.util.Properties;
-import java.util.logging.Logger;
-
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.server.util.PropertiesDecryptor;
 import org.springframework.beans.factory.InitializingBean;
 
-import com.l7tech.common.util.ResourceUtils;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * Bean that sets system properties from values in a file.
@@ -20,8 +20,9 @@ public class SystemProperties implements InitializingBean {
 
     //- PUBLIC
 
-    public SystemProperties(final ServerConfig serverConfig) {
+    public SystemProperties(final ServerConfig serverConfig, PropertiesDecryptor propertiesDecryptor) {
         this.serverConfig = serverConfig;
+        this.propertiesDecryptor = propertiesDecryptor;
     }
 
     public void afterPropertiesSet() throws Exception  {
@@ -33,6 +34,7 @@ public class SystemProperties implements InitializingBean {
     private static final Logger logger = Logger.getLogger(SystemProperties.class.getName());
 
     private final ServerConfig serverConfig;
+    private final PropertiesDecryptor propertiesDecryptor;
 
     private void setSystemProperties(ServerConfig config) throws IOException {
         // Set system properties
@@ -53,6 +55,7 @@ public class SystemProperties implements InitializingBean {
             }
 
             if (is != null) props.load(is);
+            propertiesDecryptor.decryptEncryptedPasswords(props);
 
             for (Object o : props.keySet()) {
                 String name = (String) o;

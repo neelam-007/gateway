@@ -21,8 +21,8 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
     public static final String BASE_PATH = SyspropUtil.getString("com.l7tech.server.home", "/ssg");
     public static final String PROP_MASTER_PASSWORD_PATH_DEFAULT = new File(BASE_PATH, "etc/conf/omp.dat").getAbsolutePath();
 
-    private static final String OBFUSCATION_PREFIX = "$L7O$";
-    private static long OBFUSCATION_SEED = 171717L;
+    private static final String OBFUSCATION_PREFIX = "$L7O$"; // do not change this, for backward compat.  can add new schemes, though
+    private static long OBFUSCATION_SEED = 171717L; // do not change this, for backward compat.  can add new schemes, though
 
     /**
      * Obfuscate a password.

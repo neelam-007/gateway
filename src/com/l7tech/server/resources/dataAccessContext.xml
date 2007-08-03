@@ -15,8 +15,9 @@
     system property.
     -->
     <bean id="hibernateProperties"
-          class="org.springframework.beans.factory.config.PropertiesFactoryBean"
+          class="com.l7tech.server.util.PasswordDecryptingPropertiesFactoryBean"
           depends-on="serverConfig">
+        <constructor-arg ref="propertiesDecryptor"/>
         <property name="ignoreResourceNotFound" value="true"/>
         <property name="locations">
             <list>

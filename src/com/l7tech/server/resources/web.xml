@@ -16,6 +16,8 @@
             classpath:com/l7tech/server/resources/rbacEnforcementContext.xml
             classpath:org/codehaus/xfire/spring/xfire.xml
             /WEB-INF/CaWsdmObserverContext*.xml
+            /WEB-INF/addon*Context*.xml
+            /WEB-INF/addon*context*.xml
         </param-value>
     </context-param>
 

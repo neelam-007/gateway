@@ -15,6 +15,7 @@
 
     <bean id="systemProperties" class="com.l7tech.server.SystemProperties">
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="propertiesDecryptor"/>
     </bean>
 
     <!-- SSG boot process -->
@@ -55,6 +56,17 @@
     </bean>
 
     <bean id="masterPasswordManager" class="com.l7tech.common.security.MasterPasswordManager" factory-method="getInstance"/>
+
+    <bean id="propertiesDecryptor" class="com.l7tech.server.util.PropertiesDecryptor">
+        <constructor-arg ref="masterPasswordManager"/>
+        <property name="passwordProperties">
+            <list>
+                <value>sslkspasswd</value>
+                <value>rootcakspasswd</value>
+                <value>hibernate.connection.password</value>
+            </list>
+        </property>
+    </bean>
 
     <!-- server side identity provider factory -->
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory"/>
@@ -298,6 +310,7 @@
     <!-- keystore root cert and ssl config  -->
     <bean id="keystore" class="com.l7tech.server.KeystoreUtils">
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="masterPasswordManager"/>
     </bean>
 
     <bean id="sslKeystoreCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
@@ -324,7 +337,8 @@
       Allow use of keystore.properties keys in bean values (e.g "${sslkstorename}")
       Allow use of ftpserver.properties keys in bean values (e.g "${ssgftp.default.controlPort}")
     -->
-    <bean id="ssgPropertyPlaceholderConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" depends-on="serverConfig">
+    <bean id="ssgPropertyPlaceholderConfigurer" class="com.l7tech.server.util.PasswordDecryptingPropertyPlaceholderConfigurer" depends-on="serverConfig">
+        <constructor-arg ref="propertiesDecryptor"/>
         <property name="ignoreResourceNotFound" value="true"/>
         <property name="locations">
             <list>

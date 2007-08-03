@@ -350,10 +350,9 @@ public class XencUtil {
      * @param oaepParams     optional param when using oaep (may be empty), or null to use RSA1.5 instead of OAEP
      * @param recipientKey         the private key to use to decrypt the element
      * @return the decrypted key bytes.  Will never be null or empty.
-     * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
      * @throws java.security.GeneralSecurityException if there was a crypto problem
      */
-    public static byte[] decryptKey(byte[] encryptedKeyBytes, byte[] oaepParams, PrivateKey recipientKey) throws GeneralSecurityException, InvalidDocumentFormatException {
+    public static byte[] decryptKey(byte[] encryptedKeyBytes, byte[] oaepParams, PrivateKey recipientKey) throws GeneralSecurityException {
         final byte[] unencryptedKey;
         if(oaepParams != null) {
             // decrypt

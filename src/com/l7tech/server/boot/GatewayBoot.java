@@ -4,6 +4,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.security.MasterPasswordManager;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
@@ -30,10 +31,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
-import java.util.Map;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.MissingResourceException;
+import java.util.logging.Level;
+import java.util.*;
+import java.text.ParseException;
 
 /**
  * Object that represents a complete, running Gateway instance.
@@ -44,6 +44,7 @@ public class GatewayBoot {
     public static final String SHUTDOWN_FILENAME = "SHUTDOWN.NOW";
     private static final long SHUTDOWN_POLL_INTERVAL = 1987L;
     private static final String RESOURCE_PREFIX = "com/l7tech/server/resources/";
+    private static final String CONNECTOR_ATTR_KEYSTORE_PASS = "keystorePass";
 
     private final File ssgHome;
     private final File inf;
@@ -54,9 +55,10 @@ public class GatewayBoot {
     private Embedded embedded;
     private StandardContext context;
     private ApplicationContext applicationContext;
+    private ServerConfig serverConfig;
+    private MasterPasswordManager masterPasswordManager;
     private Engine engine;
     private Host host;
-    private ServerConfig config;
 
     /**
      * Create a Gateway instance but do not initialize or start it.
@@ -122,8 +124,13 @@ public class GatewayBoot {
         VirtualDirContext ssgContext = new VirtualDirContext("ssg", ssgFileContext);
 
         // Set up our virtual WEB-INF subdirectory and virtual favicon and index.html
-        VirtualDirEntry webXml = loadEntry("web.xml");
-        VirtualDirContext webInfContext = new VirtualDirContext("WEB-INF", webXml);
+        List<VirtualDirEntry> webinfEntries = new ArrayList<VirtualDirEntry>();
+        webinfEntries.add(loadEntry("web.xml"));
+        File extraDir = new File(inf, "extra");
+        if (extraDir.isDirectory())
+            addEntriesFromDirectory(webinfEntries, extraDir);
+
+        VirtualDirContext webInfContext = new VirtualDirContext("WEB-INF", webinfEntries.toArray(new VirtualDirEntry[0]));
         VirtualDirEntry favicon = loadEntry("favicon.ico");
         VirtualDirEntry indexhtml = loadEntry("index.html");
 
@@ -152,6 +159,29 @@ public class GatewayBoot {
         }
     }
 
+    /**
+     * Check for any files in the specified directory and if any are present, add them to the virtual web-inf.
+     * Does not search any subdirectories.
+     *
+     * @param collector   a list to which new VirtualDirEntryImpl instances will be added for each file (but not subdirectory)
+     *                    in the specified directory.  Required.
+     * @param directory   the directory to scan for new files to merge into collector.  Required.
+     */
+    private void addEntriesFromDirectory(List<VirtualDirEntry> collector, File directory) {
+        File[] files = directory.listFiles();
+        if (files == null || files.length < 1)
+            return;
+        for (File file : files) {
+            try {
+                byte[] fileBytes = HexUtils.slurpFile(file);
+                collector.add(new VirtualDirEntryImpl(file.getName(), fileBytes));
+                logger.info("Noted add-on configuration file: " + file.getName());
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Unable to read add-on configuration file (ignoring it): " + file.getAbsolutePath() + ": " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+    }
+
     public void start() throws LifecycleException {
         if (!running.compareAndSet(false, true)) {
             // Already started
@@ -171,7 +201,7 @@ public class GatewayBoot {
 
             KeystoreUtils keystoreUtils = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
             ServerXmlParser serverXml = new ServerXmlParser();
-            serverXml.load(findServerXml(config));
+            serverXml.load(findServerXml(serverConfig));
             startInitialConnectors(keystoreUtils, serverXml);
 
             itworked = true;
@@ -254,9 +284,9 @@ public class GatewayBoot {
     }
 
     private void waitForShutdown() {
-        if (config == null)
+        if (serverConfig == null)
             throw new IllegalStateException("Unable to wait for shutdown - no serverConfig available");
-        File configDir = config.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, ssgHome.getAbsolutePath(), false);
+        File configDir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, ssgHome.getAbsolutePath(), false);
         if (configDir == null || !configDir.isDirectory())
             throw new IllegalStateException("Config directory not found: " + configDir);
         File shutFile = new File(configDir, SHUTDOWN_FILENAME);
@@ -280,7 +310,8 @@ public class GatewayBoot {
         applicationContext = WebApplicationContextUtils.getWebApplicationContext(context.getServletContext());
         if (applicationContext == null)
             throw new LifecycleException("Configuration error; could not get application context");
-        config = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);
+        serverConfig = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);
+        masterPasswordManager = (MasterPasswordManager)applicationContext.getBean("masterPasswordManager", MasterPasswordManager.class);
     }
 
     private void startBootProcess() throws LifecycleException {
@@ -378,6 +409,18 @@ public class GatewayBoot {
         c.setEnableLookups(false);
 
         Map<String, String> attrs = getDefaultHttpsConnectorAttrs(keyinfo);
+
+        // If the connector is trying to add an encrypted password, decrypt it first
+        String kspass = overrideAttrs.get(CONNECTOR_ATTR_KEYSTORE_PASS);
+        if (masterPasswordManager.looksLikeEncryptedPassword(kspass)) {
+            try {
+                char[] decrypted = masterPasswordManager.decryptPassword(kspass);
+                overrideAttrs.put(CONNECTOR_ATTR_KEYSTORE_PASS, new String(decrypted));
+            } catch (ParseException e) {
+                throw new ListenerException("Unable to start listener: unable to decrypt encrypted password for SSL keystore: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+
         attrs.putAll(overrideAttrs);
         setConnectorAttributes(c, attrs);
 

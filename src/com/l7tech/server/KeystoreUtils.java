@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.security.SingleCertX509KeyManager;
+import com.l7tech.common.security.MasterPasswordManager;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
@@ -16,11 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Knows about the location and passwords for keystores, server certificates, etc.
- * <p/>
- * <br/><br/>
- * User: flascell<br/>
- * Date: Aug 26, 2003
+ * Knows about the location and passwords for the SSL and CA keystores, server certificates, etc.
  */
 public class KeystoreUtils {
     public static final String DEFAULT_PROPS_RESOURCE = "/keystore.properties";
@@ -41,9 +38,11 @@ public class KeystoreUtils {
 
     public static final String PS = System.getProperty("file.separator");
     private final ServerConfig serverConfig;
+    private final MasterPasswordManager masterPasswordManager;
 
-    public KeystoreUtils(ServerConfig serverConfig) {
+    public KeystoreUtils(ServerConfig serverConfig, MasterPasswordManager masterPasswordManager) {
         this.serverConfig = serverConfig;
+        this.masterPasswordManager = masterPasswordManager;
     }
 
     public byte[] readSSLCert() throws IOException {
@@ -94,8 +93,9 @@ public class KeystoreUtils {
         return getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(ROOT_CERTNAME);
     }
 
+    /** @return the password for the CA keystore.  Already decrypted, if it was encrypted. */
     public String getRootKeystorePasswd() {
-        return getProps().getProperty(ROOT_STOREPASSWD);
+        return new String(masterPasswordManager.decryptPasswordIfEncrypted(getProps().getProperty(ROOT_STOREPASSWD)));
     }
 
     public String getRootAlias() {
@@ -110,8 +110,9 @@ public class KeystoreUtils {
         return getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(SSL_CERT_NAME);
     }
 
+    /** @return the password for the SSL keystore.  Already decrypted, if it was encrypted. */
     public String getSslKeystorePasswd() {
-        return getProps().getProperty(SSL_KSTORE_PASSWD);
+        return new String(masterPasswordManager.decryptPasswordIfEncrypted(getProps().getProperty(SSL_KSTORE_PASSWD)));
     }
 
     public String getSslKeyStoreType() {
@@ -132,7 +133,7 @@ public class KeystoreUtils {
         try {
             KeyStore keyStore = KeyStore.getInstance(getSslKeyStoreType());
             String sslkeystorepath = getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(SSL_KSTORE_NAME);
-            String sslkeystorepassword = getProps().getProperty(SSL_KSTORE_PASSWD);
+            String sslkeystorepassword = getSslKeystorePasswd();
             fis = new FileInputStream(sslkeystorepath);
             keyStore.load(fis, sslkeystorepassword.toCharArray());
             return keyStore;
@@ -177,9 +178,9 @@ public class KeystoreUtils {
 
     public PrivateKey getSSLPrivateKey() throws KeyStoreException {
         KeyStore keystore = getSSLKeyStore();
-        String sslkeystorepassword = getProps().getProperty(SSL_KSTORE_PASSWD);
+        String sslkeystorepassword = getSslKeystorePasswd();
         String alias = getSSLAlias();
-        PrivateKey output = null;
+        final PrivateKey output;
         try {
             output = (PrivateKey)keystore.getKey(alias, sslkeystorepassword.toCharArray());
         } catch (KeyStoreException e) {
@@ -197,9 +198,11 @@ public class KeystoreUtils {
 
     /**
      * Returns the <code>KeyManager</code> array to use based on SSG SSL Private Key as a source of key material.
+     *
      * @throws NoSuchAlgorithmException if the algorithm (X.509) is not available in the default provider
      * @throws UnrecoverableKeyException if the key cannot be recovered (e.g. the given password is wrong).
      * @throws KeyStoreException if keystore operaiton fails
+     * @return an array of KeyManager instances.  Never null or empty.
      */
     public KeyManager[] getSSLKeyManagers()
       throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException
@@ -221,6 +224,7 @@ public class KeystoreUtils {
      * @throws IOException              if there is an I/O error or file does not exist
      * @throws NoSuchAlgorithmException if the keystore integrity check algorithm is not available
      * @throws CertificateException     if there is an certificate while loading the certificate(s)
+     * @return a KeyStore instance.  Never null.
      */
     public static KeyStore getKeyStore(String path, char[] password, String keystoreType)
       throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
@@ -247,6 +251,7 @@ public class KeystoreUtils {
      * @throws IOException              if there is an I/O error or file does not exist
      * @throws NoSuchAlgorithmException if the keystore integrity check algorithm is not available
      * @throws CertificateException     if there is an certificate while loading the certificate(s)
+     * @return a KeyStore instance.  Never null.
      */
     public static KeyStore getKeyStore(String path, char[] password)
       throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
@@ -258,6 +263,7 @@ public class KeystoreUtils {
      * key from this keystore.
      * 
      * @return the <code>SignerInfo</code> instance
+     * @throws IOException if there is a problem reading the certificate file or the private key
      */
     public SignerInfo getSslSignerInfo() throws IOException {
         byte[] buf = readSSLCert();
@@ -272,7 +278,7 @@ public class KeystoreUtils {
             throw ioe;
         }
 
-        PrivateKey pkey = null;
+        final PrivateKey pkey;
         try {
             pkey = getSSLPrivateKey();
         } catch (KeyStoreException e) {
@@ -296,6 +302,7 @@ public class KeystoreUtils {
                         fileInputStream = new FileInputStream(propsPath);
                         logger.info("Loading keystore properties from " + propsPath);
                     } catch (FileNotFoundException fnfe) {
+                        /* FALLTHROUGH and try to load as a resource */
                     }
                     if (fileInputStream == null) logger.info("Keystore properties file '" + propsPath + "' could not be found. Will try loading as resource");
                 }
