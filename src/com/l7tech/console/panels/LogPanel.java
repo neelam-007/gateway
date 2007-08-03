@@ -61,17 +61,33 @@ public class LogPanel extends JPanel {
     public static final int MSG_FILTER_LEVEL_INFO = 3;
     public static final int MSG_FILTER_LEVEL_ALL = 4;
 
-    public static final int LOG_MSG_NUMBER_COLUMN_INDEX = 0;
-    public static final int LOG_NODE_NAME_COLUMN_INDEX = 1;
-    public static final int LOG_TIMESTAMP_COLUMN_INDEX = 2;
-    public static final int LOG_SEVERITY_COLUMN_INDEX = 3;
-    public static final int LOG_MSG_DETAILS_COLUMN_INDEX = 4;
-    public static final int LOG_JAVA_CLASS_COLUMN_INDEX = 5;
-    public static final int LOG_JAVA_METHOD_COLUMN_INDEX = 6;
-    public static final int LOG_REQUEST_ID_COLUMN_INDEX = 7;
-    public static final int LOG_NODE_ID_COLUMN_INDEX = 8;
-    public static final int LOG_SERVICE_COLUMN_INDEX = 9;
-    public static final int LOG_THREAD_COLUMN_INDEX = 10;
+    public static final int LOG_SIGNATURE_COLUMN_INDEX = 0;
+    public static final int LOG_MSG_NUMBER_COLUMN_INDEX = 1;
+    public static final int LOG_NODE_NAME_COLUMN_INDEX = 2;
+    public static final int LOG_TIMESTAMP_COLUMN_INDEX = 3;
+    public static final int LOG_SEVERITY_COLUMN_INDEX = 4;
+    public static final int LOG_MSG_DETAILS_COLUMN_INDEX = 5;
+    public static final int LOG_JAVA_CLASS_COLUMN_INDEX = 6;
+    public static final int LOG_JAVA_METHOD_COLUMN_INDEX = 7;
+    public static final int LOG_REQUEST_ID_COLUMN_INDEX = 8;
+    public static final int LOG_NODE_ID_COLUMN_INDEX = 9;
+    public static final int LOG_SERVICE_COLUMN_INDEX = 10;
+    public static final int LOG_THREAD_COLUMN_INDEX = 11;
+
+    private static final String[] COLUMN_NAMES = {
+            "Sig",          // digital signature
+            "Message #",
+            "Node",
+            "Time",
+            "Severity",
+            "Message",
+            "Class",
+            "Method",
+            "Request Id",
+            "Node Id",
+            "Service",
+            "Thread Id"
+    };
 
     public static final String MSG_TOTAL_PREFIX = "Total: ";
 
@@ -1287,15 +1303,21 @@ public class LogPanel extends JPanel {
     private DefaultTableColumnModel getLogColumnModel() {
         DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
 
+        // Preferred and inital widths.
+        tableColumnWidths[LOG_SIGNATURE_COLUMN_INDEX] = 20;
         tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX] = 20;
         tableColumnWidths[LOG_NODE_NAME_COLUMN_INDEX] = 50;
         tableColumnWidths[LOG_TIMESTAMP_COLUMN_INDEX] = 140;
-        tableColumnWidths[LOG_THREAD_COLUMN_INDEX] = 20;
-        tableColumnWidths[LOG_SEVERITY_COLUMN_INDEX] = 40;
+        tableColumnWidths[LOG_THREAD_COLUMN_INDEX] = 60;
+        tableColumnWidths[LOG_SEVERITY_COLUMN_INDEX] = 50;
         tableColumnWidths[LOG_SERVICE_COLUMN_INDEX] = 120;
         tableColumnWidths[LOG_MSG_DETAILS_COLUMN_INDEX] = 400;
 
         // Add columns according to configuration
+        if (isAuditType) { // only audit record has digital signature
+            // TODO Franco, uncomment the following line to activate signature state column.
+//            columnModel.addColumn(new TableColumn(LOG_SIGNATURE_COLUMN_INDEX, tableColumnWidths[LOG_SIGNATURE_COLUMN_INDEX]));
+        }
         String showMsgFlag = resapplication.getString("Show_Message_Number_Column");
         if ((showMsgFlag != null) && showMsgFlag.equals("true")){
             columnModel.addColumn(new TableColumn(LOG_MSG_NUMBER_COLUMN_INDEX, tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX]));
@@ -1314,13 +1336,13 @@ public class LogPanel extends JPanel {
         // Set headers
         for(int i = 0; i < columnModel.getColumnCount(); i++){
             TableColumn tc = columnModel.getColumn(i);
-            tc.setMinWidth(50);
+            tc.setMinWidth(20);
             tc.setHeaderRenderer(iconHeaderRenderer);
             tc.setHeaderValue(getLogTableModel().getColumnName(tc.getModelIndex()));
         }
 
         // Tooltip for details
-        columnModel.getColumn(LOG_MSG_DETAILS_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer(){
+        findTableModelColumn(columnModel, LOG_MSG_DETAILS_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer(){
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 if(comp instanceof JLabel) {
@@ -1336,6 +1358,17 @@ public class LogPanel extends JPanel {
         });
 
         return columnModel;
+    }
+
+    private static TableColumn findTableModelColumn(TableColumnModel columnModel, int columnModelIndex) {
+        Enumeration<TableColumn> e = columnModel.getColumns();
+        for (; e.hasMoreElements(); ) {
+            TableColumn col = e.nextElement();
+            if (col.getModelIndex() == columnModelIndex) {
+                return col;
+            }
+        }
+        return null;
     }
 
     /**
@@ -1359,11 +1392,13 @@ public class LogPanel extends JPanel {
      */
     private DefaultTableModel getLogTableModel() {
         if (logTableModel == null) {
-            String[] cols = {"Message #", "Node", "Time", "Severity", "Message", "Class",
-                    "Method", "Request Id", "Node Id", "Service", "Thread Id"};
             String[][] rows = new String[][]{};
 
-            logTableModel = new DefaultTableModel(rows, cols) {
+            logTableModel = new DefaultTableModel(rows, COLUMN_NAMES) {
+                public Class<?> getColumnClass(int columnIndex) {
+                    return columnIndex == LOG_SIGNATURE_COLUMN_INDEX ? Icon.class : super.getColumnClass(columnIndex);
+                }
+
                 public boolean isCellEditable(int row, int col) {
                     // the table cells are not editable
                     return false;

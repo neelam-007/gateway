@@ -1,8 +1,8 @@
 package com.l7tech.console.table;
 
+import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.event.TableModelListener;
 
 /*
  * This class encapsulates the table model with filtering support.
@@ -57,4 +57,7 @@ public abstract class FilteredDefaultTableModel extends AbstractTableModel {
         return realModel.getColumnName(columnIndex);
     }
 
+    public Class<?> getColumnClass(int columnIndex) {
+        return realModel.getColumnClass(columnIndex);
+    }
 }

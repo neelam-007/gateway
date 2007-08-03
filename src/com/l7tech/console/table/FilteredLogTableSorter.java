@@ -1,3 +1,6 @@
+/**
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.table;
 
 import com.l7tech.cluster.ClusterNodeInfo;
@@ -5,10 +8,14 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.LogRequest;
 import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.audit.AuditRecord;
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.logging.LogMessage;
+import com.l7tech.logging.SSGLogRecord;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -17,14 +24,36 @@ import java.util.logging.Logger;
 
 /*
  * This class extends the <CODE>FilteredLogTableModel</CODE> class for providing the sorting functionality to the log display.
- *
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 public class FilteredLogTableSorter extends FilteredLogTableModel {
-    static Logger logger = Logger.getLogger(StatisticsTableSorter.class.getName());
+
+    /** Validity state of a digital signature. */
+    private enum DigitalSignatureState {
+        // NOTE: elements are ordered for display sorting (i.e., from bad to good).
+        /** Has signature but is invalid. */
+        INVALID(MainWindow.RESOURCE_PATH + "/DigitalSignatureStateInvalid16.png"),
+        /** No signature at all. */
+        NONE(MainWindow.RESOURCE_PATH + "/DigitalSignatureStateNone16.png"),
+        /** Has signature and is valid. */
+        VALID(MainWindow.RESOURCE_PATH + "/DigitalSignatureStateValid16.png");
+
+        private final String icon16Path;
+        private Icon icon16;
+
+        DigitalSignatureState(String icon16Path) { this.icon16Path = icon16Path; }
+
+        /** @return 16 by 16 pixel icon */
+        public synchronized Icon getIcon16() {
+            if (icon16 == null) {
+                // Can't do this in constructor because testpackage complains.
+                icon16 = new ImageIcon(ImageCache.getInstance().getIcon(icon16Path));
+            }
+            return icon16;
+        }
+    };
+
+    private static Logger logger = Logger.getLogger(StatisticsTableSorter.class.getName());
     private boolean ascending = false;
     private int columnToSort = LogPanel.LOG_TIMESTAMP_COLUMN_INDEX;
     private Object[] sortedData = null;
@@ -218,6 +247,8 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     public Object getValueAt(int row, int col) {
         LogMessage msg = getLogMessageAtRow(row);
         switch (col) {
+            case LogPanel.LOG_SIGNATURE_COLUMN_INDEX:
+                return checkDigitalSignature(msg.getSSGLogRecord()).getIcon16();
             case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
                 return new Long(msg.getMsgNumber());
             case LogPanel.LOG_NODE_NAME_COLUMN_INDEX:
@@ -285,6 +316,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             LogMessage logMsgB = filteredLogCache.get(b.intValue());
 
             switch (column) {
+                case LogPanel.LOG_SIGNATURE_COLUMN_INDEX:
+                    final DigitalSignatureState stateA = checkDigitalSignature(logMsgA.getSSGLogRecord());
+                    final DigitalSignatureState stateB = checkDigitalSignature(logMsgB.getSSGLogRecord());
+                    return (ascending ? 1 : -1) * stateA.compareTo(stateB);
                 case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
                     elementA = Long.toString(logMsgA.getMsgNumber());
                     elementB = Long.toString(logMsgB.getMsgNumber());
@@ -659,6 +694,25 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
         catch(IllegalArgumentException iae) {
             //can happen on disconnect when auto refresh is on.
+        }
+    }
+
+    /**
+     * Checks the validity of the given record's digital signature.
+     *
+     * @param record    a log record
+     * @return validity of signature
+     */
+    private DigitalSignatureState checkDigitalSignature(SSGLogRecord record) {
+        if (record instanceof AuditRecord) {
+            final AuditRecord auditRecord = (AuditRecord) record;
+            //
+            // TODO Franco, please replace the return statement with the real thing.
+            //
+            return DigitalSignatureState.values()[(int)(auditRecord.getMillis() % DigitalSignatureState.values().length)];
+        } else {
+            // No digital signature for other record types.
+            return DigitalSignatureState.NONE;
         }
     }
 }
