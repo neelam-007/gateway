@@ -37,6 +37,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
 import java.rmi.RemoteException;
@@ -1014,8 +1015,9 @@ public class MetricsChartPanel extends ChartPanel {
      */
     protected synchronized void displayPopupMenu(int x, int y) {
         // Converts the pixel x-coordinate to time value.
+        final Point2D p = translateScreenToJava2D(new Point(x, y));
         final Rectangle2D rectangle2d = getChartRenderingInfo().getPlotInfo().getDataArea();
-        final long t = (long)_xAxis.java2DToValue(x, rectangle2d, _combinedPlot.getDomainAxisEdge());
+        final long t = (long)_xAxis.java2DToValue(p.getX(), rectangle2d, _combinedPlot.getDomainAxisEdge());
 
         // Select the period as a side effect, i.e., like left-click.
         setSelectedPeriod(t);
@@ -1142,8 +1144,9 @@ public class MetricsChartPanel extends ChartPanel {
     /** Overrides to highlight selected period being clicked. */
     public void mouseClicked(MouseEvent event) {
         // Converts the pixel x-coordinate to time value.
+        final Point2D p = translateScreenToJava2D(event.getPoint());
         final Rectangle2D rectangle2d = getChartRenderingInfo().getPlotInfo().getDataArea();
-        final long t = (long)_xAxis.java2DToValue(event.getX(), rectangle2d, _combinedPlot.getDomainAxisEdge());
+        final long t = (long)_xAxis.java2DToValue(p.getX(), rectangle2d, _combinedPlot.getDomainAxisEdge());
         setSelectedPeriod(t);
     }
 
