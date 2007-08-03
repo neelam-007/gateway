@@ -95,7 +95,7 @@ case "$1" in
 	;;
 esac
 
-if [ $RETVAL != 0 ]; then 
+if [ "$RETVAL" != "0" ]; then 
 	echo "           Error"
 else
 	echo "           Ok"
