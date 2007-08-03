@@ -84,7 +84,7 @@ public class SsgSSLImplementation extends SSLImplementation {
         ssf.setAttribute("truststoreFile", trustStore.getAbsolutePath());
         ssf.setAttribute("truststoreAlgorithm", "AXPK");
 
-        File propFile = new File(base, "conf/SsgSSLImplementation.properties");
+        File propFile = new File(conf, "SsgSSLImplementation.properties");
         if (propFile.exists()) {
             logger.config("Loading connector properties from '"+propFile.getAbsolutePath()+"'.");
             Properties props = new Properties();
