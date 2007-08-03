@@ -205,7 +205,8 @@ public class ServiceMetricsPanel extends JPanel {
         latestServicesWithProblemList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 final ProblemListElement selected = (ProblemListElement)latestServicesWithProblemList.getSelectedValue();
-                publishedServiceCombo.setSelectedItem(selected.getPublishedService());
+                if (selected != null)
+                    publishedServiceCombo.setSelectedItem(selected.getPublishedService());
             }
         });
 
