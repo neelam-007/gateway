@@ -49,7 +49,7 @@ public class ServerCertUtilsTest extends TestCase {
         assertNotNull("No OCSP urls", ocspUrls);
         assertEquals("OCSP url not found.", "http://ocsp.thawte.com", ocspUrls[0]);
 
-        String[] crtUrls = ServerCertUtils.getAuthorityInformationAccessUris(certificate, " 1.3.6.1.5.5.7.48.2");
+        String[] crtUrls = ServerCertUtils.getAuthorityInformationAccessUris(certificate, "1.3.6.1.5.5.7.48.2");
         assertNotNull("No CRT urls", crtUrls);
         assertEquals("CRT url not found", "http://www.thawte.com/repository/Thawte_SGC_CA.crt", crtUrls[0]);
 
