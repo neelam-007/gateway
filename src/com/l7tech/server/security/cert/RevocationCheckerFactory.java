@@ -640,10 +640,10 @@ public class RevocationCheckerFactory {
                 }
 
                 if (crl.isRevoked(certificate)) {
-                    logger.log(Level.WARNING, "Certificate is revoked '"+certificate.getSubjectDN()+"'.");
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_REVOKED, certificate.getSubjectDN().toString());
                     return CertificateValidationResult.REVOKED;
                 } else {
-                    logger.log(Level.FINE, "Certificate is good '"+certificate.getSubjectDN()+"'.");
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_NOT_REVOKED, certificate.getSubjectDN().toString());
                     return CertificateValidationResult.OK;
                 }
             } catch (GeneralSecurityException e) {
@@ -709,6 +709,10 @@ public class RevocationCheckerFactory {
                                                                final Auditor auditor) {
             CertificateValidationResult result = CertificateValidationResult.REVOKED;
             final String url = getValidUrl(certificate, auditor);
+            if (url == null) {
+                // {@link getCrlUrl()} already audited the reason
+                return CertificateValidationResult.UNKNOWN;
+            }
 
             try {
                 OCSPClient.OCSPCertificateAuthorizer authorizer = new OCSPClient.OCSPCertificateAuthorizer(){
@@ -762,6 +766,12 @@ public class RevocationCheckerFactory {
                 };
                 OCSPClient.OCSPStatus status = ocspCache.getOCSPStatus(url, certificate, issuerCertificate, authorizer, auditor);
                 result = status.getResult();
+
+                if (result == CertificateValidationResult.OK) {
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_NOT_REVOKED, certificate.getSubjectDN().toString());
+                } else if (result == CertificateValidationResult.REVOKED) {
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_REVOKED, certificate.getSubjectDN().toString());
+                }
             } catch (OCSPCache.OCSPClientRecursionException ocre) {
                 auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_RECURSION, url);                
             } catch (OCSPClient.OCSPClientStatusException ocse) {

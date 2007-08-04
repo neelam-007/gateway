@@ -31,13 +31,15 @@ public class SystemMessages extends Messages {
     public static final M FTPSERVER_STOP                = m(2022, Level.INFO, "Stopping FTP server.");
     public static final M FTPSERVER_ERROR               = m(2023, Level.WARNING, "FTP server error ''{0}''.");
 
-    // Used by CrlCacheImpl
+    // Used by certificate validation
     public static final M CERTVAL_CANT_FIND_ISSUER      = m(2030, Level.WARNING, "Unable to locate Trusted Cert Entry for issuer with DN \"{0}\" of certificate with DN \"{1}\"");
     public static final M CERTVAL_CHECKED               = m(2031, Level.FINE, "Certificate validated and verified");
-    public static final M CERTVAL_REV_NOT_REVOKED       = m(2032, Level.FINE, "Cert {0} is not listed as revoked");
-    public static final M CERTVAL_REV_REVOKED           = m(2033, Level.WARNING, "Cert {0} is listed as revoked");
+    public static final M CERTVAL_REV_NOT_REVOKED       = m(2032, Level.FINE, "Certificate {0} is not revoked");
+    public static final M CERTVAL_REV_REVOKED           = m(2033, Level.WARNING, "Certificate {0} is revoked");
     public static final M CERTVAL_CANT_BUILD_PATH       = m(2034, Level.WARNING, "Unable to build path for Certificate {0}: {1}");
     public static final M CERTVAL_INVALID_SETTING       = m(2035, Level.WARNING, "Invalid setting for validation level {0}: {1}");
+    public static final M CERTVAL_CERT_EXPIRED          = m(2036, Level.WARNING, "Certificate {0} has expired");
+    public static final M CERTVAL_CERT_NOT_YET_VALID    = m(2037, Level.WARNING, "Certificate {0} is not yet valid");
 
     // In the following, {0} is either "CRL" or "OCSP".
     public static final M CERTVAL_REV_MULTIPLE_URLS           = m(2040, Level.WARNING, "Certificate {1} contained multiple {0} URLs");
@@ -58,14 +60,12 @@ public class SystemMessages extends Messages {
     public static final M CERTVAL_REV_SIGNER_IS_TRUSTED       = m(2055, Level.FINE,    "Using trusted certificate ''{1}'' as {0} signer");
 
     // CRL only
-    public static final M CERTVAL_CERT_EXPIRED                = m(2070, Level.WARNING, "Certificate {0} has expired");
-    public static final M CERTVAL_CERT_NOT_YET_VALID          = m(2071, Level.WARNING, "Certificate {0} is not yet valid");
-    public static final M CERTVAL_CRL_SCOPE                   = m(2072, Level.FINE,    "CRL scope does not cover certificate ''{0}'', CRL URL is ''{1}''");
-    public static final M CERTVAL_REV_CRL_INVALID             = m(2073, Level.WARNING, "CRL at {0} is invalid: {1}");
+    public static final M CERTVAL_CRL_SCOPE                   = m(2070, Level.FINE,    "CRL scope does not cover certificate ''{0}'', CRL URL is ''{1}''");
+    public static final M CERTVAL_REV_CRL_INVALID             = m(2071, Level.WARNING, "CRL at {0} is invalid: {1}");
 
     // OCSP Only
     public static final M CERTVAL_OCSP_ERROR                  = m(2085, Level.WARNING, "Error during OCSP check for responder ''{0}'': {1}");
-    public static final M CERTVAL_OCSP_SIGNER_CERT_REVOKED    = m(2086, Level.WARNING, "OCSP responder ''{0}'' signing certificate ''{1}'' is revoked.");
+    public static final M CERTVAL_OCSP_SIGNER_CERT_REVOKED    = m(2086, Level.WARNING, "OCSP responder ''{0}'' signing certificate ''{1}'' is revoked");
     public static final M CERTVAL_OCSP_BAD_RESPONSE_STATUS    = m(2087, Level.WARNING, "Bad status in OCSP check for responder ''{0}'': {1}");
     public static final M CERTVAL_OCSP_RECURSION              = m(2088, Level.WARNING, "Circular OCSP check for responder ''{0}''");
 
