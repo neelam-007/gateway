@@ -2117,6 +2117,7 @@
                 <include name="com/l7tech/common/util/XmlUtil*"/>
                 <include name="com/l7tech/common/util/BufferPool*"/>
                 <include name="com/l7tech/common/util/PaddingCharSequence*"/>
+                <include name="com/l7tech/common/security/*MasterPassword*"/>
                 <include name="com/l7tech/common/xml/TooManyChildElementsException*"/>
                 <include name="com/l7tech/common/xml/InvalidDocumentFormatException*"/>
                 <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream*"/>
