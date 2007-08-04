@@ -1,30 +1,28 @@
 package com.l7tech.server.flasher;
 
-import com.l7tech.server.config.OSDetector;
-import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.PropertyHelper;
-import com.l7tech.server.config.PartitionActions;
+import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.FileUtils;
+import com.l7tech.server.config.*;
+import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
-import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
-import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.partition.PartitionInformation;
-import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.BuildInfo;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipEntry;
-import java.io.*;
-import java.sql.*;
-
+import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
+
+import java.io.*;
+import java.sql.*;
+import java.text.ParseException;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * The utility that imports an SSG image
@@ -59,6 +57,7 @@ public class Importer {
     private String tempDirectory;
     private String partitionName;
     private OSSpecificFunctions osFunctions;
+    private PasswordPropertyCrypto passwordCrypto;
     private boolean fullClone = false;
     private String databaseURL;
     private String databaseUser;
@@ -174,7 +173,7 @@ public class Importer {
             }
             if (partitionName == null) partitionName = "";
             osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
-
+            passwordCrypto = osFunctions.getPasswordPropertyCrypto();
 
             Map<String, String> dbProps = PropertyHelper.getProperties(tempDirectory + File.separator + "hibernate.properties", new String[] {
                 SsgDatabaseConfigBean.PROP_DB_USERNAME,
@@ -183,7 +182,13 @@ public class Importer {
             });
             databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
             databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
-            databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+            String imageDbPasswdRaw = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+            try {
+                databasePasswd = passwordCrypto.decryptIfEncrypted(imageDbPasswdRaw);
+            } catch (ParseException e) {
+                logger.log(Level.WARNING, "Cannot decrypt this image's database password using the target partition's master password: " + ExceptionUtils.getMessage(e), e);
+                databasePasswd = imageDbPasswdRaw;
+            }
             logger.info("using database url " + databaseURL);
             logger.info("using database user " + databaseUser);
             logger.info("using database passwd " + databasePasswd);

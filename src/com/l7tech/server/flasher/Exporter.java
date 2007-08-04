@@ -3,10 +3,13 @@ package com.l7tech.server.flasher;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.config.PasswordPropertyCrypto;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.BuildInfo;
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
@@ -19,6 +22,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipEntry;
+import java.text.ParseException;
 
 /**
  * The utility that exports an SSG image file.
@@ -113,6 +117,7 @@ public class Exporter {
 
             // Read database connection settings for the partition at hand
             OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
+            PasswordPropertyCrypto passwordCrypto = osFunctions.getPasswordPropertyCrypto();
             Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[]{
                     SsgDatabaseConfigBean.PROP_DB_USERNAME,
                     SsgDatabaseConfigBean.PROP_DB_PASSWORD,
@@ -121,6 +126,12 @@ public class Exporter {
             String databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
             String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
             String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+            try {
+                databasePasswd = passwordCrypto.decryptIfEncrypted(databasePasswd);
+            } catch (ParseException e) {
+                throw new CausedIOException("Unable to decrypt partition database password with this partition's master password: " + ExceptionUtils.getMessage(e), e);
+            }
+
             logger.info("using database url " + databaseURL);
             logger.info("using database user " + databaseUser);
             logger.info("using database passwd " + databasePasswd);

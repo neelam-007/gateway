@@ -18,11 +18,30 @@ import java.util.Random;
  */
 public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
     public static final String PROP_MASTER_PASSWORD_PATH = "com.l7tech.masterPasswordPath";
-    public static final String BASE_PATH = SyspropUtil.getString("com.l7tech.server.home", "/ssg");
-    public static final String PROP_MASTER_PASSWORD_PATH_DEFAULT = new File(BASE_PATH, "etc/conf/omp.dat").getAbsolutePath();
 
     private static final String OBFUSCATION_PREFIX = "$L7O$"; // do not change this, for backward compat.  can add new schemes, though
     private static long OBFUSCATION_SEED = 171717L; // do not change this, for backward compat.  can add new schemes, though
+
+    private final File masterPasswordFile;
+
+    /**
+     * Create a MasterPasswordFinder that will look for the master password in the file specified by
+     * the system property com.l7tech.masterPasswordPath, defaulting to omp.dat in the current partition
+     * config directory when findMasterPassword() is called.
+     */
+    public DefaultMasterPasswordFinder() {
+         masterPasswordFile = null;
+    }
+
+    /**
+     * Create a MasterPasswordFinder that will always read the obfuscated master password from the
+     * specified file.
+     *
+     * @param masterPasswordFile the file containing nothing but the obfuscated master password
+     */
+    public DefaultMasterPasswordFinder(File masterPasswordFile) {
+        this.masterPasswordFile = masterPasswordFile;
+    }
 
     /**
      * Obfuscate a password.
@@ -81,7 +100,16 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
     }
 
     public File getMasterPasswordFile() {
-        return new File(SyspropUtil.getString(PROP_MASTER_PASSWORD_PATH, PROP_MASTER_PASSWORD_PATH_DEFAULT));        
+        if (masterPasswordFile != null)
+            return masterPasswordFile;
+
+        // This logic is here for robustness in case this should run before the system properties from serverconfig are set
+        File ssgHome = new File(SyspropUtil.getString("com.l7tech.server.home", "/ssg"));
+        String partitionName = SyspropUtil.getString("com.l7tech.server.partitionName", "default_");
+        File defaultConfigDirectory = new File(ssgHome, "etc/conf/partitions/" + partitionName);
+        String configDirectory = SyspropUtil.getString("com.l7tech.server.configDirectory", defaultConfigDirectory.getAbsolutePath());
+        String deafultMasterPasswordPath = new File(configDirectory, "omp.dat").getAbsolutePath();
+        return new File(SyspropUtil.getString(PROP_MASTER_PASSWORD_PATH, deafultMasterPasswordPath));
     }
 
     public char[] findMasterPassword() {

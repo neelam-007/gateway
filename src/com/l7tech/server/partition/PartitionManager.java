@@ -3,10 +3,7 @@ package com.l7tech.server.partition;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.server.config.OSDetector;
-import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.PartitionActions;
-import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.*;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -320,29 +317,33 @@ public class PartitionManager {
         });
 
         for (File destinationPartition: listOfPartitions) {
-            updateConfigInPartition(templateFiles, destinationPartition);
+            PasswordPropertyCrypto passwordEncryptor =
+                    OSDetector.getOSSpecificFunctions(destinationPartition.getName()).getPasswordPropertyCrypto(); 
+            updateConfigInPartition(templateFiles, destinationPartition, passwordEncryptor);
         }
     }
 
-    private static void updateConfigInPartition(File[] templateFiles, File destinationPartition) throws IOException, SAXException {
+    private static void updateConfigInPartition(File[] templateFiles, File destinationPartition, PasswordPropertyCrypto passwordEncryptor)
+            throws IOException, SAXException
+    {
         for (File templateFile : templateFiles) {
             File partitionFile = new File(destinationPartition, templateFile.getName());
             if (templateFile.isDirectory()) {
                 File[] templateSubDirFiles = templateFile.listFiles();
                 if (!partitionFile.exists()) partitionFile.mkdir();
-                updateConfigInPartition(templateSubDirFiles, partitionFile);
+                updateConfigInPartition(templateSubDirFiles, partitionFile, passwordEncryptor);
             } else {
                 if (templateFile.getName().endsWith("properties")) {
-                    PropertyHelper.mergePropertiesInPlace(partitionFile, templateFile, true);
+                    PropertyHelper.mergePropertiesInPlace(partitionFile, templateFile, true, passwordEncryptor);
                 } else if (templateFile.getName().equals("server.xml")){
                     //do special server xml merge.
-                    mergeServerXmlFileInPlace(partitionFile, templateFile);
+                    mergeServerXmlFileInPlace(partitionFile, templateFile, passwordEncryptor);
                 }
             }
         }
     }
 
-    private static void mergeServerXmlFileInPlace(File originalXmlFile, File newXmlFile) throws IOException, SAXException {
+    private static void mergeServerXmlFileInPlace(File originalXmlFile, File newXmlFile, PasswordPropertyCrypto passwordEncryptor) throws IOException, SAXException {
         //do nothing for now until we decide what to do with server.xml updates, if anything
     }
 

@@ -24,7 +24,7 @@ public class DBDumpUtil {
     public static final String DBDUMPFILENAME_STAGING = "dbdump_migrate.sql";
     public static final String DBDUMPFILENAME_CLONE = "dbdump_restore.sql";
     public static final String LICENCEORIGINALID = "originallicenseobjectid.txt";
-    private static final String[] TABLE_NOT_IN_STAGING = {"client_cert"};
+    private static final String[] TABLE_NOT_IN_STAGING = {"client_cert", "shared_keys", "keystore_file"};
     private static final String[] TABLE_NEVER_EXPORT = {"cluster_info", "service_usage", "message_id", "service_metrics"};
 
 

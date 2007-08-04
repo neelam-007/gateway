@@ -50,18 +50,36 @@ public class MasterPasswordManager {
     }
 
     /**
+     * Create a MasterPasswordManager that will always use the specified master password.
+     *
+     * @param fixedMasterPassword the master password to use.  Required.
+     */
+    public MasterPasswordManager(final char[] fixedMasterPassword) {
+        this(new MasterPasswordFinder() {
+            public char[] findMasterPassword() {
+                return fixedMasterPassword;
+            }
+        });
+    }
+
+    /**
      * Get the master password from the MasterPasswordFinder.
      * Uncached -- this will always invoke the finder.
      *
      * @return the master password, or null if one could not be found.
      */
     private char[] getMasterPassword() {
+        char[] ret = null;
+        Throwable t = null;
         try {
-            return getFinder().findMasterPassword();
+            ret = getFinder().findMasterPassword();
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Unable to find master password -- assuming unencrypted passwords", e);
-            return null;
+            /* FALLTHROUGH and log it */
+            t = e;
         }
+        if (ret == null)
+            logger.log(Level.WARNING, "Unable to find master password -- assuming unencrypted passwords", t);
+        return ret;
     }
 
     /**
@@ -73,12 +91,14 @@ public class MasterPasswordManager {
      * <pre>  sha512(masterPass, salt, sha512(masterPass, salt, masterPass)) </pre>
      *
      * @param salt the salt string from the encrypted password, or the salt string to use for encrypting a new password
-     * @return the symmetric key to use for encryption/decryption
+     * @return the symmetric key to use for encryption/decryption, or null if no key is available
      */
     private AesKey getKey(String salt) {
         try {
             MessageDigest sha = MessageDigest.getInstance("SHA-512");
             char[] mp = getMasterPassword();
+            if (mp == null)
+                return null;
             byte[] mpBytes = new String(mp).getBytes("UTF-8");
             byte[] saltBytes = salt.getBytes("UTF-8");
 
@@ -131,6 +151,8 @@ public class MasterPasswordManager {
     public String encryptPassword(char[] plaintextPassword) {
         String salt = generateSalt();
         AesKey key = getKey(salt);
+        if (key == null)
+            return new String(plaintextPassword);
 
         try {
             byte[] saltBytes = HexUtils.decodeBase64(salt);
@@ -194,6 +216,16 @@ public class MasterPasswordManager {
     }
 
     /**
+     * Check if a key is currently available for encryption/decryption.
+     * If no key is available, the encrypt and decrypt methods will return their input unchanged.
+     *
+     * @return true if a master key is currently available; false if no crypto will be done.
+     */
+    public boolean isKeyAvailable() {
+        return getMasterPassword() != null;
+    }
+
+    /**
      * Decrypt an encrypted password.
      *
      * @param encryptedPassword an encrypted password, similar to "$L7C$jasdjhfasdkj$asdkajsdhfaskdjfhasdkjfh".  Required.
@@ -219,6 +251,8 @@ public class MasterPasswordManager {
         if (ciphertextBase64.length() < 1)
             throw new ParseException("Encrypted password does not have correct format: no ciphertext", 0);
         AesKey ourkey = getKey(salt);
+        if (ourkey == null)
+            return encryptedPassword.toCharArray();
 
         try {
             byte[] saltBytes = HexUtils.decodeBase64(salt);

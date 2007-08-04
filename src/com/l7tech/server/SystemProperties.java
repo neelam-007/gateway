@@ -20,9 +20,8 @@ public class SystemProperties implements InitializingBean {
 
     //- PUBLIC
 
-    public SystemProperties(final ServerConfig serverConfig, PropertiesDecryptor propertiesDecryptor) {
+    public SystemProperties(final ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
-        this.propertiesDecryptor = propertiesDecryptor;
     }
 
     public void afterPropertiesSet() throws Exception  {
@@ -34,7 +33,6 @@ public class SystemProperties implements InitializingBean {
     private static final Logger logger = Logger.getLogger(SystemProperties.class.getName());
 
     private final ServerConfig serverConfig;
-    private final PropertiesDecryptor propertiesDecryptor;
 
     private void setSystemProperties(ServerConfig config) throws IOException {
         // Set system properties
@@ -55,7 +53,6 @@ public class SystemProperties implements InitializingBean {
             }
 
             if (is != null) props.load(is);
-            propertiesDecryptor.decryptEncryptedPasswords(props);
 
             for (Object o : props.keySet()) {
                 String name = (String) o;

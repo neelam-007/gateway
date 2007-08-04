@@ -2,6 +2,8 @@ package com.l7tech.server.config;
 
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
+import com.l7tech.common.security.MasterPasswordManager;
+import com.l7tech.common.security.DefaultMasterPasswordFinder;
 
 import java.io.*;
 import java.util.Map;
@@ -48,6 +50,16 @@ public abstract class OSSpecificFunctions {
     public static final String PARTITION_BASE = "etc/conf/partitions";
     public static final String NOPARTITION_BASE = "etc/conf/";
     private boolean hasPartitions;
+
+    public static final String MASTER_PASSWORD_FILENAME = "omp.dat";
+
+    /** These properties contain passwords, and are usually encrypted with the master password. */
+    public static String[] PASSWORD_PROPERTY_NAMES = new String[] {
+            "sslkspasswd",
+            "rootcakspasswd",
+            "hibernate.connection.password",
+    };
+
 
     String partitionControlScriptName;
 
@@ -274,6 +286,37 @@ public abstract class OSSpecificFunctions {
     }
 
     public abstract List<NetworkingConfigurationBean.NetworkConfig> getNetworkConfigs() throws SocketException;
+
+    /**
+     * Create a MasterPasswordManager configured with the current partition's master key.
+     *
+     * @return a MasterPasswordManager.  Never null.
+     */
+    public MasterPasswordManager getMasterPasswordManager() {
+        return new MasterPasswordManager(getMasterPasswordFinder());
+    }
+
+    /**
+     * Create a DefaultMasterPasswordFinder that points at the current partition's master key config file.
+     *
+     * @return a DefaultMasterPasswordFinder that can be used to load or save the master password.  Never null.
+     */
+    public DefaultMasterPasswordFinder getMasterPasswordFinder() {
+        File ompdat = new File(getConfigurationBase(), MASTER_PASSWORD_FILENAME);
+        return new DefaultMasterPasswordFinder(ompdat);
+    }
+
+    /**
+     * Create a PasswordPropertyCrypto instance that can encrypt/decrypt passwords for the current partition.
+     *
+     * @return a PasswordPropertyCrypto instance.  May be a nonfunction noop, but never null.
+     */
+    public PasswordPropertyCrypto getPasswordPropertyCrypto() {
+        MasterPasswordManager mpm = getMasterPasswordManager();
+        PasswordPropertyCrypto ppc = new PasswordPropertyCrypto(mpm, mpm);
+        ppc.setPasswordProperties(PASSWORD_PROPERTY_NAMES);
+        return ppc;
+    }
 
     public static class KeystoreInfo {
         KeystoreType type;

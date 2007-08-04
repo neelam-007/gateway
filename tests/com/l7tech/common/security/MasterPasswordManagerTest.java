@@ -11,6 +11,7 @@ import java.util.logging.Logger;
  */
 public class MasterPasswordManagerTest extends TestCase {
     private static final Logger log = Logger.getLogger(MasterPasswordManagerTest.class.getName());
+    private static final String CIPHERTEXT = "$L7C$XeKVziKOzNnDHXebZNXMkg==$AqL4EnD+Rz9V8J/ez6hilPFM6e9ZDvLwqwvgPMrzPuk=";
 
     public MasterPasswordManagerTest(String name) {
         super(name);
@@ -36,7 +37,7 @@ public class MasterPasswordManagerTest extends TestCase {
         System.out.println(obfuscated + " -> " + cleartext);
     }
 
-    public void testRoundTrip() throws Exception {
+    public void testObfuscationRoundTrip() throws Exception {
         String cleartext = "mumbleahasdfoasdghuigh";
         String obfuscated = DefaultMasterPasswordFinder.obfuscate(cleartext);
         assertFalse(cleartext.equalsIgnoreCase(obfuscated));
@@ -62,6 +63,7 @@ public class MasterPasswordManagerTest extends TestCase {
     public void testEncrypt() throws Exception {
         String cleartext = "big secret password";
         MasterPasswordManager mpm = new MasterPasswordManager(staticFinder("my master password"));
+        assertTrue(mpm.isKeyAvailable());
 
         String ciphertext = mpm.encryptPassword(cleartext.toCharArray());
         System.out.println(cleartext + " -> " + ciphertext);
@@ -69,11 +71,11 @@ public class MasterPasswordManagerTest extends TestCase {
     
     public void testDecrypt() throws Exception {
         // !!! this string must never change, since it's historical data to guarantee backward compatibility with existing client data
-        String ciphertext = "$L7C$XeKVziKOzNnDHXebZNXMkg==$AqL4EnD+Rz9V8J/ez6hilPFM6e9ZDvLwqwvgPMrzPuk=";
         MasterPasswordManager mpm = new MasterPasswordManager(staticFinder("my master password"));
-        
-        char[] cleartextChars = mpm.decryptPassword(ciphertext);
-        System.out.println(ciphertext  + " -> " + new String(cleartextChars));
+        assertTrue(mpm.isKeyAvailable());
+
+        char[] cleartextChars = mpm.decryptPassword(CIPHERTEXT);
+        System.out.println(CIPHERTEXT + " -> " + new String(cleartextChars));
     }
 
     public void testEncryptionRoundTrip() throws Exception {
@@ -85,6 +87,28 @@ public class MasterPasswordManagerTest extends TestCase {
         assertEquals(cleartext, decrypted);
     }
 
+    public void testMasterKeyMissing() throws Exception {
+        MasterPasswordManager mpm = new MasterPasswordManager(new MasterPasswordFinder() {
+            public char[] findMasterPassword() {
+                throw new IllegalStateException("No master key available");
+            }
+        });
+        assertFalse(mpm.isKeyAvailable());
+        assertEquals("blah", mpm.encryptPassword("blah".toCharArray()));
+        assertEquals(CIPHERTEXT, new String(mpm.decryptPassword(CIPHERTEXT)));
+        assertEquals(CIPHERTEXT, new String(mpm.decryptPasswordIfEncrypted(CIPHERTEXT)));
+
+        mpm = new MasterPasswordManager(new MasterPasswordFinder() {
+            public char[] findMasterPassword() {
+                return null;
+            }
+        });
+        assertFalse(mpm.isKeyAvailable());
+        assertEquals("blah", mpm.encryptPassword("blah".toCharArray()));
+        assertEquals(CIPHERTEXT, new String(mpm.decryptPassword(CIPHERTEXT)));
+        assertEquals(CIPHERTEXT, new String(mpm.decryptPasswordIfEncrypted(CIPHERTEXT)));
+    }
+    
     private void show(String password, String obf) {
         System.out.println(password + "\t OBF-->\t " + obf);
     }
@@ -95,7 +119,7 @@ public class MasterPasswordManagerTest extends TestCase {
     }
 
     public void testGenerateTestPasswords() throws Exception {
-        String master = "master";
+        String master = "7layer";
         String masterObf = DefaultMasterPasswordFinder.obfuscate(master);
         show(master, masterObf);
         System.out.println();

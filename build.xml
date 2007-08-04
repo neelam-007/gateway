@@ -3262,6 +3262,7 @@
 
         <!-- Copy modified / new files -->
         <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.partitionTemplate}/server.xml"/>
+        <copy file="${src.root}/etc/omp.dat" tofile="${install.src.partitionTemplate}/omp.dat"/>
     </target>
 
     <!--
@@ -3358,6 +3359,7 @@
         <copy todir="${install.src.conf}">
             <fileset dir="${src.root}/etc/tomcat">
                 <include name="truststore.jks"/>
+                <include name="SsgSSLImplementation.properties"/>
             </fileset>
         </copy>
 

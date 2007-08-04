@@ -2,6 +2,7 @@ package com.l7tech.server.config;
 
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.text.ParseException;
 
 /**
  * User: megery
@@ -58,7 +60,9 @@ public class PropertyHelper {
         return propsReturned;
     }
 
-    public static void mergePropertiesInPlace(File origPropsFile, File newPropsFile, boolean createIfNew) throws CausedIOException, FileNotFoundException {
+    public static void mergePropertiesInPlace(File origPropsFile, File newPropsFile, boolean createIfNew, PasswordPropertyCrypto passwordEncryptor)
+            throws CausedIOException, FileNotFoundException
+    {
         if (origPropsFile == null) throw new IllegalArgumentException("The original property file cannot be null");
         if (newPropsFile == null) throw new IllegalArgumentException("The new property file cannot be null");
 
@@ -114,6 +118,20 @@ public class PropertyHelper {
             if (!origConfiguration.containsKey(propName)) {
                 origConfiguration.addProperty(propName, newProps.getProperty(propName));
                 shouldSave = true;
+            }
+            if (passwordEncryptor.isPasswordPropertyName(propName)) {
+                try {
+                    Object oldValue = origConfiguration.getProperty(propName);
+                    String newValue = passwordEncryptor.reencrypt(oldValue);
+                    if (!newValue.equals(oldValue)) {
+                        logger.info("Encrypting password property " + propName);
+                        origConfiguration.setProperty(propName, newValue);
+                        shouldSave = true;
+                    }
+                } catch (ParseException e) {
+                    throw new CausedIOException("Unable to decrypt encrypted password property " + propName +
+                                                " (wrong master password?): " + ExceptionUtils.getMessage(e), e);
+                }
             }
         }
 

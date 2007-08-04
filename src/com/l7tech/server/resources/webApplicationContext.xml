@@ -15,7 +15,6 @@
 
     <bean id="systemProperties" class="com.l7tech.server.SystemProperties">
         <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="propertiesDecryptor"/>
     </bean>
 
     <!-- SSG boot process -->
@@ -55,7 +54,7 @@
         </property>
     </bean>
 
-    <bean id="masterPasswordManager" class="com.l7tech.common.security.MasterPasswordManager" factory-method="getInstance"/>
+    <bean id="masterPasswordManager" class="com.l7tech.common.security.MasterPasswordManager" factory-method="getInstance" depends-on="systemProperties"/>
 
     <bean id="propertiesDecryptor" class="com.l7tech.server.util.PropertiesDecryptor">
         <constructor-arg ref="masterPasswordManager"/>
