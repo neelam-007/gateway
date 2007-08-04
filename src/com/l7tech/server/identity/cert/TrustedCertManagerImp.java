@@ -182,7 +182,11 @@ public class TrustedCertManagerImp
 
             CertUtils.cachedVerify(serverCertChain[0], caTrustCert.getPublicKey());
         } catch (Exception e) {
+            if (e instanceof UnknownCertificateException)
+                throw (CertificateException) e;
+
             logger.log(Level.WARNING, e.getMessage(), e);
+
             throw new CertificateException(e.getMessage(), e);
         }
     }

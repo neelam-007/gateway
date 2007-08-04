@@ -4,8 +4,8 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.util.Set;
+import java.util.HashSet;
 
 import com.whirlycott.cache.Cache;
 
@@ -13,6 +13,8 @@ import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.SystemMessages;
 
 /**
  * Caching wrapper for OCSPClient functionality.
@@ -50,35 +52,64 @@ public class OCSPCache {
      * @param certificate The certificate whose status is to be queried
      * @param issuerCertificate The issuer of the certificate being checked
      * @param responseAuthorizer The authorizer to use
+     * @param auditor The auditor to use
      * @return The status
      * @throws OCSPClient.OCSPClientException If the status cannot be obtained
      */
     public OCSPClient.OCSPStatus getOCSPStatus(final String responderUrl,
                                                final X509Certificate certificate,
                                                final X509Certificate issuerCertificate,
-                                               final OCSPClient.OCSPCertificateAuthorizer responseAuthorizer)
+                                               final OCSPClient.OCSPCertificateAuthorizer responseAuthorizer,
+                                               final Auditor auditor)
         throws OCSPClient.OCSPClientException
     {
 
         OcspKey key = buildOcspKey(responderUrl, certificate);
 
-        OCSPClient.OCSPStatus status = (OCSPClient.OCSPStatus) certValidationCache.retrieve(key);
-        if (status != null) {
-            logger.log(Level.INFO, "Using cached OCSP response.");
+        Set<OcspKey> recursionDetectionSet = RECURSION_SET.get();
+        if ( recursionDetectionSet.contains(key) ) {
+            throw new OCSPClientRecursionException("Recursive or circular OCSP request for '"+certificate.getSubjectDN()+"'.");
         } else {
-            OCSPClient ocsp = new OCSPClient(httpClientFactory.createHttpClient(), responderUrl, issuerCertificate, responseAuthorizer);
-            status = ocsp.getRevocationStatus(certificate, useNonce(), true);
-            certValidationCache.store(key, status, getExpiryTime(status.getExpiry()));
+            recursionDetectionSet.add(key);
         }
 
-        return status;
+        try {
+            OCSPClient.OCSPStatus status = (OCSPClient.OCSPStatus) certValidationCache.retrieve(key);
+            if (status != null) {
+                auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_HIT, "OCSP", certificate.getSubjectDN().toString());
+            } else {
+                auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_MISS, "OCSP", certificate.getSubjectDN().toString());
+                OCSPClient ocsp = new OCSPClient(httpClientFactory.createHttpClient(), responderUrl, issuerCertificate, responseAuthorizer);
+                status = ocsp.getRevocationStatus(certificate, useNonce(), true);
+                certValidationCache.store(key, status, getExpiryTime(status.getExpiry()));
+            }
+
+            return status;
+        } finally {
+            recursionDetectionSet.remove(key);     
+        }
+    }
+
+    /**
+     * Exception class for recursion
+     */
+    public static final class OCSPClientRecursionException extends OCSPClient.OCSPClientException {
+        public OCSPClientRecursionException(final String message) {
+            super(message);
+        }
+        public OCSPClientRecursionException(final String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(OCSPCache.class.getName());
-
     private static final int ONE_MINUTE = TimeUnit.MINUTES.getMultiplier();
+    private static final ThreadLocal<Set<OcspKey>> RECURSION_SET = new ThreadLocal() {
+        protected Set<OcspKey> initialValue() {
+            return new HashSet<OcspKey>();
+        }
+    };
 
     private static final String PROP_EXPIRY_DEFAULT = "pkixOCSP.expiry";
     private static final String PROP_EXPIRY_MIN = "pkixOCSP.minExpiryAge";

@@ -50,11 +50,12 @@ public class SystemMessages extends Messages {
     public static final M CERTVAL_REV_URL_MATCH               = m(2047, Level.FINE,    "{0} URL {1} from Certificate {2} matches regex");
     public static final M CERTVAL_REV_ISSUER_NOT_FOUND        = m(2048, Level.WARNING, "Unable to locate {0} issuer certificate {1}");
     public static final M CERTVAL_REV_CACHE_MISS              = m(2049, Level.INFO,    "No {0} cache for {1}; refreshing");
-    public static final M CERTVAL_REV_CACHE_STALE             = m(2050, Level.INFO,    "{0} cache for {1} was last updated at {2}; refreshing");
-    public static final M CERTVAL_REV_CACHE_FRESH             = m(2051, Level.FINE,    "{0} cache for {1} was last updated at {2}; using cache");
-    public static final M CERTVAL_REV_SIGNER_IS_ISSUER        = m(2052, Level.FINE,    "Using issuer ''{1}'' as {0} signer.");
-    public static final M CERTVAL_REV_SIGNER_IS_ISSUER_DELE   = m(2053, Level.FINE,    "Using issuer authorized certificate ''{1}'' as {0} signer.");
-    public static final M CERTVAL_REV_SIGNER_IS_TRUSTED       = m(2054, Level.FINE,    "Using trusted certificate ''{1}'' as {0} signer.");
+    public static final M CERTVAL_REV_CACHE_HIT               = m(2050, Level.FINE,    "Using {0} cache for {1}");
+    public static final M CERTVAL_REV_CACHE_STALE             = m(2051, Level.INFO,    "{0} cache for {1} was last updated at {2}; refreshing");
+    public static final M CERTVAL_REV_CACHE_FRESH             = m(2052, Level.FINE,    "{0} cache for {1} was last updated at {2}; using cache");
+    public static final M CERTVAL_REV_SIGNER_IS_ISSUER        = m(2053, Level.FINE,    "Using issuer ''{1}'' as {0} signer.");
+    public static final M CERTVAL_REV_SIGNER_IS_ISSUER_DELE   = m(2054, Level.FINE,    "Using issuer authorized certificate ''{1}'' as {0} signer");
+    public static final M CERTVAL_REV_SIGNER_IS_TRUSTED       = m(2055, Level.FINE,    "Using trusted certificate ''{1}'' as {0} signer");
 
     // CRL only
     public static final M CERTVAL_CERT_EXPIRED                = m(2070, Level.WARNING, "Certificate {0} has expired");
@@ -65,6 +66,8 @@ public class SystemMessages extends Messages {
     // OCSP Only
     public static final M CERTVAL_OCSP_ERROR                  = m(2085, Level.WARNING, "Error during OCSP check for responder ''{0}'': {1}");
     public static final M CERTVAL_OCSP_SIGNER_CERT_REVOKED    = m(2086, Level.WARNING, "OCSP responder ''{0}'' signing certificate ''{1}'' is revoked.");
+    public static final M CERTVAL_OCSP_BAD_RESPONSE_STATUS    = m(2087, Level.WARNING, "Bad status in OCSP check for responder ''{0}'': {1}");
+    public static final M CERTVAL_OCSP_RECURSION              = m(2088, Level.WARNING, "Circular OCSP check for responder ''{0}''");
 
     public static final M AUTH_USER_DISABLED = m(2100, Level.INFO, "User {0} is disabled.");
     public static final M AUTH_USER_LOCKED   = m(2101, Level.INFO, "User {0} is locked.");

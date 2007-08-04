@@ -2,6 +2,7 @@ package com.l7tech.server.security.cert;
 
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.CertificateValidationResult;
+import com.l7tech.common.util.CertUtils;
 
 import java.security.cert.*;
 import java.util.Collection;
@@ -37,6 +38,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
         this.revocationCheckerFactory = factory;
         this.trustAnchors = params.getTrustAnchors();
         this.auditor = auditor;
+        this.lastFailedX509Certificate = new X509Certificate[1];
     }
 
     /**
@@ -51,6 +53,14 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
             throw new CertPathValidatorException("Only X.509 certificates are supported.");
 
         final X509Certificate x509Certificate = (X509Certificate) certificate;
+
+        /**
+         * Cached failure for 2nd pass of Suns path builder
+         */
+        if (lastFailedX509Certificate[0] != null &&
+                CertUtils.certsAreEqual(x509Certificate, lastFailedX509Certificate[0])) {
+            throw new CertPathValidatorException("Revocation check failed for certificate '"+x509Certificate.getSubjectDN()+"'.");                
+        }
 
         if (logger.isLoggable(Level.FINE))
             logger.log(Level.FINE, "Performing revocation check for certificate ''{0}''.", x509Certificate.getSubjectDN());
@@ -74,6 +84,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
         RevocationChecker revocationChecker = revocationCheckerFactory.getRevocationChecker(issuerCertificate);
         CertificateValidationResult status = revocationChecker.getRevocationStatus(x509Certificate, issuerCertificate, auditor);
         if (!status.equals(CertificateValidationResult.OK)) {
+            lastFailedX509Certificate[0] = x509Certificate;
             throw new CertPathValidatorException("Revocation check failed for certificate '"+x509Certificate.getSubjectDN()+"'.");    
         }
 
@@ -101,6 +112,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
             throw new CertPathValidatorException("Forward checking not supported");
 
         prevX509Certificate = null;
+        //lastFailedX509Certificate = null;
     }
 
     /**
@@ -121,4 +133,11 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
     private final Auditor auditor;
 
     private X509Certificate prevX509Certificate;
+
+    // this is to allow cloned checkers to share the last failure to prevent
+    // superfluous revocation checks due to the path builder backtracking
+    // see sun.security.provider.certpath.SunCertPathBuilder:163
+    // this is undesireable due to performance impact and duplication of
+    // audit details
+    private final X509Certificate[] lastFailedX509Certificate;
 }

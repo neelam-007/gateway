@@ -521,9 +521,14 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 private Socket verify(Socket socket, String host) throws IOException {
                     if (hostVerifier != null && socket instanceof SSLSocket) {
                         SSLSocket sslSocket = (SSLSocket) socket;
+
+                        // must start handshake or any exception can be lost when
+                        // getSession() is called
+                        sslSocket.startHandshake();
+
                         if(!hostVerifier.verify(host, sslSocket.getSession())) {
                             try{
-                                socket.close();
+                                socket.close(); // close socket since we're not returning it
                             } catch (IOException ioe) { }
                             throw new CausedIOException("Host name does not match certificate '" + host + "'.");
                         }

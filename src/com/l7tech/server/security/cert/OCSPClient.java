@@ -213,9 +213,17 @@ public class OCSPClient {
     /**
      * Exception class for OCSPClient
      */
-    public static final class OCSPClientException extends Exception {
+    public static class OCSPClientException extends Exception {
         public OCSPClientException(final String message) { super(message); }
         public OCSPClientException(final String message, Throwable cause) { super(message, cause); }
+    }
+
+    /**
+     * Exception class for OCSPClient bad response status
+     */
+    public static final class OCSPClientStatusException extends OCSPClientException {
+        public OCSPClientStatusException(final String message) { super(message); }
+        public OCSPClientStatusException(final String message, Throwable cause) { super(message, cause); }
     }
 
     //- PRIVATE
@@ -327,7 +335,7 @@ public class OCSPClient {
         } catch (MalformedURLException murle) {
             throw new OCSPClientException("Invalid URL for OCSP responder '"+ocspResponderUrl+"'.", murle);
         } catch (IOException ioe) {
-            throw new OCSPClientException("Error creating OCSP request for responder '"+ocspResponderUrl+"'.", ioe);
+            throw new OCSPClientException("Error creating OCSP request", ioe);
         }
 
         try {
@@ -347,7 +355,7 @@ public class OCSPClient {
             status = handleResponse(ocspResponse, certId, signed);
             
         } catch (IOException ioe) {
-            throw new OCSPClientException("HTTP error processing OCSP request for responder '"+ocspResponderUrl+"'.", ioe);
+            throw new OCSPClientException("HTTP error during OCSP request.", ioe);
         }
 
         return status;
@@ -375,18 +383,18 @@ public class OCSPClient {
                 status = processOCSPResponse(ocspResponse, certId, signed);
                 break;
             case 1: // bad request
-                throw new OCSPClientException("OCSP Response Error [1]: Bad Request");
+                throw new OCSPClientStatusException("OCSP Response Error [1]: Bad Request");
             case 2: // issuer error
-                throw new OCSPClientException("OCSP Response Error [2]: Responder Error");
+                throw new OCSPClientStatusException("OCSP Response Error [2]: Responder Error");
             case 3: // tryLater
-                throw new OCSPClientException("OCSP Response Error [3]: Responder Error (Try Later)");
+                throw new OCSPClientStatusException("OCSP Response Error [3]: Responder Error (Try Later)");
             // there is no status 4 ...
             case 5: // must sign request
-                throw new OCSPClientException("OCSP Response Error [5]: Request Signature Required");
+                throw new OCSPClientStatusException("OCSP Response Error [5]: Request Signature Required");
             case 6: // unauthorized
-                throw new OCSPClientException("OCSP Response Error [6]: Unauthorized");
+                throw new OCSPClientStatusException("OCSP Response Error [6]: Unauthorized");
             default:
-                throw new OCSPClientException("Unexpected OCSP Response Error: Status code " + responseStatus);
+                throw new OCSPClientStatusException("Unexpected OCSP Response Error: Status code " + responseStatus);
         }
 
         return status;

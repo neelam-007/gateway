@@ -646,14 +646,11 @@ public class RevocationCheckerFactory {
                     logger.log(Level.FINE, "Certificate is good '"+certificate.getSubjectDN()+"'.");
                     return CertificateValidationResult.OK;
                 }
-            } catch (CertificateException e) {
-                auditor.logAndAudit(SystemMessages.CERTVAL_REV_CRL_INVALID, crlUrl, ExceptionUtils.getMessage(e));
-                return CertificateValidationResult.REVOKED;
-            } catch (CRLException e) {
+            } catch (GeneralSecurityException e) {
                 auditor.logAndAudit(SystemMessages.CERTVAL_REV_CRL_INVALID, crlUrl, ExceptionUtils.getMessage(e));
                 return CertificateValidationResult.REVOKED;
             } catch (IOException e) {
-                auditor.logAndAudit(SystemMessages.CERTVAL_REV_RETRIEVAL_FAILED, what(), crlUrl, ExceptionUtils.getMessage(e));
+                auditor.logAndAudit(SystemMessages.CERTVAL_REV_RETRIEVAL_FAILED, new String[]{what(), crlUrl, ExceptionUtils.getMessage(e)}, e);
                 return CertificateValidationResult.REVOKED;
             }
         }
@@ -715,15 +712,26 @@ public class RevocationCheckerFactory {
 
             try {
                 OCSPClient.OCSPCertificateAuthorizer authorizer = new OCSPClient.OCSPCertificateAuthorizer(){
+                    /**
+                     * OCSP authorizer that gets the authorized signer from the superclass.
+                     *
+                     * This will pass in a callback to check for a "delegated" OCSP responder certificate.
+                     */
                     public X509Certificate getAuthorizedSigner(final OCSPClient ocsp, final X509Certificate[] certificates) {
                         return OCSPRevocationChecker.this.getAuthorizedSigner(issuerCertificate, certificates, auditor, new Functions.Unary<Boolean,X509Certificate>(){
+                            /**
+                             * Callback that checks if the given certificate is allowed by the issuer and
+                             * performs a revocation check on the certificate if needed.
+                             */
                             public Boolean call(final X509Certificate x509Certificate) {
                                 Boolean isPermittedSigner = Boolean.FALSE;
-
                                 try {
                                     if (ocsp.isPermittedByIssuer(x509Certificate)) {
                                         if (ocsp.shouldCheckRevocation(x509Certificate)) {
                                             try {
+                                                /**
+                                                 * Check for revocation of the OCSP signer certificate.
+                                                 */
                                                 CertificateValidationResult cvr = getCertValidationProcessor().check(
                                                         new X509Certificate[]{x509Certificate},
                                                         null,
@@ -752,8 +760,12 @@ public class RevocationCheckerFactory {
                         });
                     }
                 };
-                OCSPClient.OCSPStatus status = ocspCache.getOCSPStatus(url, certificate, issuerCertificate, authorizer);
+                OCSPClient.OCSPStatus status = ocspCache.getOCSPStatus(url, certificate, issuerCertificate, authorizer, auditor);
                 result = status.getResult();
+            } catch (OCSPCache.OCSPClientRecursionException ocre) {
+                auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_RECURSION, url);                
+            } catch (OCSPClient.OCSPClientStatusException ocse) {
+                auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_BAD_RESPONSE_STATUS, url, ExceptionUtils.getMessage(ocse));
             } catch (OCSPClient.OCSPClientException oce) {
                 auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_ERROR, new String[]{url, ExceptionUtils.getMessage(oce)}, oce);
             }

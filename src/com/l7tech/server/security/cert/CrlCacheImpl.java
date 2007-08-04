@@ -158,13 +158,17 @@ public class CrlCacheImpl implements CrlCache {
             fr.getResult() == AbstractUrlObjectCache.RESULT_USED_CACHED ) {
             X509CRL crl = fr.getUserObject();
             if (crl == null) {
+                IOException ioe = fr.getException();
+                if (ioe != null) {
+                    throw ioe;
+                }
                 throw new CausedIOException("Unable to access CRL from HTTP cache, status is: " + fr.getResult());
             }
             return crl;
         } else {
             IOException ioe = fr.getException();
             if (ioe == null) {
-                throw new CausedIOException("Unable to access CRL from HTTP cache, status is: " + fr.getResult());
+                throw new CausedIOException("Unable to access CRL from HTTP cache, status is: " + fr.getResult(), ioe);
             }
             throw ioe;
         }
