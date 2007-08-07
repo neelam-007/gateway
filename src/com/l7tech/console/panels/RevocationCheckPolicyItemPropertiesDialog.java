@@ -4,7 +4,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.Dialog;
 import java.awt.Frame;
-import java.awt.Component;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
@@ -30,10 +29,12 @@ import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.MaxLengthDocument;
+import com.l7tech.common.gui.widgets.TextListCellRenderer;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.common.util.ResolvingComparator;
 import com.l7tech.common.util.Resolver;
+import com.l7tech.common.util.Functions;
 import com.l7tech.console.event.CertListener;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.util.Registry;
@@ -229,7 +230,7 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
         Utilities.equalizeButtonSizes(new JButton[]{okButton, cancelButton});
 
         typeComboBox.setModel(new DefaultComboBoxModel(RevocationCheckPolicyItem.Type.values()));
-        typeComboBox.setRenderer(new RevocationCheckPolicyItemTypeRenderer());
+        typeComboBox.setRenderer(new TextListCellRenderer(new RevocationCheckPolicyItemAccessor()));
         typeComboBox.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableControls();
@@ -548,51 +549,29 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
     }
 
     /**
-     * Renderer for RevocationCheckPolicyItem.Types
+     * Label text accessor for RevocationCheckPolicyItem.Types
      */
-    private static final class RevocationCheckPolicyItemTypeRenderer extends JLabel implements ListCellRenderer {
-        public Component getListCellRendererComponent( JList list,
-                                                       Object value,
-                                                       int index,
-                                                       boolean isSelected,
-                                                       boolean cellHasFocus)
-        {
+    private static final class RevocationCheckPolicyItemAccessor implements Functions.Unary<String, Object> {
+        public String call(Object value) {
             RevocationCheckPolicyItem.Type type = (RevocationCheckPolicyItem.Type) value;
 
             String labelKey = RES_ITEM_CRLFROMCERT;
-            if (type != null) {
-                switch(type) {
-                    case CRL_FROM_CERTIFICATE:
-                        labelKey = RES_ITEM_CRLFROMCERT;
-                        break;
-                    case CRL_FROM_URL:
-                        labelKey = RES_ITEM_CRLFROMURL;
-                        break;
-                    case OCSP_FROM_CERTIFICATE:
-                        labelKey = RES_ITEM_OCSPFROMCERT;
-                        break;
-                    case OCSP_FROM_URL:
-                        labelKey = RES_ITEM_OCSPFROMURL;
-                        break;
-                }
+            switch(type) {
+                case CRL_FROM_CERTIFICATE:
+                    labelKey = RES_ITEM_CRLFROMCERT;
+                    break;
+                case CRL_FROM_URL:
+                    labelKey = RES_ITEM_CRLFROMURL;
+                    break;
+                case OCSP_FROM_CERTIFICATE:
+                    labelKey = RES_ITEM_OCSPFROMCERT;
+                    break;
+                case OCSP_FROM_URL:
+                    labelKey = RES_ITEM_OCSPFROMURL;
+                    break;
             }
 
-            setText(resources.getString(labelKey));
-
-            if (isSelected) {
-                setBackground(list.getSelectionBackground());
-                setForeground(list.getSelectionForeground());
-                setOpaque(true);
-            } else {
-                setBackground(list.getBackground());
-                setForeground(list.getForeground());
-                setOpaque(false);
-            }
-
-            setEnabled(list.isEnabled());
-            setFont(list.getFont());
-
-            return this;
+            return resources.getString(labelKey);
         }
     }
 }

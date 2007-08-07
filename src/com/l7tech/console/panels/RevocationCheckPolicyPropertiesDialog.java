@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import java.awt.Dialog;
 import java.awt.Frame;
-import java.awt.Component;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -19,9 +18,11 @@ import javax.swing.event.ListDataEvent;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.FilterDocument;
+import com.l7tech.common.gui.widgets.TextListCellRenderer;
 import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.security.RevocationCheckPolicyItem;
 import com.l7tech.common.util.ValidationUtils;
+import com.l7tech.common.util.Functions;
 
 /**
  * Properties dialog for Revocation Checking Policies.
@@ -195,7 +196,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
                 enableOrDisableControls();
             }
         });
-        policyItemList.setCellRenderer(new RevocationCheckPolicyItemRenderer());
+        policyItemList.setCellRenderer(new TextListCellRenderer(new RevocationCheckPolicyItemAccessor()));
         policyItemList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.setDoubleClickAction(policyItemList, editButton);
 
@@ -377,23 +378,17 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
     }
 
     /**
-     * Renderer for RevocationCheckPolicyItems
+     * Label text accessor for RevocationCheckPolicyItems
      */
-    private static final class RevocationCheckPolicyItemRenderer extends JLabel implements ListCellRenderer {
-        public Component getListCellRendererComponent( JList list,
-                                                       Object value,
-                                                       int index,
-                                                       boolean isSelected,
-                                                       boolean cellHasFocus)
-        {
+    private static final class RevocationCheckPolicyItemAccessor implements Functions.Unary<String, Object>
+    {
+        public String call(Object value) {        
             RevocationCheckPolicyItem revocationCheckPolicyItem = (RevocationCheckPolicyItem) value;
             RevocationCheckPolicyItem.Type type = null;
             String url = null;
 
-            if ( revocationCheckPolicyItem != null ) {
-                type = revocationCheckPolicyItem.getType();
-                url = revocationCheckPolicyItem.getUrl();
-            }
+            type = revocationCheckPolicyItem.getType();
+            url = revocationCheckPolicyItem.getUrl();
 
             String labelKey = RES_ITEM_CRLFROMCERT;
             if (type != null) {
@@ -413,22 +408,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
                 }
             }
 
-            setText(MessageFormat.format(resources.getString(labelKey), url));
-
-            if (isSelected) {
-                setBackground(list.getSelectionBackground());
-                setForeground(list.getSelectionForeground());
-                setOpaque(true);
-            } else {
-                setBackground(list.getBackground());
-                setForeground(list.getForeground());
-                setOpaque(false);
-            }
-
-            setEnabled(list.isEnabled());
-            setFont(list.getFont());
-
-            return this;
+            return MessageFormat.format(resources.getString(labelKey), url);
         }
     }
 }
