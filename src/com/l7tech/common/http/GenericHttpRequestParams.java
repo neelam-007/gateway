@@ -29,6 +29,8 @@ public class GenericHttpRequestParams {
     private ArrayList extraHeaders = null;
     private boolean preemptiveAuthentication = true;
     private boolean followRedirects = false;
+    private boolean useKeepAlives = true;
+    private boolean useExpectContinue = false;
 
     /**
      * Create a new request description that does not yet have a target URL set.
@@ -67,6 +69,8 @@ public class GenericHttpRequestParams {
         extraHeaders = template.extraHeaders == null ? null : new ArrayList(template.extraHeaders);
         preemptiveAuthentication = template.preemptiveAuthentication;
         followRedirects = template.followRedirects;
+        useKeepAlives = template.useKeepAlives;
+        useExpectContinue = template.useExpectContinue;
     }
 
     public GenericHttpState getState() {
@@ -255,6 +259,42 @@ public class GenericHttpRequestParams {
      */
     public void setFollowRedirects(boolean followRedirects) {
         this.followRedirects = followRedirects;
+    }
+
+    /**
+     * Should an Expect/Continue handshake be performed.
+     *
+     * @return True if expect/continue is to be used.
+     */
+    public boolean isUseExpectContinue() {
+        return useExpectContinue;
+    }
+
+    /**
+     * Set use of Expect/Continue handshake
+     *
+     * @param useExpectContinue True for expect/continue
+     */
+    public void setUseExpectContinue(boolean useExpectContinue) {
+        this.useExpectContinue = useExpectContinue;
+    }
+
+    /**
+     * Should Keep-Alive connections be used.
+     *
+     * @return True if Keep-Alive is to be used.
+     */
+    public boolean isUseKeepAlives() {
+        return useKeepAlives;
+    }
+
+    /**
+     * Set use of Keep-Alive connections
+     *
+     * @param useKeepAlives True for Keep-Alive
+     */
+    public void setUseKeepAlives(boolean useKeepAlives) {
+        this.useKeepAlives = useKeepAlives;
     }
 
     /**

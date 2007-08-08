@@ -40,6 +40,7 @@ import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.ssl.SslPeerHttpClient;
 import com.l7tech.proxy.ssl.SslPeerLazyDelegateSocketFactory;
 import com.l7tech.server.DefaultStashManagerFactory;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.xmlsec.ServerResponseWssSignature;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
@@ -445,7 +446,18 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         params.setDefaultMaxConnectionsPerHost(hmax);
         params.setMaxTotalConnections(tmax);
         connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
-        GenericHttpClient client = new CommonsHttpClient(connectionManager, getConnectionTimeout(), getTimeout());
+        GenericHttpClient client = new CommonsHttpClient(connectionManager, getConnectionTimeout(), getTimeout()) {
+            public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
+                // override params to match server config
+                if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpUseExpectContinue")) ) {
+                    params.setUseExpectContinue(true);
+                }
+                if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpNoKeepAlive")) ) {
+                    params.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
+                }
+                return super.createRequest(method, params);
+            }
+        };
 
         // Attach SSL support
         client = new SslPeerHttpClient(client,

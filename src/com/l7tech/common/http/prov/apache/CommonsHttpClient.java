@@ -49,6 +49,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     public static final String PROP_MAX_CONN_PER_HOST = CommonsHttpClient.class.getName() + ".maxConnectionsPerHost";
     public static final String PROP_MAX_TOTAL_CONN = CommonsHttpClient.class.getName() + ".maxTotalConnections";
     public static final String PROP_STALE_CHECKS = CommonsHttpClient.class.getName() + ".staleCheckCount";
+    public static final String PROP_HTTP_EXPECT_CONTINUE = CommonsHttpClient.class.getName() + ".useExpectContinue";
+    public static final String PROP_HTTP_DISABLE_KEEP_ALIVE = CommonsHttpClient.class.getName() + ".noKeepAlive";
     public static final String PROP_DEFAULT_CONNECT_TIMEOUT = CommonsHttpClient.class.getName() + ".defaultConnectTimeout";
     public static final String PROP_DEFAULT_READ_TIMEOUT = CommonsHttpClient.class.getName() + ".defaultReadTimeout";
 
@@ -60,6 +62,14 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
     static {
         DefaultHttpParams.setHttpParamsFactory(new CachingHttpParamsFactory(new DefaultHttpParamsFactory()));
+
+        HttpParams defaultParams = DefaultHttpParams.getDefaultParams();
+        if (SyspropUtil.getString(PROP_HTTP_EXPECT_CONTINUE, null) != null) {
+            defaultParams.setBooleanParameter("http.protocol.expect-continue", SyspropUtil.getBoolean(PROP_HTTP_EXPECT_CONTINUE));
+        }
+        if (SyspropUtil.getBoolean(PROP_HTTP_DISABLE_KEEP_ALIVE)) {
+            defaultParams.setParameter("http.default-headers", Collections.singletonList(new Header("Connection", "close")));
+        }
     }
 
     private final HttpConnectionManager cman;
@@ -143,6 +153,15 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         HttpClientParams clientParams = client.getParams();
         clientParams.setDefaults(getOrBuildCachingHttpParams(clientParams.getDefaults()));
         clientParams.setAuthenticationPreemptive(false);
+
+        // Note that we only set if there is a non-default value specified
+        // this allows the system wide default to be used for the bridge
+        if (params.isUseExpectContinue()) {
+            clientParams.setBooleanParameter("http.protocol.expect-continue", Boolean.valueOf(params.isUseExpectContinue()));
+        }
+        if (!params.isUseKeepAlives()) {
+            clientParams.setParameter("http.default-headers", Collections.singletonList(new Header("Connection", "close")));
+        }
 
         final HttpState state = getHttpState(client, params);
 

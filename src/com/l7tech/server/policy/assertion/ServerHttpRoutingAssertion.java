@@ -33,6 +33,7 @@ import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -448,6 +449,13 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (method == GenericHttpClient.PUT || method == GenericHttpClient.POST) {
                 routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, reqMime.getOuterContentType().getFullValue()));
             }
+            if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpUseExpectContinue")) ) {
+                routedRequestParams.setUseExpectContinue(true);
+            }
+            if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpNoKeepAlive")) ) {
+                routedRequestParams.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
+            }
+
             routedRequest = httpClient.createRequest(method, routedRequestParams);
 
             List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.
