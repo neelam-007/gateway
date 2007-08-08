@@ -55,6 +55,7 @@ do
             echo "7) Upgrade the SecureSpan Appliance"
         fi
 
+        echo "8) Change the Master Passphrase"
         
         echo -n "Please make a selection: "
         read choice
@@ -89,6 +90,11 @@ do
                     if [ "$okToReboot" == "y" ] || [ "$okToReboot" == "yes" ] ; then
                         sudo /sbin/reboot
                     fi
+                    clear;;
+                8)  clear;
+                    (${CONFWIZARD}) -changeMasterPassphrase;
+                    echo "Press enter to continue";
+                    read;
                     clear;;
                 *)  if [ "$choice" == "6" ] && [ "${SCA_PRESENT}" == "true" ]; then
                         clear;

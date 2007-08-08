@@ -35,7 +35,7 @@ if [ -z "${launchtype}" ] || [ ${launchtype} == "-graphical" ]; then
     fi
 fi
 
-if [ ${launchtype} == "-exportsharedkey" ]; then
+if [ ${launchtype} == "-exportsharedkey" ] || [ ${launchtype} == "-changeMasterPassphrase" ]; then
     ${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
 else
     launch_wizard "${launchtype}"

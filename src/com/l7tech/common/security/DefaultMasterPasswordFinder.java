@@ -5,10 +5,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.FileUtils;
 
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.io.IOException;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.util.Random;
 
 /**
@@ -115,7 +112,8 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
     public char[] findMasterPassword() {
         File filePath = getMasterPasswordFile();
         try {
-            byte[] bytes = HexUtils.slurpFile(filePath);
+            InputStream stream = FileUtils.loadFileSafely(filePath.getAbsolutePath());
+            byte[] bytes = HexUtils.slurpStream(stream);
             String obfuscated = new String(bytes);
             return unobfuscate(obfuscated).toCharArray();
         } catch (IOException e) {

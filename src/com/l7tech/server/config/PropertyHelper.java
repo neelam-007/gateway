@@ -60,6 +60,90 @@ public class PropertyHelper {
         return propsReturned;
     }
 
+    /**
+     * Edit the specfified properties file, decrypting any encrypted passwords with the specified passwordCrypto's
+     * decryptor, and then reencrypting them with the passwordCrypto's encryptor.
+     *
+     * @param origPropsFile  the properties file to edit. Required.
+     *                       If this file doesn't exist, this method returns without taking any action.
+     * @param passwordCrypto a passwordCrypto to use to decrypt existing encrypted passwords and to reencrypt
+     *                       them again afterwards.
+     *                       <p/>
+     *                       If this passwordCrypto's decryptor is null, existing encrypted passwords will not
+     *                       be decrypted.
+     *                       <p/>
+     *                       If the encryptor is null, passwords will not be reencrypted after they are decrypted.
+     *                       <p/>
+     *                       If both are null, the passwords will not be changed.
+     * @throws CausedIOException if there is a problem reading or writing the properties file.
+     */
+    public static void reencryptPasswordsInPlace(File origPropsFile, PasswordPropertyCrypto passwordCrypto)
+            throws CausedIOException
+    {
+        if (origPropsFile == null) throw new IllegalArgumentException("The original property file cannot be null");
+        if (passwordCrypto.getEncryptor() == null && passwordCrypto.getDecryptor() == null) {
+            logger.fine("Neither encryption or decryption of passwords is possible - leaving properties file unchanged: " + origPropsFile.getName());
+            return;
+        }
+
+        if (!origPropsFile.exists())
+            return;
+
+        PropertiesConfiguration props = new PropertiesConfiguration();
+        props.setAutoSave(false);
+        props.setListDelimiter((char)0);
+
+        // Read the existing properties
+        FileInputStream origFis = null;
+        try {
+            origFis = new FileInputStream(origPropsFile);
+            props.load(origFis);
+        } catch (ConfigurationException ce) {
+            throw new CausedIOException("Error reading properties file '"+origPropsFile+"'.", ce);
+        } catch (FileNotFoundException e) {
+            throw new CausedIOException("Error reading properties file '"+origPropsFile+"'.", e);
+        } finally {
+            ResourceUtils.closeQuietly(origFis);
+        }
+
+
+        //now get all the keys and make a new properties object;
+        boolean shouldSave = false;
+        Iterator allProps = props.getKeys();
+        while(allProps.hasNext()) {
+            String propName = (String) allProps.next();
+            if (passwordCrypto.isPasswordPropertyName(propName)) {
+                try {
+                    Object oldValue = props.getProperty(propName);
+                    String newValue = passwordCrypto.reencrypt(oldValue);
+                    if (!newValue.equals(oldValue)) {
+                        logger.info("Re-encrypting password property " + propName);
+                        props.setProperty(propName, newValue);
+                        shouldSave = true;
+                    }
+                } catch (ParseException e) {
+                    throw new CausedIOException("Unable to decrypt encrypted password property " + propName +
+                                                " (wrong master password?): " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+        }
+
+        if (shouldSave) {
+            FileOutputStream origFos = null;
+
+            try {
+                origFos = new FileOutputStream(origPropsFile);
+                props.save(origFos);
+            } catch (ConfigurationException ce) {
+                throw new CausedIOException("Error writing properties file '"+origPropsFile+"'.", ce);
+            } catch (FileNotFoundException e) {
+                throw new CausedIOException("Error writing properties file '"+origPropsFile+"'.", e);
+            } finally {
+                ResourceUtils.closeQuietly(origFos);
+            }
+        }
+    }
+
     public static void mergePropertiesInPlace(File origPropsFile, File newPropsFile, boolean createIfNew, PasswordPropertyCrypto passwordEncryptor)
             throws CausedIOException, FileNotFoundException
     {

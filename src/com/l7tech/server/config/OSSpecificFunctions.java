@@ -297,13 +297,24 @@ public abstract class OSSpecificFunctions {
     }
 
     /**
+     * Get the path of the default master password finder's obfuscated master password config file.
+     * <p/>
+     * This method does not check anything about this file (including but not limited to its existence, file mode, or contents).
+     *
+     * @return a File pointing at the expected location of this partitions obfuscated master password
+     *         file (omp.dat).
+     */
+    public File getMasterPasswordFile() {
+        return new File(getConfigurationBase(), MASTER_PASSWORD_FILENAME);
+    }
+
+    /**
      * Create a DefaultMasterPasswordFinder that points at the current partition's master key config file.
      *
      * @return a DefaultMasterPasswordFinder that can be used to load or save the master password.  Never null.
      */
     public DefaultMasterPasswordFinder getMasterPasswordFinder() {
-        File ompdat = new File(getConfigurationBase(), MASTER_PASSWORD_FILENAME);
-        return new DefaultMasterPasswordFinder(ompdat);
+        return new DefaultMasterPasswordFinder(getMasterPasswordFile());
     }
 
     /**

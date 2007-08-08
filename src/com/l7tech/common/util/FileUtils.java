@@ -310,4 +310,23 @@ public class FileUtils {
             in.mkdir();
         }
     }
+
+    /**
+     * Cause the specified file to exist, if it doesn't already.
+     * The file will be created as a zero-length file.
+     *
+     * @param file the file that should be created.  Required.
+     * @throws java.io.IOException if there is a problem checking for the existence of or creating the file
+     */
+    public static void touch(File file) throws IOException {
+        if (file.getParentFile() != null)
+            ensurePath(file.getParentFile());
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(file, true);
+            fos.getChannel().force(true);
+        } finally {
+            ResourceUtils.closeQuietly(fos);
+        }
+    }
 }

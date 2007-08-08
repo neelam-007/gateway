@@ -31,10 +31,20 @@ public class PasswordPropertyCrypto {
      * Set the list of property names whose values should be checked to see if they look like passwords
      * that should be (re)encrypted.
      *
-     * @param passwordPropertyNames an array of property names; if empty or null, no passwords will be encrypted.
+     * @param passwordPropertyNames an array of property names; if empty or null, no passwords will be decrypted or encrypted.
      */
     public void setPasswordProperties(String[] passwordPropertyNames) {
         this.passwordPropertyNames = passwordPropertyNames;
+    }
+
+    /**
+     * Get the list of property names whose values should be checked to see if they look like passwords
+     * that should be (re)encrypted.
+     *
+     * @return an array of property names, or empty or null if no passwords will be decrypted or encrypted.
+     */
+    public String[] getPasswordProperties() {
+        return passwordPropertyNames;
     }
 
     private boolean decryptAndMaybeEncryptPasswords(MasterPasswordManager encryptor, MasterPasswordManager decryptor, Properties props) throws ParseException {
@@ -115,6 +125,20 @@ public class PasswordPropertyCrypto {
      */
     public String decryptIfEncrypted(Object maybeEncrypted) throws ParseException {
         return reencrypt(null, decryptor, maybeEncrypted);
+    }
+
+    /**
+     * @return the encryptor, or null if no encryption is being performed.
+     */
+    public MasterPasswordManager getEncryptor() {
+        return encryptor;
+    }
+
+    /**
+     * @return the decryptor, or null if no decryption is possible.
+     */
+    public MasterPasswordManager getDecryptor() {
+        return decryptor;
     }
 
     /**

@@ -13,6 +13,7 @@ public class ConfigurationWizardLauncher {
     public static final String GRAPHICAL_MODE = "-graphical";
     public static final String CONSOLE_MODE = "-console";
     public static final String EXPORT_SHARED_KEY = "-exportsharedkey";
+    public static final String CHANGE_MASTER_PASSPHRASE = "-changeMasterPassphrase";
 
     private static final String USAGE_STATEMENT = "usage: ConfigurationWizardLauncher [-console | -graphical]" + EOL_CHAR +
                         "If no parameter is specified, graphical mode is assumed" + EOL_CHAR +
@@ -38,6 +39,8 @@ public class ConfigurationWizardLauncher {
             PartitionManager.doMigration();
         } else if (EXPORT_SHARED_KEY.equalsIgnoreCase(launchType)) {
             SharedKeyGetter.main(newArgs);
+        } else if (CHANGE_MASTER_PASSPHRASE.equalsIgnoreCase(launchType)) {
+            MasterPassphraseChanger.main(newArgs);
         } else if (null == launchType || "".equals(launchType) || GRAPHICAL_MODE.equalsIgnoreCase(launchType)) {
             GuiConfigWizardLauncher.launch(newArgs);
         }

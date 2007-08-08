@@ -410,14 +410,16 @@ public class GatewayBoot {
 
         Map<String, String> attrs = getDefaultHttpsConnectorAttrs(keyinfo);
 
-        // If the connector is trying to add an encrypted password, decrypt it first
+        // If the connector is trying to add an encrypted password, decrypt it first.
+        // If it can't be decrypted, ignore it and fall back to the password from keystore.properties.
         String kspass = overrideAttrs.get(CONNECTOR_ATTR_KEYSTORE_PASS);
         if (masterPasswordManager.looksLikeEncryptedPassword(kspass)) {
             try {
                 char[] decrypted = masterPasswordManager.decryptPassword(kspass);
                 overrideAttrs.put(CONNECTOR_ATTR_KEYSTORE_PASS, new String(decrypted));
             } catch (ParseException e) {
-                throw new ListenerException("Unable to start listener: unable to decrypt encrypted password for SSL keystore: " + ExceptionUtils.getMessage(e), e);
+                logger.log(Level.WARNING, "Unable to decrypt encrypted password in server.xml -- falling back to password from keystore.properties: " + ExceptionUtils.getMessage(e));
+                overrideAttrs.remove(CONNECTOR_ATTR_KEYSTORE_PASS);
             }
         }
 
