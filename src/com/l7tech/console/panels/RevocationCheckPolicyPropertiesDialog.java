@@ -104,7 +104,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
     /**
      * Characters allowed in a policy name
      */
-    private static final String NAME_CHARACTERS = ValidationUtils.ALPHA_NUMERIC + " ,.'";
+    private static final String NAME_CHARACTERS = ValidationUtils.ALPHA_NUMERIC + " ,.'{[}]!#$%^()";
 
     /**
      * Maximum number of items in a policy 
