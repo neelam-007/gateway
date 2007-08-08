@@ -697,6 +697,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 queuePasswordField,
                 useJmsMsgPropAsSoapActionCheckBox,
                 jmsMsgPropWithSoapActionTextField,
+                acknowledgementModeComboBox,
+                useQueueForFailedCheckBox,
+                failureQueueNameTextField,
         });
         securityFormAuthorizationPreparer.prepare(jndiExtraPropertiesOuterPanel);
         securityFormAuthorizationPreparer.prepare(queueExtraPropertiesOuterPanel);
