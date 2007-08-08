@@ -110,6 +110,7 @@ public class PropertyHelper {
         //now get all the keys and make a new properties object;
         boolean shouldSave = false;
         Iterator allProps = props.getKeys();
+        Map<String, String> toMutate = new HashMap<String, String>();
         while(allProps.hasNext()) {
             String propName = (String) allProps.next();
             if (passwordCrypto.isPasswordPropertyName(propName)) {
@@ -117,15 +118,21 @@ public class PropertyHelper {
                     Object oldValue = props.getProperty(propName);
                     String newValue = passwordCrypto.reencrypt(oldValue);
                     if (!newValue.equals(oldValue)) {
-                        logger.info("Re-encrypting password property " + propName);
-                        props.setProperty(propName, newValue);
-                        shouldSave = true;
+                        toMutate.put(propName, newValue);
                     }
                 } catch (ParseException e) {
                     throw new CausedIOException("Unable to decrypt encrypted password property " + propName +
                                                 " (wrong master password?): " + ExceptionUtils.getMessage(e), e);
                 }
             }
+        }
+
+        for (Map.Entry<String, String> entry : toMutate.entrySet()) {
+            String propName = entry.getKey();
+            String newValue = entry.getValue();
+            logger.info("Re-encrypting password property " + propName);
+            props.setProperty(propName, newValue);
+            shouldSave = true;
         }
 
         if (shouldSave) {
