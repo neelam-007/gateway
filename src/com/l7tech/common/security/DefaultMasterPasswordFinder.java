@@ -112,8 +112,7 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
     public char[] findMasterPassword() {
         File filePath = getMasterPasswordFile();
         try {
-            InputStream stream = FileUtils.loadFileSafely(filePath.getAbsolutePath());
-            byte[] bytes = HexUtils.slurpStream(stream);
+            byte[] bytes = HexUtils.slurpFile(filePath);
             String obfuscated = new String(bytes);
             return unobfuscate(obfuscated).toCharArray();
         } catch (IOException e) {
