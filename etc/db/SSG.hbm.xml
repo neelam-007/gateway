@@ -12,6 +12,16 @@
         <param name="enumClass">com.l7tech.common.security.TrustedCert$PolicyUsageType</param>
     </typedef>
 
+    <typedef class="com.l7tech.objectmodel.GenericEnumUserType" name="jms_reply_type">
+        <param name="enumClass">com.l7tech.common.transport.jms.JmsReplyType</param>
+        <param name="identifierMethod">getNum</param>
+        <param name="valueOfMethod">getByNum</param>
+    </typedef>
+    
+    <typedef class="com.l7tech.objectmodel.GenericEnumUserType" name="jms_acknowledgement_type">
+        <param name="enumClass">com.l7tech.common.transport.jms.JmsAcknowledgementType</param>
+    </typedef>
+
     <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider" lazy="false" discriminator-value="1">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
@@ -195,7 +205,9 @@
 
         <property name="name" column="name" type="string"/>
         <property name="destinationName" column="destination_name" type="string"/>
-        <property name="replyType" column="reply_type" type="com.l7tech.common.transport.jms.JmsReplyTypeMapper"/>
+        <property name="failureDestinationName" column="failure_destination_name" type="string"/>
+        <property name="acknowledgementType" column="acknowledgement_type" type="jms_acknowledgement_type"/>        
+        <property name="replyType" column="reply_type" type="jms_reply_type"/>
         <property name="username"/>
         <property name="password"/>
         <property name="maxConcurrentRequests" column="max_concurrent_requests"/>

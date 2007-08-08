@@ -49,6 +49,13 @@ ALTER TABLE trusted_cert ADD COLUMN trust_anchor tinyint default 1,
 INSERT INTO identity_provider (objectid,name,description,type,properties,version) VALUES (-2,'Internal Identity Provider','Internal Identity Provider',1,'<java version="1.6.0_01" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>adminEnabled</string><boolean>true</boolean></void></object></java>',0);
 
 ALTER TABLE audit_main ADD COLUMN signature varchar(175);
+
+--
+-- Add new JMS configuration options
+--
+ALTER TABLE jms_endpoint ADD COLUMN failure_destination_name varchar(128),
+                         ADD COLUMN acknowledgement_type varchar(128);
+
 --
 -- Reenable FK at very end of script
 --

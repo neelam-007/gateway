@@ -26,6 +26,8 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
 
     private long _connectionOid;
     private String _destinationName;
+    private String _failureDestinationName;
+    private JmsAcknowledgementType _acknowledgementType;
     private JmsReplyType _replyType = JmsReplyType.AUTOMATIC;
     private String _username;
     private String _password;
@@ -42,6 +44,8 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         setName( other.getName() );
         setConnectionOid( other.getConnectionOid() );
         setDestinationName( other.getDestinationName() );
+        setFailureDestinationName( other.getFailureDestinationName() );
+        setAcknowledgementType( other.getAcknowledgementType() );
         setReplyType( other.getReplyType() );
         setUsername( other.getUsername() );
         setPassword( other.getPassword() );
@@ -126,6 +130,22 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
 
     public void setDestinationName(String name) {
         _destinationName = name;
+    }
+
+    public String getFailureDestinationName() {
+        return _failureDestinationName;
+    }
+
+    public void setFailureDestinationName(String name) {
+        _failureDestinationName = name;
+    }
+
+    public JmsAcknowledgementType getAcknowledgementType() {
+        return _acknowledgementType;
+    }
+
+    public void setAcknowledgementType(JmsAcknowledgementType acknowledgementType) {
+        _acknowledgementType = acknowledgementType;
     }
 
     public JmsReplyType getReplyType() {

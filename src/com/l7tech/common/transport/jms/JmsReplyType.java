@@ -1,60 +1,72 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.transport.jms;
 
-import java.io.ObjectStreamException;
-import java.io.Serializable;
-
 /**
+ * Enumerated type for JMS Reply Types
+ *
  * @author alex
- * @version $Revision$
  */
-public class JmsReplyType implements Serializable {
+public enum JmsReplyType {
 
-    //- PUBLIC
+    /**
+     * The reply type is inferred from the inbound message.
+     */
+    AUTOMATIC( "Automatic" ),
 
-    public static final JmsReplyType AUTOMATIC = new JmsReplyType( 0, "Automatic" );
-    public static final JmsReplyType NO_REPLY = new JmsReplyType( 1, "No reply" );
-    public static final JmsReplyType REPLY_TO_OTHER = new JmsReplyType( 2, "Reply to other" );
+    /**
+     * No reply is expected, use this type for one way messages.
+     */
+    NO_REPLY( "No reply" ),
 
-    public int getNum() { return _num; }
-    public String getName() { return _name; }
+    /**
+     * Send the reply to a specific queue.
+     */
+    REPLY_TO_OTHER( "Reply to other" );
+
+    /**
+     * Get the name of this reply type.
+     *
+     * @return The name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Get the ID for this reply type.
+     *
+     * @return The ID for the type
+     */
+    public int getNum() {
+        return ordinal();
+    }
+
+    /**
+     * Get a reply type by ID.
+     *
+     * @param num The id of the type.
+     * @return The type or null
+     */
+    public static JmsReplyType getByNum(final int num) {
+        return values()[num];
+    }
+
+    /**
+     * Get the String representation for the type.
+     *
+     * @return The descriptive text
+     */
     public String toString() {
-        return "<JmsReplyType num=\"" + _num + "\" name=\"" + _name + "\"/>";
+        return "<JmsReplyType num=\"" + getNum() + "\" name=\"" + getName() + "\"/>";
     }
 
     //- PRIVATE
 
-    static final JmsReplyType[] VALUES = { AUTOMATIC, NO_REPLY, REPLY_TO_OTHER };
+    private final String name;
 
-    private final int _num;
-    private final String _name;
-
-    private JmsReplyType( int num, String name ) {
-        _num = num;
-        _name = name;
-    }
-
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        final JmsReplyType that = (JmsReplyType) o;
-
-        if (_num != that._num) return false;
-
-        return true;
-    }
-
-    public int hashCode() {
-        return _num;
-    }
-
-    private Object readResolve() throws ObjectStreamException {
-        return VALUES[_num];
+    private JmsReplyType(final String name) {
+        this.name = name;
     }
 }

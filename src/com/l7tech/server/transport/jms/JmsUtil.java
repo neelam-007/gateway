@@ -37,12 +37,13 @@ public class JmsUtil {
      * to connect to a JMS provider.
      * @param auth overrides the username and password from the connection if present.  May be null.
      * @param mapper property mapper for initial context properties. May be null.
+     * @param autoAcknowledge True to use Session.AUTO_ACKNOWLEDGE for sessions
      * @return a {@link JmsBag} containing the resulting {@link ConnectionFactory}, {@link Connection} and {@link Session}.
      * @throws JMSException
      * @throws NamingException
      * @throws JmsConfigException if no connection factory URL could be found for this connection
      */
-    public static JmsBag connect( JmsConnection connection, PasswordAuthentication auth, JmsPropertyMapper mapper )
+    public static JmsBag connect( JmsConnection connection, PasswordAuthentication auth, JmsPropertyMapper mapper, boolean autoAcknowledge )
             throws JmsConfigException, JMSException, NamingException {
         logger.fine( "Connecting to " + connection.toString() );
         String icf = connection.getInitialContextFactoryClassname();
@@ -131,27 +132,28 @@ public class JmsUtil {
                 }
             }
 
+            boolean transactional = !autoAcknowledge;
             if ( username != null && password != null ) {
                 if ( connFactory instanceof QueueConnectionFactory ) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection(username, password);
-                    sess = ((QueueConnection)conn).createQueueSession( false, Session.AUTO_ACKNOWLEDGE );
+                    sess = ((QueueConnection)conn).createQueueSession( transactional, Session.AUTO_ACKNOWLEDGE );
                 } else if ( connFactory instanceof TopicConnectionFactory ) {
                     conn = ((TopicConnectionFactory)connFactory).createTopicConnection(username, password);
-                    sess = ((TopicConnection)conn).createTopicSession( false, Session.AUTO_ACKNOWLEDGE );
+                    sess = ((TopicConnection)conn).createTopicSession( transactional, Session.AUTO_ACKNOWLEDGE );
                 } else {
                     conn = connFactory.createConnection( username, password );
-                    sess = conn.createSession( false, Session.AUTO_ACKNOWLEDGE );
+                    sess = conn.createSession( transactional, Session.AUTO_ACKNOWLEDGE );
                 }
             } else {
                 if ( connFactory instanceof QueueConnectionFactory ) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection();
-                    sess = ((QueueConnection)conn).createQueueSession( false, Session.AUTO_ACKNOWLEDGE );
+                    sess = ((QueueConnection)conn).createQueueSession( transactional, Session.AUTO_ACKNOWLEDGE );
                 } else if ( connFactory instanceof TopicConnectionFactory ) {
                     conn = ((TopicConnectionFactory)connFactory).createTopicConnection();
-                    sess = ((TopicConnection)conn).createTopicSession( false, Session.AUTO_ACKNOWLEDGE );
+                    sess = ((TopicConnection)conn).createTopicSession( transactional, Session.AUTO_ACKNOWLEDGE );
                 } else {
                     conn = connFactory.createConnection( username, password );
-                    sess = conn.createSession( false, Session.AUTO_ACKNOWLEDGE );
+                    sess = conn.createSession( transactional, Session.AUTO_ACKNOWLEDGE );
                 }
             }
 
@@ -179,10 +181,10 @@ public class JmsUtil {
     }
 
     /**
-     * Equivalent to {@link JmsUtil#connect(JmsConnection, PasswordAuthentication, JmsPropertyMapper) JmsUtil#connect(JmsConnection, null, null)}
+     * Equivalent to {@link JmsUtil#connect(JmsConnection, PasswordAuthentication, JmsPropertyMapper, boolean) JmsUtil#connect(JmsConnection, null, null, true)}
      */
     public static JmsBag connect( JmsConnection connection ) throws JMSException, NamingException, JmsConfigException {
-        return connect( connection, null, null );
+        return connect( connection, null, null, true );
     }
 
     private static final Logger logger = Logger.getLogger(JmsUtil.class.getName());

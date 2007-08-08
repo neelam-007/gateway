@@ -65,34 +65,42 @@ class JmsRequestHandler {
 
     /**
      * Handle an incoming JMS SOAP request.  Also takes care of sending the reply if appropriate.
-     * @param receiver
-     * @param bag
-     * @param jmsRequest
+     *
+     * @param receiver The calling receiver
+     * @param bag The JMS context
+     * @param transacted True is the session is transactional (so commit when done)
+     * @param failureQueue The queue for failed messages (may be null)
+     * @param jmsRequest The request message to process
+     * @throws JmsRuntimeException if an error occurs
      */
-    public void onMessage( JmsReceiver receiver, final JmsBag bag, final javax.jms.Message jmsRequest ) throws JmsRuntimeException {
+    public void onMessage( final JmsReceiver receiver,
+                           final JmsBag bag,
+                           final boolean transacted,
+                           final QueueSender failureQueue,
+                           final Message jmsRequest ) throws JmsRuntimeException {
 
-        Message jmsResponse = null;
-
+        final Message jmsResponse;
+        final InputStream requestStream;
+        final ContentTypeHeader ctype;
+        final Map<String, Object> reqJmsMsgProps;
+        final String soapAction;
         try {
-            InputStream requestStream = null;
-            ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
+            // Init content and type            
             if ( jmsRequest instanceof TextMessage ) {
                 requestStream = new ByteArrayInputStream(((TextMessage)jmsRequest).getText().getBytes("UTF-8"));
-                jmsResponse = bag.getSession().createTextMessage();
-
+                ctype = ContentTypeHeader.XML_DEFAULT;
             } else if ( jmsRequest instanceof BytesMessage ) {
                 requestStream = new BytesMessageInputStream((BytesMessage)jmsRequest);
                 String requestCtype = jmsRequest.getStringProperty("Content-Type");
                 if (requestCtype != null)
                     ctype = ContentTypeHeader.parseValue(requestCtype);
-                jmsResponse = bag.getSession().createBytesMessage();
-
+                else
+                    ctype = ContentTypeHeader.XML_DEFAULT;
             } else {
-                String msg = "Received message of unsupported type " + jmsRequest.getClass().getName() +
-                             " on " + receiver.getInboundRequestEndpoint().getDestinationName() +
-                             ".  Only TextMessage and BytesMessage are supported";
-                _logger.warning( msg );
-                throw new JmsRuntimeException( msg );
+                handleInvalidMessageType(receiver, jmsRequest);
+                // not reached
+                ctype = null;
+                requestStream = null;
             }
 
             // Copies the request JMS message properties into the request JmsKnob.
@@ -102,7 +110,7 @@ class JmsRequestHandler {
                 final Object value = jmsRequest.getObjectProperty(name);
                 msgProps.put(name, value);
             }
-            final Map<String, Object> reqJmsMsgProps = Collections.unmodifiableMap(msgProps);
+            reqJmsMsgProps = Collections.unmodifiableMap(msgProps);
 
             // Gets the JMS message property to use as SOAPAction, if present.
             String soapActionValue = null;
@@ -112,8 +120,20 @@ class JmsRequestHandler {
                 if (_logger.isLoggable(Level.FINER))
                 _logger.finer("Found JMS message property to use as SOAPAction value: " + jmsMsgPropWithSoapAction + "=" + soapActionValue);
             }
-            final String soapAction = soapActionValue;
+            soapAction = soapActionValue;
+        } catch (IOException ioe) {
+            throw new JmsRuntimeException("Error processing request message", ioe);
+        } catch (JMSException jmse) {
+            throw new JmsRuntimeException("Error processing request message", jmse);
+        }
 
+        try {
+            jmsResponse = buildMessageFromTemplate(bag, receiver, jmsRequest);
+        } catch (JMSException e) {
+            throw new JmsRuntimeException("Couldn't create response message!", e);
+        }
+
+        try {
             com.l7tech.common.message.Message request = new com.l7tech.common.message.Message();
             request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream );
             request.attachJmsKnob(new JmsKnob() {
@@ -205,6 +225,7 @@ class JmsRequestHandler {
                     }
                 }
 
+                boolean responseSuccess;
                 if (!stealthMode) {
                     BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
                     final byte[] responseBytes;
@@ -236,12 +257,34 @@ class JmsRequestHandler {
                         }
                     }
 
-                    sendResponse( jmsRequest, jmsResponse, bag, receiver, status );
+                    responseSuccess = sendResponse( jmsRequest, jmsResponse, bag, receiver, status );
+                } else { // is stealth mode
+                    responseSuccess = true;
+                }
+
+                if ( transacted ) {
+                    boolean handledAnyFailure;
+                    if ( status!=AssertionStatus.NONE ) {
+                        if ( failureQueue!=null ) {
+                            handledAnyFailure = postMessageToFailureQueue( jmsRequest, failureQueue );
+                        } else {
+                            handledAnyFailure = false;
+                        }
+                    } else {
+                        handledAnyFailure = true; //nothing to handle    
+                    }
+
+                    Session session = bag.getSession();
+                    if ( responseSuccess && handledAnyFailure ) {
+                        session.commit();
+                    } else {
+                        session.rollback();
+                    }
                 }
             } catch (IOException e) {
-                _logger.log( Level.WARNING, e.toString(), e );
+                throw new JmsRuntimeException(e);
             } catch (JMSException e) {
-                _logger.log( Level.WARNING, "Couldn't acknowledge message!", e );
+                throw new JmsRuntimeException("Couldn't acknowledge message!", e);
             } finally {
                 try {
                     auditContext.flush();
@@ -256,8 +299,6 @@ class JmsRequestHandler {
                     }
                 }
             }
-        } catch (JMSException e) {
-            _logger.log(Level.WARNING, "Couldn't create response message!", e);
         } catch (NoSuchPartException e) {
             throw new RuntimeException(e); // can't happen
         } catch (IOException e) {
@@ -265,7 +306,29 @@ class JmsRequestHandler {
         }
     }
 
-    private void sendResponse(Message jmsRequestMsg, Message jmsResponseMsg, JmsBag bag, JmsReceiver receiver, AssertionStatus status ) {
+    private void handleInvalidMessageType(JmsReceiver receiver, Message message) throws JmsRuntimeException {
+        String msg = "Received message of unsupported type " + message.getClass().getName() +
+                     " on " + receiver.getInboundRequestEndpoint().getDestinationName() +
+                     ".  Only TextMessage and BytesMessage are supported";
+        _logger.warning( msg );
+        throw new JmsRuntimeException( msg );
+    }
+
+    private Message buildMessageFromTemplate(JmsBag bag, JmsReceiver receiver, Message template)
+            throws JMSException, JmsRuntimeException {
+        Message message = null;
+        if ( template instanceof TextMessage ) {
+            message = bag.getSession().createTextMessage();
+        } else if ( template instanceof BytesMessage ) {
+            message = bag.getSession().createBytesMessage();
+        } else {
+            handleInvalidMessageType(receiver, template);
+        }
+        return message;
+    }
+
+    private boolean sendResponse(Message jmsRequestMsg, Message jmsResponseMsg, JmsBag bag, JmsReceiver receiver, AssertionStatus status ) {
+        boolean sent = false;
         try {
             Destination jmsReplyDest = receiver.getOutboundResponseDestination( jmsRequestMsg, jmsResponseMsg );
             if ( status != AssertionStatus.NONE ) {
@@ -293,9 +356,20 @@ class JmsRequestHandler {
                     if ( producer != null ) producer.close();
                 }
             }
+            sent = true;
         } catch ( JMSException e ) {
             _logger.log( Level.WARNING, "Caught JMS exception while sending response", e );
         }
+        return sent;
+    }
+
+    private boolean postMessageToFailureQueue(Message message, QueueSender sender) throws JMSException {
+        boolean posted = false;
+
+        sender.send(message);
+        posted = true;
+
+        return posted;
     }
 
     private static final Logger _logger = Logger.getLogger(JmsRequestHandler.class.getName());

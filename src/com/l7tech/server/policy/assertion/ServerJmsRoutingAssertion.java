@@ -482,7 +482,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             if ( endpoint == null ) throw new FindException( "JmsEndpoint could not be located! It may have been deleted" );
             PasswordAuthentication pwauth = endpoint.getPasswordAuthentication();
 
-            bag = JmsUtil.connect( conn, pwauth, jmsPropertyMapper );
+            bag = JmsUtil.connect( conn, pwauth, jmsPropertyMapper, true );
             bag.getConnection().start();
         }
         return bag;

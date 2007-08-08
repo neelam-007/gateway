@@ -5,13 +5,18 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.RunOnChangeListener;
+import com.l7tech.common.gui.widgets.TextListCellRenderer;
+import com.l7tech.common.gui.MaxLengthDocument;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.PermissionDeniedException;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsAcknowledgementType;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
@@ -20,8 +25,6 @@ import javax.naming.Context;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.rmi.RemoteException;
@@ -57,6 +60,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JCheckBox useJmsMsgPropAsSoapActionCheckBox;
     private JLabel jmsMsgPropWithSoapActionLabel;
     private JTextField jmsMsgPropWithSoapActionTextField;
+    private JComboBox acknowledgementModeComboBox;
+    private JCheckBox useQueueForFailedCheckBox;
+    private JLabel failureQueueLabel;
+    private JTextField failureQueueNameTextField;
     private JButton testButton;
     private JButton saveButton;
     private JButton cancelButton;
@@ -172,12 +179,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         inboundRadioButton.setEnabled(!isOutboundOnly());
         outboundRadioButton.setEnabled(!isOutboundOnly());
 
-        inboundRadioButton.addItemListener(new ItemListener() {
-            public void itemStateChanged(ItemEvent e) {
-                enableOrDisableComponents();
-            }
-        });
-
+        inboundRadioButton.addItemListener(formPreener);
 
         initProviderComboBox();
 
@@ -201,6 +203,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         icfTextField.getDocument().addDocumentListener(formPreener);
         qcfTextField.getDocument().addDocumentListener(formPreener);
         queueNameTextField.getDocument().addDocumentListener(formPreener);
+        failureQueueNameTextField.setDocument(new MaxLengthDocument(128));
+        failureQueueNameTextField.getDocument().addDocumentListener(formPreener);
 
         jndiExtraPropertiesOuterPanel.addContainerListener(new ContainerListener() {
             public void componentAdded(ContainerEvent e) {
@@ -234,11 +238,30 @@ public class JmsQueuePropertiesDialog extends JDialog {
             }
         });
 
-        useJmsMsgPropAsSoapActionCheckBox.addItemListener(new ItemListener() {
-            public void itemStateChanged(ItemEvent e) {
-                enableOrDisableComponents();
+        acknowledgementModeComboBox.setModel(new DefaultComboBoxModel(JmsAcknowledgementType.values()));
+        acknowledgementModeComboBox.setRenderer(new TextListCellRenderer(new Functions.Unary<String,Object>() {
+            public String call(Object o) {
+                JmsAcknowledgementType type = (JmsAcknowledgementType) o;
+                String text = "";
+
+                switch( type ) {
+                    case AUTOMATIC:
+                        text = "On Take";
+                        break;
+                    case ON_COMPLETION:
+                        text = "On Completion";
+                        break;
+                    default:
+                        text = "Unknown";
+                        break;
+                }
+
+                return text;
             }
-        });
+        }));
+        acknowledgementModeComboBox.addActionListener(formPreener);
+        useQueueForFailedCheckBox.addActionListener(formPreener);
+        useJmsMsgPropAsSoapActionCheckBox.addItemListener(formPreener);
         jmsMsgPropWithSoapActionTextField.getDocument().addDocumentListener(formPreener);
         Utilities.enableGrayOnDisabled(jmsMsgPropWithSoapActionTextField);
 
@@ -371,19 +394,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
           provider.getInitialContextFactoryClassname().equals(connection.getInitialContextFactoryClassname());
     }
 
-    private FormPreener formPreener = new FormPreener();
-
-    private class FormPreener implements DocumentListener {
-        public void insertUpdate(DocumentEvent e) { changed(); }
-
-        public void removeUpdate(DocumentEvent e) { changed(); }
-
-        public void changedUpdate(DocumentEvent e) { changed(); }
-
-        private void changed() {
+    private RunOnChangeListener formPreener = new RunOnChangeListener(new Runnable() {
+        public void run() {
             enableOrDisableComponents();
         }
-    }
+    });
 
     /**
      * Extract information from the view and create a new JmsConnection object.  The new object will not have a
@@ -475,6 +490,16 @@ public class JmsQueuePropertiesDialog extends JDialog {
         String name = queueNameTextField.getText();
         ep.setName(name);
         ep.setDestinationName(name);
+        JmsAcknowledgementType type = (JmsAcknowledgementType) acknowledgementModeComboBox.getSelectedItem();
+        if (!inboundRadioButton.isSelected()) type = null; // only applicable for inbound
+        ep.setAcknowledgementType(type);
+        if ( type == null || type == JmsAcknowledgementType.AUTOMATIC ) {
+            ep.setFailureDestinationName(null);
+        } else if ( useQueueForFailedCheckBox.isSelected() ) {
+            ep.setFailureDestinationName( failureQueueNameTextField.getText() );
+        } else {
+            ep.setFailureDestinationName( null );
+        }
         ep.setMessageSource(inboundRadioButton.isSelected());
 
         if (useQueueCredentialsCheckBox.isSelected()) {
@@ -549,6 +574,22 @@ public class JmsQueuePropertiesDialog extends JDialog {
             enableOrDisableQueueCredentials();
         }
 
+        useQueueForFailedCheckBox.setSelected(false);
+        failureQueueNameTextField.setText("");
+        if (endpoint != null) {
+            JmsAcknowledgementType type = endpoint.getAcknowledgementType();
+            if (type != null) {
+                acknowledgementModeComboBox.setSelectedItem(type);
+            }
+            if ( endpoint.getAcknowledgementType() == JmsAcknowledgementType.ON_COMPLETION ) {
+                String name = endpoint.getFailureDestinationName();
+                if (name != null && name.length() > 0) {
+                    useQueueForFailedCheckBox.setSelected(true);
+                    failureQueueNameTextField.setText(name);
+                }
+            }
+        }
+
         useJmsMsgPropAsSoapActionCheckBox.setSelected(false);
         jmsMsgPropWithSoapActionTextField.setText("");
         if (endpoint != null) {
@@ -585,8 +626,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return false;
         if (queueExtraPropertiesPanel != null && !queueExtraPropertiesPanel.validatePanel())
             return false;
-        if (inboundRadioButton.isSelected() && useJmsMsgPropAsSoapActionCheckBox.isSelected() && jmsMsgPropWithSoapActionTextField.getText().length() == 0)
-            return false;
+        if (inboundRadioButton.isSelected() && (
+                (useJmsMsgPropAsSoapActionCheckBox.isSelected() && jmsMsgPropWithSoapActionTextField.getText().length() == 0) ||
+                (JmsAcknowledgementType.ON_COMPLETION == acknowledgementModeComboBox.getSelectedItem() &&
+                        useQueueForFailedCheckBox.isSelected() &&
+                        failureQueueNameTextField.getText().length()==0)
+        )) return false;
         return true;
     }
 
@@ -609,12 +654,29 @@ public class JmsQueuePropertiesDialog extends JDialog {
             useJmsMsgPropAsSoapActionCheckBox.setEnabled(true);
             jmsMsgPropWithSoapActionLabel.setEnabled(useJmsMsgPropAsSoapActionCheckBox.isSelected());
             jmsMsgPropWithSoapActionTextField.setEnabled(useJmsMsgPropAsSoapActionCheckBox.isSelected());
+            enableOrDisableAcknowledgementControls();
         } else {
             Utilities.setEnabled(inboundOptionsPanel, false);
         }
         final boolean valid = validateForm();
         saveButton.setEnabled(valid);
         testButton.setEnabled(valid);
+    }
+
+    private void enableOrDisableAcknowledgementControls() {
+        boolean enabled = false;
+        boolean checkBoxEnabled = false;
+
+        if ( JmsAcknowledgementType.ON_COMPLETION == acknowledgementModeComboBox.getSelectedItem() ) {
+            checkBoxEnabled = true;
+            if ( useQueueForFailedCheckBox.isSelected() ) {
+                enabled = true;        
+            }
+        }
+
+        useQueueForFailedCheckBox.setEnabled(checkBoxEnabled);
+        failureQueueLabel.setEnabled(enabled);
+        failureQueueNameTextField.setEnabled(enabled);
     }
 
     private void applyFormSecurity() {

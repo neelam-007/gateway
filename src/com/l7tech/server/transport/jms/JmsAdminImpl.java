@@ -189,12 +189,16 @@ public class JmsAdminImpl implements JmsAdmin {
         checkLicense();
         JmsBag bag = null;
         MessageConsumer jmsQueueReceiver = null;
+        QueueSender jmsQueueSender = null;
         TopicSubscriber jmsTopicSubscriber = null;
         Connection jmsConnection = null;
 
         try {
             _logger.finer("Connecting to connection " + conn);
-            bag = JmsUtil.connect(conn, endpoint.getPasswordAuthentication(), jmsPropertyMapper);
+            bag = JmsUtil.connect(conn,
+                    endpoint.getPasswordAuthentication(),
+                    jmsPropertyMapper,
+                    endpoint.getAcknowledgementType()==JmsAcknowledgementType.AUTOMATIC);
 
             Context jndiContext = bag.getJndiContext();
             jmsConnection = bag.getConnection();
@@ -205,11 +209,20 @@ public class JmsAdminImpl implements JmsAdmin {
             _logger.finer("Got Session...");
             if (jmsSession instanceof QueueSession) {
                 QueueSession qs = ((QueueSession)jmsSession);
+                // inbound queue
                 Object o = jndiContext.lookup(endpoint.getDestinationName());
                 if (!(o instanceof Queue)) throw new JmsTestException(endpoint.getDestinationName() + " is not a Queue");
                 Queue q = (Queue)o;
                 _logger.fine("Creating queue receiver for " + q);
                 jmsQueueReceiver = qs.createReceiver(q);
+                // failure queue
+                if (endpoint.getFailureDestinationName() != null) {
+                    Object fo = jndiContext.lookup(endpoint.getFailureDestinationName());
+                    if (!(fo instanceof Queue)) throw new JmsTestException(endpoint.getFailureDestinationName() + " is not a Queue");
+                    Queue fq = (Queue)fo;
+                    _logger.fine("Creating queue receiver for " + fq);
+                    jmsQueueSender = qs.createSender(fq);
+                }
             } else if (jmsSession instanceof TopicSession) {
                 TopicSession ts = ((TopicSession)jmsSession);
                 Object o = jndiContext.lookup(endpoint.getDestinationName());
@@ -233,6 +246,11 @@ public class JmsAdminImpl implements JmsAdmin {
             _logger.log(Level.INFO, "Caught Throwable while testing endpoint", t);
             throw new JmsTestException(t.toString());
         } finally {
+            try {
+                if (jmsQueueSender != null) jmsQueueSender.close();
+            } catch (JMSException e) {
+            }
+
             try {
                 if (jmsQueueReceiver != null) jmsQueueReceiver.close();
             } catch (JMSException e) {

@@ -6,7 +6,6 @@ import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
-import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsUtil;
 
 import javax.jms.*;
@@ -19,7 +18,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * JMS client code "borrowed" from the ServerJmsRoutingAssertion.
@@ -113,8 +111,6 @@ public class JmsClient {
                     break; // if successful, no need for further retries
                 } catch (Exception e) {
                     if (++oopses < MAX_OOPSES) {
-                        String msg = "Failed to establish JMS connection on try #" +
-                                oopses +  ".  Will retry after " + RETRY_DELAY + "ms.";
                         if ( jmsSession != null ) try { jmsSession.close(); } catch ( Exception e2 ) { }
                         closeBag();
 
@@ -123,7 +119,6 @@ public class JmsClient {
 
                         Thread.sleep(RETRY_DELAY);
                     } else {
-                        String msg = "Tried " + MAX_OOPSES + " times to establish JMS connection and failed.";
                         throw e;
                     }
                 }
@@ -199,7 +194,6 @@ public class JmsClient {
 
     private PasswordAuthentication credentials;
     private Map data = null; // props for JMS dest
-    private JmsConnectionManager jmsConnectionManager;
     private JmsConnection routedRequestConnection;
     private JmsEndpoint routedRequestEndpoint;
 
@@ -208,7 +202,6 @@ public class JmsClient {
     private Destination endpointResponseDestination;
     private Destination responseDestination;
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
     public static final int BUFFER_SIZE = 8192;
     private static final int MAX_OOPSES = 5;
     private static final long RETRY_DELAY = 1000;
@@ -320,7 +313,7 @@ public class JmsClient {
             JmsEndpoint endpoint = getRoutedRequestEndpoint();
             if ( endpoint == null ) throw new JMSException( "JmsEndpoint could not be located! It may have been deleted" );
 
-            bag = JmsUtil.connect( conn, credentials, null );
+            bag = JmsUtil.connect( conn, credentials, null, true );
             bag.getConnection().start();
         }
         return bag;

@@ -243,6 +243,8 @@ CREATE TABLE jms_endpoint(
   connection_oid bigint NOT NULL,
   name varchar(128) NOT NULL,
   destination_name varchar(128) NOT NULL,
+  failure_destination_name varchar(128),
+  acknowledgement_type varchar(128),    
   reply_type integer default '0',
   username varchar(32) default '',
   password varchar(32) default '',

@@ -9,6 +9,7 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
+import com.l7tech.common.transport.jms.JmsAcknowledgementType;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
@@ -240,7 +241,11 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
             synchronized(sync) {
                 if ( _bag == null ) {
                     _logger.finest( "Getting new JmsBag" );
-                    _bag = JmsUtil.connect( _connection, _inboundRequestEndpoint.getPasswordAuthentication(), _jmsPropertyMapper );
+                    _bag = JmsUtil.connect(
+                            _connection,
+                            _inboundRequestEndpoint.getPasswordAuthentication(),
+                            _jmsPropertyMapper,
+                            _inboundRequestEndpoint.getAcknowledgementType()==JmsAcknowledgementType.AUTOMATIC );
                 }
                 return _bag;
             }
@@ -255,13 +260,13 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                     try {
                         JmsBag bag = getBag();
                         Session s = bag.getSession();
-                        if ( !(s instanceof QueueSession) ) throw new JmsConfigException("Only QueueSessions are supported");
+                        if ( !(s instanceof QueueSession) ) {
+                            message = "Only QueueSessions are supported";
+                            throw new JmsConfigException(message);
+                        }
                         QueueSession qs = (QueueSession)s;
                         Queue q = getQueue();
                         _consumer = qs.createReceiver( q );
-
-                        Connection conn = bag.getConnection();
-                        conn.start();
                         ok = true;
                     } catch (JMSException e) {
                         message = ExceptionUtils.getMessage(e);
@@ -276,9 +281,7 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                         message = ExceptionUtils.getMessage(e);
                         throw e;
                     } finally {
-                        if (ok) {
-                            fireConnected();
-                        } else {
+                        if (!ok) {
                             fireConnectError(message);
                         }
                     }
@@ -297,6 +300,94 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                     _queue = (Queue)context.lookup( qname );
                 }
                 return _queue;
+            }
+        }
+
+        private QueueSender getFailureSender() throws JMSException, NamingException, JmsConfigException {
+            synchronized(sync) {
+                if ( _failureSender == null &&
+                        _inboundRequestEndpoint.getAcknowledgementType()==JmsAcknowledgementType.ON_COMPLETION &&
+                        _inboundRequestEndpoint.getFailureDestinationName()!=null ) {
+                    _logger.finest( "Getting new MessageSender" );
+                    boolean ok = false;
+                    String message = null;
+                    try {
+                        JmsBag bag = getBag();
+                        Session s = bag.getSession();
+                        if ( !(s instanceof QueueSession) ) {
+                            message = "Only QueueSessions are supported";
+                            throw new JmsConfigException(message);
+                        }
+                        QueueSession qs = (QueueSession)s;
+                        Queue q = getFailureQueue();
+                        _failureSender = qs.createSender( q );
+                        ok = true;
+                    } catch (JMSException e) {
+                        message = ExceptionUtils.getMessage(e);
+                        throw e;
+                    } catch (NamingException e) {
+                        message = ExceptionUtils.getMessage(e);
+                        throw e;
+                    } catch (JmsConfigException e) {
+                        message = ExceptionUtils.getMessage(e);
+                        throw e;
+                    } catch (RuntimeException e) {
+                        message = ExceptionUtils.getMessage(e);
+                        throw e;
+                    } finally {
+                        if (!ok) {
+                            fireConnectError(message);
+                        }
+                    }
+                }
+                return _failureSender;
+            }
+        }
+
+        private Queue getFailureQueue() throws NamingException, JmsConfigException, JMSException {
+            synchronized(sync) {
+                if ( _failureQueue == null ) {
+                    _logger.finest( "Getting new FailureQueue" );
+                    JmsBag bag = getBag();
+                    Context context = bag.getJndiContext();
+                    String qname = _inboundRequestEndpoint.getFailureDestinationName();
+                    _failureQueue = (Queue)context.lookup( qname );
+                }
+                return _failureQueue;
+            }
+        }
+
+        private void ensureConnectionStarted() throws NamingException, JmsConfigException, JMSException {
+            synchronized(sync) {
+                boolean ok = false;
+                String message = null;
+                try {
+                    JmsBag bag = getBag();
+                    Connection conn = bag.getConnection();
+                    conn.start(); // should be ignored if started
+                    ok = true;
+                } catch (JMSException e) {
+                    message = ExceptionUtils.getMessage(e);
+                    throw e;
+                } catch (NamingException e) {
+                    message = ExceptionUtils.getMessage(e);
+                    throw e;
+                } catch (JmsConfigException e) {
+                    message = ExceptionUtils.getMessage(e);
+                    throw e;
+                } catch (RuntimeException e) {
+                    message = ExceptionUtils.getMessage(e);
+                    throw e;
+                } finally {
+                    if (ok) {
+                        if (!_started) {
+                            _started = true;
+                            fireConnected();
+                        }
+                    } else {
+                        fireConnectError(message);
+                    }
+                }
             }
         }
 
@@ -344,9 +435,21 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                     _consumer = null;
                 }
 
+                if ( _failureSender != null ) {
+                    try {
+                        _failureSender.close();
+                    } catch ( JMSException e ) {
+                        _logger.log( Level.INFO, "Caught JMSException during cleanup", e );
+                    }
+                    _failureSender = null;
+                }
+
                 _queue = null;
+                _failureQueue = null;
+                _started = false;
 
                 if ( _bag != null ) {
+                    // this will close the session and cause rollback if transacted
                     _bag.close();
                     _bag = null;
                 }
@@ -367,7 +470,12 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                 while ( !isStop() ) {
                     try {
 //                        _logger.finest( "Polling for a message on " + _inboundRequestEndpoint.getDestinationName() );
-                        Message jmsMessage = getConsumer().receive( RECEIVE_TIMEOUT );
+                        QueueReceiver receiver = getConsumer();
+                        QueueSender sender = getFailureSender();
+                        ensureConnectionStarted();
+                        boolean isTransacted = _inboundRequestEndpoint.getAcknowledgementType()==JmsAcknowledgementType.ON_COMPLETION;
+
+                        Message jmsMessage = receiver.receive( RECEIVE_TIMEOUT );
                         if ( jmsMessage != null ) {
                             _logger.fine( "Received a message on " + _inboundRequestEndpoint.getDestinationName() );
                             oopses = 0;
@@ -376,7 +484,8 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                             synchronized(syncRecv) {
                                 jrh = _handler;
                             }
-                            jrh.onMessage( JmsReceiver.this, getBag(), jmsMessage );
+                            jrh.onMessage( JmsReceiver.this, getBag(), isTransacted, sender, jmsMessage );
+
                         }
                     } catch ( Throwable e ) {
                         _logger.log( Level.WARNING,
@@ -418,9 +527,12 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
         }
 
         // JMS stuff
+        private boolean _started = false;
         private JmsBag _bag;
         private QueueReceiver _consumer;
         private Queue _queue;
+        private QueueSender _failureSender;
+        private Queue _failureQueue;
 
         // Runtime stuff
         private volatile boolean _stop = false;
