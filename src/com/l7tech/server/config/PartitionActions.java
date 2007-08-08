@@ -240,7 +240,13 @@ public class PartitionActions {
         }
     }
 
-    public static void fixKeystorePaths(File partitionDir, PartitionInformation piToUpdate) throws FileNotFoundException {
+    /**
+     * Fixes keystore paths to correspond to the correct partition. Also removes any passwords from the server.xml
+     * found in the given partition.
+     * @param partitionDir which partition dir should be changed
+     * @throws FileNotFoundException
+     */
+    public static void fixConnectorAttributes(File partitionDir, PartitionInformation piToUpdate) throws FileNotFoundException {
         File serverConfig = new File(partitionDir, "server.xml");
         File keystoreProperties = new File(partitionDir, "keystore.properties");
         FileInputStream serverConfigFis = null;
@@ -263,6 +269,7 @@ public class PartitionActions {
                     String newKsFile = newKeystorePath.getAbsolutePath() + File.separator + keystorePath.substring(keystoreFileIndex);
                     connectorNode.setAttribute("keystoreFile", newKsFile);
                 }
+                connectorNode.removeAttribute("keystorePass");
             }
             serverConfigFos = new FileOutputStream(serverConfig);
             XmlUtil.nodeToOutputStream(serverConfigDom, serverConfigFos);
@@ -501,7 +508,7 @@ public class PartitionActions {
         //edit the system.properties file so the name is correct
         try {
             updatePartitionEndpoints(newPartition, false);
-            fixKeystorePaths(new File(newPartition.getOSSpecificFunctions().getPartitionBase() + newPartition.getPartitionId()), newPartition);
+            fixConnectorAttributes(new File(newPartition.getOSSpecificFunctions().getPartitionBase() + newPartition.getPartitionId()), newPartition);
             updateSystemProperties(newPartition, false);
         } catch (FileNotFoundException e) {
             logger.warning("Error while preparing the \"" + newPartition.getPartitionId() + "\" partition. [" + e.getMessage() + "]");

@@ -1,6 +1,7 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.MasterPasswordManager;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.PropertyHelper;
@@ -152,6 +153,9 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         //configured
         String existingDbUsername = (String) props.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
         String existingDbPassword = (String) props.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+        MasterPasswordManager decryptor = osFunctions.getPasswordPropertyCrypto().getDecryptor();
+        if (decryptor != null)
+            existingDbPassword = new String(decryptor.decryptPasswordIfEncrypted(existingDbPassword));
 
         Matcher matcher = SsgDatabaseConfigBean.dbUrlPattern.matcher(existingDBUrl);
         if (matcher.matches()
@@ -293,6 +297,11 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
 
             existingDbUsername = (String) dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
             existingDbPassword = (String) dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+            if (StringUtils.isNotEmpty(existingDbPassword)) {
+                MasterPasswordManager decryptor = osFunctions.getPasswordPropertyCrypto().getDecryptor();
+                if (decryptor != null)
+                    existingDbPassword = new String(decryptor.decryptPasswordIfEncrypted(existingDbPassword));
+            }
 
             String existingDBUrl = (String) dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
 

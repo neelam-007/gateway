@@ -4,6 +4,7 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.PasswordPropertyCrypto;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.ui.gui.ConfigurationWizard;
@@ -21,6 +22,7 @@ import java.util.TreeMap;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.text.ParseException;
 
 /**
  * User: megery
@@ -97,12 +99,14 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             success = true;
         } catch (IOException e) {
             success = false;
+        } catch (ParseException e) {
+            success = false;
         }
 
         return success;
     }
 
-    private void updateDbConfigFile(File dbConfigFile) throws IOException {
+    private void updateDbConfigFile(File dbConfigFile) throws IOException, ParseException {
 
         SsgDatabaseConfigBean dbConfigBean = (SsgDatabaseConfigBean) configBean;
         String dbUrl = dbConfigBean.getDbHostname();
@@ -142,6 +146,9 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             upgradePackageName(dbProps);
             setMaxConnections(dbProps);
 
+            PasswordPropertyCrypto pc = getOsFunctions().getPasswordPropertyCrypto();
+            pc.encryptPasswords(dbProps);
+
             fos = new FileOutputStream(dbConfigFile);
             logger.info("Saving properties to file '"+dbConfigFile+"'.");
             dbProps.setHeader(HIBERNATE_PROPERTY_COMMENTS + "\n" + new Date());
@@ -162,7 +169,11 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             logger.severe("error while updating the Database configuration file");
             throw e;
         }
-        finally {
+        catch (ParseException e) {
+            logger.severe("unable to decrypt the existing database password while updating the database configuration");
+            logger.severe(e.getMessage());
+            throw e;
+        } finally {
             ResourceUtils.closeQuietly(fos);
         }
     }

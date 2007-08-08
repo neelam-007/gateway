@@ -278,7 +278,7 @@ public class PartitionManager {
                     s = defaultPartitionDir.getAbsolutePath() + "/var/modules";
                     pa.setUnixFilePermissions(new String[]{s}, "775", defaultPartitionDir, osf);
 
-                    PartitionActions.fixKeystorePaths(defaultPartitionDir, null);
+//                    PartitionActions.fixConnectorAttributes(defaultPartitionDir, null);
                     PartitionActions.doFirewallConfig(new PartitionInformation(PartitionInformation.DEFAULT_PARTITION_NAME));
                 } catch (IOException e) {
                     System.out.println("Error while creating the default partition: " + e.getMessage());
@@ -317,6 +317,7 @@ public class PartitionManager {
         });
 
         for (File destinationPartition: listOfPartitions) {
+            PartitionActions.fixConnectorAttributes(destinationPartition, null);
             PasswordPropertyCrypto passwordEncryptor =
                     OSDetector.getOSSpecificFunctions(destinationPartition.getName()).getPasswordPropertyCrypto(); 
             updateConfigInPartition(templateFiles, destinationPartition, passwordEncryptor);

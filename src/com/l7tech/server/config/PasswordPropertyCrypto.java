@@ -1,11 +1,10 @@
 package com.l7tech.server.config;
 
 import com.l7tech.common.security.MasterPasswordManager;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
-import java.util.Properties;
-import java.util.Map;
-import java.util.Set;
 import java.text.ParseException;
+import java.util.*;
 
 /**
  * A class that knows how to encrypt, reencrypt, and decrypt password properties.
@@ -14,6 +13,7 @@ public class PasswordPropertyCrypto {
     private final MasterPasswordManager encryptor;
     private final MasterPasswordManager decryptor;
     private String[] passwordPropertyNames;
+
 
     /**
      * Create a properties decryptor that will encrypt password properties using the specified MasterPasswordManager.
@@ -75,6 +75,32 @@ public class PasswordPropertyCrypto {
      */
     public boolean encryptPasswords(Properties props) throws ParseException {
         return decryptAndMaybeEncryptPasswords(encryptor, decryptor, props);
+    }
+
+    public boolean encryptPasswords(PropertiesConfiguration props) throws ParseException {
+        return decryptAndMaybeEncryptPasswords(encryptor, decryptor, props);
+    }
+
+    private boolean decryptAndMaybeEncryptPasswords(MasterPasswordManager encryptor, MasterPasswordManager decryptor, PropertiesConfiguration props) throws ParseException {
+        boolean changesMade = false;
+        Map<String, String> mutator = new HashMap<String, String>();
+
+        Iterator keys = props.getKeys();
+        while (keys.hasNext()) {
+            String propName = (String) keys.next();
+            if (isPasswordPropertyName(propName)) {
+                Object oldValue = props.getProperty(propName);
+                String newValue = reencrypt(encryptor, decryptor, oldValue);
+                if (!newValue.equals(oldValue)) {
+                    mutator.put(propName, newValue);
+                }
+            }
+        }
+        for (Map.Entry<String, String> entry : mutator.entrySet()) {
+            props.setProperty(entry.getKey(), entry.getValue());
+            changesMade = true;
+        }
+        return changesMade;
     }
 
 

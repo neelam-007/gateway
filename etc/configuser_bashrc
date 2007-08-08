@@ -92,7 +92,7 @@ do
                     fi
                     clear;;
                 8)  clear;
-                    (${CONFWIZARD}) -changeMasterPassphrase;
+                    (${CONFWIZARD} -changeMasterPassphrase);
                     echo "Press enter to continue";
                     read;
                     clear;;

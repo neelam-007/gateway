@@ -37,6 +37,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.MessageFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -1057,14 +1058,14 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             Element el = (Element)list.item(i);
             if (el.hasAttribute("secure") && el.getAttribute("secure").equalsIgnoreCase("true")) {
                 el.setAttribute(XML_KSFILE, sslKeyStorePath);
-                el.setAttribute(XML_KSPASS, new String(ksPassword));
+                el.removeAttribute(XML_KSPASS); //this will default to the one in keystore properties instead (as of 4.2)
                 el.setAttribute(XML_KSTYPE, getKsType());
                 el.setAttribute(XML_KSALIAS, KeyStoreConstants.PROP_KS_ALIAS_DEFAULTVALUE);
             }
         }
     }
 
-    private void updateKeystoreProperties(File keystorePropertiesFile, char[] ksPassword) throws IOException {
+    private void updateKeystoreProperties(File keystorePropertiesFile, char[] ksPassword) throws IOException, ParseException {
         FileOutputStream fos = null;
         try {
             PropertiesConfiguration keystoreProps = PropertyHelper.mergeProperties(
@@ -1077,6 +1078,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             keystoreProps.setProperty(KeyStoreConstants.PROP_CA_KS_PASS, new String(ksPassword));
             keystoreProps.setProperty(KeyStoreConstants.PROP_SSL_KS_PASS, new String(ksPassword));
             keystoreProps.setProperty(KeyStoreConstants.PROP_KS_ALIAS, new String(KeyStoreConstants.PROP_KS_ALIAS_DEFAULTVALUE));
+
+            PasswordPropertyCrypto pc = getOsFunctions().getPasswordPropertyCrypto();
+            pc.encryptPasswords(keystoreProps);
 
             fos = new FileOutputStream(keystorePropertiesFile);
             keystoreProps.setHeader(PROPERTY_COMMENT + "\n" + new Date());
@@ -1097,6 +1101,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.severe("error while updating the keystore properties file");
             logger.severe(ioex.getMessage());
             throw ioex;
+        } catch (ParseException e) {
+           logger.severe("cannot decrypt passwords in the keystore.properties file.");
+           logger.severe(e.getMessage());
+           throw e;
         } finally {
             ResourceUtils.closeQuietly(fos);
         }
