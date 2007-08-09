@@ -2,11 +2,13 @@ package com.l7tech.server.config.ui.console;
 
 import com.l7tech.server.config.PartitionActions;
 import com.l7tech.server.config.PartitionActionListener;
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.config.commands.PartitionConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.common.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 
@@ -262,35 +264,57 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
         }
     }
 
+    private String getRunMarker(String partitionName) {
+        try {
+            return osFunctions.isPartitionRunning(partitionName) ? "! " : "  ";
+        } catch (OSSpecificFunctions.OsSpecificFunctionUnavailableException e) {
+            return "  ";
+        } catch (IOException e) {
+            printText("*** Unable to check if partition is running: " + partitionName + ": " + ExceptionUtils.getMessage(e) + getEolChar());
+            return "? ";
+        }
+    }
+
     private PartitionInformation doSelectPartitionPrompts() throws IOException, WizardNavigationException {
+        for (; ;) {
+            List<String> promptList = new ArrayList<String>();
 
-        List<String> promptList =  new ArrayList<String>();
+            promptList.add(HEADER_SELECT_PARTITION);
+            String defaultValue = "1";
+            int index = 1;
 
-        promptList.add(HEADER_SELECT_PARTITION);
-        String defaultValue = "1";
-        int index = 1;
+            List<String> partitions = new ArrayList<String>(partitionNames);
 
-        List<String> partitions = new ArrayList<String>(partitionNames);
+            for (String partitionName : partitions) {
+                String runMarker = getRunMarker(partitionName);
+                promptList.add(String.valueOf(index++) + ") " + runMarker + partitionName + getEolChar());
+            }
 
-        for (String partitionName : partitions) {
-            promptList.add(String.valueOf(index++) + ") " + partitionName + getEolChar());
+            promptList.add("Please make a selection: [" + defaultValue + "]");
+
+            List<String> allowedEntries = new ArrayList<String>();
+
+            for (int i = 1; i < index; i++) {
+                allowedEntries.add(String.valueOf(i));
+            }
+
+            String input = getData(promptList, defaultValue, allowedEntries.toArray(new String[0]));
+            PartitionInformation pinfo = null;
+            if (input != null) {
+                String whichPartition = partitions.get(Integer.parseInt(input) - 1);
+                pinfo = PartitionManager.getInstance().getPartition(whichPartition);
+                try {
+                    if (osFunctions.isPartitionRunning(whichPartition)) {
+                        printText(getEolChar() + "This partition is currently running and cannot be reconfigured at this time." + getEolChar());
+                        continue;
+                    }
+                } catch (OSSpecificFunctions.OsSpecificFunctionUnavailableException e) {
+                    printText(getEolChar() + "Please ensure that this partition is stopped." + getEolChar());
+                    readLine();
+                }
+            }
+            return pinfo;
         }
-
-        promptList.add("Please make a selection: [" + defaultValue + "]");
-
-        List<String> allowedEntries = new ArrayList<String>();
-
-        for (int i = 1; i < index; i++) {
-            allowedEntries.add(String.valueOf(i));
-        }
-
-        String input = getData(promptList, defaultValue, allowedEntries.toArray(new String[0]));
-        PartitionInformation pinfo = null;
-        if (input != null) {
-            String whichPartition = partitions.get(Integer.parseInt(input) -1);
-            pinfo  = PartitionManager.getInstance().getPartition(whichPartition);
-        }
-        return pinfo;
     }
 
     private void doConfigureEndpointsPrompts(PartitionInformation pinfo) throws IOException, WizardNavigationException {

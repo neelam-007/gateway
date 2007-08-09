@@ -2,6 +2,7 @@ package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.common.gui.NumberField;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.text.MessageFormat;
 
 /**
@@ -187,6 +189,57 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
                 //do nothing
             }
         }
+    }
+
+    /**
+     * Checks the status of the named partition.
+     * Displays an error message and returns false if the partition
+     * is currently running.
+     * <p/>
+     * Displays a warning and returns true if we are unable to tell if
+     * the partition is running.
+     *
+     * @param partitionName the partition to check. Required
+     * @param remove true if the user is trying to remove the partition
+     * @return true iff. the wizard should proceed to configure the specified partition
+     */
+    private boolean checkPartitionStatus(String partitionName, boolean remove) {
+        String verb = remove ? "remove" : "configure";
+        try {
+            if (osFunctions.isPartitionRunning(partitionName)) {
+                JOptionPane.showMessageDialog(ConfigWizardPartitioningPanel.this,
+                        "The specified partition is currently running.\n" +
+                                "Please ensure the partition is stopped before attempting to " + verb + " it.",
+                        "Partition Status",
+                        JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            /* FALLTHROUGH and allow the user to attempt to configure this partition */
+        } catch (OSSpecificFunctions.OsSpecificFunctionUnavailableException e) {
+            JOptionPane.showMessageDialog(ConfigWizardPartitioningPanel.this,
+                    "Please ensure the partition is stopped before continuing.",
+                    "Partition Status",
+                    JOptionPane.INFORMATION_MESSAGE);
+            /* FALLTHROUGH and allow the user to attempt to configure this partition */
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to check partition status: " + ExceptionUtils.getMessage(e), e);
+            JOptionPane.showMessageDialog(ConfigWizardPartitioningPanel.this,
+                    "There was an error checking to see if the selected partition was running.\n" +
+                            "Please ensure the partition is stopped before attempting to " + verb + " it.",
+                    "Partition Status",
+                    JOptionPane.WARNING_MESSAGE);
+            /* FALLTHROUGH and allow the user to attempt to configure this partition */
+        }
+        return true;
+    }
+
+    public boolean onNextButton() {
+        PartitionInformation part = getSelectedPartition();
+        if (part == null)
+            return false;
+
+        String partitionName = part.getPartitionId();
+        return checkPartitionStatus(partitionName, false) && super.onNextButton();
     }
 
     private void doAddPartition() {

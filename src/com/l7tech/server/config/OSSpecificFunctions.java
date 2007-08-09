@@ -254,6 +254,23 @@ public abstract class OSSpecificFunctions {
         return keystoreInfos;
     }
 
+
+    public static class OsSpecificFunctionUnavailableException extends Exception {
+    }
+
+    /**
+     * Check to see if the specified partition is currently running, if this functionality is available
+     * on the current operating system.
+     *
+     * @param partitionName the partition to check, or null to check the current partition.
+     * @return true iff. this partition appears to be currently running.
+     * @throws IOException if we are unable to determine if the specified partition is running, or
+     * @throws OsSpecificFunctionUnavailableException if this functionality is not available on this operating system
+     */
+    public boolean isPartitionRunning(String partitionName) throws OsSpecificFunctionUnavailableException, IOException {
+        throw new OsSpecificFunctionUnavailableException();
+    }
+
     public abstract String getOriginalPartitionControlScriptName();
     public abstract String getSpecificPartitionControlScriptName();
 

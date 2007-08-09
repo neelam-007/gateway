@@ -10,6 +10,7 @@ import com.l7tech.server.partition.PartitionInformation;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.LogManager;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
@@ -33,6 +34,7 @@ public class MasterPassphraseChanger {
 
     public static void main(String[] args) {
         try {
+            LogManager.getLogManager().getLogger("").setLevel(Level.SEVERE);
             new MasterPassphraseChanger(System.in, System.out).run();
         } catch (Throwable e) {
             String msg = "Unable to change master passphrase: " + ExceptionUtils.getMessage(e);
@@ -46,7 +48,27 @@ public class MasterPassphraseChanger {
         PartitionInformation partition = choosePartition();
         OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partition.getPartitionId());
 
-        String newMasterPass = promptForPassword("Enter the new master passphrase (6 - 128 characters, 'quit' to quit): ");
+        try {
+            if (osFunctions.isPartitionRunning(partition.getPartitionId())) {
+                wizardUtils.printText(EOL + "Unable to continue -- this partition is currently running." + EOL);
+                System.exit(2);
+            }
+        } catch (OSSpecificFunctions.OsSpecificFunctionUnavailableException e) {
+            wizardUtils.printText(EOL + "Please ensure that the partition '" + partition.getPartitionId() + "' is stopped before continuing." + EOL);
+            wizardUtils.printText("Press Enter to continue");
+            wizardUtils.readLine();
+        }
+
+        String newMasterPass;
+        String confirm;
+        boolean matched = false;
+        do {
+            newMasterPass = promptForPassword("Enter the new master passphrase (6 - 128 characters, 'quit' to quit): ");
+            confirm = promptForPassword("Confirm new master passphrase ('quit' to quit): ");
+            matched = confirm.equals(newMasterPass);
+            if (!matched)
+                wizardUtils.printText("The passphrases do not match." + EOL);
+        } while (!matched);
 
         // Create decryptor with current master passphrase, and save the current one in a backup file
         File ompCurFile = osFunctions.getMasterPasswordFile();
@@ -83,7 +105,7 @@ public class MasterPassphraseChanger {
         // we'll back up the .old file, in case the admin needs to recover something by hand someday
         ompOldFile.renameTo(new File(ompOldFile.getParent(), ompOldFile.getName() + "-" + System.currentTimeMillis()));
 
-        wizardUtils.printText("Master passphrase changed successfully.");
+        wizardUtils.printText(EOL + "Master passphrase changed successfully." + EOL);
     }
 
     private void deleteLockFiles(File... files) {

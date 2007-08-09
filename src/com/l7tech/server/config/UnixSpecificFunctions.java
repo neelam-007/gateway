@@ -2,12 +2,17 @@ package com.l7tech.server.config;
 
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ProcUtils;
+import com.l7tech.common.util.ProcResult;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * User: megery
@@ -39,6 +44,24 @@ public abstract class UnixSpecificFunctions extends OSSpecificFunctions {
 
     public boolean isUnix() {
         return true;
+    }
+
+    public boolean isPartitionRunning(String partitionName) throws IOException, OsSpecificFunctionUnavailableException {
+        if (partitionName != null && !partitionName.equalsIgnoreCase(getPartitionName())) {
+            // It's a query about some other partition -- pass the buck to it
+            return OSDetector.getOSSpecificFunctions(partitionName).isPartitionRunning(null);
+        }
+
+        // It's a query about the current partition
+        File confDir = new File(getConfigurationBase());
+        File pidFile = new File(confDir, "ssg.pid");
+        if (!pidFile.exists())
+            return false;
+        String pidStr = new String(HexUtils.slurpFile(pidFile)).trim();
+        if (pidStr.length() < 1)
+            return false;
+        ProcResult result = ProcUtils.exec(null, new File("/bin/ps"), new String[] { "-p", pidStr }, null, true);
+        return result.getExitStatus() == 0;
     }
 
     public String getOriginalPartitionControlScriptName() {
