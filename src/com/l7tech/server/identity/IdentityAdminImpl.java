@@ -20,11 +20,14 @@ import java.rmi.RemoteException;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Set;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.UnsupportedEncodingException;
+import javax.security.auth.x500.X500Principal;
 
 /**
  * Server side implementation of the IdentityAdmin interface.
@@ -40,11 +43,19 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
     private final LicenseManager licenseManager;
     private final RoleManager roleManager;
+    private final X509Certificate certificateAuthorityCertificate;
+
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
-    public IdentityAdminImpl(LicenseManager licenseManager, RoleManager roleManager) {
+    public IdentityAdminImpl(final LicenseManager licenseManager,
+                             final RoleManager roleManager,
+                             final X509Certificate caCert) {
+        if (licenseManager == null) throw new IllegalArgumentException("licenseManager is required");
+        if (roleManager == null) throw new IllegalArgumentException("roleManager is required");
+
         this.licenseManager = licenseManager;
         this.roleManager = roleManager;
+        this.certificateAuthorityCertificate = caCert;
     }
 
     private void checkLicense() throws RemoteException {
@@ -387,6 +398,45 @@ public class IdentityAdminImpl implements IdentityAdmin {
         } catch (FindException e) {
             throw new UpdateException("error resetting user's password", e);
         }
+    }
+
+    public int revokeCertificates() throws RemoteException, UpdateException {
+        logger.info("Revoking all user certificates.");
+
+        int revocationCount = 0;
+        try {
+            checkLicense();
+
+            // determine DN of internal CA
+            X509Certificate caCert = certificateAuthorityCertificate;
+            if (caCert == null) throw new UpdateException("Certificate authority is not configured.");
+            X500Principal caSubject = caCert.getSubjectX500Principal();            
+
+            // revoke the cert in internal CA
+            List<ClientCertManager.CertInfo> infos = clientCertManager.findAll();
+            for (ClientCertManager.CertInfo info : infos) {
+                logger.log(Level.INFO, "Revoking certificate for user ''{0}''.", info.getLogin());
+
+                UserBean userBean = new UserBean();
+                userBean.setProviderId(info.getProviderId());
+                userBean.setUniqueIdentifier(info.getUserId());
+                userBean.setLogin(info.getLogin());
+                if (clientCertManager.revokeUserCertIfIssuerMatches(userBean, caSubject)) {
+                    revocationCount++;
+                    logger.log(Level.INFO, "Revoked certificate for user ''{0}''.", info.getLogin());
+                } else {
+                    logger.log(Level.INFO, "Certificate not revoked for user ''{0}''.", info.getLogin());
+                }
+            }
+
+            // internal users should have their password "revoked" along with their cert
+        } catch (FindException e) {
+            throw new UpdateException("Error revoking certificates", e);
+        } catch (ObjectNotFoundException onfe) {
+            throw new UpdateException("Error revoking certificates", onfe);
+        }
+
+        return revocationCount;
     }
 
     public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {

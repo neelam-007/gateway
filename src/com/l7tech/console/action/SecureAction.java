@@ -32,6 +32,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     // Well-known feature set names
     public static final String TRUSTSTORE_FEATURESET_NAME = "service:TrustStore";
     public static final String KEYSTORE_FEATURESET_NAME = "service:KeyStore";
+    public static final String CA_FEATURESET_NAME = "service:CSRHandler";
     public static final String UI_PUBLISH_SERVICE_WIZARD = "ui:PublishServiceWizard";
     public static final String UI_PUBLISH_XML_WIZARD = "ui:PublishXmlWizard";
     public static final String UI_WSDL_CREATE_WIZARD = "ui:WsdlCreateWizard";

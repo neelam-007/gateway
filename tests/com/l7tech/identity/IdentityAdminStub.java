@@ -168,6 +168,10 @@ public class IdentityAdminStub implements IdentityAdmin {
     public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException {
     }
 
+    public int revokeCertificates() throws RemoteException, UpdateException {
+        return 0;
+    }
+
     public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {
     }
 

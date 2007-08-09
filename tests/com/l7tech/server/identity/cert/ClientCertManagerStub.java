@@ -14,6 +14,8 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Collections;
+import javax.security.auth.x500.X500Principal;
 
 /**
  * @author emil
@@ -64,6 +66,14 @@ public class ClientCertManagerStub implements ClientCertManager {
      */
     public void revokeUserCert(User user) throws UpdateException, ObjectNotFoundException {
         throw new RuntimeException("Not implemented");
+    }
+
+    public boolean revokeUserCertIfIssuerMatches(User user, X500Principal issuer) throws UpdateException, ObjectNotFoundException {
+        throw new RuntimeException("Not implemented");
+    }
+
+    public List<CertInfo> findAll() {
+        return Collections.emptyList();
     }
 
     /**

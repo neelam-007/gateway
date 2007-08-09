@@ -26,6 +26,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspConstants;
@@ -34,6 +35,8 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.ClientCertificateRevokedException;
+import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -329,7 +332,7 @@ public class PolicyServiceClient {
                                          X509Certificate serverCertificate,
                                          X509Certificate clientCert,
                                          PrivateKey clientKey)
-            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException, ClientCertificateException
     {
         log.log(Level.INFO, "Downloading policy from " + url.toString());
 
@@ -358,6 +361,12 @@ public class PolicyServiceClient {
             log.log(Level.FINER, "Policy download took " + roundTripMillis + "ms");
             Policy result = null;
             Date ssgTime = null; // Trusted timestamp from the SSG
+
+            String certStatus = conn.getHeaders().getOnlyOneValue(SecureSpanConstants.HttpHeaders.CERT_STATUS);
+            if (SecureSpanConstants.CERT_INVALID.equalsIgnoreCase(certStatus)) {
+                log.log(Level.INFO, "Policy download failed due to invalid client certificate.");
+                throw new ClientCertificateRevokedException("Client certificate invalid.");
+            }
 
             Date[] timestampCreatedDate = new Date[] { null };
             boolean[] timestampWasSigned = new boolean[] { false };
@@ -416,7 +425,7 @@ public class PolicyServiceClient {
                                                         boolean useSsl,
                                                         X509Certificate clientCert,
                                                         PrivateKey clientKey)
-            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException, ClientCertificateException
     {
         URL url = new URL(useSsl ? "https" : "http",
                           ssg.getSsgAddress(),
@@ -432,7 +441,7 @@ public class PolicyServiceClient {
                                                     String serviceId,
                                                     X509Certificate serverCertificate,
                                                     KerberosServiceTicket kerberosTicket)
-            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException, ClientCertificateException
     {
         URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), ssg.getRuntime().getPolicyServiceFile());
         Document requestDoc = createDecoratedGetPolicyRequest(serviceId, kerberosTicket);
@@ -459,7 +468,7 @@ public class PolicyServiceClient {
                                                             String serviceId,
                                                             X509Certificate serverCertificate,
                                                             PasswordAuthentication basicCredentials)
-            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException, ClientCertificateException
     {
         URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), ssg.getRuntime().getPolicyServiceFile());
         Document requestDoc = createGetPolicyRequest(serviceId);
@@ -493,7 +502,7 @@ public class PolicyServiceClient {
                                                          boolean useSsl,
                                                          SamlAssertion samlAss,
                                                          PrivateKey subjectPrivateKey)
-            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException, ClientCertificateException
     {
         URL url = new URL(useSsl ? "https" : "http",
                           ssg.getSsgAddress(),
@@ -525,7 +534,7 @@ public class PolicyServiceClient {
                                                             String serviceId,
                                                             X509Certificate serverCertificate,
                                                             boolean useSsl)
-            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException, ClientCertificateException
     {
         URL url = new URL(useSsl ? "https" : "http",
                           ssg.getSsgAddress(),

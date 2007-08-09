@@ -98,6 +98,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem manageKerberosMenuItem = null;
     private JMenuItem manageCertificatesMenuItem = null;
     private JMenuItem managePrivateKeysMenuItem = null;
+    private JMenuItem revokeCertificatesMenuItem = null;
     private JMenuItem manageGlobalSchemasMenuItem = null;
     private JMenuItem manageClusterPropertiesMenuItem = null;
     private JMenuItem manageRolesMenuItem = null;
@@ -131,6 +132,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private NewFederatedIdentityProviderAction newPKIProviderAction;
     private ManageCertificatesAction manageCertificatesAction = null;
     private ManagePrivateKeysAction managePrivateKeysAction = null;
+    private RevokeCertificatesAction revokeCertificatesAction = null;
     private ManageGlobalSchemasAction manageGlobalSchemasAction = null;
     private ManageClusterPropertiesAction manageClusterPropertiesAction = null;
     private ShowDashboardAction showDashboardAction = null;
@@ -547,6 +549,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             menu.add(getManageCertificatesMenuItem());
             menu.add(getManagePrivateKeysMenuItem());
+            menu.add(getRevokeCertificatesMenuItem());
             menu.add(getManageGlobalSchemasMenuItem());
             menu.add(getManageClusterPropertiesActionMenuItem());
             menu.add(getManageJmsEndpointsMenuItem());
@@ -1378,6 +1381,17 @@ public class MainWindow extends JFrame implements SheetHolder {
         this.addLogonListener(managePrivateKeysAction);
         addPermissionRefreshListener(managePrivateKeysAction);
         return managePrivateKeysAction;
+    }
+
+    private Action getRevokeCertificatesAction() {
+        if (revokeCertificatesAction != null)
+            return revokeCertificatesAction;
+
+        revokeCertificatesAction = new RevokeCertificatesAction();
+        revokeCertificatesAction.setEnabled(false);
+        this.addLogonListener(revokeCertificatesAction);
+        addPermissionRefreshListener(revokeCertificatesAction);
+        return revokeCertificatesAction;
     }
 
     private Action getManageGlobalSchemasAction() {
@@ -2307,6 +2321,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         managePrivateKeysMenuItem = new JMenuItem(getManagePrivateKeysAction());
 
         return managePrivateKeysMenuItem;
+    }
+
+    public JMenuItem getRevokeCertificatesMenuItem() {
+        if (revokeCertificatesMenuItem != null)
+            return revokeCertificatesMenuItem;
+        revokeCertificatesMenuItem = new JMenuItem(getRevokeCertificatesAction());
+
+        return revokeCertificatesMenuItem;
     }
 
     public JMenuItem getManageGlobalSchemasMenuItem(){

@@ -23,8 +23,11 @@ import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.security.auth.x500.X500Principal;
 
 
 /**
@@ -203,22 +206,47 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     }
 
     public void revokeUserCert(User user) throws UpdateException {
+        revokeUserCertIfIssuerMatches(user, null);
+    }
+
+    public boolean revokeUserCertIfIssuerMatches(User user, X500Principal issuer) throws UpdateException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
-        logger.finest("revokeUserCert for " + getName(user));
+        logger.finest("revokeUserCert for " + getName(user) + (issuer==null ? "" : " issuer "+issuer.toString()));
+        boolean revokedUserCertificate = false;
         CertEntryRow currentdata = getFromTable(user);
         if (currentdata != null) {
-            currentdata.setCertBase64(null);
-            currentdata.setResetCounter(0);
-            try {
-                getHibernateTemplate().delete(currentdata);
-            } catch (HibernateException e) {
-                String msg = "Hibernate exception revoking cert";
-                logger.log(Level.WARNING, msg, e);
-                throw new UpdateException(msg, e);
+            boolean revoke = false;
+            if (issuer != null) {
+                try {
+                    X509Certificate userCertificate = currentdata.getCertificate();
+                    if (userCertificate.getIssuerX500Principal().equals(issuer)) {
+                        revoke = true;
+                    }
+                } catch (CertificateException ce) {
+                    revoke = true;
+                    logger.log(Level.WARNING, "Error reading users certificate '"+user.getLogin()+"', revoking.", ce); 
+                }
+            } else {
+                revoke = true;
+            }
+
+            if (revoke) {
+                currentdata.setCertBase64(null);
+                currentdata.setResetCounter(0);
+                try {
+                    getHibernateTemplate().delete(currentdata);
+                    revokedUserCertificate = true;
+                } catch (HibernateException e) {
+                    String msg = "Hibernate exception revoking cert";
+                    logger.log(Level.WARNING, msg, e);
+                    throw new UpdateException(msg, e);
+                }
             }
         } else {
             logger.fine("there was no existing cert for " + getName(user));
         }
+
+        return revokedUserCertificate;
     }
 
     public void forbidCertReset(User user) throws UpdateException {
@@ -251,6 +279,29 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     @Transactional(readOnly=true)
     public List findBySki(String ski) throws FindException {
         return simpleQuery("ski", ski);
+    }
+
+    public List<CertInfo> findAll() throws FindException {
+        List<CertInfo> allCerts = new ArrayList();
+
+        try {
+            List userCerts = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    return session.createQuery(HQL_FINDALL_QUERY).list();
+                }
+            });
+
+            for (Object row : userCerts) {
+                CertEntryRow cer = (CertEntryRow) row;
+                allCerts.add(new CertInfoImpl(cer));
+            }
+
+        } catch (DataAccessException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new FindException("Couldn't retrieve cert", e);
+        }
+
+        return Collections.unmodifiableList(allCerts);
     }
 
     private List simpleQuery(String fieldname, final String value) throws FindException {
@@ -313,6 +364,8 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     private static final String USER_ID = "userId";
     private static final String USER_LOGIN = "login";
 
+    private static final String HQL_FINDALL_QUERY = "from " + CertEntryRow.class.getName();
+    
     private static final String FIND_BY_USER_ID = "from " + TABLE_NAME + " in class " + CertEntryRow.class.getName() +
                            " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = ?" +
                            " and " + TABLE_NAME + "." + USER_ID + " = ?";
@@ -321,4 +374,27 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
                            " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = ?" +
                            " and " + TABLE_NAME + "." + USER_LOGIN + " = ?";
 
+    private static class CertInfoImpl implements CertInfo {
+        private final long providerId;
+        private final String userId;
+        private final String login;
+
+        private CertInfoImpl(CertEntryRow cer) {
+            this.providerId = cer.getProvider();
+            this.userId = cer.getUserId();
+            this.login = cer.getLogin();
+        }
+
+        public String getLogin() {
+            return login;
+        }
+
+        public long getProviderId() {
+            return providerId;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+    }
 }

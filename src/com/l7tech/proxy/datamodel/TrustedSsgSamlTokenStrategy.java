@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Date;
-import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,7 +42,7 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
     }
 
     protected SamlAssertion acquireSamlAssertion(Ssg ssg)
-            throws OperationCanceledException, GeneralSecurityException,
+            throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
             KeyStoreCorruptException, BadCredentialsException, IOException, HttpChallengeRequiredException {
         log.log(Level.INFO, "Applying for SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         SamlAssertion s;
@@ -73,6 +72,8 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
         } catch (TokenServiceClient.UnrecognizedServerCertException e) {
             CurrentSslPeer.set(tokenServerSsg);
             throw new ServerCertificateUntrustedException(e);
+        } catch (TokenServiceClient.CertificateInvalidException cie) {
+            throw new ClientCertificateRevokedException("Gateway token service response indicates invalid certificate.");               
         }
         log.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         return s;

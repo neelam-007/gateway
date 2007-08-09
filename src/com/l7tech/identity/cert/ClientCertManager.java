@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.UpdateException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import javax.security.auth.x500.X500Principal;
 
 /**
  * This is our internal CA. It manages the client_cert data.
@@ -65,6 +66,12 @@ public interface ClientCertManager {
     void revokeUserCert(User user) throws UpdateException, ObjectNotFoundException;
 
     /**
+     * revokes the cert (if applicable) for this user and the certificate issuer matches
+     * the given value.
+     */
+    boolean revokeUserCertIfIssuerMatches(User user, X500Principal issuer) throws UpdateException, ObjectNotFoundException;
+
+    /**
      * record the fact that the a user cert was used successfully in an authentication operation
      * this will prevent the user to regen his cert until the administrator revokes the cert
      *
@@ -82,11 +89,30 @@ public interface ClientCertManager {
     List findBySki(String ski) throws FindException;
 
     /**
+     * Get information on all existing keys.
+     *
+     * @return The list of key information (may be empty)
+     * @throws FindException If an error occurs
+     */
+    List<CertInfo> findAll() throws FindException;
+
+    /**
      * Thrown by a {@link com.l7tech.identity.UserManager} if it doesn't like the cert
      */
     public static class VetoSave extends Exception {
         public VetoSave(String message) {
             super(message);
         }
+    }
+
+    /**
+     * Information for a Certificate
+     *
+     * @see ClientCertManager#findAll()
+     */
+    interface CertInfo {
+        long getProviderId();
+        String getUserId();
+        String getLogin();
     }
 }

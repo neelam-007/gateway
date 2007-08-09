@@ -130,6 +130,6 @@ public abstract class AbstractSamlTokenStrategy extends AbstractTokenStrategy {
      * @throws IOException "
      */
     protected abstract SamlAssertion acquireSamlAssertion(Ssg ssg)
-            throws OperationCanceledException, GeneralSecurityException,
+            throws OperationCanceledException, GeneralSecurityException, ClientCertificateException, 
             KeyStoreCorruptException, BadCredentialsException, IOException, HttpChallengeRequiredException;
 }

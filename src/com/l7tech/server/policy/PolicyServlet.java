@@ -157,6 +157,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     sendExceptionFault(context, ise, servletResponse);
                 }
 
+                // Ensure headers are written (e.g. invalid client cert header)
+                ((HttpServletResponseKnob)response.getHttpResponseKnob()).beginResponse();
+
                 if (context.getPolicyResult() != AssertionStatus.NONE) {
                     returnFault(context, servletResponse);
                 } else {

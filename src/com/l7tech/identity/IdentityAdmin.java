@@ -310,6 +310,16 @@ public interface IdentityAdmin {
     void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException;
 
     /**
+     * Revoke all certificates.
+     *
+     * @return the number of certificates that were revoked
+     * @throws RemoteException
+     * @throws UpdateException
+     */
+    @Secured(types=USER, stereotype=DELETE_MULTI)
+    int revokeCertificates() throws RemoteException, UpdateException;
+
+    /**
      * Store a certificate for a user who does not yet have one.
      *
      * @param user  the {@link User} who is to be assigned a certificate.  Must not be null.

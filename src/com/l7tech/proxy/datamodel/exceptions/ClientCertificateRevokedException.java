@@ -13,7 +13,7 @@ package com.l7tech.proxy.datamodel.exceptions;
  * Date: Sep 10, 2003
  * Time: 5:26:34 PM
  */
-public class ClientCertificateRevokedException extends Exception {
+public class ClientCertificateRevokedException extends ClientCertificateException {
     public ClientCertificateRevokedException() {
     }
 

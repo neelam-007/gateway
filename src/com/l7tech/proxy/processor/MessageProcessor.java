@@ -151,6 +151,9 @@ public class MessageProcessor {
                         } catch (SSLException e) {
                             handleAnySslException(context, e, ssg);
                             // FALLTHROUGH -- retry with new server certificate
+                        } catch (ClientCertificateRevokedException ccre) {
+                            handleCertStatusInvalid(context, null);
+                            // FALLTHROUGH -- retry with new client certificate
                         } catch (ServerCertificateUntrustedException e) {
                             if (context.getSsg().isFederatedGateway()) {
                                 SslPeer sslPeer = CurrentSslPeer.get();
@@ -749,7 +752,17 @@ public class MessageProcessor {
                     throw new ConfigurationException(msg);
                 }
 
-                context.downloadPolicy(serviceid);
+                try {
+                    context.downloadPolicy(serviceid);
+                } catch (ClientCertificateRevokedException ccre) {
+                    try {
+                        handleCertStatusInvalid(context, httpResponse);
+                    } catch (PolicyRetryableException pre) {
+                        // thrown after new policy is downloaded
+                    }
+                    context.downloadPolicy(serviceid);
+                }
+
                 if (status != 200) {
                     log.info("Retrying request with the new policy");
                     throw new PolicyRetryableException();
@@ -980,7 +993,8 @@ public class MessageProcessor {
             if (ssg.isFederatedGateway()) {
                 final String msg = "Federated Gateway " + context.getSsg() + " is trying to " +
                                    "tell us to destroy our Trusted client certificate; ignoring it";
-                logResponseError(msg, httpResponse, context);
+                if (httpResponse != null)
+                    logResponseError(msg, httpResponse, context);
                 throw new ConfigurationException(msg);
             }
             ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(context.getCredentialsForTrustedSsg());

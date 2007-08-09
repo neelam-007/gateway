@@ -542,6 +542,8 @@ public class PolicyApplicationContext extends ProcessingContext {
             } catch (TokenServiceClient.UnrecognizedServerCertException e) {
                 CurrentSslPeer.set(ssg);
                 throw new ServerCertificateUntrustedException(e);
+            } catch (TokenServiceClient.CertificateInvalidException cie) {
+                throw new ClientCertificateRevokedException(cie.getMessage());
             }
         } else {
             logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString() + " using a WS-S signed request");
@@ -555,6 +557,8 @@ public class PolicyApplicationContext extends ProcessingContext {
             } catch (TokenServiceClient.UnrecognizedServerCertException e) {
                 CurrentSslPeer.set(ssg);
                 throw new ServerCertificateUntrustedException(e);
+            } catch (TokenServiceClient.CertificateInvalidException cie) {
+                throw new ClientCertificateRevokedException(cie.getMessage());
             }
         }
         logger.log(Level.INFO, "WS-SecureConversation session established with Gateway " + ssg.toString() + "; session ID=" + s.getSessionId());
@@ -922,6 +926,10 @@ public class PolicyApplicationContext extends ProcessingContext {
             if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
             logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
             throw new CausedIOException(e);
+        } catch (ClientCertificateRevokedException e) {
+            if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
+            logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
+            throw e;
         } catch (ClientCertificateException e) {
             if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
             logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));

@@ -13,10 +13,12 @@ import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.InvalidClientCertificateException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -106,7 +108,7 @@ public class TokenServiceServlet extends HttpServlet {
             try {
                 final StashManager stashManager = stashManagerFactory.createStashManager();
                 request.initialize(stashManager, ctype, req.getInputStream());
-                status = tokenService.respondToSecurityTokenRequest(context, authenticator(), false, false);
+                status = tokenService.respondToSecurityTokenRequest(context, authenticator(context), false, false);
                 context.setPolicyResult(status);
             } catch (InvalidDocumentFormatException e) {
                 String msg = "Request is not formatted as expected. " + e.getMessage();
@@ -142,6 +144,9 @@ public class TokenServiceServlet extends HttpServlet {
                 sendExceptionFault(context, e, res);
                 return;
             }
+
+            // init headers (needed for faults also)
+            respKnob.beginResponse();
 
             // in case of failure, return soap fault
             if (status != AssertionStatus.NONE) {
@@ -186,13 +191,14 @@ public class TokenServiceServlet extends HttpServlet {
         }
     }
 
-    private TokenServiceImpl.CredentialsAuthenticator authenticator() {
+    private TokenServiceImpl.CredentialsAuthenticator authenticator(final PolicyEnforcementContext context) {
         return new TokenServiceImpl.CredentialsAuthenticator() {
             public User authenticate(LoginCredentials creds) {
                 IdentityProviderConfigManager idpcm =
                   (IdentityProviderConfigManager)applicationContext.getBean("identityProviderConfigManager");
                 User authenticatedUser = null;
                 Collection<IdentityProvider> providers;
+                boolean sawInvalidClientCertException = false;
                 try {
                     // go through providers and try to authenticate the cert
                     IdentityProviderFactory ipf = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory");
@@ -210,8 +216,13 @@ public class TokenServiceServlet extends HttpServlet {
                                     authenticatedUser = authResult.getUser();
                                 }
                             }
+                        } catch (InvalidClientCertificateException icce) {
+                            sawInvalidClientCertException = true;
+                            logger.log(Level.INFO, "Invalid client certificateException trying to authenticate credentials ''{0}'', on provider ''{1}''.",
+                                    new String[]{icce.getMessage(), provider.getConfig().getName()});
                         } catch (AuthenticationException e) {
-                            logger.log(Level.INFO, "AuthenticationException trying to authenticate credentials " + e.getMessage());
+                            logger.log(Level.INFO, "AuthenticationException trying to authenticate credentials ''{0}'', on provider ''{1}''.",
+                                    new String[]{e.getMessage(), provider.getConfig().getName()});
                         }
                     }
                 } catch (FindException e) {
@@ -220,6 +231,11 @@ public class TokenServiceServlet extends HttpServlet {
                 }
                 if (authenticatedUser == null) {
                     logger.fine("Credentials did not authenticate against any provider.");
+                    if ( sawInvalidClientCertException ) {
+                        // set response header so that the XML VPN Client is made aware of this situation
+                        context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
+                                                                              SecureSpanConstants.CERT_INVALID);
+                    }
                 } else {
                     logger.finer("authenticated: " + authenticatedUser);
                 }

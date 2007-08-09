@@ -10,6 +10,7 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
@@ -64,35 +65,41 @@ public class ClientRequestWssSaml extends ClientAssertion {
         final Ssg ssg = context.getSsg();
 
         // If we are capable of having client cert, then get one
-        final X509Certificate certificate;
-        final PrivateKey privateKey;
+        X509Certificate cert = null;
+        PrivateKey key = null;
         if (!ssg.isFederatedGateway() || ssg.getTrustedGateway() != null) {
             context.prepareClientCertificate();
-            certificate = ssg.getClientCertificate();
-            privateKey = ssg.getClientCertificatePrivateKey();
-        } else {
-            certificate = null;
-            privateKey = null;
+            cert = ssg.getClientCertificate();
+            key = ssg.getClientCertificatePrivateKey();
         }
 
-        final SamlAssertion ass;
-        if (isSenderVouches()) {
-            if (data.getVersion()==null || data.getVersion().intValue()==1) {
-                ass = context.getOrCreateSamlSenderVouchesAssertion(1);
-            }
-            else {
-                ass = context.getOrCreateSamlSenderVouchesAssertion(2);
-            }
-        } else {
-            // Look up or apply for SAML ticket
-            if (data.getVersion()==null || data.getVersion().intValue()==1) {
-                ass = context.getOrCreateSamlHolderOfKeyAssertion(1);
-            }
-            else {
-                ass = context.getOrCreateSamlHolderOfKeyAssertion(2);                
+        SamlAssertion samlAssertion;
+        try {
+            samlAssertion = getSamlAssertion(context);
+        } catch (ClientCertificateRevokedException cce) {
+            if (ssg.isFederatedGateway()) {
+                Ssg trustedSsg = ssg.getTrustedGateway();
+                if (trustedSsg != null) {
+                    try {
+                        trustedSsg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(context.getFederatedCredentials());
+                    } catch (ServerFeatureUnavailableException sfue) {
+                        throw new ConfigurationException(ExceptionUtils.getMessage(sfue), sfue);
+                    }
+                    // cert/key are updated
+                    cert = ssg.getClientCertificate();
+                    key = ssg.getClientCertificatePrivateKey();
+                    samlAssertion = getSamlAssertion(context);
+                } else {
+                    throw cce; // rethrow
+                }
+            } else {
+                throw cce; // rethrow and handle higher up  
             }
         }
+        final SamlAssertion ass = samlAssertion;
 
+        final X509Certificate certificate = cert;
+        final PrivateKey privateKey = key;
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException {
                 try {
@@ -151,5 +158,32 @@ public class ClientRequestWssSaml extends ClientAssertion {
 
     public String iconResource(boolean open) {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
+    }
+
+    private SamlAssertion getSamlAssertion(PolicyApplicationContext context)
+            throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
+            ClientCertificateException, IOException, SAXException, KeyStoreCorruptException,
+            HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
+            InvalidDocumentFormatException, ConfigurationException {
+
+
+        final SamlAssertion ass;
+        if (isSenderVouches()) {
+            if (data.getVersion()==null || data.getVersion().intValue()==1) {
+                ass = context.getOrCreateSamlSenderVouchesAssertion(1);
+            }
+            else {
+                ass = context.getOrCreateSamlSenderVouchesAssertion(2);
+            }
+        } else {
+            // Look up or apply for SAML ticket
+            if (data.getVersion()==null || data.getVersion().intValue()==1) {
+                ass = context.getOrCreateSamlHolderOfKeyAssertion(1);
+            }
+            else {
+                ass = context.getOrCreateSamlHolderOfKeyAssertion(2);
+            }
+        }
+        return ass;
     }
 }

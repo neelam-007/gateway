@@ -62,6 +62,8 @@ public abstract class Authorizer {
                 return true;
             } else if (attempted instanceof AttemptedReadAll) {
                 return perm.getScope().isEmpty();
+            } else if (attempted instanceof AttemptedDeleteAll) {
+                return perm.getScope().isEmpty();
             }
         }
         return false;

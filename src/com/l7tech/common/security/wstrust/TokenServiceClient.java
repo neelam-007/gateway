@@ -19,6 +19,8 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.*;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.protocol.SecureSpanConstants;
+
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -74,6 +76,13 @@ public class TokenServiceClient {
         UnrecognizedServerCertException(String message) { super(message); }
         UnrecognizedServerCertException(String message, Throwable cause) { super(message, cause); }
         UnrecognizedServerCertException(Throwable cause) { super(cause); }
+    }
+
+    public static class CertificateInvalidException extends CertificateException {
+        CertificateInvalidException() {}
+        CertificateInvalidException(String message) { super(message); }
+        CertificateInvalidException(String message, Throwable cause) { super(message, cause); }
+        CertificateInvalidException(Throwable cause) { super(cause); }
     }
 
     /**
@@ -292,6 +301,13 @@ public class TokenServiceClient {
 
             Long len = conn.getContentLength();
             log.log(Level.FINEST, "Token server response content length=" + len);
+
+            String certStatus = conn.getHeaders().getOnlyOneValue(SecureSpanConstants.HttpHeaders.CERT_STATUS);
+            if (SecureSpanConstants.CERT_INVALID.equalsIgnoreCase(certStatus)) {
+                log.log(Level.INFO, "Token service request failed due to invalid client certificate.");
+                throw new CertificateInvalidException("Client certificate invalid.");
+            }            
+
             response = conn.getDocument();
         } catch (SAXException e) {
             throw new CausedIOException("Unable to parse RequestSecurityTokenResponse from security token service: " + e.getMessage(), e);
