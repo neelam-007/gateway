@@ -95,12 +95,7 @@ public class GlobalSchemaDialog extends JDialog {
         };
         schemaTable.setModel(model);
         schemaTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        /*
-
-        schemaTable.getColumnModel().getColumn(0).setResizable(true);
-        schemaTable.getColumnModel().getColumn(1).setResizable(true);
-        schemaTable.getTableHeader().setResizingAllowed(true);
-        */
+        schemaTable.getTableHeader().setReorderingAllowed(false);
         setListeners();
 
         // support Enter and Esc keys
@@ -120,7 +115,6 @@ public class GlobalSchemaDialog extends JDialog {
 
         populate();
         enableRemoveBasedOnSelection();
-        TableUtil.adjustColumnWidth(schemaTable, 1);
     }
 
     private void populate() {
