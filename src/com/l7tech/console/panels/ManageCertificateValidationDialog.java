@@ -33,6 +33,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.objectmodel.ConstraintViolationException;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.ClusterProperty;
 
@@ -304,6 +305,11 @@ public class ManageCertificateValidationDialog extends JDialog {
                     try {
                         getTrustedCertAdmin().saveRevocationCheckPolicy(check);
                         loadRevocationCheckingPolicies();
+                    } catch (DuplicateObjectException ome) {
+                        String msg = resources.getString("error.revocationpolicyadddupe.text");
+                        JOptionPane.showMessageDialog(ManageCertificateValidationDialog.this, msg,
+                                                      resources.getString("error.revocationpolicyadddupe.title"),
+                                                      JOptionPane.ERROR_MESSAGE);
                     } catch (ObjectModelException ome) {
                         String msg = resources.getString("error.revocationpolicyadd.text");
                         logger.log(Level.WARNING, msg, ome);
