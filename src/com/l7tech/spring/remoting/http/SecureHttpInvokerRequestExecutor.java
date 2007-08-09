@@ -19,6 +19,7 @@ import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.protocol.Protocol;
 
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
 
 /**
@@ -50,7 +51,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     }
 
     public void setSession(String host, int port, String sessionId) {
-        synchronized (this) {
+        synchronized (lock) {
             this.host = host;
             this.port = port;
             this.sessionId = sessionId;
@@ -58,11 +59,13 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     }
 
     public void setTrustFailureHandler(SSLTrustFailureHandler failureHandler) {
-        this.trustFailureHandler = failureHandler;
+        synchronized (lock) {
+            this.trustFailureHandler = failureHandler;
+        }
     }
 
     public void clearSessionIfMatches(String sessionId) {
-        synchronized (this) {
+        synchronized (lock) {
             if (sessionId != null && sessionId.equals(this.sessionId)) {
                 this.sessionId = null;
                 this.host = null;
@@ -124,13 +127,26 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     }
 
     protected void executePostMethod(HttpInvokerClientConfiguration config, HttpClient httpClient, PostMethod postMethod) throws IOException {
+        SSLTrustFailureHandler trustFailureHandler;
+        String host;
+        int port;
+        String sessionId;
+        synchronized (lock) {
+            trustFailureHandler = this.trustFailureHandler;
+            host = this.host;
+            port = this.port;
+            sessionId = this.sessionId;
+        }
+
+        if (host == null) {
+            throw new CausedIOException("Not logged in");
+        }
+
         SecureHttpClient.setTrustFailureHandler(trustFailureHandler);
         Protocol protocol = httpClient.getHostConfiguration().getProtocol();
         HostConfiguration hostConfiguration = new HostConfiguration();
         hostConfiguration.setHost(host, port, protocol);
-        synchronized (this) {
-            postMethod.addRequestHeader("X-Layer7-SessionId", sessionId);
-        }
+        postMethod.addRequestHeader("X-Layer7-SessionId", sessionId);
         httpClient.executeMethod(hostConfiguration, postMethod);
     }
 
@@ -144,6 +160,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     private static final String HOST_REGEX = "^http[s]?\\://[a-zA-Z_\\-0-9\\.\\:]{1,1024}";
     private static final String ENCODING_GZIP = "gzip";
 
+    private final Object lock = new Object();
     private final String userAgent;
     private SSLTrustFailureHandler trustFailureHandler;
     private String host;
