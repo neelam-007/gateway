@@ -21,12 +21,14 @@ import com.l7tech.server.LifecycleBean;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class JmsBootProcess extends LifecycleBean {
+public class JmsBootProcess extends LifecycleBean implements PropertyChangeListener {
     private final ServerConfig serverConfig;
     private final JmsConnectionManager connectionManager;
     private final JmsEndpointManager endpointManager;
@@ -59,6 +61,14 @@ public class JmsBootProcess extends LifecycleBean {
         this.endpointManager = endpointManager;
         this.jmsPropertyMapper = jmsPropertyMapper;
         this.backgroundTimer = timer;
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        synchronized(receiverLock) {
+            for (JmsReceiver receiver : activeReceivers) {
+                receiver.propertyChange(evt);
+            }
+        }        
     }
 
     protected void init() {

@@ -11,6 +11,7 @@ import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.common.transport.jms.JmsAcknowledgementType;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.TimeUnit;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
 import com.l7tech.server.ServerConfig;
@@ -24,6 +25,9 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * Message processing runtime support for JMS messages.
@@ -33,14 +37,17 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsReceiver implements ServerComponentLifecycle, ApplicationContextAware {
+public class JmsReceiver implements ServerComponentLifecycle, ApplicationContextAware, PropertyChangeListener {
     // Statics
     private static final Logger _logger = Logger.getLogger(JmsReceiver.class.getName());
+    private static final String PROPERTY_ERROR_SLEEP = "ioJmsErrorSleep";    
     private static final int MAXIMUM_OOPSES = 5;
     /** Set to five seconds so that the uninterruptible (!) poll doesn't pause server shutdown for too long. */
     private static final long RECEIVE_TIMEOUT = 5 * 1000;
     public static final int OOPS_RETRY = 5000; // Five seconds
-    public static final int OOPS_SLEEP = 60 * 1000; // One minute
+    public static final int DEFAULT_OOPS_SLEEP = 60 * 1000; // One minute
+    public static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
+    public static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
     public static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
 
     // Persistence stuff
@@ -53,9 +60,10 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
 
     // Runtime stuff
     private final Object syncRecv = new Object();
+    private final AtomicInteger oopsSleep = new AtomicInteger(DEFAULT_OOPS_SLEEP);
     private boolean _initialized = false;
     private ApplicationContext applicationContext;
-    private transient long lastAuditErrorTime = 0L;
+    private long lastAuditErrorTime = 0L;
 
     /**
      * Complete constructor
@@ -69,6 +77,9 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
         if (replyType == null) replyType = JmsReplyType.AUTOMATIC;
         _replyType = replyType;
         _jmsPropertyMapper = jmsPropertyMapper;
+
+        String stringValue = ServerConfig.getInstance().getProperty(PROPERTY_ERROR_SLEEP);
+        setErrorSleepTime(stringValue);
     }
 
     /**
@@ -86,6 +97,13 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
 
     public String toString() {
         return "jmsReceiver:" + getDisplayName();
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (PROPERTY_ERROR_SLEEP.equals(evt.getPropertyName())) {
+            String stringValue = (String) evt.getNewValue();
+            setErrorSleepTime(stringValue);
+        }
     }
 
     JmsConnection getConnection() {
@@ -201,6 +219,27 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
 
     private String getDisplayName() {
         return getConnection().getJndiUrl()  + "/" + getConnection().getName();
+    }
+
+    private void setErrorSleepTime(String stringValue) {
+        long newErrorSleepTime = DEFAULT_OOPS_SLEEP;
+
+        try {
+            newErrorSleepTime = TimeUnit.parse(stringValue, TimeUnit.SECONDS);
+        } catch (NumberFormatException nfe) {
+            _logger.log(Level.WARNING, "Ignoring invalid JMS error sleep time ''{0}'' (using default).", stringValue);
+        }
+
+        if ( newErrorSleepTime < MIN_OOPS_SLEEP ) {
+            _logger.log(Level.WARNING, "Ignoring invalid JMS error sleep time ''{0}'' (using minimum).", stringValue);
+            newErrorSleepTime = MIN_OOPS_SLEEP;
+        } else if ( newErrorSleepTime > MAX_OOPS_SLEEP ) {
+            _logger.log(Level.WARNING, "Ignoring invalid JMS error sleep time ''{0}'' (using maximum).", stringValue);
+            newErrorSleepTime = MAX_OOPS_SLEEP;
+        }
+
+        _logger.log(Level.CONFIG, "Updated JMS error sleep time to {0}ms.", newErrorSleepTime);
+        oopsSleep.set((int)newErrorSleepTime);
     }
 
     private void fireConnected() {
@@ -502,9 +541,10 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                                 Thread.currentThread().interrupt();
                             }
                         } else {
-                            _logger.warning( "Too many errors (" + MAXIMUM_OOPSES + ") - listener for JMS endpoint " + _inboundRequestEndpoint + " will try again in " + OOPS_SLEEP + "ms" );
+                            int sleepTime = oopsSleep.get();
+                            _logger.warning( "Too many errors (" + MAXIMUM_OOPSES + ") - listener for JMS endpoint " + _inboundRequestEndpoint + " will try again in " + sleepTime + "ms" );
                             try {
-                                Thread.sleep(OOPS_SLEEP);
+                                Thread.sleep(sleepTime);
                             } catch ( InterruptedException e1 ) {
                                 _logger.info( "Interrupted during sleep interval" );
                                 Thread.currentThread().interrupt();

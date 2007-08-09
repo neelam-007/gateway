@@ -47,7 +47,8 @@
                 <constructor-arg>
                     <map>
                         <entry key="serviceMetricsManager"><list><value>serviceMetricsEnabled</value></list></entry>
-                        <entry key="certValidationProcessor"><list><value>pkixTrust.useDefaultAnchors</value></list></entry>                        
+                        <entry key="certValidationProcessor"><list><value>pkixTrust.useDefaultAnchors</value></list></entry>
+                        <entry key="jmsBootProcess"><list><value>ioJmsErrorSleep</value></list></entry>
                     </map>
                 </constructor-arg>
             </bean>
