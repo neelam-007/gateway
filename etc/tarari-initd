@@ -88,6 +88,15 @@ stop() {
 
 }
 
+usage() {
+   cat >&1 <<-EOF
+		Usage:
+		 	${0} start             - Start the Tarari service
+		 	${0} stop <filename>   - Stop the Tarari service
+		 	${0} restart           - Restart (stop then start) the Tarari service
+	EOF
+}
+
 # See how we were called.
 case "$1" in
   start)
@@ -100,6 +109,10 @@ case "$1" in
 	stop
 	start
 	;;
+  *)
+    usage
+    exit 1;
+    ;;
 esac
 
 if [ "$RETVAL" != "0" ]; then 
