@@ -14,6 +14,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.DuplicateObjectException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -112,6 +113,13 @@ public class NewLdapProviderAction extends NewProviderAction {
                             header.setOid(getIdentityAdmin().saveIdentityProviderConfig(iProvider));
                             // Refresh permission cache so that newly created IdP is usable
                             Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+                        } catch (DuplicateObjectException doe) {
+                            String msg = "An Identity Provider with the same name already exists.\nThe new Identity Provider has not been saved.";
+                            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                                          msg,
+                                                          "Error Saving Identity Provider",
+                                                          JOptionPane.WARNING_MESSAGE);
+                            header = null;
                         } catch (Exception e) {
                             ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
                             header = null;
