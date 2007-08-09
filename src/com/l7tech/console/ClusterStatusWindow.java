@@ -33,6 +33,7 @@ import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
@@ -87,7 +88,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
     private final ClassLoader cl = ClusterStatusWindow.class.getClassLoader();
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
-    private boolean canceled;
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     /**
      * Resource bundle with default locale
@@ -822,7 +823,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         }
 
         // create a worker thread to retrieve the Service statistics
-        final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList) {
+        final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList, cancelled) {
             public void finished() {
 
                 if (isCanceled()) {
@@ -893,7 +894,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         initAdminConnection();
         initCaches();
         getStatusRefreshTimer().start();
-        canceled = false;
+        cancelled.set(false);
 
         synchronized(logWindows) {
             for(Enumeration lwEnum=logWindows.elements(); lwEnum.hasMoreElements(); ) {
@@ -935,7 +936,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         setNodeStatusUnknown();
         serviceManager = null;
         clusterStatusAdmin = null;
-        canceled = true;
+        cancelled.set(true);
     }
 
 
@@ -945,7 +946,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
      * @return true if the job is cancelled, false otherwise.
      */
     public boolean isCanceled() {
-        return canceled;
+        return cancelled.get();
     }
 
     /**

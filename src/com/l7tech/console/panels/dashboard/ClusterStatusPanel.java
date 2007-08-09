@@ -36,6 +36,7 @@ import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.regex.PatternSyntaxException;
 
@@ -101,7 +102,7 @@ public class ClusterStatusPanel extends JPanel {
     private Hashtable<String, GatewayStatus> currentNodeList;
     private Vector<Long> clusterRequestCounterCache;
     private Vector<GatewayLogWindow> logWindows = new Vector<GatewayLogWindow>();
-    private boolean canceled;
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     /**
      * @param parent    the parent JFrame containing this panel
@@ -134,7 +135,7 @@ public class ClusterStatusPanel extends JPanel {
         sinceNowButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // Creates a worker thread to retrieve a snapshot of the Service statistics.
-                final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList) {
+                final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList, cancelled) {
                     public void finished() {
                         statisticsPanel.setCounterStart(getStatisticsList());
                         countingSinceField.setText(COUNTER_TIME_FORMAT.format(getCurrentClusterSystemTime()));
@@ -148,7 +149,7 @@ public class ClusterStatusPanel extends JPanel {
         sinceStartupButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // Creates a worker thread to retrieve a snapshot of the Service statistics.
-                final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList) {
+                final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList, cancelled) {
                     public void finished() {
                         statisticsPanel.clearCounterStart();
                         // For a snappier UI experience, instead of waiting for the next timer
@@ -611,7 +612,7 @@ public class ClusterStatusPanel extends JPanel {
         }
 
         // create a worker thread to retrieve the Service statistics
-        final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList) {
+        final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList, cancelled) {
             public void finished() {
 
                 if (isCanceled()) {
@@ -672,7 +673,7 @@ public class ClusterStatusPanel extends JPanel {
         initAdminConnection();
         initCaches();
         getStatusRefreshTimer().start();
-        canceled = false;
+        cancelled.set(false);
 
         synchronized(logWindows) {
             for (GatewayLogWindow window : logWindows) {
@@ -710,7 +711,7 @@ public class ClusterStatusPanel extends JPanel {
         setNodeStatusUnknown();
         serviceManager = null;
         clusterStatusAdmin = null;
-        canceled = true;
+        cancelled.set(true);
     }
 
 
@@ -720,7 +721,7 @@ public class ClusterStatusPanel extends JPanel {
      * @return true if the job is cancelled, false otherwise.
      */
     public boolean isCanceled() {
-        return canceled;
+        return cancelled.get();
     }
 
     /**
