@@ -1,16 +1,14 @@
 package com.l7tech.server.flasher;
 
-import com.l7tech.server.config.PropertyHelper;
-import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.FileUtils;
 import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PasswordPropertyCrypto;
+import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
-import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.BuildInfo;
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 
@@ -18,11 +16,10 @@ import java.io.*;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.zip.ZipOutputStream;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
-import java.text.ParseException;
+import java.util.zip.ZipOutputStream;
 
 /**
  * The utility that exports an SSG image file.
@@ -126,11 +123,7 @@ public class Exporter {
             String databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
             String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
             String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
-            try {
-                databasePasswd = passwordCrypto.decryptIfEncrypted(databasePasswd);
-            } catch (ParseException e) {
-                throw new CausedIOException("Unable to decrypt partition database password with this partition's master password: " + ExceptionUtils.getMessage(e), e);
-            }
+            databasePasswd = passwordCrypto.decryptIfEncrypted(databasePasswd);
 
             logger.info("using database url " + databaseURL);
             logger.info("using database user " + databaseUser);

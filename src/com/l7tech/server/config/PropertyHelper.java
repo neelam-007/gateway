@@ -114,15 +114,10 @@ public class PropertyHelper {
         while(allProps.hasNext()) {
             String propName = (String) allProps.next();
             if (passwordCrypto.isPasswordPropertyName(propName)) {
-                try {
-                    Object oldValue = props.getProperty(propName);
-                    String newValue = passwordCrypto.reencrypt(oldValue);
-                    if (!newValue.equals(oldValue)) {
-                        toMutate.put(propName, newValue);
-                    }
-                } catch (ParseException e) {
-                    throw new CausedIOException("Unable to decrypt encrypted password property " + propName +
-                                                " (wrong master password?): " + ExceptionUtils.getMessage(e), e);
+                Object oldValue = props.getProperty(propName);
+                String newValue = passwordCrypto.reencrypt(oldValue);
+                if (!newValue.equals(oldValue)) {
+                    toMutate.put(propName, newValue);
                 }
             }
         }
@@ -211,17 +206,12 @@ public class PropertyHelper {
                 shouldSave = true;
             }
             if (passwordEncryptor.isPasswordPropertyName(propName)) {
-                try {
-                    Object oldValue = origConfiguration.getProperty(propName);
-                    String newValue = passwordEncryptor.reencrypt(oldValue);
-                    if (!newValue.equals(oldValue)) {
-                        logger.info("Encrypting password property " + propName);
-                        origConfiguration.setProperty(propName, newValue);
-                        shouldSave = true;
-                    }
-                } catch (ParseException e) {
-                    throw new CausedIOException("Unable to decrypt encrypted password property " + propName +
-                                                " (wrong master password?): " + ExceptionUtils.getMessage(e), e);
+                Object oldValue = origConfiguration.getProperty(propName);
+                String newValue = passwordEncryptor.reencrypt(oldValue);
+                if (!newValue.equals(oldValue)) {
+                    logger.info("Encrypting password property " + propName);
+                    origConfiguration.setProperty(propName, newValue);
+                    shouldSave = true;
                 }
             }
         }

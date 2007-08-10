@@ -183,12 +183,7 @@ public class Importer {
             databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
             databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
             String imageDbPasswdRaw = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
-            try {
-                databasePasswd = passwordCrypto.decryptIfEncrypted(imageDbPasswdRaw);
-            } catch (ParseException e) {
-                logger.log(Level.WARNING, "Cannot decrypt this image's database password using the target partition's master password: " + ExceptionUtils.getMessage(e), e);
-                databasePasswd = imageDbPasswdRaw;
-            }
+            databasePasswd = passwordCrypto.decryptIfEncrypted(imageDbPasswdRaw);
             logger.info("using database url " + databaseURL);
             logger.info("using database user " + databaseUser);
             logger.info("using database passwd " + databasePasswd);

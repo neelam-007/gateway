@@ -168,11 +168,6 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         } catch (NumberFormatException e) {
             logger.severe("error while updating the Database configuration file");
             throw e;
-        }
-        catch (ParseException e) {
-            logger.severe("unable to decrypt the existing database password while updating the database configuration");
-            logger.severe(e.getMessage());
-            throw e;
         } finally {
             ResourceUtils.closeQuietly(fos);
         }

@@ -3,7 +3,6 @@ package com.l7tech.server.config;
 import com.l7tech.common.security.MasterPasswordManager;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
-import java.text.ParseException;
 import java.util.*;
 
 /**
@@ -47,7 +46,7 @@ public class PasswordPropertyCrypto {
         return passwordPropertyNames;
     }
 
-    private boolean decryptAndMaybeEncryptPasswords(MasterPasswordManager encryptor, MasterPasswordManager decryptor, Properties props) throws ParseException {
+    private boolean decryptAndMaybeEncryptPasswords(MasterPasswordManager encryptor, MasterPasswordManager decryptor, Properties props) {
         boolean changesMade = false;
         Set<Map.Entry<Object,Object>> entries = props.entrySet();
         for (Map.Entry<Object, Object> entry : entries) {
@@ -69,19 +68,17 @@ public class PasswordPropertyCrypto {
      *
      * @param props a Properties instance to edit in-place.  Required.
      *              Any properties that look like password properties will be run through the MasterPasswordManager.
-     * @throws java.text.ParseException if a decryptor was provided, and an already-encrypted password was encountered
-     *                                  that could not be decrypted using the provided decryptor.
      * @return true if any properties were altered.
      */
-    public boolean encryptPasswords(Properties props) throws ParseException {
+    public boolean encryptPasswords(Properties props) {
         return decryptAndMaybeEncryptPasswords(encryptor, decryptor, props);
     }
 
-    public boolean encryptPasswords(PropertiesConfiguration props) throws ParseException {
+    public boolean encryptPasswords(PropertiesConfiguration props) {
         return decryptAndMaybeEncryptPasswords(encryptor, decryptor, props);
     }
 
-    private boolean decryptAndMaybeEncryptPasswords(MasterPasswordManager encryptor, MasterPasswordManager decryptor, PropertiesConfiguration props) throws ParseException {
+    private boolean decryptAndMaybeEncryptPasswords(MasterPasswordManager encryptor, MasterPasswordManager decryptor, PropertiesConfiguration props) {
         boolean changesMade = false;
         Map<String, String> mutator = new HashMap<String, String>();
 
@@ -111,10 +108,8 @@ public class PasswordPropertyCrypto {
      * @param props a Properties instance to edit in-place.  Required.
      *              Any properties that look like password properties will be run through the MasterPasswordManager.
      * @return true if any properties were altered.
-     * @throws java.text.ParseException if a decryptor was provided, and an already-encrypted password was encountered
-     *                                  that could not be decrypted using the provided decryptor.
      */
-    public boolean decryptPasswords(Properties props) throws ParseException {
+    public boolean decryptPasswords(Properties props) {
         return decryptAndMaybeEncryptPasswords(null, decryptor, props);
     }
 
@@ -126,19 +121,17 @@ public class PasswordPropertyCrypto {
      *
      * @param maybeEncrypted a property value that may already be encrypted
      * @return the property value decrypted by the decryptor (if necessary) and then reencrypted with the current encryptor
-     * @throws java.text.ParseException if a decryptor was provided, and an already-encrypted password was encountered
-     *                                  that could not be decrypted using the provided decryptor.
      */
-    public String reencrypt(Object maybeEncrypted) throws ParseException {
+    public String reencrypt(Object maybeEncrypted) {
         return reencrypt(encryptor, decryptor, maybeEncrypted);
     }
 
-    private String reencrypt(MasterPasswordManager encryptor, MasterPasswordManager decryptor, Object maybeEncrypted) throws ParseException {
+    private String reencrypt(MasterPasswordManager encryptor, MasterPasswordManager decryptor, Object maybeEncrypted) {
         String plaintext = maybeEncrypted.toString();
         if (encryptor == null)
             return plaintext;
-        if (decryptor != null && decryptor.looksLikeEncryptedPassword(plaintext))
-            plaintext = new String(decryptor.decryptPassword(plaintext));
+        if (decryptor != null)
+            plaintext = new String(decryptor.decryptPasswordIfEncrypted(plaintext));
         return encryptor.encryptPassword(plaintext.toCharArray());
     }
 
@@ -147,9 +140,8 @@ public class PasswordPropertyCrypto {
      *
      * @param maybeEncrypted a property value that may already be encrypted
      * @return the password decrypted by the current decryptor, if possible, otherwise the input value unchanged.
-     * @throws ParseException if the password appears to be encrypted but cannot be decrypted with the current decryptor
      */
-    public String decryptIfEncrypted(Object maybeEncrypted) throws ParseException {
+    public String decryptIfEncrypted(Object maybeEncrypted) {
         return reencrypt(null, decryptor, maybeEncrypted);
     }
 

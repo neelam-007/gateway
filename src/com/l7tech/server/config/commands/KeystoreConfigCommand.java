@@ -1101,10 +1101,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.severe("error while updating the keystore properties file");
             logger.severe(ioex.getMessage());
             throw ioex;
-        } catch (ParseException e) {
-           logger.severe("cannot decrypt passwords in the keystore.properties file.");
-           logger.severe(e.getMessage());
-           throw e;
         } finally {
             ResourceUtils.closeQuietly(fos);
         }
