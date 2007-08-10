@@ -253,7 +253,9 @@ public class ServiceManagerImp
                         String ordinal = ass == null ? "" : "#" + Integer.toString(ass.getOrdinal());
                         String what = ass == null ? "<unknown>" : "(" + ass.getClass().getSimpleName() + ")";
                         String msg = "Disabling PublishedService #{0} ({1}); policy could not be compiled (assertion {2} {3})";
-                        logger.log(Level.WARNING, MessageFormat.format(msg, service.getOid(), service.getName(), ordinal, what));
+                        logger.log(Level.WARNING,
+                                   MessageFormat.format(msg, service.getOid(), service.getName(), ordinal, what),
+                                   ExceptionUtils.getDebugException(e));
                         // We don't actually disable the service here -- only the admin should be doing that.
                         // Instead, we will let the service cache continue to monitor the situation
                     } catch (Exception e) {

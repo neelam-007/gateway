@@ -19,6 +19,8 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.server.event.system.*;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.objectmodel.FindException;
+
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -45,6 +47,7 @@ public class BootProcess
     implements DisposableBean, InitializingBean
 {
     private static final Logger logger;
+    private boolean wasStarted = false;
 
     static {
         String DEFAULT_LOGPROPERTIES_PATH = ServerConfig.getInstance().getPropertyCached("configDirectory") + File.separator + "ssglog.properties";
@@ -81,6 +84,8 @@ public class BootProcess
     }
 
     public void start() throws LifecycleException {
+        initCaches();
+        wasStarted = true;
         getApplicationContext().publishEvent(new Starting(this, Component.GW_SERVER, ipAddress));
         logger.info("Starting server");
 
@@ -260,32 +265,45 @@ public class BootProcess
 
         applicationContext.publishEvent(new Initialized(this, Component.GW_SERVER, ipAddress));
 
-        // initialize service cache after all this
-        ServiceManager serviceManager = (ServiceManager)applicationContext.getBean("serviceManager");
-        logger.info("initializing the service cache");
-        serviceManager.initiateServiceCache();
-
-        // Make sure certs without thumbprints get them
-        try {
-            TrustedCertManager tcm = (TrustedCertManager)applicationContext.getBean("trustedCertManager");
-            tcm.findByThumbprint(null);
-            tcm.findByThumbprint("");
-            tcm.findBySki(null);
-            tcm.findBySki("");
-
-            ClientCertManager ccm = (ClientCertManager)applicationContext.getBean("clientCertManager");
-            ccm.findByThumbprint(null);
-            ccm.findByThumbprint("");
-            ccm.findBySki(null);
-            ccm.findBySki("");
-        } catch (DataAccessException e) {
-            // see bugzilla 2162, if a bad cert somehow makes it in the db, we should not prevent the gateway to boot
-            logger.log(Level.WARNING, "Could not thumbprint certs. Something " +
-                "corrupted in trusted_cert or client_cert table.",
-                e);
-        }
-
         logger.info("Initialized server");
+    }
+
+    private void initCaches() throws LifecycleException {
+        if (!wasStarted) {
+            logger.info("Initializing server cache");
+            ApplicationContext applicationContext = getApplicationContext();
+
+            try {
+                // initialize service cache after all this
+                ServiceManager serviceManager = (ServiceManager)applicationContext.getBean("serviceManager");
+                logger.info("Initializing the service cache");
+                serviceManager.initiateServiceCache();
+                logger.info("Initialized the service cache");
+
+                // Make sure certs without thumbprints get them
+                try {
+                    TrustedCertManager tcm = (TrustedCertManager)applicationContext.getBean("trustedCertManager");
+                    tcm.findByThumbprint(null);
+                    tcm.findByThumbprint("");
+                    tcm.findBySki(null);
+                    tcm.findBySki("");
+
+                    ClientCertManager ccm = (ClientCertManager)applicationContext.getBean("clientCertManager");
+                    ccm.findByThumbprint(null);
+                    ccm.findByThumbprint("");
+                    ccm.findBySki(null);
+                    ccm.findBySki("");
+                } catch (DataAccessException e) {
+                    // see bugzilla 2162, if a bad cert somehow makes it in the db, we should not prevent the gateway to boot
+                    logger.log(Level.WARNING, "Could not thumbprint certs. Something " +
+                        "corrupted in trusted_cert or client_cert table.",
+                        e);
+                }
+            } catch (FindException fe) {
+                throw new LifecycleException("Error initializing caches", fe);
+            }
+            logger.info("Initialized server cache");
+        }
     }
 
     /**
