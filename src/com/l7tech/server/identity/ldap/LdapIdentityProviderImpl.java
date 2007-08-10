@@ -361,6 +361,9 @@ public class LdapIdentityProviderImpl
                                                         "Please narrow your search criterion.");
             output.add(maxExceeded);
             // dont throw here, we still want to return what we got
+        } catch (javax.naming.AuthenticationException ae) {
+            logger.log(Level.WARNING, "LDAP authentication error '" + ae.getMessage() + "'.", ExceptionUtils.getDebugException(ae));
+            throw new FindException("error searching ldap", ae);
         } catch (NamingException e) {
             logger.log(Level.WARNING, "error searching with filter: " + filter, e);
             throw new FindException("error searching ldap", e);
@@ -540,8 +543,14 @@ public class LdapIdentityProviderImpl
             } catch (NamingException e) {
                 // note. i am not embedding the NamingException because it sometimes
                 // contains com.sun.jndi.ldap.LdapCtx which does not implement serializable
-                String msg = "Cannot connect to this directory.";
-                logger.log(Level.INFO, "ldap config test failure " + msg, e);
+                String msg;
+                if (e instanceof javax.naming.AuthenticationException) {
+                    msg = "Cannot connect to this directory, authentication failed.";
+                    logger.log(Level.INFO, "LDAP configuration test failure. " + msg, ExceptionUtils.getDebugException(e));
+                } else {
+                    msg = "Cannot connect to this directory.";
+                    logger.log(Level.INFO, "LDAP configuration test failure. " + msg, e);
+                }
                 throw new InvalidIdProviderCfgException(msg, e);
             }
 

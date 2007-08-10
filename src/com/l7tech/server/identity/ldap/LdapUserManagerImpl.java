@@ -7,6 +7,7 @@ import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.common.util.ExceptionUtils;
 
 import javax.naming.*;
 import javax.naming.directory.*;
@@ -87,8 +88,11 @@ public class LdapUserManagerImpl implements LdapUserManager {
         } catch (NameNotFoundException e) {
             logger.finest("user " + dn + " does not exist in" + ldapIdentityProviderConfig.getName() + "(" + e.getMessage() + ")");
             return null;
+        } catch (AuthenticationException ae) {
+            logger.log(Level.WARNING, "LDAP authentication error: " + ae.getMessage(), ExceptionUtils.getDebugException(ae));
+            return null;
         } catch (NamingException ne) {
-            logger.log(Level.WARNING, ne.getMessage(), ne);
+            logger.log(Level.WARNING, "LDAP error: " + ne.getMessage(), ne);
             return null;
         } finally {
             try {
@@ -139,8 +143,10 @@ public class LdapUserManagerImpl implements LdapUserManager {
                 answer.close();
             }
             return findByPrimaryKey(dn);
-        } catch (NamingException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+        } catch (AuthenticationException ae) {
+            logger.log(Level.WARNING, "LDAP authentication error: " + ae.getMessage(), ExceptionUtils.getDebugException(ae));
+        } catch (NamingException ne) {
+            logger.log(Level.WARNING, "LDAP error: " + ne.getMessage(), ne);
         } finally {
             try {
                 if (context != null) context.close();

@@ -4,11 +4,13 @@ import com.l7tech.identity.ldap.*;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.common.util.ExceptionUtils;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.OperationNotSupportedException;
 import javax.naming.SizeLimitExceededException;
+import javax.naming.AuthenticationException;
 import javax.naming.directory.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -72,8 +74,12 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             } finally {
                 if (context != null) context.close();
             }
+        } catch (AuthenticationException ae) {
+            logger.log(Level.WARNING, "LDAP authentication error, while building group: " + ae.getMessage(),
+                    ExceptionUtils.getDebugException(ae));
+            throw new FindException("naming exception", ae);
         } catch (NamingException e) {
-            logger.log(Level.WARNING, "error building group", e);
+            logger.log(Level.WARNING, "LDAP error, while building group", e);
             throw new FindException("naming exception", e);
         }
     }
@@ -272,9 +278,13 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             DirContext context;
             try {
                 context = identityProvider.getBrowseContext();
+            } catch (AuthenticationException ae) {
+                String msg = "cannot get context";
+                logger.log(Level.WARNING, "LDAP authentication error: " + ae.getMessage(), ExceptionUtils.getDebugException(ae));
+                throw new FindException(msg, ae);
             } catch (NamingException e) {
                 String msg = "cannot get context";
-                logger.log(Level.WARNING, msg, e);
+                logger.log(Level.WARNING, "LDAP error: " + msg, e);
                 throw new FindException(msg, e);
             }
 
@@ -588,6 +598,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 }
             }
             return headers;
+        } catch (AuthenticationException ae) {
+            logger.log(Level.WARNING, "LDAP authentication error: " + ae.getMessage(), ExceptionUtils.getDebugException(ae));
+            throw new FindException(ae.getMessage(), ae);
         } catch (NamingException ne) {
             logger.log(Level.SEVERE, null, ne);
             throw new FindException(ne.getMessage(), ne);
