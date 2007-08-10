@@ -253,7 +253,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                     "This cannot be undone.\n" +
                     "Do you wish to proceed?";
             }
-            boolean confirmed = getConfirmationFromUser(warningMessage);
+            boolean confirmed = getConfirmationFromUser(warningMessage, "n");
             if (confirmed) {
                 if (PartitionActions.removePartition(partitionToRemove, this)) {
                     PartitionManager.getInstance().removePartition(whichPartitionName);
@@ -474,7 +474,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
     public boolean getPartitionActionsConfirmation(String message) {
         boolean ok = false;
         try {
-            ok = getConfirmationFromUser(message);
+            ok = getConfirmationFromUser(message, "n");
         } catch (IOException e) {
             logger.severe("Error while getting input. [" + e.getMessage() + "]");
         } catch (WizardNavigationException e) {

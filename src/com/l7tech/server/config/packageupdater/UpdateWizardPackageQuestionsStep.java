@@ -73,7 +73,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
             checkValidSinglePackage(selectedUpdatePackage);
             String confirmMessage = getConfirmationMessage();
 
-            if (getConfirmationFromUser(confirmMessage)) {
+            if (getConfirmationFromUser(confirmMessage, "n")) {
                 configBean.setPackageInformation(selectedUpdatePackage);
                 storeInput();
             } else {

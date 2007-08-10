@@ -240,9 +240,9 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String errorMsg = "The database named \"" + dbName + "\" already exists. Would you like to overwrite it?";
         boolean confirmed = false;
         try {
-            confirmed = getConfirmationFromUser(errorMsg);
+            confirmed = getConfirmationFromUser(errorMsg, "n");
             if (confirmed) {
-                confirmed = getConfirmationFromUser(REALLY_CONFIRM_OVERWRITE);
+                confirmed = getConfirmationFromUser(REALLY_CONFIRM_OVERWRITE, "n");
             } else {
                 showErrorMessage(WIZARD_CANNOT_PROCEED);
             }
@@ -286,20 +286,15 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
 
     public boolean getGenericUserConfirmation(String msg) {
-        String[] prompts = new String[] {
-            msg + " : [n]",
-        };
-
-        String input = null;
+        boolean input = false;
         try {
-            input = getData(prompts, "n");
-            return (input != null && (input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y")));
+            input = getConfirmationFromUser(msg, "n");
         } catch (IOException e) {
             logger.severe(e.getMessage());
         } catch (WizardNavigationException e) {
-            return false;
+            input = false;
         }
-        return false;
+        return input;
     }
 
     public Map<String, String> getPrivelegedCredentials(String description, String usernamePrompt, String passwordPrompt, String defaultUsername) {

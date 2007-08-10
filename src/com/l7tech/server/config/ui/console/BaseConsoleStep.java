@@ -203,15 +203,12 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         return "(Version " + getParentWizard().getCurrentVersion() + ")";
     }
 
-    protected boolean getConfirmationFromUser(String message) throws IOException, WizardNavigationException {
+    protected boolean getConfirmationFromUser(String message, String defaultValue) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
-                message + " : [n]",
+                message + " : [" + defaultValue +"]",
         };
 
-        String input = getData(prompts, "n");
-        if (input != null) {
-            return (isYes(input));
-        }
-        return false;
+        String input = getData(prompts, defaultValue,ConsoleWizardUtils.YES_NO_VALUES,"*** Please enter 'yes' or 'no' ***");
+        return input != null && (isYes(input));
     }
 }

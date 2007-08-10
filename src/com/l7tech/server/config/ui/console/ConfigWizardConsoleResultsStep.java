@@ -66,7 +66,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
         if (osFunctions.isWindows() && !getParentWizard().isHadFailures()) {
             try {
                 boolean shouldStart = false;
-                shouldStart = getConfirmationFromUser(getEolChar() + "Would you like to start the partition that was just configured?");
+                shouldStart = getConfirmationFromUser(getEolChar() + "Would you like to start the partition that was just configured?", "n");
                 if (shouldStart) {
                     PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
                     if (!PartitionActions.startService(pi, this)) {
@@ -163,7 +163,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
     public boolean getPartitionActionsConfirmation(String message) {
         boolean ok = false;
         try {
-            getConfirmationFromUser(message);
+            getConfirmationFromUser(message, "n");
         } catch (IOException e) {
             logger.severe("Error while getting input. [" + e.getMessage() + "]");
         } catch (WizardNavigationException e) {

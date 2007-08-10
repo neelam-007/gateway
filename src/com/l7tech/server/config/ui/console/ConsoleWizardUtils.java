@@ -27,6 +27,7 @@ public class ConsoleWizardUtils {
     public static final String EOL_CHAR = System.getProperty("line.separator");
 
     private Pattern validIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
+    public static final String[] YES_NO_VALUES = new String[]{"Y","y","N","n","YES","yes","NO","no","Yes","No"};
 
     public static ConsoleWizardUtils getInstance(InputStream in, PrintStream out) {
         if (instance_ == null) {

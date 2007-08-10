@@ -6,14 +6,14 @@ import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InterfaceAddress;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.net.InterfaceAddress;
-import java.net.Inet6Address;
-import java.text.MessageFormat;
 
 /**
  * User: megery
@@ -36,9 +36,9 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private static final String MISSING_IP_ADDRESS_MSG = "Missing IP Address";
     private static final String MISSING_NETMASK_MSG = "Missing Netmask.";
     private static final String MISSING_GATEWAY_MSG = "Missing Gateway.";
-    private static final String CONFIGURE_MORE_INTERFACES_PROMPT = "Would you like to configure another interface? [no]: ";
+    private static final String CONFIGURE_MORE_INTERFACES_PROMPT = "Would you like to configure another interface?";
     private static final String NEW_INTERFACE_NAME_PROMPT = "Please enter the name of the new interface (ex: eth5): ";
-    private static final String CONFIGURE_NAMESERVERS_PROMPT = "Would you like to configure the nameservers for this interface? [no]";
+    private static final String CONFIGURE_NAMESERVERS_PROMPT = "Would you like to configure the nameservers for this interface?";
     private static final String INVALID_SOMETHING = "\"{0}\" is not a valid {1}";
 
     private NetworkingConfigurationBean netBean;
@@ -167,12 +167,9 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     }
 
     private boolean doRepeatConfiguration() throws IOException, WizardNavigationException {
-        String[] prompts = new String[] {
-            CONFIGURE_MORE_INTERFACES_PROMPT,
-        };
-        String doItAgain = getData(prompts, "no");
+        boolean doItAgain = getConfirmationFromUser(CONFIGURE_MORE_INTERFACES_PROMPT, "no");
 
-        return (StringUtils.equalsIgnoreCase(doItAgain, "yes") || StringUtils.equalsIgnoreCase(doItAgain, "y") ) ;
+        return (doItAgain) ;
     }
 
     private void saveConfig(NetworkingConfigurationBean.NetworkConfig whichConfig) {
@@ -263,10 +260,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         boolean hasCurrentNameServers = (currentNameServers != null && currentNameServers.length != 0);
         String[] nameServers = null;
 
-        String shouldConfigNameServers = getData(
-                new String[]{CONFIGURE_NAMESERVERS_PROMPT},
-                "no"
-        );
+        boolean shouldConfigNameServers = getConfirmationFromUser(CONFIGURE_NAMESERVERS_PROMPT, "no");
 
         String defaultNameserversLine = null;
         boolean isFirst = true;
@@ -280,7 +274,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         boolean isValid;
         String nameserversline;
-        if (isYes(shouldConfigNameServers)) {
+        if (shouldConfigNameServers) {
                 do {
                     nameserversline = getData(
                             new String[] {"Enter the IP Address(es) of the nameserver(s) to be associated with the \"" + interfaceName + "\" interface (comma separated): "},

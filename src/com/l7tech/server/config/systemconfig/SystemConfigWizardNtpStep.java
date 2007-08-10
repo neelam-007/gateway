@@ -6,12 +6,12 @@ import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -54,8 +54,9 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
 
     private void doTimeZoneConfig() throws IOException, WizardNavigationException {
         if (StringUtils.isNotEmpty(osFunctions.getTimeZonesDir())) {
-            String shouldConfigureTz = getData(new String[] {"Would you like to configure the timezone on this system  [y]:"}, "y");
-            if (isYes(shouldConfigureTz)) {
+            boolean shouldConfigureTz = getConfirmationFromUser("Would you like to configure the timezone on this system?","y");
+
+            if (shouldConfigureTz) {
                 File tzInfo = doTzConfigurationPrompts(new File(osFunctions.getTimeZonesDir()));
                 String absolutePath = tzInfo.getAbsolutePath();
                 String base = osFunctions.getTimeZonesDir();
@@ -174,10 +175,8 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
     }
 
     private void doNtpConfig() throws IOException, WizardNavigationException {
-        String shouldConfigureNtp = getData(
-            new String[] {"Would you like to configure time synchronization on this system (NTP) [y]:"},"y");
-
-        if (isYes(shouldConfigureNtp)) {
+        boolean shouldConfigureNtp = getConfirmationFromUser("Would you like to configure time synchronization on this system (NTP)?", "y");
+        if (shouldConfigureNtp) {
             doNtpConfigurationPrompts("");
         }
     }

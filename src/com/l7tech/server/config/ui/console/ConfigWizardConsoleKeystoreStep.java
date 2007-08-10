@@ -161,8 +161,9 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
     private void askInitialiseHSMQuestions() throws IOException, WizardNavigationException {
         boolean askAgain;
         do {
-            String shouldBackup = getData(new String[] {"Back Up Master Key to USB Drive After Initialization? [y]"}, "y");
-            if (isYes(shouldBackup)) {
+            boolean shouldBackup = getConfirmationFromUser("Back Up Master Key to USB Drive After Initialization? ", "y");
+
+            if (shouldBackup) {
                 keystoreBean.setShouldBackupMasterKey(true);
                 String backupPassword = getMatchingPasswords("Enter the password to protect the master key backup:", "Confirm the password to protect the master key backup:", 6);
                 keystoreBean.setMasterKeyBackupPassword(backupPassword.toCharArray());
