@@ -49,6 +49,7 @@ import com.l7tech.common.util.ResourceTrackingWSDLLocator;
 import com.l7tech.common.util.Closeable;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.console.event.WsdlEvent;
@@ -455,7 +456,7 @@ public class WsdlLocationPanel extends JPanel {
                             baseUri = new File(baseUri).toURI().toString();
                         }
                         Wsdl wsdl;
-                        if (Boolean.getBoolean(SYSPROP_NO_WSDL_IMPORTS)) {
+                        if (SyspropUtil.getBoolean(SYSPROP_NO_WSDL_IMPORTS)) {
                             // Old technique, don't process imports correctly
                             String wsdlStr = XmlUtil.nodeToString(resolvedDoc);
                             wsdl = Wsdl.newInstance(WsdlUtils.getWSDLFactory(), baseUri, new StringReader(wsdlStr), false);
