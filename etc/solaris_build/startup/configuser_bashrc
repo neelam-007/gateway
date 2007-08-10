@@ -40,6 +40,7 @@ do
         if [ "${UPDATER_PRESENT}" == "true" ] ; then
             echo "6) Upgrade the SecureSpan Appliance"
         fi
+        echo "8) Change the Master Passphrase"
         echo -n "Please make a selection: "
         read choice
 
@@ -74,6 +75,11 @@ do
                         echo "Please enter the root password in order to reboot"
                         su root -c "${REBOOT_CMD}"
                     fi
+                    clear;;
+                8)  clear;
+                    (${CONFWIZARD} -changeMasterPassphrase);
+                    echo "Press enter to continue";
+                    read;
                     clear;;
                 *)  if [ "$choice" == "6" ] && [ "${UPDATER_PRESENT}" == "true" ]; then
                         clear;

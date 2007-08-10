@@ -8,6 +8,7 @@ USER=${LOGNAME}
 SCADIAG="/opt/sun/sca6000/sbin/scadiag"
 popd > /dev/null
 
+JAVA_HOME=${SSG_ROOT}/jdk
 launchtype=${1}
 
 OPTIONS="-Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT}"
@@ -34,5 +35,10 @@ if [ -z "${launchtype}" ] || [ ${launchtype} == "-graphical" ]; then
         launchtype="-console"
     fi
 fi
-launch_wizard "${launchtype}"
+
+if [ "${launchtype}z" == "-exportsharedkeyz" ] || [ "${launchtype}z" == "-changeMasterPassphrasez" ]; then
+    ${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
+else
+    launch_wizard "${launchtype}"
+fi
 
