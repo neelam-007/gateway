@@ -1310,7 +1310,7 @@ public class LogPanel extends JPanel {
         tableColumnWidths[LOG_TIMESTAMP_COLUMN_INDEX] = 140;
         tableColumnWidths[LOG_THREAD_COLUMN_INDEX] = 60;
         tableColumnWidths[LOG_SEVERITY_COLUMN_INDEX] = 50;
-        tableColumnWidths[LOG_SERVICE_COLUMN_INDEX] = 120;
+        tableColumnWidths[LOG_SERVICE_COLUMN_INDEX] = 110;
         tableColumnWidths[LOG_MSG_DETAILS_COLUMN_INDEX] = 400;
 
         // Add columns according to configuration
@@ -1341,6 +1341,26 @@ public class LogPanel extends JPanel {
             tc.setHeaderValue(getLogTableModel().getColumnName(tc.getModelIndex()));
         }
 
+        // Displays icon and tooltip in cells of digital signature column.
+        final TableColumn signatureColumn = findTableModelColumn(columnModel, LOG_SIGNATURE_COLUMN_INDEX);
+        if (signatureColumn != null) {
+            signatureColumn.setCellRenderer(new DefaultTableCellRenderer() {
+                @Override
+                public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                    final Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                    if (value instanceof FilteredLogTableSorter.DigitalSignatureState && comp instanceof JLabel) {
+                        final FilteredLogTableSorter.DigitalSignatureState state = (FilteredLogTableSorter.DigitalSignatureState)value;
+                        final JLabel label = (JLabel)comp;
+                        label.setIcon(state.getIcon16());
+                        label.setText(null);
+                        label.setHorizontalAlignment(JLabel.CENTER);
+                        label.setToolTipText(state.getDescription());
+                    }
+                    return comp;
+                }
+            });
+        }
+
         // Tooltip for details
         findTableModelColumn(columnModel, LOG_MSG_DETAILS_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer(){
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -1360,6 +1380,13 @@ public class LogPanel extends JPanel {
         return columnModel;
     }
 
+    /**
+     * Find a table column given its model index.
+     *
+     * @param columnModel       the table column model
+     * @param columnModelIndex  model index of the column
+     * @return the table column; null if there is no column with such index
+     */
     private static TableColumn findTableModelColumn(TableColumnModel columnModel, int columnModelIndex) {
         Enumeration<TableColumn> e = columnModel.getColumns();
         for (; e.hasMoreElements(); ) {
@@ -1395,10 +1422,6 @@ public class LogPanel extends JPanel {
             String[][] rows = new String[][]{};
 
             logTableModel = new DefaultTableModel(rows, COLUMN_NAMES) {
-                public Class<?> getColumnClass(int columnIndex) {
-                    return columnIndex == LOG_SIGNATURE_COLUMN_INDEX ? Icon.class : super.getColumnClass(columnIndex);
-                }
-
                 public boolean isCellEditable(int row, int col) {
                     // the table cells are not editable
                     return false;
@@ -1719,6 +1742,11 @@ public class LogPanel extends JPanel {
 
             setBorder(UIManager.getBorder("TableHeader.cellBorder"));
             setHorizontalAlignment(JLabel.CENTER);
+
+            if (table.convertColumnIndexToModel(column) == LOG_SIGNATURE_COLUMN_INDEX) {
+                setToolTipText("Digital Signature");
+            }
+
             return this;
         }
     };

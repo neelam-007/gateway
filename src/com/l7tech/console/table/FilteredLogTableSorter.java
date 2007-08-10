@@ -29,19 +29,37 @@ import java.util.logging.Logger;
 public class FilteredLogTableSorter extends FilteredLogTableModel {
 
     /** Validity state of a digital signature. */
-    private enum DigitalSignatureState {
+    public enum DigitalSignatureState {
         // NOTE: elements are ordered for display sorting (i.e., from bad to good).
         /** Has signature but is invalid. */
-        INVALID(MainWindow.RESOURCE_PATH + "/DigitalSignatureStateInvalid16.png"),
-        /** No signature at all. */
-        NONE(MainWindow.RESOURCE_PATH + "/DigitalSignatureStateNone16.png"),
-        /** Has signature and is valid. */
-        VALID(MainWindow.RESOURCE_PATH + "/DigitalSignatureStateValid16.png");
+        INVALID("invalid", "digital signature is invalid", MainWindow.RESOURCE_PATH + "/DigitalSignatureStateInvalid16.png"),
 
+        /** No signature at all. */
+        NONE("missing", "no digital signature", MainWindow.RESOURCE_PATH + "/DigitalSignatureStateNone16.png"),
+
+        /** Has signature and is valid. */
+        VALID("verified", "digital signature is verified", MainWindow.RESOURCE_PATH + "/DigitalSignatureStateValid16.png");
+
+        private final String name;
+        private final String description;
         private final String icon16Path;
         private Icon icon16;
 
-        DigitalSignatureState(String icon16Path) { this.icon16Path = icon16Path; }
+        DigitalSignatureState(String name, String description, String icon16Path) {
+            this.name = name;
+            this.description = description;
+            this.icon16Path = icon16Path;
+        }
+
+        /** @return a word suitable for message parameter substitution (e.g., Digital signature is BLAH) */
+        public String getName() {
+            return name;
+        }
+
+        /** @return an uncapitalized short phrase suitable for things like tooltip or exception message */
+        public String getDescription() {
+            return description;
+        }
 
         /** @return 16 by 16 pixel icon */
         public synchronized Icon getIcon16() {
@@ -248,7 +266,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         LogMessage msg = getLogMessageAtRow(row);
         switch (col) {
             case LogPanel.LOG_SIGNATURE_COLUMN_INDEX:
-                return checkDigitalSignature(msg.getSSGLogRecord()).getIcon16();
+                return checkDigitalSignature(msg.getSSGLogRecord());
             case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
                 return new Long(msg.getMsgNumber());
             case LogPanel.LOG_NODE_NAME_COLUMN_INDEX:
