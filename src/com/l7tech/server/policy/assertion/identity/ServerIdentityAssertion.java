@@ -37,6 +37,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
 
     protected final Auditor auditor;
     private final ApplicationContext applicationContext;
+    private final IdentityProviderFactory identityProviderFactory;
     protected IdentityAssertion identityAssertion;
 
     public ServerIdentityAssertion(IdentityAssertion data, ApplicationContext ctx) {
@@ -47,6 +48,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
         }
         this.auditor = new Auditor(this, ctx, Logger.getLogger(getClass().getName()));
         this.applicationContext = ctx;
+        identityProviderFactory = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory", IdentityProviderFactory.class);
     }
 
     /**
@@ -176,8 +178,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
      * @throws FindException
      */
     protected IdentityProvider getIdentityProvider(PolicyEnforcementContext context) throws FindException {
-        IdentityProviderFactory ipf = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory");
-        IdentityProvider provider = ipf.getProvider(identityAssertion.getIdentityProviderOid());
+        IdentityProvider provider = identityProviderFactory.getProvider(identityAssertion.getIdentityProviderOid());
         if (provider == null) {
             auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_EXIST);
             throw new FindException("id assertion refers to an id provider which does not exist anymore");
