@@ -147,7 +147,9 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
            return ipAddresses;
         }
 
-        public void setIpAddress(String ipAddress) {
+        public void setIpAddress(String ipAddress, boolean overWrite) {
+            if (overWrite)
+                ipAddresses = new ArrayList<String>();
             ipAddresses.add(ipAddress);
         }
 

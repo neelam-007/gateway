@@ -228,7 +228,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         whichConfig.setBootProto(bootProto);
 
         if (StringUtils.equalsIgnoreCase(bootProto, NetworkingConfigurationBean.STATIC_BOOT_PROTO)) {
-            whichConfig.setIpAddress(getIpAddress(whichConfig));
+            whichConfig.setIpAddress(getIpAddress(whichConfig), true);
             whichConfig.setGateway(getGateway(whichConfig));
             whichConfig.setNetMask(getNetMask(whichConfig));
             whichConfig.setNameServer(getNameServer(whichConfig.getNameServers(), whichConfig.getInterfaceName()));

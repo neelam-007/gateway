@@ -93,6 +93,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
                 System.arraycopy(allTimeZones, 0, timezonesToDisplay, 0, TIMEZONES_PER_PAGE);
                 boolean hasMoreEntries = true;
                 while (displayedCount < howManyTimeZones && selectedTimeZone == null) {
+                    hasMoreEntries = (displayedCount + TIMEZONES_PER_PAGE) < allTimeZones.length;
                     whichIndex = showTimeZones(timezonesToDisplay, dir.equals(new File(osFunctions.getTimeZonesDir()))?null:dir, displayedCount + 1, allowedEntries, hasMoreEntries);
                     displayedCount += TIMEZONES_PER_PAGE;
                     if (whichIndex >= 0) {
@@ -101,7 +102,6 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
                         int length = TIMEZONES_PER_PAGE;
                         if ( (displayedCount + TIMEZONES_PER_PAGE) > allTimeZones.length) {
                             length = allTimeZones.length - displayedCount;
-                            hasMoreEntries = false;
                         }
                         timezonesToDisplay = new File[length];
                         System.arraycopy(allTimeZones, displayedCount, timezonesToDisplay, 0, length);
