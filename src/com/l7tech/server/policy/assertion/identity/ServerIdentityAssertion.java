@@ -82,9 +82,18 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
         }
 
         AssertionStatus lastStatus = AssertionStatus.UNDEFINED;
+        final IdentityProvider provider;
+        try {
+            provider = getIdentityProvider(context);
+        } catch (FindException e) {
+            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[0], e);
+            // fla fix, allow the policy to continue in case the credentials be valid for
+            // another id assertion down the road (fix for bug 374)
+            return AssertionStatus.AUTH_FAILED;
+        }
+
         for (LoginCredentials pc : pCredentials) {
             try {
-                IdentityProvider provider = getIdentityProvider(context);
                 lastStatus = validateCredentials(provider, pc, context);
                 if (lastStatus.equals(AssertionStatus.NONE)) {
                     // successful output point
@@ -101,12 +110,6 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
                 lastStatus = authFailed(pc, mce);
             } catch (AuthenticationException ae) {
                 lastStatus = authFailed(pc, ae);
-            } catch (FindException fe) {
-                auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[0], fe);
-                // fla fix, allow the policy to continue in case the credentials be valid for
-                // another id assertion down the road (fix for bug 374)
-                // throw new IdentityAssertionException( err, fe );
-                lastStatus = AssertionStatus.AUTH_FAILED;
             }
         }
         auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] { identityAssertion.loggingIdentity() });
@@ -119,7 +122,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
     protected AssertionStatus validateCredentials(IdentityProvider provider,
                                                   LoginCredentials pc,
                                                   PolicyEnforcementContext context)
-        throws AuthenticationException, FindException {
+        throws AuthenticationException {
         AuthenticationResult authResult = AuthCache.getInstance().getCachedAuthResult(
             pc,
             provider,

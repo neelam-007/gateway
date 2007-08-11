@@ -13,6 +13,7 @@ import com.l7tech.server.identity.fed.*;
 import com.l7tech.server.identity.internal.*;
 import com.l7tech.server.identity.ldap.*;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -21,10 +22,13 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.AbstractBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.support.AbstractApplicationContext;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,7 +38,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 public class IdentityProviderFactory
-        implements InitializingBean, BeanPostProcessor, ApplicationContextAware {
+        implements InitializingBean, BeanPostProcessor, ApplicationContextAware, ApplicationListener {
     private AbstractBeanFactory abstractBeanFactory;
     private ApplicationContext springContext;
     private IdentityProviderConfigManager identityProviderConfigManager;
@@ -70,42 +74,35 @@ public class IdentityProviderFactory
      * If possible it will be a cached version, but in all cases it will be up-to-date
      * with respect to the database, because the version is always checked.
      *
-     * @param identityProviderOid the OID of the IdentityProviderConfig record
+     * @param idpOid the OID of the IdentityProviderConfig record
      * @return the IdentityProvider, or null if it's not in the database (either it was deleted or never existed)
-     * @throws FindException
+     * @throws FindException if there is problem loading information from the database
      */
-    public synchronized IdentityProvider getProvider(long identityProviderOid) throws FindException {
-        IdentityProviderConfigManager configManager = getIdentityProviderConfigurationManager();
-        Long oid = new Long(identityProviderOid);
+    public IdentityProvider getProvider(long idpOid) throws FindException {
 
-        IdentityProvider cachedProvider = providers.get(oid);
-        if (cachedProvider != null) {
-            Integer dbVersion = configManager.getVersion(identityProviderOid);
-            if (dbVersion == null) {
-                // It's been deleted
-                providers.remove(oid);
-                return null;
-            } else if (dbVersion.longValue() != cachedProvider.getConfig().getVersion()) {
-                // It's old, force a reload
-                cachedProvider = null;
+        IdentityProvider cachedProvider = providers.get(idpOid);
+        if (cachedProvider != null)
+            return cachedProvider;
+
+        synchronized (this) {
+            cachedProvider = providers.get(idpOid);
+            if (cachedProvider == null) {
+                IdentityProviderConfigManager configManager = getIdentityProviderConfigurationManager();
+                IdentityProviderConfig config = configManager.findByPrimaryKey(idpOid);
+                if (config == null) {
+                    return null;
+                }
+
+                try {
+                    cachedProvider = makeProvider(config);
+                } catch (InvalidIdProviderCfgException e) {
+                    final String msg = "Can't initialize an identity cachedProvider with type " + config.type();
+                    logger.log(Level.SEVERE, msg, e);
+                    throw new RuntimeException(msg, e);
+                }
+
+                providers.put(idpOid, cachedProvider);
             }
-        }
-
-        if (cachedProvider == null) {
-            IdentityProviderConfig config = configManager.findByPrimaryKey(oid.longValue());
-            if (config == null) {
-                return null;
-            }
-
-            try {
-                cachedProvider = makeProvider(config);
-            } catch (InvalidIdProviderCfgException e) {
-                final String msg = "Can't initialize an identity cachedProvider with type " + config.type();
-                logger.log(Level.SEVERE, msg, e);
-                throw new RuntimeException(msg, e);
-            }
-
-            providers.put(oid, cachedProvider);
         }
 
         return cachedProvider;
@@ -300,7 +297,7 @@ public class IdentityProviderFactory
     /**
      * Avoid too many calls to getBean 
      */
-    private IdentityProviderConfigManager getIdentityProviderConfigurationManager() {
+    private synchronized IdentityProviderConfigManager getIdentityProviderConfigurationManager() {
         IdentityProviderConfigManager manager = identityProviderConfigManager;
 
         if ( manager == null) {
@@ -311,8 +308,21 @@ public class IdentityProviderFactory
         return manager;
     }
 
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent iev = (EntityInvalidationEvent)event;
+            if (IdentityProviderConfig.class.isAssignableFrom(iev.getEntityClass())) {
+                // Throw them out of the cache so they get reloaded next time they are needed
+                long[] oids = iev.getEntityIds();
+                for (long oid : oids) {
+                    providers.remove(oid);
+                }
+            }
+        }
+    }
+
     // note these need to be singletons so that they can be invalidates in case of deletion
-    private static Map<Long, IdentityProvider> providers = new HashMap<Long, IdentityProvider>();
+    private static Map<Long, IdentityProvider> providers = new ConcurrentHashMap<Long, IdentityProvider>();
 
     public static final int MAX_AGE = 60 * 1000;
 
