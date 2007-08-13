@@ -188,17 +188,56 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         out.defaultWriteObject();
     }
 
-    public void serializeSignableProperties(OutputStream out) throws IOException {
+    public abstract void serializeOtherProperties(OutputStream out) throws IOException;
+
+    public static final String SERSEP = ":";
+
+    public final void serializeSignableProperties(OutputStream out) throws IOException {
         // previous format:
-        // objectid:nodeid:time:audit_level:name:message:ip_address:user_name:user_id:provider_oid:signature:objectid:entity_class:entity_id:action:objectid:status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:
+        // objectid:nodeid:time:audit_level:name:message:ip_address:user_name:user_id:provider_oid:
+        //
+        // entity_class:entity_id:action:objectid:status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:
         // response_zipxml:response_status:routing_latency:objectid:component_id:action:audit_associated_logs
 
-        if (userName != null) out.write(userName.getBytes());
-        if (userId != null) out.write(userId.getBytes());
+
+        /* object id cannot be included in the calculation since it changes once saved
+        out.write(Long.toString(oid).getBytes());
+        out.write(SERSEP.getBytes());
+        */
+
+        if (nodeId != null) out.write(nodeId.getBytes());
+        out.write(SERSEP.getBytes());
+
+        out.write(Long.toString(getMillis()).getBytes());
+        out.write(SERSEP.getBytes());
+
+        if (getLevel() != null) out.write(getLevel().toString().getBytes());
+        out.write(SERSEP.getBytes());
+
         if (name != null) out.write(name.getBytes());
+        out.write(SERSEP.getBytes());
+
+        if (getMessage() != null) out.write(getMessage().getBytes());
+        out.write(SERSEP.getBytes());
+
         if (ipAddress != null) out.write(ipAddress.getBytes());
+        out.write(SERSEP.getBytes());
+
+        if (userName != null) out.write(userName.getBytes());
+        out.write(SERSEP.getBytes());
+
+        if (userId != null) out.write(userId.getBytes());
+        out.write(SERSEP.getBytes());
+
+        out.write(Long.toString(identityProviderOid).getBytes());
+        out.write(SERSEP.getBytes());
+
+        serializeOtherProperties(out);
+        out.write(SERSEP.getBytes());
+
         for (AuditDetail ad : details) {
             ad.serializeSignableProperties(out);
+            out.write(SERSEP.getBytes());
         }
     }
 

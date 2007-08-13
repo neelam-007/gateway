@@ -285,10 +285,8 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     /** Used to lazily populate operationName if it is not yet set. */
     private Object operationNameHaver;
 
-    public void serializeSignableProperties(OutputStream out) throws IOException {
-        super.serializeSignableProperties(out);
+    public void serializeOtherProperties(OutputStream out) throws IOException {
         if (operationName != null) out.write(operationName.getBytes());
-
         if (requestXml != null) out.write(requestXml.getBytes());
         if (responseXml != null) out.write(responseXml.getBytes());
     }

@@ -76,8 +76,7 @@ public class SystemAuditRecord extends AuditRecord {
     private int componentId;
     private boolean alwaysAudit;
 
-    public void serializeSignableProperties(OutputStream out) throws IOException {
-        super.serializeSignableProperties(out);
+    public void serializeOtherProperties(OutputStream out) throws IOException {
         if (action != null) out.write(action.getBytes());
     }
 }

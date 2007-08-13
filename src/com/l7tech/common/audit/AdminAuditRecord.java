@@ -109,8 +109,7 @@ public class AdminAuditRecord extends AuditRecord {
     /** a character indicating the type of event that generated this record. */
     protected char action;
 
-    public void serializeSignableProperties(OutputStream out) throws IOException {
-        super.serializeSignableProperties(out);
+    public void serializeOtherProperties(OutputStream out) throws IOException {
         if (entityClassname != null) out.write(entityClassname.getBytes());
     }
 }
