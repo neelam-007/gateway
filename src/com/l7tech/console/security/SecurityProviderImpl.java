@@ -22,6 +22,7 @@ import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
@@ -91,7 +92,7 @@ public class SecurityProviderImpl extends SecurityProvider
             AdminLogin adminLogin = getAdminLoginRemoteReference(host);
 
             // dummy call, just to establish SSL connection (if none)
-            adminLogin.getServerCertificate("admin");
+            byte[] maybeSSGCert = adminLogin.getServerCertificate("admin");
             if (Thread.currentThread().isInterrupted()) throw new LoginException("Login interrupted.");
 
             // check cert if new
@@ -345,6 +346,7 @@ public class SecurityProviderImpl extends SecurityProvider
                 if(e!=null && failure) serverCertificateChain = chain;
 
                 if (hostBuffer.length()==0 || hostBuffer.toString().equals(peerHost)) {
+                    TopComponents.getInstance().setSSGCert(chain);
                     return true;
                 }
 

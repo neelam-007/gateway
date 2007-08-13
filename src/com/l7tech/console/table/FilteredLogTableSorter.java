@@ -10,17 +10,28 @@ import com.l7tech.cluster.LogRequest;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.crypto.Cipher;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 
 /*
  * This class extends the <CODE>FilteredLogTableModel</CODE> class for providing the sorting functionality to the log display.
@@ -724,10 +735,48 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private DigitalSignatureState checkDigitalSignature(SSGLogRecord record) {
         if (record instanceof AuditRecord) {
             final AuditRecord auditRecord = (AuditRecord) record;
-            //
-            // TODO Franco, please replace the return statement with the real thing.
-            //
-            return DigitalSignatureState.values()[(int)(auditRecord.getMillis() % DigitalSignatureState.values().length)];
+
+            String signatureToVerify = auditRecord.getSignature();
+            if (signatureToVerify == null || signatureToVerify.length() < 1) {
+                return DigitalSignatureState.NONE;
+            }
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            MessageDigest digest;
+            try {
+                digest = MessageDigest.getInstance("SHA-512");
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("should not happen", e);
+            }
+            byte[] digestvalue = null;
+            try {
+                auditRecord.serializeSignableProperties(baos);
+                digestvalue = digest.digest(baos.toByteArray());
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "could not serialize audit record", e);
+            } finally {
+                try {
+                    baos.close();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "error closing stream", e);
+                }
+            }
+
+            // get the cert of the ssg we're connected to
+            X509Certificate cert = TopComponents.getInstance().getSsgCert()[0];
+            PublicKey pub = cert.getPublicKey();
+            try {
+                byte[] decodedSig = HexUtils.decodeBase64(signatureToVerify);
+                Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
+                rsaCipher.init(Cipher.DECRYPT_MODE, pub);
+                byte[] decrypteddata = rsaCipher.doFinal(decodedSig);
+                if (Arrays.equals(decrypteddata, digestvalue)) {
+                    return DigitalSignatureState.VALID;
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "cannot verify signature", e);
+            }
+            return DigitalSignatureState.INVALID;
         } else {
             // No digital signature for other record types.
             return DigitalSignatureState.NONE;

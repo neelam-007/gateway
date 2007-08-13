@@ -16,6 +16,7 @@ import java.awt.*;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
+import java.security.cert.X509Certificate;
 
 import org.springframework.context.ApplicationContext;
 
@@ -29,6 +30,7 @@ import org.springframework.context.ApplicationContext;
  */
 public class TopComponents {
     private static final TopComponents instance = new TopComponents();
+    private X509Certificate[] ssgCert;
 
     public void showHelpTopics() {
         getMainWindow().showHelpTopicsRoot();
@@ -91,6 +93,14 @@ public class TopComponents {
 
     public ConsoleAssertionRegistry getAssertionRegistry() {
         return (ConsoleAssertionRegistry)getApplicationContext().getBean("assertionRegistry", AssertionRegistry.class);
+    }
+
+    public void setSSGCert(X509Certificate[] remoteConnectedCert) {
+        ssgCert = remoteConnectedCert;
+    }
+
+    public X509Certificate[] getSsgCert() {
+        return ssgCert;
     }
 
     /** Interface implemented by lazy component finders. */
