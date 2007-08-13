@@ -45,6 +45,8 @@ import java.io.ByteArrayOutputStream;
 public class AuditContextImpl implements AuditContext {
 
     private static final Logger logger = Logger.getLogger(AuditContextImpl.class.getName());
+    private static final String CONFIG_AUDIT_SIGN = "auditSigningEnabled";
+    private static final Boolean DEFAULT_AUDIT_SIGN = false;
     private volatile int ordinal = 0;
     private final ServerConfig serverConfig;
     private KeystoreUtils keystore;
@@ -191,8 +193,9 @@ public class AuditContextImpl implements AuditContext {
 
             currentRecord.setDetails(detailsToSave);
             currentRecord.setLevel(highestLevelYetSeen);
-            // todo, sign the record only if necessary by testing a cluster variable
-            signRecord(currentRecord);
+            if ( isSignAudits() ) {
+                signRecord(currentRecord);
+            }
             auditRecordManager.save(currentRecord);
         } catch (SaveException e) {
             logger.log(Level.SEVERE, "Couldn't save audit records", e);
@@ -204,6 +207,7 @@ public class AuditContextImpl implements AuditContext {
             currentAssociatedLogsThreshold = null;
             currentUseAssociatedLogsThreshold = null;
             currentMessageThreshold = null;
+            currentSignAuditSetting = null;
             details.clear();
             highestLevelYetSeen = Level.ALL;
             ordinal = 0;
@@ -332,6 +336,21 @@ public class AuditContextImpl implements AuditContext {
         return currentSystemClientThreshold;
     }
 
+    private boolean isSignAudits() {
+        if (currentSignAuditSetting == null) {
+            String configStr = serverConfig.getPropertyCached(CONFIG_AUDIT_SIGN);
+            Boolean configValue = null;
+            if (configStr != null) {
+                configValue = Boolean.valueOf(configStr.trim());
+            }
+            if (configValue == null) {
+                configValue = DEFAULT_AUDIT_SIGN;
+            }
+            currentSignAuditSetting = configValue;
+        }
+        return currentSignAuditSetting.booleanValue();
+    }
+
     /**
      * Get the Level for the given name/value.
      *
@@ -358,6 +377,7 @@ public class AuditContextImpl implements AuditContext {
     private Level currentSystemClientThreshold;
     private Level currentAssociatedLogsThreshold;
     private Boolean currentUseAssociatedLogsThreshold;
+    private Boolean currentSignAuditSetting;
     private final AuditRecordManager auditRecordManager;
 
     private AuditRecord currentRecord;
