@@ -128,11 +128,9 @@ public class PasswordPropertyCrypto {
 
     private String reencrypt(MasterPasswordManager encryptor, MasterPasswordManager decryptor, Object maybeEncrypted) {
         String plaintext = maybeEncrypted.toString();
-        if (encryptor == null)
-            return plaintext;
         if (decryptor != null)
             plaintext = new String(decryptor.decryptPasswordIfEncrypted(plaintext));
-        return encryptor.encryptPassword(plaintext.toCharArray());
+        return encryptor == null ? plaintext : encryptor.encryptPassword(plaintext.toCharArray());
     }
 
     /**
