@@ -298,10 +298,11 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         out.write(Long.toString(serviceOid).getBytes());
         out.write(SERSEP.getBytes());
 
-        if (operationName != null) out.write(operationName.getBytes());
+        if (getOperationName() != null) out.write(getOperationName().getBytes()); // this is lazy, must use getter
         out.write(SERSEP.getBytes());
 
-        out.write(Boolean.toString(authenticated).getBytes());
+        if (authenticated) out.write("1".getBytes()); // todo abstract this out
+        else out.write("0".getBytes());
         out.write(SERSEP.getBytes());
 
         if (authenticationType != null) out.write(authenticationType.toString().getBytes());
