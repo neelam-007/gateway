@@ -746,6 +746,8 @@ public class WssProcessorImpl implements WssProcessor {
         for (Iterator j = dataRefEls.iterator(); j.hasNext();) {
             Element dataRefEl = (Element)j.next();
             String dataRefUri = dataRefEl.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME);
+            if (dataRefUri.startsWith("#"))
+                dataRefUri = dataRefUri.substring(1);
             Element encryptedDataElement = (Element)cntx.elementsByWsuId.get(dataRefUri);
             if (encryptedDataElement == null) // TODO can omit this second search if encrypted sections never overlap
                 encryptedDataElement = SoapUtil.getElementByWsuId(refList.getOwnerDocument(), dataRefUri);
