@@ -22,6 +22,8 @@ import java.util.logging.Logger;
  */
 public class SslClientSocketFactory extends SSLSocketFactory implements Comparator {
     private static final Logger logger = Logger.getLogger(SslClientSocketFactory.class.getName());
+    private static final String PROP_SSL_SESSION_TIMEOUT = SslClientSocketFactory.class.getName() + ".sslSessionTimeoutSeconds";
+    public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
     private final SSLContext sslContext;
     private static X509TrustManager trustManager;
 
@@ -48,6 +50,8 @@ public class SslClientSocketFactory extends SSLSocketFactory implements Comparat
             if (trustManager == null) throw new IllegalStateException("TrustManager must be set before first use");
             sslContext = SSLContext.getInstance("SSL");
             sslContext.init(null, new TrustManager[] { trustManager } , null);
+            int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT).intValue();
+            sslContext.getClientSessionContext().setSessionTimeout(timeout);
         } catch (GeneralSecurityException e) {
             throw new RuntimeException("Couldn't initialize LDAP client SSL context", e);
         }
