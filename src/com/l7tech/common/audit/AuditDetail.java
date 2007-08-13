@@ -159,9 +159,12 @@ public class AuditDetail extends PersistentEntityImp implements Serializable {
     }
 
     public void serializeSignableProperties(OutputStream out) throws IOException {
-        if (exception != null) out.write(exception.getBytes());
+        out.write(Integer.toString(messageId).getBytes());
+        out.write(AuditRecord.SERSEP.getBytes());
+        
         if (params != null) for (String param : params) {
             if (param != null) out.write(param.getBytes());
+            out.write(AuditRecord.SERSEP.getBytes());
         }
     }
 }

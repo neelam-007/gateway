@@ -286,8 +286,43 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     private Object operationNameHaver;
 
     public void serializeOtherProperties(OutputStream out) throws IOException {
+        // status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:
+        // response_zipxml:response_status:routing_latency
+
+        out.write(Integer.toString(status).getBytes());
+        out.write(SERSEP.getBytes());
+
+        if (requestId != null) out.write(requestId.getBytes());
+        out.write(SERSEP.getBytes());
+
+        out.write(Long.toString(serviceOid).getBytes());
+        out.write(SERSEP.getBytes());
+
         if (operationName != null) out.write(operationName.getBytes());
+        out.write(SERSEP.getBytes());
+
+        out.write(Boolean.toString(authenticated).getBytes());
+        out.write(SERSEP.getBytes());
+
+        if (authenticationType != null) out.write(authenticationType.toString().getBytes());
+        out.write(SERSEP.getBytes());
+
+        out.write(Integer.toString(requestContentLength).getBytes());
+        out.write(SERSEP.getBytes());
+
+        out.write(Integer.toString(responseContentLength).getBytes());
+        out.write(SERSEP.getBytes());
+
         if (requestXml != null) out.write(requestXml.getBytes());
+        out.write(SERSEP.getBytes());
+
         if (responseXml != null) out.write(responseXml.getBytes());
+        out.write(SERSEP.getBytes());
+
+        out.write(Integer.toString(responseHttpStatus).getBytes());
+        out.write(SERSEP.getBytes());
+
+        out.write(Integer.toString(routingLatency).getBytes());
+        out.write(SERSEP.getBytes());
     }
 }

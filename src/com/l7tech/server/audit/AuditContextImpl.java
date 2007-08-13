@@ -217,7 +217,8 @@ public class AuditContextImpl implements AuditContext {
             byte[] siginput;
             try {
                 signatureSubject.serializeSignableProperties(baos);
-                siginput = digest.digest(baos.toByteArray());
+                byte[] tmp = baos.toByteArray();
+                siginput = digest.digest(tmp);
             } finally {
                 baos.close();
             }

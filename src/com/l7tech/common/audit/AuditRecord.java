@@ -196,14 +196,12 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         // previous format:
         // objectid:nodeid:time:audit_level:name:message:ip_address:user_name:user_id:provider_oid:
         //
-        // entity_class:entity_id:action:objectid:status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:
+        // from other classes:
+        // entity_class:entity_id:action:   objectid:status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:
         // response_zipxml:response_status:routing_latency:objectid:component_id:action:audit_associated_logs
 
 
-        /* object id cannot be included in the calculation since it changes once saved
-        out.write(Long.toString(oid).getBytes());
-        out.write(SERSEP.getBytes());
-        */
+        // Note that object ids cannot be included in the calculation since it changes once saved
 
         if (nodeId != null) out.write(nodeId.getBytes());
         out.write(SERSEP.getBytes());
@@ -232,6 +230,10 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         out.write(Long.toString(identityProviderOid).getBytes());
         out.write(SERSEP.getBytes());
 
+        // AdminAuditRecord does entity_class:entity_id:action
+        // MessageSummaryAuditRecord does status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:
+        // response_zipxml:response_status:routing_latency
+        // SystemAuditRecord component_id:action
         serializeOtherProperties(out);
         out.write(SERSEP.getBytes());
 
