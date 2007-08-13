@@ -110,6 +110,15 @@ public class AdminAuditRecord extends AuditRecord {
     protected char action;
 
     public void serializeOtherProperties(OutputStream out) throws IOException {
+        // entity_class:entity_id:action
+
         if (entityClassname != null) out.write(entityClassname.getBytes());
+        out.write(SERSEP.getBytes());
+
+        out.write(Long.toString(entityOid).getBytes());
+        out.write(SERSEP.getBytes());
+
+        out.write(action);
+        out.write(SERSEP.getBytes());
     }
 }
