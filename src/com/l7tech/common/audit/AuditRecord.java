@@ -189,6 +189,10 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     }
 
     public void serializeSignableProperties(OutputStream out) throws IOException {
+        // previous format:
+        // objectid:nodeid:time:audit_level:name:message:ip_address:user_name:user_id:provider_oid:signature:objectid:entity_class:entity_id:action:objectid:status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:
+        // response_zipxml:response_status:routing_latency:objectid:component_id:action:audit_associated_logs
+
         if (userName != null) out.write(userName.getBytes());
         if (userId != null) out.write(userId.getBytes());
         if (name != null) out.write(name.getBytes());

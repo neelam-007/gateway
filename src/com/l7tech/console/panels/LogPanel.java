@@ -1315,8 +1315,7 @@ public class LogPanel extends JPanel {
 
         // Add columns according to configuration
         if (isAuditType) { // only audit record has digital signature
-            // TODO Franco, uncomment the following line to activate signature state column.
-//            columnModel.addColumn(new TableColumn(LOG_SIGNATURE_COLUMN_INDEX, tableColumnWidths[LOG_SIGNATURE_COLUMN_INDEX]));
+            columnModel.addColumn(new TableColumn(LOG_SIGNATURE_COLUMN_INDEX, tableColumnWidths[LOG_SIGNATURE_COLUMN_INDEX]));
         }
         String showMsgFlag = resapplication.getString("Show_Message_Number_Column");
         if ((showMsgFlag != null) && showMsgFlag.equals("true")){

@@ -767,7 +767,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             PublicKey pub = cert.getPublicKey();
             try {
                 byte[] decodedSig = HexUtils.decodeBase64(signatureToVerify);
-                Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
+                Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
                 rsaCipher.init(Cipher.DECRYPT_MODE, pub);
                 byte[] decrypteddata = rsaCipher.doFinal(decodedSig);
                 if (Arrays.equals(decrypteddata, digestvalue)) {
