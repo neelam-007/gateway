@@ -9,6 +9,7 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.TextUtils;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListener;
 import com.l7tech.console.table.TrustedCertTableSorter;
@@ -355,33 +356,27 @@ public class CertSearchPanel extends JDialog {
             return false;
         }
 
-        String subjectName = CertUtils.extractCommonNameFromClientCertificate(cert);
-        String issuerName = CertUtils.extractIssuerNameFromClientCertificate(cert);
+        String subjectName = CertUtils.extractCommonNameFromClientCertificate(cert).toLowerCase();
+        String issuerName = CertUtils.extractIssuerNameFromClientCertificate(cert).toLowerCase();
 
-        boolean show1 = true;
-        boolean show2 = true;
+        boolean show1 = false;
+        boolean show2 = false;
         if (subjectNameTextField.getText().trim().length() > 0) {
-            if (subjectSearchComboBox.getSelectedIndex() == SEARCH_SELECTION_STARTS_WITH) {
-                if(!subjectName.startsWith(subjectNameTextField.getText().trim())) {
-                     show1 = false;
-                }
-            } else if (subjectSearchComboBox.getSelectedIndex() == SEARCH_SELECTION_EQUALS) {
-                if(!subjectName.equals(subjectNameTextField.getText().trim())) {
-                     show1 = false;
-                }
+            boolean fullMatch = subjectSearchComboBox.getSelectedIndex() != SEARCH_SELECTION_STARTS_WITH;
+            if (TextUtils.matches(subjectNameTextField.getText().trim(), subjectName, false, fullMatch)) {
+                 show1 = true;
             }
+        } else {
+            show1 = true;
         }
 
         if (issuerNameTextField.getText().trim().length() > 0) {
-            if (issuerSearchComboBox.getSelectedIndex() == SEARCH_SELECTION_STARTS_WITH) {
-                if(!issuerName.startsWith(issuerNameTextField.getText().trim())) {
-                     show2 = false;
-                }
-            } else if (issuerSearchComboBox.getSelectedIndex() == SEARCH_SELECTION_EQUALS) {
-                 if(!issuerName.equals(issuerNameTextField.getText().trim())) {
-                     show2 = false;
-                }
+            boolean fullMatch = issuerSearchComboBox.getSelectedIndex() != SEARCH_SELECTION_STARTS_WITH;
+            if (TextUtils.matches(issuerNameTextField.getText().trim(), issuerName, false, fullMatch)) {
+                 show2 = true;
             }
+        } else {
+            show2 = true;
         }
 
         return (show1 && show2);

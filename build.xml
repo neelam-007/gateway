@@ -819,6 +819,7 @@
             <test name="com.l7tech.common.http.ParameterizedStringTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.wsfederation.FederationPassiveClientTest" haltonfailure="no"/>
             <test name="com.l7tech.common.util.EncryptionUtilTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.util.TextUtilsTest" haltonfailure="no"/>
             <test name="com.l7tech.server.GatewayFeatureSetsTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.ServerAssertionRegistryTest" haltonfailure="no"/>
             <test name="com.l7tech.server.util.ServerCertUtilsTest" haltonfailure="no"/>

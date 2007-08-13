@@ -7,6 +7,7 @@ package com.l7tech.common.util;
 
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * Utilities for text mode programs.
@@ -120,5 +121,54 @@ public class TextUtils {
         }
         output.append(input.substring(pos));
         return output.toString();
+    }
+
+    /**
+     * Check if the given pattern matches the given text.
+     *
+     * <p>This uses a simplified regex format where '*' matches anything.</p>
+     *
+     * @param pattern The pattern (my contain '*', must not be null)
+     * @param text The text to match (mut not be null)
+     * @param caseSensitive True for a case sensitive match
+     * @param fullMatch True is the pattern must match the string (else just the start)
+     * @return True if the pattern matches the text
+     * @throws IllegalArgumentException if pattern or text is null
+     */
+    public static boolean matches(String pattern, String text, boolean caseSensitive, boolean fullMatch) {
+        if (pattern==null) throw new IllegalArgumentException("pattern must not be null");
+        if (text==null) throw new IllegalArgumentException("text must not be null");
+
+        boolean match = false;
+
+        if ( !caseSensitive ) {
+            pattern = pattern.toLowerCase();
+            text = text.toLowerCase();
+        }
+
+        pattern = pattern.replaceAll("\\\\", "\\\\\\\\");
+        pattern = pattern.replaceAll("\\{", "\\\\\\{");
+        pattern = pattern.replaceAll("\\}", "\\\\\\}");
+        pattern = pattern.replaceAll("\\[", "\\\\\\[");
+        pattern = pattern.replaceAll("\\]", "\\\\\\]");
+        pattern = pattern.replaceAll("\\(", "\\\\\\(");
+        pattern = pattern.replaceAll("\\)", "\\\\\\)");
+        pattern = pattern.replaceAll("\\.", "\\\\\\.");
+        pattern = pattern.replaceAll("\\|", "\\\\\\|");
+        pattern = pattern.replaceAll("\\^", "\\\\\\^");
+        pattern = pattern.replaceAll("\\$", "\\\\\\$");
+        pattern = pattern.replaceAll("\\?", "\\\\\\?");
+        pattern = pattern.replaceAll("\\*", ".*");
+        pattern = "^" + pattern;
+
+        Matcher matcher = Pattern.compile(pattern).matcher(text);
+
+        if ( fullMatch ) {
+            match = matcher.matches();
+        } else {
+            match = matcher.find();
+        }
+
+        return match;
     }
 }
