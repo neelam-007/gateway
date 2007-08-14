@@ -236,7 +236,6 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         //      response_zipxml:response_status:routing_latency
         // SystemAuditRecord component_id:action
         serializeOtherProperties(out);
-        out.write(SERSEP.getBytes());
 
         for (AuditDetail ad : details) {
             ad.serializeSignableProperties(out);
