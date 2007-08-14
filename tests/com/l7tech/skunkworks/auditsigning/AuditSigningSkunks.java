@@ -17,7 +17,7 @@ public class AuditSigningSkunks {
             "d0483d1a7e86e61099056a0098a88864:1187041902433:INFO:Server:Server Started:192.168.15.110:::-1:1200000:Started::2020::",
             "d0483d1a7e86e61099056a0098a88864:1187041978390:WARNING:SendSmsService [/foo]:Message processed successfully:127.0.0.1:::-1:0:000001146135cf10-0000000000000000:720896:sendSms:0::-1:-1:::200:0::",
             "d0483d1a7e86e61099056a0098a88864:1187042157519:INFO::User logged in:127.0.0.1:admin:3:-2:<none>:0:L::",
-            " d0483d1a7e86e61099056a0098a88864:1187049036804:WARNING:SendSmsService [/foo]:Message processed successfully:127.0.0.1:::-1:0:000001146135cf10-0000000000000001:720896:sendSms:0::502:11:<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "d0483d1a7e86e61099056a0098a88864:1187049036804:WARNING:SendSmsService [/foo]:Message processed successfully:127.0.0.1:::-1:0:000001146135cf10-0000000000000001:720896:sendSms:0::502:11:<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                     "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                     "        <soapenv:Body>\n" +
                     "                <sendSms xmlns=\"http://www.csapi.org/schema/parlayx/sms/send/v1_0/local\">\n" +
@@ -65,7 +65,13 @@ public class AuditSigningSkunks {
     }
 
     private static ParsedSignedAuditRecord process(String input) {
-        // remove signature. the signature starts after the 10th ':' and has a length of
+        if (input == null) return null;
+        input = input.trim();
+        // make sure there are no non-escaped '\n'
+        // todo
+        // removed escaped \n characters (replace '\\\n' with '\n')
+        // todo
+        
         ParsedSignedAuditRecord out = new ParsedSignedAuditRecord();
         out.raw = input;
         ArrayList separatorPositions = new ArrayList();
@@ -86,7 +92,7 @@ public class AuditSigningSkunks {
 
         StringBuffer parsedTmp = new StringBuffer();
 
-        // extract signature, remove initial ID and signature
+        // extract signature, remove initial ID and signature the signature starts after the 10th ':' and has a length of 173
         out.signature = input.substring((Integer)(separatorPositions.get(9)) + 1, (Integer)(separatorPositions.get(10)));
         if (out.signature == null || out.signature.length() < 1) {
             // we're dealing with a record which does not contain a signature
