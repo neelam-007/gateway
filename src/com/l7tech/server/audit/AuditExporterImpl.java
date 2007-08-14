@@ -72,10 +72,10 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * @param serviceOids   OIDs of services (thus filtering to service events only); null for no service filtering
      * @return SQL statement; never null
      */
-    private static String composeSql(long fromTime, long toTime, long[] serviceOids) {
+    static String composeSql(long fromTime, long toTime, long[] serviceOids) {
         final StringBuilder s = new StringBuilder(
             "SELECT audit_main.*, audit_admin.*, audit_message.*, audit_system.*, " +
-            "GROUP_CONCAT(DISTINCT 'ADMID:', audit_detail.message_id, '/-/_/-/', (SELECT GROUP_CONCAT(value ORDER BY position ASC SEPARATOR '/-/_/-/') FROM audit_detail_params WHERE " +
+            "GROUP_CONCAT(DISTINCT 'ADMID:', audit_detail.message_id, '/-/_/-/', (SELECT COALESCE(GROUP_CONCAT(value ORDER BY position ASC SEPARATOR '/-/_/-/'), '') FROM audit_detail_params WHERE " +
             "audit_detail_params.audit_detail_oid = audit_detail.objectid) ORDER BY ordinal SEPARATOR '/-/_/-/') AS audit_associated_logs " +
             "FROM audit_main " +
             "LEFT OUTER JOIN audit_admin ON audit_main.objectid = audit_admin.objectid " +
@@ -95,7 +95,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * @param serviceOids   OIDs of services (thus filtering to service events only); null for no service filtering
      * @return SQL statement; never null
      */
-    private static String composeCountSql(long fromTime, long toTime, long[] serviceOids) {
+    static String composeCountSql(long fromTime, long toTime, long[] serviceOids) {
         final StringBuilder s = new StringBuilder("SELECT COUNT(*) FROM audit_main");
         if (serviceOids != null && serviceOids.length > 0) {
             s.append(", audit_message");
@@ -115,7 +115,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * @param serviceOids   OIDs of services (thus filtering to service events only); null for no service filtering
      * @return SQL WHERE clause; may be empty but never null
      */
-    private static String composeWhereClause(long fromTime, long toTime, long[] serviceOids) {
+    static String composeWhereClause(long fromTime, long toTime, long[] serviceOids) {
         final StringBuilder s = new StringBuilder();
 
         if (fromTime != -1) {
@@ -162,6 +162,46 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     }
 
     /**
+     * Get a Session object that can be used to create a DB connection.
+     * If a session is returned, caller is responsible for releasing it when they are finished by calling
+     * releaseSessionForExport().
+     * <p/>
+     * This method always returns the hibernate session.
+     * <p/>
+     * Unit tests can override this method to produce a test that doesn't require a hibernate session.  Such unit
+     * tests must also override getConnectionForExport() so that it doesn't require a Session instance.
+     *
+     * @return a Session object, or null if a Session is not required to be passed to getConnectionForExport().
+     */
+    protected Session getSessionForExport() {
+        return super.getSession();
+    }
+
+    /**
+     * Release a Session that was returned by getSessionForExport.
+     * <p/>
+     * This method calls releaseSession() if session is non-null.
+     *
+     * @param session the Session to release, or null to take no action.
+     */
+    protected void releaseSessionForExport(Session session) {
+        if (session != null) releaseSession(session);
+    }
+
+    /**
+     * Get the DB connection that will be used for export, using the provided Session instance if needed.
+     * <p/>
+     * This method always calls connection() on the provided Session instance.
+     *
+     * @param session a Session returned by getSessionForExport(), possibly null.
+     * @return a JDBC Connection instance.  Never null.
+     * @throws java.sql.SQLException if a connection cannot be created
+     */
+    protected Connection getConnectionForExport(Session session) throws SQLException {
+        return session.connection();
+    }
+
+    /**
      * Exports the audit records from the database to the specified OutputStream, in UTF-8 format.
      * The audits are exported as a colon-delimited text file with colon as the record delimiter and "\n" as the
      * field delimiter..
@@ -190,8 +230,8 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             DigestOutputStream md5Out = new DigestOutputStream(sha1Out, md5);
             PrintStream out = new PrintStream(md5Out, false, "UTF-8");
 
-            session = getSession();
-            conn = session.connection();
+            session = getSessionForExport();
+            conn = getConnectionForExport(session);
             st = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
             st.setFetchSize(FETCH_SIZE_ROWS);
 
@@ -319,7 +359,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
 
             ResourceUtils.closeQuietly(rs);
             ResourceUtils.closeQuietly(st);
-            releaseSession(session);
+            releaseSessionForExport(session);
         }
     }
 
