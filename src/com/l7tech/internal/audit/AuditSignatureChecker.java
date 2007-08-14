@@ -1,10 +1,15 @@
 package com.l7tech.internal.audit;
 
+import com.l7tech.common.util.CertUtils;
+
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.security.cert.X509Certificate;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import javax.net.ssl.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,6 +17,11 @@ import java.io.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+import java.util.Collection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.security.NoSuchAlgorithmException;
+import java.security.KeyManagementException;
 
 /**
  * Tool to check individual signatures of downloaded audit events with both
@@ -35,7 +45,7 @@ public class AuditSignatureChecker extends JFrame {
         return result;
     }
 
-    private static X509Certificate loadCertFromFile(String file) {
+    private static Certificate[] loadCertFromFile(String file) throws IOException, CertificateException {
         final File auditFile = new File(file);
         if (! auditFile.exists()) {
             return null;
@@ -44,6 +54,7 @@ public class AuditSignatureChecker extends JFrame {
             return null;
         }
         final File certFile = new File(file);
+
         if (! certFile.exists()) {
             return null;
         }
@@ -51,31 +62,93 @@ public class AuditSignatureChecker extends JFrame {
             return null;
         }
 
-        // TODO read cert from file
-        return null;
+        Collection<? extends Certificate> certs = CertUtils.getFactory().generateCertificates(new FileInputStream(file));
+
+        return certs.toArray(new X509Certificate[0]);
     }
 
 
-    private static X509Certificate loadCertFromURL(String url) {
-        // todo, read cert from a HTTPS URL
-        return null;
+    private static Certificate[] loadCertFromURL(String purl) throws IOException {
+        URL url = new URL(purl);
+
+        SSLContext sslContext;
+        try {
+            sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null,
+              new X509TrustManager[]{new X509TrustManager() {
+                  public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                      return new java.security.cert.X509Certificate[0];
+                  }
+
+                  public void checkClientTrusted(java.security.cert.X509Certificate[] x509Certificates, String s) {
+                  }
+
+                  public void checkServerTrusted(java.security.cert.X509Certificate[] x509Certificates, String s) {
+                  }
+              }},
+              null);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IOException(e.getMessage());
+        } catch (KeyManagementException e) {
+            throw new IOException(e.getMessage());
+        }
+
+        URLConnection gconn = url.openConnection();
+        if (gconn instanceof HttpsURLConnection) {
+            HttpsURLConnection conn = (HttpsURLConnection)gconn;
+            conn.setSSLSocketFactory(sslContext.getSocketFactory());
+            final String[] sawHost = new String[] { null };
+            conn.setHostnameVerifier(new HostnameVerifier() {
+                public boolean verify(String s, SSLSession sslSession) {
+                    sawHost[0] = s;
+                    return true;
+                }
+            });
+
+            try {
+                conn.connect();
+            } catch (IOException e) {
+                throw e;
+            }
+
+            try {
+                return conn.getServerCertificates();
+            } catch (IOException e) {
+                throw e;
+            }
+        } else
+            throw new IOException("URL resulted in a non-HTTPS connection");
     }
 
 
-    private static X509Certificate loadCert(String urlOrFile, final PrintWriter out) {
-        X509Certificate output = loadCertFromFile(urlOrFile);
+    private static Certificate[] loadCert(String urlOrFile, final PrintWriter out) {
+        String errormsg = null;
+        Certificate[] output = new Certificate[0];
+        try {
+            output = loadCertFromFile(urlOrFile);
+        } catch (IOException e) {
+            errormsg = e.getMessage();
+        } catch (CertificateException e) {
+            errormsg = e.getMessage();
+        }
         if (output == null) {
-            output = loadCertFromURL(urlOrFile);
+            try {
+                output = loadCertFromURL(urlOrFile);
+            } catch (IOException e) {
+                errormsg = e.getMessage();
+            }
         }
         if (output == null) {
             out.println("Could not load cert from " + urlOrFile);
+            out.println(errormsg);
             return null;
         }
+        out.println("Certificate loaded OK");
         return output;
     }
 
     public static boolean checkFile(final String auditPath, final String certPath, final PrintWriter out) {
-        X509Certificate cert = loadCert(certPath, out);
+        Certificate[] cert = loadCert(certPath, out);
         if (cert == null) {
             return false;
         }
@@ -105,11 +178,11 @@ public class AuditSignatureChecker extends JFrame {
         }
     }
 
-    private static boolean checkFile(final InputStream is, final PrintWriter out, X509Certificate cert) throws IOException {
+    private static boolean checkFile(final InputStream is, final PrintWriter out, Certificate[] cert) throws IOException {
         final BufferedReader in = new BufferedReader(new InputStreamReader(is));
         String line;
         while ((line = in.readLine()) != null ) {
-            DownloadedAuditRecordSignatureVerificator rec = null;
+            DownloadedAuditRecordSignatureVerificator rec;
             try {
                 rec = DownloadedAuditRecordSignatureVerificator.parse(line);
             } catch (DownloadedAuditRecordSignatureVerificator.InvalidAuditRecordException e) {
@@ -119,7 +192,13 @@ public class AuditSignatureChecker extends JFrame {
             if (!rec.isSigned()) {
                 out.println(rec.getAuditID() + " is not signed");
             } else {
-                boolean res = rec.verifySignature(cert);
+                boolean res;
+                try {
+                    res = rec.verifySignature(cert[0]);
+                } catch (Exception e) {
+                    out.println("Error validating signature " + e.getMessage());
+                    res = false;
+                }
                 if (res) {
                     out.println(rec.getAuditID() + " has a valid signature");
                 } else {

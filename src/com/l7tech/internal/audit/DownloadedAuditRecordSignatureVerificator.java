@@ -1,8 +1,17 @@
 package com.l7tech.internal.audit;
 
+import com.l7tech.common.util.HexUtils;
+
 import javax.security.cert.X509Certificate;
+import javax.crypto.Cipher;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Logger;
+import java.security.cert.Certificate;
+import java.security.PublicKey;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.io.IOException;
 
 /**
  * Stuff used to parse downloaded audit records and verify it's signature.
@@ -117,13 +126,32 @@ public class DownloadedAuditRecordSignatureVerificator {
         return out;
     }
 
-    public boolean verifySignature(X509Certificate cert) {
+    public boolean verifySignature(Certificate cert) throws IOException {
         if (!isSigned()) {
             logger.info("Verify signature fails because the record is not signed.");
             return false;
         }
-        // todo
-        return true;
+        PublicKey pub = cert.getPublicKey();
+        MessageDigest digest;
+        try {
+            digest = MessageDigest.getInstance("SHA-512");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("should not happen", e);
+        }
+        byte[] digestvalue = digest.digest(parsedRecordInSignableFormat.getBytes());
+
+        try {
+            byte[] decodedSig = HexUtils.decodeBase64(signature);
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            rsaCipher.init(Cipher.DECRYPT_MODE, pub);
+            byte[] decrypteddata = rsaCipher.doFinal(decodedSig);
+            if (Arrays.equals(decrypteddata, digestvalue)) {
+                return true;
+            }
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+        return false;
     }
 
     public boolean isSigned() {
