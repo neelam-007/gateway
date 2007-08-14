@@ -9,7 +9,6 @@ import com.l7tech.common.LicenseManager;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.ftp.FtpTestException;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.server.GatewayFeatureSets;
@@ -20,6 +19,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * @author rmak
@@ -28,16 +28,16 @@ import java.util.logging.Logger;
 public class FtpAdminImpl implements FtpAdmin {
     private static final Logger _logger = Logger.getLogger(FtpAdminImpl.class.getName());
     private final LicenseManager _licenseManager;
-    private final TrustedCertManager _trustedCertManager;
+    private final X509TrustManager _x509TrustManager;
     private final SsgKeyStoreManager _ssgKeyStoreManager;
     private final ServerAssertionRegistry _serverAssertionRegistry;
 
     public FtpAdminImpl(LicenseManager licenseManager,
-                        TrustedCertManager trustedCertManager,
+                        X509TrustManager x509TrustManager,
                         SsgKeyStoreManager ssgKeyStoreManager,
                         ServerAssertionRegistry serverAssertionRegistry) {
         _licenseManager = licenseManager;
-        _trustedCertManager = trustedCertManager;
+        _x509TrustManager = x509TrustManager;
         _ssgKeyStoreManager = ssgKeyStoreManager;
         _serverAssertionRegistry = serverAssertionRegistry;
     }
@@ -100,7 +100,7 @@ public class FtpAdminImpl implements FtpAdmin {
                                                      String.class,              // clientCertKeyAlias
                                                      String.class,              // directory
                                                      Integer.TYPE,              // timeout
-                                                     TrustedCertManager.class,  // trustedCertManager
+                                                     X509TrustManager.class,    // x509TrustManager
                                                      SsgKeyStoreManager.class)  // ssgKeyStoreManager
                                           .invoke(null /* static method */,
                                                   isFtps,
@@ -115,7 +115,7 @@ public class FtpAdminImpl implements FtpAdmin {
                                                   clientCertKeyAlias,
                                                   directory,
                                                   timeout,
-                                                  _trustedCertManager,
+                                                  _x509TrustManager,
                                                   _ssgKeyStoreManager);
         } catch (ClassNotFoundException e) {
             _logger.log(Level.INFO, "Caught ClassNotFoundException while testing connection.", e);
