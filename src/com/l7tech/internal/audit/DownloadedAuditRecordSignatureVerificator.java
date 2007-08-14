@@ -1,7 +1,8 @@
-package com.l7tech.skunkworks.auditsigning;
+package com.l7tech.internal.audit;
 
 import javax.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
  * Stuff used to parse downloaded audit records and verify it's signature.
@@ -13,13 +14,26 @@ import java.util.ArrayList;
  * Date: Aug 14, 2007<br/>
  */
 public class DownloadedAuditRecordSignatureVerificator {
+    private Logger logger = Logger.getLogger(DownloadedAuditRecordSignatureVerificator.class.getName());
+
     private boolean isSigned;
     private String signature;
     private String recordInExportedFormat;
     private String parsedRecordInSignableFormat;
     private String type;
+    private String auditID;
 
-    public static DownloadedAuditRecordSignatureVerificator parse(String input) {
+    public static class InvalidAuditRecordException extends Exception {
+        public InvalidAuditRecordException(String msg) {
+            super(msg);
+        }
+    }
+
+    public String getAuditID() {
+        return auditID;
+    }
+
+    public static DownloadedAuditRecordSignatureVerificator parse(String input) throws InvalidAuditRecordException {
         if (input == null) return null;
         input = input.trim();
         // removed escaped \n characters (replace '\\\n' with '\n')
@@ -37,7 +51,8 @@ public class DownloadedAuditRecordSignatureVerificator {
         }
 
         if (separatorPositions.size() < 30) {
-            throw new RuntimeException("This does not appear to be a valid audit record (" + separatorPositions.size() + ")");
+            throw new InvalidAuditRecordException("This does not appear to be a valid audit record (" +
+                                                    separatorPositions.size() + ")");
         }
 
         StringBuffer parsedTmp = new StringBuffer();
@@ -48,10 +63,12 @@ public class DownloadedAuditRecordSignatureVerificator {
             // we're dealing with a record which does not contain a signature
             out.isSigned = false;
         } else if (out.signature.length() != 172) {
-            throw new IllegalArgumentException("Unexpected signature length " + out.signature.length() + ". " + out.signature);
+            throw new InvalidAuditRecordException("Unexpected signature length " + out.signature.length() +
+                                                  ". " + out.signature);
         } else {
             out.isSigned = true;
         }
+        out.auditID = input.substring(0, separatorPositions.get(0));
         parsedTmp.append(input.substring(separatorPositions.get(0) +1, separatorPositions.get(9)));
 
         // append either the AdminAuditRecord, MessageSummaryAuditRecord or the SystemAuditRecord
@@ -59,7 +76,7 @@ public class DownloadedAuditRecordSignatureVerificator {
         int tmpend = separatorPositions.get(11);
         if ((tmpend - tmpstart) > 1) {
             if (out.type != null) {
-                throw new RuntimeException("record cannot be admin AND " + out.type);
+                throw new InvalidAuditRecordException("record cannot be admin AND " + out.type);
             }
             out.type = "Admin";
             parsedTmp.append(input.substring(separatorPositions.get(11), separatorPositions.get(14)));
@@ -69,7 +86,7 @@ public class DownloadedAuditRecordSignatureVerificator {
         tmpend = separatorPositions.get(15);
         if ((tmpend - tmpstart) > 1) {
             if (out.type != null) {
-                throw new RuntimeException("record cannot be summary AND " + out.type);
+                throw new InvalidAuditRecordException("record cannot be summary AND " + out.type);
             }
             out.type = "Msg Summary";
             parsedTmp.append(input.substring(separatorPositions.get(15), separatorPositions.get(27)));
@@ -79,7 +96,7 @@ public class DownloadedAuditRecordSignatureVerificator {
         tmpend = separatorPositions.get(28);
         if ((tmpend - tmpstart) > 1) {
             if (out.type != null) {
-                throw new RuntimeException("record cannot be system AND " + out.type);
+                throw new InvalidAuditRecordException("record cannot be system AND " + out.type);
             }
             out.type = "System";
             parsedTmp.append(input.substring(separatorPositions.get(28), separatorPositions.get(30)));
@@ -101,6 +118,10 @@ public class DownloadedAuditRecordSignatureVerificator {
     }
 
     public boolean verifySignature(X509Certificate cert) {
+        if (!isSigned()) {
+            logger.info("Verify signature fails because the record is not signed.");
+            return false;
+        }
         // todo
         return true;
     }

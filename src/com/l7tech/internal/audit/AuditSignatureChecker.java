@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.security.cert.X509Certificate;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -34,31 +35,50 @@ public class AuditSignatureChecker extends JFrame {
         return result;
     }
 
-    /**
-     * @return true if pass; false if fail
-     */
-    public static boolean checkFile(final String auditPath, final String certPath, final PrintWriter out) {
-        final File auditFile = new File(auditPath);
+    private static X509Certificate loadCertFromFile(String file) {
+        final File auditFile = new File(file);
         if (! auditFile.exists()) {
-            out.println("File does not exist: " + auditPath);
-            return false;
+            return null;
         }
         if (! auditFile.isFile()) {
-            out.println("Not a file: " + auditPath);
-            return false;
+            return null;
         }
-
-        final File certFile = new File(certPath);
+        final File certFile = new File(file);
         if (! certFile.exists()) {
-            out.println("File does not exist: " + certFile);
-            return false;
+            return null;
         }
         if (! certFile.isFile()) {
-            out.println("Not a file: " + certFile);
-            return false;
+            return null;
         }
 
-        // TODO read certFile into Certificate object.
+        // TODO read cert from file
+        return null;
+    }
+
+
+    private static X509Certificate loadCertFromURL(String url) {
+        // todo, read cert from a HTTPS URL
+        return null;
+    }
+
+
+    private static X509Certificate loadCert(String urlOrFile, final PrintWriter out) {
+        X509Certificate output = loadCertFromFile(urlOrFile);
+        if (output == null) {
+            output = loadCertFromURL(urlOrFile);
+        }
+        if (output == null) {
+            out.println("Could not load cert from " + urlOrFile);
+            return null;
+        }
+        return output;
+    }
+
+    public static boolean checkFile(final String auditPath, final String certPath, final PrintWriter out) {
+        X509Certificate cert = loadCert(certPath, out);
+        if (cert == null) {
+            return false;
+        }
 
         try {
             if (isZipFile(auditPath)) {
@@ -70,14 +90,14 @@ public class AuditSignatureChecker extends JFrame {
                         out.println("\"audit.dat\" not found inside ZIP file.");
                         return false;
                     } else {
-                        return checkFile(zipFile.getInputStream(zipEntry), out);
+                        return checkFile(zipFile.getInputStream(zipEntry), out, cert);
                     }
                 } finally {
-                    zipFile.close();
+                    if (zipFile != null) zipFile.close();
                 }
             } else {
                 // Treat auditFile as the "audit.dat" content.
-                return checkFile(new FileInputStream(auditPath), out);
+                return checkFile(new FileInputStream(auditPath), out, cert);
             }
         } catch (Exception e) {
             e.printStackTrace(out);
@@ -85,15 +105,27 @@ public class AuditSignatureChecker extends JFrame {
         }
     }
 
-    /**
-     * TODO implement this
-     * @return true if pass; false if fail
-     */
-    private static boolean checkFile(final InputStream is, final PrintWriter out) throws IOException {
+    private static boolean checkFile(final InputStream is, final PrintWriter out, X509Certificate cert) throws IOException {
         final BufferedReader in = new BufferedReader(new InputStreamReader(is));
-        String line = null;
+        String line;
         while ((line = in.readLine()) != null ) {
-            out.println(line);
+            DownloadedAuditRecordSignatureVerificator rec = null;
+            try {
+                rec = DownloadedAuditRecordSignatureVerificator.parse(line);
+            } catch (DownloadedAuditRecordSignatureVerificator.InvalidAuditRecordException e) {
+                out.println(e.getMessage());
+                continue;
+            }
+            if (!rec.isSigned()) {
+                out.println(rec.getAuditID() + " is not signed");
+            } else {
+                boolean res = rec.verifySignature(cert);
+                if (res) {
+                    out.println(rec.getAuditID() + " has a valid signature");
+                } else {
+                    out.println(rec.getAuditID() + " has an *INVALID* signature");
+                }
+            }
         }
         return true;
     }
