@@ -1799,6 +1799,27 @@
              compression="gzip"/>
     </target>
 
+
+    <!--
+        Package the AuditSignatureChecker (Aways invoked by hand)
+    -->
+    <target name="package.auditsignaturechecker"
+            description="Compile and package the Audit Signature Checker."
+            depends="init, compile">
+        <jar jarfile="${build.dir}/AuditSignatureChecker.jar">
+            <manifest>
+                <attribute name="Implementation-Title" value="${app.name}"/>
+                <attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}"/>
+                <attribute name="Implementation-Vendor" value="${vendor.name}"/>
+                <attribute name="Main-Class" value="com.l7tech.internal.audit.AuditSignatureChecker"/>
+            </manifest>
+            <fileset dir="${build.classes}">
+                <include name="com/l7tech/internal/audit/**/*"/>
+            </fileset>
+        </jar>
+    </target>
+
+
     <!--
       Build the windows installers
     -->
