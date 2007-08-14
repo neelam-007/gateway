@@ -31,6 +31,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
     private KeystoreConfigBean keystoreBean;
 
     private Map<String, KeystoreType> ksTypeMap;
+    private ResourceBundle resourceBundle;
 
     public ConfigWizardConsoleKeystoreStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -46,6 +47,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         keystoreBean = (KeystoreConfigBean) configBean;
         configCommand = new KeystoreConfigCommand(configBean);
         ksTypeMap = new TreeMap<String,KeystoreType>();
+        resourceBundle = ResourceBundle.getBundle("com.l7tech.server.config.resources.configwizard");
     }
 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
@@ -147,8 +149,9 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         KeystoreActions ka = new KeystoreActions(osFunctions);
         try {
             ka.probeUSBBackupDevice();
-            doKeystorePasswordPrompts("Enter the existing HSM Password",
-                    "Please enter the existing HSM Password: ",
+            doKeystorePasswordPrompts(
+                    "Enter the existing HSM Password",
+                    resourceBundle.getString("hsm.import.password.msg") + ": " ,
                     null);
             success = true;
         } catch (KeystoreActionsException e) {
@@ -181,9 +184,10 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 askAgain = false;
             }
         } while (askAgain);
-        doKeystorePasswordPrompts("Set the HSM Password",
-                              "Enter the HSM password: ",
-                              keystoreBean.isInitializeHSM()?"Confirm the HSM password: ":null);
+        doKeystorePasswordPrompts(
+                "Set the HSM Password",
+                resourceBundle.getString("hsm.initialize.new.password.msg") + ": ",
+                keystoreBean.isInitializeHSM()?resourceBundle.getString("hsm.initialize.confirm.password.msg") + ": ":null);
     }
 
     private void askLunaKeystoreQuestions() throws IOException, WizardNavigationException {

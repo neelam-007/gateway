@@ -2,13 +2,14 @@ package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.server.config.KeyStoreConstants;
 import com.l7tech.server.config.KeystoreActions;
-import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
+import com.l7tech.server.config.exceptions.KeystoreActionsException;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ResourceBundle;
 
 /**
  * User: megery
@@ -23,6 +24,7 @@ public class Sca6000KeystorePanel extends KeystorePanel {
     private JCheckBox shouldBackupMasterKey;
 
     KeystorePasswordPanel pwPanel;
+    private ResourceBundle resourceBundle;
 
 
     public Sca6000KeystorePanel() {
@@ -31,6 +33,7 @@ public class Sca6000KeystorePanel extends KeystorePanel {
     }
 
     private void init() {
+        resourceBundle = ResourceBundle.getBundle("com.l7tech.server.config.resources.configwizard");
         ButtonGroup bg = new ButtonGroup();
 
         bg.add(initializeKeystore);
@@ -73,9 +76,13 @@ public class Sca6000KeystorePanel extends KeystorePanel {
 
     private void setPasswordFieldsVisible() {
         if (initializeKeystore.isSelected()) {
-            pwPanel.setPasswordPrompts("Select the HSM password", "Confirm the HSM password");
+            pwPanel.setPasswordPrompts(
+                    resourceBundle.getString("hsm.initialize.new.password.msg"),
+                    resourceBundle.getString("hsm.initialize.confirm.password.msg"));
         } else {
-            pwPanel.setPasswordPrompts("Enter the HSM password", null);
+            pwPanel.setPasswordPrompts(
+                    resourceBundle.getString("hsm.import.password.msg"),
+                    null);
         }
     }
 
