@@ -455,6 +455,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpNoKeepAlive")) ) {
                     params.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
                 }
+                if ( "1.0".equals(ServerConfig.getInstance().getPropertyCached("ioHttpVersion")) ) {
+                    params.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
+                }                
                 return super.createRequest(method, params);
             }
         };

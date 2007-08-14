@@ -455,6 +455,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpNoKeepAlive")) ) {
                 routedRequestParams.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
             }
+            if ( "1.0".equals(ServerConfig.getInstance().getPropertyCached("ioHttpVersion")) ) {
+                routedRequestParams.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
+            }
 
             routedRequest = httpClient.createRequest(method, routedRequestParams);
 

@@ -154,13 +154,20 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         clientParams.setDefaults(getOrBuildCachingHttpParams(clientParams.getDefaults()));
         clientParams.setAuthenticationPreemptive(false);
 
+        boolean useHttp1_0 = params.getHttpVersion() == GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0;
+
         // Note that we only set if there is a non-default value specified
         // this allows the system wide default to be used for the bridge
         if (params.isUseExpectContinue()) {
+            if (useHttp1_0) throw new GenericHttpException("Cannot use expect-continue with HTTP/1.0");
             clientParams.setBooleanParameter("http.protocol.expect-continue", Boolean.valueOf(params.isUseExpectContinue()));
         }
-        if (!params.isUseKeepAlives()) {
+        if (!params.isUseKeepAlives() && !useHttp1_0) {
+            // default is to persist so add close
             clientParams.setParameter("http.default-headers", Collections.singletonList(new Header("Connection", "close")));
+        } else if (params.isUseKeepAlives() && useHttp1_0) {
+            // default is to close so add keep-alive
+            clientParams.setParameter("http.default-headers", Collections.singletonList(new Header("Connection", "keep-alive")));
         }
 
         final HttpState state = getHttpState(client, params);
@@ -182,7 +189,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
         httpMethod.setFollowRedirects(params.isFollowRedirects());
         HttpMethodParams methodParams = httpMethod.getParams();
-        methodParams.setVersion(HttpVersion.HTTP_1_1);
+        methodParams.setVersion(useHttp1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1);
         methodParams.setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
         methodParams.setSoTimeout(timeout);
 

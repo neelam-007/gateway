@@ -18,6 +18,12 @@ import java.util.*;
  * Bean that provides information about a pending HTTP request. 
  */
 public class GenericHttpRequestParams {
+
+    public static enum HttpVersion {
+        HTTP_VERSION_1_0,
+        HTTP_VERSION_1_1,
+    }
+
     private URL targetUrl;
     private GenericHttpState state;
     private PasswordAuthentication passwordAuthentication = null;
@@ -31,6 +37,7 @@ public class GenericHttpRequestParams {
     private boolean followRedirects = false;
     private boolean useKeepAlives = true;
     private boolean useExpectContinue = false;
+    private HttpVersion httpVersion = HttpVersion.HTTP_VERSION_1_1;
 
     /**
      * Create a new request description that does not yet have a target URL set.
@@ -295,6 +302,24 @@ public class GenericHttpRequestParams {
      */
     public void setUseKeepAlives(boolean useKeepAlives) {
         this.useKeepAlives = useKeepAlives;
+    }
+
+    /**
+     * Get the HTTP protocol version to use.
+     *
+     * @return The HTTP version
+     */
+    public HttpVersion getHttpVersion() {
+        return httpVersion;
+    }
+
+    /**
+     * Set the HTTP protocol version.
+     *
+     * @param httpVersion The HTTP version
+     */
+    public void setHttpVersion(HttpVersion httpVersion) {
+        this.httpVersion = httpVersion;
     }
 
     /**
