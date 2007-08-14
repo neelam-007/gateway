@@ -2,7 +2,6 @@ package com.l7tech.skunkworks.auditsigning;
 
 import java.util.ArrayList;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * [todo jdoc this class]
@@ -55,178 +54,13 @@ public class AuditSigningSkunks {
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < downloaded.length; i++) {
-            ParsedSignedAuditRecord p = process(downloaded[i]);
-            if (!signable[i].equals(p.parsed)) {
+            DownloadedAuditRecordSignatureVerificator p = DownloadedAuditRecordSignatureVerificator.parse(downloaded[i]);
+            if (!signable[i].equals(p.getParsedRecordInSignableFormat())) {
                 System.out.println("ERROR, parsed record does not match downloaded audit record: " + p);
             } else {
                 System.out.println("Perfect match");
             }
         }
     }
-
-    public static class ParsedSignedAuditRecord {
-        String signature;
-        String raw;
-        String parsed;
-        boolean signed = false;
-        String type;
-        int nrRecords;
-        public String toString() {
-            return "Parsed audit record: " + parsed + "\n" +
-                   "Signed: " + signed + "\n" +
-                   "Type: " + type + "\n" +
-                   "Number or records " + nrRecords;
-        }
-    }
-
-    private static int nextUnescapedSeparator(String input, int startPos) {
-        int res = input.indexOf(SEPARATOR_PATTERN, startPos);
-        if (res < 1) return res;
-        if (input.charAt(res-1) == '\\') {
-            return nextUnescapedSeparator(input, res+1);
-        } else return res;
-    }
-
-    private static final String SEPARATOR_PATTERN = ":";
-    private static ParsedSignedAuditRecord process(String input) {
-        if (input == null) return null;
-        input = input.trim();
-        // removed escaped \n characters (replace '\\\n' with '\n')
-        input = input.replace("\\\n", "\n");
-        
-        ParsedSignedAuditRecord out = new ParsedSignedAuditRecord();
-        out.raw = input;
-        ArrayList<Integer> separatorPositions = new ArrayList<Integer>();
-        int pos = 0;
-        int tmp = nextUnescapedSeparator(input, pos);
-        /*Long reqLength = null;
-        Long resLength = null;*/
-        while (tmp >= 0) {
-            separatorPositions.add(tmp);
-            pos = tmp+1;
-            /*int currentSize = separatorPositions.size();
-            // 0 based index of separators 21_req_length_22_res_length_23_reqxml_24_resxml
-            // lookout for xml which contains a whole bunch of ':' separators
-            switch (currentSize) {
-                case 22:
-                    tmp = input.indexOf(SEPARATOR_PATTERN, pos);
-                    // check if a request length is specified
-                    if ((tmp - pos) > 1) {
-                        String maybelength = input.substring(pos, tmp);
-                        try {
-                            reqLength = Long.parseLong(maybelength);
-                        } catch (NumberFormatException e) {
-                            logger.log(Level.SEVERE, "Expected request length at " + maybelength);
-                        }
-                    }
-                    break;
-                case 23:
-                    tmp = input.indexOf(SEPARATOR_PATTERN, pos);
-                    // check if a response length is specified
-                    if ((tmp - pos) > 1) {
-                        String maybelength = input.substring(pos, tmp);
-                        try {
-                            resLength = Long.parseLong(maybelength);
-                        } catch (NumberFormatException e) {
-                            logger.log(Level.SEVERE, "Expected response length at " + maybelength);
-                        }
-                    }
-                    break;
-                case 24:
-                    if (reqLength != null && reqLength > 0) {
-                        tmp = input.indexOf(SEPARATOR_PATTERN, pos + reqLength.intValue());
-                        String maybeXML = input.substring(pos, tmp);
-                        logger.fine("XML parsed out " + maybeXML);
-                    } else {
-                        // no request length specified, not expecting xml here
-                        tmp = input.indexOf(SEPARATOR_PATTERN, pos);
-                    }
-                    break;
-                case 25:
-                    if (resLength != null && resLength > 0) {
-                        tmp = input.indexOf(SEPARATOR_PATTERN, pos + resLength.intValue());
-                        String maybeXML = input.substring(pos, tmp);
-                        logger.fine("XML parsed out " + maybeXML);
-                    } else {
-                        // no response length specified, not expecting xml here
-                        tmp = input.indexOf(SEPARATOR_PATTERN, pos);
-                    }
-                    break;
-                default:
-                    tmp = input.indexOf(SEPARATOR_PATTERN, pos);
-            }*/
-            tmp = nextUnescapedSeparator(input, pos);
-        }
-
-        out.nrRecords = separatorPositions.size();
-        if (out.nrRecords < 30) {
-            throw new RuntimeException("This does not appear to be a valid audit record (" + out.nrRecords + ")");
-        }
-
-        StringBuffer parsedTmp = new StringBuffer();
-
-        // extract signature, remove initial ID and signature the signature starts after the 10th ':' and has a length of 173
-        out.signature = input.substring(separatorPositions.get(9) + 1, separatorPositions.get(10));
-        if (out.signature == null || out.signature.length() < 1) {
-            // we're dealing with a record which does not contain a signature
-            out.signed = false;
-        } else if (out.signature.length() != 172) {
-            throw new IllegalArgumentException("Unexpected signature length " + out.signature.length() + ". " + out.signature);
-        } else {
-            out.signed = true;
-        }
-        parsedTmp.append(input.substring(separatorPositions.get(0) +1, separatorPositions.get(9)));
-
-        // append either the AdminAuditRecord, MessageSummaryAuditRecord or the SystemAuditRecord
-        boolean isadminrecord = false;
-        boolean ismsgsummaryrecord = false;
-        boolean issystemrecord = false;
-        int tmpstart = separatorPositions.get(10);
-        int tmpend = separatorPositions.get(11);
-        if ((tmpend - tmpstart) > 1) {
-            isadminrecord = true;
-            if (out.type != null) {
-                throw new RuntimeException("record cannot be admin AND " + out.type);
-            }
-            out.type = "Admin";
-            parsedTmp.append(input.substring(separatorPositions.get(11), separatorPositions.get(14)));
-            parsedTmp.append(SEPARATOR_PATTERN);
-        }
-        tmpstart = separatorPositions.get(14);
-        tmpend = separatorPositions.get(15);
-        if ((tmpend - tmpstart) > 1) {
-            ismsgsummaryrecord = true;
-            if (out.type != null) {
-                throw new RuntimeException("record cannot be summary AND " + out.type);
-            }
-            out.type = "Msg Summary";
-            parsedTmp.append(input.substring(separatorPositions.get(15), separatorPositions.get(27)));
-            parsedTmp.append(SEPARATOR_PATTERN);
-        }
-        tmpstart = separatorPositions.get(27);
-        tmpend = separatorPositions.get(28);
-        if ((tmpend - tmpstart) > 1) {
-            issystemrecord = true;
-            if (out.type != null) {
-                throw new RuntimeException("record cannot be system AND " + out.type);
-            }
-            out.type = "System";
-            parsedTmp.append(input.substring(separatorPositions.get(28), separatorPositions.get(30)));
-            parsedTmp.append(SEPARATOR_PATTERN);
-        }
-
-        // Unescape : separators until now
-        String parsingResult = parsedTmp.toString();
-        parsingResult = parsingResult.replace("\\:", ":");
-
-
-        // Append the audit details if any
-        tmpstart = input.indexOf("[", separatorPositions.get(30));
-        if (tmpstart > 0) {
-            parsingResult = parsingResult + input.substring(tmpstart);
-        }
-
-        out.parsed = parsingResult;
-        return out;
-    }
+    
 }
