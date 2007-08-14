@@ -230,7 +230,7 @@ public class AuditContextImpl implements AuditContext {
             Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
             rsaCipher.init(Cipher.ENCRYPT_MODE, pk);
             byte[] encrypteddata = rsaCipher.doFinal(siginput);
-            String signature = HexUtils.encodeBase64(encrypteddata);
+            String signature = HexUtils.encodeBase64(encrypteddata, true);
             signatureSubject.setSignature(signature);
         } catch (Exception e) {
             logger.log(Level.WARNING, "ERROR GENERATING AUDIT SIGNATURE", e);
