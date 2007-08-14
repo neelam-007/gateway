@@ -231,8 +231,9 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         out.write(SERSEP.getBytes());
 
         // AdminAuditRecord does entity_class:entity_id:action
-        // MessageSummaryAuditRecord does status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:
-        // response_zipxml:response_status:routing_latency
+        // MessageSummaryAuditRecord does status:request_id:service_oid:operation_name:
+        //      authenticated:authenticationType:request_length:response_length:request_zipxml:
+        //      response_zipxml:response_status:routing_latency
         // SystemAuditRecord component_id:action
         serializeOtherProperties(out);
         out.write(SERSEP.getBytes());
