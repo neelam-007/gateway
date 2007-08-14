@@ -17,11 +17,9 @@ public class AuditSigningSkunks {
     private static final Logger logger = Logger.getLogger(AuditSigningSkunks.class.getName());
 
     private static String[] signable = {
-            "d0483d1a7e86e61099056a0098a88864:1187041899550:FINE:Server:Server Starting:192.168.15.110:::-1:1200000:Starting:",
-            "d0483d1a7e86e61099056a0098a88864:1187041902433:INFO:Server:Server Started:192.168.15.110:::-1:1200000:Started::2020:",
-            "d0483d1a7e86e61099056a0098a88864:1187041978390:WARNING:SendSmsService [/foo]:Message processed successfully:127.0.0.1:::-1:0:000001146135cf10-0000000000000000:720896:sendSms:0::-1:-1:::200:0:",
-            "d0483d1a7e86e61099056a0098a88864:1187042157519:INFO::User logged in:127.0.0.1:admin:3:-2:<none>:0:L:",
-            "d0483d1a7e86e61099056a0098a88864:1187049036804:WARNING:SendSmsService [/foo]:Message processed successfully:127.0.0.1:::-1:0:000001146135cf10-0000000000000001:720896:sendSms:0::502:11:<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "d0483d1a7e86e61099056a0098a88864:1187115431578:FINE:Server:Server Starting:192.168.15.110:::-1:1200000:Starting:",
+            "d0483d1a7e86e61099056a0098a88864:1187115434359:INFO:Server:Server Started:192.168.15.110:::-1:1200000:Started:[2020\\:Not starting FTP server (no listeners enabled).]",
+            "d0483d1a7e86e61099056a0098a88864:1187115487162:WARNING:SendSmsService [/foo]:Message processed successfully:127.0.0.1:::-1:0:000001146597ddae-0000000000000000:720896:sendSms:0::502:11:<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                     "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                     "        <soapenv:Body>\n" +
                     "                <sendSms xmlns=\"http://www.csapi.org/schema/parlayx/sms/send/v1_0/local\">\n" +
@@ -31,14 +29,15 @@ public class AuditSigningSkunks {
                     "                        <message>message</message>\n" +
                     "                </sendSms>\n" +
                     "        </soapenv:Body>\n" +
-                    "</soapenv:Envelope>:<blahness/>:200:0:"
+                    "</soapenv:Envelope>:<blahness/>:200:0:[-4\\:oh yea!,-4\\:blahness audit detail 2]",
+            "d0483d1a7e86e61099056a0098a88864:1187115566163:INFO::User logged in:127.0.0.1:admin:3:-2:<none>:0:L:",
+            "d0483d1a7e86e61099056a0098a88864:1187115609199:INFO:SendSmsService:PublishedService #720896 (SendSmsService) updated (changed policyXml):127.0.0.1:admin:3:-2:com.l7tech.service.PublishedService:720896:U:",
+            "d0483d1a7e86e61099056a0098a88864:1187115634918:WARNING:SendSmsService [/foo]:Message processed successfully:127.0.0.1:::-1:0:000001146597ddae-0000000000000001:720896:sendSms:0::-1:-1:::200:0:[-4\\:oh yea!,-4\\:blahness audit detail 2]"
     };
     private static String[] downloaded = {
-            "2228224:d0483d1a7e86e61099056a0098a88864:1187041899550:FINE:Server:Server Starting:192.168.15.110:::-1:X3rb8HEe0PU3vfSmqpyaGZIsH4iEmjsr0H7XZDNgeUyJRJSFGibQ35yDoZVlrNXwtJsKkSfGGGFkgq63QX1loP6cxXF0CDgoOzuqtuPzY8Mhp0hdeS0jmZc+mxsTl/F7NDuSn5sz5EuZ6L/muvTqTnLHeeWv+sjNpQYBWwI5FgI=::::::::::::::::::2228224:1200000:Starting:",
-            "2228225:d0483d1a7e86e61099056a0098a88864:1187041902433:INFO:Server:Server Started:192.168.15.110:::-1:AKjnIxnu5AFZ2rfJNgs/EY0rioaV1gJaqjngqoQJveeqzS1ZOZuMh+8OIH/+mgsARtYnLXLl9vE2/akWaRVyBf/cHWsdgVjPLhJQUfd7jUnfCql5bT6idEsIKneyTAh7kzGKzetJxvFm2apJuPMiXm9psGaxfaeq5koy4Wrzd6Q=::::::::::::::::::2228225:1200000:Started:",
-            "2228226:d0483d1a7e86e61099056a0098a88864:1187041978390:WARNING:SendSmsService [/foo]:Message processed successfully:127.0.0.1:::-1:MGI3ebCuf+9jrAHEAVl12CDoyYk1JDvK2yEdBQA3+RvAiTacFrBBaI+L6QarfmAbqQgXJLlQzJkBzKa/kTHoNWC8wGIcqn1PkDeRrFMs4oTWyN1JBToOMprhAibl73hGOfFmPK9hXxpl/yDmDIXqXqqe6lnRrQrG+9nHCSyChE0=:::::2228226:0:000001146135cf10-0000000000000000:720896:sendSms:0::-1:-1:::200:0::::",
-            "2228227:d0483d1a7e86e61099056a0098a88864:1187042157519:INFO::User logged in:127.0.0.1:admin:3:-2:ALli4SHl+hcdGORUGDbxQDXCRtWWL01G0kLC3LdGmoBdcUVtmnQ7G7G+6wgot2tbw6oYqtaFZYSSKVGx1uyEKrHwVZLPdjK4j1SvCI3N6T6/bA0qyG72mkVbc/rH9f5+qqHeuT3nfcVvDHe+wGTe/Q2Zaf2XV2599n7p7G+u4Zk=:2228227:<none>:0:L:::::::::::::::::",
-            "2228231:d0483d1a7e86e61099056a0098a88864:1187049036804:WARNING:SendSmsService [/foo]:Message processed successfully:127.0.0.1:::-1:GmyQWGRY01Eiv5d9/vl+nnu09TmIuHtSTgtREmz1PiqetHP8JiK0wqOQXP5tN0ZjxFCnrRAviCLnele9YCf+Ihw6p/Tgrgn4qZuCVCL41IGFMFvWi7r8GkW5QyXaa8Z6cZkpfmX/cW2cPyGn3ywlKTV645x0OAICdJsFHr1Dd9o=:::::2228231:0:000001146135cf10-0000000000000001:720896:sendSms:0::502:11:<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\\n" +
+            "2719744:d0483d1a7e86e61099056a0098a88864:1187115431578:FINE:Server:Server Starting:192.168.15.110:::-1:eyUelocvrZ8oB3KzlE5ThhP1R1ufloULJB9fbPjEl7B3f1i4MZsl34Mp8MqPiK3dTpBUTcq5sHXKYZHyyMSu5f84jvjKCYLtLR+LV/xMf5IjoKGiOy+FCAyb1jCk/dUJiNLUJQhBuopwI8vSDtJ14l9D9nivgS48Vf7TFbk7zRA=::::::::::::::::::2719744:1200000:Starting:",
+            "2719745:d0483d1a7e86e61099056a0098a88864:1187115434359:INFO:Server:Server Started:192.168.15.110:::-1:EM8w44e+JciKgwQs4nmgE0L6lP6lKTwkD0cPab9yVSXHxjYNTSMheA4LL1o65MOFiMmg/GGLxdqp+r5WS+h6BZhF0zH4ET6xQ8ZoIa1yVbvufArWeliOekF8nxmwqArceYgYKITvZjvK8kE86NvaHeqz3JH5zfCoeuK2jkPpWlg=::::::::::::::::::2719745:1200000:Started:[2020\\:Not starting FTP server (no listeners enabled).]",
+            "2719746:d0483d1a7e86e61099056a0098a88864:1187115487162:WARNING:SendSmsService [/foo]:Message processed successfully:127.0.0.1:::-1:etfcqBkN9DAa0Z4xMFuCWuk/CAfmTMNuwPDD+eryyEIlS8bAKcxqj9qVrPIysJSXl8mGpr65WtfgcZ7PKaDk+uXOqvnD+nPZgSke3R/62KO6H4/B3ufgHIh5AbG0rAgVJQRrmm1qxNJRZ66u3ChLBlQivP+mpPCDFI4WUpRgeKw=:::::2719746:0:000001146597ddae-0000000000000000:720896:sendSms:0::502:11:<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\\n" +
                     "<soapenv\\:Envelope xmlns\\:soapenv=\"http\\://schemas.xmlsoap.org/soap/envelope/\">\\\n" +
                     "        <soapenv\\:Body>\\\n" +
                     "                <sendSms xmlns=\"http\\://www.csapi.org/schema/parlayx/sms/send/v1_0/local\">\\\n" +
@@ -48,12 +47,20 @@ public class AuditSigningSkunks {
                     "                        <message>message</message>\\\n" +
                     "                </sendSms>\\\n" +
                     "        </soapenv\\:Body>\\\n" +
-                    "</soapenv\\:Envelope>:<blahness/>:200:0::::"
+                    "</soapenv\\:Envelope>:<blahness/>:200:0::::[-4\\:oh yea!,-4\\:blahness audit detail 2]",
+            "2719747:d0483d1a7e86e61099056a0098a88864:1187115566163:INFO::User logged in:127.0.0.1:admin:3:-2:SVgiceaAHTKs/F71mWoBRQQcf2cWWqIYxVE++XPpC45onufEwkeQojm45aYety8gfuStoigVG86SPtUrm9L8CqIakAhi7skXndaOfcRx97wlK3JHmAcSozl0u/x5mut84g2nCZTwKh6RvQb0yZYblkuYs7TySW0XVWomDTORcPM=:2719747:<none>:0:L:::::::::::::::::",
+            "2719748:d0483d1a7e86e61099056a0098a88864:1187115609199:INFO:SendSmsService:PublishedService #720896 (SendSmsService) updated (changed policyXml):127.0.0.1:admin:3:-2:L7LOy0NJsgcqjJgiPeVMkKx68JxFcurbC6OaPohnYk+cGqeWuRYJwPfRpCPHcnSFvIhmdaNEWyKaIFZIKAvZqXAuxcY7+1oHh337Lpdnha6zl2izFxtL4MeGUZFmAIUdcY0SArm8es9mlXAfdBIf8g5gIlKaml+ERQ195zSdybM=:2719748:com.l7tech.service.PublishedService:720896:U:::::::::::::::::",
+            "2719749:d0483d1a7e86e61099056a0098a88864:1187115634918:WARNING:SendSmsService [/foo]:Message processed successfully:127.0.0.1:::-1:PGc0QM5m07xxU1iDrIKQtwc+Tc1SEroPNIlmmlcVWl2tMKJVuA3zRQF3f5YolxxJn/tw+iyUoGyFgvfozjjLf0wrL1DXPSw1yB/Hs2fUH5uo4789fyjHWxLH1wScIpNjzclcfu0lufxp4vGE2vj9dCgZOYRZSUsMU76j70/Eg5A=:::::2719749:0:000001146597ddae-0000000000000001:720896:sendSms:0::-1:-1:::200:0::::[-4\\:oh yea!,-4\\:blahness audit detail 2]"
     };
 
     public static void main(String[] args) throws Exception {
-        for (String s : downloaded) {
-            System.out.println("\n\n" + process(s));
+        for (int i = 0; i < downloaded.length; i++) {
+            ParsedSignedAuditRecord p = process(downloaded[i]);
+            if (!signable[i].equals(p.parsed)) {
+                System.out.println("ERROR, parsed record does not match downloaded audit record: " + p);
+            } else {
+                System.out.println("Perfect match");
+            }
         }
     }
 
@@ -72,12 +79,18 @@ public class AuditSigningSkunks {
         }
     }
 
+    private static int nextUnescapedSeparator(String input, int startPos) {
+        int res = input.indexOf(SEPARATOR_PATTERN, startPos);
+        if (res < 1) return res;
+        if (input.charAt(res-1) == '\\') {
+            return nextUnescapedSeparator(input, res+1);
+        } else return res;
+    }
+
     private static final String SEPARATOR_PATTERN = ":";
     private static ParsedSignedAuditRecord process(String input) {
         if (input == null) return null;
         input = input.trim();
-        // make sure there are no non-escaped '\n'
-        // todo
         // removed escaped \n characters (replace '\\\n' with '\n')
         input = input.replace("\\\n", "\n");
         
@@ -85,13 +98,13 @@ public class AuditSigningSkunks {
         out.raw = input;
         ArrayList<Integer> separatorPositions = new ArrayList<Integer>();
         int pos = 0;
-        int tmp = input.indexOf(SEPARATOR_PATTERN, pos);
-        Long reqLength = null;
-        Long resLength = null;
+        int tmp = nextUnescapedSeparator(input, pos);
+        /*Long reqLength = null;
+        Long resLength = null;*/
         while (tmp >= 0) {
             separatorPositions.add(tmp);
             pos = tmp+1;
-            int currentSize = separatorPositions.size();
+            /*int currentSize = separatorPositions.size();
             // 0 based index of separators 21_req_length_22_res_length_23_reqxml_24_resxml
             // lookout for xml which contains a whole bunch of ':' separators
             switch (currentSize) {
@@ -141,7 +154,8 @@ public class AuditSigningSkunks {
                     break;
                 default:
                     tmp = input.indexOf(SEPARATOR_PATTERN, pos);
-            }
+            }*/
+            tmp = nextUnescapedSeparator(input, pos);
         }
 
         out.nrRecords = separatorPositions.size();
@@ -163,7 +177,7 @@ public class AuditSigningSkunks {
         }
         parsedTmp.append(input.substring(separatorPositions.get(0) +1, separatorPositions.get(9)));
 
-        // find out if we're looking at an AdminAuditRecord, a MessageSummaryAuditRecord or a SystemAuditRecord
+        // append either the AdminAuditRecord, MessageSummaryAuditRecord or the SystemAuditRecord
         boolean isadminrecord = false;
         boolean ismsgsummaryrecord = false;
         boolean issystemrecord = false;
@@ -201,8 +215,18 @@ public class AuditSigningSkunks {
             parsedTmp.append(SEPARATOR_PATTERN);
         }
 
+        // Unescape : separators until now
+        String parsingResult = parsedTmp.toString();
+        parsingResult = parsingResult.replace("\\:", ":");
 
-        out.parsed = parsedTmp.toString();
+
+        // Append the audit details if any
+        tmpstart = input.indexOf("[", separatorPositions.get(30));
+        if (tmpstart > 0) {
+            parsingResult = parsingResult + input.substring(tmpstart);
+        }
+
+        out.parsed = parsingResult;
         return out;
     }
 }

@@ -9,6 +9,8 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import java.io.*;
 import java.util.Arrays;
+import java.text.MessageFormat;
+import java.text.FieldPosition;
 
 /**
  * An audit detail record.
@@ -160,11 +162,18 @@ public class AuditDetail extends PersistentEntityImp implements Serializable {
 
     public void serializeSignableProperties(OutputStream out) throws IOException {
         out.write(Integer.toString(messageId).getBytes());
+        out.write("\\".getBytes());
         out.write(AuditRecord.SERSEP.getBytes());
-        
-        if (params != null) for (String param : params) {
-            if (param != null) out.write(param.getBytes());
-            out.write(AuditRecord.SERSEP.getBytes());
+
+        String reConstructedMsg = Messages.getMessageById(messageId);
+        StringBuffer tmp = new StringBuffer();
+        if (reConstructedMsg != null && params != null) {
+            MessageFormat mf = new MessageFormat(reConstructedMsg);
+            mf.format(params, tmp, new FieldPosition(0));
+            reConstructedMsg = tmp.toString();
+        }
+        if (reConstructedMsg != null && reConstructedMsg.length() > 0) {
+            out.write(reConstructedMsg.getBytes());
         }
     }
 }

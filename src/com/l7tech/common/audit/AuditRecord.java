@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.Iterator;
 import java.util.logging.Level;
 
 /**
@@ -237,9 +238,14 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         // SystemAuditRecord component_id:action
         serializeOtherProperties(out);
 
-        for (AuditDetail ad : details) {
-            ad.serializeSignableProperties(out);
-            out.write(SERSEP.getBytes());
+        if (details != null && details.size() > 0) {
+            out.write("[".getBytes());
+            for (Iterator itor = details.iterator(); itor.hasNext();) {
+                AuditDetail ad = (AuditDetail)itor.next();
+                ad.serializeSignableProperties(out);
+                if (itor.hasNext()) out.write(",".getBytes());
+            }
+            out.write("]".getBytes());
         }
     }
 
