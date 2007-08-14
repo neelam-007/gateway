@@ -17,6 +17,7 @@ usage() {
     echo "  start - start the given partition and detach from the console"
     echo "  run - start the given partition but do not detach from the console"
     echo "  stop - stop the given partition"
+    echo "  status = query the status of the given partition (check the running state)."
     echo "  usage - show this message"
     echo "  partition-name - the name of the partition to control"
     echo
@@ -36,13 +37,16 @@ build_paths() {
     CONFIG_FILE="${PARTITION_DIR}/server.xml"
     ENABLED_FILE="${PARTITION_DIR}/enabled"
     FIREWALL_FILE="${PARTITION_DIR}/firewall_rules"
-    GATEWAY_PID="${PARTITION_DIR}/ssg.pid"
-    GATEWAY_SHUTDOWN="${PARTITION_DIR}/SHUTDOWN.NOW"
+    CATALINA_PID="${PARTITION_DIR}/ssg.pid"
 }
 
 do_control() {
     . ${SSG_HOME}/bin/partition_defs.sh true "${PARTITION_COUNT}"
     (perl ${SSG_HOME}/bin/partition_firewall.pl ${FIREWALL_FILE} ${COMMAND})
+
+    if [ -z "$TOMCAT_HOME" ] ; then
+        TOMCAT_HOME="${SSG_HOME}/tomcat/"
+    fi
 
     if [ "${PARTITION_NAME}"  == "default_" ]; then
         if [ -e  /usr/local/Tarari ]; then
@@ -50,20 +54,18 @@ do_control() {
         fi
     fi
 
-    JAVA_OPTS="${ORIGINAL_JAVA_OPTS} ${partition_opts} -Djava.security.properties==${PARTITION_DIR}/java.security -Dcom.l7tech.server.partitionName=${PARTITION_NAME}"
-    export JAVA_OPTS
-    export SSG_HOME
-    export GATEWAY_PID
-    export GATEWAY_SHUTDOWN
+    export JAVA_OPTS="${ORIGINAL_JAVA_OPTS} ${partition_opts} -Djava.security.properties==${PARTITION_DIR}/java.security"
+    export TOMCAT_HOME
+    export CATALINA_OPTS=-Dcom.l7tech.server.partitionName=${PARTITION_NAME}
+    export CATALINA_PID
 
     if [ "${COMMAND}" == "start" ] ; then
-        if [ -f "${GATEWAY_PID}" ]  && [ -d "/proc/$(< ${GATEWAY_PID})" ] ; then
+        if [ -f "${CATALINA_PID}" ]  && [ -d "/proc/$(< ${CATALINA_PID})" ] ; then
             return 1
         fi
-        
-        (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND} 2>&1 | logger -t SSG-${PARTITION_NAME}") <&- &>/dev/null &
+        (su $SSGUSER -c "${TOMCAT_HOME}/bin/catalina.sh ${COMMAND} -config ${CONFIG_FILE} 2>&1 | logger -t SSG-${PARTITION_NAME}") <&- &>/dev/null &
     else
-        (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}") &>/dev/null
+        (su $SSGUSER -c "${TOMCAT_HOME}/bin/catalina.sh ${COMMAND} -config ${CONFIG_FILE}") &>/dev/null
     fi
 }
 
@@ -112,7 +114,7 @@ build_paths
 
 if [ "${COMMAND}" == "status" ] ; then
     STATUS=1
-    if [ -f "${GATEWAY_PID}" ]  && [ -d "/proc/$(< ${GATEWAY_PID})" ] ; then
+    if [ -f "${CATALINA_PID}" ]  && [ -d "/proc/$(< ${CATALINA_PID})" ] ; then
         STATUS=0
     fi
 
