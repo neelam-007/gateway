@@ -15,6 +15,7 @@ ALLKERNELS=`ls ${KERNELSOURCEROOT}`
 INSTALL_BASE=tarari-installs
 RPM_TOP="rpmbuild"
 RPM_SPEC="tarari.spec"
+RPM_SOURCES_ALL="tarari.tar.gz"
 RPM_SOURCES="tarari-kernel-drivers.tar.gz tarari.tar.gz"
 RPM_SERVER="http://rhel4/rhel4/rhel/4/i386/"
 
@@ -163,7 +164,7 @@ do_rpm() {
 do_all() {
 	# Fail fast if files are missing
 	[ -f "${RPM_SPEC}" ] || exitfail "Missing spec file: ${RPM_SPEC}"
-	for FILENAME in ${RPM_SOURCES} ; do
+	for FILENAME in ${RPM_SOURCES_ALL} ; do
 	[ -f "${FILENAME}" ] || exitfail "Missing source file: ${FILENAME}"
 	done
 	RPMS=$(wget -O - ${RPM_SERVER} 2>/dev/null | awk -F'"' '{print $6}' | grep kernel-smp-devel)
