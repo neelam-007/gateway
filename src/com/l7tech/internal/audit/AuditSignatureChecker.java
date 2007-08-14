@@ -181,12 +181,18 @@ public class AuditSignatureChecker extends JFrame {
     private static boolean checkFile(final InputStream is, final PrintWriter out, Certificate[] cert) throws IOException {
         final BufferedReader in = new BufferedReader(new InputStreamReader(is));
         String line;
+        int i = 0;
         while ((line = in.readLine()) != null ) {
+            i++;
+            if (i == 1) continue; // dont do header line
+            if (line.length() < 5) continue;
+
             DownloadedAuditRecordSignatureVerificator rec;
             try {
                 rec = DownloadedAuditRecordSignatureVerificator.parse(line);
             } catch (DownloadedAuditRecordSignatureVerificator.InvalidAuditRecordException e) {
                 out.println(e.getMessage());
+                out.println(line);
                 continue;
             }
             if (!rec.isSigned()) {
@@ -284,14 +290,14 @@ public class AuditSignatureChecker extends JFrame {
 
             gridBagConstraints.gridx = 0;
             gridBagConstraints.gridy = 1;
-            add(new JLabel("Certificate:"), gridBagConstraints);
+            add(new JLabel("Certificate (path or URL):"), gridBagConstraints);
 
             _certPathTextField.getDocument().addDocumentListener(new DocumentListener() {
                 public void insertUpdate(DocumentEvent e) { enableOrDisableComponents(); }
                 public void removeUpdate(DocumentEvent e) { enableOrDisableComponents(); }
                 public void changedUpdate(DocumentEvent e) { enableOrDisableComponents(); }
             });
-            _certPathTextField.setToolTipText("Path of certificate file");
+            _certPathTextField.setToolTipText("Path of certificate file or HTTPS URL");
             gridBagConstraints.gridx = 1;
             gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
             gridBagConstraints.weightx = 1.;
