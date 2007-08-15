@@ -1816,6 +1816,13 @@
             </manifest>
             <fileset dir="${build.classes}">
                 <include name="com/l7tech/internal/audit/**/*"/>
+                <include name="com/l7tech/common/util/CertUtils*"/>
+                <include name="com/l7tech/common/util/HexUtils*"/>
+                <include name="com/l7tech/common/util/CausedIOException*"/>
+                <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream*"/>
+                <include name="com/l7tech/common/util/SyspropUtil*"/>
+                <include name="com/l7tech/common/util/ExceptionUtils*"/>
+                <include name="com/l7tech/common/util/DnParserBc*"/>
             </fileset>
         </jar>
     </target>
