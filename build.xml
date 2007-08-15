@@ -1808,6 +1808,12 @@
             description="Compile and package the Audit Signature Checker."
             depends="init, compile">
         <jar jarfile="${build.dir}/AuditSignatureChecker.jar">
+            <indexjars>
+                <fileset dir="${build.dir}/lib" casesensitive="yes">
+                    <include name="commons-codec-1.2.jar"/>
+                    <include name="bcprov-jdk15-135.jar"/>
+                </fileset>
+            </indexjars>
             <manifest>
                 <attribute name="Implementation-Title" value="${app.name}"/>
                 <attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}"/>
