@@ -540,7 +540,7 @@ public class RevocationCheckerFactory {
                             continue; // could be other valid URLs
                         }
 
-                        auditor.logAndAudit(SystemMessages.CERTVAL_REV_URL_MATCH, what(), urlsFromCert[0], subjectDn);
+                        auditor.logAndAudit(SystemMessages.CERTVAL_REV_URL_MATCH, what(), url, subjectDn);
                         return url;
                     }
                 }

@@ -6,7 +6,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.cert.X509Extension;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.security.auth.x500.X500Principal;
@@ -45,7 +44,7 @@ public class ServerCertUtils {
      * @return an array of zero or more CRL URLs from the certificate
      */
     public static String[] getCrlUrls(X509Certificate cert) throws IOException {
-        Set urls = new HashSet();
+        Set urls = new LinkedHashSet();
         byte[] distibutionPointBytes = cert.getExtensionValue(CertUtils.X509_OID_CRL_DISTRIBUTION_POINTS);
         if (distibutionPointBytes != null && distibutionPointBytes.length > 0) {
             ASN1Encodable asn1 = X509ExtensionUtil.fromExtensionValue(distibutionPointBytes);
