@@ -188,7 +188,7 @@ public class AssertionMessages extends Messages {
     public static final M WSS_BASIC_NO_CREDENTIALS                          = m(5202, Level.INFO, "Request did not include WSS Basic credentials");
     public static final M WSS_BASIC_CANNOT_FIND_CREDENTIALS                 = m(5203, Level.INFO, "Cannot find credentials");
     public static final M WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS             = m(5204, Level.INFO,  "Request did not include an encrypted UsernameToken");
-    public static final M WSS_BASIC_UNABLE_TO_ATTACH_TOKEN                  = m(5205, Level.WARNING, false, true, "Response not SOAP; unable to attach WS-Security EncryptedUsernameToken token");
+    public static final M WSS_BASIC_UNABLE_TO_ATTACH_TOKEN                  = m(5205, Level.WARNING, false, true, "Response not SOAP; unable to use WS-Security EncryptedUsernameToken");
 
     // ServerSslAssertion
     public static final M SSL_REQUIRED_PRESENT                              = m(5300, Level.FINE, "SSL required and present");
