@@ -1709,6 +1709,7 @@
                 <exclude name="com/l7tech/console/util/ClusterStatusWorker*.class"/>
                 <exclude name="com/l7tech/console/util/IconManager*.class"/>
                 <exclude name="com/l7tech/console/util/TopComponents*.class"/>
+                <exclude name="com/l7tech/console/util/jcalendar/**/*"/>
                 <exclude name="com/l7tech/console/util/jfree/**/*"/>
                 <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
                 <exclude name="com/l7tech/policy/wssp/**/*"/>

@@ -76,7 +76,7 @@ public class TimeRangePicker extends JComponent implements PropertyChangeListene
         }
     }
 
-    private JPanel mainPanel;
+    public JPanel mainPanel;
     private JDateTimeChooser _startChooser;
     private JDateTimeChooser _endChooser;
     private JComboBox _timeZoneComboBox;

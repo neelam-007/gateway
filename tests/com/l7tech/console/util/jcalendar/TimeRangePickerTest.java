@@ -26,7 +26,8 @@ import java.util.TimeZone;
  */
 public class TimeRangePickerTest extends JFrame {
     private JPanel contentPane;
-    private TimeRangePicker _timeRangePicker;
+    private JPanel _timeRangePickerPanel;
+    private final TimeRangePicker _timeRangePicker;
     private JComboBox _localeComboBox;
     private JButton _getLocaleButton;
     private JButton _setLocaleButton;
@@ -97,6 +98,8 @@ public class TimeRangePickerTest extends JFrame {
             }
         }
 
+        // Cannot use nested form because ant target "compile-test-forms" does not include source tree "src".
+        _timeRangePicker = new TimeRangePicker();
         _timeRangePicker.addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
                 final TimeZone timeZone = _timeRangePicker.getTimeZone();
@@ -113,6 +116,8 @@ public class TimeRangePickerTest extends JFrame {
                 }
             }
         });
+
+        _timeRangePickerPanel.add(_timeRangePicker.mainPanel);
 
         final Locale[] locales = Locale.getAvailableLocales();
         Arrays.sort(locales, new Comparator<Locale>() {
@@ -239,6 +244,7 @@ public class TimeRangePickerTest extends JFrame {
                 frame.pack();
                 Utilities.centerOnScreen(frame);
                 frame.setVisible(true);
+                frame.toFront();
             }
         });
     }
