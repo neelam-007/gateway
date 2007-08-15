@@ -4,6 +4,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.BuildInfo;
 import static com.l7tech.common.Component.fromId;
 import com.l7tech.common.audit.*;
@@ -111,6 +112,7 @@ public class LogPanel extends JPanel {
     private String msgFilterThreadId = "";
     private String msgFilterMessage = "";
     private boolean isAuditType;
+    private boolean signAudits = isSignAudits(true);
     private String nodeId;
     private JPanel selectPane;
     private JPanel filterPane;
@@ -1344,13 +1346,20 @@ public class LogPanel extends JPanel {
         final TableColumn signatureColumn = findTableModelColumn(columnModel, LOG_SIGNATURE_COLUMN_INDEX);
         if (signatureColumn != null) {
             signatureColumn.setCellRenderer(new DefaultTableCellRenderer() {
+                private final ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
                 @Override
                 public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                     final Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                     if (value instanceof FilteredLogTableSorter.DigitalSignatureState && comp instanceof JLabel) {
                         final FilteredLogTableSorter.DigitalSignatureState state = (FilteredLogTableSorter.DigitalSignatureState)value;
+                        Icon icon = state.getIcon16();
+                        if (state == FilteredLogTableSorter.DigitalSignatureState.NONE) {
+                            if (!isSignAudits(false)) {
+                                icon = null;
+                            }
+                        }
                         final JLabel label = (JLabel)comp;
-                        label.setIcon(state.getIcon16());
+                        label.setIcon(icon);
                         label.setText(null);
                         label.setHorizontalAlignment(JLabel.CENTER);
                         label.setToolTipText(state.getDescription());
@@ -1475,6 +1484,10 @@ public class LogPanel extends JPanel {
 
         final long duration = isAuditType ? durationMillis : System.currentTimeMillis() /* i.e., unlimited */;
 
+        if (isAuditType) {
+            isSignAudits(true); // updates cached value
+        }
+
         // retrieve the new logs
         Window window = SwingUtilities.getWindowAncestor(this);
         if(window!=null && window.isVisible())
@@ -1487,6 +1500,10 @@ public class LogPanel extends JPanel {
     public void refreshLogs(Date first, Date last) {
         getLogsRefreshTimer().stop();
 
+        if (isAuditType) {
+            isSignAudits(true); // updates cached value
+        }
+        
         // retrieve the new logs
         Window window = SwingUtilities.getWindowAncestor(this);
         if(window!=null && window.isVisible()) {
@@ -1707,6 +1724,32 @@ public class LogPanel extends JPanel {
         cal.setTime(time);
         getLastUpdateTimeLabel().setText("Last Updated: " + sdf.format(cal.getTime()) +
                 (isAutoRefreshEffective() ? " [Auto-Refresh]" : "   "));
+    }
+
+    /**
+     * @param refresh    whether to query the server afresh
+     * @return  true if audit signing is enabled
+     */
+    private boolean isSignAudits(final boolean refresh) {
+        if (refresh) {
+            boolean result = signAudits;
+            final ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
+            try {
+                final ClusterProperty prop = clusterStatusAdmin.findPropertyByName("audit.signing");
+                if (prop == null) {
+                    result = false;
+                } else {
+                    result = Boolean.valueOf(prop.getValue());
+                }
+            } catch (RemoteException e) {
+                // keep old value
+            } catch (FindException e) {
+                // keep old value
+            }
+            signAudits = result;
+        }
+
+        return signAudits;
     }
 
     // This customized renderer can render objects of the type TextandIcon
