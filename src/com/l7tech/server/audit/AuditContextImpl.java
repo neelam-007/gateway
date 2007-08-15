@@ -227,7 +227,7 @@ public class AuditContextImpl implements AuditContext {
                 baos.close();
             }
             PrivateKey pk = keystore.getSSLPrivateKey();
-            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             rsaCipher.init(Cipher.ENCRYPT_MODE, pk);
             byte[] encrypteddata = rsaCipher.doFinal(siginput);
             String signature = HexUtils.encodeBase64(encrypteddata, true);
