@@ -72,6 +72,8 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThreshold";
     public static final String PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThresholdRespected";
 
+    public static final String CONFIG_AUDIT_SIGN_CLUSTER = "audit.signing";
+
     public static final String PARAM_ANTIVIRUS_ENABLED = "savseEnable";
     public static final String PARAM_ANTIVIRUS_HOST = "savseHost";
     public static final String PARAM_ANTIVIRUS_PORT = "savsePort";

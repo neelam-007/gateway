@@ -6,14 +6,16 @@
  */
 package com.l7tech.cluster;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.HibernateEntityManager;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.admin.AuditSigningStatusChange;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,9 +32,9 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.REQUIRED)
 public class ClusterPropertyManagerImpl
         extends HibernateEntityManager<ClusterProperty, EntityHeader>
-        implements ClusterPropertyManager
-{
+        implements ClusterPropertyManager, ApplicationContextAware {
     private final Logger logger = Logger.getLogger(ClusterPropertyManagerImpl.class.getName());
+    private ApplicationContext applicationContext;
 
     private final String HQL_FIND_BY_NAME =
             "from " + getTableName() +
@@ -51,6 +53,28 @@ public class ClusterPropertyManagerImpl
             return prop.getValue();
         }
         return null;
+    }
+
+    private void propertyChangeMonitor(ClusterProperty p) {
+        if (p.getName().equals(ServerConfig.CONFIG_AUDIT_SIGN_CLUSTER)) {
+            if (p.getValue().equals("true")) {
+                applicationContext.publishEvent(new AuditSigningStatusChange(this, "on"));
+            } else {
+                applicationContext.publishEvent(new AuditSigningStatusChange(this, "off"));
+            }
+        }
+    }
+
+    public long save(ClusterProperty p) throws SaveException {
+        // monitor certain property changes
+        propertyChangeMonitor(p);
+        return super.save(p);
+    }
+
+    public void update(ClusterProperty p) throws UpdateException {
+        // monitor certain property changes
+        propertyChangeMonitor(p);
+        super.update(p);
     }
 
     private ClusterProperty describe(ClusterProperty cp) {
@@ -125,5 +149,9 @@ public class ClusterPropertyManagerImpl
 
     public String getTableName() {
         return "cluster_properties";
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 }

@@ -492,7 +492,8 @@
         <property name="keystore" ref="keystore"/>
     </bean>
 
-    <bean id="clusterPropertyManager" class="com.l7tech.cluster.ClusterPropertyManagerImpl" parent="hibernateBean"/>
+    <bean id="clusterPropertyManager" class="com.l7tech.cluster.ClusterPropertyManagerImpl" parent="hibernateBean">
+    </bean>
 
     <bean id="clusterPropertyCache" class="com.l7tech.cluster.ClusterPropertyCache">
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
