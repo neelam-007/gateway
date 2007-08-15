@@ -147,7 +147,7 @@ public class AssertionKeyAliasEditor extends JDialog {
     private void populateCombobox() {
         //PrivateKeyManagerWindow
         try {
-            java.util.List<TrustedCertAdmin.KeystoreInfo> keystores = getTrustedCertAdmin().findAllKeystores();
+            java.util.List<TrustedCertAdmin.KeystoreInfo> keystores = getTrustedCertAdmin().findAllKeystores(true);
             if (keystores != null) {
                 int size = 0;
                 for (TrustedCertAdmin.KeystoreInfo ksi : keystores) {

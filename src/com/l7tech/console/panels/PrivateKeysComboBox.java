@@ -35,11 +35,22 @@ public class PrivateKeysComboBox extends JComboBox {
         }
     }
 
+    private boolean _includeHardwareKeystore;
+
     /**
-     * Creates a combo box prepopulated with a list of private keys in the SSG
-     * keystore; and with none selected initially.
+     * Creates a combo box prepopulated with a list of private keys from all SSG
+     * keystores; and with none selected initially.
      */
     public PrivateKeysComboBox() {
+        this(true);
+    }
+
+    /**
+     * Creates a combo box prepopulated with a list of private keys from specified SSG
+     * keystores; and with none selected initially.
+     */
+    public PrivateKeysComboBox(final boolean includeHardwareKeystore) {
+        _includeHardwareKeystore = includeHardwareKeystore;
         populate();
         setSelectedIndex(-1);
     }
@@ -50,7 +61,7 @@ public class PrivateKeysComboBox extends JComboBox {
 
     private void populate() {
         try {
-            final java.util.List<TrustedCertAdmin.KeystoreInfo> keystores = getTrustedCertAdmin().findAllKeystores();
+            final java.util.List<TrustedCertAdmin.KeystoreInfo> keystores = getTrustedCertAdmin().findAllKeystores(_includeHardwareKeystore);
             final List<PrivateKeyItem> items = new ArrayList<PrivateKeyItem>();
             for (TrustedCertAdmin.KeystoreInfo keystore : keystores) {
                 for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.id)) {

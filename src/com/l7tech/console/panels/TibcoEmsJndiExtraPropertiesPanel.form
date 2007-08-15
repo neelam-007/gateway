@@ -75,7 +75,7 @@
                   <text value="Supply digital certificate for client authentication:"/>
                 </properties>
               </component>
-              <component id="57dbf" class="com.l7tech.console.panels.PrivateKeysComboBox" binding="clientCertsComboBox">
+              <component id="57dbf" class="com.l7tech.console.panels.PrivateKeysComboBox" binding="clientCertsComboBox" custom-create="true">
                 <constraints>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>

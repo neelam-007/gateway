@@ -5,9 +5,7 @@ package com.l7tech.common.security;
 
 import com.l7tech.common.AsyncAdminMethods;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
-import static com.l7tech.common.security.rbac.EntityType.REVOCATION_CHECK_POLICY;
-import static com.l7tech.common.security.rbac.EntityType.SSG_KEY_ENTRY;
-import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
+import static com.l7tech.common.security.rbac.EntityType.*;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
@@ -207,6 +205,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     /**
      * Find all keystore instances available on this Gateway.
      *
+     * @param includeHardware   whether to include hardware keystores
      * @return a List of KeystoreInfo.  Always contains at least one keystore, although it may be read-only.
      * @throws IOException if there is a problem reading necessary keystore data
      * @throws RemoteException on remote communication error
@@ -215,7 +214,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.SUPPORTS)
     @Secured(stereotype=FIND_ENTITIES)
-    public List<KeystoreInfo> findAllKeystores() throws IOException, FindException, KeyStoreException;
+    public List<KeystoreInfo> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException;
 
     /**
      * Retrieves all SsgKeyEntry instances available on this Gateway node.

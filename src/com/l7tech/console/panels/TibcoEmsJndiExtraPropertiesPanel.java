@@ -142,4 +142,9 @@ public class TibcoEmsJndiExtraPropertiesPanel extends JmsExtraPropertiesPanel {
     private static String boolToStr(final boolean b) {
         return b ? JmsConnection.VALUE_BOOLEAN_TRUE : JmsConnection.VALUE_BOOLEAN_FALSE;
     }
+
+    private void createUIComponents() {
+        // TIBCO EMS API cannot use private keys stored in hardware keystore.
+        clientCertsComboBox = new PrivateKeysComboBox(false);
+    }
 }

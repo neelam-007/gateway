@@ -3,22 +3,22 @@
  */
 package com.l7tech.server;
 
+import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
-import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.security.CertificateRequest;
+import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
@@ -31,8 +31,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -261,10 +261,13 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         return sslCertificate;
     }
 
-    public List<KeystoreInfo> findAllKeystores() throws IOException, FindException, KeyStoreException {
+    public List<KeystoreInfo> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException {
         List<SsgKeyFinder> finders = ssgKeyStoreManager.findAll();
         List<KeystoreInfo> list = new ArrayList<KeystoreInfo>();
         for (SsgKeyFinder finder : finders) {
+            if (!includeHardware && finder.getType() == SsgKeyFinder.SsgKeyStoreType.PKCS11_HARDWARE) {
+                continue;   // skip
+            }
             long id = finder.getOid();
             String name = finder.getName();
             SsgKeyFinder.SsgKeyStoreType type = finder.getType();
