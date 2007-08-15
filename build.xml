@@ -399,8 +399,12 @@
         <include name="**/commons-collections-3.2.jar"/>
         <include name="**/commons-configuration-1.3.jar"/>
         <include name="**/commons-codec-*.jar"/>
+        <include name="**/commons-logging-*.jar"/>
         <include name="**/xercesImpl.jar"/>
         <include name="**/xss4j*.jar"/>
+        <include name="**/whirlycache-*.jar"/>
+        <include name="**/bcprov-jdk15-135.jar"/>
+        <include name="**/concurrent-*.jar"/>
     </patternset>
 
     <!--
