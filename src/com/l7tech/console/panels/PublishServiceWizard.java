@@ -191,8 +191,8 @@ public class PublishServiceWizard extends Wizard {
             header.setOid(oid);
             PublishServiceWizard.this.notify(header);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Cannot publish service as is", e);
             if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                logger.log(Level.WARNING, "Cannot publish service as is (duplicate)");
                 String msg = "This Web service cannot be saved as is because its resolution\n" +
                              "parameters (SOAPAction, namespace, and possibly routing URI)\n" +
                              "are already used by an existing published service.\n\nWould " +
@@ -213,7 +213,7 @@ public class PublishServiceWizard extends Wizard {
                     logger.info("Service publication aborted.");
                 }
             } else {
-                e.printStackTrace();
+                logger.log(Level.WARNING, "Cannot publish service as is", e);
                 JOptionPane.showMessageDialog(null,
                   "Unable to save the service '" + saBundle.service.getName() + "'\n",
                   "Error",
