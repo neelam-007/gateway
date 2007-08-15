@@ -4,17 +4,17 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.RunOnChangeListener;
-import com.l7tech.common.gui.widgets.TextListCellRenderer;
 import com.l7tech.common.gui.MaxLengthDocument;
+import com.l7tech.common.gui.util.RunOnChangeListener;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.TextListCellRenderer;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.PermissionDeniedException;
+import com.l7tech.common.transport.jms.JmsAcknowledgementType;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsProvider;
-import com.l7tech.common.transport.jms.JmsAcknowledgementType;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
 import com.l7tech.console.security.FormAuthorizationPreparer;
@@ -261,6 +261,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }));
         acknowledgementModeComboBox.addActionListener(formPreener);
         useQueueForFailedCheckBox.addActionListener(formPreener);
+        Utilities.enableGrayOnDisabled(failureQueueNameTextField);
         useJmsMsgPropAsSoapActionCheckBox.addItemListener(formPreener);
         jmsMsgPropWithSoapActionTextField.getDocument().addDocumentListener(formPreener);
         Utilities.enableGrayOnDisabled(jmsMsgPropWithSoapActionTextField);
