@@ -122,6 +122,7 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
                     }
                     wssReq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();
                 } catch (SAXException e) {
+                    auditor.logAndAudit(AssertionMessages.SC_UNABLE_TO_ATTACH_SC_TOKEN);
                     throw new CausedIOException(e);
                 }
                 wssReq.setSignTimestamp();

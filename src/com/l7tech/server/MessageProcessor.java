@@ -268,11 +268,14 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             attemptedRequest = true;
 
             status = serverPolicy.checkRequest(context);
-            context.setPolicyResult(status);
 
             // Execute deferred actions for request, then response
-            if (status == AssertionStatus.NONE)
+            if (status == AssertionStatus.NONE) {
+                status = AssertionStatus.UNDEFINED;
                 status = doDeferredAssertions(context);
+            }
+            
+            context.setPolicyResult(status);
 
             // Run response through WssDecorator if indicated
             if (status == AssertionStatus.NONE &&

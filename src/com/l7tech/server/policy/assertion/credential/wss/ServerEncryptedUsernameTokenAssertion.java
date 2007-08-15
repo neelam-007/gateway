@@ -141,6 +141,16 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractServerAsserti
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {
+                try {
+                    if (!context.getResponse().isSoap()) {
+                        auditor.logAndAudit(AssertionMessages.WSS_BASIC_UNABLE_TO_ATTACH_TOKEN);
+                        return AssertionStatus.NOT_APPLICABLE;
+                    }
+                } catch (SAXException e) {
+                    auditor.logAndAudit(AssertionMessages.WSS_BASIC_UNABLE_TO_ATTACH_TOKEN);
+                    throw new CausedIOException(e);
+                }
+
                 SecurityKnob sk = context.getResponse().getSecurityKnob();
                 DecorationRequirements respReq = sk.getAlternateDecorationRequirements(data.getRecipientContext());
                 respReq.setEncryptedKeySha1(encryptedKeySha1);
