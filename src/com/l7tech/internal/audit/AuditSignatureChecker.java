@@ -1,30 +1,33 @@
+/**
+ * Copyright (C) 2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.internal.audit;
 
 import com.l7tech.common.util.CertUtils;
 
+import javax.net.ssl.*;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import javax.net.ssl.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
-import java.util.Collection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.security.NoSuchAlgorithmException;
-import java.security.KeyManagementException;
 
 /**
- * Tool to check individual signatures of downloaded audit events with both
+ * Tool to check signatures in a downloaded audit file; with both
  * GUI and command line interfaces.
  *
  * @since SecureSpan 4.2
@@ -233,7 +236,7 @@ public class AuditSignatureChecker extends JFrame {
         } else if (args.length == 2) {
             // Invokes command line interface.
             final boolean result = checkFile(args[0], args[1], new PrintWriter(System.out, true));
-            System.out.println("*****" + (result ? "PASS" : "FAIL") + "*****");
+            System.out.println("***** " + (result ? "PASS" : "FAIL") + " *****");
         } else {
             System.out.println("usage: (Help)         java -h");
             System.out.println("       (GUI)          java " + AuditSignatureChecker.class.getName());
@@ -288,6 +291,7 @@ public class AuditSignatureChecker extends JFrame {
             gridBagConstraints.gridx = 2;
             add(browseAuditButton, gridBagConstraints);
 
+            gridBagConstraints.insets = new Insets(3, 10, 3, 10);
             gridBagConstraints.gridx = 0;
             gridBagConstraints.gridy = 1;
             add(new JLabel("Certificate (path or URL):"), gridBagConstraints);
@@ -327,7 +331,6 @@ public class AuditSignatureChecker extends JFrame {
             gridBagConstraints.gridx = 0;
             gridBagConstraints.gridy = 2;
             gridBagConstraints.gridwidth = GridBagConstraints.REMAINDER;
-            gridBagConstraints.insets = new Insets(3, 10, 3, 10);
             add(subPanel, gridBagConstraints);
 
             _outputTextArea.setEditable(false);
@@ -410,13 +413,13 @@ public class AuditSignatureChecker extends JFrame {
         private void setStatus(final boolean pass) {
             _statusLabel.setOpaque(true);
             _statusLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-            _statusLabel.setFont(new Font("SansSerif", Font.BOLD, 10));
+            _statusLabel.setFont(new Font("Monospaced", Font.BOLD, 12));
             if (pass) {
-                _statusLabel.setText("PASS");
+                _statusLabel.setText(" PASS ");
                 _statusLabel.setForeground(Color.BLACK);
                 _statusLabel.setBackground(Color.GREEN);
             } else {
-                _statusLabel.setText("FAIL");
+                _statusLabel.setText(" FAIL ");
                 _statusLabel.setForeground(Color.RED);
                 _statusLabel.setBackground(Color.YELLOW);
             }
