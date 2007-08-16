@@ -2148,48 +2148,18 @@
             <!-- Entry points, GUI, console and API -->
             <root classname="com.l7tech.server.flasher.Importer" />
             <root classname="com.l7tech.server.flasher.Exporter" />
+
+            <!-- Not sure if these are required but they were in the non-auto packaged JAR -->
+            <root classname="com.l7tech.common.License" />
+            <root classname="com.l7tech.common.LicenseException" />
+            <root classname="com.l7tech.common.security.xml.SimpleSecurityTokenResolver" />
+
+            <!-- Providers -->
             <root classname="com.l7tech.common.util.DnParserBc" />
             <root classname="com.l7tech.common.util.ConfigurableLogFormatter" />
         </classfileset>
         <jar jarfile="${build.dir}/migration/SSGMigration.jar"  manifest="${build.etc}/SSGMigration.mf">
             <fileset refid="package.ssgflasher.classfileset"/>
-            <fileset dir="${build.classes}">
-                <include name="com/l7tech/server/flasher/**/*"/>
-                <include name="com/l7tech/common/BuildInfo*"/>
-                <include name="com/l7tech/common/License.class"/>
-                <include name="com/l7tech/common/LicenseException.class"/>
-                <include name="com/l7tech/common/InvalidLicenseException.class"/>
-                <include name="com/l7tech/common/security/xml/SimpleSecurityTokenResolver*.class"/>
-                <include name="com/l7tech/common/security/xml/SecurityTokenResolver.class"/>
-                <include name="com/l7tech/common/util/CausedIOException*"/>
-                <include name="com/l7tech/common/util/FileUtils*"/>
-                <include name="com/l7tech/common/util/ResourceUtils*"/>
-                <include name="com/l7tech/common/util/XmlUtil*"/>
-                <include name="com/l7tech/common/util/BufferPool*"/>
-                <include name="com/l7tech/common/util/PaddingCharSequence*"/>
-                <include name="com/l7tech/common/security/*MasterPassword*"/>
-                <include name="com/l7tech/common/xml/TooManyChildElementsException*"/>
-                <include name="com/l7tech/common/xml/InvalidDocumentFormatException*"/>
-                <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream*"/>
-                <include name="com/l7tech/server/config/KeystoreType*"/>
-                <include name="com/l7tech/server/config/LinuxSpecificFunctions*"/>
-                <include name="com/l7tech/server/config/OSDetector*"/>
-                <include name="com/l7tech/server/config/*SpecificFunctions*"/>
-                <include name="com/l7tech/server/config/WindowsSpecificFunctions*"/>
-                <include name="com/l7tech/server/config/PropertyHelper*"/>
-                <include name="com/l7tech/server/config/PasswordPropertyCrypto*"/>
-                <include name="com/l7tech/server/config/beans/ConfigurationBean*"/>
-                <include name="com/l7tech/server/config/beans/SsgDatabaseConfigBean*"/>
-                <include name="com/l7tech/server/config/beans/BaseConfigurationBean*"/>
-                <include name="com/l7tech/server/config/db/DBActions*"/>
-                <include name="com/l7tech/server/config/db/DBInformation*"/>
-                <include name="com/l7tech/server/config/db/DbVersion*"/>
-                <include name="com/l7tech/server/config/db/CheckSSGDatabase*"/>
-                <include name="com/l7tech/server/config/exceptions/UnsupportedOsException*"/>
-                <include name="com/l7tech/server/config/PartitionActions*"/>
-                <include name="com/l7tech/server/partition/PartitionInformation*"/>
-                <include name="com/l7tech/server/partition/PartitionManager*"/>
-            </fileset>
         </jar>
 
         <copy todir="${build.dir}/migration/lib">
@@ -2586,7 +2556,8 @@
         </fileset>
         <checkdeps jarfile="build/Client.jar"
                    libfilesetref="client.testpackage.fileset"
-                   resultproperty="testpackage.client.result"/>
+                   resultproperty="testpackage.client.result"
+                   failpackages="com.l7tech.admin com.l7tech.cluster com.l7tech.console com.l7tech.server com.l7tech.internal"/>
         <!-- This just stops idea complaining -->
         <property name="testpackage.client.result" value=""/>
         <condition property="testpackage.client.fail">
@@ -2603,7 +2574,8 @@
         </fileset>
         <checkdeps jarfile="build/Manager.jar"
                    libfilesetref="manager.testpackage.fileset"
-                   resultproperty="testpackage.manager.result"/>
+                   resultproperty="testpackage.manager.result"
+                   failpackages="com.l7tech.internal com.l7tech.proxy"/>
         <!-- This just stops idea complaining -->
         <property name="testpackage.manager.result" value=""/>
         <condition property="testpackage.manager.fail">
@@ -2620,7 +2592,8 @@
         </fileset>
         <checkdeps jarfile="build/layer7-api.jar"
                    libfilesetref="api.testpackage.fileset"
-                   resultproperty="testpackage.api.result"/>
+                   resultproperty="testpackage.api.result"
+                   failpackages="com.l7tech.admin com.l7tech.cluster com.l7tech.common com.l7tech.console com.l7tech.identity com.l7tech.internal com.l7tech.logging com.l7tech.objectmodel com.l7tech.policy.validator com.l7tech.policy.wsp com.l7tech.policy.wssp com.l7tech.proxy com.l7tech.server com.l7tech.service com.l7tech.spring"/>
 
         <!-- This just stops idea complaining -->
         <property name="testpackage.api.result" value=""/>
@@ -2675,6 +2648,7 @@
                    libfilesetref="flasher.testpackage.fileset"
                    resultproperty="testpackage.flasher.result"
                    ignoreclasses="com.l7tech.common.security.prov.luna.LunaJceProviderEngine"
+                   failpackages="com.l7tech.admin com.l7tech.cluster com.l7tech.internal com.l7tech.service com.l7tech.spring"
         />
         <!-- This just stops idea complaining -->
         <property name="testpackage.flasher.result" value=""/>
