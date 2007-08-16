@@ -38,7 +38,7 @@ public class MasterPassphraseChanger {
             new MasterPassphraseChanger(System.in, System.out).run();
         } catch (Throwable e) {
             String msg = "Unable to change master passphrase: " + ExceptionUtils.getMessage(e);
-            logger.log(Level.SEVERE, msg, e);
+            logger.log(Level.WARNING, msg, e);
             System.err.println(msg);
             System.exit(1);
         }
