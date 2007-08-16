@@ -38,7 +38,8 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
     public void doUserInterview(boolean validated) throws WizardNavigationException {
         ConfigurationWizard wizard = getParentWizard();
 
-        if (wizard.isHadFailures()) printText("There were errors during configuration, see below for details" + getEolChar());
+        if (wizard.isHadFailures())
+            printText("There were errors during configuration, see below for details" + getEolChar());
         else {
             printText("The configuration was successfully applied." + getEolChar());
             printText("You must restart the SSG in order for the configuration to take effect." + getEolChar());
@@ -78,7 +79,12 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
                 printText(getEolChar() + "Couldn't start the service [" + e.getMessage() + "]" + getEolChar());
             }
         }
-        printText(getEolChar() + "Configuration complete. The wizard will now exit." + getEolChar());
+        if (wizard.isHadFailures()) {
+            printText(getEolChar() + "*** Configuration failed. There were errors during configuration, see the logs above for details. ***" + getEolChar());
+            printText(getEolChar() + "The wizard will now exit." + getEolChar());
+        }
+        else
+            printText(getEolChar() + "Configuration complete. The wizard will now exit." + getEolChar());
     }
 
     private boolean needsManualSteps() {
