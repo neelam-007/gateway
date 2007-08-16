@@ -84,7 +84,6 @@ public class NamespaceMapEditor extends JDialog {
         setContentPane(mainPanel);
         setTitle("Edit Namespaces and Prefixes");
         setTableModel();
-        TableUtil.adjustColumnWidth(namespacesTable, 1);
         namespacesTable.getTableHeader().setReorderingAllowed(false);
         setListeners();
         enableRemoveBasedOnSelection();
@@ -147,6 +146,8 @@ public class NamespaceMapEditor extends JDialog {
             };
             namespacesTable.getColumnModel().getColumn(0).setCellRenderer(specialCellRenderer);
             namespacesTable.getColumnModel().getColumn(1).setCellRenderer(specialCellRenderer);
+            namespacesTable.getColumnModel().getColumn(0).setPreferredWidth(250);
+            namespacesTable.getColumnModel().getColumn(1).setPreferredWidth(750);
         }
     }
 
