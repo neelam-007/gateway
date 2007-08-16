@@ -201,6 +201,15 @@
             </list>
         </property>
     </bean>
+    <bean id="clientSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.http.SslClientSocketFactory"/>
+        <property name="targetMethod" value="setKeyManagers"/>
+        <property name="arguments">
+            <list>
+                <ref bean="sslKeyManagers"/>
+            </list>
+        </property>
+    </bean>
 
      <!-- server side HTTP routing hostname verifier -->
     <bean id="hostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">

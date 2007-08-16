@@ -7,6 +7,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.KeyManager;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -26,11 +27,16 @@ public class SslClientSocketFactory extends SSLSocketFactory implements Comparat
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
     private final SSLContext sslContext;
     private static X509TrustManager trustManager;
+    private static KeyManager[] keyManagers;
 
     public synchronized static void setTrustManager(X509TrustManager trustManager) {
         logger.info("Got SSL Client TrustManager");
         if (trustManager == null) throw new NullPointerException();
         SslClientSocketFactory.trustManager = trustManager;
+    }
+
+    public synchronized static void setKeyManagers(KeyManager[] keyManagers) {
+        SslClientSocketFactory.keyManagers = keyManagers;    
     }
 
     private static class SingletonHolder {
@@ -49,7 +55,7 @@ public class SslClientSocketFactory extends SSLSocketFactory implements Comparat
         try {
             if (trustManager == null) throw new IllegalStateException("TrustManager must be set before first use");
             sslContext = SSLContext.getInstance("SSL");
-            sslContext.init(null, new TrustManager[] { trustManager } , null);
+            sslContext.init(keyManagers, new TrustManager[] { trustManager } , null);
             int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
         } catch (GeneralSecurityException e) {
