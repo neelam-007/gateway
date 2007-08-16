@@ -13,6 +13,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
@@ -22,6 +24,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.prefs.Preferences;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -34,6 +37,14 @@ import java.util.zip.ZipFile;
  * @rmak
  */
 public class AuditSignatureChecker extends JFrame {
+
+    // User preferences keys.
+    private static final String PREF_AUDITPATH = Gui.class.getName() + ".auditPath";
+    private static final String PREF_CERTPATH = Gui.class.getName() + ".certPath";
+    private static final String PREF_WINDOW_X = Gui.class.getName() + ".windowX";
+    private static final String PREF_WINDOW_Y = Gui.class.getName() + ".windowY";
+    private static final String PREF_WINDOW_WIDTH = Gui.class.getName() + ".windowWidth";
+    private static final String PREF_WINDOW_HEIGHT = Gui.class.getName() + ".windowHeight";
 
     private static boolean isZipFile(final String path) throws IOException {
         boolean result = false;
@@ -150,6 +161,14 @@ public class AuditSignatureChecker extends JFrame {
         return output;
     }
 
+    /**
+     * Check signatures of each audit record in an exported file or ZIP archive.
+     *
+     * @param auditPath     path of audit ZIP file or the uncompressed audit.dat file
+     * @param certPath      path of signing certficate file
+     * @param out           output writer
+     * @return true if pass; false if fail
+     */
     public static boolean checkFile(final String auditPath, final String certPath, final PrintWriter out) {
         Certificate[] cert = loadCert(certPath, out);
         if (cert == null) {
@@ -158,6 +177,7 @@ public class AuditSignatureChecker extends JFrame {
 
         try {
             if (isZipFile(auditPath)) {
+                // A downloaded audit ZIP file.
                 ZipFile zipFile = null;
                 try {
                     zipFile = new ZipFile(auditPath);
@@ -172,7 +192,7 @@ public class AuditSignatureChecker extends JFrame {
                     if (zipFile != null) zipFile.close();
                 }
             } else {
-                // Treat auditFile as the "audit.dat" content.
+                // File is the unZIPed "audit.dat".
                 return checkFile(new FileInputStream(auditPath), out, cert);
             }
         } catch (Exception e) {
@@ -181,6 +201,15 @@ public class AuditSignatureChecker extends JFrame {
         }
     }
 
+    /**
+     * Check signatures of each audit record in a file.
+     *
+     * @param is    input stream of audit.dat
+     * @param cert  signing certficate
+     * @param out   output writer
+     * @return true if pass; false if fail
+     * @throws IOException if I/O error occurs
+     */
     private static boolean checkFile(final InputStream is, final PrintWriter out, Certificate[] cert) throws IOException {
         final BufferedReader in = new BufferedReader(new InputStreamReader(is));
         String line;
@@ -225,11 +254,6 @@ public class AuditSignatureChecker extends JFrame {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     final Gui frame = new Gui();
-                    final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-                    final Dimension frameSize = frame.getSize();
-                    final int x = screenSize.width > frameSize.width ? (screenSize.width - frameSize.width) / 2 : 0;
-                    final int y = screenSize.height > frameSize.height ? (screenSize.height - frameSize.height) / 2 : 0;
-                    frame.setLocation(x, y);
                     frame.toFront();
                 }
             });
@@ -237,6 +261,11 @@ public class AuditSignatureChecker extends JFrame {
             // Invokes command line interface.
             final boolean result = checkFile(args[0], args[1], new PrintWriter(System.out, true));
             System.out.println("***** " + (result ? "PASS" : "FAIL") + " *****");
+            // Saves user preferences (for GUI interface to use).
+            final Preferences prefs = Preferences.userRoot();
+            prefs.put(PREF_AUDITPATH, args[0]);
+            prefs.put(PREF_CERTPATH, args[1]);
+
         } else {
             System.out.println("usage: (Help)         java -h");
             System.out.println("       (GUI)          java " + AuditSignatureChecker.class.getName());
@@ -257,7 +286,32 @@ public class AuditSignatureChecker extends JFrame {
         private final JLabel _statusLabel = new JLabel();
         private final JTextArea _outputTextArea = new JTextArea();
 
+        private final PrintWriter _outputTextAreaWriter = new PrintWriter(new Writer() {
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+
+            @Override
+            public void write(char[] cbuf, int off, int len) throws IOException {
+                _outputTextArea.append(new String(cbuf, off, len));
+            }
+        });
+
+        final PrintStream _outputTextAreaStream = new PrintStream(new OutputStream() {
+            public void write(int b) throws IOException {
+                _outputTextAreaWriter.print((char)b);
+            }
+        }, true);
+
         public Gui() {
+            // Redirects all exception stack trace.
+            System.setOut(_outputTextAreaStream);
+            System.setErr(_outputTextAreaStream);
+
             setTitle("Audit Signature Checker");
 
             setLayout(new GridBagLayout());
@@ -347,10 +401,41 @@ public class AuditSignatureChecker extends JFrame {
             gridBagConstraints.weighty = 1.;
             add(scrollPane, gridBagConstraints);
 
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            setDefaultCloseOperation(EXIT_ON_CLOSE);
+            addWindowListener(new WindowAdapter() {
+                public void windowClosing(WindowEvent e) {
+                    // Saves user preferences.
+                    final Preferences prefs = Preferences.userRoot();
+                    prefs.putInt(PREF_WINDOW_X, getLocation().x);
+                    prefs.putInt(PREF_WINDOW_Y, getLocation().y);
+                    prefs.putInt(PREF_WINDOW_WIDTH, getSize().width);
+                    prefs.putInt(PREF_WINDOW_HEIGHT, getSize().height);
+                    prefs.put(PREF_AUDITPATH, _auditPathTextField.getText());
+                    prefs.put(PREF_CERTPATH, _certPathTextField.getText());
+                }
+            });
 
             enableOrDisableComponents();
             pack();
+
+            // Applies user preferences.
+            final Preferences prefs = Preferences.userRoot();
+            int width = prefs.getInt(PREF_WINDOW_WIDTH, -1);
+            int height = prefs.getInt(PREF_WINDOW_HEIGHT, -1);
+            if (width == -1) width = getSize().width;
+            if (height == -1) height = getSize().height;
+            int x = prefs.getInt(PREF_WINDOW_X, -1);
+            int y = prefs.getInt(PREF_WINDOW_Y, -1);
+            if (x == -1 || y == -1) {
+                final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                if (x == -1) x = screenSize.width > width ? (screenSize.width - width) / 2 : 0;
+                if (y == -1) y = screenSize.height > height ? (screenSize.height - height) / 2 : 0;
+            }
+            setLocation(x, y);
+            setSize(width, height);
+            _auditPathTextField.setText(prefs.get(PREF_AUDITPATH, null));
+            _certPathTextField.setText(prefs.get(PREF_CERTPATH, null));
+
             setVisible(true);
         }
 
@@ -393,20 +478,7 @@ public class AuditSignatureChecker extends JFrame {
         /** Handles check button click. */
         private void onCheck() {
             _outputTextArea.setText(null);
-            final boolean result = checkFile(_auditPathTextField.getText(), _certPathTextField.getText(), new PrintWriter(new Writer() {
-                @Override
-                public void flush() {
-                }
-
-                @Override
-                public void close() {
-                }
-
-                @Override
-                public void write(char[] cbuf, int off, int len) throws IOException {
-                    _outputTextArea.append(new String(cbuf, off, len));
-                }
-            }));
+            final boolean result = checkFile(_auditPathTextField.getText(), _certPathTextField.getText(), _outputTextAreaWriter);
             setStatus(result);
         }
 
