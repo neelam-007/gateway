@@ -33,6 +33,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     private final KeystoreFileManager keystoreFileManager;
     private final KeystoreUtils keystoreUtils;
 
+    private boolean initialized = false;
     private List<SsgKeyFinder> keystores = null;
 
     public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, KeystoreUtils keystoreUtils) throws KeyStoreException, FindException {
@@ -50,11 +51,19 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     }
 
     private synchronized void init() throws KeyStoreException, FindException {
-        if (keystores != null)
+        if (initialized)
             return;
 
         List<SsgKeyFinder> list = new ArrayList<SsgKeyFinder>();
         Collection<KeystoreFile> dbFiles = keystoreFileManager.findAll();
+
+        if (dbFiles.isEmpty()) {
+            // This isn't supposed to be possible -- DefaultKeystoreFilePopulator should have run by now
+            String msg = "Database contains no entries in keystore_file -- no private key management features will work";
+            logger.warning(msg);
+            throw new KeyStoreException(msg);
+        }
+
         boolean haveHsm = isHsmAvailable();
         boolean createdHsmFinder = false;
         for (KeystoreFile dbFile : dbFiles) {
@@ -92,6 +101,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
         // TODO support multiple software keystores?
         // TODO remove keystoreUtils entirely, eliminating special privileges for SSL and CA keys?
         keystores = Collections.unmodifiableList(list);
+        initialized = true;
     }
 
     public boolean isHsmAvailable() {

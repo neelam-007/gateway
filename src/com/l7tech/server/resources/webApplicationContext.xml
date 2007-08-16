@@ -503,6 +503,13 @@
     <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker">
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
+        <property name="earlyTasks">
+            <list>
+                <bean class="com.l7tech.server.security.keystore.DefaultKeystoreFilePopulator">
+                    <property name="sessionFactory" ref="sessionFactory"/>
+                </bean>
+            </list>
+        </property>
     </bean>
 
     <bean id="securityTokenResolver" class="com.l7tech.server.TrustedAndUserCertificateResolver">
@@ -649,7 +656,7 @@
 
     <bean id="keystoreFileManager" class="com.l7tech.server.security.keystore.KeystoreFileManagerImpl" parent="hibernateBean"/>
 
-    <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl">
+    <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl" depends-on="gatewaySanityChecker">
         <constructor-arg ref="sharedKeyManager"/>
         <constructor-arg ref="keystoreFileManager"/>
         <constructor-arg ref="keystore"/>

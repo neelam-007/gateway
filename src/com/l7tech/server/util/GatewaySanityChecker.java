@@ -38,13 +38,14 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
     private static final Logger logger = Logger.getLogger(GatewaySanityChecker.class.getName());
     private static final String CPROP_PREFIX_UPGRADE = "upgrade.task.";
 
-    /** Currently, the whitelist of allowed upgrade task values is very simple -- there's only one! */
+    /** Currently, the whitelist of allowed upgrade task values is very simple -- there's only two! */
     private static final String VALUE_35_36_ADD_ROLES = "com.l7tech.server.upgrade.Upgrade35To36AddRoles";
     private static final String VALUE_365_37_ADD_SAMPLE_MESSAGE_PERMISSIONS = "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions";
 
     private final ClusterPropertyManager clusterPropertyManager;
     private final PlatformTransactionManager transactionManager; // required for TransactionTemplate
     private Auditor auditor;
+    private UpgradeTask[] earlyTasks;
 
     public GatewaySanityChecker(PlatformTransactionManager transactionManager,
                                 ClusterPropertyManager clusterPropertyManager)
@@ -56,8 +57,14 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
 
     public void afterPropertiesSet() throws Exception {
         this.auditor = new Auditor(this, getApplicationContext(), logger);
-    }
 
+        // Run nonconditional sanity checking tasks
+        if (earlyTasks != null) {
+            for (UpgradeTask task : earlyTasks) {
+                runTask(task, null);
+            }
+        }
+    }
 
 
     private void doSanityCheck() throws FatalUpgradeException {
@@ -78,7 +85,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                 String value = prop.getValue();
 
                 if (!isUpgradeTaskRecognized(value)) {
-                    auditor.logAndAudit(BootMessages.UPGRADE_TASK_IGNORED, new String[] {"unrecognized upgrade task value: " + name + "=" + value});
+                    auditor.logAndAudit(BootMessages.UPGRADE_TASK_IGNORED, "unrecognized upgrade task value: " + name + "=" + value);
                     continue;
                 }
 
@@ -103,7 +110,22 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
         }
     }
 
-    /** @return true if the specified upgrade task is on the whitelist of allowed upgrade tasks. */
+    /**
+     * Set some extra sanity checking tasks which will be run early.
+     * <p/>
+     * Unlike the regular upgrade tasks, which run when the STARTED application event is received,
+     * these tasks will be run immediately from {@link #afterPropertiesSet}.
+     *
+     * @param earlyTasks  extra sanity checker tasks to run early, or null.
+     */
+    public void setEarlyTasks(UpgradeTask[] earlyTasks) {
+        this.earlyTasks = earlyTasks;
+    }
+
+    /**
+     * @param value a cluster property value that might be the name of a supported UpgradeTask subclass.
+     * @return true if the specified upgrade task is on the whitelist of allowed upgrade tasks.
+     */
     private boolean isUpgradeTaskRecognized(String value) {
         return value.equals(VALUE_35_36_ADD_ROLES) || value.equals(VALUE_365_37_ADD_SAMPLE_MESSAGE_PERMISSIONS);
     }
@@ -114,6 +136,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
      * classnames have already been whitelisted, and sorting the list.
      *
      * @param taskProps  cluster properties containing upgrade tasks to run, in the order to run them.
+     * @throws FatalUpgradeException  if the task failed, no further tasks should be attempted, and the Gateway startup should abort
      */
     private void doUpgradeTasks(List<ClusterProperty> taskProps) throws FatalUpgradeException {
         for (ClusterProperty prop : taskProps) {
@@ -121,10 +144,10 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
         }
     }
 
-    private void doUpgradeTask(final ClusterProperty prop) throws FatalUpgradeException {
-        final String propName = prop.getName();
-        final String className = prop.getValue();
-        logger.info("Running upgrade task: " + propName + "=" + className);
+    private void doUpgradeTask(final ClusterProperty propp) throws FatalUpgradeException {
+        final String taskName = propp.getName();
+        final String className = propp.getValue();
+        logger.info("Running upgrade task: " + taskName + "=" + className);
 
         // Instantiate the upgrade task
         final UpgradeTask task;
@@ -133,11 +156,23 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
         } catch (Exception e) {
             auditor.logAndAudit(BootMessages.UPGRADE_TASK_IGNORED,
                                 new String[] {"Unable to instantiate upgrade task: " +
-                                        propName + "=" + className + ": " + ExceptionUtils.getMessage(e)},
+                                        taskName + "=" + className + ": " + ExceptionUtils.getMessage(e)},
                                 e);
             return;
         }
 
+        runTask(task, propp);
+    }
+
+    /**
+     * Run the specified upgrade task.
+     *
+     * @param task          the task to run. required
+     * @param propToDelete    a ClusterProperty to delete in the same transaction that runs the upgrade task.
+     *                  If null, no cluster properties will be deleted (unless the task deletes any on its own, of course).
+     * @throws FatalUpgradeException  if the task failed, no further tasks should be attempted, and the Gateway startup should abort
+     */
+    private void runTask(final UpgradeTask task, final ClusterProperty propToDelete) throws FatalUpgradeException {
         // Remove the cluster property and do the work both in the same transaction
         final NonfatalUpgradeException[] enonfatal = new NonfatalUpgradeException[] { null };
         final FatalUpgradeException[] efatal = new FatalUpgradeException[] { null };
@@ -146,8 +181,9 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
             new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
                 protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
                     try {
-                        // Remove the cluster property so noone else repeats the work
-                        clusterPropertyManager.delete(prop);
+                        // If triggered by a cluster property, remove it so noone else repeats the work
+                        if (propToDelete != null)
+                            clusterPropertyManager.delete(propToDelete);
 
                         // Do the actual work
                         task.upgrade(getApplicationContext());
@@ -160,7 +196,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                         transactionStatus.setRollbackOnly();
                     } catch (DeleteException e) {
                         // Something has gone unexpectedly very wrong
-                        efatal[0] = new FatalUpgradeException("Unable to delete upgrade task property: " + prop.getName() + ": " +
+                        efatal[0] = new FatalUpgradeException("Unable to delete upgrade task property: " + propToDelete.getName() + ": " +
                                 ExceptionUtils.getMessage(e), e);
                         transactionStatus.setRollbackOnly();
                     }
