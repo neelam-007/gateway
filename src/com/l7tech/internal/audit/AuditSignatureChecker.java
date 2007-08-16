@@ -406,6 +406,9 @@ public class AuditSignatureChecker extends JFrame {
                 public void windowClosing(WindowEvent e) {
                     // Saves user preferences.
                     final Preferences prefs = Preferences.userRoot();
+                    if ((getExtendedState() & MAXIMIZED_BOTH) != 0) {
+                        setExtendedState(NORMAL);
+                    }
                     prefs.putInt(PREF_WINDOW_X, getLocation().x);
                     prefs.putInt(PREF_WINDOW_Y, getLocation().y);
                     prefs.putInt(PREF_WINDOW_WIDTH, getSize().width);
@@ -420,6 +423,7 @@ public class AuditSignatureChecker extends JFrame {
 
             // Applies user preferences.
             final Preferences prefs = Preferences.userRoot();
+
             int width = prefs.getInt(PREF_WINDOW_WIDTH, -1);
             int height = prefs.getInt(PREF_WINDOW_HEIGHT, -1);
             if (width == -1) width = getSize().width;
@@ -433,6 +437,7 @@ public class AuditSignatureChecker extends JFrame {
             }
             setLocation(x, y);
             setSize(width, height);
+
             _auditPathTextField.setText(prefs.get(PREF_AUDITPATH, null));
             _certPathTextField.setText(prefs.get(PREF_CERTPATH, null));
 
