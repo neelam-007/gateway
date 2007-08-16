@@ -45,9 +45,21 @@ do_control() {
     . ${SSG_HOME}/bin/partition_defs.sh true "${PARTITION_COUNT}"
     (perl ${SSG_HOME}/bin/partition_firewall.pl ${FIREWALL_FILE} ${COMMAND})
 
-    if [ "${PARTITION_NAME}"  == "default_" ]; then
+    if [ "${PARTITION_NAME}"  == "default_" ] ; then
         if [ -e  /usr/local/Tarari ]; then
             ORIGINAL_JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true $ORIGINAL_JAVA_OPTS"
+        fi
+    else
+        if  [ -e "${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname" ]; then
+            RMI_HOSTNAME="$(<${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname)"
+        else
+            RMI_HOSTNAME="$(hostname -f)"
+        fi
+        echo ${ORIGINAL_JAVA_OPTS} | grep java.rmi.server.hostname &>/dev/null
+        if [ $? -eq 0 ] ; then
+            ORIGINAL_JAVA_OPTS=$(echo ${ORIGINAL_JAVA_OPTS} | sed "s/-Djava.rmi.server.hostname=[^ ]*/-Djava.rmi.server.hostname=${RMI_HOSTNAME}/")
+        else
+            ORIGINAL_JAVA_OPTS="${ORIGINAL_JAVA_OPTS} -Djava.rmi.server.hostname=${RMI_HOSTNAME}" 
         fi
     fi
 

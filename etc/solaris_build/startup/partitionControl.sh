@@ -47,10 +47,22 @@ do_control() {
     /usr/sbin/ipf -Fa -f /etc/ipf/ipf.conf
     /usr/sbin/ipf -f /ssg/etc/ssg-ipf.conf
 
-    if [ "${PARTITION_NAME}"  == "default_" ]; then
+    if [ "${PARTITION_NAME}"  == "default_" ] ; then
         if [ -e  /usr/local/Tarari ]; then
             ORIGINAL_JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true $ORIGINAL_JAVA_OPTS"
         fi
+    else
+       if  [ -e "${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname" ]; then
+           RMI_HOSTNAME="$(<${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname)"
+       else
+           RMI_HOSTNAME="$(hostname).$(domainname)"
+       fi
+       echo ${ORIGINAL_JAVA_OPTS} | grep java.rmi.server.hostname &>/dev/null
+       if [ $? -eq 0 ] ; then
+           ORIGINAL_JAVA_OPTS=$(echo ${ORIGINAL_JAVA_OPTS} | sed "s/-Djava.rmi.server.hostname=[^ ]*/-Djava.rmi.server.hostname=${RMI_HOSTNAME}/")
+       else
+           ORIGINAL_JAVA_OPTS="${ORIGINAL_JAVA_OPTS} -Djava.rmi.server.hostname=${RMI_HOSTNAME}" 
+       fi
     fi
 
     JAVA_OPTS="${ORIGINAL_JAVA_OPTS} ${partition_opts} -Djava.security.properties==${PARTITION_DIR}/java.security -Dcom.l7tech.server.partitionName=${PARTITION_NAME}"
