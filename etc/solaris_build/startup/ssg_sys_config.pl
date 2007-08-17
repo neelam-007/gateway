@@ -72,6 +72,7 @@ if ($inputFh->open("<$inputFiles{'HOSTNAMEFILE'}")) {
 		}
 		if ($hostsFH->open(">$outputFiles{'HOSTS'}")) {
 			$hostsFH->print("127.0.0.1\t\t\tlocalhost loghost\n");
+			$hostsFH->print("169.254.0.1\t\t\t$hostname.$domain $hostname\n");  # 169.254.0.1 gets replaced by DHCP scripts
 			$hostsFH->close();
 		} else {
 			$logFile->print("$timestamp: couldn't write hosts file\n");
