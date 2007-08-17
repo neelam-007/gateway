@@ -2934,6 +2934,7 @@
             deprecation="on" verbose="off" target="1.5" source="1.5">
             <classpath refid="project.classpath"/>
             <exclude name="com/l7tech/server/**/*"/>
+            <exclude name="com/l7tech/internal/**/*"/>
         </javac>
     </target>
 
