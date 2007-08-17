@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 import org.apache.commons.httpclient.HostConfiguration;
@@ -17,6 +18,7 @@ import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 
 import com.l7tech.common.util.ShutdownExceptionHandler;
+import com.l7tech.common.util.ExceptionUtils;
 
 /**
  * Extension of the MultiThreadedHttpConnectionManager that will close stale connections.
@@ -152,9 +154,14 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
             try {
                 for (int c=0; c<staleCleanupCountPerHost; c++) {
                     HttpConnection connection = null;
+                    connection = super.getConnectionWithTimeout(hostConfiguration, 10);
                     try {
-                        connection = super.getConnectionWithTimeout(hostConfiguration, 10);
-                        connection.isOpen(); // triggers stale checking
+                        connection.closeIfStale();
+                    } catch(IOException ioe) {
+                        if (logger.isLoggable(Level.FINER)) {
+                            logger.log(Level.FINER, "Error when stale checking connection '"+ExceptionUtils.getMessage(ioe)+"'.",
+                                    ExceptionUtils.getDebugException(ioe));
+                        }
                     }
                     finally {
                         if (connection != null) connection.releaseConnection();
