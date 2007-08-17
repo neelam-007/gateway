@@ -420,7 +420,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
             throw e;
         } catch (KeystoreActionsException e) {
-            logger.severe("Error while restoring a keystore to the HSM. Could not get the keydata from the database: " + e.getMessage());
+            logger.severe("Error while restoring a keystore to the HSM: " + e.getMessage());
             throw e;
         }
     }
@@ -501,7 +501,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             try {
                 result = ProcUtils.exec(null, new File(sudoCommand), args, null, true);
                 if (result.getExitStatus() != 0) {
-                    logHSMManagementProblemAndThrow(result, restoreScript,"There was an error trying to restore the HSM master key");
+                    logHSMManagementProblemAndThrow(result, restoreScript,"There was an error trying to restore the HSM master key. Please ensure that the USB key is attached and that the password is correct.");
                 } else {
                     logger.info("Successfully restored the HSM master key");
                 }
@@ -558,7 +558,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     }
 
-    private void makeHSMKeys(File keystoreDir, char[] fullKeystoreAccessPassword, boolean isRestoreHsm) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, SignatureException, InvalidKeyException, UnrecoverableEntryException {
+    private void makeHSMKeys(File keystoreDir, char[] fullKeystoreAccessPassword, boolean isRestoreHsm) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, SignatureException, InvalidKeyException, UnrecoverableEntryException, KeystoreActionsException {
         if ( !keystoreDir.exists() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' does not exist" );
         if ( !keystoreDir.isDirectory() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' is not a directory" );
 
@@ -578,11 +578,17 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         if (isRestoreHsm) {
             //get ca cert from the HSM
             KeyStore.Entry caEntry = theHsmKeystore.getEntry(KeyStoreConstants.CA_ALIAS, new KeyStore.PasswordProtection(fullKeystoreAccessPassword));
-            caCert = (X509Certificate) ((KeyStore.PrivateKeyEntry)caEntry).getCertificateChain()[0];
 
             //get ssl cert from the HSM
             KeyStore.Entry sslEntry = theHsmKeystore.getEntry(KeyStoreConstants.SSL_ALIAS, new KeyStore.PasswordProtection(fullKeystoreAccessPassword));
-            sslCert = (X509Certificate) ((KeyStore.PrivateKeyEntry)sslEntry).getCertificateChain()[0];
+
+            if (caEntry == null || sslEntry == null) {
+                String message = "The CA or SSL entry could not be found in the restored HSM. The contents of the keystore are not intact.";
+                logInvalidKeystoreContentsAndThrow(theHsmKeystore, message, fullKeystoreAccessPassword);
+            } else {
+                caCert = (X509Certificate) ((KeyStore.PrivateKeyEntry)caEntry).getCertificateChain()[0];
+                sslCert = (X509Certificate) ((KeyStore.PrivateKeyEntry)sslEntry).getCertificateChain()[0];
+            }
         } else {
             logger.info("Generating RSA keypair for CA cert");
             KeyPair cakp = JceProvider.generateRsaKeyPair();
@@ -609,6 +615,35 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         createDummyKeystorse(keystoreDir);
         exportCerts(caCert, caCertFile, sslCert, sslCertFile);
+    }
+
+    private void logInvalidKeystoreContentsAndThrow(KeyStore theHsmKeystore, String message, char[] fullKeystoreAccessPassword) throws KeystoreActionsException {
+        logger.severe(message);
+        String contents = "";
+        try {
+            Enumeration<String> aliases = theHsmKeystore.aliases();
+            if (aliases.hasMoreElements()) {
+                KeyStore.ProtectionParameter pp = new KeyStore.PasswordProtection(fullKeystoreAccessPassword);
+                while (aliases.hasMoreElements()) {
+                    String s = aliases.nextElement();
+                    KeyStore.Entry item = theHsmKeystore.getEntry(s, pp);
+                    contents += "\t" + s + " - " + item.getClass().getName() + "\n";
+                }
+            } else {
+                contents += "The keystore is empty";
+            }
+            logger.severe("The contents of the keystore are: \n" + contents);
+        } catch (KeyStoreException e) {
+            logger.severe("Could not enumerate the entries in the HSM: " + e.getMessage());
+            throw new KeystoreActionsException("Could not enumerate the entries in the HSM: " + e.getMessage(), e);
+        } catch (NoSuchAlgorithmException e) {
+            logger.severe("Could not enumerate the entries in the HSM: " + e.getMessage());
+            throw new KeystoreActionsException("Could not enumerate the entries in the HSM: " + e.getMessage(), e);
+        } catch (UnrecoverableEntryException e) {
+            logger.severe("Could not enumerate the entries in the HSM: " + e.getMessage());
+            throw new KeystoreActionsException("Could not enumerate the entries in the HSM: " + e.getMessage(), e);
+        }
+        throw new KeystoreActionsException(message);
     }
 
     private void createDummyKeystorse(File keystoreDir) throws IOException {

@@ -347,7 +347,7 @@ public class KeystoreActions {
 
     private int getOriginalVersion(Connection connection) throws SQLException {
         int originalVersion = -1;
-        String getVersionSql = new String("Select version from keystore_file where objectid=1 and name=\"HSM\"");
+        String getVersionSql = "Select version from keystore_file where objectid=1 and name=\"HSM\"";
 
         Statement stmt = null;
         try {
@@ -384,9 +384,15 @@ public class KeystoreActions {
                 throw new KeystoreActionsException("Could not determine the current version of the HSM keystore in the database: " + e.getMessage());
             }
 
-            preparedStmt = conn.prepareStatement("update keystore_file set version=?, databytes=? where objectid=1 and name=\"HSM\"");
-            preparedStmt.setInt(1, originalVersion+1);
-            preparedStmt.setBinaryStream(2, is, keyData.length);
+            boolean rowExists = HSMRowExistsInDatabase(conn);
+            if (rowExists) {
+                preparedStmt = conn.prepareStatement("update keystore_file set version=?, databytes=? where objectid=1 and name=\"HSM\"");
+                preparedStmt.setInt(1, originalVersion+1);
+                preparedStmt.setBinaryStream(2, is, keyData.length);
+            } else {
+                preparedStmt = conn.prepareStatement("insert into keystore_file values (1, 0, \"HSM\", \"hsm.sca.targz\", ?)");
+                preparedStmt.setBinaryStream(1, is, keyData.length);
+            }
             preparedStmt.addBatch();
             preparedStmt.executeBatch();
             logger.info("succesfully inserted the HSM keystore information into the database.");
@@ -397,6 +403,19 @@ public class KeystoreActions {
         } finally {
             ResourceUtils.closeQuietly(preparedStmt);
             ResourceUtils.closeQuietly(conn);
+        }
+    }
+
+    private boolean HSMRowExistsInDatabase(Connection conn) throws KeystoreActionsException {
+        Statement stmt = null;
+        try {
+            stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("select * from keystore_file where objectid=1 and name=\"HSM\"");
+            return rs.first();
+        } catch (SQLException e) {
+            throw new KeystoreActionsException("Error while determining the contents of the HSM keystore in the database: " + e.getMessage());
+        } finally{
+            ResourceUtils.closeQuietly(stmt);
         }
     }
 }
