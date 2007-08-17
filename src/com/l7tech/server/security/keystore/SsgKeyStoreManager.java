@@ -1,6 +1,8 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,4 +36,19 @@ public interface SsgKeyStoreManager {
      */
     @Transactional(readOnly=true)
     SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException;
+
+    /**
+     * Find a single private key, along with its cert chain, by searching for a key with the specified alias.
+     * <p/>
+     * If the specified alias is not found in the preferred keystore, all other keystores will be scanned for it.
+     * If the key cannot be found in any key store, FindException is thrown.
+     *
+     * @param keyAlias  the alias of the key to find.  Required.
+     * @param preferredKeystoreId  the ID of a keystore to look in first, or -1 to scan all key stores.
+     * @return a SignerInfo instance containing a private key and cert chain.  Never null.
+     * @throws FindException if the requested alias could not be found in any keystore, or if there is a problem reading key data from the DB.
+     * @throws java.security.KeyStoreException if there is a problem with the format of some keystore data
+     */
+    @Transactional(readOnly=true)
+    SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException;
 }

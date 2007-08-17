@@ -4,6 +4,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.security.kerberos.KerberosClient;
 import com.l7tech.common.security.kerberos.KerberosConfigException;
 import com.l7tech.common.security.kerberos.KerberosException;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.Group;
@@ -381,27 +382,34 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
 
     protected void checkPrivateKey(PrivateKeyable a, AssertionPath ap, PolicyValidatorResult r) {
         if (!a.isUsesDefaultKeyStore()) {
+            boolean found = false;
             try {
-                SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(a.getNonDefaultKeystoreId());
-                List<String> aliases = keyFinder.getAliases();
-
-                boolean found = false;
-                for (String alias : aliases) {
-                    if (a.getKeyAlias().equals(alias)) {
-                        found = true;
-                        break;
+                long keystoreId = a.getNonDefaultKeystoreId();
+                String keyAlias = a.getKeyAlias();
+                SsgKeyEntry foundKey = ssgKeyStoreManager.lookupKeyByKeyAlias(keyAlias, keystoreId);
+                if (foundKey != null) {
+                    found = true;
+                    long foundKeystoreId = foundKey.getKeystoreId();
+                    if (foundKey.getKeystoreId() != keystoreId) {
+                        SsgKeyFinder ks = ssgKeyStoreManager.findByPrimaryKey(foundKeystoreId);
+                        String name = ks != null ? ks.getName() : ("id:" + foundKeystoreId);
+                        r.addWarning(new PolicyValidatorResult.Warning((Assertion)a, ap,
+                                                                       "This assertion refers to a Private Key with alias '" + keyAlias + "' in a keystore with ID '" + keystoreId + "'.  " +
+                                                                       "No keystore with that ID is present on this SecureSpan Gateway, but the system has found " +
+                                                                       "a Private Key with a matching alias in the keystore '" + name + "' and will use that.",
+                                                                       null));
                     }
                 }
-                if (!found) {
-                    r.addError(new PolicyValidatorResult.Error((Assertion)a, ap,
-                                                               "This assertion refers to a Private Key which cannot " +
-                                                               "be found on this SecureSpan Gateway",
-                                                               null));
-                }
+
             } catch (Exception e) {
                 logger.log(Level.WARNING, "error looking for private key", e);
             }
-
+            if (!found) {
+                r.addError(new PolicyValidatorResult.Error((Assertion)a, ap,
+                                                           "This assertion refers to a Private Key which cannot " +
+                                                           "be found on this SecureSpan Gateway",
+                                                           null));
+            }
         }
     }
 

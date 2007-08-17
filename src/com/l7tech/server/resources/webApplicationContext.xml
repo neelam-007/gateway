@@ -669,6 +669,7 @@
         <constructor-arg ref="sharedKeyManager"/>
         <constructor-arg ref="keystoreFileManager"/>
         <constructor-arg ref="keystore"/>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">

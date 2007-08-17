@@ -1,5 +1,6 @@
 package com.l7tech.server.security.keystore;
 
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,5 +20,10 @@ public class SsgKeyStoreManagerStub implements SsgKeyStoreManager {
     @Transactional(readOnly = true)
     public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException {
         return null;
+    }
+
+    @Transactional(readOnly = true)
+    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException {
+        throw new FindException("Not found");
     }
 }

@@ -1,12 +1,15 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
 import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
 import com.l7tech.server.security.keystore.software.TomcatSsgKeyFinder;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.KeyStoreException;
 import java.util.ArrayList;
@@ -32,14 +35,16 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
 
     private final KeystoreFileManager keystoreFileManager;
     private final KeystoreUtils keystoreUtils;
+    private final ServerConfig serverConfig;
 
     private boolean initialized = false;
     private List<SsgKeyFinder> keystores = null;
 
-    public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, KeystoreUtils keystoreUtils) throws KeyStoreException, FindException {
+    public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, KeystoreUtils keystoreUtils, ServerConfig serverConfig) throws KeyStoreException, FindException {
         this.keystoreFileManager = kem;
         this.keystoreUtils = keystoreUtils;
         this.softwareKeystorePasssword = toPassphrase(skm.getSharedKey());
+        this.serverConfig = serverConfig;
     }
 
     private char[] toPassphrase(byte[] b) {
@@ -120,5 +125,40 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
                 return keystore;
         }
         throw new FindException("No SsgKeyFinder available on this node with id=" + id);
+    }
+
+    @Transactional(readOnly = true)
+    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException {
+        // First look in the preferred keystore
+        SsgKeyFinder alreadySearched = null;
+        if (preferredKeystoreId != -1) {
+
+            try {
+                alreadySearched = findByPrimaryKey(preferredKeystoreId);
+                if (alreadySearched != null)
+                    return alreadySearched.getCertificateChain(keyAlias);
+                /* FALLTHROUGH and scan all keystores */
+            } catch (FindException e) {
+                /* FALLTHROUGH and scan all keystores */
+            } catch (KeyStoreException e) {
+                /* FALLTHROUGH and scan the other keystores */
+            }
+        }
+
+        boolean scanOthers = serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_KEYSTORE_SEARCH_FOR_ALIAS, true, 2 * 60 * 1000);
+
+        // Scan the other keystores
+        List<SsgKeyFinder> finders = scanOthers ? findAll() : Collections.<SsgKeyFinder>emptyList();
+        for (SsgKeyFinder finder : finders) {
+            if (finder == alreadySearched)
+                continue;
+            try {
+                return finder.getCertificateChain(keyAlias);
+            } catch (KeyStoreException e) {
+                /* FALLTHROUGH and check the next keystore */
+            }
+        }
+
+        throw new FindException("No key with alias " + keyAlias + " found in any keystore");
     }
 }

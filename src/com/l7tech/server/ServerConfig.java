@@ -105,6 +105,9 @@ public class ServerConfig implements ClusterPropertyListener {
 
     public static final String PARAM_SCHEMA_SOFTWARE_FALLBACK = "schemaSoftwareFallback";
 
+    public static final String PARAM_KEYSTORE_SEARCH_FOR_ALIAS = "keyStoreSearchForAlias";
+
+
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
@@ -669,6 +672,16 @@ public class ServerConfig implements ClusterPropertyListener {
             val = emergencyDefault;
         }
         return val;
+    }
+
+    public boolean getBooleanProperty(String propName, boolean emergencyDefault) {
+        String strval = getProperty(propName);
+        return strval == null ? emergencyDefault : Boolean.parseBoolean(strval);
+    }
+
+    public boolean getBooleanPropertyCached(String propName, boolean emergencyDefault, long maxAge) {
+        String strval = getPropertyCached(propName, maxAge);
+        return strval == null ? emergencyDefault : Boolean.parseBoolean(strval);
     }
 
     public long getTimeUnitPropertyCached(String propName, long emergencyDefault, long maxAge) {

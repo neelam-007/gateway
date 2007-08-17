@@ -110,6 +110,11 @@ public class SsgKeyEntry implements NamedEntity, Serializable {
         return getCertificateChain()[0];
     }
 
+    /** @return the keystore id from which this entry came. */
+    public long getKeystoreId() {
+        return keystoreId;
+    }
+
     /** @param keystoreId the new keystore id. */
     public void setKeystoreId(long keystoreId) {
         this.keystoreId = keystoreId;

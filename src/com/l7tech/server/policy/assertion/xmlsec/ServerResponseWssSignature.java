@@ -28,7 +28,6 @@ import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -77,17 +76,14 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
             if (maybePrivateKeyable instanceof PrivateKeyable) {
                 PrivateKeyable keyable = (PrivateKeyable)maybePrivateKeyable;
                 if (!keyable.isUsesDefaultKeyStore()) {
-                    if (!keyable.isUsesDefaultKeyStore()) {
-                        final long keystoreId = keyable.getNonDefaultKeystoreId();
-                        final String keyAlias = keyable.getKeyAlias();
-                        com.l7tech.server.security.keystore.SsgKeyStoreManager sksm =
-                                (SsgKeyStoreManager)ctx.getBean("ssgKeyStoreManager", com.l7tech.server.security.keystore.SsgKeyStoreManager.class);
-                        SsgKeyFinder keyFinder = sksm.findByPrimaryKey(keystoreId);
-                        SsgKeyEntry keyEntry = keyFinder.getCertificateChain(keyAlias);
-                        X509Certificate[] certChain = keyEntry.getCertificateChain();
-                        PrivateKey privateKey = keyEntry.getPrivateKey();
-                        return new SignerInfo(privateKey, certChain);
-                    }
+                    final long keystoreId = keyable.getNonDefaultKeystoreId();
+                    final String keyAlias = keyable.getKeyAlias();
+                    com.l7tech.server.security.keystore.SsgKeyStoreManager sksm =
+                            (SsgKeyStoreManager)ctx.getBean("ssgKeyStoreManager", com.l7tech.server.security.keystore.SsgKeyStoreManager.class);
+                    SsgKeyEntry keyEntry = sksm.lookupKeyByKeyAlias(keyAlias, keystoreId);
+                    X509Certificate[] certChain = keyEntry.getCertificateChain();
+                    PrivateKey privateKey = keyEntry.getPrivateKey();
+                    return new SignerInfo(privateKey, certChain);
                 }
             }
 
