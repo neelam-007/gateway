@@ -1807,18 +1807,14 @@
 
 
     <!--
-        Package the AuditSignatureChecker (Aways invoked by hand)
+        Package the AuditSignatureChecker (Aways invoked by hand).
+        Result is a self-contained executable JAR file with dependency JARs nested inside.
     -->
     <target name="package.auditsignaturechecker"
             description="Compile and package the Audit Signature Checker."
             depends="init, compile">
-        <jar jarfile="${build.dir}/AuditSignatureChecker.jar">
-            <indexjars>
-                <fileset dir="${build.dir}/lib" casesensitive="yes">
-                    <include name="commons-codec-1.2.jar"/>
-                    <include name="bcprov-jdk15-135.jar"/>
-                </fileset>
-            </indexjars>
+        <mkdir dir="${build.dir}/auditsignaturechecker/staging/main"/>
+        <jar jarfile="${build.dir}/auditsignaturechecker/staging/main/main.jar">
             <manifest>
                 <attribute name="Implementation-Title" value="${app.name}"/>
                 <attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}"/>
@@ -1827,13 +1823,48 @@
             </manifest>
             <fileset dir="${build.classes}">
                 <include name="com/l7tech/internal/audit/**/*"/>
-                <include name="com/l7tech/common/util/CertUtils*"/>
-                <include name="com/l7tech/common/util/HexUtils*"/>
-                <include name="com/l7tech/common/util/CausedIOException*"/>
-                <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream*"/>
-                <include name="com/l7tech/common/util/SyspropUtil*"/>
-                <include name="com/l7tech/common/util/ExceptionUtils*"/>
-                <include name="com/l7tech/common/util/DnParserBc*"/>
+                <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
+                <include name="com/l7tech/common/util/CertUtils*.class"/>
+                <include name="com/l7tech/common/util/CausedIOException.class"/>
+                <include name="com/l7tech/common/util/DnParserJava15.class"/>
+                <include name="com/l7tech/common/util/ExceptionUtils.class"/>
+                <include name="com/l7tech/common/util/HexUtils.class"/>
+                <include name="com/l7tech/common/util/SyspropUtil*.class"/>
+                <include name="com/l7tech/common/util/WhirlycacheFactory*.class"/>
+            </fileset>
+        </jar>
+
+        <fileset id="auditsignaturechecker.jars.fileset" dir="${build.lib}">
+            <include name="bcprov-jdk15-135.jar"/>
+            <include name="commons-codec-1.2.jar"/>
+            <include name="commons-collections-2.1.1.jar"/>
+            <include name="commons-logging-1.0.4.jar"/>
+            <include name="concurrent-1.3.4.jar"/>
+            <include name="whirlycache-1.0.1.jar"/>
+        </fileset>
+        <pathconvert property="auditsignaturechecker.jars.classpath" targetos="unix" pathsep=" " refid="auditsignaturechecker.jars.fileset">
+            <mapper type="regexp" from=".*[/\\](.*)\.jar" to="lib/\1.jar"/>
+        </pathconvert>
+
+        <mkdir dir="${build.dir}/auditsignaturechecker/staging/lib"/>
+        <copy todir="${build.dir}/auditsignaturechecker/staging/lib">
+            <fileset refid="auditsignaturechecker.jars.fileset"/>
+        </copy>
+
+        <unzip src="lib/one-jar-boot-0.95.jar" dest="${build.dir}/auditsignaturechecker/staging">
+            <patternset>
+                <exclude name="boot-manifest.mf"/>
+                <exclude name="META-INF/*"/>
+            </patternset>
+        </unzip>
+
+        <jar jarfile="${build.dir}/auditsignaturechecker/AuditSignatureChecker.jar">
+            <manifest>
+                <attribute name="Class-Path" value="${auditsignaturechecker.jars.classpath}"/>
+                <attribute name="Main-Class" value="com.simontuffs.onejar.Boot"/>
+            </manifest>
+            <fileset dir="${build.dir}/auditsignaturechecker/staging">
+                <include name="**/*"/>
             </fileset>
         </jar>
     </target>

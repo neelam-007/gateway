@@ -38,13 +38,9 @@ import java.util.zip.ZipFile;
  */
 public class AuditSignatureChecker extends JFrame {
 
-    // User preferences keys.
-    private static final String PREF_AUDITPATH = Gui.class.getName() + ".auditPath";
-    private static final String PREF_CERTPATH = Gui.class.getName() + ".certPath";
-    private static final String PREF_WINDOW_X = Gui.class.getName() + ".windowX";
-    private static final String PREF_WINDOW_Y = Gui.class.getName() + ".windowY";
-    private static final String PREF_WINDOW_WIDTH = Gui.class.getName() + ".windowWidth";
-    private static final String PREF_WINDOW_HEIGHT = Gui.class.getName() + ".windowHeight";
+    private static final Preferences _preferences = Preferences.userRoot().node("/com/l7tech/internal/audit/auditsignaturechecker");
+    private static final String PREF_AUDITPATH = "audit.path";
+    private static final String PREF_CERTPATH = "cert.path";
 
     private static boolean isZipFile(final String path) throws IOException {
         boolean result = false;
@@ -276,12 +272,11 @@ public class AuditSignatureChecker extends JFrame {
             final boolean result = checkFile(args[0], args[1], new PrintWriter(System.out, true));
             System.out.println("***** " + (result ? "PASS" : "FAIL") + " *****");
             // Saves user preferences (for GUI interface to use).
-            final Preferences prefs = Preferences.userRoot();
-            prefs.put(PREF_AUDITPATH, args[0]);
-            prefs.put(PREF_CERTPATH, args[1]);
+            _preferences.put(PREF_AUDITPATH, args[0]);
+            _preferences.put(PREF_CERTPATH, args[1]);
 
         } else {
-            System.out.println("usage: (Help)         java -h");
+            System.out.println("usage: (Help)         java " + AuditSignatureChecker.class.getName() + "-h");
             System.out.println("       (GUI)          java " + AuditSignatureChecker.class.getName());
             System.out.println("       (Command line) java " + AuditSignatureChecker.class.getName() + " {ZIP file} {Cert file}");
             System.out.println("                      java " + AuditSignatureChecker.class.getName() + " audit.dat  {Cert file}");
@@ -293,6 +288,11 @@ public class AuditSignatureChecker extends JFrame {
      * GUI interface.
      */
     private static class Gui extends JFrame {
+
+        private static final String PREF_WINDOW_X = "window.x";
+        private static final String PREF_WINDOW_Y = "window.y";
+        private static final String PREF_WINDOW_WIDTH = "window.width";
+        private static final String PREF_WINDOW_HEIGHT = "window.height";
 
         private final JTextField _auditPathTextField = new JTextField();
         private final JTextField _certPathTextField = new JTextField();
@@ -419,16 +419,15 @@ public class AuditSignatureChecker extends JFrame {
             addWindowListener(new WindowAdapter() {
                 public void windowClosing(WindowEvent e) {
                     // Saves user preferences.
-                    final Preferences prefs = Preferences.userRoot();
                     if ((getExtendedState() & MAXIMIZED_BOTH) != 0) {
                         setExtendedState(NORMAL);
                     }
-                    prefs.putInt(PREF_WINDOW_X, getLocation().x);
-                    prefs.putInt(PREF_WINDOW_Y, getLocation().y);
-                    prefs.putInt(PREF_WINDOW_WIDTH, getSize().width);
-                    prefs.putInt(PREF_WINDOW_HEIGHT, getSize().height);
-                    prefs.put(PREF_AUDITPATH, _auditPathTextField.getText());
-                    prefs.put(PREF_CERTPATH, _certPathTextField.getText());
+                    _preferences.putInt(PREF_WINDOW_X, getLocation().x);
+                    _preferences.putInt(PREF_WINDOW_Y, getLocation().y);
+                    _preferences.putInt(PREF_WINDOW_WIDTH, getSize().width);
+                    _preferences.putInt(PREF_WINDOW_HEIGHT, getSize().height);
+                    _preferences.put(PREF_AUDITPATH, _auditPathTextField.getText());
+                    _preferences.put(PREF_CERTPATH, _certPathTextField.getText());
                 }
             });
 
@@ -436,14 +435,12 @@ public class AuditSignatureChecker extends JFrame {
             pack();
 
             // Applies user preferences.
-            final Preferences prefs = Preferences.userRoot();
-
-            int width = prefs.getInt(PREF_WINDOW_WIDTH, -1);
-            int height = prefs.getInt(PREF_WINDOW_HEIGHT, -1);
+            int width = _preferences.getInt(PREF_WINDOW_WIDTH, -1);
+            int height = _preferences.getInt(PREF_WINDOW_HEIGHT, -1);
             if (width == -1) width = getSize().width;
             if (height == -1) height = getSize().height;
-            int x = prefs.getInt(PREF_WINDOW_X, -1);
-            int y = prefs.getInt(PREF_WINDOW_Y, -1);
+            int x = _preferences.getInt(PREF_WINDOW_X, -1);
+            int y = _preferences.getInt(PREF_WINDOW_Y, -1);
             if (x == -1 || y == -1) {
                 final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 if (x == -1) x = screenSize.width > width ? (screenSize.width - width) / 2 : 0;
@@ -452,8 +449,8 @@ public class AuditSignatureChecker extends JFrame {
             setLocation(x, y);
             setSize(width, height);
 
-            _auditPathTextField.setText(prefs.get(PREF_AUDITPATH, null));
-            _certPathTextField.setText(prefs.get(PREF_CERTPATH, null));
+            _auditPathTextField.setText(_preferences.get(PREF_AUDITPATH, null));
+            _certPathTextField.setText(_preferences.get(PREF_CERTPATH, null));
 
             setVisible(true);
         }
