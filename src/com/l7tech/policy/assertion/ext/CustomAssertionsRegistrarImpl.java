@@ -240,10 +240,7 @@ public class CustomAssertionsRegistrarImpl
                 }
             }
             else {
-                File configFile = new File(fileName);
-                URL fileUrl = configFile.toURI().toURL();
-                if (initFromUrl(fileUrl, caClassLoader))
-                    initialized = true;
+                logger.info("No custom assertions found.");
             }
         }
         catch(IOException ioe) {
