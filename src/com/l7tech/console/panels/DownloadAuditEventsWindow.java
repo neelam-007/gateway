@@ -20,7 +20,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.filechooser.FileFilter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -245,7 +245,15 @@ public class DownloadAuditEventsWindow extends JFrame {
         chooser.setDialogTitle("Save Audit Events As");
         chooser.setDialogType(JFileChooser.SAVE_DIALOG);
         chooser.setMultiSelectionEnabled(false);
-        final FileNameExtensionFilter fileFilter = new FileNameExtensionFilter("ZIP archives (*.zip)", "zip");
+        final FileFilter fileFilter = new FileFilter() {
+            public boolean accept(File f) {
+                return (f.isDirectory() || f.getName().toLowerCase().endsWith(".zip"));
+            }
+
+            public String getDescription() {
+                return "ZIP archives (*.zip)";
+            }
+        };
         chooser.setFileFilter(fileFilter);
         final int result = chooser.showSaveDialog(DownloadAuditEventsWindow.this);
         if (result != JFileChooser.APPROVE_OPTION)

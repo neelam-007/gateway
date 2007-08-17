@@ -9,7 +9,6 @@ import javax.net.ssl.*;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -461,7 +460,15 @@ public class AuditSignatureChecker extends JFrame {
             chooser.setDialogTitle("Select Audit Download File");
             chooser.setDialogType(JFileChooser.OPEN_DIALOG);
             chooser.setMultiSelectionEnabled(false);
-            final FileNameExtensionFilter fileFilter = new FileNameExtensionFilter("ZIP archives (*.zip)", "zip");
+            final javax.swing.filechooser.FileFilter fileFilter = new javax.swing.filechooser.FileFilter() {
+                public boolean accept(File f) {
+                    return (f.isDirectory() || f.getName().toLowerCase().endsWith(".zip"));
+                }
+
+                public String getDescription() {
+                    return "ZIP archives (*.zip)";
+                }
+            };
             chooser.setFileFilter(fileFilter);
             final int result = chooser.showOpenDialog(this);
             if (result != JFileChooser.APPROVE_OPTION)
