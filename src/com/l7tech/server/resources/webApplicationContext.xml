@@ -151,7 +151,7 @@
         <constructor-arg ref="licenseManager"/>
     </bean>
     <!-- server side service manager -->
-    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache" depends-on="assertionRegistry">
+    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
         <constructor-arg ref="policyFactory"/>
         <constructor-arg>
             <list>
@@ -231,7 +231,7 @@
     </bean>
 
     <!-- server side service manager -->
-    <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" depends-on="customAssertionRegistrar" parent="hibernateBean">
+    <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
         <property name="serviceCache" ref="serviceCache"/>
         <property name="resolutionManager" ref="resolutionManager"/>
         <property name="roleManager" ref="roleManager"/>
@@ -647,7 +647,7 @@
 
     <bean id="stashManagerFactory" class="com.l7tech.server.DefaultStashManagerFactory" factory-method="getInstance"/>
 
-    <bean id="assertionRegistry" class="com.l7tech.server.policy.ServerAssertionRegistry">
+    <bean id="assertionRegistry" class="com.l7tech.server.policy.ServerAssertionRegistry" depends-on="ssgBoot">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="licenseManager"/>
     </bean>
