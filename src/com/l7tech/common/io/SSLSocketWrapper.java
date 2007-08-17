@@ -3,7 +3,6 @@ package com.l7tech.common.io;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -260,14 +259,6 @@ public class SSLSocketWrapper extends SSLSocket {
 
     public void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
         delegate.setPerformancePreferences(connectionTime, latency, bandwidth);
-    }
-
-    public SSLParameters getSSLParameters() {
-        return delegate.getSSLParameters();
-    }
-
-    public void setSSLParameters(SSLParameters sslParameters) {
-        delegate.setSSLParameters(sslParameters);
     }
 
     //- PRIVATE
