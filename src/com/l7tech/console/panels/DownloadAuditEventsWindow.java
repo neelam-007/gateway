@@ -270,7 +270,14 @@ public class DownloadAuditEventsWindow extends JFrame {
      * Handles download button click.
      */
     private void onDownload() {
-        outputFile = new File(filePathTextField.getText());
+        // Adds "zip" extension if not already.
+        String filePath = filePathTextField.getText();
+        if (!filePath.toLowerCase().endsWith(".zip")) {
+            filePath = filePath + ".zip";
+            filePathTextField.setText(filePath);
+        }
+
+        outputFile = new File(filePath);
         if (outputFile.exists()) {
             String[] options = { "Overwrite", "Cancel" };
             int result = JOptionPane.showOptionDialog(this,
