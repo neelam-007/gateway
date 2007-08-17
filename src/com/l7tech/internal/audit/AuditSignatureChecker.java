@@ -201,6 +201,20 @@ public class AuditSignatureChecker extends JFrame {
         }
     }
 
+    // reconstitutes records on multi lines
+    private static String readRecord(BufferedReader in) throws IOException {
+        StringBuffer sb = new StringBuffer();
+        String tmp = in.readLine();
+        if (tmp == null) return null;
+        sb.append(tmp);
+        while (tmp.endsWith("\\")) {
+            tmp = in.readLine();
+            sb.append("\n");
+            sb.append(tmp);
+        }
+        return sb.toString();
+    }
+
     /**
      * Check signatures of each audit record in a file.
      *
@@ -212,19 +226,19 @@ public class AuditSignatureChecker extends JFrame {
      */
     private static boolean checkFile(final InputStream is, final PrintWriter out, Certificate[] cert) throws IOException {
         final BufferedReader in = new BufferedReader(new InputStreamReader(is));
-        String line;
+        String readrecord;
         int i = 0;
-        while ((line = in.readLine()) != null ) {
+        while ((readrecord = readRecord(in)) != null ) {
             i++;
             if (i == 1) continue; // dont do header line
-            if (line.length() < 5) continue;
+            if (readrecord.length() < 5) continue;
 
             DownloadedAuditRecordSignatureVerificator rec;
             try {
-                rec = DownloadedAuditRecordSignatureVerificator.parse(line);
+                rec = DownloadedAuditRecordSignatureVerificator.parse(readrecord);
             } catch (DownloadedAuditRecordSignatureVerificator.InvalidAuditRecordException e) {
                 out.println(e.getMessage());
-                out.println(line);
+                out.println(readrecord);
                 continue;
             }
             if (!rec.isSigned()) {
