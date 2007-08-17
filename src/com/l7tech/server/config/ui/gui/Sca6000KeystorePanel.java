@@ -102,6 +102,7 @@ public class Sca6000KeystorePanel extends KeystorePanel {
                 if(isShouldBackupMasterKey()) {
                     //prompt for masterkeybackup password
                     JPasswordField pFld = new JPasswordField();
+                    pFld.setFocusCycleRoot(true);
                     String passwordMsg = "Enter a password to protect the master key backup";
                     int action = JOptionPane.showConfirmDialog(this, new Object[]{passwordMsg, pFld},"Enter Password", JOptionPane.OK_CANCEL_OPTION);
                     if (action == JOptionPane.OK_OPTION) {

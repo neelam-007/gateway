@@ -11,6 +11,7 @@ import com.l7tech.server.partition.PartitionManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.logging.Logger;
 
 /**
@@ -53,7 +54,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
         printText("\n" + STEP_INFO + "\n");
 
-        boolean doKeystoreConfig = false;
+        boolean doKeystoreConfig;
         try {
             doKeystoreConfig = askDoKeystorePrompts();
             if (doKeystoreConfig) {
@@ -88,7 +89,13 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         }
         prompts.add("Please select the keystore type you wish to use: [1]");
 
-        String input = getData(prompts, "1", ksTypeMap.keySet().toArray(new String[]{}));
+        String input = getData(
+                prompts.toArray(new String[0]),
+                "1",
+                ksTypeMap.keySet().toArray(new String[]{}),
+                null
+        );
+
         KeystoreType ksType = ksTypeMap.get(input);
 
         if (ksType == null) {
@@ -126,7 +133,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 "2) Import Existing Keystore" + getEolChar(),
                 "Please make a selection: [" + defaultValue + "] ",
             };
-            String input = getData(prompts, defaultValue, new String[] {"1", "2"});
+            String input = getData(prompts, defaultValue, new String[] {"1", "2"},null);
             keystoreBean.setInitializeHSM((input != null && "1".equals(input)));
             if (keystoreBean.isInitializeHSM()) {
                     askInitialiseHSMQuestions();
@@ -138,7 +145,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
     }
 
     private boolean askRestoreHSMQuestions() throws IOException, WizardNavigationException {
-        boolean success = false;
+        boolean success;
         keystoreBean.setShouldBackupMasterKey(false);
         String backupPassword = getMatchingPasswords(
                 "Enter the master key backup password: ",
@@ -218,11 +225,12 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                             errorMessages.add("**** The specified Luna Java Service Provider directory does not exist ****\n");
                         }
                         if (errorMessages.size() > 0) {
-                            return (String[]) errorMessages.toArray(new String[errorMessages.size()]);
+                            return errorMessages.toArray(new String[errorMessages.size()]);
                         }
                         return null;
                     }
-                }
+                },
+                false
         );
     }
 
@@ -251,7 +259,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             "2) Create SSL keys only\n",
             "Please make a selection: [" + defaultValue + "] ",
         };
-        String input = getData(prompts, defaultValue, new String[] {"1", "2"});
+        String input = getData(prompts, defaultValue, new String[] {"1", "2"}, null);
         keystoreBean.setDoBothKeys( (input != null && "1".equals(input)));
         doKeystorePasswordPrompts("Keystore Password",
                                   "Enter the keystore password (must be a minimum of 6 characters): ",
@@ -270,7 +278,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
     }
 
     private boolean askDoKeystorePrompts() throws IOException, WizardNavigationException {
-        boolean shouldConfigure = false;
+        boolean shouldConfigure;
         String defaultValue = "1";
         String [] prompts = new String[] {
             NO_KEYSTORE_PROMPT,
@@ -278,7 +286,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             "please make a selection: [" + defaultValue + "]",
         };
 
-        String input = getData(prompts, defaultValue, new String[]{"1","2"});
+        String input = getData(prompts, defaultValue, new String[]{"1","2"}, null);
 
         shouldConfigure = input != null && input.trim().equals("2");
         keystoreBean.doKeystoreConfig(shouldConfigure);
@@ -296,7 +304,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                             "Warning: You are configuring a new partition without a keystore. \nThis partition will not be able to start without a keystore." + getEolChar(),
                             "Press Enter To Continue" + getEolChar(),
                             getEolChar(),
-                    }, "");
+                    }, "", (String[]) null, null);
                     shouldDisable = true;
                 } else {
                     shouldDisable = false;
@@ -309,14 +317,13 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
     }
 
     public boolean validateStep() {
-        boolean ok = false;
+        boolean ok;
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         if (ksBean.isDoKeystoreConfig()) {
             KeystoreActions ka = new KeystoreActions(osFunctions);
             try {
                 byte[] existingRawSharedKey = ka.getSharedKey(this);
                 if (existingRawSharedKey != null) {
-//                    logger.info(MessageFormat.format("After validate - Got a shared key: {0}, Length: {1}", HexUtils.hexDump(existingRawSharedKey), existingRawSharedKey.length));
                     ((KeystoreConfigBean)configBean).setSharedKeyBytes(existingRawSharedKey);
                 }
                 ok = true;
@@ -338,14 +345,14 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         String passwd = null;
         String type = null;
         try {
-            passwd = getData(prompt, "");
+            passwd = getSecretData(prompt, "", (String[]) null, null);
             List<String> typePrompts = new ArrayList<String>();
             typePrompts.add("-- Please provide the type for the existing keystore --" + getEolChar());
             typePrompts.add("1) " + KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName() + getEolChar());
             typePrompts.add("2) " + KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName() + getEolChar());
             typePrompts.add("3) " + KeystoreType.LUNA_KEYSTORE_NAME.shortTypeName() + getEolChar());
             typePrompts.add("Please make a selection: [1]");
-            String which  = getData(typePrompts, "1", new String[] {"1","2","3"});
+            String which  = getData(typePrompts.toArray(new String[0]), "1", new String[] {"1","2","3"},null);
             if ("1".equals(which))
                 type = KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName();
             else if ("2".equals(which))

@@ -24,7 +24,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
 
     private static final String TITLE = "Configure Time Synchronization (NTP)";
     private NtpConfigurationBean ntpBean;
-    public static final int TIMEZONES_PER_PAGE = 10; 
+    public static final int TIMEZONES_PER_PAGE = 10;
 
 
     public SystemConfigWizardNtpStep(ConfigurationWizard parentWizard) {
@@ -78,14 +78,14 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             logger.warning("Could not determine available timezones. Timezone directory \"" + dir.getAbsolutePath() + "\" does not exist");
         } else {
             File[] allTimeZones = getTimezones(dir);
-            File[] timezonesToDisplay = null;
+            File[] timezonesToDisplay;
             int howManyTimeZones = allTimeZones.length;
             List<String> allowedEntries = new ArrayList<String>();
             for (int i = 0; i < howManyTimeZones; i++) {
                 allowedEntries.add(String.valueOf(i+1));
             }
 
-            int whichIndex = 0;
+            int whichIndex;
             if (howManyTimeZones > TIMEZONES_PER_PAGE) {
                 //try paging the view
                 int displayedCount = 0;
@@ -153,7 +153,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             prompts.add(prompt + getEolChar());
         }
 
-        String[] acceptedEntries = null;
+        String[] acceptedEntries;
         String defaultValue = "";
         if (!hasMoreEntries) {
             acceptedEntries = allowedEntries.toArray(new String[0]);
@@ -163,10 +163,10 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             tempList.addAll(allowedEntries);
             tempList.add(defaultValue);
             acceptedEntries = tempList.toArray(new String[0]);
-            prompts.add("Please make a selection [Enter for next page]: ");            
+            prompts.add("Please make a selection [Enter for next page]: ");
         }
 
-        String tzSelection = getData(prompts, defaultValue, acceptedEntries);
+        String tzSelection = getData(prompts.toArray(new String[0]), defaultValue, acceptedEntries,null);
         if (tzSelection.equals(defaultValue)) {
             return -1;
         }
@@ -191,16 +191,18 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
 
         prompt += " : ";
 
-        boolean isValid = false;
+        boolean isValid;
 
-        String timeserverLine = null;
+        String timeserverLine;
         String tsAddress = null;
 
         do {
             isValid = false;
             timeserverLine = getData(
                     new String[]{prompt},
-                    existingNtpServer
+                    existingNtpServer,
+                    (String[]) null,
+                    null
             );
 
             if (StringUtils.isEmpty(timeserverLine))

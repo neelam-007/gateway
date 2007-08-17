@@ -84,7 +84,9 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private void doHostnamePrompt() throws IOException, WizardNavigationException {
         String fqdn = getData(
                 new String[] {HOSTNAME_PROMPT},
-                ""
+                "",
+                (String[]) null,
+                null
         );
         int firstDotPos = fqdn.indexOf(".");
         String justHostname = fqdn;
@@ -200,7 +202,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         for (int index=1; index <= x; ++index) {
             allowedEntries[index-1] = String.valueOf(index);
         }
-        String whichChoice = getData(promptList, "1", allowedEntries);
+        String whichChoice = getData(promptList.toArray(new String[0]), "1", allowedEntries,null);
 
         int choiceNum = Integer.parseInt(whichChoice);
         NetworkingConfigurationBean.NetworkConfig theConfig;
@@ -242,7 +244,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
 
         boolean duplicateName;
-        String name = "";
+        String name;
         do {
             duplicateName = false;
             name = getData(prompts, "", interfaceNamePattern, "*** Please specify an interface name ***");
@@ -277,8 +279,12 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (shouldConfigNameServers) {
                 do {
                     nameserversline = getData(
-                            new String[] {"Enter the IP Address(es) of the nameserver(s) to be associated with the \"" + interfaceName + "\" interface (comma separated): "},
-                            defaultNameserversLine
+                            new String[] {
+                                    "Enter the nameservers to be associated with the \"" + interfaceName + "\" interface (comma separated): "
+                            },
+                            defaultNameserversLine,
+                            (String[])null,
+                            null
                         );
 
                 if (StringUtils.isEmpty(nameserversline)) {
@@ -310,7 +316,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         List<String> errors;
 
         do {
-            gateway = getData(new String[] {prompt}, gateway);
+            gateway = getData(new String[] {prompt}, gateway, (String[]) null,null);
             errors = validateGateway(gateway);
 
             isValid = errors.isEmpty();
@@ -335,17 +341,17 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
             currentFirstAddress = stringAddresses.get(0);
         }
 
-        String prompt = "Enter the IP for interface \"" + interfaceName + "\"";
-        if (StringUtils.isNotEmpty(currentFirstAddress)) prompt += " [" + currentFirstAddress + "] ";
-        prompt += ": ";
-
         boolean isValid;
         List<String> errors;
         String defaultAddress = StringUtils.isNotEmpty(currentFirstAddress)?currentFirstAddress:"";
+        String prompt = "Enter the IP for interface \"" + interfaceName + "\"";
+        if (StringUtils.isNotEmpty(defaultAddress))
+            prompt += " [" + defaultAddress + "] ";
+        prompt += ": ";
 
-        String newAddress = "";
+        String newAddress;
         do {
-            newAddress = getData(new String[] {prompt}, defaultAddress);
+            newAddress = getData(new String[] {prompt}, defaultAddress, (String[]) null,null);
             errors = validateIpAddress(newAddress);
 
             isValid = errors.isEmpty();
@@ -368,7 +374,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         String defaultNetMask = StringUtils.isNotEmpty(netMask)?netMask:"";
         do {
-            netMask = getData(new String[] {prompt}, defaultNetMask);
+            netMask = getData(new String[] {prompt}, defaultNetMask, (String[]) null,null);
             errors = validateNetMask(netMask);
 
             isValid = errors.isEmpty();
@@ -400,7 +406,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         printText(getEolChar() + HEADER_BOOTPROTO);
 
-        String input = getData(prompts, defaultValue, new String[]{"1","2"});
+        String input = getData(prompts, defaultValue, new String[]{"1","2"},null);
         bootProto = StringUtils.equals("1", input)?NetworkingConfigurationBean.STATIC_BOOT_PROTO:NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO;
         return bootProto;
     }

@@ -88,7 +88,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
     }
 
     private boolean doDbTest() {
-        boolean success = true;
+        boolean success;
         String privUsername = databaseBean.getPrivUsername();
         String privPassword = databaseBean.getPrivPassword();
         String dbHostname = databaseBean.getDbHostname();
@@ -116,8 +116,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
         String defaultHostname = null;
         String defaultDbName = null;
-        String defaultDbUsername = null;
-//        String defaultDbPassword = null;
+        String defaultDbUsername;
 
         String existingDBUrl = (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_URL);
 
@@ -152,7 +151,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String[] prompts = new String[] {
             "Please enter the password for the root database user (needed to create a new database): [" + defaultPassword + "] ",
         };
-        String passwd = getData(prompts, defaultPassword);
+        String passwd = getSecretData(prompts, defaultPassword, (String[]) null,null);
         databaseBean.setPrivPassword(passwd);
         return passwd;
     }
@@ -161,7 +160,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String[] prompts = new String[] {
              "Please enter the username for the root database user (needed to create a new database): [" + defaultUsername + "] ",
         };
-        String username = getData(prompts, defaultUsername);
+        String username = getData(prompts, defaultUsername, (String[]) null,null);
         databaseBean.setPrivUserName(username);
         return username;
     }
@@ -170,28 +169,28 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String[] prompts = new String[] {
             PROMPT_DB_PASSWORD + "[" + defaultDbPassword + "] ",
         };
-        databaseBean.setDbPassword(getData(prompts, defaultDbPassword));
+        databaseBean.setDbPassword(getSecretData(prompts, defaultDbPassword, null, null));
     }
 
     private void doDBUsernamePrompts(String defaultDbUsername) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
             PROMPT_DB_USERNAME + "[" + defaultDbUsername + "] ",
         };
-        databaseBean.setDbUsername(getData(prompts, defaultDbUsername));
+        databaseBean.setDbUsername(getData(prompts, defaultDbUsername, (String[]) null,null));
     }
 
     private void doDBNamePrompt(String defaultDbName) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
                 PROMPT_DB_NAME + "[" + defaultDbName + "] ",
         };
-        databaseBean.setDbName(getData(prompts, defaultDbName).trim());
+        databaseBean.setDbName(getData(prompts, defaultDbName, (String[]) null,null).trim());
     }
 
     private void doDbHostnamePrompt(String defaultHostname) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
                 PROMPT_DB_HOSTNAME + "[" + defaultHostname + "] ",
         };
-        databaseBean.setDbHostname(getData(prompts, defaultHostname).trim());
+        databaseBean.setDbHostname(getData(prompts, defaultHostname, (String[]) null,null).trim());
     }
 
     private void doDbConnectionTypePrompts(boolean isCurrentDbExists) throws WizardNavigationException, IOException {
@@ -204,8 +203,13 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
                 "Please make a selection: [" + defaultValue + "] ",
         };
 
-        String input = null;
-        input = getData(prompts, "2", new String[] {"1","2"});
+        String input;
+        input = getData(
+                prompts,
+                "2",
+                new String[] {"1","2"},
+                null
+        );
 
         createNewDb = StringUtils.equals(input, "1");
     }
@@ -279,6 +283,8 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         } catch (WizardNavigationException e) {
             return null;
         }
+
+        if (passwd == null) passwd = "";
         return passwd.toCharArray();
     }
 
@@ -304,14 +310,16 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
         try {
             String username = getData(
-                    new String[] {
-                        usernamePrompt,
-                    }, defaultUsername);
+                    new String[] {usernamePrompt},
+                    defaultUsername,
+                    (String[]) null,
+                    null);
 
-            String password = getData(
-                    new String[] {
-                        passwordPrompt,
-                    }, "");
+            String password = getSecretData(
+                    new String[] {passwordPrompt},
+                    "",
+                    (String[]) null,
+                    null);
             Map<String, String> creds = new HashMap<String, String>();
             creds.put(DBActions.USERNAME_KEY, username);
             databaseBean.setPrivUserName(username);

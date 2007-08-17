@@ -66,7 +66,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
             "-- Specify Hostname -- " + getEolChar(),
             "The hostname is used to identify the SSG and generate its certificates" + getEolChar(),
             "What hostname would you like to use? [" + defaultClusterHostname + "] : ",
-        }, defaultClusterHostname);
+        }, defaultClusterHostname, (String[]) null, null);
 
         clusterBean.setClusterHostname(input.trim());
 
@@ -101,9 +101,11 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         clusterTypePrompts.add("Please make a selection: [1]");
 
         String input = getData(
-                clusterTypePrompts,
+                clusterTypePrompts.toArray(new String[0]),
                 "1",
-                clusterPromptMapper.keySet().toArray(new String[]{}));
+                clusterPromptMapper.keySet().toArray(new String[]{}),
+                null
+        );
 
         ClusteringType clusterType = clusterPromptMapper.get(input);
 
@@ -122,7 +124,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
             validatedHostname = true;
         }
 
-        boolean validatedType = false;
+        boolean validatedType;
         switch (clusterBean.getClusterType()) {
             case CLUSTER_NONE:
             case CLUSTER_NEW:

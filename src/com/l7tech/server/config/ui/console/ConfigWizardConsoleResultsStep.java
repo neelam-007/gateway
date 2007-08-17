@@ -66,7 +66,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
 
         if (osFunctions.isWindows() && !getParentWizard().isHadFailures()) {
             try {
-                boolean shouldStart = false;
+                boolean shouldStart;
                 shouldStart = getConfirmationFromUser(getEolChar() + "Would you like to start the partition that was just configured?", "n");
                 if (shouldStart) {
                     PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
@@ -126,7 +126,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
     }
 
     private String convertStepsForConsole(String originalSteps) {
-        String convertedSteps = null;
+        String convertedSteps;
         //convert UL and LI to an equivalent form
         convertedSteps = originalSteps.replaceAll("<[Bb][Rr]>", getEolChar());
         convertedSteps = convertedSteps.replaceAll("<[Uu][Ll]>|<[Dd][Ll]>|</.*>", "");
@@ -183,7 +183,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
         messages.add("**** " + message + " ****");
         messages.add("Press Enter to continue");
         try {
-            getData(messages,"");
+            getData(messages.toArray(new String[0]),"", (String[]) null,null);
         } catch (IOException e) {
             logger.severe("Error while getting input. [" + e.getMessage() + "]");
         } catch (WizardNavigationException e) {
@@ -196,7 +196,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
         messages.add(message);
         messages.add("Press Enter to continue");
         try {
-            getData(messages,"");
+            getData(messages.toArray(new String[0]),"", (String[]) null,null);
         } catch (IOException e) {
             logger.severe("Error while getting input. [" + e.getMessage() + "]");
         } catch (WizardNavigationException e) {

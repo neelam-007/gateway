@@ -5,8 +5,8 @@ import com.l7tech.server.config.WizardInputValidator;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
-import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
@@ -131,7 +131,8 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
                     }
                     return null;
                 }
-            });
+            },
+            true);
 
         return (String) passwords.get(firstPrompt);
     }
@@ -140,34 +141,16 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         consoleWizardUtils.handleInput(input, isShowNavigation());
     }
 
-    protected String getData(List<String> promptLines, String defaultValue, String[] allowedEntries) throws IOException, WizardNavigationException {
-        if (promptLines == null) return "";
-        return consoleWizardUtils.getData(promptLines.toArray(new String[]{}), defaultValue, isShowNavigation(), allowedEntries, null);
-    }
-
-    protected String getData(List<String> promptLines, String defaultValue) throws IOException, WizardNavigationException {
-        if (promptLines == null) return "";
-        return consoleWizardUtils.getData(promptLines.toArray(new String[]{}), defaultValue, isShowNavigation(), new String[]{}, null);
+    protected String getSecretData(String[] promptLines, String defaultValue, String[] allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
+        return consoleWizardUtils.getSecretData(promptLines, defaultValue, isShowNavigation(), allowedEntries, errorMessage);
     }
 
     protected String getData(String[] promptLines, String defaultValue, String[] allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
         return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, errorMessage);
     }
 
-    protected String getData(String[] promptLines, String defaultValue, String[] allowedEntries) throws IOException, WizardNavigationException {
-        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, null);
-    }
-
     protected String getData(String[] promptLines, String defaultValue, Pattern allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
         return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, errorMessage);
-    }
-
-    protected String getData(String[] promptLines, String defaultValue, Pattern allowedEntries) throws IOException, WizardNavigationException {
-        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, null);
-    }
-
-    protected String getData(String[] promptLines, String defaultValue) throws IOException, WizardNavigationException {
-        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), new String[]{}, null);
     }
 
     protected void printText(List<String> textToPrint) {
@@ -208,7 +191,7 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
                 message + " : [" + defaultValue +"]",
         };
 
-        String input = getData(prompts, defaultValue,ConsoleWizardUtils.YES_NO_VALUES,"*** Please enter 'yes' or 'no' ***");
+        String input = getData(prompts, "n", (String[]) null, null);
         return input != null && (isYes(input));
     }
 }

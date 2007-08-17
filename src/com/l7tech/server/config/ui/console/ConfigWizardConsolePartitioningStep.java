@@ -85,7 +85,9 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
             newPartitionName = getData(
                 new String[] {"To rename this partition, type a new name here or press Enter to keep the existing name: [" + existingName + "]"},
                 existingName,
-                Pattern.compile(PartitionInformation.ALLOWED_PARTITION_NAME_PATTERN));
+                Pattern.compile(PartitionInformation.ALLOWED_PARTITION_NAME_PATTERN),
+                null
+            );
 
             if (!StringUtils.equals(existingName, newPartitionName)) {
                 try {
@@ -93,13 +95,18 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                     if (PartitionActions.renamePartition(newPartitionInfo, newPartitionName, this)) {
                         partitionNames = PartitionManager.getInstance().getPartitionNames();
                         newPartitionInfo = PartitionManager.getInstance().getPartition(newPartitionName);
-                        getData(new String[]{
-                            getEolChar(),
-                            "The partition has been renamed." + getEolChar(),
-                            "Please ensure that you complete the configuration of this partition using this wizard or the partition will not start correctly." + getEolChar(),
-                            "Press Enter to continue" + getEolChar(),
-                            getEolChar(),
-                            },"");
+                        getData(
+                            new String[]{
+                                getEolChar(),
+                                "The partition has been renamed." + getEolChar(),
+                                "Please ensure that you complete the configuration of this partition using this wizard or the partition will not start correctly." + getEolChar(),
+                                "Press Enter to continue" + getEolChar(),
+                                getEolChar(),
+                                },
+                            "",
+                            (String[]) null,
+                            null
+                        );
                     } else {
                         printText("The partition was not renamed" + getEolChar());
                     }
@@ -133,7 +140,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                 allowedValues[i] = String.valueOf(i+1);
             }
 
-            String whichAction = getData(prompts, "1", allowedValues);
+            String whichAction = getData(prompts, "1", allowedValues,null);
 
             int choice = Integer.parseInt(whichAction);
             switch(choice) {
@@ -158,12 +165,16 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
         PartitionInformation pi = null;
         if (partitionNames.size() >= PartitionInformation.MAX_PARTITIONS) {
             String message = MessageFormat.format("*** A maximum of {0} partitions is supported ***" + getEolChar(), PartitionInformation.MAX_PARTITIONS);
-            getData(new String[] {
+            getData(
+                    new String[] {
                         getEolChar(),
                         message,
                         "Press enter to continue",
                         getEolChar(),
-                    }, "");
+                    },
+                    "",
+                    (String[]) null,
+                    null);
 
         } else {
             List<String> prompts = new ArrayList<String>();
@@ -236,7 +247,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                 allowedEntries[i]= String.valueOf(i + 1);
             }
 
-            String whichPartition = getData(prompts, defaultValue, allowedEntries);
+            String whichPartition = getData(prompts.toArray(new String[0]), defaultValue, allowedEntries,null);
             int whichIndex = Integer.parseInt(whichPartition) -1;
 
             String whichPartitionName = nameList.get(whichIndex);
@@ -298,7 +309,12 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                 allowedEntries.add(String.valueOf(i));
             }
 
-            String input = getData(promptList, defaultValue, allowedEntries.toArray(new String[0]));
+            String input = getData(
+                    promptList.toArray(new String[0]), 
+                    defaultValue,
+                    allowedEntries.toArray(new String[0]),
+                    null);
+
             PartitionInformation pinfo = null;
             if (input != null) {
                 String whichPartition = partitions.get(Integer.parseInt(input) - 1);
@@ -343,7 +359,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                 allowedEntries[i] = String.valueOf(i + 1);
             }
 
-            String whichEndpointSelection = getData(promptList, defaultValue, allowedEntries);
+            String whichEndpointSelection = getData(promptList.toArray(new String[0]), defaultValue, allowedEntries,null);
             int whichEndpointIndex = Integer.parseInt(whichEndpointSelection);
 
             if (whichEndpointIndex == index) { //if the select was the last in the list then it's the "done" option
@@ -387,7 +403,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
             prompts.add("Please enter the IP Address for the \"" + httpHolder.endpointType + "\" endpoint" + getEolChar());
             prompts.addAll(ipAddressOptions);
             prompts.add("Please make a selection: [1]");
-            input = getData(prompts, "1", allowedEntries);
+            input = getData(prompts.toArray(new String[0]), "1", allowedEntries,null);
             int ipIndex = Integer.parseInt(input) - 1;
             httpHolder.setIpAddress(availableIpAddress[ipIndex]);
 
@@ -406,7 +422,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
             prompts.add("1) Enable"  + getEolChar());
             prompts.add("2) Disable"  + getEolChar());
             prompts.add("Please make a selection: [" + (ftpHolder.isEnabled() ?  "1" : "2" ) +"]");
-            input = getData(prompts, "2", new String[] {"1","2"});
+            input = getData(prompts.toArray(new String[0]), "2", new String[] {"1","2"},null);
             boolean wasEnabled = holder.isEnabled();
 
             if (StringUtils.equals(input, "2")) {
@@ -435,7 +451,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                 prompts.add("Please enter the IP Address for the \"" + ftpHolder.getEndpointType() + "\" endpoint" + getEolChar());
                 prompts.addAll(ipAddressOptions);
                 prompts.add("Please make a selection: [1]");
-                input = getData(prompts, "1", allowedEntries);
+                input = getData(prompts.toArray(new String[0]), "1", allowedEntries,null);
                 int ipIndex = Integer.parseInt(input) - 1;
                 ftpHolder.setIpAddress(availableIpAddress[ipIndex]);
 
@@ -460,9 +476,13 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
         } else if (holder instanceof PartitionInformation.OtherEndpointHolder) {
             PartitionInformation.OtherEndpointHolder otherHolder = (PartitionInformation.OtherEndpointHolder) holder;
 
-            input = getData(new String[] {
-                "Please enter the port for the \"" + otherHolder.endpointType + "\" endpoint: [" + otherHolder.getPort() + "] ",
-            }, otherHolder.getPort().toString(), portPattern);
+            input = getData(
+                    new String[] {
+                        "Please enter the port for the \"" + otherHolder.endpointType + "\" endpoint: [" + otherHolder.getPort() + "] ",
+                    },
+                    otherHolder.getPort().toString(),
+                    portPattern,
+                    null);
             otherHolder.setPort(Integer.parseInt(input));
         }
     }
@@ -489,7 +509,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
         messages.add("**** " + message + " ****");
         messages.add("Press Enter to continue");
         try {
-            getData(messages,"");
+            getData(messages.toArray(new String[0]),"", (String[]) null,null);
         } catch (IOException e) {
             logger.severe("Error while getting input. [" + e.getMessage() + "]");            
         } catch (WizardNavigationException e) {
@@ -503,7 +523,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
         messages.add(message);
         messages.add("Press Enter to continue");
         try {
-            getData(messages,"");
+            getData(messages.toArray(new String[0]),"", (String[]) null,null);
         } catch (IOException e) {
             logger.severe("Error while getting input. [" + e.getMessage() + "]");
         } catch (WizardNavigationException e) {
