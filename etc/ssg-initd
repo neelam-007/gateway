@@ -173,6 +173,10 @@ case "$1" in
   status)
         status "$2"
         ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
 esac
 
 exit $RETVAL
