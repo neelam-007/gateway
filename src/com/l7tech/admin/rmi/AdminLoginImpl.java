@@ -23,6 +23,8 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.system.FailedAdminLoginEvent;
+import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
@@ -98,16 +100,23 @@ public class AdminLoginImpl
                 }
             }
 
-            if (user == null)
-                throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
-
             boolean remoteLogin = true;
+            String remoteIp = null;
             try {
-                String remoteIp = RemoteUtils.getClientHost();
-                logger.info("User '" + user.getLogin() + "' logged in from IP '" + remoteIp + "'.");
+                remoteIp = RemoteUtils.getClientHost();
             } catch (ServerNotActiveException snae) {
-                logger.finer("User '" + user.getLogin() + "' logged in locally.");
                 remoteLogin = false;
+            }
+
+            if (user == null) {
+                getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + username + "'"));
+                throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
+            }
+
+            if (remoteLogin) {
+                logger.info("User '" + user.getLogin() + "' logged in from IP '" + remoteIp + "'.");
+            } else {
+                logger.finer("User '" + user.getLogin() + "' logged in locally.");
             }
 
             AdminContext adminContext = makeAdminContext();
