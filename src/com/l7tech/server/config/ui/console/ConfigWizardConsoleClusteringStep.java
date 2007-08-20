@@ -65,7 +65,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         String input = getData(new String[] {
             "-- Specify Hostname -- " + getEolChar(),
             "The hostname is used to identify the SSG and generate its certificates" + getEolChar(),
-            "What hostname would you like to use? [" + defaultClusterHostname + "] : ",
+            "What hostname would you like to use? (Enter a fully qualified hostname - ex ssg.mydomain.com) [" + defaultClusterHostname + "] : ",
         }, defaultClusterHostname, (String[]) null, null);
 
         clusterBean.setClusterHostname(input.trim());

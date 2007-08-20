@@ -32,6 +32,7 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
 
 
     private JLabel emptyHostnameLabel;
+    private JLabel hostnameHint;
 
     public ConfigWizardClusteringPanel(WizardStepPanel next) {
         super(next);
@@ -61,6 +62,7 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         noClusterOption.setSelected(true);
         emptyHostnameLabel.setForeground(Color.RED);
 
+        hostnameHint.setText("<html>Enter a fully qualified hostname <br>ex ssg.mydomain.com<html>");
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
     }
