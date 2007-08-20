@@ -46,17 +46,15 @@ do
         echo "3) Use a privileged shell (root)"
         echo "4) Logout (no reboot)"
         echo "5) Reboot the SSG appliance (apply the new configuration)"
-
+        echo "6) Change the Master Passphrase"
         if [ "${SCA_PRESENT}" == "true" ] ; then
-            echo "6) Back up the Master Key to USB flash drive"
+            echo "7) Back up the Master Key to USB flash drive"
         fi
 
         if [ "${UPDATER_PRESENT}" == "true" ] ; then
-            echo "7) Upgrade the SecureSpan Appliance"
+            echo "8) Upgrade the SecureSpan Appliance"
         fi
 
-        echo "8) Change the Master Passphrase"
-        
         echo -n "Please make a selection: "
         read choice
 
@@ -91,12 +89,12 @@ do
                         sudo /sbin/reboot
                     fi
                     clear;;
-                8)  clear;
+                6)  clear;
                     (${CONFWIZARD} -changeMasterPassphrase);
                     echo "Press enter to continue";
                     read;
                     clear;;
-                *)  if [ "$choice" == "6" ] && [ "${SCA_PRESENT}" == "true" ]; then
+                *)  if [ "$choice" == "7" ] && [ "${SCA_PRESENT}" == "true" ]; then
                         clear;
                         echo "Checking for USB drive"
                         (sudo ${MASTERKEYMANAGE} probe &> /dev/null);
@@ -122,7 +120,7 @@ do
                             echo "Press enter to continue."
                             read;
                         fi
-                    elif [ "$choice" == "7" ] && [ "${UPDATER_PRESENT}" == "true" ]; then
+                    elif [ "$choice" == "8" ] && [ "${UPDATER_PRESENT}" == "true" ]; then
                         clear;
                         (${UPDATEWIZARD})
                         echo "Press enter to continue";

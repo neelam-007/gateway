@@ -37,10 +37,10 @@ do
         echo "3) Use a privileged shell (root)"
         echo "4) Logout (no reboot)"
         echo "5) Reboot the SSG appliance (apply the new configuration)"
+        echo "6) Change the Master Passphrase"
         if [ "${UPDATER_PRESENT}" == "true" ] ; then
-            echo "6) Upgrade the SecureSpan Appliance"
+            echo "7) Upgrade the SecureSpan Appliance"
         fi
-        echo "8) Change the Master Passphrase"
         echo -n "Please make a selection: "
         read choice
 
@@ -76,12 +76,12 @@ do
                         su root -c "${REBOOT_CMD}"
                     fi
                     clear;;
-                8)  clear;
+                6)  clear;
                     (${CONFWIZARD} -changeMasterPassphrase);
                     echo "Press enter to continue";
                     read;
                     clear;;
-                *)  if [ "$choice" == "6" ] && [ "${UPDATER_PRESENT}" == "true" ]; then
+                *)  if [ "$choice" == "7" ] && [ "${UPDATER_PRESENT}" == "true" ]; then
                         clear;
                         (${UPDATEWIZARD})
                         echo "Press enter to continue";
