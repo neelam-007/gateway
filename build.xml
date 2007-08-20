@@ -3104,7 +3104,7 @@
 
     <target name="tar"
             description="Build TARs for use in Solaris/Tarari builds"
-            depends="ssg-install-full-init,INTERNAL-ssg-install,package.tarari.tar"/>
+            depends="ssg-install-full-init,INTERNAL-ssg-install,package.solaris.tar,package.tarari.tar"/>
 
     <target name="ssg-install-full-init">
         <property name="ssg.install.enabled" value="true"/>
@@ -3454,6 +3454,22 @@
             </tarfileset>
         </tar>		
         <echo level="info">BUILD COMPLETE - Produced ${tarball}!</echo>
+    </target>
+
+    <!-- Create the TAR used when building the Solaris PKG -->
+    <target name="package.solaris.tar" depends="init">
+        <echo level="info">Creating Solaris Gateway Build Tar ...</echo>
+        <tar destfile="${build.dir}/solaris_build.tar.gz" compression="gzip" longfile="gnu">
+            <tarfileset dir="${src.root}/etc" username="root" group="root" mode="755">
+                <include name="solaris_build/**/*.sh"/>
+                <exclude name="**/.svn"/>
+            </tarfileset>
+            <tarfileset dir="${src.root}/etc" username="root" group="root" mode="644">
+                <include name="solaris_build/**/*"/>
+                <exclude name="**/*.sh"/>
+                <exclude name="**/.svn"/>
+            </tarfileset>
+        </tar>
     </target>
 
     <!-- Create the TAR used when building the Tarari rpm -->
