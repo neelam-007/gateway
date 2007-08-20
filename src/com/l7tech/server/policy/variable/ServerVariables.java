@@ -14,6 +14,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.identity.AuthenticationResult;
 
 import javax.wsdl.Operation;
 import javax.xml.namespace.QName;
@@ -35,6 +36,7 @@ public class ServerVariables {
     private static final RemoteIpGetter remoteIpGetter = new RemoteIpGetter();
     private static final OperationGetter soapOperationGetter = new OperationGetter();
     private static final SoapNamespaceGetter soapNamespaceGetter = new SoapNamespaceGetter();
+    private static final AuthenticatedUserGetter authenticatedUserGetter = new AuthenticatedUserGetter();
 
     private static final Map<String, Variable> varsByName = new HashMap<String, Variable>();
     private static final Map<String, Variable> varsByPrefix = new HashMap<String, Variable>();
@@ -113,17 +115,7 @@ public class ServerVariables {
                 return tk == null ? null : tk.getRemoteHost();
             }
         }),
-        new Variable("request.authenticateduser", new Getter() {
-            public Object get(String name, PolicyEnforcementContext context) {
-                String user = null;
-                User authenticatedUser = context.getLastAuthenticatedUser();
-                if (authenticatedUser != null) {
-                    user = authenticatedUser.getName();
-                    if (user == null) user = authenticatedUser.getId();
-                }
-                return user;
-            }
-        }),
+        new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USER, authenticatedUserGetter),
         new Variable("request.clientid", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 User user = context.getLastAuthenticatedUser();
@@ -509,6 +501,40 @@ public class ServerVariables {
         public Object get(String name, PolicyEnforcementContext context) {
             return getRequestRemoteIp(context.getRequest());
         }
+    }
+
+    private static class AuthenticatedUserGetter implements Getter {
+        public Object get(String name, PolicyEnforcementContext context) {
+            String suffix = name.substring(BuiltinVariables.PREFIX_AUTHENTICATED_USER.length());
+            if (suffix.length() == 0) { // Without suffix
+                String user = null;
+                User authenticatedUser = context.getLastAuthenticatedUser();
+                if (authenticatedUser != null) {
+                    user = authenticatedUser.getName();
+                    if (user == null) user = authenticatedUser.getId();
+                }
+                return user;
+            } else { // With suffix
+                if (!suffix.startsWith(".")) throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the parameter name.");
+                String indexS = name.substring(BuiltinVariables.PREFIX_AUTHENTICATED_USER.length() + 1);
+                try {
+                    int index = Integer.parseInt(indexS);
+                    AuthenticationResult ar = context.getAllAuthenticationResults().get(index);
+                    if (ar == null) {
+                        logger.info("Context variable " + name + " yielded null");
+                        return null;
+                    }
+                    return ar.getUser().getName();
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Was expecting a number suffix with " + name + ". " + e.getMessage());
+                } catch (IndexOutOfBoundsException e) {
+                    logger.info("not that many users authenticated: " + e.getMessage());
+                    // shouldn't throw here, we'll be nice
+                    return "";
+                }
+            }
+        }
+
     }
 
     private static class OperationGetter implements Getter {
