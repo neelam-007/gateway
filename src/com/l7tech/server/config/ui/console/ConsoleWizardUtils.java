@@ -112,7 +112,7 @@ public class ConsoleWizardUtils {
         return input;
     }
 
-    public String getSecretData(String[] promptLines, String defaultValue, boolean isNavAware, String[] allowedEntries, String errorMessage) throws WizardNavigationException, IOException {
+    public String getSecretData(String[] promptLines, String defaultValue, boolean isNavAware, Pattern allowedEntries, String errorMessage) throws WizardNavigationException, IOException {
 
             boolean isValidInput;
 
@@ -129,13 +129,9 @@ public class ConsoleWizardUtils {
                 }
 
                 //if the wizard didn't recognize the input (i.e. non navigation input) then check it's validity here
-                if (allowedEntries != null && allowedEntries.length != 0) {
-                    boolean foundAMatch = false;
-                    for (String allowedEntry : allowedEntries) {
-                        foundAMatch = StringUtils.equals(input, allowedEntry);
-                        if (foundAMatch) break;
-                    }
-                    isValidInput = foundAMatch;
+                if (allowedEntries != null) {
+                    Matcher matcher = allowedEntries.matcher(input);
+                    isValidInput = matcher.matches();
                 }
                 if (!isValidInput) {
                     if (StringUtils.isEmpty(errorMessage))
@@ -242,10 +238,10 @@ public class ConsoleWizardUtils {
             String prompt = prompts[i];
             if (prompt == null) continue;
             if (isNoDefaults) {
-                gotData.put(prompt, getSecretData(new String[]{prompt}, null, isNavAware, (String[])null, null));
+                gotData.put(prompt, getSecretData(new String[]{prompt}, null, isNavAware, null, null));
             } else {
                 String defaultValue = defaultValues[i];
-                gotData.put(prompt, getSecretData(new String[]{prompt}, defaultValue, isNavAware, (String[])null, null));
+                gotData.put(prompt, getSecretData(new String[]{prompt}, defaultValue, isNavAware, null, null));
             }
         }
 

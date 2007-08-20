@@ -11,7 +11,6 @@ import com.l7tech.server.partition.PartitionManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.logging.Logger;
 
 /**
@@ -345,7 +344,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         String passwd = null;
         String type = null;
         try {
-            passwd = getSecretData(prompt, "", (String[]) null, null);
+            passwd = getSecretData(prompt, "", null, null);
             List<String> typePrompts = new ArrayList<String>();
             typePrompts.add("-- Please provide the type for the existing keystore --" + getEolChar());
             typePrompts.add("1) " + KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName() + getEolChar());

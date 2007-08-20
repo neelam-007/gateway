@@ -1,8 +1,8 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.PropertyHelper;
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.DefaultLicenseChecker;
+import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
 import com.l7tech.server.config.db.DBActions;
@@ -151,7 +151,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String[] prompts = new String[] {
             "Please enter the password for the root database user (needed to create a new database): [" + defaultPassword + "] ",
         };
-        String passwd = getSecretData(prompts, defaultPassword, (String[]) null,null);
+        String passwd = getSecretData(prompts, defaultPassword, null,null);
         databaseBean.setPrivPassword(passwd);
         return passwd;
     }
@@ -318,7 +318,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
             String password = getSecretData(
                     new String[] {passwordPrompt},
                     "",
-                    (String[]) null,
+                    null,
                     null);
             Map<String, String> creds = new HashMap<String, String>();
             creds.put(DBActions.USERNAME_KEY, username);

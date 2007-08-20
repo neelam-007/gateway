@@ -1,22 +1,26 @@
 package com.l7tech.server.config;
 
-import com.l7tech.common.util.*;
-import com.l7tech.common.security.MasterPasswordManager;
 import com.l7tech.common.security.DefaultMasterPasswordFinder;
+import com.l7tech.common.security.MasterPasswordManager;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.FileUtils;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.ui.console.ConsoleWizardUtils;
-import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.partition.PartitionInformation;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.LogManager;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
-import java.io.*;
-
+import com.l7tech.server.partition.PartitionManager;
 import org.xml.sax.SAXException;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Prompts the user to change the master passphrase.
@@ -176,7 +180,7 @@ public class MasterPassphraseChanger {
         String[] promptLines = new String[] { prompt };
         Pattern pattern = Pattern.compile("^.{6,128}$", Pattern.DOTALL);
         try {
-            return wizardUtils.getData(promptLines, null, false, pattern, "Master passphrase should be between 8 and 128 characters long.");
+            return wizardUtils.getSecretData(promptLines, null, false, pattern, "Master passphrase should be between 8 and 128 characters long.");
         } catch (WizardNavigationException e) {
             throw new CausedIOException(e); // can't happen
         }

@@ -141,7 +141,7 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         consoleWizardUtils.handleInput(input, isShowNavigation());
     }
 
-    protected String getSecretData(String[] promptLines, String defaultValue, String[] allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
+    protected String getSecretData(String[] promptLines, String defaultValue, Pattern allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
         return consoleWizardUtils.getSecretData(promptLines, defaultValue, isShowNavigation(), allowedEntries, errorMessage);
     }
 
