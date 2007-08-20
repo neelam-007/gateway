@@ -8,6 +8,7 @@ import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
@@ -205,6 +206,20 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
 
     public License getCurrentLicense() throws RemoteException, InvalidLicenseException {
         return licenseManager.getCurrentLicense();
+    }
+
+    public long getLicenseExpiryWarningPeriod() throws RemoteException {
+        long expiryWarnPeriod = 0;
+        String propertyName = "license.expiryWarnAge";
+        String propStr = serverConfig.getPropertyCached(propertyName);
+        if (propStr != null) {
+            try {
+                expiryWarnPeriod = TimeUnit.parse(propStr, TimeUnit.DAYS);    
+            } catch (NumberFormatException nfe) {
+                logger.warning("Unable to parse property '" + propertyName + "' with value '"+propStr+"'.");
+            }
+        }
+        return expiryWarnPeriod;
     }
 
     public void installNewLicense(String newLicenseXml) throws RemoteException, InvalidLicenseException, UpdateException {

@@ -156,6 +156,16 @@ public interface ClusterStatusAdmin {
     License getCurrentLicense() throws RemoteException, InvalidLicenseException;
 
     /**
+     * Get the warning period for license expiry.
+     *
+     * <p>If the license expires within this period a warning should be shown
+     * to allow action to be taken.</p>
+     *
+     * @return The warning period
+     */
+    long getLicenseExpiryWarningPeriod() throws RemoteException;
+
+    /**
      * Check the specified license for validity with this product and, if it is valid, install it to the cluster
      * property table and also immediately activate it.
      * <p>

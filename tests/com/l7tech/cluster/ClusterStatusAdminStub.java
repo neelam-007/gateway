@@ -140,6 +140,10 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         return license;
     }
 
+    public long getLicenseExpiryWarningPeriod() throws RemoteException {
+        return 0;
+    }
+
     public void installNewLicense(String newLicenseXml) throws RemoteException, InvalidLicenseException {
         try {
             license = new License(newLicenseXml, null, GatewayFeatureSets.getFeatureSetExpander());

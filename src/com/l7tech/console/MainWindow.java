@@ -3,6 +3,9 @@ package com.l7tech.console;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
+import com.l7tech.common.Authorizer;
+import com.l7tech.common.security.rbac.AttemptedDeleteAll;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.*;
 import com.l7tech.common.util.ExceptionUtils;
@@ -55,6 +58,8 @@ import java.rmi.server.RMIClassLoader;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.SimpleDateFormat;
+import java.security.cert.X509Certificate;
 
 
 /**
@@ -2433,7 +2438,9 @@ public class MainWindow extends JFrame implements SheetHolder {
               Registry reg = Registry.getDefault();
               License lic = null;         // if null, license is missing or invalid
               boolean licInvalid = false; // if true, license is invalid
+              long licenseExpiryWarningPeriod = 0;
               try {
+                  licenseExpiryWarningPeriod = clusterStatusAdmin.getLicenseExpiryWarningPeriod();
                   lic = clusterStatusAdmin.getCurrentLicense();
               } catch (RemoteException e1) {
                   log.log(Level.WARNING, "getCurrentLicense(): " + ExceptionUtils.getMessage(e1), e1);
@@ -2479,7 +2486,25 @@ public class MainWindow extends JFrame implements SheetHolder {
                   }
               });
 
-              if (lic == null) showLicenseWarning(licInvalid);
+              if (lic == null) {
+                  showLicenseWarning(licInvalid, false, null);
+              } else {
+                  Authorizer auth = Registry.getDefault().getSecurityProvider();
+                  if ( auth.hasPermission(new AttemptedDeleteAll(EntityType.ANY)) ) {
+                      Date expiryDate = lic.getExpiryDate();
+                      if (expiryDate!=null && (expiryDate.getTime()-licenseExpiryWarningPeriod) < System.currentTimeMillis()) {
+                          showLicenseWarning(false, true, expiryDate);
+                      } else {
+                          X509Certificate[] sslCertificates = TopComponents.getInstance().getSsgCert();
+                          if ( sslCertificates != null && sslCertificates.length > 0 ) {
+                              Date sslExpiryDate = sslCertificates[0].getNotAfter();
+                              if (sslExpiryDate!=null && (sslExpiryDate.getTime()-licenseExpiryWarningPeriod) < System.currentTimeMillis()) {
+                                  showSSLWarning(sslExpiryDate);
+                              }
+                          }
+                      }
+                  }
+              }
           }
 
           /* invoked on authentication failure */
@@ -2504,11 +2529,19 @@ public class MainWindow extends JFrame implements SheetHolder {
         getImportMenuItem().setAction(policyPanel.getImportAction());
     }
 
-    public void showLicenseWarning(boolean invalidLicense) {
+    public void showLicenseWarning(boolean invalidLicense, boolean expiresSoon, Date expiry) {
+        final String title;
         final StringBuffer message;
         if (invalidLicense) {
+            title = "Gateway Not Licensed";
             message = new StringBuffer("The currently installed license for this gateway is invalid.");
+        } else if (expiresSoon) {
+            title = "Gateway License Warning";
+            SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z");
+            String dateStr = sdf.format(expiry);
+            message = new StringBuffer("The currently installed license for this gateway expires "+dateStr+".");
         } else {
+            title = "Gateway Not Licensed";
             message = new StringBuffer("There is no license currently installed for this gateway.");
         }
         message.append("\n Would you like to view the license manager now?");
@@ -2528,9 +2561,36 @@ public class MainWindow extends JFrame implements SheetHolder {
                     }
                 };
                 DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
-                                                  message.toString(), "Gateway Not Licensed",
+                                                  message.toString(), title,
                                                   JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
                                                   callback);
+            }
+        });
+    }
+
+    public void showSSLWarning(Date expiry) {
+        final String title = "Gateway SSL Warning";
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z");
+        String dateStr = sdf.format(expiry);
+        final StringBuffer message = new StringBuffer();
+
+        message.append("The currently installed SSL certificate for this gateway ");
+        if (new Date().before(expiry))  {
+            message.append("expires ");
+        } else {
+            message.append("expired ");
+        }
+
+        message.append(dateStr);
+        message.append(".");
+
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                                  message.toString(),
+                                                  title,
+                                                  JOptionPane.OK_OPTION,
+                                                  null);
             }
         });
     }
