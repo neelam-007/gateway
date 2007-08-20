@@ -44,4 +44,8 @@ public class BridgeRoutingAssertionTreeNode extends HttpRoutingAssertionTreeNode
         list.add(0, getPreferredAction());
         return (Action[])list.toArray(new Action[]{});
     }
+
+    protected boolean isUsingPrivateKey() {
+        return true;
+    }
 }

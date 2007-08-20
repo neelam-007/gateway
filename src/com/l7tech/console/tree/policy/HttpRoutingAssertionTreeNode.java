@@ -40,8 +40,7 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         EditKeyAliasForAssertion privateKeyAction = new EditKeyAliasForAssertion(this);
-        boolean usesPrivateKey = isUsingPrivateKey();
-        if (!usesPrivateKey) {
+        if (!isUsingPrivateKey()) {
             privateKeyAction.setEnabled(false);
             privateKeyAction.putValue(Action.SHORT_DESCRIPTION, "Disabled because the URL is not HTTPS");
         }
@@ -54,7 +53,7 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
         return list.toArray(new Action[0]);
     }
 
-    private boolean isUsingPrivateKey() {
+    protected boolean isUsingPrivateKey() {
         HttpRoutingAssertion assertion = ((HttpRoutingAssertion)getUserObject());
         if (assertion == null)
             return false;
