@@ -1,10 +1,23 @@
 #!/bin/sh
 
+# Detect existing user/group ids
+UID_GATEWAY=`[ -d /ssg ] && ls -nd /ssg | awk '{print $3}'`
+GID_GATEWAY=`[ -d /ssg ] && ls -nd /ssg | awk '{print $4}'`
+UID_SSGCONF=`[ -f /ssg/configwizard/ssgconfig0.log ] && ls -nd /ssg/configwizard/ssgconfig0.log | awk '{print $3}'`
+
+if [ "$UID_GATEWAY" = "$UID_SSGCONF" ] ; then
+    UID_SSGCONF=""
+fi
+
 if [ `grep \^gateway\: /etc/group` ]; then 
 	echo "group gateway already exists"
 else
 	echo "adding gateway group"
-	groupadd gateway
+    GID_PARAM=""
+    if [ $GID_GATEWAY ] ; then
+        GID_PARAM="-g $GID_GATEWAY"
+    fi
+	groupadd $GID_PARAM gateway
         if [ ${?} -eq 1 ]; then
                 echo "Error: Group gateway failed to add"
                 exit 1;
@@ -14,8 +27,12 @@ fi
 if [ `grep \^gateway\: /etc/passwd` ]; then
 	echo "user gateway already exists"
 else
+    UID_PARAM=""
+    if [ $UID_GATEWAY ] ; then
+        UID_PARAM="-u $UID_GATEWAY"
+    fi
 	echo "adding gateway user"
-	useradd -G gateway -g gateway -d /export/home/gateway -s /usr/bin/bash gateway
+	useradd $UID_PARAM -G gateway -g gateway -d /export/home/gateway -s /usr/bin/bash gateway
         if [ ${?} -eq 1 ]; then
                 echo "Error: User gateway failed to add"
                 exit 1;
@@ -26,8 +43,12 @@ if [ `grep \^ssgconfig\: /etc/passwd` ]; then
 	echo "user ssgconfig already exists"
 else
 	echo "adding ssgconfig user"
+    UID_PARAM=""
+    if [ $UID_SSGCONF ] ; then
+        UID_PARAM="-u $UID_SSGCONF"
+    fi
 	# ssgconfig name is too long, swallow the output
-	useradd -G gateway -g gateway -d /export/home/ssgconfig -s /usr/bin/bash ssgconfig > /dev/null 2>&1
+	useradd $UID_PARAM -G gateway -g gateway -d /export/home/ssgconfig -s /usr/bin/bash ssgconfig > /dev/null 2>&1
         if [ ${?} -eq 1 ]; then
                 echo "Error: User ssgconfig failed to add"
                 exit 1;

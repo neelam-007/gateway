@@ -1,7 +1,7 @@
 #!/bin/sh
 
-#Because I just don't care how nicely it dies, just that it's dead. Really dead.
-/etc/init.d/ssg reallystop
+#Stop the ssg
+[ -f /etc/init.d/ssg ] && /etc/init.d/ssg stop
 
 userdel -r gateway
 if [ ${?} -eq 1 ]; then
@@ -15,3 +15,4 @@ if [ ${?} -eq 1 ]; then
 fi
 groupdel gateway
 
+exit 0
