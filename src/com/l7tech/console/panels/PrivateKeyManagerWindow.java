@@ -312,6 +312,8 @@ public class PrivateKeyManagerWindow extends JDialog {
             showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
         } catch (InvalidKeyException e) {
             showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
+        } catch (RemoteException e) {
+            showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
         }
 
         loadPrivateKeys();

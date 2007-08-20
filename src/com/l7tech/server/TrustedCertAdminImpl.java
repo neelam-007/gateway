@@ -93,6 +93,16 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         }
     }
 
+    private void checkLicenseKeyStore() throws RemoteException {
+        try {
+            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
+            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_KEYSTORE);
+        } catch (LicenseException e) {
+            // New exception to conceal original stack trace from LicenseManager
+            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
+        }
+    }
+
     public List<TrustedCert> findAllCerts() throws FindException, RemoteException {
         checkLicense();
         return new ArrayList<TrustedCert>(getManager().findAll());
@@ -262,6 +272,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     }
 
     public List<KeystoreInfo> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException {
+        checkLicense();
         List<SsgKeyFinder> finders = ssgKeyStoreManager.findAll();
         List<KeystoreInfo> list = new ArrayList<KeystoreInfo>();
         for (SsgKeyFinder finder : finders) {
@@ -278,6 +289,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     }
 
     public List<SsgKeyEntry> findAllKeys(long keystoreId) throws IOException, CertificateException, FindException {
+        checkLicense();
         try {
             SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
 
@@ -295,6 +307,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     }
 
     public void deleteKey(long keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException {
+        checkLicenseKeyStore();
         try {
             SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
             SsgKeyStore store = keyFinder.getKeyStore();
@@ -316,6 +329,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     }
 
     public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException {
+        checkLicenseKeyStore();
         if (alias == null) throw new NullPointerException("alias is null");
         if (alias.length() < 1) throw new IllegalArgumentException("alias is empty");
         if (dn == null) throw new NullPointerException("dn is null");
@@ -336,7 +350,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         return registerJob(keystore.generateKeyPair(alias, new X500Principal(dn), keybits, expiryDays), X509Certificate.class);
     }
 
-    public byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException {
+    public byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException, RemoteException {
+        checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
         try {
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
@@ -360,7 +375,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         }
     }
 
-    public void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException {
+    public void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException, RemoteException {
+        checkLicenseKeyStore();
         X509Certificate[] safeChain = CertUtils.parsePemChain(pemChain);
 
         SsgKeyFinder keyFinder;
@@ -388,7 +404,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     }
 
     public void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8)
-            throws SaveException, CertificateException, InvalidKeyException {
+            throws SaveException, CertificateException, InvalidKeyException, RemoteException {
+        checkLicenseKeyStore();
         X509Certificate[] safeChain = CertUtils.parsePemChain(pemChain);
 
         SsgKeyFinder keyFinder;

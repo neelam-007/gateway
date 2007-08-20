@@ -255,7 +255,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param expiryDays number of days the self-signed cert should be valid.  Required.
      * @return the job identifier of the key generation job.  Call {@link #getJobStatus(com.l7tech.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
      *         and {@link #getJobResult(JobId)} to pick up the result in the form of a self-signed X509Certificate.
-     * @throws RemoteException on remote communication error
+     * @throws RemoteException on remote communication error or license failure
      * @throws FindException if there is a problem getting info from the database
      * @throws java.security.GeneralSecurityException if there is a problem generating or signing the cert
      * @throws IllegalArgumentException if the keybits or dn are improperly specified
@@ -273,9 +273,10 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param dn the DN to include in the new CSR, ie "CN=mymachine.example.com".  Required.
      * @return the bytes of the encoded form of this certificate request, in PKCS#10 format.
      * @throws FindException if there is a problem getting info from the database
+     * @throws RemoteException on remote communication error or license failure
      */
     @Transactional(readOnly=true)
-    byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException;
+    byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException, RemoteException;
 
     /**
      * Replace the certificate chain for the specified private key with a new one whose subject cert
@@ -292,10 +293,11 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      *
      * @throws UpdateException if there is a problem getting info from the database
      * @throws CertificateException if there is a problem with the PEM chain
+     * @throws RemoteException on remote communication error or license failure
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException;
+    void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException, RemoteException;
 
     /**
      * Create a new RSA private key entry in the specified keystore with the specified alias, cert chain,
@@ -319,9 +321,10 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws InvalidKeyException   if a valid RSA key corresponding to the subject cert private key
      *                                 could not be created from privateKeyPkcs8.
      * @throws SaveException if there is some other problem importing the new private key entry
+     * @throws RemoteException on remote communication error or license failure
      */
     // TODO need an annotation to note that this methods arguments must never be persisted in any debug or audit traces
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8) throws CertificateException, SaveException, InvalidKeyException;
+    void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8) throws CertificateException, SaveException, InvalidKeyException, RemoteException;
 }
