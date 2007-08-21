@@ -14,6 +14,8 @@ import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -38,6 +40,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private JTabbedPane tabbedPane;
     private ServiceMetricsPanel serviceMetricsPanel;
     private ClusterStatusPanel clusterStatusPanel;
+    private JPanel serviceMetricsTabPanel;
     private JPanel clusterStatusTabPanel;
 
     private final int clusterStatusTabIndex;
@@ -72,6 +75,16 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
 
                     setTabAlert(clusterStatusTabIndex, anyInactive);
                 }
+            }
+        });
+
+        tabbedPane.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent event) {
+                // Disables service metrics refresh if tab is not in front in
+                // order to save network bandwidth and CPU time.
+                serviceMetricsPanel.setRefreshEnabled(tabbedPane.getSelectedComponent() == serviceMetricsTabPanel);
+                // Cannot do the same for cluster status because we want
+                // node-down-alert whether tab is in front or not.
             }
         });
 
@@ -136,7 +149,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     }
 
     public void setVisible(boolean vis) {
-        serviceMetricsPanel.setVisible(vis);
+        serviceMetricsPanel.setRefreshEnabled(vis);
         if (!vis) {
             // Let inactivity timeout start counting after this window is closed.
             TopComponents.getInstance().updateLastActivityTime();

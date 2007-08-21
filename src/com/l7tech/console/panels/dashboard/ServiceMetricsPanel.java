@@ -379,8 +379,13 @@ public class ServiceMetricsPanel extends JPanel {
         _connected = false;
     }
 
-    public void setVisible(boolean vis) {
-        if (vis) {
+    /**
+     * Enables/disables periodic refresh.
+     *
+     * @param enabled   true if enabled
+     */
+    public void setRefreshEnabled(boolean enabled) {
+        if (enabled) {
             _refreshTimer.start();
             _metricsChartPanel.restoreAutoRange(); // In case chart was zoomed in when closed.
             _metricsChartPanel.resumeUpdate();     // In case chart was suspended when closed.
@@ -429,6 +434,12 @@ public class ServiceMetricsPanel extends JPanel {
     private synchronized void refreshData() {
         try {
             final ClusterStatusAdmin clusterStatusAdmin = getClusterStatusAdmin();
+
+            if (!clusterStatusAdmin.isMetricsEnabled()) {
+                statusLabel.setText(METRICS_NOT_ENABLED);
+                // Skips refresh if service metrics collection is disabled on server. (Bug 4053)
+                return;
+            }
 
             updateClusterNodesCombo();
             updatePublishedServicesCombo();
@@ -541,11 +552,7 @@ public class ServiceMetricsPanel extends JPanel {
             // Updates the status label.
             // -----------------------------------------------------------------
 
-            if (clusterStatusAdmin.isMetricsEnabled()) {
-                statusLabel.setText(STATUS_UPDATED_FORMAT.format(new Object[] { new Date() }));
-            } else {
-                statusLabel.setText(METRICS_NOT_ENABLED);
-            }
+            statusLabel.setText(STATUS_UPDATED_FORMAT.format(new Object[] { new Date() }));
 
             if (!_connected) {  // Previously disconnected.
                 _logger.log(Level.INFO, "Reconnected to SSG.");
