@@ -1,22 +1,20 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.PartitionActions;
-import com.l7tech.server.config.PartitionActionListener;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.PartitionActionListener;
+import com.l7tech.server.config.PartitionActions;
 import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.config.commands.PartitionConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
-import com.l7tech.common.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -387,6 +385,8 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
         if (holder instanceof PartitionInformation.HttpEndpointHolder) {
             PartitionInformation.HttpEndpointHolder httpHolder = (PartitionInformation.HttpEndpointHolder) holder;
             String[] availableIpAddress = PartitionActions.getAvailableIpAddresses().toArray(new String[0]);
+            //make sure they show up in a predictable order
+            Arrays.sort(availableIpAddress);
 
             List<String> ipAddressOptions = new ArrayList<String>();
             int index = 1;
