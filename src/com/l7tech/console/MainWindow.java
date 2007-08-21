@@ -236,6 +236,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      * notification on this event type (connection event).
      */
     private void fireConnected() {
+        TopComponents.getInstance().setConnectionLost(false);
         User u = Registry.getDefault().getSecurityProvider().getUser();
         if (u == null) throw new IllegalStateException("Logon apparently worked, but no User is available");
         LogonEvent event = new LogonEvent(this, LogonEvent.LOGON);

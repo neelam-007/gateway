@@ -879,15 +879,26 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
       throws ContainerVetoException {
         if (e.getChild() == this) {
             if (policyEditorToolbar.buttonSave.isEnabled()) {
-                int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
-                  "<html><center><b>Do you want to save changes to service policy " +
-                  "for<br> '" + subjectName + "' ?</b></center></html>",
-                  "Save Service policy",
-                  JOptionPane.YES_NO_CANCEL_OPTION));
-                if (answer == JOptionPane.YES_OPTION) {
-                    policyEditorToolbar.buttonSave.getAction().actionPerformed(null);
-                } else if ((answer == JOptionPane.CANCEL_OPTION)) {
-                    throw new ContainerVetoException(e, "User aborted");
+                if (!TopComponents.getInstance().isConnectionLost()) {
+                    int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+                      "<html><center><b>Do you want to save changes to service policy " +
+                      "for<br> '" + subjectName + "' ?</b></center></html>",
+                      "Save Service policy",
+                      JOptionPane.YES_NO_CANCEL_OPTION));
+                    if (answer == JOptionPane.YES_OPTION) {
+                        policyEditorToolbar.buttonSave.getAction().actionPerformed(null);
+                    } else if ((answer == JOptionPane.CANCEL_OPTION)) {
+                        throw new ContainerVetoException(e, "User aborted");
+                    }
+                } else {
+                    int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+                      "<html><center><b>Connection Lost. Do you want to save changes to service policy " +
+                      "file?</b></center></html>",
+                      "Save Service policy",
+                      JOptionPane.YES_NO_CANCEL_OPTION));
+                    if (answer == JOptionPane.YES_OPTION) {
+                        getExportAction().actionPerformed(null);
+                    }
                 }
             }
             final PolicyToolBar pt = topComponents.getPolicyToolBar();

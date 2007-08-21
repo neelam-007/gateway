@@ -31,6 +31,7 @@ import org.springframework.context.ApplicationContext;
 public class TopComponents {
     private static final TopComponents instance = new TopComponents();
     private X509Certificate[] ssgCert;
+    private boolean connectionLost = false;
 
     public void showHelpTopics() {
         getMainWindow().showHelpTopicsRoot();
@@ -46,6 +47,14 @@ public class TopComponents {
 
     public void firePolicyEdit(PolicyEditorPanel pep) {
         getMainWindow().firePolicyEdit(pep);
+    }
+
+    public boolean isConnectionLost() {
+        return connectionLost;
+    }
+
+    public void setConnectionLost(boolean connectionLost) {
+        this.connectionLost = connectionLost;
     }
 
     public String ssgURL() {

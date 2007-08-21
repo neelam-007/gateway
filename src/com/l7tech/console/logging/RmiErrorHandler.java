@@ -43,6 +43,7 @@ public class RmiErrorHandler implements ErrorHandler {
             (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet())) {
             // prevent error cascade during repaint if it's a network problem
             e.getLogger().log(Level.WARNING, "Disconnected from gateway, notifiying workspace.");
+            TopComponents.getInstance().setConnectionLost(true);
             TopComponents.getInstance().disconnectFromGateway();
         }
 
