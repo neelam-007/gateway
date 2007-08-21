@@ -12,6 +12,7 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.LicenseEvent;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationContext;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,6 +31,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 
 /**
  * The Gateway's AssertionRegistry, which extends the default registry with the ability to look for
@@ -442,6 +446,15 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             previousVersion = loadedModules.put(filename, module);
             failModTimes.clear(); // retry all failures whenever a module is loaded or unloaded
             try {
+                // Notify any module load listeners declared by any of this module's assertions
+                for (Assertion proto : protos) {
+                    String listenerClassname = (String)proto.meta().get(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME);
+                    if (listenerClassname != null && listenerClassname.length() > 0) {
+                        logger.info("Initializing dynamic module " + filename);
+                        onModuleLoaded(proto.getClass(), listenerClassname);
+                    }
+                }
+
                 for (Assertion proto : protos) {
                     String adjective = previousVersion == null ? "newly-registered" : "just-upgraded";
                     logger.info("Registering dynamic assertion " + proto.getClass().getName() + " from " + adjective + " module " + filename + " (module SHA-1 " + sha1 + ")");
@@ -499,6 +512,41 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         onModuleUnloaded(module);
 
         return true;
+    }
+
+    /**
+     * Notify the specified assertion's module loader listener that its module has been loaded, if it
+     * declares an appropriate listener classname.
+     *
+     * @param assclass  the assertion class.  required
+     * @param classname  the name of the listener class to invoke.  Required.
+     */
+    private void onModuleLoaded(Class<? extends Assertion> assclass, String classname) {
+        if (classname == null || classname.length() < 1) return;
+        try {
+            Class listenerClass = assclass.getClassLoader().loadClass(classname);
+            Method listenerMethod = listenerClass.getMethod("onModuleLoaded", ApplicationContext.class);
+            int mods = listenerMethod.getModifiers();
+            if (!Modifier.isStatic(mods)) {
+                logger.log(Level.WARNING, "Modular assertion " + assclass.getName() + " declares a module load listener but its onModuleLoaded listenerMethod isn't static");
+                return;
+            }
+            if (!Modifier.isPublic(mods)) {
+                logger.log(Level.WARNING, "Modular assertion " + assclass.getName() + " declares a module load listener but its onModuleLoaded listenerMethod isn't public");
+                return;
+            }
+
+            listenerMethod.invoke(null, getApplicationContext());
+
+        } catch (ClassNotFoundException e) {
+            logger.log(Level.WARNING, "Modular assertion " + assclass.getName() + " declares a module load listener but the class isn't found: " + ExceptionUtils.getMessage(e));
+        } catch (NoSuchMethodException e) {
+            logger.log(Level.WARNING, "Modular assertion " + assclass.getName() + " declares a module load listener but the class doesn't have a public static method onModuleLoaded(ApplicationContext): " + ExceptionUtils.getMessage(e));
+        } catch (InvocationTargetException e) {
+            logger.log(Level.WARNING, "Modular assertion " + assclass.getName() + " declares a module load listener but it could not be invoked: " + ExceptionUtils.getMessage(e), e);
+        } catch (IllegalAccessException e) {
+            logger.log(Level.WARNING, "Modular assertion " + assclass.getName() + " declares a module load listener but it could not be invoked: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     private void onModuleUnloaded(AssertionModule module) {

@@ -459,6 +459,30 @@ public interface AssertionMetadata {
      */
     String CLUSTER_PROPERTIES = "clusterProperties";
 
+    /**
+     * String classname.  Name of class that contains a public static void method named "onModuleLoaded" that
+     * takes a single argument of type {@link org.springframework.context.ApplicationContext}.
+     * <p/>
+     * If this class is located in the same classloader from which came the assertion class, and contains
+     * the appropriate listener method, then the SecureSpan Gateway's ServerAssertionRegistry will invoke
+     * the onModuleLoaded() method when the module is being loaded, immediately prior to its assertions
+     * being registered in the assertion registry.
+     * <p/>
+     * Modular assertions can use this to take care of any initialization that should always happen at module load time,
+     * regardless of whether any actual assertion instances are present in any actual policies.  For example,
+     * a module could get the applicationEventProxy bean and subscribe to application events.
+     * <p/>
+     * As with any class loaded from the modular assertion classloader, the module load listener class
+     * can also declare a public static void nullary method named "onModuleUnloaded" that will be invoked
+     * whenever its module is unloaded.
+     * <p/>
+     * If null, or if this class doesn't exist or can't be loaded, this property is ignored and no listener
+     * method is invoked.
+     * <p/>
+     * This key was introduced in SecureSpan Gateway version 4.2.
+     */
+    String MODULE_LOAD_LISTENER_CLASSNAME = "moduleLoadListenerClassname";
+
     /** @return the concrete Assertion class.  Returned class is never null and is always assignable to Assertion. */
     Class getAssertionClass();
 
