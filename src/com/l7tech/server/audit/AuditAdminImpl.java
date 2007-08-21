@@ -73,7 +73,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         synchronized( downloadReaperTask ) {
             if (!downloadReaperScheduled) {
                 downloadReaperScheduled = true;
-                Background.scheduleRepeated(downloadReaperTask, 10, 10);
+                Background.scheduleRepeated(downloadReaperTask, 1011L, 1011L);
             }
         }
     }
