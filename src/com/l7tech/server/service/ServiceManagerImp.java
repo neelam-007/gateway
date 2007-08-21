@@ -250,17 +250,23 @@ public class ServiceManagerImp
                     } catch (ServerPolicyException e) {
                         Assertion ass = e.getAssertion();
 
-                        String ordinal = ass == null ? "" : "#" + Integer.toString(ass.getOrdinal());
-                        String what = ass == null ? "<unknown>" : "(" + ass.getClass().getSimpleName() + ")";
-                        String msg = "Disabling PublishedService #{0} ({1}); policy could not be compiled (assertion {2} {3})";
-                        logger.log(Level.WARNING,
-                                   MessageFormat.format(msg, service.getOid(), service.getName(), ordinal, what),
-                                   ExceptionUtils.getDebugException(e));
+                        if (logger.isLoggable(Level.WARNING)) {
+                            String ordinal = ass == null ? "" : "#" + Integer.toString(ass.getOrdinal());
+                            String what = ass == null ? "<unknown>" : "(" + ass.getClass().getSimpleName() + ")";
+                            String msg = "Disabling PublishedService #{0} ({1}); policy could not be compiled (assertion {2} {3})";
+                            String servUri = service.getRoutingUri();
+                            String servName = service.getName();
+                            String logServName = servUri == null ? servName : (servName + ": " + servUri);
+                            logger.log(Level.WARNING, MessageFormat.format(msg, service.getOid(), logServName, ordinal, what));
+                        }
                         // We don't actually disable the service here -- only the admin should be doing that.
                         // Instead, we will let the service cache continue to monitor the situation
                     } catch (Exception e) {
                         LogRecord r = new LogRecord(Level.WARNING, "Disabling PublishedService #{0} ({1}); policy could not be compiled");
-                        r.setParameters(new Object[] { service.getOid(), service.getName() });
+                        String servUri = service.getRoutingUri();
+                        String servName = service.getName();
+                        String logServName = servUri == null ? servName : (servName + ": " + servUri);
+                        r.setParameters(new Object[] { service.getOid(), logServName});
                         r.setThrown(e);
                         logger.log(r);
                     }
