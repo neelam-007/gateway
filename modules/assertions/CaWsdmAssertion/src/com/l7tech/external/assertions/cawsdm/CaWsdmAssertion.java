@@ -54,8 +54,7 @@ public class CaWsdmAssertion extends Assertion implements SetsVariables {
         meta.put(AssertionMetadata.LONG_NAME, "Check the status of the CA WSDM Observer");
 
         // This is a pseudo-assertion and so should appear in no palette folders
-        //meta.putNull(AssertionMetadata.PALETTE_FOLDERS);
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
+        meta.putNull(AssertionMetadata.PALETTE_FOLDERS);
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Information16.gif");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
