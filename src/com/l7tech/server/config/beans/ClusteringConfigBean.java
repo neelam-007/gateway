@@ -1,6 +1,7 @@
 package com.l7tech.server.config.beans;
 
 import com.l7tech.server.config.ClusteringType;
+import org.apache.commons.lang.StringUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -59,8 +60,6 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     }
 
     private void init() {
-        setClusterHostname(getOsFunctions().getClusterHostName());
-
         try {
             setLocalHostName(InetAddress.getLocalHost().getCanonicalHostName());
         } catch (UnknownHostException e) {
@@ -95,6 +94,9 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     }
 
     public String getClusterHostname() {
+        if (StringUtils.isEmpty(this.clusterHostname))
+            setClusterHostname(getOsFunctions().getClusterHostName());
+        
         return this.clusterHostname;
     }
 

@@ -8,9 +8,9 @@ import com.l7tech.server.config.db.DBInformation;
  * Time: 4:15:46 PM
  */
 public class SharedWizardInfo {
-    ClusteringType clusterType = ClusteringType.UNDEFINED;
-    KeystoreType ksType = KeystoreType.UNDEFINED;
-    DBInformation dbinfo;
+    private ClusteringType clusterType = ClusteringType.UNDEFINED;
+    private KeystoreType ksType = KeystoreType.UNDEFINED;
+    private DBInformation dbinfo;
     private String hostname;
 
     private static SharedWizardInfo instance;
