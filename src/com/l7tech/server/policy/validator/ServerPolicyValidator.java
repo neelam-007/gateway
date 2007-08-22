@@ -234,11 +234,18 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 }
             }
         } else if (a instanceof SchemaValidation) {
-            // check for unresolved imports
+
             SchemaValidation svass = (SchemaValidation)a;
             AssertionResourceInfo ri = svass.getResourceInfo();
-            if (ri instanceof StaticResourceInfo)
+            if (ri instanceof StaticResourceInfo) { // check for unresolved imports
                 validateSchemaValidation(a, ap, (StaticResourceInfo)ri, r);
+            } else if (ri instanceof GlobalResourceInfo) { // check for broken ref
+                boolean res = checkGlobalSchemaExists((GlobalResourceInfo)ri);
+                if (!res) {
+                    r.addError(new PolicyValidatorResult.Error(a,
+                                        ap, "This assertion refers to a global schema that no longer exists.", null));
+                }
+            }
         } else if (a instanceof UnknownAssertion) {
             UnknownAssertion ua = (UnknownAssertion) a;
 
@@ -329,6 +336,18 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         if (a instanceof PrivateKeyable) {
             checkPrivateKey((PrivateKeyable)a, ap, r);
         }
+    }
+
+    private boolean checkGlobalSchemaExists(GlobalResourceInfo globalResourceInfo) {
+        // look for the presence of the schema
+        String sId = globalResourceInfo.getId();
+        Collection res = null;
+        try {
+            res = schemaEntryManager.findByName(sId);
+        } catch (FindException e) {
+            logger.log(Level.INFO, "error looking for schema", e);
+        }
+        return !(res == null || res.isEmpty());
     }
 
     private void validateSchemaValidation(Assertion a, AssertionPath ap, StaticResourceInfo sri, PolicyValidatorResult r) {
