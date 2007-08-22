@@ -9,6 +9,7 @@ import com.l7tech.common.util.ProcResult;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Collections;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.io.File;
@@ -72,31 +73,35 @@ public abstract class UnixSpecificFunctions extends OSSpecificFunctions {
         return getPartitionBase() + getPartitionName() + "/" + partitionControlScriptName;
     }
 
-    public List<NetworkingConfigurationBean.NetworkConfig> getNetworkConfigs() throws SocketException {
+    public List<NetworkingConfigurationBean.NetworkConfig> getNetworkConfigs(boolean getLoopBack, boolean getIPV6) throws SocketException {
         List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = new ArrayList<NetworkingConfigurationBean.NetworkConfig>();
 
-        Enumeration<NetworkInterface> allInterfaces = NetworkInterface.getNetworkInterfaces();
-        while (allInterfaces.hasMoreElements()) {
-            NetworkInterface networkInterface = allInterfaces.nextElement();
-            if (!networkInterface.isLoopback()) {
-                NetworkingConfigurationBean.NetworkConfig aConfig = createNetworkConfig(networkInterface);
-                if (aConfig != null) networkConfigs.add(aConfig);
-
-                Enumeration subInterfaces = networkInterface.getSubInterfaces();
-                while (subInterfaces.hasMoreElements()) {
-                    NetworkInterface subInterface = (NetworkInterface) subInterfaces.nextElement();
-                    if (!subInterface.isLoopback()) {
-                        NetworkingConfigurationBean.NetworkConfig subConfig = createNetworkConfig(subInterface);
-                        if (subConfig != null) networkConfigs.add(subConfig);
-                    }
-                }
+        List<NetworkInterface> allInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+        for (NetworkInterface networkInterface : allInterfaces) {
+            boolean addIt = ( (!networkInterface.isLoopback()) || (networkInterface.isLoopback() && getLoopBack));
+            if (addIt) {
+                addNetworkConfigToList(networkInterface, networkConfigs, getIPV6);
             }
         }
 
         return networkConfigs;
     }
 
-    abstract NetworkingConfigurationBean.NetworkConfig createNetworkConfig(NetworkInterface networkInterface);
+    private void addNetworkConfigToList(NetworkInterface networkInterface, List<NetworkingConfigurationBean.NetworkConfig> networkConfigs, boolean getIPV6) throws SocketException {
+        NetworkingConfigurationBean.NetworkConfig aConfig = createNetworkConfig(networkInterface, false);
+        if (aConfig != null) networkConfigs.add(aConfig);
+
+        Enumeration subInterfaces = networkInterface.getSubInterfaces();
+        while (subInterfaces.hasMoreElements()) {
+            NetworkInterface subInterface = (NetworkInterface) subInterfaces.nextElement();
+            if (!subInterface.isLoopback()) {
+                NetworkingConfigurationBean.NetworkConfig subConfig = createNetworkConfig(subInterface, false);
+                if (subConfig != null) networkConfigs.add(subConfig);
+            }
+        }
+    }
+
+    abstract NetworkingConfigurationBean.NetworkConfig createNetworkConfig(NetworkInterface networkInterface, boolean includeIPV6);
 
 
     public abstract String getFirewallRulesForPartition(PartitionInformation.HttpEndpointHolder basicEndpoint,

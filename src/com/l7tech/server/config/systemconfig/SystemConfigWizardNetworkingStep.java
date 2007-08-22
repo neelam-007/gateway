@@ -6,7 +6,6 @@ import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
-import java.net.Inet6Address;
 import java.net.InterfaceAddress;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -209,7 +208,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         if (choiceNum < 1 || choiceNum > allNetworkConfigs.size()) {
             //creating a new interface
-            theConfig = NetworkingConfigurationBean.makeNetworkConfig(null, null);
+            theConfig = NetworkingConfigurationBean.makeNetworkConfig(null, null, false);
         } else {
             theConfig = allNetworkConfigs.get(choiceNum -1);
         }
@@ -334,9 +333,9 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (!addresses.isEmpty()) {
             List<String> stringAddresses = new ArrayList<String>();
             for (InterfaceAddress address : addresses) {
-                if (!(address.getAddress() instanceof Inet6Address)) {
+//                if (!(address.getAddress() instanceof Inet6Address)) {
                     stringAddresses.add(address.getAddress().getHostAddress());
-                }
+//                }
             }
             currentFirstAddress = stringAddresses.get(0);
         }

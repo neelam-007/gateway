@@ -31,9 +31,9 @@ public class SystemConfigurationWizard extends ConfigurationWizard {
     public void printConfigOnly() {
         ConsoleWizardUtils utils = getWizardUtils();
         try {
-            List<NetworkingConfigurationBean.NetworkConfig> netConfigs = osFunctions.getNetworkConfigs();
+            List<NetworkingConfigurationBean.NetworkConfig> netConfigs = osFunctions.getNetworkConfigs(false, true);
             for (NetworkingConfigurationBean.NetworkConfig netConfig : netConfigs) {
-                NetworkInterface networkInterface = netConfig.getNic();
+                NetworkInterface networkInterface = netConfig.getNetworkInterface();
                 if (!networkInterface.isLoopback()) {
                     printNetworkConfig(netConfig);
                 }
@@ -49,7 +49,7 @@ public class SystemConfigurationWizard extends ConfigurationWizard {
             utils.printText(MessageFormat.format("Interface \"{0}\"", networkConfig.getInterfaceName()) + ConsoleWizardUtils.EOL_CHAR);
             utils.printText("Details:" + ConsoleWizardUtils.EOL_CHAR);
             utils.printText("\tBoot Protocol: " + networkConfig.getBootProto().toUpperCase() +  ConsoleWizardUtils.EOL_CHAR);            
-            utils.printText("\tCurrently Online: " + (networkConfig.getNic().isUp()?"yes":"no") +  ConsoleWizardUtils.EOL_CHAR);
+            utils.printText("\tCurrently Online: " + (networkConfig.getNetworkInterface().isUp()?"yes":"no") +  ConsoleWizardUtils.EOL_CHAR);
             byte[] hardwareAdress = networkConfig.getHardwareAddress();
             if (hardwareAdress != null) {
                 String mac = HexUtils.hexDump(networkConfig.getHardwareAddress()).toUpperCase();

@@ -6,6 +6,7 @@ import org.apache.commons.lang.StringUtils;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.Inet6Address;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
@@ -28,8 +29,8 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
     private List<NetworkConfig> networkingConfigs;
 
-    public static NetworkConfig makeNetworkConfig(NetworkInterface nic, String bootProto) {
-        return new NetworkConfig(nic, bootProto);
+    public static NetworkConfig makeNetworkConfig(NetworkInterface nic, String bootProto, boolean includeIPV6) {
+        return new NetworkConfig(nic, bootProto, includeIPV6);
     }
 
     public NetworkingConfigurationBean(String name, String description) {
@@ -83,7 +84,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     private void getExistingInterfaces() {
         logger.info("Determining existing interface information.");
         try {
-            networkingConfigs  = getOsFunctions().getNetworkConfigs();
+            networkingConfigs  = getOsFunctions().getNetworkConfigs(false, false);
         } catch (SocketException e) {
             logger.warning("Error while determining the IP Addresses for this machine:" + e.getMessage());
         }
@@ -107,13 +108,16 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         private boolean dirtyFlag;
         NetworkInterface nic;
 
-        protected NetworkConfig(NetworkInterface nic, String bootProto) {
+        protected NetworkConfig(NetworkInterface nic, String bootProto, boolean includeIPV6) {
             this.nic = nic;
             ipAddresses = new ArrayList<String>();
             if (nic != null) {
                 List<InterfaceAddress> addrs = nic.getInterfaceAddresses();
                 for (InterfaceAddress addr : addrs) {
-                    ipAddresses.add(addr.getAddress().getHostAddress());
+                    if (addr.getAddress() instanceof Inet6Address && includeIPV6)
+                        ipAddresses.add(addr.getAddress().getHostAddress());
+                    else
+                        ipAddresses.add(addr.getAddress().getHostAddress());
                 }
             }
             this.bootProto = bootProto;
@@ -211,7 +215,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
             this.dirtyFlag = dirtyFlag;
         }
 
-        public NetworkInterface getNic() {
+        public NetworkInterface getNetworkInterface() {
             return nic;
         }
 

@@ -302,7 +302,7 @@ public abstract class OSSpecificFunctions {
         return timeZonesDir;
     }
 
-    public abstract List<NetworkingConfigurationBean.NetworkConfig> getNetworkConfigs() throws SocketException;
+    public abstract List<NetworkingConfigurationBean.NetworkConfig> getNetworkConfigs(boolean getLoopBack, boolean getIPV6) throws SocketException;
 
     /**
      * Create a MasterPasswordManager configured with the current partition's master key.

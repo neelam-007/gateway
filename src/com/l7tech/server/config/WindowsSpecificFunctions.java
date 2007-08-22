@@ -3,11 +3,11 @@ package com.l7tech.server.config;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 
 import java.io.File;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.net.SocketException;
 import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class WindowsSpecificFunctions extends OSSpecificFunctions {
 
@@ -33,13 +33,12 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
         throw new IllegalStateException("Cannot Configure the network on Windows.");
     }
 
-    public List<NetworkingConfigurationBean.NetworkConfig> getNetworkConfigs() throws SocketException {
+    public List<NetworkingConfigurationBean.NetworkConfig> getNetworkConfigs(boolean getLoopBack, boolean getIPV6) throws SocketException {
         List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = new ArrayList<NetworkingConfigurationBean.NetworkConfig>();
-        Enumeration<NetworkInterface> allInterfaces = NetworkInterface.getNetworkInterfaces();
-        while (allInterfaces.hasMoreElements()) {
-            NetworkInterface networkInterface = allInterfaces.nextElement();
+        List<NetworkInterface> allInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+        for (NetworkInterface networkInterface : allInterfaces) {
             if (!networkInterface.isLoopback())
-                networkConfigs.add(NetworkingConfigurationBean.makeNetworkConfig(networkInterface, null));
+                networkConfigs.add(NetworkingConfigurationBean.makeNetworkConfig(networkInterface, null, getIPV6));
         }
         return networkConfigs;
     }

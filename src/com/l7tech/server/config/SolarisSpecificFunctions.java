@@ -53,18 +53,18 @@ public class SolarisSpecificFunctions extends UnixSpecificFunctions {
         timeZonesDir = "/usr/share/lib/zoneinfo/";
     }
 
-    NetworkingConfigurationBean.NetworkConfig createNetworkConfig(NetworkInterface networkInterface) {
+    NetworkingConfigurationBean.NetworkConfig createNetworkConfig(NetworkInterface networkInterface, boolean includeIPV6) {
         //get the corresponding info on this interface from the various places they exist in solaris
-        return collectInterfaceInfo(networkInterface);
+        return collectInterfaceInfo(networkInterface, includeIPV6);
     }
 
-    private NetworkingConfigurationBean.NetworkConfig collectInterfaceInfo(NetworkInterface networkInterface) {
+    private NetworkingConfigurationBean.NetworkConfig collectInterfaceInfo(NetworkInterface networkInterface, boolean includeIPV6) {
         String ifName = networkInterface.getName();
         File isInterfaceDhcpFile = new File("/etc/", "dhcp."+ifName);
         if (isInterfaceDhcpFile.exists()) {
-            return NetworkingConfigurationBean.makeNetworkConfig(networkInterface, NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO);
+            return NetworkingConfigurationBean.makeNetworkConfig(networkInterface, NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO, includeIPV6);
         } else {
-            return NetworkingConfigurationBean.makeNetworkConfig(networkInterface, NetworkingConfigurationBean.STATIC_BOOT_PROTO);
+            return NetworkingConfigurationBean.makeNetworkConfig(networkInterface, NetworkingConfigurationBean.STATIC_BOOT_PROTO, includeIPV6);
         }
     }
 

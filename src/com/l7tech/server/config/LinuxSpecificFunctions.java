@@ -53,14 +53,14 @@ public class LinuxSpecificFunctions extends UnixSpecificFunctions {
         timeZonesDir = "/usr/share/zoneinfo/";
     }
 
-    NetworkingConfigurationBean.NetworkConfig createNetworkConfig(NetworkInterface networkInterface) {
+    NetworkingConfigurationBean.NetworkConfig createNetworkConfig(NetworkInterface networkInterface, boolean includeIPV6) {
         //get the corresponding ifcfg file from /etc/sysconfig/network-scripts/
         String ifName = networkInterface.getName();
         File ifCfgFile = new File(getNetworkConfigurationDirectory(), "ifcfg-"+ifName);
-        return parseConfigFile(networkInterface, ifCfgFile);
+        return parseConfigFile(networkInterface, ifCfgFile, includeIPV6);
     }
 
-    private NetworkingConfigurationBean.NetworkConfig parseConfigFile(NetworkInterface networkInterface, File file) {
+    private NetworkingConfigurationBean.NetworkConfig parseConfigFile(NetworkInterface networkInterface, File file, boolean includeIPV6) {
         if (!file.exists()) {
             return null;
         }
@@ -87,7 +87,7 @@ public class LinuxSpecificFunctions extends UnixSpecificFunctions {
                 }
             }
             //finished reading the file, now make the network config
-            theNetConfig = NetworkingConfigurationBean.makeNetworkConfig(networkInterface, bootProto==null?NetworkingConfigurationBean.STATIC_BOOT_PROTO:bootProto);
+            theNetConfig = NetworkingConfigurationBean.makeNetworkConfig(networkInterface, bootProto==null?NetworkingConfigurationBean.STATIC_BOOT_PROTO:bootProto, includeIPV6);
             if (StringUtils.isNotEmpty(netMask)) theNetConfig.setNetMask(netMask);
             if (StringUtils.isNotEmpty(gateway)) theNetConfig.setGateway(gateway);
 
