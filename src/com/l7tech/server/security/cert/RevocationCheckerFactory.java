@@ -745,10 +745,12 @@ public class RevocationCheckerFactory {
                                                 if (cvr == CertificateValidationResult.OK) {
                                                     isPermittedSigner = Boolean.TRUE;
                                                 } else {
-                                                    auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_SIGNER_CERT_REVOKED, url, x509Certificate.getSubjectDN().toString());                                                                                                    
+                                                    auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_SIGNER_CERT_REVOKED, url, x509Certificate.getSubjectDN().toString());
+                                                    debugCertificate(x509Certificate);
                                                 }
                                             } catch (GeneralSecurityException gse) {
-                                                auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_SIGNER_CERT_REVOKED, url, x509Certificate.getSubjectDN().toString());                                                
+                                                auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_SIGNER_CERT_REVOKED, url, x509Certificate.getSubjectDN().toString());
+                                                debugCertificate(x509Certificate);
                                             }
                                         } else {
                                             isPermittedSigner = Boolean.TRUE;
@@ -781,6 +783,20 @@ public class RevocationCheckerFactory {
             }
 
             return result;
+        }
+
+        private void debugCertificate(X509Certificate certificate) {
+            if (certificate != null) {
+                if (logger.isLoggable(Level.FINE)) {
+                    try {
+                        logger.log(Level.FINE, "OCSP Responder rejected certificate\n{0}", CertUtils.encodeAsPEM(certificate));
+                    } catch (IOException ioe) {
+                        logger.log(Level.FINE, "OCSP Responder rejected certificate Subject DN ''{0}''.", certificate.getSubjectX500Principal());
+                    } catch (CertificateEncodingException cee) {
+                        logger.log(Level.FINE, "OCSP Responder rejected certificate Subject DN ''{0}''.", certificate.getSubjectX500Principal());
+                    }
+                }
+            }
         }
     }
 

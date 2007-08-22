@@ -74,14 +74,17 @@ public class OCSPCache {
         }
 
         try {
-            OCSPClient.OCSPStatus status = (OCSPClient.OCSPStatus) certValidationCache.retrieve(key);
-            if (status != null) {
+            OCSPClient.OCSPStatus status;
+            OcspValue ocspValue = (OcspValue) certValidationCache.retrieve(key);
+            if (ocspValue != null && !ocspValue.isExpired()) {
+                status = ocspValue.status;
                 auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_HIT, "OCSP", certificate.getSubjectDN().toString());
             } else {
                 auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_MISS, "OCSP", certificate.getSubjectDN().toString());
                 OCSPClient ocsp = new OCSPClient(httpClientFactory.createHttpClient(), responderUrl, issuerCertificate, responseAuthorizer);
                 status = ocsp.getRevocationStatus(certificate, useNonce(), true);
-                certValidationCache.store(key, status, getExpiryTime(status.getExpiry()));
+                long expiry = getExpiryTime(status.getExpiry());
+                certValidationCache.store(key, new OcspValue(status, expiry), expiry);
             }
 
             return status;
@@ -224,6 +227,29 @@ public class OCSPCache {
 
         public int hashCode() {
             return hashCode;
+        }
+    }
+
+    /**
+     * Value is just a status with a timestamp (of the actual expiry)
+     */
+    private static final class OcspValue {
+        private final OCSPClient.OCSPStatus status;
+        private final long expiry;
+
+        private OcspValue(OCSPClient.OCSPStatus status, long expiry) {
+            this.status = status;
+            this.expiry = expiry;
+        }
+
+        private boolean isExpired() {
+            boolean expired = true;
+
+            if (expiry > System.currentTimeMillis()) {
+                expired = false;        
+            }
+
+            return expired;
         }
     }
 }
