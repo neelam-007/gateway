@@ -67,6 +67,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private static final ResourceBundle resources =
             ResourceBundle.getBundle("com.l7tech.console.resources.SchemaValidationPropertiesDialog", Locale.getDefault());
     private final String BORDER_TITLE_PREFIX = resources.getString("modeBorderTitlePrefix.text");
+    public static final String NOTSET = "<not set>";
 
     // Top-level widgets
     private JComboBox cbSchemaLocation;
@@ -280,12 +281,17 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             if (ri instanceof GlobalResourceInfo) {
                 GlobalResourceInfo gri = (GlobalResourceInfo)ri;
                 DefaultComboBoxModel model = (DefaultComboBoxModel)globalSchemaCombo.getModel();
+                boolean found = false;
                 for (int i = 0; i < model.getSize(); i++) {
                     String comboBoxItem = (String)model.getElementAt(i);
                     if (gri.getId() != null && gri.getId().equals(comboBoxItem)) {
+                        found = true;
                         globalSchemaCombo.setSelectedIndex(i);
                         break;
                     }
+                }
+                if (!found) {
+                    globalSchemaCombo.setSelectedItem(NOTSET);
                 }
             }
         } else {
@@ -346,7 +352,9 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                     schemaNames.add(s.getName());
                 }
             }
+            schemaNames.add(NOTSET);
             globalSchemaCombo.setModel(new DefaultComboBoxModel(schemaNames.toArray(new String[]{})));
+            globalSchemaCombo.setSelectedItem(NOTSET);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Cannot get global schemas", e);
         }
@@ -489,6 +497,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         if (globalSchemaCombo.getSelectedItem() == null) {
             throw new RuntimeException("the combo has nothing selected?");
             // this shouldn't happen (unless bug)
+        } else if (globalSchemaCombo.getSelectedItem().equals(NOTSET)) {
+            return false;
         }
         gri.setId(globalSchemaCombo.getSelectedItem().toString());
         schemaValidationAssertion.setResourceInfo(gri);
