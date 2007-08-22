@@ -602,7 +602,9 @@ public class MessageProcessor {
         GenericHttpRequestParams params = new GenericHttpRequestParams(url);
         if (!ssg.isHttpHeaderPassthrough()) { // Bug #3006
             String cookieHeader = getSessionCookiesHeaderValue(context);
-            params.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, cookieHeader));
+            if (cookieHeader.length() > 0) {
+                params.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, cookieHeader));
+            }
         }
         params.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_USER_AGENT, SecureSpanConstants.USER_AGENT));
 
