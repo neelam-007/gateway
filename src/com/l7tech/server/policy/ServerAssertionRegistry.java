@@ -14,6 +14,7 @@ import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.cluster.ClusterProperty;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.DisposableBean;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,7 +40,7 @@ import java.lang.reflect.Modifier;
  * The Gateway's AssertionRegistry, which extends the default registry with the ability to look for
  * modular ServerConfig properties in the new assertions and register them with ServerConfig.
  */
-public class ServerAssertionRegistry extends AssertionRegistry {
+public class ServerAssertionRegistry extends AssertionRegistry implements DisposableBean {
     protected static final Logger logger = Logger.getLogger(ServerAssertionRegistry.class.getName());
     private static final Pattern PATTERN_WHITESPACE = Pattern.compile("\\s+");
     private static final String DISABLED_SUFFIX = ".disabled".toLowerCase();
@@ -68,6 +69,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
     private final Map<String, String[]> newClusterProps = new ConcurrentHashMap<String, String[]>();
     private File lastScannedDir = null;
     private long lastScannedDirModTime = 0;
+    private TimerTask scanTimerTask = null;
     private boolean scanNeeded = true;
 
 
@@ -142,6 +144,9 @@ public class ServerAssertionRegistry extends AssertionRegistry {
     }
 
     private synchronized boolean scanModularAssertions() {
+        if (isShuttingDown())
+            return false;
+
         if (!licenseManager.isFeatureEnabled(GatewayFeatureSets.SERVICE_MODULELOADER))
             return false;
 
@@ -167,6 +172,9 @@ public class ServerAssertionRegistry extends AssertionRegistry {
     }
 
     private boolean scanModularAssertionsImpl(File dir, long dirLastModified, String extsList) {
+        if (isShuttingDown())
+            return false;
+
         boolean changesMade = false;
 
         lastScannedDir = dir;
@@ -399,7 +407,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 }
             }
 
-            AssertionModuleClassLoader assloader = new AssertionModuleClassLoader(filename, file.toURL(), getClass().getClassLoader(), nestedJarfiles);
+            AssertionModuleClassLoader assloader = new AssertionModuleClassLoader(filename, file.toURI().toURL(), getClass().getClassLoader(), nestedJarfiles);
             Set<Assertion> protos = new HashSet<Assertion>();
             for (String assertionClassname : assertionClassnames) {
                 if (classExists(getClass().getClassLoader(), assertionClassname))
@@ -545,7 +553,8 @@ public class ServerAssertionRegistry extends AssertionRegistry {
 
     private void onModuleUnloaded(AssertionModule module) {
         Background.cancelAllTasksFromClassLoader(module.getModuleClassLoader());
-        publishEvent(new AssertionModuleUnregistrationEvent(this, module));
+        if (!isShuttingDown())
+            publishEvent(new AssertionModuleUnregistrationEvent(this, module));
         try {
             module.close();
         } catch (IOException e) {
@@ -614,12 +623,13 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         scanModularAssertions();
         checkForNewClusterProperties();
         long rescanMillis = serverConfig.getLongProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_RESCAN_MILLIS, 4523);
-        Background.scheduleRepeated(new TimerTask() {
+        scanTimerTask = new TimerTask() {
             public void run() {
                 scanModularAssertions();
                 checkForNewClusterProperties();
             }
-        }, rescanMillis, rescanMillis);
+        };
+        Background.scheduleRepeated(scanTimerTask, rescanMillis, rescanMillis);
     }
 
     private static void installGatewayMetadataDefaults() {
@@ -636,6 +646,10 @@ public class ServerAssertionRegistry extends AssertionRegistry {
     }
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
+        if (isShuttingDown())
+            // Ignore events once shutdown starts
+            return;
+
         super.onApplicationEvent(applicationEvent);
 
         if (applicationEvent instanceof LicenseEvent) {
@@ -644,6 +658,23 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 lastScannedDirModTime = 0;
                 failModTimes.clear(); // retry all failures whenever the license changes
                 scanNeeded = true;
+            }
+        }
+    }
+
+    public synchronized void destroy() throws Exception {
+        super.destroy();
+        if (scanTimerTask != null)
+            Background.cancel(scanTimerTask);
+        scanTimerTask = null;
+        scanNeeded = false;
+        failModTimes.clear();
+
+        for (String moduleName : new ArrayList<String>(loadedModules.keySet())) {
+            try {
+                unregisterModule(moduleName);
+            } catch (Throwable t) {
+                logger.log(Level.WARNING, "Error while unregistering module " + moduleName + ": " + ExceptionUtils.getMessage(t), t);
             }
         }
     }

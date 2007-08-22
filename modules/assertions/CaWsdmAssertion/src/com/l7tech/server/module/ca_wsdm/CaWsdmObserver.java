@@ -358,13 +358,18 @@ public class CaWsdmObserver implements ApplicationListener {
         CaWsdmPropertiesAdaptor propsAdaptor = getPropertiesAdaptor();
         final ObserverProperties observerProperties = propsAdaptor.getObserverProperties();
 
-        if (observerProperties.getManagerSoapEndpoint() == null) {
-            String msg = "Missing cluster property \"" +
+        String endpoint = observerProperties.getManagerSoapEndpoint();
+        if (endpoint == null || endpoint.trim().length() < 1 || CaWsdmPropertiesAdaptor.DEFAULT_SOAP_ENDPOINT.equals(endpoint)) {
+            String msg = "Observer for CA Unicenter WSDM is NOT enabled: Please customize the manager SOAP endpoint by editing " +
+                         "the cluster property \"" +
                          CaWsdmPropertiesAdaptor.asCpName(ObserverProperties.CONFIG_MANAGER_SOAP_ENDPOINT) +
-                         "\". Not enabling Observer for CA Unicenter WSDM.";
+                         "\" and then restart the Gateway.";
             _logger.severe(msg);
             _enabled = false;
-            throw new IOException(msg);
+            synchronized (this) {
+                instance = null;
+            }
+            return;
         } else {
             _enabled = true;
         }

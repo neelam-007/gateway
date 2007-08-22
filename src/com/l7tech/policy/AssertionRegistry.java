@@ -14,6 +14,7 @@ import com.l7tech.policy.wsp.TypeMappingFinder;
 import com.l7tech.policy.wsp.WspConstants;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
@@ -35,7 +36,7 @@ import java.util.logging.Logger;
  * The Bridge, Gateway, and Manager each have their own implementation, of which there is usually one instance
  * per process.
  */
-public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, ApplicationContextAware, InitializingBean, ApplicationListener {
+public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, ApplicationContextAware, InitializingBean, ApplicationListener, DisposableBean {
     protected static final Logger logger = Logger.getLogger(AssertionRegistry.class.getName());
 
     // Install the default getters that can't be included in DefaultAssertionMetadata itself due to the compile13 closure
@@ -48,6 +49,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
     private final Map<String, Assertion> prototypes = new ConcurrentHashMap<String, Assertion>();
     private final Map<String, Assertion> byExternalName = new ConcurrentHashMap<String, Assertion>();
     private ApplicationContext applicationContext;
+    private boolean shuttingDown = false;
 
     public AssertionRegistry() {
         installEnhancedMetadataDefaults();
@@ -357,5 +359,14 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
     }
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
+    }
+
+    /** @return true if the destroy() method has ever been called on this instance */
+    protected boolean isShuttingDown() {
+        return shuttingDown;
+    }
+
+    public synchronized void destroy() throws Exception {
+        shuttingDown = true;
     }
 }

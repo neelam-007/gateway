@@ -20,6 +20,12 @@ public class CaWsdmPropertiesAdaptor {
 
     /** Default observer type (a.k.a. handler type); for display in WSDM Manager. */
     public static final int OBSERVER_TYPE_DEFAULT = 777;
+    
+    /** The default (unconfigured) SOAP endpoint, until the admin customizes wsdm.managerSoapEndpoint. */
+    static final String DEFAULT_SOAP_ENDPOINT = "http://hostname:8282/wsdm35mmi/services/WSDM35MMI";
+
+    /** Filename that WSDM will try to load from the classpath to find the SOMMA properties. */
+    static final String SOMMA_FILENAME = "WsdmSOMMA_Basic.properties";
 
     // Serverconfig variable names for the ones added by layer 7 that aren't from ObserverProperties
     private static final String PARAM_OBSERVER_TYPE = "cawsdmObserverType";
@@ -28,7 +34,6 @@ public class CaWsdmPropertiesAdaptor {
     private static final Set<String> caProps = new HashSet<String>();
     private static final Set<String> sommaProps = new HashSet<String>();
     private final ServerConfig serverConfig;
-    static final String SOMMA_FILENAME = "WsdmSOMMA_Basic.properties";
 
     /**
      * Create an adaptor that will build a {@link com.ca.wsdm.monitor.ObserverProperties} instance
@@ -71,7 +76,7 @@ public class CaWsdmPropertiesAdaptor {
         addCaProp(props, ObserverProperties.CONFIG_MANAGER_SOAP_ENDPOINT,
                   "WSDM Manager endpoint address.  (URL)\n" +
                   "(REQUIRED) If not specified, the Observer will be disabled.",
-                  "http://hostname:8282/wsdm35mmi/services/WSDM35MMI");
+                  DEFAULT_SOAP_ENDPOINT);
 
         addCaProp(props, ObserverProperties.CONFIG_AUTO_DISCOVER,
                   "Determines whether the Observer reports all newly discovered WSDLs and\n" +
