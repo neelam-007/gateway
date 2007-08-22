@@ -346,7 +346,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 doRestoreHsm(fullKsPassword, ksBean, ksDir, javaSecFile, newJavaSecFile, keystorePropertiesFile, tomcatServerConfigFile, sslKeyStoreFile, systemPropertiesFile);
             }
         } catch (Exception e) {
-            logger.severe(MessageFormat.format("There were errors while configuring the HSM. {0}", e.getMessage()));
+            logger.severe(MessageFormat.format("There were errors while configuring the HSM. {0}", ExceptionUtils.getMessage(e)));
             throw e;
         }
     }
