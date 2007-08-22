@@ -15,11 +15,15 @@ import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.event.RoutingEvent;
+import com.l7tech.server.event.system.Started;
+import com.l7tech.server.event.system.Starting;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.policy.assertion.Assertion;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -62,6 +66,9 @@ public class CaWsdmObserver implements ApplicationListener {
 
     private final ServerConfig _serverConfig;
     private final ApplicationEventProxy _applicationEventProxy;
+    private CaWsdmPropertiesAdaptor propsAdaptor;
+
+    private boolean _initializationAttempted = false;
 
     /** Determines whether to enable observer. */
     private boolean _enabled;
@@ -91,6 +98,7 @@ public class CaWsdmObserver implements ApplicationListener {
     public CaWsdmObserver(ApplicationContext applicationContext) {
         this._serverConfig = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);
         this._applicationEventProxy = (ApplicationEventProxy)applicationContext.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        _applicationEventProxy.addApplicationListener(this);
     }
 
     /**
@@ -286,11 +294,68 @@ public class CaWsdmObserver implements ApplicationListener {
         }
     }
 
+    /** @return the ProperteisAdaptor that provides the CA WSDM observer and SOMMA properties from the DB. Never null. */
+    public synchronized CaWsdmPropertiesAdaptor getPropertiesAdaptor() {
+        if (propsAdaptor == null)
+            propsAdaptor = new CaWsdmPropertiesAdaptor(_serverConfig);
+        return propsAdaptor;
+    }
 
-    public void initialize() throws Exception {
+    // Runs on the Spring event delivery thread that told us our module had just been loaded.
+    // Typically this is the timer thread in ServerAssertionRegistry.
+    // This spawns an init thread, starts it, and waits for it to finish.
+    private void initializeIfNeeded() {
+        synchronized (this) {
+            if (_initializationAttempted)
+                return;
+            _initializationAttempted = true;
+        }
+
+        logger.log(Level.INFO, "CaWsdmObserver module is initializing a new instance");
+        Thread initThread = null;
+        try {
+            // Ensure that initialize runs on a thread with the context classloader set to the modular assertion classloader
+            final Throwable[] initError = new Throwable[] { null };
+            Runnable initJob = new Runnable() {
+                public void run() {
+                    try {
+                        initializeOnInitThread();
+                    } catch (Exception e) {
+                        initError[0] = e;
+                    }
+                }
+            };
+            initThread = new Thread(initJob, "CA WSDM module initialization");
+            initThread.setContextClassLoader(getClass().getClassLoader());
+            initThread.start();
+            initThread.join();
+            initThread = null;
+            if (initError[0] != null)
+                throw new RuntimeException("Error while initializing CaWsdmObserver module: " + ExceptionUtils.getMessage(initError[0]), initError[0]);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("interrupted while initializing CaWsdmObserver module", e);
+        } catch (Throwable t) {
+            logger.log(Level.SEVERE, "CaWsdmObserver threw exception while initializing: " + ExceptionUtils.getMessage(t), t);
+            _enabled = false;
+        } finally {
+            if (initThread != null) {
+                try {
+                    initThread.interrupt();
+                    initThread.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
+    // Runs on the init thread, with context classloader set to this class's classloader
+    private void initializeOnInitThread() throws Exception {
 
         // Get configuration properties from the cluster properties manager
-        CaWsdmPropertiesAdaptor propsAdaptor = new CaWsdmPropertiesAdaptor(_serverConfig);
+        CaWsdmPropertiesAdaptor propsAdaptor = getPropertiesAdaptor();
         final ObserverProperties observerProperties = propsAdaptor.getObserverProperties();
 
         if (observerProperties.getManagerSoapEndpoint() == null) {
@@ -318,33 +383,6 @@ public class CaWsdmObserver implements ApplicationListener {
         } catch (ManagerEndpointNotDefinedException e) {
             _logger.log(Level.SEVERE, "Invalid CA Unicenter WSDM Manager SOAP endpoint URL. Not enabling Observer for CA Unicenter WSDM.", e);
         }
-
-        // Turn on the event spigot
-        _applicationEventProxy.addApplicationListener(this);
-    }
-
-    private ObserverProperties getObserverProperties(String propsPath, Properties properties) throws IOException {
-        FileInputStream fis = null;
-        try {
-            fis = new FileInputStream(propsPath);
-            properties.load(fis);
-            _logger.info("Loaded Observer for CA Unicenter WSDM properties from file \"" + propsPath + "\".");
-        } catch (FileNotFoundException e) {
-            throw new FileNotFoundException("File \"" + propsPath + "\" not found. Not enabling Observer for CA Unicenter WSDM.");
-        } catch (IOException e) {
-            throw new IOException("Cannot read \"" + propsPath + "\". Not enabling Observer for CA Unicenter WSDM.", e);
-        } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                    _logger.log(Level.WARNING, "Cannot close \"" + propsPath + "\" after reading.", e);
-                }
-            }
-        }
-
-        final ObserverProperties observerProperties = new ObserverProperties(properties);
-        return observerProperties;
     }
 
     public void onApplicationEvent(ApplicationEvent event) {
@@ -357,6 +395,23 @@ public class CaWsdmObserver implements ApplicationListener {
                 handlePostRoutingEvent(postRoutingEvent);
             }
         }
+        if (_initializationAttempted)
+            return;
+
+        if (event instanceof AssertionModuleRegistrationEvent) {
+            AssertionModuleRegistrationEvent regEvent = (AssertionModuleRegistrationEvent)event;
+            Set<? extends Assertion> protos = regEvent.getModule().getAssertionPrototypes();
+            if (protos.size() > 0) {
+                Assertion proto = protos.iterator().next();
+                if (proto.getClass().getClassLoader() == getClass().getClassLoader()) {
+                    // Our module has just been registered.  Time to do our delayed initialization.
+                    initializeIfNeeded();
+                }
+            }
+        } else if (event instanceof Starting || event instanceof Started) {
+            // Make sure we initialize properly on startup (too early to get our own registration event) 
+            initializeIfNeeded();
+        }
     }
 
     public boolean isEnabled() {
@@ -364,15 +419,15 @@ public class CaWsdmObserver implements ApplicationListener {
     }
 
     public void destroy() throws Exception {
-        if (_enabled) {
-            try {
+        try {
+            if (_enabled) {
                 // Shuts down the ODK API threads.
                 WsdmHandlerUtilSOAP.stop();
-            } finally {
-                // Unsubscribe ourself from the applicationEventProxy
-                if (_applicationEventProxy != null)
-                    _applicationEventProxy.removeApplicationListener(this);
             }
+        } finally {
+            // Unsubscribe ourself from the applicationEventProxy
+            if (_applicationEventProxy != null)
+                _applicationEventProxy.removeApplicationListener(this);
         }
     }
 
@@ -392,14 +447,7 @@ public class CaWsdmObserver implements ApplicationListener {
         if (instance != null) {
             logger.log(Level.WARNING, "CaWsdmObserver module is already initialized");
         } else {
-            logger.log(Level.INFO, "CaWsdmObserver module is initializing a new instance");
-            try {
-                instance = new CaWsdmObserver(context);
-                instance.initialize();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "CaWsdmObserver module exception while initializing: " + ExceptionUtils.getMessage(e), e);
-                instance = null;
-            }
+            instance = new CaWsdmObserver(context);
         }
     }
 

@@ -28,6 +28,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
     private final Set<Class> classes = Collections.synchronizedSet(new HashSet<Class>());
     private final String moduleName;
     private final Map<NestedZipFile, Object> nestedJarFiles;
+    private final Set<ClassLoader> delegates = Collections.synchronizedSet(new LinkedHashSet<ClassLoader>());
 
     public AssertionModuleClassLoader(String moduleName, URL jarUrl, ClassLoader parent, Set<NestedZipFile> nestedJarFiles) {
         super(new URL[] { jarUrl }, parent);
@@ -37,12 +38,41 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
             this.nestedJarFiles.put(file, new Object());
     }
 
+    /**
+     * Add a ClassLoader to the list of extra, last-second delegates to ask if a needed class or resource
+     * can't be found while loading classes or resources from this module.
+     * <p/>
+     * These will be invoked in order until one of them produces the sought-after class or resource.
+     *
+     * @param classLoader a ClassLoader to invoke if a class or resource couldn't be found directly in the .aar, a nested
+     *        jar file, or a parent classloader
+     */
+    public void addDelegate(ClassLoader classLoader) {
+        if (classLoader == null) throw new IllegalArgumentException("classLoader argument must be non-null");
+        delegates.add(classLoader);
+    }
+
+    /**
+     * Revove a ClassLoader from the list of extra delegates.
+     *
+     * @param classLoader the ClassLoader to remove from the list.
+     * @return true if the specified classloader was found and removed
+     */
+    public boolean removeDelegate(ClassLoader classLoader) {
+        return delegates.remove(classLoader);
+    }
+
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
-        Class<?> found;
+        Class<?> found = null;
         try {
-            found = super.findClass(name);
+            if (!name.startsWith("com.l7tech.") && !name.startsWith("java."))
+                found = findClassFromNestedJars(name);
+            if (found == null)
+                found = super.findClass(name);
         } catch (ClassNotFoundException e) {
             found = findClassFromNestedJars(name);
+            if (found == null)
+                found = findClassFromDelegates(name);
             if (found == null)
                 throw new ClassNotFoundException(ExceptionUtils.getMessage(e), e);
         }
@@ -58,6 +88,17 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         return defineClass(name, bytecode, 0, bytecode.length);
     }
 
+    private Class findClassFromDelegates(String name) {
+        for (ClassLoader loader : delegates) {
+            try {
+                return loader.loadClass(name);
+            } catch (ClassNotFoundException e) {
+                /* FALLTHROUGH and try next delegate */
+            }
+        }
+        return null;
+    }
+
     /**
      * Get the bytes for the specified resource from this assertion module, without looking in any parent
      * class loaders.
@@ -68,8 +109,12 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
      */
     byte[] getResourceBytes(final String path) throws IOException {
         URL url = super.findResource(path);
-        if (url == null)
-            return getResourceBytesFromNestedJars(path);
+        if (url == null) {
+            byte[] found = getResourceBytesFromNestedJars(path);
+            if (found == null)
+                found = getResourceBytesFromDelegates(path);
+            return found;
+        }
         InputStream is = null;
         try {
             is = url.openStream();
@@ -93,10 +138,33 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         return null;
     }
 
+    private byte[] getResourceBytesFromDelegates(String path) {
+        for (ClassLoader loader : delegates) {
+            InputStream foundStream = loader.getResourceAsStream(path);
+            if (foundStream != null) {
+                try {
+                    return HexUtils.slurpStream(foundStream);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING,
+                               "Error reading resource " + path +
+                               " from delegate ClassLoader for module name " + moduleName + ": " + ExceptionUtils.getMessage(e),
+                               e);
+                } finally {
+                    ResourceUtils.closeQuietly(foundStream);
+                }
+            }
+        }
+        return null;
+    }
+
     public URL findResource(final String name) {
         URL url = super.findResource(name);
-        return url == null ? findResourceFromNestedJars(name) : url;
-    }
+        if (url == null)
+            url = findResourceFromNestedJars(name);
+        if (url == null)
+            url = findResourceFromDelegates(name);
+        return url;
+   }
 
     private URL findResourceFromNestedJars(String name) {
         for (NestedZipFile nested : nestedJarFiles.keySet()) {
@@ -109,6 +177,15 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
                                          moduleName + ": " + ExceptionUtils.getMessage(e), e);
                 return null;
             }
+        }
+        return null;
+    }
+
+    private URL findResourceFromDelegates(String name) {
+        for (ClassLoader loader : delegates) {
+            URL found = loader.getResource(name);
+            if (found != null)
+                return found;
         }
         return null;
     }
@@ -139,6 +216,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
             urls.add(url);
         }
         urls.add(findResourceFromNestedJars(name));
+        urls.add(findResourceFromDelegates(name)); // TODO should add all of them, not just one of them
         return new IteratorEnumeration<URL>(urls.iterator());
     }
 

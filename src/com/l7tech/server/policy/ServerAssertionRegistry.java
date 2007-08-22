@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.MetadataFinder;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.cluster.ClusterProperty;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationContext;
 
@@ -29,7 +30,6 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
@@ -42,7 +42,6 @@ import java.lang.reflect.Modifier;
 public class ServerAssertionRegistry extends AssertionRegistry {
     protected static final Logger logger = Logger.getLogger(ServerAssertionRegistry.class.getName());
     private static final Pattern PATTERN_WHITESPACE = Pattern.compile("\\s+");
-    private static final Pattern PATTERN_MID_DOTS = Pattern.compile("\\.([a-zA-Z0-9_])");
     private static final String DISABLED_SUFFIX = ".disabled".toLowerCase();
 
     // Install the default getters that are specific to the Gateway
@@ -115,25 +114,6 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         return prototype;
     }
 
-
-    /**
-     * Converts a cluster property name like "foo.bar.blatzBloof.bargleFoomp" into a ServerConfig property
-     * root like "fooBarBlatzBlofBargleFoomp".
-     *
-     * @param clusterPropertyName the cluster property name to convert
-     * @return the corresponding serverConfig property name.  Never null.
-     */
-    private static String makeServerConfigPropertyName(String clusterPropertyName) {
-        Matcher matcher = PATTERN_MID_DOTS.matcher(clusterPropertyName);
-        StringBuffer sb = new StringBuffer();
-        while (matcher.find()) {
-            matcher.appendReplacement(sb, matcher.group(1).toUpperCase());
-        }
-        matcher.appendTail(sb);
-        return sb.toString();
-    }
-
-
     /** Scan modular assertions for new cluster properties. */
     private synchronized void checkForNewClusterProperties() {
         Map<String,String> namesToDesc =  serverConfig.getClusterPropertyNames();
@@ -151,7 +131,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 // Dynamically register this new cluster property
                 String desc = tuple[0];
                 String dflt = tuple[1];
-                String serverConfigName = makeServerConfigPropertyName(clusterPropertyName);
+                String serverConfigName = ClusterProperty.asServerConfigPropertyName(clusterPropertyName);
 
                 toAdd.add(new String[] { serverConfigName, clusterPropertyName, desc, dflt });
                 logger.info("Dynamically registering cluster property " + clusterPropertyName);
@@ -446,6 +426,13 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             previousVersion = loadedModules.put(filename, module);
             failModTimes.clear(); // retry all failures whenever a module is loaded or unloaded
             try {
+                // Set up class loader delegates first, in case any of the initialization listeners needs them in place
+                for (Assertion proto : protos) {
+                    ClassLoader dcl = (ClassLoader)proto.meta().get(AssertionMetadata.MODULE_CLASS_LOADER_DELEGATE_INSTANCE);
+                    if (dcl != null)
+                        assloader.addDelegate(dcl);
+                }
+
                 // Notify any module load listeners declared by any of this module's assertions
                 for (Assertion proto : protos) {
                     String listenerClassname = (String)proto.meta().get(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME);

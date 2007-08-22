@@ -8,6 +8,9 @@ package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 /**
  * A row in the cluster_properties table. On the server-side, this is managed through
  * the ClusterPropertyManager, and on the client side, through the ClusterStatusAdmin interface.
@@ -19,6 +22,7 @@ public class ClusterProperty extends NamedEntityImp {
 
     private String value;
     private String description;
+    public static final Pattern PATTERN_MID_DOTS = Pattern.compile("\\.([a-zA-Z0-9_])");
 
     public ClusterProperty() { }
 
@@ -68,4 +72,20 @@ public class ClusterProperty extends NamedEntityImp {
         return result;
     }
 
+    /**
+     * Converts a cluster property name like "foo.bar.blatzBloof.bargleFoomp" into a ServerConfig property
+     * root like "fooBarBlatzBlofBargleFoomp".
+     *
+     * @param clusterPropertyName the cluster property name to convert, ie "trfl.logs.enableShared"
+     * @return the corresponding serverConfig property name, ie "trflLogsEnableShared".  Never null.
+     */
+    public static String asServerConfigPropertyName(String clusterPropertyName) {
+        Matcher matcher = PATTERN_MID_DOTS.matcher(clusterPropertyName);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, matcher.group(1).toUpperCase());
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
+    }
 }

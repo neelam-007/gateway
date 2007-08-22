@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.module.ca_wsdm.CaWsdmPropertiesAdaptor;
+import com.l7tech.server.module.ca_wsdm.CaWsdmSommaPropertiesClassLoader;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -69,7 +70,16 @@ public class CaWsdmAssertion extends Assertion implements SetsVariables {
         // Subscribe our Observer to the module loading events so it can set up its application listener
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.server.module.ca_wsdm.CaWsdmObserver");
 
+        // Hook up a classloader delegate so we can produce a virtual WsdmSOMMA_Basic.properties file
+        // Behind an inner class because it will only work within the Gateway
+        meta.put(AssertionMetadata.MODULE_CLASS_LOADER_DELEGATE_INSTANCE, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return new CaWsdmSommaPropertiesClassLoader();
+            }
+        });
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
+
 }

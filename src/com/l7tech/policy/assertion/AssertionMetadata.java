@@ -483,6 +483,21 @@ public interface AssertionMetadata {
      */
     String MODULE_LOAD_LISTENER_CLASSNAME = "moduleLoadListenerClassname";
 
+    /**
+     * ClassLoader instance.  A ClassLoader that will be invoked to find any classes or resources that
+     * are not found while searching in the modular assertion classloader from which came the assertion class.
+     * <p/>
+     * If this is provided, the ServerAssertionRegistry will arrange to have it added to the modular assertion
+     * classloader's delegate list so it will be invoked whenever the modular assertion classloader is about to fail to
+     * find a requested class or resource.  (At that point it will already have tried looking in its parent
+     * classloaders, so it is not possible to shadow existing classes using this mechanism.)
+     * <p/>
+     * If this is null, no delegate ClassLoader will registered for this assertion.
+     * <p/>
+     * This key was introduced in SecureSpan Gateway version 4.2.
+     */
+    String MODULE_CLASS_LOADER_DELEGATE_INSTANCE = "moduleClassLoaderDelegateInstance";
+
     /** @return the concrete Assertion class.  Returned class is never null and is always assignable to Assertion. */
     Class getAssertionClass();
 

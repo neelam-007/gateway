@@ -2,13 +2,12 @@ package com.l7tech.server.module.ca_wsdm;
 
 import com.ca.wsdm.monitor.ObserverProperties;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.cluster.ClusterProperty;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.HashMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.File;
 
 /**
  * Converts cluster properties into CA WSDM properties.
@@ -27,7 +26,9 @@ public class CaWsdmPropertiesAdaptor {
     private static final String PARAM_MESSAGE_BODY_LIMIT = "cawsdmMessageBodyLimit";
 
     private static final Set<String> caProps = new HashSet<String>();
+    private static final Set<String> sommaProps = new HashSet<String>();
     private final ServerConfig serverConfig;
+    static final String SOMMA_FILENAME = "WsdmSOMMA_Basic.properties";
 
     /**
      * Create an adaptor that will build a {@link com.ca.wsdm.monitor.ObserverProperties} instance
@@ -133,6 +134,22 @@ public class CaWsdmPropertiesAdaptor {
                   "data to the Manager if the connection between the Observer and Manager has\n" +
                   "been broken. Change as desired if system resources permit.",
                   "5");
+
+        // Add logging config properties
+
+        addSommaProp(props, "log.file.maxsize", "Maximum size of observer log file (bytes)", "10485760");
+        addSommaProp(props, "log.echo.debug", null, "false");
+        addSommaProp(props, "log.echo.info", null, "false");
+        addSommaProp(props, "log.echo.warn", null, "true");
+        addSommaProp(props, "log.echo.error", null, "true");
+        addSommaProp(props, "log.enable.debug", null, "false");
+        addSommaProp(props, "log.enable.info", null, "false");
+        addSommaProp(props, "log.enable.warn", null, "true");
+        addSommaProp(props, "log.enable.error", null, "true");
+
+        // These two are generated automatically based on the current SSG_HOME value.
+        //addSommaProp(props, "log.file.path", "Observer log file path.", "/ssg/logs/ca_wsdm_observer");
+        //addSommaProp(props, "log.file.ext", "Observer log file extension", ".log");
     }
 
 
@@ -144,11 +161,18 @@ public class CaWsdmPropertiesAdaptor {
         caProps.add(caName);
     }
 
+    private static synchronized void addSommaProp(Map<String, String[]> props, String caName, String desc, String dflt) {
+        if (desc == null)
+            desc = "This property configures WSDM logging.";
+        props.put(asCpName(caName), new String[] { desc, dflt });
+        sommaProps.add(caName);
+    }
+
     /**
      * Given a CA WSDM ObserverProperties name, returns the corresponding Layer 7 cluster property name.
      *
-     * @param caName  the name of a CA ObserverProperties property, ie "standaloneMode".
-     * @return the corresponding Layer 7 cluster property name, ie "cawsdm.standaloneMode".
+     * @param caName  the name of a CA ObserverProperties property, ie "standaloneMode" or "log.echo.warn".
+     * @return the corresponding Layer 7 cluster property name, ie "cawsdm.standaloneMode" or "cawsdm.log.echo.warn".
      */
     public static String asCpName(String caName) {
         return "cawsdm." + caName;
@@ -157,13 +181,11 @@ public class CaWsdmPropertiesAdaptor {
     /**
      * Given a CA WSDM ObserverProperties name, returns the corresponding Layer 7 serverconfig parameter name.
      *
-     * @param caName  the name of a CA ObserverProperties property, ie "standaloneMode".
-     * @return the corresponding Layer 7 ServerConfig parameter name, ie "cawsdmStandaloneMode"
+     * @param caName  the name of a CA ObserverProperties property, ie "standaloneMode" or "log.echo.warn".
+     * @return the corresponding Layer 7 ServerConfig parameter name, ie "cawsdmStandaloneMode" or "cawsdmLogEchoWarn".
      */
     public static String asScName(String caName) {
-        if (caName.length() < 2)
-            return caName.toUpperCase();
-        return "cawsdm" + caName.substring(0, 1).toUpperCase() + caName.substring(1);
+        return ClusterProperty.asServerConfigPropertyName(asCpName(caName));
     }
 
 
@@ -180,6 +202,27 @@ public class CaWsdmPropertiesAdaptor {
         }
 
         return new ObserverProperties(properties);
+    }
+
+    /**
+     * Build a WsdmSOMMA_Basic.properties collection from the current serverconfig cluster properties.
+     *
+     * @return a Properties object representing the properties from serverconfig that
+     *          used to live in the WsdmSOMMA_Basic.properties file.  Never null.
+     */
+    public Properties getSommaBasicProperties() {
+        Properties properties = new Properties();
+
+        properties.put("log.file.path",
+                       serverConfig.getProperty(ServerConfig.PARAM_SSG_HOME_DIRECTORY) +
+                       File.separator + "logs" + File.separator + "ca_wsdm_observer");
+        properties.put("log.file.ext", ".log");
+
+        for (String caProp : sommaProps) {
+            String value = serverConfig.getProperty(asScName(caProp));
+            properties.put(caProp, value);
+        }
+        return properties;
     }
 
     public int getObserverType() {
