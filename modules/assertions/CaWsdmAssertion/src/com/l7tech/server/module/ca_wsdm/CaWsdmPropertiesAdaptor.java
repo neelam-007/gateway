@@ -219,8 +219,13 @@ public class CaWsdmPropertiesAdaptor {
         properties.put("log.file.ext", ".log");
 
         for (String caProp : sommaProps) {
-            String value = serverConfig.getProperty(asScName(caProp));
-            properties.put(caProp, value);
+            String scName = asScName(caProp);
+            String value = serverConfig.getProperty(scName);
+            if (value != null) {
+                properties.put(caProp, value);
+            } else {
+                logger.warning("null ServerConfig property (not yet registered?): " + scName);
+            }
         }
         return properties;
     }

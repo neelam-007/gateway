@@ -96,9 +96,12 @@ public class ServerAssertionRegistry extends AssertionRegistry {
 
     public synchronized Assertion registerAssertion(Class<? extends Assertion> assertionClass) {
         Assertion prototype = super.registerAssertion(assertionClass);
+        gatherClusterProps(prototype.meta());
+        return prototype;
+    }
 
+    private synchronized void gatherClusterProps(AssertionMetadata meta) {
         // Check if the new assertion requires any new serverConfig properties.
-        AssertionMetadata meta = prototype.meta();
         //noinspection unchecked
         Map<String, String[]> newProps = (Map<String, String[]>)meta.get(AssertionMetadata.CLUSTER_PROPERTIES);
         if (newProps != null) {
@@ -110,8 +113,6 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 newClusterProps.put(name, new String[] { desc, dflt });
             }
         }
-
-        return prototype;
     }
 
     /** Scan modular assertions for new cluster properties. */
@@ -426,6 +427,12 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             previousVersion = loadedModules.put(filename, module);
             failModTimes.clear(); // retry all failures whenever a module is loaded or unloaded
             try {
+                // Register any new cluster properties, in case the assertion initialization requires them
+                for (Assertion proto : protos) {
+                    gatherClusterProps(proto.meta());
+                }
+                checkForNewClusterProperties();
+
                 // Set up class loader delegates first, in case any of the initialization listeners needs them in place
                 for (Assertion proto : protos) {
                     ClassLoader dcl = (ClassLoader)proto.meta().get(AssertionMetadata.MODULE_CLASS_LOADER_DELEGATE_INSTANCE);
