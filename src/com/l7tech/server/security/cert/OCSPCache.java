@@ -83,8 +83,9 @@ public class OCSPCache {
                 auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_MISS, "OCSP", certificate.getSubjectDN().toString());
                 OCSPClient ocsp = new OCSPClient(httpClientFactory.createHttpClient(), responderUrl, issuerCertificate, responseAuthorizer);
                 status = ocsp.getRevocationStatus(certificate, useNonce(), true);
-                long expiry = getExpiryTime(status.getExpiry());
-                certValidationCache.store(key, new OcspValue(status, expiry), expiry);
+                long timeNow = System.currentTimeMillis();
+                long expiryPeriod = getExpiryPeriod(status.getExpiry(), timeNow);
+                certValidationCache.store(key, new OcspValue(status, timeNow + expiryPeriod), expiryPeriod);
             }
 
             return status;
@@ -126,22 +127,21 @@ public class OCSPCache {
     /**
      * Calculate expiry for response. 
      */
-    private long getExpiryTime(final long responseExpiry) {
+    private long getExpiryPeriod(final long responseExpiry, final long timeNow) {
         long expiry;
 
-        long timeNow = System.currentTimeMillis();
         if ( responseExpiry <= 0 ) {
-            expiry = timeNow + getDefaultExpiry();
+            expiry = getDefaultExpiry();
         } else {
             long updateTime = responseExpiry;
             long updatePeriod = updateTime - timeNow;
 
             if ( updatePeriod > getMaxExpiry() ) {
-                expiry = timeNow + getMaxExpiry();
+                expiry = getMaxExpiry();
             } else if ( updatePeriod < getMinExpiry() ) {
-                expiry = timeNow + getMinExpiry();
+                expiry = getMinExpiry();
             } else {
-                expiry = updateTime;
+                expiry = updatePeriod;
             }
         }
 
