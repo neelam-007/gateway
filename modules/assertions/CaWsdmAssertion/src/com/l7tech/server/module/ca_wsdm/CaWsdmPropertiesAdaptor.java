@@ -138,14 +138,14 @@ public class CaWsdmPropertiesAdaptor {
         // Add logging config properties
 
         addSommaProp(props, "log.file.maxsize", "Maximum size of observer log file (bytes)", "10485760");
-        addSommaProp(props, "log.echo.debug", null, "false");
-        addSommaProp(props, "log.echo.info", null, "false");
-        addSommaProp(props, "log.echo.warn", null, "true");
-        addSommaProp(props, "log.echo.error", null, "true");
-        addSommaProp(props, "log.enable.debug", null, "false");
-        addSommaProp(props, "log.enable.info", null, "false");
-        addSommaProp(props, "log.enable.warn", null, "true");
-        addSommaProp(props, "log.enable.error", null, "true");
+        addSommaProp(props, "log.echo.debug", "Logs debug information to the console (/var/log/messages)", "false");
+        addSommaProp(props, "log.echo.info", "Logs info information to the console (/var/log/messages)", "false");
+        addSommaProp(props, "log.echo.warn", "Logs warning information to the console (/var/log/messages)", "true");
+        addSommaProp(props, "log.echo.error", "Logs error information to the console (/var/log/messages)", "true");
+        addSommaProp(props, "log.enable.debug", "Logs debug information to the log file", "false");
+        addSommaProp(props, "log.enable.info", "Logs info details to the log file", "false");
+        addSommaProp(props, "log.enable.warn", "Logs warning information to the log file", "true");
+        addSommaProp(props, "log.enable.error", "Logs error information to the log file", "true");
 
         // These two are generated automatically based on the current SSG_HOME value.
         //addSommaProp(props, "log.file.path", "Observer log file path.", "/ssg/logs/ca_wsdm_observer");
