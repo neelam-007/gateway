@@ -36,7 +36,7 @@ public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
         insert( new OversizedTextAssertionPaletteNode(), index++ );
         insert( new RequestWssReplayProtectionNode(), index++ );
         insert( new SchemaValidationPaletteNode(), index++ );
-        insert(new FaultLevelPaletteNode(), index++);
+        //insert(new FaultLevelPaletteNode(), index++);
         index = insertMatchingModularAssertions(index);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {

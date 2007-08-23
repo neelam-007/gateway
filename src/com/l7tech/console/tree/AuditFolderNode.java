@@ -32,6 +32,7 @@ public class AuditFolderNode extends AbstractPaletteFolderNode {
         insert( new AuditAssertionPaletteNode(), index++ );
         insert( new AuditDetailAssertionPaletteNode(), index++ );
         insert( new EmailAlertAssertionPaletteNode(), index++ );
+        insert(new FaultLevelPaletteNode(), index++);
         index = insertMatchingModularAssertions(index);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
