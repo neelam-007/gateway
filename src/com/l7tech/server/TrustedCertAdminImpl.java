@@ -437,11 +437,18 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
                 }
             });
             SsgKeyEntry entry = new SsgKeyEntry(keystoreId, alias, safeChain, rsaPrivateKey);
-            keystore.storePrivateKeyEntry(entry, false);
+
+            Future<Boolean> result = keystore.storePrivateKeyEntry(entry, false);
+            // Force it to be synchronous (Bug #3924)
+            result.get();
         } catch (NoSuchAlgorithmException e) {
             throw new SaveException("error setting new cert: " + ExceptionUtils.getMessage(e), e);
         } catch (KeyStoreException e) {
             logger.log(Level.WARNING, "error setting new cert", e);
+            throw new SaveException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
+        } catch (ExecutionException e) {
+            throw new SaveException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
+        } catch (InterruptedException e) {
             throw new SaveException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
         }
     }
