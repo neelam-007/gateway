@@ -5,6 +5,7 @@ import com.l7tech.common.security.MasterPasswordManager;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.ui.console.ConsoleWizardUtils;
 import com.l7tech.server.partition.PartitionInformation;
@@ -27,6 +28,7 @@ import java.util.regex.Pattern;
  */
 public class MasterPassphraseChanger {
     protected static final Logger logger = Logger.getLogger(MasterPassphraseChanger.class.getName());
+    private static final String DEFAULT_MASTER_PASSPHRASE = "7layer";
     private static final String EOL = System.getProperty("line.separator");
     private static final String HEADER_SELECT_PARTITION = "-- Select The Partition To Configure --" + EOL;
     private static final int MIN_LENGTH = 6;
@@ -50,6 +52,12 @@ public class MasterPassphraseChanger {
         }
     }
 
+    private boolean isMatchingMasterPassphrase(String currentObfuscated, String candidatePlaintext) throws IOException {
+        long currentSalt = DefaultMasterPasswordFinder.getSalt(currentObfuscated);
+        String candidateObfuscated = DefaultMasterPasswordFinder.obfuscate(candidatePlaintext, currentSalt);
+        return currentObfuscated.equals(candidateObfuscated);
+    }
+
     private void run() throws IOException, SAXException {
         PartitionInformation partition = choosePartition();
         OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partition.getPartitionId());
@@ -65,6 +73,19 @@ public class MasterPassphraseChanger {
             wizardUtils.readLine();
         }
 
+        File ompCurFile = osFunctions.getMasterPasswordFile();
+        if (ompCurFile.exists()) {
+            String ompCurStr = new String(HexUtils.slurpFile(ompCurFile), "UTF-8").trim();
+            if (!isMatchingMasterPassphrase(ompCurStr, DEFAULT_MASTER_PASSPHRASE)) {
+                String curMasterPass = promptForPassword("Enter the existing master passphrase ('quit' to quit): ");
+                if (!isMatchingMasterPassphrase(ompCurStr, curMasterPass)) {
+                    wizardUtils.printText(EOL + "Entered passphrase does not match the current master passphrase." + EOL);
+                    System.exit(3);                    
+                }
+            }
+        }
+
+
         String newMasterPass;
         String confirm;
         boolean matched = false;
@@ -76,8 +97,8 @@ public class MasterPassphraseChanger {
                 wizardUtils.printText("The passphrases do not match." + EOL);
         } while (!matched);
 
+
         // Create decryptor with current master passphrase, and save the current one in a backup file
-        File ompCurFile = osFunctions.getMasterPasswordFile();
         File ompOldFile = new File(ompCurFile.getParent(), "omp.dat.old");
         File ompNewFile = new File(ompCurFile.getParent(), "omp.dat.new");
 
