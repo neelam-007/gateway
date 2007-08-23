@@ -27,10 +27,12 @@ import java.util.regex.Pattern;
  */
 public class MasterPassphraseChanger {
     protected static final Logger logger = Logger.getLogger(MasterPassphraseChanger.class.getName());
-
-    private final ConsoleWizardUtils wizardUtils;
     private static final String EOL = System.getProperty("line.separator");
     private static final String HEADER_SELECT_PARTITION = "-- Select The Partition To Configure --" + EOL;
+    private static final int MIN_LENGTH = 6;
+    private static final int MAX_LENGTH = 128;
+
+    private final ConsoleWizardUtils wizardUtils;
 
     private MasterPassphraseChanger(InputStream in, PrintStream out) {
         wizardUtils = ConsoleWizardUtils.getInstance(in, out);
@@ -67,7 +69,7 @@ public class MasterPassphraseChanger {
         String confirm;
         boolean matched = false;
         do {
-            newMasterPass = promptForPassword("Enter the new master passphrase (6 - 128 characters, 'quit' to quit): ");
+            newMasterPass = promptForPassword("Enter the new master passphrase (" + MIN_LENGTH + " - " + MAX_LENGTH + " characters, 'quit' to quit): ");
             confirm = promptForPassword("Confirm new master passphrase ('quit' to quit): ");
             matched = confirm.equals(newMasterPass);
             if (!matched)
@@ -178,9 +180,9 @@ public class MasterPassphraseChanger {
 
     private String promptForPassword(String prompt) throws IOException {
         String[] promptLines = new String[] { prompt };
-        Pattern pattern = Pattern.compile("^.{6,128}$", Pattern.DOTALL);
+        Pattern pattern = Pattern.compile("^.{" + MIN_LENGTH + "," + MAX_LENGTH + "}$", Pattern.DOTALL);
         try {
-            return wizardUtils.getSecretData(promptLines, null, false, pattern, "Master passphrase should be between 8 and 128 characters long.");
+            return wizardUtils.getSecretData(promptLines, null, false, pattern, "Master passphrase should be between " + MIN_LENGTH + " and " + MAX_LENGTH + " characters long.");
         } catch (WizardNavigationException e) {
             throw new CausedIOException(e); // can't happen
         }
