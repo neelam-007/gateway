@@ -41,15 +41,27 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
     }
 
     /**
-     * Obfuscate a password.
+     * Obfuscate a password using a randomly-chosen salt.
      * This is a utility method provided for use by MasterPasswordFinder implementations.
      *
      * @param clear the cleartext string that is to be obfuscated.  Required.
      * @return the obfuscated form of the password.
      */
     public static String obfuscate(String clear) {
+        long salt = new Random().nextLong();
+        return obfuscate(clear, salt);
+    }
+
+    /**
+     * Obfuscate a password using the specified salt.
+     * This is a utility method provided for use by MasterPasswordFinder implementations.
+     *
+     * @param clear the cleartext string that is to be obfuscated.  Required.
+     * @param salt a specific salt to use for the obfuscation
+     * @return the obfuscated form of the password.
+     */
+    public static String obfuscate(String clear, long salt) {
         try {
-            long salt = new Random().nextLong();
             Random rand = new Random(OBFUSCATION_SEED + salt);
             byte[] in = clear.getBytes("UTF-8");
             byte[] out = new byte[in.length];
@@ -73,17 +85,14 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
      *
      * @param obfuscated the obfuscated password.  Required.
      * @return the unobfuscated string
-     * @throws java.io.IOException if the obfuscated password is not correctly formatted base-64 or does not result in valid utf-8
+     * @throws IOException if the obfuscated password is not correctly formatted base-64 or does not result in valid utf-8
      */
     public static String unobfuscate(String obfuscated) throws IOException {
-        if (!obfuscated.startsWith(OBFUSCATION_PREFIX) || obfuscated.length() <= OBFUSCATION_PREFIX.length())
-            throw new IOException("Invalid obfuscated password");
+        long salt = getSalt(obfuscated);
         obfuscated = obfuscated.substring(OBFUSCATION_PREFIX.length());
         int dollarPos = obfuscated.indexOf('$');
         if (dollarPos < 1 || dollarPos >= obfuscated.length() - 1)
             throw new IOException("Invalid obfuscated password");
-        String saltString = obfuscated.substring(0, dollarPos);
-        long salt = Long.parseLong(new String(HexUtils.decodeBase64(saltString), "UTF-8"));
         obfuscated = obfuscated.substring(dollarPos + 1);
         Random rand = new Random(OBFUSCATION_SEED + salt);
         byte[] in = HexUtils.decodeBase64(obfuscated);
@@ -94,6 +103,24 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
             out[i] = b;
         }
         return new String(out, "UTF-8");
+    }
+
+    /**
+     * Get the salt used to obfuscate the specified obfuscated password.
+     *
+     * @param obfuscated  the obfuscated password to examine. Required.
+     * @return the salt that was used to obfuscate it.
+     * @throws IOException if the obfuscated password is not correctly formatted base-64 or does not result in valid utf-8
+     */
+    public static long getSalt(String obfuscated) throws IOException {
+        if (!obfuscated.startsWith(OBFUSCATION_PREFIX) || obfuscated.length() <= OBFUSCATION_PREFIX.length())
+            throw new IOException("Invalid obfuscated password");
+        obfuscated = obfuscated.substring(OBFUSCATION_PREFIX.length());
+        int dollarPos = obfuscated.indexOf('$');
+        if (dollarPos < 1 || dollarPos >= obfuscated.length() - 1)
+            throw new IOException("Invalid obfuscated password");
+        String saltString = obfuscated.substring(0, dollarPos);
+        return Long.parseLong(new String(HexUtils.decodeBase64(saltString), "UTF-8"));
     }
 
     public File getMasterPasswordFile() {
