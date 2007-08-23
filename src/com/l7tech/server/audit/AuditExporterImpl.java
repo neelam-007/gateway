@@ -75,7 +75,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     static String composeSql(long fromTime, long toTime, long[] serviceOids) {
         final StringBuilder s = new StringBuilder(
             "SELECT audit_main.*, audit_admin.*, audit_message.*, audit_system.*, " +
-            "GROUP_CONCAT(DISTINCT 'ADMID:', audit_detail.message_id, '/-/_/-/', (SELECT COALESCE(GROUP_CONCAT(value ORDER BY position ASC SEPARATOR '/-/_/-/'), '') FROM audit_detail_params WHERE " +
+            "GROUP_CONCAT('ADMID:', audit_detail.message_id, '/-/_/-/', (SELECT COALESCE(GROUP_CONCAT(value ORDER BY position ASC SEPARATOR '/-/_/-/'), '') FROM audit_detail_params WHERE " +
             "audit_detail_params.audit_detail_oid = audit_detail.objectid) ORDER BY ordinal SEPARATOR '/-/_/-/') AS audit_associated_logs " +
             "FROM audit_main " +
             "LEFT OUTER JOIN audit_admin ON audit_main.objectid = audit_admin.objectid " +
