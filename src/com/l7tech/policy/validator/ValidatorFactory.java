@@ -40,6 +40,7 @@ class ValidatorFactory {
         assertionMap.put(RequestWssSaml2.class, SamlStatementValidator.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionValidator.class);
         assertionMap.put(WsspAssertion.class, WsspAssertionValidator.class);
+        assertionMap.put(BridgeRoutingAssertion.class, BridgeRoutingAssertionValidator.class);
         // add mapping
     }
 
