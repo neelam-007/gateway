@@ -184,10 +184,6 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                                               data.getCurrentSecurityHeaderHandling(),
                                               data.getXmlSecurityActorToPromote());
 
-                if (data.isTaiCredentialChaining()) {
-                    throw new PolicyAssertionException(data, "BridgeRoutingAssertion unable to support TAI credential chaining");
-                }
-
                 if (data.isAttachSamlSenderVouches()) {
                     doAttachSamlSenderVouches(context, signerInfo);
                 }
@@ -576,6 +572,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             // enforce http outgoing rules here
             HttpForwardingRuleEnforcer.handleRequestHeaders(params, context, assertion.getRequestHeaderRules(),
                                                             auditor, null, varNames);
+
+            if (data.isTaiCredentialChaining()) {
+                doTaiCredentialChaining(context, params, params.getTargetUrl());
+            }
 
             return new RerunnableHttpRequest() {
                 private RerunnableHttpRequest.InputStreamFactory isf = null;

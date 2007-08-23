@@ -8,7 +8,6 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
@@ -24,7 +23,6 @@ import com.l7tech.common.security.SingleCertX509KeyManager;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -53,8 +51,6 @@ import java.security.PrivateKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -68,7 +64,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     public static final String HOST = HttpConstants.HEADER_HOST;
 
     private static final Logger logger = Logger.getLogger(ServerHttpRoutingAssertion.class.getName());
-    private static final String IV_USER = "IV_USER";
 
     private final SignerInfo senderVouchesSignerInfo;
     private final GenericHttpClientFactory httpClientFactory;
@@ -332,48 +327,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
         }
         return AssertionStatus.FAILED;
-    }
-
-    /**
-     *
-     */
-    private void doTaiCredentialChaining(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams, URL url) {
-        String chainId = null;
-        if (!context.isAuthenticated()) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NOT_AUTHENTICATED);
-        } else {
-            User clientUser = context.getLastAuthenticatedUser();
-            if (clientUser != null) {
-                String id = clientUser.getLogin();
-                if (id == null || id.length() < 1) id = clientUser.getName();
-                if (id == null || id.length() < 1) id = clientUser.getId();
-
-                if (id != null && id.length() > 0) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_CHAIN_USERNAME, new String[] {id});
-                    chainId = id;
-                } else
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NO_USER_ID, new String[] {id});
-            } else {
-                final String login = context.getLastCredentials().getLogin();
-                if (login != null && login.length() > 0) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_CHAIN_LOGIN, new String[] {login});
-                    chainId = login;
-                } else
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NO_USER);
-            }
-
-            if (chainId != null && chainId.length() > 0) {
-                routedRequestParams.addExtraHeader(new GenericHttpHeader(IV_USER, chainId));
-                HttpCookie ivUserCookie = new HttpCookie(IV_USER, chainId, 0, url.getPath(), url.getHost());
-                Collection cookies = Collections.singletonList(ivUserCookie);
-                routedRequestParams.addExtraHeader(
-                        new GenericHttpHeader(HttpConstants.HEADER_COOKIE,
-                                              HttpCookie.getCookieHeader(cookies)));
-
-                // there is no defined quoting or escape mechanism for HTTP cookies so we'll use URLEncoding
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADD_OUTGOING_COOKIE, new String[] {IV_USER});
-            }
-        }
     }
 
     private GenericHttpClient.GenericHttpMethod methodFromRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams) {
