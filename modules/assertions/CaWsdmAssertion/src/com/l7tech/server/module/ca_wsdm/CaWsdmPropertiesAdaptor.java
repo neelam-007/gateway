@@ -120,7 +120,7 @@ public class CaWsdmPropertiesAdaptor {
                   "ensure that no SOAP messages are sent to manager.\n" +
                   "When set to yes, sending of SOAP messages to manager is determined by logSOAP\n" +
                   "parameter.\n" +
-                  "Note that setting this to yes will increasing CPU and network load on the SSG.",
+                  "Note that setting this to yes will increase CPU and network load on the SSG.",
                   "no");
 
         addCaProp(props, ObserverProperties.CONFIG_STANDALONE_MODE,
