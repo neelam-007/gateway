@@ -15,7 +15,7 @@ import java.text.FieldPosition;
 /**
  * An audit detail record.
  */
-public class AuditDetail extends PersistentEntityImp implements Serializable {
+public class AuditDetail extends PersistentEntityImp implements Serializable, Comparable {
     private transient AuditRecord auditRecord;
     private long auditOid;
     private long time;
@@ -175,5 +175,14 @@ public class AuditDetail extends PersistentEntityImp implements Serializable {
         if (reConstructedMsg != null && reConstructedMsg.length() > 0) {
             out.write(reConstructedMsg.getBytes());
         }
+    }
+
+    public int compareTo(Object o) {
+        if (!(o instanceof AuditDetail)) {
+            // should not happen
+            throw new RuntimeException("you can't compare AuditDetails and " + o.getClass().getName() + "s");
+        }
+        AuditDetail other = (AuditDetail)o;
+        return this.getOrdinal() - other.getOrdinal();
     }
 }

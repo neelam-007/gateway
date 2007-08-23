@@ -14,10 +14,7 @@ import com.l7tech.common.util.HexUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.Iterator;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -239,8 +236,11 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         serializeOtherProperties(out);
 
         if (details != null && details.size() > 0) {
+            ArrayList<AuditDetail> sorteddetails = new ArrayList<AuditDetail>(details);
+            Collections.sort(sorteddetails);
+
             out.write("[".getBytes());
-            for (Iterator itor = details.iterator(); itor.hasNext();) {
+            for (Iterator itor = sorteddetails.iterator(); itor.hasNext();) {
                 AuditDetail ad = (AuditDetail)itor.next();
                 ad.serializeSignableProperties(out);
                 if (itor.hasNext()) out.write(",".getBytes());
