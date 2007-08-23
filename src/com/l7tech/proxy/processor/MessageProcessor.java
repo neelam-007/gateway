@@ -617,7 +617,7 @@ public class MessageProcessor {
         GenericHttpResponse httpResponse = null;
 
         try {
-            setAuthenticationAndBufferingState(context, params);
+            setAuthenticationAndBufferingState(context, params, httpClient instanceof RerunnableGenericHttpClient);
             params.addExtraHeader(new GenericHttpHeader(SoapUtil.SOAPACTION, context.getPolicyAttachmentKey().getSoapAction()));
             params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, context.getOriginalUrl().toString()));
 
@@ -1150,11 +1150,15 @@ public class MessageProcessor {
      *
      * @param context  the Context containing the request that might require HTTP level authentication
      * @param params   the HTTP request parameters to configure
+     * @param alwaysSetContentLength true to force a content length to be set
      */
-    private void setAuthenticationAndBufferingState(PolicyApplicationContext context, GenericHttpRequestParams params)
+    private void setAuthenticationAndBufferingState(PolicyApplicationContext context,
+                                                    GenericHttpRequestParams params,
+                                                    boolean alwaysSetContentLength)
             throws OperationCanceledException, IOException, HttpChallengeRequiredException {
+
         // Turn off request buffering unless HTTP digest is required (Bug #1376)
-        if (!context.isDigestAuthRequired()) {
+        if (alwaysSetContentLength || !context.isDigestAuthRequired()) {
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
             final long contentLength = context.getRequest().getMimeKnob().getContentLength();
             params.setContentLength(new Long(contentLength));

@@ -552,103 +552,121 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
      * NOTE: this is NOT compatible with a non-sticky failover client.
      */
     private SimpleHttpClient newRRLSimpleHttpClient(final PolicyEnforcementContext context, final SimpleHttpClient client, final RoutingResultListener rrl, final HeaderHolder hh) {
-        return new SimpleHttpClient(client) {
-            public GenericHttpRequest createRequest(final GenericHttpMethod method, final GenericHttpRequestParams params)  {
-                // enforce http outgoing rules here
-                HttpForwardingRuleEnforcer.handleRequestHeaders(params, context, assertion.getRequestHeaderRules(),
-                                                                auditor, null, varNames);
-                
-                return new RerunnableHttpRequest() {
-                    private RerunnableHttpRequest.InputStreamFactory isf = null;
-                    private InputStream is = null;
+        return new BRASimpleHttpClient(client, context, rrl, hh);
+    }
 
-                    public void setInputStreamFactory(RerunnableHttpRequest.InputStreamFactory isf) {
-                        this.isf = isf;
-                    }
+    private class BRASimpleHttpClient extends SimpleHttpClient implements RerunnableGenericHttpClient {
+        private final GenericHttpClient client;
+        private final PolicyEnforcementContext context;
+        private final RoutingResultListener rrl;
+        private final HeaderHolder hh;
 
-                    public void setInputStream(InputStream is) {
-                        this.is = is;
-                    }
+        private BRASimpleHttpClient(final GenericHttpClient client,
+                                    final PolicyEnforcementContext context,
+                                    final RoutingResultListener rrl,
+                                    final HeaderHolder hh) {
+            super(client);
+            this.client = client;
+            this.context = context;
+            this.rrl = rrl;
+            this.hh = hh;
+        }
 
-                    public void close() {
-                    }
+        public GenericHttpRequest createRequest(final GenericHttpMethod method, final GenericHttpRequestParams params)  {
+            // enforce http outgoing rules here
+            HttpForwardingRuleEnforcer.handleRequestHeaders(params, context, assertion.getRequestHeaderRules(),
+                                                            auditor, null, varNames);
 
-                    /*
-                     * Get the response, re-routing if directed to do so by a listener.
-                     */
-                    public GenericHttpResponse getResponse() throws GenericHttpException {
-                        getInputStreamFactory(); // init isf
-                        return doGetResponse(true);
-                    }
+            return new RerunnableHttpRequest() {
+                private RerunnableHttpRequest.InputStreamFactory isf = null;
+                private InputStream is = null;
 
-                    public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
-                        throw new IllegalStateException("The bridge currently does not support form posts");
-                    }
+                public void setInputStreamFactory(RerunnableHttpRequest.InputStreamFactory isf) {
+                    this.isf = isf;
+                }
 
-                    private RerunnableHttpRequest.InputStreamFactory getInputStreamFactory() throws GenericHttpException {
-                        if(isf==null) {
-                            BufferPoolByteArrayOutputStream baos = null;
-                            try {
-                                baos = new BufferPoolByteArrayOutputStream();
-                                HexUtils.copyStream(is, baos);
-                                final byte[] data = baos.toByteArray();
-                                isf = new RerunnableHttpRequest.InputStreamFactory() {
-                                    public InputStream getInputStream() {
-                                        return new ByteArrayInputStream(data);
-                                    }
-                                };
-                            }
-                            catch(IOException ioe) {
-                                throw new GenericHttpException("Cannot read request data.", ioe);
-                            } finally {
-                                if (baos != null) baos.close();
-                            }
-                        }
-                        return isf;
-                    }
+                public void setInputStream(InputStream is) {
+                    this.is = is;
+                }
 
-                    private GenericHttpResponse doGetResponse(boolean allowRerequest) throws GenericHttpException {
-                        GenericHttpRequest req = null;
-                        GenericHttpResponse res = null;
+                public void close() {
+                }
 
+                /*
+                 * Get the response, re-routing if directed to do so by a listener.
+                 */
+                public GenericHttpResponse getResponse() throws GenericHttpException {
+                    getInputStreamFactory(); // init isf
+                    return doGetResponse(true);
+                }
+
+                public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+                    throw new IllegalStateException("The bridge currently does not support form posts");
+                }
+
+                private RerunnableHttpRequest.InputStreamFactory getInputStreamFactory() throws GenericHttpException {
+                    if(isf==null) {
+                        BufferPoolByteArrayOutputStream baos = null;
                         try {
-                            req = client.createRequest(method, params);
-                            if(isf!=null) {
-                                if(req instanceof RerunnableHttpRequest) {
-                                    ((RerunnableHttpRequest)req).setInputStreamFactory(getInputStreamFactory());
+                            baos = new BufferPoolByteArrayOutputStream();
+                            HexUtils.copyStream(is, baos);
+                            final byte[] data = baos.toByteArray();
+                            isf = new RerunnableHttpRequest.InputStreamFactory() {
+                                public InputStream getInputStream() {
+                                    return new ByteArrayInputStream(data);
                                 }
-                                else {
-                                    req.setInputStream(isf.getInputStream());
-                                }
-                            }
-
-                            res = req.getResponse();
-                            int status = res.getStatus();
-
-                            if(status!=HttpConstants.STATUS_OK && allowRerequest) {
-                                if(rrl.reroute(params.getTargetUrl(), status, res.getHeaders(), context)) {
-                                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, params.getTargetUrl().getPath(), Integer.toString(status));
-
-                                    //TODO if we refactor the BRA we should clean this up (params changed by this SimpleHttpClient impl [HACK])
-                                    params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(context.getCookies())));
-
-                                    return doGetResponse(false);
-                                }
-                            }
-
-                            GenericHttpResponse result = res;
-                            hh.setHeaders(result.getHeaders());
-                            res = null;
-                            return result;
+                            };
                         }
-                        finally {
-                            if(req!=null) req.close();
-                            if(res!=null) res.close();
+                        catch(IOException ioe) {
+                            throw new GenericHttpException("Cannot read request data.", ioe);
+                        } finally {
+                            if (baos != null) baos.close();
                         }
                     }
-                };
-            }
-        };
+                    return isf;
+                }
+
+                private GenericHttpResponse doGetResponse(boolean allowRerequest) throws GenericHttpException {
+                    GenericHttpRequest req = null;
+                    GenericHttpResponse res = null;
+
+                    try {
+                        req = client.createRequest(method, params);
+                        if(isf!=null) {
+                            if(req instanceof RerunnableHttpRequest) {
+                                ((RerunnableHttpRequest)req).setInputStreamFactory(getInputStreamFactory());
+                            }
+                            else {
+                                req.setInputStream(isf.getInputStream());
+                            }
+                        }
+
+                        res = req.getResponse();
+                        int status = res.getStatus();
+
+                        if(status!=HttpConstants.STATUS_OK && allowRerequest) {
+                            if(rrl.reroute(params.getTargetUrl(), status, res.getHeaders(), context)) {
+                                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, params.getTargetUrl().getPath(), Integer.toString(status));
+
+                                //TODO if we refactor the BRA we should clean this up (params changed by this SimpleHttpClient impl [HACK])
+                                params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(context.getCookies())));
+
+                                return doGetResponse(false);
+                            }
+                        }
+
+                        GenericHttpResponse result = res;
+                        hh.setHeaders(result.getHeaders());
+                        res = null;
+                        return result;
+                    }
+                    finally {
+                        if(req!=null) req.close();
+                        if(res!=null) res.close();
+                    }
+                }
+            };
+        }
     }
 
     public class HeaderHolder {
