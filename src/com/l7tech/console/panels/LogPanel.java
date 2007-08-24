@@ -1814,6 +1814,8 @@ public class LogPanel extends JPanel {
 
             if (table.convertColumnIndexToModel(column) == LOG_SIGNATURE_COLUMN_INDEX) {
                 setToolTipText("Digital Signature");
+            } else {
+                setToolTipText(null);
             }
 
             return this;
