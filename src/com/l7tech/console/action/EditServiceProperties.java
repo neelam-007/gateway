@@ -74,10 +74,12 @@ public class EditServiceProperties extends ServiceNodeAction {
             public void call(Boolean changed) {
                 if (changed) {
                     serviceNode.clearServiceHolder();
+                    serviceNode.reloadChildren();
                     JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesTree.NAME);
                     if (tree != null) {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         model.nodeChanged(node);
+                        model.reload(node); // WSDL may have changed
                     }
 
                     // update name on top of editor if that service is being edited

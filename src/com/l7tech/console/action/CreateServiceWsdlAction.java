@@ -5,6 +5,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import static com.l7tech.common.security.rbac.EntityType.*;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.console.event.WizardAdapter;
@@ -121,6 +123,7 @@ public class CreateServiceWsdlAction extends SecureAction {
     }
 
     private PublishedService existingService;
+    private Functions.UnaryVoid<Document> editCallback;
     private WizardListener wizardListener = new WizardAdapter() {
         /**
          * Invoked when the wizard has finished.
@@ -128,7 +131,7 @@ public class CreateServiceWsdlAction extends SecureAction {
          * @param we the event describing the wizard finish
          */
         public void wizardFinished(WizardEvent we) {
-            PublishedService service = null;
+            PublishedService service;
             boolean tryToPublish = false;
             boolean isEdit = false;
             if (existingService == null) {
@@ -150,14 +153,17 @@ public class CreateServiceWsdlAction extends SecureAction {
                 StringWriter sw = new StringWriter();
                 wsdlWriter.writeWSDL(def, sw);
                 Wsdl ws = new Wsdl(def);
-                service.setWsdlXml(sw.toString());
-                service.setName(ws.getServiceName());
 
                 //if this is an "edit" then we are only interested in the WSDL and don't need to save the service.
                 if (isEdit) {
+                    if (editCallback != null)
+                        editCallback.call(XmlUtil.stringToDocument(sw.toString()));
                     return;
                 }
 
+                // OK to update service here (not an edit)
+                service.setWsdlXml(sw.toString());
+                service.setName(ws.getServiceName());
                 service.setDisabled(true);
                 final String serviceAddress = getServiceAddress(def);
                 RoutingAssertion ra;
@@ -300,8 +306,12 @@ public class CreateServiceWsdlAction extends SecureAction {
         throw new IllegalArgumentException("missing SOAP address port definition");
     }
 
-    public void setOriginalInformation(PublishedService origService, Document origWsdl, Set<WsdlComposer.WsdlHolder> importedWsdls) {
+    public void setOriginalInformation(PublishedService origService,
+                                       Functions.UnaryVoid<Document> editCallback,
+                                       Document origWsdl,
+                                       Set<WsdlComposer.WsdlHolder> importedWsdls) {
         this.existingService = origService;
+        this.editCallback = editCallback;
         this.originalWsdl = origWsdl;
         this.importedWsdls = importedWsdls;
     }

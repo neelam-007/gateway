@@ -10,6 +10,7 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.Functions;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.console.action.Actions;
@@ -29,7 +30,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -396,14 +396,17 @@ public class ServicePropertiesDialog extends JDialog {
         subject.setHttpMethods(methods);
         subject.setLaxResolution(laxResolutionCheckbox.isSelected());
 
-        if (newWSDL != null) {
+        if (newWSDLUrl != null) {
             try {
                 subject.setWsdlUrl(newWSDLUrl.startsWith("http") ? newWSDLUrl : null);
-                subject.setWsdlXml(XmlUtil.nodeToString(newWSDL));
             } catch (MalformedURLException e) {
                 throw new RuntimeException("Invalid URL", e);
-            } catch (RemoteException e) {
-                throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
+            }
+        }
+
+        if (newWSDL != null) {
+            try {
+                subject.setWsdlXml(XmlUtil.nodeToString(newWSDL));
             } catch (IOException e) {
                 throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
             }
@@ -468,9 +471,17 @@ public class ServicePropertiesDialog extends JDialog {
     private void editWsdl() {
         CreateServiceWsdlAction action = new CreateServiceWsdlAction();
         try {
-            Document dom = XmlUtil.parse(new StringReader(subject.getWsdlXml()), false);
-            ServiceAdmin svcAdmin = Registry.getDefault().getServiceManager();
-            Collection<ServiceDocument> svcDocuments = svcAdmin.findServiceDocumentsByServiceID(String.valueOf(subject.getOid()));
+            Document dom = newWSDL;
+            if (dom == null) {
+                dom = XmlUtil.stringAsDocument(subject.getWsdlXml());
+            }
+
+            Collection<ServiceDocument> svcDocuments = newWsdlDocuments;
+            if (svcDocuments == null) {
+                ServiceAdmin svcAdmin = Registry.getDefault().getServiceManager();
+                svcDocuments = svcAdmin.findServiceDocumentsByServiceID(String.valueOf(subject.getOid()));
+            }
+
             Set<WsdlComposer.WsdlHolder> importedWsdls = new HashSet<WsdlComposer.WsdlHolder>();
             for (ServiceDocument svcDocument : svcDocuments) {
                 if (svcDocument.getType().equals(WsdlCreateWizard.IMPORT_SERVICE_DOCUMENT_TYPE)) {
@@ -481,7 +492,22 @@ public class ServicePropertiesDialog extends JDialog {
                 }
             }
 
-            action.setOriginalInformation(subject, dom, importedWsdls);
+            Functions.UnaryVoid<Document> editCallback = new Functions.UnaryVoid<Document>() {
+                public void call(Document wsdlDocument) {
+                    // record info
+                    newWSDL = wsdlDocument;
+
+                    // display new xml in xml display
+                    try {
+                        editor.setText(XmlUtil.nodeToString(newWSDL));
+                        editor.setCaretPosition(0);
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "cannot display new wsdl ", e);
+                    }               
+                }
+            };
+
+            action.setOriginalInformation(subject, editCallback, dom, importedWsdls);
             action.actionPerformed(null);
         } catch (Exception e) {
             logger.log(Level.WARNING, "cannot display new wsdl ", e);
@@ -516,7 +542,8 @@ public class ServicePropertiesDialog extends JDialog {
 
                     // display new xml in xml display
                     try {
-                        editor.setText(XmlUtil.nodeToFormattedString(newWSDL));
+                        editor.setText(XmlUtil.nodeToString(newWSDL));
+                        editor.setCaretPosition(0);
                     } catch (IOException e) {
                         logger.log(Level.WARNING, "cannot display new wsdl ", e);
                     }
