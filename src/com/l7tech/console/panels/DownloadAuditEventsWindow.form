@@ -132,7 +132,6 @@
                 <constraints>
                   <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="2" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false">
                     <minimum-size width="400" height="-1"/>
-                    <maximum-size width="440" height="-1"/>
                   </grid>
                 </constraints>
               </nested-form>
