@@ -19,6 +19,7 @@ import javax.xml.namespace.QName;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceDocument;
@@ -63,6 +64,10 @@ public class ServicePanel extends WizardStepPanel {
      * @return true iff. the WSDL URL in the URL: text field was downloaded successfully.
      */
     public boolean onNextButton() {
+        if (TopComponents.getInstance().isConnectionLost()) {
+            DialogDisplayer.showMessageDialog(this, "The connection to the SecureSpan Gateway was lost", "Connection Lost", JOptionPane.ERROR_MESSAGE, null, null);
+            return false;
+        }
         boolean res = processWsdlLocation();
         if (res) {
             // test for soap bindings
