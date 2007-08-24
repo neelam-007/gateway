@@ -9,7 +9,6 @@ import com.l7tech.server.config.ui.gui.ConfigurationWizard;
  */
 public class GuiConfigWizardLauncher {
     public static void launch(String[] newArgs) {
-        System.out.println("Starting Configuration Wizard in Graphical Mode");
         ConfigurationWizard.startWizard(newArgs);
     }
 }

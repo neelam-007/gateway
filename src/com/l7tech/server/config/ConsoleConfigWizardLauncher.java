@@ -23,8 +23,6 @@ public class ConsoleConfigWizardLauncher {
     }
 
     private static void launchWithConsole(String[] args) {
-        System.out.println("Starting Configuration Wizard in Console Mode");
-
         //args will be either empty or -silent -filename
         boolean isSilent = false;
         if (args != null && args.length > 0) {

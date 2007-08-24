@@ -29,12 +29,6 @@ launch_wizard(){
     	fi
 }
 
-if [ -z "${launchtype}" ] || [ ${launchtype} == "-graphical" ]; then
-    if [ -z "${DISPLAY}" ]; then
-        launchtype="-console"
-    fi
-fi
-
 if [ "${launchtype}z" == "-exportsharedkeyz" ] || [ "${launchtype}z" == "-changeMasterPassphrasez" ]; then
     ${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
 else

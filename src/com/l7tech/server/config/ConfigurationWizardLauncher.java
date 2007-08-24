@@ -15,10 +15,23 @@ public class ConfigurationWizardLauncher {
     public static final String EXPORT_SHARED_KEY = "-exportsharedkey";
     public static final String CHANGE_MASTER_PASSPHRASE = "-changeMasterPassphrase";
 
-    private static final String USAGE_STATEMENT = "usage: ConfigurationWizardLauncher [-console | -graphical]" + EOL_CHAR +
-                        "If no parameter is specified, graphical mode is assumed" + EOL_CHAR +
-                        "\t-console\t\trun the configuration wizard in console only mode" + EOL_CHAR +
-                        "\t-graphical\t\trun the configuration wizard in graphical mode" + EOL_CHAR;
+    private static final String USAGE_STATEMENT = "usage: ConfigurationWizardLauncher [options]" + EOL_CHAR +
+                        "If no options are specified, console mode is assumed" + EOL_CHAR +
+                        "\t-console" + EOL_CHAR +
+                        "\t\trun the configuration wizard in console only mode" + EOL_CHAR +
+
+                        "\t-graphical" + EOL_CHAR +
+                        "\t\trun the configuration wizard in graphical mode" + EOL_CHAR +
+
+                        "\t-partitionMigrate" + EOL_CHAR +
+                        "\t\tmigrate ssg configuration in all partitions to the latest format" + EOL_CHAR +
+
+                        "\t-exportSharedKey" + EOL_CHAR +
+                        "\t\texport the cluster shared key to STDOUT" + EOL_CHAR +
+
+                        "\t-changeMasterPassphrase" + EOL_CHAR +
+                        "\t\tchange the master passphrase used to encrypt passwords" + EOL_CHAR +
+                        "\t\tin the SSG configuration files" + EOL_CHAR;
 
     public static void main(String[] args) {
         String[] newArgs;
@@ -29,22 +42,21 @@ public class ConfigurationWizardLauncher {
             newArgs = new String[args.length -1];
             System.arraycopy(args, 1, newArgs, 0, args.length -1);
         } else {
-            launchType = GRAPHICAL_MODE;
+            launchType = CONSOLE_MODE;
             newArgs = args;
         }
 
-        if (CONSOLE_MODE.equalsIgnoreCase(launchType)) {
-            ConsoleConfigWizardLauncher.launch(newArgs);
-        } else if (PARTITION_UPGRADE.equalsIgnoreCase(launchType)) {
+        if (PARTITION_UPGRADE.equalsIgnoreCase(launchType)) {
             PartitionManager.doMigration();
         } else if (EXPORT_SHARED_KEY.equalsIgnoreCase(launchType)) {
             SharedKeyGetter.main(newArgs);
         } else if (CHANGE_MASTER_PASSPHRASE.equalsIgnoreCase(launchType)) {
             MasterPassphraseChanger.main(newArgs);
-        } else if (null == launchType || "".equals(launchType) || GRAPHICAL_MODE.equalsIgnoreCase(launchType)) {
+        } else if (GRAPHICAL_MODE.equalsIgnoreCase(launchType)) {
             GuiConfigWizardLauncher.launch(newArgs);
-        }
-        else {
+        } else if (null == launchType || "".equals(launchType) || CONSOLE_MODE.equalsIgnoreCase(launchType)) {
+            ConsoleConfigWizardLauncher.launch(newArgs);
+        } else {
             System.out.println("invalid argument: " + launchType);
             System.out.println(usage());
             System.exit(1);
