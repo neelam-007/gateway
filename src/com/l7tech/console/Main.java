@@ -57,8 +57,8 @@ public class Main {
                 configureSecurity();
 
                 initializeUIPreferences();
-                DialogDisplayer.setForceNative(true);
-
+                if (!SyspropUtil.getBoolean("com.l7tech.console.useSheets"))
+                    DialogDisplayer.setForceNative(true);
 
                 /* load user preferences and merge them with system props */
                 HeavySsmPreferences prefs = HeavySsmPreferences.getPreferences();

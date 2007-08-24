@@ -151,6 +151,7 @@ public class LicenseDialog extends JDialog {
     }
 
     private void init() {
+        DialogDisplayer.suppressSheetDisplay(this); // Dialogs that resize themselves are incompatible with sheet display (Bug #3969)
         setTitle("Gateway Cluster License");
         Container cp = getContentPane();
         cp.setLayout(new BoxLayout(cp, BoxLayout.X_AXIS));
