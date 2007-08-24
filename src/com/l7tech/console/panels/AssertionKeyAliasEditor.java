@@ -15,6 +15,7 @@ import java.awt.event.ActionListener;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.ArrayList;
 
 /**
  * Dialog allowing SSM administrator to set the keystore used by a particular assertion.
@@ -149,26 +150,27 @@ public class AssertionKeyAliasEditor extends JDialog {
         try {
             java.util.List<TrustedCertAdmin.KeystoreInfo> keystores = getTrustedCertAdmin().findAllKeystores(true);
             if (keystores != null) {
-                int size = 0;
-                for (TrustedCertAdmin.KeystoreInfo ksi : keystores) {
-                    size += getTrustedCertAdmin().findAllKeys(ksi.id).size();
-                }
-                ComboEntry[] existingAlias = new ComboEntry[size];
-                int i = 0;
-                int tosel = 0;
+                java.util.List<ComboEntry> comboEntries = new ArrayList<ComboEntry>();
+                ComboEntry toSelect = null;
                 for (TrustedCertAdmin.KeystoreInfo ksi : keystores) {
                     for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(ksi.id)) {
-                        existingAlias[i] = new ComboEntry(ksi.id, ksi.name, entry.getAlias());
-                        if (assertion.getNonDefaultKeystoreId() == ksi.id) {
-                            if (entry.getAlias().equals(assertion.getKeyAlias())) {
-                                tosel = i;
-                            }
-                        }
-                        i++;
+                        ComboEntry comboEntry = new ComboEntry(ksi.id, ksi.name, entry.getAlias());
+                        comboEntries.add(comboEntry);
+                        if (assertion.getNonDefaultKeystoreId() == ksi.id && entry.getAlias().equals(assertion.getKeyAlias()))
+                            toSelect = comboEntry;
                     }
                 }
-                aliasCombo.setModel(new DefaultComboBoxModel(existingAlias));
-                aliasCombo.setSelectedItem(existingAlias[tosel]);
+                if (toSelect == null && !assertion.isUsesDefaultKeyStore()) {
+                    // Alias is configured, but it doesn't exist on this Gateway (Bug #4143)
+                    toSelect = new ComboEntry(assertion.getNonDefaultKeystoreId(), "UNRECOGNIZED", assertion.getKeyAlias());
+                    comboEntries.add(0, toSelect);
+                }
+                aliasCombo.setModel(new DefaultComboBoxModel(comboEntries.toArray()));
+                if (toSelect != null) {
+                    aliasCombo.setSelectedItem(toSelect);
+                } else {
+                    aliasCombo.setSelectedIndex(0);
+                }
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "problem populating keystore info", e);
