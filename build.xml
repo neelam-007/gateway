@@ -1856,6 +1856,7 @@
             <patternset>
                 <exclude name="boot-manifest.mf"/>
                 <exclude name="META-INF/*"/>
+                <exclude name="**/*.java"/>
             </patternset>
         </unzip>
 
