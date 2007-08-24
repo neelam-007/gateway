@@ -104,11 +104,13 @@ do
                             echo "Press enter to continue."
                             read;
                         else
-                            echo -n "Found the USB drive. Continuing..."
+                            echo "Found the USB drive. Continuing..."
                             echo -n "Enter the keystore password:"
                             read -s ksPassword;
+			    echo ""
                             echo -n "Enter the master key backup password:"
                             read -s masterKeyBackupPassword;
+			    echo "" 
                             (sudo ${MASTERKEYMANAGE} backup ${ksPassword} ${MASTER_KEY_BACKUP_FILE_NAME} ${masterKeyBackupPassword});
                             if [ ${?} != 0 ] ; then
                                 echo ""
