@@ -32,7 +32,8 @@ public class FontUtil {
         Font font = c.getFont();
         if (font == null) return;
         Map<TextAttribute, Object> fontAttributes = new HashMap<TextAttribute, Object>(font.getAttributes());
-        fontAttributes.put(TextAttribute.SIZE, scale * getFontSize(fontAttributes));
+        // In Java 1.5 this must be a Float
+        fontAttributes.put(TextAttribute.SIZE, new Float(scale * getFontSize(fontAttributes)));
         Font newFont = Font.getFont(fontAttributes);
         c.setFont(newFont);
     }
@@ -50,6 +51,18 @@ public class FontUtil {
         fontAttributes.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
         Font newFont = Font.getFont(fontAttributes);
         c.setFont(newFont);
+    }
+
+    /**
+     * Change the font used by the given component into bold face.
+     *
+     * @param font the component whose font to make boldface.   Required.
+     */
+    public static Font emboldenFont(Font font) {
+        if (font == null) throw new IllegalArgumentException("Font required");
+        Map<TextAttribute, Object> fontAttributes = new HashMap<TextAttribute, Object>(font.getAttributes());
+        fontAttributes.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
+        return Font.getFont(fontAttributes);
     }
 
     private static double getFontSize(Map<TextAttribute,?> attributes) {

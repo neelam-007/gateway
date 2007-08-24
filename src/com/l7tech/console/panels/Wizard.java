@@ -3,7 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FontUtil;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -233,8 +233,6 @@ public class Wizard extends JDialog {
         mainPanel.add(wizardStepPanel, BorderLayout.CENTER);
         mainPanel.add(createButtonPanel(), BorderLayout.SOUTH);
         getContentPane().add(mainPanel, BorderLayout.CENTER);
-
-        Utilities.equalizeComponentSizes(stepsLabels.toArray(new JComponent[0]));
     }
 
     /**
@@ -738,7 +736,28 @@ public class Wizard extends JDialog {
          */
         public void setSelected(boolean b) {
             selected = b;
-            setFont(initialFont.deriveFont(selected ? Font.BOLD : Font.PLAIN));
+            setFont( selected ? FontUtil.emboldenFont(initialFont) : initialFont);
+        }
+
+        /**
+         * Calculate the preferred size based on the bold font which is
+         * presumably wider than the plain font.
+         */
+        public Dimension getPreferredSize() {
+            Dimension dimension;
+
+            boolean embolden = !selected;
+            if (embolden) {
+                setSelected(true);
+            }
+
+            dimension = super.getPreferredSize();
+
+            if (embolden) {
+                setSelected(false);
+            }
+
+            return dimension;
         }
 
         /**
