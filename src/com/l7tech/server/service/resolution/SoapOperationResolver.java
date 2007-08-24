@@ -6,11 +6,11 @@ package com.l7tech.server.service.resolution;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.SoapKnob;
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.service.PublishedService;
-import org.xml.sax.SAXException;
 import org.springframework.context.ApplicationContext;
+import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
@@ -20,12 +20,13 @@ import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.extensions.soap.SOAPBody;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.wsdl.extensions.soap12.SOAP12Body;
 import javax.xml.namespace.QName;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * Attempts to resolve services using the QNames of the payload elements.
@@ -154,13 +155,36 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
                     auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_NO_STYLE, bop.getName());
                     continue nextBindingOperation;
                 }
+
                 if ("rpc".equalsIgnoreCase(operationStyle.trim())) {
                     operationQNames.add(new QName(namespace, bop.getName()));
                 } else if ("document".equalsIgnoreCase(operationStyle.trim())) {
                     javax.wsdl.Message inputMessage = bop.getOperation().getInput().getMessage();
                     if (inputMessage == null) continue;
-                    //noinspection unchecked
-                    List<Part> parts = inputMessage.getOrderedParts(null);
+
+                    List<ExtensibilityElement> inputEels = input.getExtensibilityElements();
+                    List<String> partNames = null;
+                    for (ExtensibilityElement inputEel : inputEels) {
+                        // Headers are not relevant for service resolution (yet?)
+                        if (inputEel instanceof SOAPBody) {
+                            SOAPBody inputBody = (SOAPBody) inputEel;
+                            partNames = inputBody.getParts();
+                        } else if (inputEel instanceof SOAP12Body) {
+                            SOAP12Body inputBody = (SOAP12Body) inputEel;
+                            partNames = inputBody.getParts();
+                        }
+                    }
+
+                    List<Part> parts;
+                    if (partNames == null) {
+                        parts = inputMessage.getOrderedParts(null);
+                    } else {
+                        parts = new ArrayList<Part>();
+                        for (String name : partNames) {
+                            parts.add((Part) inputMessage.getParts().get(name));
+                        }
+                    }
+
                     //noinspection unchecked
                     for (Part part : parts) {
                         QName tq = part.getTypeName();

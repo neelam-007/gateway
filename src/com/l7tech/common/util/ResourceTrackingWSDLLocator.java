@@ -1,32 +1,31 @@
 package com.l7tech.common.util;
 
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.StringReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.HttpURLConnection;
-import javax.wsdl.xml.WSDLLocator;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.w3c.dom.Document;
+import com.l7tech.common.io.ByteOrderMarkInputStream;
+import com.l7tech.common.mime.ContentTypeHeader;
 import org.w3c.dom.DOMConfiguration;
+import org.w3c.dom.Document;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.io.ByteOrderMarkInputStream;
+import javax.wsdl.xml.WSDLLocator;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * WSDLLocator that keeps track of imported documents.
@@ -98,7 +97,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
      */
     public InputSource getImportInputSource(final String parentLocation, final String importLocation) {
         InputSource inputSource = null;
-        
+
         String uri = null;
         try {
             InputSource is = delegate.getImportInputSource(parentLocation, importLocation);
@@ -123,8 +122,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     }
 
     public void close() {
-        //todo, fix compile time error caused by conflict between systinet-wasp and new wsdl4j
-        //delegate.close();
+        delegate.close();
     }
 
     /**
@@ -296,7 +294,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
         StringBuffer buffer = new StringBuffer(4096);
         char[] charbuffer = new char[4096];
 
-        int read = 0;
+        int read;
         int total = 0;
         while((read=reader.read(charbuffer)) >= 0) {
             total += read;
