@@ -450,6 +450,7 @@ public class LogPanel extends JPanel {
     }
 
     private void updateControlState() {
+        getMsgProgressBar().setVisible(true);   // Shows progress bar only upon full retrieval; not upon incremental auto-refresh.
         clearLogCache();
         if (retrievalMode == RetrievalMode.DURATION) {
             refreshLogs();
@@ -536,13 +537,11 @@ public class LogPanel extends JPanel {
 
     public boolean isAutoRefreshEffective() {
         Window pWin = SwingUtilities.getWindowAncestor(this);
-        if (pWin == null) return false;
-        if (! pWin.isVisible()) return false;
-        if (isAuditType) {
-            return durationAutoRefresh;
-        } else {
-            return controlPanel.autoRefreshCheckBox.isEnabled() && controlPanel.autoRefreshCheckBox.isSelected();
-        }
+        return pWin != null
+                && pWin.isVisible()
+                && isAuditType
+                && retrievalMode == RetrievalMode.DURATION
+                && durationAutoRefresh;
     }
 
     private void updateLogAutoRefresh() {
@@ -1071,7 +1070,7 @@ public class LogPanel extends JPanel {
     }
 
     /**
-     * Return the total number of the messages being displayed.
+     * @return the label that shows the total number of the messages being displayed.
      */
     private JLabel getMsgTotal(){
         if(msgTotal == null) {
@@ -1080,6 +1079,23 @@ public class LogPanel extends JPanel {
             msgTotal.setAlignmentY(0);
         }
         return msgTotal;
+    }
+
+    private JProgressBar msgProgressBar;
+
+    /**
+     * @return the progress bar that shows message query is in progress
+     */
+    public JProgressBar getMsgProgressBar() {
+        if (msgProgressBar == null) {
+            msgProgressBar = new JProgressBar(SwingConstants.HORIZONTAL);
+            msgProgressBar.setIndeterminate(true);
+            msgProgressBar.setPreferredSize(new Dimension(80, 12));
+            msgProgressBar.setMinimumSize(new Dimension(80, 12));
+            msgProgressBar.setMaximumSize(new Dimension(80, 12));
+            msgProgressBar.setVisible(false);
+        }
+        return msgProgressBar;
     }
 
     /**
@@ -1272,10 +1288,21 @@ public class LogPanel extends JPanel {
      */
     private JPanel getStatusPane() {
         if(statusPane == null) {
+            getMsgTotal().setAlignmentY(Component.CENTER_ALIGNMENT);
+            getMsgProgressBar().setAlignmentY(Component.CENTER_ALIGNMENT);
+            final JPanel msgTotalPanel = new JPanel();
+            msgTotalPanel.setLayout(new BoxLayout(msgTotalPanel, BoxLayout.X_AXIS));
+            msgTotalPanel.add(getMsgTotal());
+            msgTotalPanel.add(Box.createHorizontalStrut(10));
+            msgTotalPanel.add(getMsgProgressBar());
+            msgTotalPanel.add(Box.createHorizontalGlue());
+
+            msgTotalPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            getLastUpdateTimeLabel().setAlignmentX(Component.LEFT_ALIGNMENT);
             statusPane = new JPanel();
             statusPane.setLayout(new BoxLayout(statusPane, BoxLayout.Y_AXIS));
             statusPane.add(Box.createVerticalGlue());
-            statusPane.add(getMsgTotal());
+            statusPane.add(msgTotalPanel);
             statusPane.add(getLastUpdateTimeLabel());
             statusPane.add(Box.createVerticalGlue());
         }

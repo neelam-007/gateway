@@ -11,7 +11,6 @@ import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
@@ -20,18 +19,18 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
 
+import javax.crypto.Cipher;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.crypto.Cipher;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /*
  * This class extends the <CODE>FilteredLogTableModel</CODE> class for providing the sorting functionality to the log display.
@@ -646,6 +645,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                     if (isCanceled()) {
                         logger.info("Log retrieval is canceled.");
                         logPane.getLogsRefreshTimer().stop();
+                        logPane.getMsgProgressBar().setVisible(false);
                     } else {
                         // Note: the get() operation is a blocking operation.
                         if (this.get() != null) {
@@ -691,6 +691,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                             // if there unfilled requests
                             final int total = count + logCount;
                             if (unfilledRequest.size() > 0 && total < MAX_NUMBER_OF_LOG_MESSGAES) {
+                                logPane.getMsgProgressBar().setVisible(true);
                                 SwingUtilities.invokeLater(
                                         new Runnable() {
                                             public void run() {
@@ -699,6 +700,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                                         });
 
                             } else {
+                                logPane.getMsgProgressBar().setVisible(false);
                                 if (restartTimer) {
                                     logPane.getLogsRefreshTimer().start();
                                 }
@@ -723,6 +725,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
         catch(IllegalArgumentException iae) {
             //can happen on disconnect when auto refresh is on.
+            logPane.getMsgProgressBar().setVisible(false);
         }
     }
 
