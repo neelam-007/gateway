@@ -2160,16 +2160,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private void onInactivityTimerTick() {
         if (ssmApplication.isApplet()) return;  // timer disabled on applet
 
-        // Don't timeout as long as any monitoring window is displaying.
-        for (Frame frame : JFrame.getFrames()) {
-            if (frame instanceof GatewayAuditWindow ||
-                frame instanceof DashboardWindow) {
-                if (frame.isVisible()) {
-                    return;
-                }
-            }
-        }
-
         long now = System.currentTimeMillis();
         double inactive = (now - lastActivityTime);
         if (Math.round(inactive / inactivityTimer.getDelay()) >= 1) { // match
