@@ -1,13 +1,13 @@
 package com.l7tech.console;
 
 import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.common.Authorizer;
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
-import com.l7tech.common.Authorizer;
-import com.l7tech.common.security.rbac.AttemptedDeleteAll;
-import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.*;
+import com.l7tech.common.security.rbac.AttemptedDeleteAll;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.*;
 import com.l7tech.console.auditalerts.AuditAlertChecker;
@@ -19,7 +19,6 @@ import com.l7tech.console.panels.LicenseDialog;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
-import com.l7tech.console.panels.dashboard.DashboardWindow;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.LogonListener;
@@ -55,11 +54,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClassLoader;
+import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.SimpleDateFormat;
-import java.security.cert.X509Certificate;
 
 
 /**
@@ -2131,24 +2130,15 @@ public class MainWindow extends JFrame implements SheetHolder {
                   lastActivityTime = System.currentTimeMillis();
               }
           };
-        // all events we know about
+        // all events that should reset the idle timout, omitting events which might fire while dashboard and audits are updating unattended (Bug #4142)
         long mask =
-          AWTEvent.COMPONENT_EVENT_MASK |
-          AWTEvent.CONTAINER_EVENT_MASK |
           AWTEvent.FOCUS_EVENT_MASK |
           AWTEvent.KEY_EVENT_MASK |
           AWTEvent.MOUSE_EVENT_MASK |
           AWTEvent.MOUSE_MOTION_EVENT_MASK |
           AWTEvent.WINDOW_EVENT_MASK |
           AWTEvent.ACTION_EVENT_MASK |
-          AWTEvent.ADJUSTMENT_EVENT_MASK |
-          AWTEvent.ITEM_EVENT_MASK |
-          AWTEvent.TEXT_EVENT_MASK |
-          AWTEvent.INPUT_METHOD_EVENT_MASK |
-          AWTEvent.PAINT_EVENT_MASK |
-          AWTEvent.INVOCATION_EVENT_MASK |
-          AWTEvent.HIERARCHY_EVENT_MASK |
-          AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK;
+          AWTEvent.INPUT_METHOD_EVENT_MASK;
 
         // dynamic initializer, register listener
         {
