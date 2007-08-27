@@ -48,9 +48,16 @@ public class Main {
     public void run(String[] args) {
         try {
             setInitialEnvironment();
-            final SplashScreen screen = new SplashScreen("/com/l7tech/console/resources/splash-screen.gif");
+            final SplashScreen screen;
+            if ("1.5".equals(SyspropUtil.getString("java.specification.version", "1.5"))) {
+                screen = new SplashScreen("/com/l7tech/console/resources/splash-screen.gif");
+            } else {
+                screen = null;
+            }
             try {
-                screen.splash();
+                if (screen != null)
+                    screen.splash();
+                
                 JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
                 Logger log = Logger.getLogger(getClass().getName());
 
@@ -76,7 +83,8 @@ public class Main {
                 SsmApplication app = (SsmApplication)ctx.getBean("ssmApplication");
                 app.run();
             } finally {
-                screen.dispose();
+                if (screen != null)
+                    screen.dispose();
             }
         } catch (final Exception e) {
             SwingUtilities.invokeLater(new Runnable() {

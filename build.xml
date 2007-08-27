@@ -1492,6 +1492,7 @@
         <generate-manifest propertyPrefix="manager" filename="Manager.mf">
             <section>
                 <attribute name="Main-Class" value="com.l7tech.console.Main"/>
+                <attribute name="SplashScreen-Image" value="com/l7tech/console/resources/splash-screen.gif"/>
             </section>
         </generate-manifest>
         <jar jarfile="${build.dir}/Manager.jar" manifest="${build.etc}/Manager.mf" index="true">
