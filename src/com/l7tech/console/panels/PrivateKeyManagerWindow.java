@@ -88,8 +88,8 @@ public class PrivateKeyManagerWindow extends JDialog {
     private static String activeKeypairJobAlias = "";
     private static long lastJobPollTime = 0;
     private static long minJobPollInterval = 1011;
-    private static TrustedCertAdmin.KeystoreInfo mutableKeystore;
 
+    private TrustedCertAdmin.KeystoreInfo mutableKeystore = null;
     private Component keypairJobViewportView;
     private PermissionFlags flags;
     private KeyTable keyTable = null;
