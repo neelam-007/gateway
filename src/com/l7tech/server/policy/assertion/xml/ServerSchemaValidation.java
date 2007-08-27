@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.net.MalformedURLException;
 
 /**
  * Validates the soap body's contents of a soap request or soap response against
@@ -157,7 +158,12 @@ public class ServerSchemaValidation
             XmlKnob xmlKnob = message.getXmlKnob();
 
             if (globalSchemaID != null) {
-                ps = schemaManager.getSchemaByUrl(globalSchemaID);
+                try {
+                    ps = schemaManager.getSchemaByUrl(globalSchemaID);
+                } catch (MalformedURLException e) {
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_GLOBALREF_BROKEN, new String[]{globalSchemaID});
+                    return AssertionStatus.SERVER_ERROR;
+                }
             } else {
                 Map vars = context.getVariableMap(varsUsed, auditor);
                 String schemaUrl = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);

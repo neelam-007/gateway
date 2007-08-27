@@ -228,6 +228,7 @@ public class AssertionMessages extends Messages {
     public static final M SCHEMA_VALIDATION_NO_ACCEL                        = m(5607, Level.INFO, "Schema cannot be hardware accelerated");
     public static final M SCHEMA_VALIDATION_FALLBACK                        = m(5608, Level.INFO, "Hardware-accelerated schema validation failed; falling back to software");
     public static final M SCHEMA_VALIDATION_VALID_BUT_WRONG_NS              = m(5609, Level.INFO, "Message was valid but payload was in an unexpected namespace");
+    public static final M SCHEMA_VALIDATION_GLOBALREF_BROKEN                = m(5610, Level.WARNING, "Cannot validate schema because the global schema named {0} cannot be retrieved");
 
     // ServerTimeRange
     public static final M TIME_RANGE_NOTHING_TO_CHECK                       = m(5700, Level.FINEST, "Nothing to check");
