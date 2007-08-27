@@ -1,5 +1,6 @@
 package com.l7tech.server.config.ui.console;
 
+import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.server.config.WizardInputValidator;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import org.apache.commons.lang.StringUtils;
@@ -27,8 +28,16 @@ public class ConsoleWizardUtils {
     public static final String EOL_CHAR = System.getProperty("line.separator");
 
     private Pattern validIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
-    public static final String[] YES_NO_VALUES = new String[]{"Y","y","N","n","YES","yes","NO","no","Yes","No"};
+    public static String[] YES_VALUES;
+    public static String[] NO_VALUES;
+    public static String[] YES_NO_VALUES;
     private Console console;
+
+    static {
+        YES_VALUES = new String[]{"Y","y","YES","yes","Yes"};
+        NO_VALUES = new String[]{"N","n","NO","no","No"};
+        YES_NO_VALUES = ArrayUtils.concat(YES_VALUES, NO_VALUES);
+    }
 
     public static ConsoleWizardUtils getInstance(InputStream in, PrintStream out) {
         if (instance_ == null) {
@@ -275,7 +284,7 @@ public class ConsoleWizardUtils {
     }
 
     public boolean isYes(String answer) {
-        return StringUtils.equalsIgnoreCase("yes", answer) || StringUtils.equalsIgnoreCase("y", answer);
+        return  ArrayUtils.contains(YES_VALUES, answer);
     }
 
     public boolean isValidIpAddress(String address) {

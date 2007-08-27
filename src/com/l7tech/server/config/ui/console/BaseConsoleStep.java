@@ -191,7 +191,7 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
                 message + " : [" + defaultValue +"]",
         };
 
-        String input = getData(prompts, defaultValue, Pattern.compile("[YyNn]"), "*** That is not a valid selection. Please answer Y or N. ***");
+        String input = getData(prompts, defaultValue, ConsoleWizardUtils.YES_NO_VALUES, "*** That is not a valid selection. Please answer Y or N. ***");
         return input != null && (isYes(input));
     }
 }
