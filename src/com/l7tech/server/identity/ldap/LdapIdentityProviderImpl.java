@@ -362,11 +362,11 @@ public class LdapIdentityProviderImpl
             output.add(maxExceeded);
             // dont throw here, we still want to return what we got
         } catch (javax.naming.AuthenticationException ae) {
-            logger.log(Level.WARNING, "LDAP authentication error '" + ae.getMessage() + "'.", ExceptionUtils.getDebugException(ae));
-            throw new FindException("error searching ldap", ae);
+            logger.log(Level.WARNING, "LDAP authentication error '" + ExceptionUtils.getMessage(ae) + "'.", ExceptionUtils.getDebugException(ae));
+            throw new FindException("LDAP search error: Authentication failed.");
         } catch (NamingException e) {
             logger.log(Level.WARNING, "error searching with filter: " + filter, e);
-            throw new FindException("error searching ldap", e);
+            throw new FindException("LDAP search error", e);
         } finally {
             if (context != null) {
                 if (answer != null) {
