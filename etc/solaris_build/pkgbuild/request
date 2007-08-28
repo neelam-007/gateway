@@ -1,10 +1,7 @@
 #!/bin/sh
 
-expected_java_home="${EXPECTED_JAVA_HOME}"
-expected_java_bin="${expected_java_home}/bin/java"
-expected_java_version="1.6"
-
-MY_JAVA_HOME="${expected_java_home}"
+expected_java_version="1.6.0_02"
+MY_JAVA_HOME=""
 result=""
 
 #Checks the version of java at the path passed in as an argument
@@ -31,7 +28,7 @@ check_java_version() {
 		fi
 	fi
 
-	javaver=`${binpath} -version 2>&1 | awk -F\" '/version/ {print $2}' | awk -F. '{print $1 "." $2}'`;
+	javaver=`${binpath} -version 2>&1 | awk -F\" '/version/ {print $2}'`;
 	echo "\n\n\n\tFound Java ${javaver} at ${binpath}"
 
 	if [ "${javaver}" != ${expected_java_version} ]; then
@@ -63,15 +60,8 @@ get_java_location() {
 	MY_JAVA_HOME=${result}
 }
 
-if [ -x ${expected_java_home} ]; then
-	check_java_version ${expected_java_home}
-	if [ "${result}" = "" ]; then
-		get_java_location
-	fi
-else
-	echo "\n\n\n\tThis package requires Java ${expected_java_version} to be installed."
-	get_java_location
-fi
+echo "\n\n\n\tThis package requires Java ${expected_java_version} to be installed."
+get_java_location
 
 #write out the location to a file that can be picked up in postinstall
 echo EXPECTED_JAVA_HOME="${MY_JAVA_HOME}" >> $1
