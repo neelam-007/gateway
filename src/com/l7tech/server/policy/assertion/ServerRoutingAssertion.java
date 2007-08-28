@@ -216,6 +216,8 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             samlOptions.setVersion(data.getSamlAssertionVersion());
             samlOptions.setExpiryMinutes(data.getSamlAssertionExpiry());
             samlOptions.setUseThumbprintForSignature(data.isUseThumbprintInSamlSignature());
+            if (data.getRecipientContext() != null)
+                samlOptions.setSecurityHeaderActor(data.getRecipientContext().getActor());
             SubjectStatement statement = SubjectStatement.createAuthenticationStatement(
                                                             svInputCredentials,
                                                             SubjectStatement.SENDER_VOUCHES,

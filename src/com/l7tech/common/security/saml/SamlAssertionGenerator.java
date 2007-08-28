@@ -134,6 +134,7 @@ public class SamlAssertionGenerator {
                 dr.setSenderMessageSigningPrivateKey(attestingEntity.getPrivate());
                 dr.setSenderMessageSigningCertificate(attestingEntity.getCertificateChain()[0]);
             }
+            dr.setSecurityHeaderActor(options.getSecurityHeaderActor());
             wssDecorator.decorateMessage(soapMessage, dr);
         } catch (Throwable e) {
             SignatureException ex = new SignatureException("error signing the saml ticket");
@@ -314,6 +315,14 @@ public class SamlAssertionGenerator {
             this.samlVersion = samlVersion;
         }
 
+        public String getSecurityHeaderActor() {
+            return securityHeaderActor;
+        }
+
+        public void setSecurityHeaderActor(String securityHeaderActor) {
+            this.securityHeaderActor = securityHeaderActor;
+        }
+
         private boolean useThumbprintForSignature = false;
         private boolean proofOfPosessionRequired = true;
         private int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
@@ -322,6 +331,7 @@ public class SamlAssertionGenerator {
         private SignerInfo attestingEntity;
         private String id = null;
         private int samlVersion = VERSION_1;
+        private String securityHeaderActor = null;
     }
 
     static final int DEFAULT_EXPIRY_MINUTES = 5;

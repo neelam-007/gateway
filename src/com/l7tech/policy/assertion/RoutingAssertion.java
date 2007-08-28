@@ -5,12 +5,16 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.common.security.xml.SecurityActor;
+
 import java.io.Serializable;
 
 /**
  * @author alex
  */
-public abstract class RoutingAssertion extends Assertion implements Cloneable, Serializable {
+public abstract class RoutingAssertion extends Assertion implements Cloneable, Serializable, SecurityHeaderAddressable {
     public static final int REMOVE_CURRENT_SECURITY_HEADER = 0;
     public static final int LEAVE_CURRENT_SECURITY_HEADER_AS_IS = 1;
     public static final int PROMOTE_OTHER_SECURITY_HEADER = 2;
@@ -24,6 +28,7 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
     private boolean groupMembershipStatement;
     private String xmlSecurityActorToPromote;
     private int currentSecurityHeaderHandling = REMOVE_CURRENT_SECURITY_HEADER;
+    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 
     /**
      * This is the value of the soap security header actor attribute that should be promoted to
@@ -145,6 +150,17 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
         this.setSamlAssertionExpiry(source.getSamlAssertionExpiry());
         this.setSamlAssertionVersion(source.getSamlAssertionVersion());
         this.setXmlSecurityActorToPromote(source.getXmlSecurityActorToPromote());
+        this.setRecipientContext(source.getRecipientContext());
+    }
+
+    public XmlSecurityRecipientContext getRecipientContext() {
+        return recipientContext;
+    }
+
+    public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        if (recipientContext == null)
+            throw new NullPointerException();
+        this.recipientContext = recipientContext;
     }
 }
 

@@ -2,8 +2,11 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.console.action.JmsRoutingAssertionPropertiesAction;
+import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -26,9 +29,15 @@ public class JmsRoutingAssertionTreeNode extends LeafAssertionTreeNode {
     public String getName() {
         final String name = "Route to JMS Queue ";
         JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
+        String actor = "";
+        XmlSecurityRecipientContext context = ass.getRecipientContext();
+        if (context != null)
+            actor = context.localRecipient()
+                    ? ""
+                    : " [\'" + ass.getRecipientContext().getActor() + "\' actor]";
         if (ass.getEndpointOid() == null)
-            return name + "(Not Yet Specified)";
-        return name + (ass.getEndpointName() == null ? "(unnamed)" : ass.getEndpointName());
+            return name + "(Not Yet Specified)" + actor;
+        return name + (ass.getEndpointName() == null ? "(unnamed)" : ass.getEndpointName()) + actor;
     }
 
     /**
@@ -41,6 +50,9 @@ public class JmsRoutingAssertionTreeNode extends LeafAssertionTreeNode {
         java.util.List list = new ArrayList();
         Action a = new JmsRoutingAssertionPropertiesAction(this);
         list.add(a);
+        if (getUserObject() instanceof SecurityHeaderAddressable) {
+            list.add(new EditXmlSecurityRecipientContextAction(this));
+        }
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
