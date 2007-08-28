@@ -21,6 +21,7 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -558,8 +559,15 @@ public class FindIdentitiesDialog extends JDialog {
             setTableModel(Collections.enumeration(Arrays.asList(headers)));
         } catch (Exception e) {
             setTableModel(Collections.enumeration(Collections.emptyList()));
-            ErrorManager.getDefault().
-              notify(Level.WARNING, e, "The system reported an error during search.");
+            if (e instanceof FindException && e.getCause()==null) {
+                JOptionPane.showMessageDialog(this,
+                  "There was an error while seaching the provider:\n" + e.getMessage(),
+                  "Error searching provider",
+                  JOptionPane.ERROR_MESSAGE);
+            } else {
+                ErrorManager.getDefault().
+                    notify(Level.WARNING, e, "The system reported an error during search.");
+            }
         }
 
         if (!searchResultPanel.isVisible()) {
