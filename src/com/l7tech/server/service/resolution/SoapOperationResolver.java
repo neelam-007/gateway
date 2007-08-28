@@ -8,6 +8,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -96,7 +97,7 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
             //noinspection unchecked
             List<BindingOperation> bops = binding.getBindingOperations();
             for (BindingOperation bop : bops) {
-                List<QName> operationQnames = Wsdl.getPayloadQNames(bop, bindingStyle, auditor);
+                List<QName> operationQnames = SoapUtil.getOperationPayloadQNames(bop, bindingStyle, auditor);
                 if (operationQnames != null) operationQnameLists.add(operationQnames);
             }
         }

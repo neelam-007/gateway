@@ -11,12 +11,15 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.xml.*;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.MessageProcessingMessages;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap12.SOAP12Body;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.soap.*;
@@ -1466,7 +1469,7 @@ public class SoapUtil {
     }
 
     /**
-     * @deprecated use {@link com.l7tech.common.xml.Wsdl#getPayloadQNames}, it's more accurate
+     * @deprecated use {@link SoapUtil#getOperationPayloadQNames}, it's more accurate
      */
     @Deprecated
     public static String findTargetNamespace(Definition def, BindingOperation bindingOperation) {
@@ -1499,6 +1502,125 @@ public class SoapUtil {
         }
 
         return def.getTargetNamespace();
+    }
+
+    /**
+     * Gets the QName(s) of the element(s) that should appear as children of the SOAP Body element for messages destined
+     * for the provided operation.
+     * @param bindingOperation the operation to get QNames from. Must not be null.
+     * @param bindingStyle the style from the SOAP binding element; will be used if the operation doesn't specify its own style. May be null, indicating a default of "document".
+     * @param auditor an Auditor to send error messages to.  May be null.
+     * @return
+     */
+    public static List<QName> getOperationPayloadQNames(final BindingOperation bindingOperation,
+                                               final String bindingStyle,
+                                               final Auditor auditor)
+    {
+        //noinspection unchecked
+        final List<ExtensibilityElement> bopEels = bindingOperation.getExtensibilityElements();
+        SOAPOperation soapOperation = null;
+        for (ExtensibilityElement eel : bopEels) {
+            if (eel instanceof SOAPOperation) {
+                soapOperation = (SOAPOperation) eel;
+            }
+        }
+
+        final OperationType ot = bindingOperation.getOperation().getStyle();
+        if (ot != null && ot != OperationType.REQUEST_RESPONSE && ot != OperationType.ONE_WAY)
+            return null;
+
+        String operationStyle = soapOperation == null ? null : soapOperation.getStyle();
+
+        BindingInput input = bindingOperation.getBindingInput();
+        //noinspection unchecked
+        List<ExtensibilityElement> eels = input.getExtensibilityElements();
+        String use = null;
+        String namespace = null;
+        for (ExtensibilityElement eel : eels) {
+            if (eel instanceof javax.wsdl.extensions.soap.SOAPBody) {
+                javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)eel;
+                use = body.getUse();
+                namespace = body.getNamespaceURI();
+            } else if (eel instanceof MIMEMultipartRelated) {
+                MIMEMultipartRelated mime = (MIMEMultipartRelated) eel;
+                //noinspection unchecked
+                List<MIMEPart> parts = mime.getMIMEParts();
+                MIMEPart part1 = parts.get(0);
+                //noinspection unchecked
+                List<ExtensibilityElement> partEels = part1.getExtensibilityElements();
+                for (ExtensibilityElement partEel : partEels) {
+                    if (partEel instanceof javax.wsdl.extensions.soap.SOAPBody) {
+                        javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody) partEel;
+                        use = body.getUse();
+                        namespace = body.getNamespaceURI();
+                    }
+                }
+            }
+        }
+
+        if (use == null) return null;
+
+        List<QName> operationQNames = new ArrayList<QName>();
+
+        if (operationStyle == null) operationStyle = bindingStyle;
+        if (operationStyle == null) {
+            if (auditor != null) auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_NO_STYLE, bindingOperation.getName());
+            operationStyle = Wsdl.STYLE_DOCUMENT;
+        }
+
+        if (Wsdl.STYLE_RPC.equalsIgnoreCase(operationStyle.trim())) {
+            operationQNames.add(new QName(namespace, bindingOperation.getName()));
+        } else if (Wsdl.STYLE_DOCUMENT.equalsIgnoreCase(operationStyle.trim())) {
+            javax.wsdl.Message inputMessage = bindingOperation.getOperation().getInput().getMessage();
+            if (inputMessage == null) return null;
+
+            List<ExtensibilityElement> inputEels = input.getExtensibilityElements();
+            List<String> partNames = null;
+            for (ExtensibilityElement inputEel : inputEels) {
+                // Headers are not relevant for service resolution (yet?)
+                if (inputEel instanceof javax.wsdl.extensions.soap.SOAPBody) {
+                    javax.wsdl.extensions.soap.SOAPBody inputBody = (javax.wsdl.extensions.soap.SOAPBody) inputEel;
+                    partNames = inputBody.getParts();
+                } else if (inputEel instanceof SOAP12Body) {
+                    SOAP12Body inputBody = (SOAP12Body) inputEel;
+                    partNames = inputBody.getParts();
+                }
+            }
+
+            List<Part> parts;
+            if (partNames == null) {
+                parts = inputMessage.getOrderedParts(null);
+            } else {
+                parts = new ArrayList<Part>();
+                for (String name : partNames) {
+                    parts.add((Part) inputMessage.getParts().get(name));
+                }
+            }
+
+            //noinspection unchecked
+            for (Part part : parts) {
+                QName tq = part.getTypeName();
+                QName eq = part.getElementName();
+                if (tq != null && eq != null) {
+                    if (auditor != null) auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_PART_TYPE, part.getName());
+                    return null;
+                } else if (tq != null) {
+                    operationQNames.add(new QName(null, part.getName()));
+                    if (auditor != null) auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_PART_TYPE, inputMessage.getQName().getLocalPart());
+                } else if (eq != null) {
+                    operationQNames.add(eq);
+                }
+            }
+        } else {
+            if (auditor != null) auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_BAD_STYLE, operationStyle, bindingOperation.getName());
+            return null;
+        }
+
+        if (operationQNames.isEmpty()) {
+            if (auditor != null) auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NO_QNAMES_FOR_OP, bindingOperation.getName());
+        }
+
+        return operationQNames;
     }
 
     private interface OperationSearchContext {

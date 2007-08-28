@@ -7,7 +7,7 @@ package com.l7tech.server.service.resolution;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.util.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -45,7 +45,7 @@ public class UrnResolver extends WsdlOperationServiceResolver<String> {
             }
         }
 
-        List<QName> names = Wsdl.getPayloadQNames(operation, bindingStyle, auditor);
+        List<QName> names = SoapUtil.getOperationPayloadQNames(operation, bindingStyle, auditor);
         if (names == null || names.isEmpty()) return def.getTargetNamespace();
         return names.get(0).getNamespaceURI();
     }
