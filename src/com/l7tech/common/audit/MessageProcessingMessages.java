@@ -58,7 +58,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M SR_SOAPOPERATION_NOT_SOAP         = m(3130, Level.FINE, "Service is not SOAP");
     public static final M SR_SOAPOPERATION_NO_WSDL          = m(3131, Level.FINE, "Service is SOAP but has no WSDL");
     public static final M SR_SOAPOPERATION_WSDL_NO_BINDINGS = m(3132, Level.FINE, "WSDL has no bindings");
-    public static final M SR_SOAPOPERATION_WSDL_NO_STYLE    = m(3133, Level.INFO, "Couldn''t get style for BindingOperation {0}");
+    public static final M SR_SOAPOPERATION_WSDL_NO_STYLE    = m(3133, Level.INFO, "Couldn''t get style for BindingOperation {0}; assuming \"document\"");
     public static final M SR_SOAPOPERATION_WSDL_PART_TYPE   = m(3134, Level.INFO, "Part {0} has both an element and a type");
     public static final M SR_SOAPOPERATION_WSDL_DOCLIT_TYPE = m(3135, Level.INFO, "Input message {0} in document-style operation has a type, not an element");
     public static final M SR_SOAPOPERATION_BAD_STYLE        = m(3136, Level.INFO, "Unsupported style ''{0}'' for {1}");

@@ -1465,6 +1465,10 @@ public class SoapUtil {
         }
     }
 
+    /**
+     * @deprecated use {@link com.l7tech.common.xml.Wsdl#getPayloadQNames}, it's more accurate
+     */
+    @Deprecated
     public static String findTargetNamespace(Definition def, BindingOperation bindingOperation) {
         BindingInput bindingInput = bindingOperation.getBindingInput();
         if (bindingInput != null) {

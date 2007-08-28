@@ -5,16 +5,21 @@
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.message.Message;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.mime.NoSuchPartException;
-import org.xml.sax.SAXException;
+import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.Wsdl;
 import org.springframework.context.ApplicationContext;
+import org.xml.sax.SAXException;
 
+import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.xml.namespace.QName;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * @author alex
@@ -25,7 +30,24 @@ public class UrnResolver extends WsdlOperationServiceResolver<String> {
     }
 
     protected String getTargetValue(Definition def, BindingOperation operation) {
-        return SoapUtil.findTargetNamespace(def, operation);
+        String bindingStyle = null;
+        Collection<Binding> bindings = def.getBindings().values();
+        for (Binding binding : bindings) {
+            // TODO this idiocy is necessary because the BindingOperation does not hold a reference to its parent Binding
+            if (binding.getBindingOperations().contains(operation)) {
+                List<ExtensibilityElement> eels = binding.getExtensibilityElements();
+                for (ExtensibilityElement eel : eels) {
+                    if (eel instanceof SOAPBinding) {
+                        SOAPBinding soapBinding = (SOAPBinding) eel;
+                        bindingStyle = soapBinding.getStyle();
+                    }
+                }
+            }
+        }
+
+        List<QName> names = Wsdl.getPayloadQNames(operation, bindingStyle, auditor);
+        if (names == null || names.isEmpty()) return def.getTargetNamespace();
+        return names.get(0).getNamespaceURI();
     }
 
     protected String getRequestValue(Message request) throws ServiceResolutionException {

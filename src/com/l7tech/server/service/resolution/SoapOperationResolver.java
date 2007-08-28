@@ -14,13 +14,7 @@ import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
-import javax.wsdl.extensions.soap12.SOAP12Binding;
-import javax.wsdl.extensions.mime.MIMEMultipartRelated;
-import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.soap.SOAPBinding;
-import javax.wsdl.extensions.soap.SOAPBody;
-import javax.wsdl.extensions.soap.SOAPOperation;
-import javax.wsdl.extensions.soap12.SOAP12Body;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -101,116 +95,10 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
 
             //noinspection unchecked
             List<BindingOperation> bops = binding.getBindingOperations();
-            nextBindingOperation: for (BindingOperation bop : bops) {
-                String operationStyle;
-
-                //noinspection unchecked
-                List<ExtensibilityElement> bopEels = bop.getExtensibilityElements();
-                SOAPOperation soapOperation = null;
-                for (ExtensibilityElement eel : bopEels) {
-                    if (eel instanceof SOAPOperation) {
-                        soapOperation = (SOAPOperation) eel;
-                    }
-                }
-
-                OperationType ot = bop.getOperation().getStyle();
-                if (ot != null && ot != OperationType.REQUEST_RESPONSE && ot != OperationType.ONE_WAY)
-                    continue nextBindingOperation;
-
-                operationStyle = soapOperation == null ? null : soapOperation.getStyle();
-
-                BindingInput input = bop.getBindingInput();
-                //noinspection unchecked
-                List<ExtensibilityElement> eels = input.getExtensibilityElements();
-                String use = null;
-                String namespace = null;
-                for (ExtensibilityElement eel : eels) {
-                    if (eel instanceof SOAPBody) {
-                        SOAPBody body = (SOAPBody)eel;
-                        use = body.getUse();
-                        namespace = body.getNamespaceURI();
-                    } else if (eel instanceof MIMEMultipartRelated) {
-                        MIMEMultipartRelated mime = (MIMEMultipartRelated) eel;
-                        //noinspection unchecked
-                        List<MIMEPart> parts = mime.getMIMEParts();
-                        MIMEPart part1 = parts.get(0);
-                        //noinspection unchecked
-                        List<ExtensibilityElement> partEels = part1.getExtensibilityElements();
-                        for (ExtensibilityElement partEel : partEels) {
-                            if (partEel instanceof SOAPBody) {
-                                SOAPBody body = (SOAPBody) partEel;
-                                use = body.getUse();
-                                namespace = body.getNamespaceURI();
-                            }
-                        }
-                    }
-                }
-
-                if (use == null) continue nextBindingOperation;
-
-                List<QName> operationQNames = new ArrayList<QName>();
-
-                if (operationStyle == null) operationStyle = bindingStyle;
-                if (operationStyle == null) {
-                    auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_NO_STYLE, bop.getName());
-                    continue nextBindingOperation;
-                }
-
-                if ("rpc".equalsIgnoreCase(operationStyle.trim())) {
-                    operationQNames.add(new QName(namespace, bop.getName()));
-                } else if ("document".equalsIgnoreCase(operationStyle.trim())) {
-                    javax.wsdl.Message inputMessage = bop.getOperation().getInput().getMessage();
-                    if (inputMessage == null) continue;
-
-                    List<ExtensibilityElement> inputEels = input.getExtensibilityElements();
-                    List<String> partNames = null;
-                    for (ExtensibilityElement inputEel : inputEels) {
-                        // Headers are not relevant for service resolution (yet?)
-                        if (inputEel instanceof SOAPBody) {
-                            SOAPBody inputBody = (SOAPBody) inputEel;
-                            partNames = inputBody.getParts();
-                        } else if (inputEel instanceof SOAP12Body) {
-                            SOAP12Body inputBody = (SOAP12Body) inputEel;
-                            partNames = inputBody.getParts();
-                        }
-                    }
-
-                    List<Part> parts;
-                    if (partNames == null) {
-                        parts = inputMessage.getOrderedParts(null);
-                    } else {
-                        parts = new ArrayList<Part>();
-                        for (String name : partNames) {
-                            parts.add((Part) inputMessage.getParts().get(name));
-                        }
-                    }
-
-                    //noinspection unchecked
-                    for (Part part : parts) {
-                        QName tq = part.getTypeName();
-                        QName eq = part.getElementName();
-                        if (tq != null && eq != null) {
-                            auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_PART_TYPE, part.getName());
-                            continue nextBindingOperation;
-                        } else if (tq != null) {
-                            operationQNames.add(new QName(null, part.getName()));
-                            auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_PART_TYPE, inputMessage.getQName().getLocalPart());
-                        } else if (eq != null) {
-                            operationQNames.add(eq);
-                        }
-                    }
-                } else {
-                    auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_BAD_STYLE, operationStyle, bop.getName());
-                    continue nextBindingOperation;
-                }
-
-                if (operationQNames.isEmpty()) {
-                    auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NO_QNAMES_FOR_OP, bop.getName());
-                }
-
-                operationQnameLists.add(operationQNames);
+            for (BindingOperation bop : bops) {
+                List<QName> operationQnames = Wsdl.getPayloadQNames(bop, bindingStyle, auditor);
+                if (operationQnames != null) operationQnameLists.add(operationQnames);
             }
-
         }
 
         return operationQnameLists;
