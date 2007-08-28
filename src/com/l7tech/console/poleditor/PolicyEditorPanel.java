@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
@@ -42,6 +43,8 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.StringReader;
+import java.io.IOException;
+import java.io.FileOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.rmi.RemoteException;
@@ -52,6 +55,9 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
 
 /**
  * The class represents the policy editor
@@ -78,6 +84,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private ValidatePolicyAction validateAction;
     private ValidatePolicyAction serverValidateAction;
     private ExportPolicyToFileAction exportPolicyAction;
+    private ExportPolicyToFileAction simpleExportPolicyAction;
     private ImportPolicyFromFileAction importPolicyAction;
     private PolicyEditorSubject subject;
     private String subjectName;
@@ -897,7 +904,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                       "Save Service policy",
                       JOptionPane.YES_NO_CANCEL_OPTION));
                     if (answer == JOptionPane.YES_OPTION) {
-                        getExportAction().actionPerformed(null);
+                        getSimpleExportAction().actionPerformed(null);
                     }
                 }
             }
@@ -992,6 +999,26 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             };
         }
         return exportPolicyAction;
+    }
+
+    public Action getSimpleExportAction() {
+        if (simpleExportPolicyAction == null) {
+            simpleExportPolicyAction = new ExportPolicyToFileAction(getHomePath()) {
+                protected void performAction() {
+                    Assertion assertion = rootAssertion.asAssertion();
+                    exportPolicy(getName(), assertion);
+                }
+                protected void serializeToFile(Assertion rootAssertion, File policyFile) throws IOException, SAXException {
+                    // do policy to xml
+                    Document policydoc = XmlUtil.stringToDocument(WspWriter.getPolicyXml(rootAssertion));
+                    // write xml to file
+                    FileOutputStream fos = new FileOutputStream(policyFile);
+                    XmlUtil.nodeToFormattedOutputStream(policydoc, fos);
+                    fos.flush();
+                }
+            };
+        }
+        return simpleExportPolicyAction;
     }
 
     public Action getUDDIImportAction() {

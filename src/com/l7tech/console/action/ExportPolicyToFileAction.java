@@ -147,9 +147,8 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
                                                       JOptionPane.YES_NO_OPTION);
         }
         if (overwrite != JOptionPane.YES_OPTION) return null;
-        PolicyExporter exporter = new PolicyExporter();
         try {
-            exporter.exportToFile(rootAssertion, policyFile);
+            serializeToFile(rootAssertion, policyFile);
             // only update template folder if this policy is saved in templates directory
             if (!policyFileExists && templateDir != null && templateDir.equals(chooser.getSelectedFile().getParentFile())) {
                 insertIntoAssertionTree(policyFile);
@@ -162,6 +161,11 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
         }
 
         return null;
+    }
+
+    protected void serializeToFile(Assertion rootAssertion, File policyFile) throws IOException, SAXException {
+        PolicyExporter exporter = new PolicyExporter();
+        exporter.exportToFile(rootAssertion, policyFile);
     }
 
     private void insertIntoAssertionTree(File policyFile) {
