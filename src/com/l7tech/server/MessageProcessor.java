@@ -17,6 +17,7 @@ import com.l7tech.common.message.*;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
+import com.l7tech.common.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.processor.*;
@@ -568,6 +569,17 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);
                     // this shouldn't be possible now
                     // pass through, leaving wssOutput as null
+                } catch (UnexpectedKeyInfoException e) {
+                    // Must catch before ProcessorException
+                    // Use appropriate fault to warn client about unresolvable KeyInfo
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    context.setAuditLevel(Level.SEVERE);
+                    SoapFaultLevel cfault = new SoapFaultLevel();
+                    cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+                    cfault.setFaultTemplate(SoapFaultUtils.badKeyInfoFault(getIncomingURL(context)));
+                    context.setFaultlevel(cfault);
+                    assertionStatusHolder[0] = AssertionStatus.FAILED;
+                    return false;
                 } catch (ProcessorException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                     assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;

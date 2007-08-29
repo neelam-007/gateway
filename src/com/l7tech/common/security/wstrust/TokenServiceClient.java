@@ -11,6 +11,7 @@ import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.KeyInfoElement;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
+import com.l7tech.common.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -518,8 +519,7 @@ public class TokenServiceClient {
                                                       Element rstr,
                                                       X509Certificate clientCertificate,
                                                       PrivateKey clientPrivateKey)
-                                            throws InvalidDocumentFormatException, GeneralSecurityException
-    {
+            throws InvalidDocumentFormatException, GeneralSecurityException, UnexpectedKeyInfoException {
         // Extract session ID
         Element identifierEl = XmlUtil.findOnlyOneChildElementByName(scTokenEl, SoapUtil.WSSC_NAMESPACE_ARRAY, "Identifier");
         if (identifierEl == null) throw new InvalidDocumentFormatException("Response contained no wsc:Identifier");

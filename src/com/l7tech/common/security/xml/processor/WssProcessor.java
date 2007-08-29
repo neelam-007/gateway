@@ -8,6 +8,7 @@ package com.l7tech.common.security.xml.processor;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
+import com.l7tech.common.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.xml.sax.SAXException;
 
@@ -47,5 +48,5 @@ public interface WssProcessor {
                                       X509Certificate senderCertificate,
                                       SecurityContextFinder securityContextFinder,
                                       SecurityTokenResolver securityTokenResolver)
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException;
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException, UnexpectedKeyInfoException;
 }

@@ -54,8 +54,7 @@ public class WssProcessorImpl implements WssProcessor {
                                              SecurityContextFinder securityContextFinder,
                                              SecurityTokenResolver securityTokenResolver
     )
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException
-    {
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException, UnexpectedKeyInfoException {
         // Reset all potential outputs
         Document soapMsg = message.getXmlKnob().getDocumentReadOnly();
         ProcessingStatusHolder cntx = new ProcessingStatusHolder(message, soapMsg);
@@ -656,8 +655,7 @@ public class WssProcessorImpl implements WssProcessor {
     // If the encrypted key was addressed to us, it will have been added to the context ProcessedEncryptedKeys set.
     private Element processEncryptedKey(Element encryptedKeyElement,
                                         final ProcessingStatusHolder cntx)
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
-    {
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, UnexpectedKeyInfoException {
         if(logger.isLoggable(Level.FINEST)) logger.finest("Processing EncryptedKey");
 
         // If there's a KeyIdentifier, log whether it's talking about our key
@@ -1305,30 +1303,6 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
-    private X509Certificate resolveEmbeddedCert(final Element parentElement) {
-        // Attempt to get the cert directly from the KeyInfo element
-        final KeyInfo keyInfo;
-        try {
-            keyInfo = new KeyInfo(parentElement);
-        } catch (XSignatureException e) {
-            // dont throw here on purpose, this should return null if not sucessful to give a chance to
-            // alternate methods to get the cert
-            logger.log(Level.FINE, "could not construct key info element from the parent element", e);
-            return null;
-        }
-        KeyInfo.X509Data[] x509DataArray = keyInfo.getX509Data();
-        if (x509DataArray != null && x509DataArray.length > 0) {
-            KeyInfo.X509Data x509Data = x509DataArray[0];
-            X509Certificate[] certs = x509Data.getCertificates();
-            // according to javadoc, this can be null
-            if (certs == null || certs.length < 1) {
-                return null;
-            }
-            return certs[0];
-        }
-        return null;
-    }
-
     private void processSignature(final Element sigElement,
                                   final SecurityContextFinder securityContextFinder,
                                   final ProcessingStatusHolder cntx)
@@ -1367,13 +1341,13 @@ public class WssProcessorImpl implements WssProcessor {
                 Element strEle = XmlUtil.findOnlyOneChildElementByName(keyInfoElement,
                                                             SoapUtil.SECURITY_URIS_ARRAY,
                                                             SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
-                String wssePrefix = null;
+                final String wssePrefix;
                 if (strEle == null) {
                     wssePrefix = cntx.releventSecurityHeader.getPrefix();
                 } else {
                     wssePrefix = strEle.getPrefix();
                 }
-                Element bst = null;
+                final Element bst;
                 if (wssePrefix == null) {
                     bst = sigElement.getOwnerDocument().createElementNS(wsseNs, "BinarySecurityToken");
                     bst.setAttribute("xmlns", wsseNs);
@@ -1869,8 +1843,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Constructor that supports lazily-unwrapping the key
         EncryptedKeyImpl(Element encryptedKeyEl, SecurityTokenResolver tokenResolver, Resolver<String,X509Certificate> x509Resolver)
-                throws InvalidDocumentFormatException, IOException, GeneralSecurityException
-        {
+                throws InvalidDocumentFormatException, IOException, GeneralSecurityException, UnexpectedKeyInfoException {
             super(encryptedKeyEl);
             this.elementWsuId = SoapUtil.getElementWsuId(encryptedKeyEl);
             this.tokenResolver = tokenResolver;

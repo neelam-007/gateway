@@ -70,6 +70,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     private final PolicyAttachmentKey policyAttachmentKey;
     private final URL originalUrl;
     private boolean policyUpdated = false;
+    private boolean serverCertUpdated = false;
     private Long nonce = null; // nonce.  set on-demand, and only set once
     private String secureConversationId = null;
     private byte[] secureConversationSharedSecret = null;
@@ -220,6 +221,16 @@ public class PolicyApplicationContext extends ProcessingContext {
     /** @return true if a new policy has been downloaded for this request once already. */
     public boolean isPolicyUpdated() {
         return policyUpdated;
+    }
+
+    /** @return true if server cert discover has been performed for this request once already. */
+    public boolean isServerCertUpdated() {
+        return serverCertUpdated;
+    }
+
+    /** Note that server cert discovery has been performed for this SSG. */
+    public void setServerCertUpdated() {
+        serverCertUpdated = true;
     }
 
     /**

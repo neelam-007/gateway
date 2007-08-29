@@ -56,6 +56,20 @@ public class SoapFaultUtils {
         return output;
     }
 
+    public static String badKeyInfoFault(String actor) {
+        String output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                            "  <soapenv:Body>\n" +
+                            "    <soapenv:Fault xmlns:wsse=\"" + SoapUtil.SECURITY_NAMESPACE + "\">\n" +
+                            "      <faultcode>wsse:SecurityTokenUnavailable</faultcode>\n" +
+                            "      <faultactor>@@actor@@</faultactor>\n" +
+                            "    </soapenv:Fault>\n" +
+                            "  </soapenv:Body>\n" +
+                            "</soapenv:Envelope>";
+        output = output.replace("@@actor@@", actor);
+        return output;
+    }
+
     public static Document generateSoapFaultDocument(String faultCode,
                                              String faultString,
                                              Element faultDetails,

@@ -174,7 +174,8 @@ public class MessageProcessor {
             }
 
             log.warning("Too many attempts to conform to policy; giving up");
-            if (context.getResponse().isXml())
+            // Avoid passing back a response that didn't pass successfully through the client side policy unless it's a fault
+            if (context.getResponse().isXml() && context.getResponse().isSoap() && context.getResponse().getSoapKnob().isFault())
                 return;
             throw new ConfigurationException("Unable to conform to policy, and no useful fault from Gateway.");
         } finally {
@@ -190,17 +191,20 @@ public class MessageProcessor {
     private void handleServerCertificateUntrustedException(Ssg ssg, PolicyApplicationContext context, ServerCertificateUntrustedException e) throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, CertificateException, KeyStoreException, HttpChallengeRequiredException, ConfigurationException {
         if (context.getSsg().isFederatedGateway()) {
             SslPeer sslPeer = CurrentSslPeer.get();
-            if (sslPeer == ssg)
+            if (sslPeer == ssg) {
                 ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, null);
-            else if (sslPeer == context.getSsg().getTrustedGateway()) {
+                context.setServerCertUpdated();
+            } else if (sslPeer == context.getSsg().getTrustedGateway()) {
                 ((Ssg)sslPeer).getRuntime().getSsgKeyStoreManager().installSsgServerCertificate((Ssg)sslPeer, context.getFederatedCredentials());
-            } else if (sslPeer != null)
+            } else if (sslPeer != null) {
                 // We were talking to something else, probably a token provider.
                 handleSslExceptionForWsTrustTokenService(ssg, sslPeer, e);
-            else
+            } else {
                 throw new ConfigurationException("Internal "+ Constants.APP_NAME+" error: server certificate untrusted, but no SSL peer", e);
-        } else
+            }
+        } else {
             ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, context.getCredentialsForTrustedSsg()); // might throw BadCredentialsException
+        }
     }
 
     private void handleAnySslException(final PolicyApplicationContext context, SSLException e, Ssg ssg) throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException, HttpChallengeRequiredException {
@@ -474,22 +478,30 @@ public class MessageProcessor {
 
         Message response = context.getResponse();
         SoapFaultDetail responseFaultDetail = null;
+        String faultCodeString = null;
         if (response.isSoap() && response.getSoapKnob().isFault())
             responseFaultDetail = response.getSoapKnob().getFaultDetail();
+        if (responseFaultDetail != null && responseFaultDetail.getFaultCode() != null) {
+            faultCodeString = responseFaultDetail.getFaultCode().trim();
+        }
 
         // TODO refactor this fault handling into a routine of its own.  Should also deal with fault signing then.
-        // Bug #1026 - If request used WS-SecureConversation, check if response is a BadContextToken fault.
+        if (faultCodeString != null && faultCodeString.equals(SecureSpanConstants.FAULTCODE_SECURITYTOKENUNAVAILABLE)) {
+            // Bug #4134 - If server cert not recognized, try redoing server cert discovery
+            if (!context.isServerCertUpdated()) {
+                CurrentSslPeer.set(context.getSsg());
+                throw new ServerCertificateUntrustedException(SecureSpanConstants.FAULTCODE_SECURITYTOKENUNAVAILABLE);
+            }
+            // FALLTHROUGH: not handled by agent -- fall through and send it back to the client
+        }
         if (context.getSecureConversationId() != null) {
-            if (responseFaultDetail != null && responseFaultDetail.getFaultCode() != null)
-            {
-                final String faultCode = responseFaultDetail.getFaultCode().trim();
-                if (faultCode.equals(SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN)) {
-                    // TODO we should only trust this fault if it is signed
-                    log.info("Gateway reports " + SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN +
-                             ".  Will throw away the current WS-SecureConversationSession and try again.");
-                    context.closeSecureConversationSession();
-                    throw new PolicyRetryableException("Flushed bad secure conversation session.");
-                }
+            // Bug #1026 - If request used WS-SecureConversation, check if response is a BadContextToken fault.
+            if (faultCodeString != null && faultCodeString.equals(SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN)) {
+                // TODO we should only trust this fault if it is signed
+                log.info("Gateway reports " + SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN +
+                         ".  Will throw away the current WS-SecureConversationSession and try again.");
+                context.closeSecureConversationSession();
+                throw new PolicyRetryableException("Flushed bad secure conversation session.");
             }
             // FALLTHROUGH: not handled by agent -- fall through and send it back to the client
         }

@@ -128,7 +128,10 @@ public class SecureSpanConstants {
     /** SOAP faultcode: "The issuer of an assertion is not acceptable to the receiver". */
     public static final String FAULTCODE_INVALIDSECURITYTOKEN = "wsse:InvalidSecurityToken";
 
-    /** SOAP faultcode: "A referenced SAML assertion could not be retrieved." -saml token profile. */
+    /**
+     * SOAP faultcode: "A referenced SAML assertion could not be retrieved." -saml token profile.
+     *  "Referenced security token could not be retrieved." -wss 1.1
+     */
     public static final String FAULTCODE_SECURITYTOKENUNAVAILABLE = "wsse:SecurityTokenUnavailable";
 
     /**
