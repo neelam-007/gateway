@@ -110,6 +110,10 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem manageClusterLicensesMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
     private JMenuItem manageAuditAlertsMenuItem;
+    private JMenuItem editPolicyMenuItem = null;
+    private JMenuItem servicePropertiesMenuItem = null;
+    private JMenuItem publishToUDDIMenuItem = null;
+    private JMenuItem deleteServiceMenuItem = null;
 
     // actions
     private Action refreshAction = null;
@@ -416,6 +420,12 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getValidateMenuItem());
 
             menu.addSeparator();
+            menu.add(getEditPolicyMenuItem());
+            menu.add(getServicePropertiesMenuItem());
+            menu.add(getPublishToUDDIMenuItem());
+            menu.add(getDeleteServiceMenuItem());
+
+            menu.addSeparator();
 
             menu.add(getConnectMenuItem());
             menu.add(getDisconnectMenuItem());
@@ -430,6 +440,62 @@ public class MainWindow extends JFrame implements SheetHolder {
             fileMenu = menu;
         }
         return fileMenu;
+    }
+
+    private JMenuItem getEditPolicyMenuItem() {
+        if (editPolicyMenuItem == null) {
+            editPolicyMenuItem = new JMenuItem();
+            editPolicyMenuItem.setEnabled(false);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/policy16.gif"));
+            editPolicyMenuItem.setIcon(icon);
+            editPolicyMenuItem.setText("Edit Policy");
+            //int mnemonic = editPolicyMenuItem.getText().toCharArray()[0];
+            //editPolicyMenuItem.setMnemonic(mnemonic);
+            //editPolicyMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return editPolicyMenuItem;
+    }
+
+    private JMenuItem getServicePropertiesMenuItem() {
+        if (servicePropertiesMenuItem == null) {
+            servicePropertiesMenuItem = new JMenuItem();
+            servicePropertiesMenuItem.setEnabled(false);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Edit16.gif"));
+            servicePropertiesMenuItem.setIcon(icon);
+            servicePropertiesMenuItem.setText("Service Properties");
+            //int mnemonic = servicePropertiesMenuItem.getText().toCharArray()[0];
+            //servicePropertiesMenuItem.setMnemonic(mnemonic);
+            //servicePropertiesMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return servicePropertiesMenuItem;
+    }
+
+    private JMenuItem getPublishToUDDIMenuItem() {
+        if (publishToUDDIMenuItem == null) {
+            publishToUDDIMenuItem = new JMenuItem();
+            publishToUDDIMenuItem.setEnabled(false);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/xmlObject16.gif"));
+            publishToUDDIMenuItem.setIcon(icon);
+            publishToUDDIMenuItem.setText("Publish Policy to UDDI");
+            //int mnemonic = publishToUDDIMenuItem.getText().toCharArray()[0];
+            //publishToUDDIMenuItem.setMnemonic(mnemonic);
+            //publishToUDDIMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return publishToUDDIMenuItem;
+    }
+
+    private JMenuItem getDeleteServiceMenuItem() {
+        if (deleteServiceMenuItem == null) {
+            deleteServiceMenuItem = new JMenuItem();
+            deleteServiceMenuItem.setEnabled(false);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/delete.gif"));
+            deleteServiceMenuItem.setIcon(icon);
+            deleteServiceMenuItem.setText("Delete Service");
+            //int mnemonic = deleteServiceMenuItem.getText().toCharArray()[0];
+            //deleteServiceMenuItem.setMnemonic(mnemonic);
+            //deleteServiceMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return deleteServiceMenuItem;
     }
 
     private JMenuItem getValidateMenuItem() {
@@ -1100,8 +1166,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         getDisconnectAction().setEnabled(connected);
         getNewAction().setEnabled(connected);
         getConnectAction().setEnabled(!connected);
+        // these are enabled if connected AND a service is selected in the tree
+        if (!connected) {
+            getEditPolicyMenuItem().setEnabled(connected);
+            getServicePropertiesMenuItem().setEnabled(connected);
+            getPublishToUDDIMenuItem().setEnabled(connected);
+            getDeleteServiceMenuItem().setEnabled(connected);
+        }
         homeAction.setEnabled(connected);
-
     }
 
 
@@ -1242,6 +1314,32 @@ public class MainWindow extends JFrame implements SheetHolder {
         servicesTree = new ServicesTree();
         servicesTree.setShowsRootHandles(true);
         TopComponents.getInstance().registerComponent(ServicesTree.NAME, servicesTree);
+        servicesTree.addTreeSelectionListener(new TreeSelectionListener() {
+            public void valueChanged(TreeSelectionEvent treeSelectionEvent) {
+                boolean enable = servicesTree.getSelectionCount() > 0;
+                if (enable) {
+                    if (!(servicesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent() instanceof ServiceNode)) {
+                        enable = false;
+                    }
+                }
+                getEditPolicyMenuItem().setEnabled(enable);
+                getServicePropertiesMenuItem().setEnabled(enable);
+                getPublishToUDDIMenuItem().setEnabled(enable);
+                getDeleteServiceMenuItem().setEnabled(enable);
+                if (enable) {
+                    // go get the actions from the node
+                    ServiceNode node = (ServiceNode)(servicesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent());
+                    getEditPolicyMenuItem().setAction(new EditServicePolicyAction(node));
+                    getServicePropertiesMenuItem().setAction(new EditServiceProperties(node));
+                    getPublishToUDDIMenuItem().setAction(new PublishPolicyToSystinetRegistry(node));
+                    getDeleteServiceMenuItem().setAction(new DeleteServiceAction(node) {
+                        public String getName() {
+                            return "Delete Service";
+                        }
+                    });
+                }
+            }
+        });
         return servicesTree;
     }
 
