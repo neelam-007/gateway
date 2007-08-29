@@ -204,6 +204,7 @@ public class MessageProcessor {
             }
         } else {
             ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, context.getCredentialsForTrustedSsg()); // might throw BadCredentialsException
+            context.setServerCertUpdated();
         }
     }
 
