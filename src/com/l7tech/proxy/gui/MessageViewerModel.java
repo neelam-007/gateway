@@ -36,6 +36,11 @@ import java.util.logging.Logger;
 class MessageViewerModel extends AbstractListModel implements RequestInterceptor {
     private static final Logger log = Logger.getLogger(MessageViewerModel.class.getName());
     private static final int maxMessages = 64;
+    private static final String TO_SERVER ='\u2192' + " To Server";
+    private static final String FROM_SERVER = '\u2190' + " From Server";
+    private static final String POLICY_UPDATED = '\u2190' + " Policy updated";
+    private static final String POLICY_DOWNLOAD_ERROR = '\u2190' + " Policy download error";
+    private static final String SERVER_ERROR = '\u2190' + " Server Error";
 
     private List<SavedMessage> messages = new ArrayList<SavedMessage>(maxMessages);
     private boolean recordFromClient = false;
@@ -334,13 +339,13 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         if (!isRecordToServer()) return;
         HttpHeadersKnob hhk = (HttpHeadersKnob)context.getRequest().getKnobAlways(HttpHeadersKnob.class);
         try {
-            appendMessage(new SavedXmlMessage("   To Server",
+            appendMessage(new SavedXmlMessage(TO_SERVER,
                                               context.getRequest().getXmlKnob().getDocumentReadOnly(),
                                               hhk.getHeaders()));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get request as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
-            appendMessage(new SavedTextMessage("  To Server", msg));
+            appendMessage(new SavedTextMessage(TO_SERVER, msg));
         }
     }
 
@@ -352,16 +357,16 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             final HttpHeadersKnob hhk = (HttpHeadersKnob)response.getKnobAlways(HttpHeadersKnob.class);
             final HttpHeaders headers = hhk.getHeaders();
             if (!response.isXml()) {
-                appendMessage(new SavedTextMessage("   From Server", "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + ">", headers));
+                appendMessage(new SavedTextMessage(FROM_SERVER, "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + ">", headers));
                 return;
             }
             Document responseDoc = response.getXmlKnob().getDocumentReadOnly();
             responseDoc = XmlUtil.stringToDocument(XmlUtil.nodeToString(responseDoc));
-            appendMessage(new SavedXmlMessage("   From Server", responseDoc, headers));
+            appendMessage(new SavedXmlMessage(FROM_SERVER, responseDoc, headers));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get response as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
-            appendMessage(new SavedTextMessage("   From Server", msg));
+            appendMessage(new SavedTextMessage(FROM_SERVER, msg));
         }
     }
 
@@ -396,10 +401,10 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             PrintStream p = new PrintStream(b, true, "UTF-8");
             t.printStackTrace(p);
             p.flush();
-            appendMessage(new SavedTextMessage("   Server Error", b.toString("UTF-8")));
+            appendMessage(new SavedTextMessage(SERVER_ERROR, b.toString("UTF-8")));
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);
-            appendMessage(new SavedTextMessage("   Server Error", t.getMessage()));
+            appendMessage(new SavedTextMessage(SERVER_ERROR, t.getMessage()));
         } finally {
             b.close();
         }
@@ -414,7 +419,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         } catch (PolicyAssertionException e) {
             // Fallthrough and use null
         }
-        appendMessage(new SavedPolicyMessage("   Policy updated", binding, clientAssertion));
+        appendMessage(new SavedPolicyMessage(POLICY_UPDATED, binding, clientAssertion));
     }
 
     // can be called from any thread
@@ -426,10 +431,10 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             error.printStackTrace(p);
             p.flush();
             String mess = b.toString("UTF-8");
-            appendMessage(new PolicyErrorMessage("   Policy download error", binding, mess));
+            appendMessage(new PolicyErrorMessage(POLICY_DOWNLOAD_ERROR, binding, mess));
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);
-            appendMessage(new SavedTextMessage("   Policy download error", error == null ? "null" : error.getMessage()));
+            appendMessage(new SavedTextMessage(POLICY_DOWNLOAD_ERROR, error == null ? "null" : error.getMessage()));
         } finally {
             b.close();
         }
