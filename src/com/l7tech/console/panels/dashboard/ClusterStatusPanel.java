@@ -254,7 +254,7 @@ public class ClusterStatusPanel extends JPanel {
             public void valueChanged(ListSelectionEvent e) {
                 int row = clusterStatusTable.getSelectedRow();
                 boolean canDelete = false;
-                if (row >= 0) {
+                if (row >= 0 && Registry.getDefault().isAdminContextPresent()) {
                     String nodeId = (String) clusterStatusTable.getValueAt(row, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
                     boolean logsBeingDisplayed = displayingLogsForNode(nodeId);
 

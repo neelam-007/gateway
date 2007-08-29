@@ -146,6 +146,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     public void onLogoff(LogonEvent e) {
         serviceMetricsPanel.onLogoff(e);
         clusterStatusPanel.onLogoff(e);
+        dispose();
     }
 
     public void setVisible(boolean vis) {
