@@ -29,16 +29,8 @@ launch_wizard(){
     	fi
 }
 
-if [ -z "${launchtype}" ] || [ ${launchtype} == "-graphical" ]; then
-    if [ -z "${DISPLAY}" ]; then
-        echo "No DISPLAY variable set, running in console only mode"
-        launchtype="-console"
-    fi
-fi
-
 if [ "${launchtype}z" == "-exportsharedkeyz" ] || [ "${launchtype}z" == "-changeMasterPassphrasez" ]; then
     ${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
 else
     launch_wizard "${launchtype}"
 fi
-
