@@ -36,11 +36,13 @@ import java.util.logging.Logger;
 class MessageViewerModel extends AbstractListModel implements RequestInterceptor {
     private static final Logger log = Logger.getLogger(MessageViewerModel.class.getName());
     private static final int maxMessages = 64;
-    private static final String TO_SERVER ='\u2192' + " To Server";
-    private static final String FROM_SERVER = '\u2190' + " From Server";
-    private static final String POLICY_UPDATED = '\u2190' + " Policy updated";
-    private static final String POLICY_DOWNLOAD_ERROR = '\u2190' + " Policy download error";
-    private static final String SERVER_ERROR = '\u2190' + " Server Error";
+    private static final char RIGHTWARD_ARROW = '\u2192';
+    private static final char LEFTWARD_ARROW = '\u2190';
+    private static final String TO_SERVER = RIGHTWARD_ARROW + " To Server";
+    private static final String FROM_SERVER = LEFTWARD_ARROW + " From Server";
+    private static final String POLICY_UPDATED = LEFTWARD_ARROW + " Policy updated";
+    private static final String POLICY_DOWNLOAD_ERROR = LEFTWARD_ARROW + " Policy download error";
+    private static final String SERVER_ERROR = LEFTWARD_ARROW + " Server Error";
 
     private List<SavedMessage> messages = new ArrayList<SavedMessage>(maxMessages);
     private boolean recordFromClient = false;
