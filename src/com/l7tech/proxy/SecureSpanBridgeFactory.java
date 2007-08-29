@@ -9,10 +9,9 @@ import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
@@ -28,6 +27,7 @@ import org.xml.sax.SAXException;
 import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
@@ -110,8 +110,10 @@ public class SecureSpanBridgeFactory {
             ssg.setKeyStoreFile(new File(options.getKeyStorePath()));
         if (options.getCertStorePath() != null)
             ssg.setTrustStoreFile(new File(options.getCertStorePath()));
-        if (options.getUseSslByDefault() != null)
+        if (options.getUseSslByDefault() != null) {
+            //noinspection UnnecessaryUnboxing
             ssg.setUseSslByDefault(options.getUseSslByDefault().booleanValue());
+        }
         if (options.getTrustedGateway() != null) {
             SecureSpanBridgeImpl trustedBridge = (SecureSpanBridgeImpl)options.getTrustedGateway();
             ssg.setTrustedGateway(trustedBridge.getSsg());
@@ -208,24 +210,54 @@ public class SecureSpanBridgeFactory {
             QName[] names = SoapUtil.getPayloadNames(message);
             String nsUri = names == null || names.length < 1 ? null : names[0].getNamespaceURI();
             PolicyAttachmentKey pak = new PolicyAttachmentKey(nsUri, soapAction, origUrl.getFile());
-            Message request = new Message();
+            final Message request = new Message();
             request.initialize(message);
-            Message response = new Message();
-            PolicyApplicationContext context = null;
+            final Message response = new Message();
+            final PolicyApplicationContext context;
+            PolicyApplicationContext contextToClose = null;
             try {
-                context = new PolicyApplicationContext(ssg, request, response, nri, pak, origUrl);
+                context = contextToClose = new PolicyApplicationContext(ssg, request, response, nri, pak, origUrl);
                 mp.processMessage(context);
                 // Copy results out before context gets closed
                 final HttpResponseKnob responseHttp = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
                 final int httpStatus = responseHttp != null ? responseHttp.getStatus() : 500;
-                final Document doc = context.getResponse().getXmlKnob().getDocumentReadOnly(); // we no longer care about sync with underlying MIME part
-                return new Result() {
+                return new MimeResult() {
                     public int getHttpStatus() {
                         return httpStatus;
                     }
 
-                    public Document getResponse() {
-                        return doc;
+                    public Document getResponse() throws SAXException, IOException {
+                        return response.getXmlKnob().getDocumentReadOnly();
+                    }
+
+                    public boolean isResponseXml() throws IOException {
+                        return response.isXml();
+                    }
+
+                    public String getContentType() throws IOException {
+                        return response.getMimeKnob().getOuterContentType().getFullValue();
+                    }
+
+                    public long getContentLength() throws IOException {
+                        return response.getMimeKnob().getContentLength();
+                    }
+
+                    public InputStream getResponseStream() throws IOException {
+                        try {
+                            return response.getMimeKnob().getEntireMessageBodyAsInputStream();
+                        } catch (NoSuchPartException e) {
+                            throw new CausedIOException("Unable to read response: " + ExceptionUtils.getMessage(e), e); // can't happen
+                        }
+                    }
+
+                    public byte[] getResponseBytes() throws IOException {
+                        InputStream stream = null;
+                        try {
+                            stream = getResponseStream();
+                            return HexUtils.slurpStream(stream);
+                        } finally {
+                            ResourceUtils.closeQuietly(stream);
+                        }
                     }
                 };
             } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
@@ -259,8 +291,8 @@ public class SecureSpanBridgeFactory {
             } catch (PolicyLockedException e) {
                 throw new CausedSendException(e);
             } finally {
-                if (context != null)
-                    context.close();
+                if (contextToClose != null)
+                    contextToClose.close();
                 CurrentSslPeer.clear();
             }
         }

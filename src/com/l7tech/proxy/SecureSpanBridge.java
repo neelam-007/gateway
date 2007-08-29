@@ -10,6 +10,7 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -26,8 +27,67 @@ public interface SecureSpanBridge {
      * This is the result returned from a call to send().
      */
     public static interface Result {
+        /**
+         * Check the HTTP status of the result.
+         * @return the HTTP status, e.g., 200 for success or 500 for a fault
+         */
         int getHttpStatus();
+
+        /**
+         * Get the response document, if the response was XML.
+         *
+         * @return the response as a DOM document.  Never null.
+         * @throws IOException if there is a problem reading the response
+         * @throws SAXException if the response isn't declared as XML, or if the XML is not well-formed
+         */
         Document getResponse() throws IOException, SAXException;
+    }
+
+    /**
+     * Extended result information returned from SSB API version 4.2.0 and higher.
+     * This allows for non-XML responses.
+     */
+    public static interface MimeResult extends Result {
+        /**
+         * Check if the response was declared as XML.
+         *
+         * @return true if a call to getResponse() would return a Document.
+         * @throws IOException if there is a problem reading the response
+         */
+        boolean isResponseXml() throws IOException;
+
+        /**
+         * Get the reponse content type.
+         *
+         * @return the full content type of the response, e.g., "text/xml; charset=utf-8".
+         * @throws IOException if there is a problem reading the response
+         */
+        String getContentType() throws IOException;
+
+        /**
+         * Get the response content length.
+         *
+         * @return the length of the response body in bytes, or -1 if not known in advance.
+         * @throws IOException if there is a problem reading the response
+         */
+        long getContentLength() throws IOException;
+
+        /**
+         * Get the raw response bytes as a stream.
+         *
+         * @return an InputStream that will produce the response bytes.  Never null.
+         * @throws IOException if there is a problem reading the response
+         */
+        InputStream getResponseStream() throws IOException;
+
+        /**
+         * Get the response as a byte array.  This requires that the entire response
+         * can fit into memory.
+         *
+         * @return the response body as a byte array.  Never null, but may be empty.
+         * @throws IOException if there is a problem reading the response
+         */
+        byte[] getResponseBytes() throws IOException;
     }
 
     /** Thrown if there is a problem sending a message to the Gateway. */
@@ -71,6 +131,7 @@ public interface SecureSpanBridge {
      * @param soapAction the SOAPAction header to use for this message, including surrounding double-quote characters
      * @param message the SOAPEnvelope containing the message to send, as a DOM tree
      * @return the {@link Result} returned by the Gateway.  Never null.
+     *         As of SecureSpanBridge version 4.2.0, this can always by safely downcast to a {@link MimeResult}.
      * @throws SendException                if the operation failed due to one of the following problems:
      *      a client certificate was required but could not be obtained;
      *      this request cannot succeed until the client or server configuration is changed;
@@ -78,8 +139,8 @@ public interface SecureSpanBridge {
      *      the Gateways's SSL certificate could not be obtained, validated, and/or saved;
      *      the response from the Gateway was signed, but the signature did not validate.
      * @throws BadCredentialsException      if the username or password was not accepted by the Gateway
-     * @throws IOException                  if information couldn't be obtained from the SSG due to network trouble
-     * @throws IOException                  if a certificate could not be saved to disk
+     * @throws IOException                  if information couldn't be obtained from the SSG due to network trouble; or,
+     *                                      if a certificate could not be saved to disk
      * @throws CertificateAlreadyIssuedException if we need a client cert but the Gateway has already issued us one
      */
     Result send(String soapAction, Document message) throws SendException, IOException, BadCredentialsException,
@@ -149,12 +210,12 @@ public interface SecureSpanBridge {
      * If no Bridge client certificate has yet been obtained or imported, the Bridge will generate a new private key
      * and send a certificate signing request to the Gateway to apply for a new client certificate.
      *
-     * @throws IOException if there was a network problem downloading the server cert
-     * @throws IOException if there was a problem reading or writing the keystore file
-     * @throws IOException if the keystore was corrupt
+     * @throws IOException if there was a network problem downloading the server cert; or,
+     *                     if there was a problem reading or writing the keystore file; or,
+     *                     if the keystore was corrupt
      * @throws BadCredentialsException if the downloaded Gateway SSL cert could not be verified with the configured username and password
-     * @throws GeneralSecurityException (specifically, CertificateException) if the Gateway provides an invalid certificate
-     * @throws GeneralSecurityException for miscellaneous and mostly unlikely certificate or key store problems
+     * @throws GeneralSecurityException (specifically, CertificateException) if the Gateway provides an invalid certificate; or,
+     *                                  for miscellaneous and mostly unlikely certificate or key store problems
      * @throws CertificateAlreadyIssuedException if the Gateway has already issued a client certificate to this account
      */
     void ensureCertificatesAreAvailable() throws IOException, BadCredentialsException, GeneralSecurityException, CertificateAlreadyIssuedException;
@@ -170,9 +231,9 @@ public interface SecureSpanBridge {
      * @param serverCert the X509 certificate to use for this Gateway.  Will be saved to the Bridge's Cert Store, and
      *                   used for trusting future SSL connections to the Gateway, and for WS-Security encryption of
      *                   messages bound for the Gateway.
-     * @throws IOException if there is a problem with the specified certificate
-     * @throws IOException if the Cert Store cannot be written
-     * @throws IOException if the Cert Store is corrupt
+     * @throws IOException if there is a problem with the specified certificate; or,
+     *                     if the Cert Store cannot be written; or,
+     *                     if the Cert Store is corrupt
      */
     void importServerCert(X509Certificate serverCert) throws IOException;
 
@@ -188,10 +249,10 @@ public interface SecureSpanBridge {
      *
      * @param clientCert the X509 certificate to use for this account
      * @param clientKey the private key corresponding to the public key in getCachedClientCert
-     * @throws IOException if there is a problem with the specified certificate
-     * @throws IOException if the Key Store or Cert Store cannot be written
-     * @throws IOException if the Key Store or Cert Store is corrupt
-     * @throws IOException if there is an existing Key Store encrypted with a password other than the current password
+     * @throws IOException if there is a problem with the specified certificate; or,
+     *                     if the Key Store or Cert Store cannot be written; or,
+     *                     if the Key Store or Cert Store is corrupt; or,
+     *                     if there is an existing Key Store encrypted with a password other than the current password
      */
     void importClientCert(X509Certificate clientCert, PrivateKey clientKey) throws IOException;
 
@@ -211,11 +272,11 @@ public interface SecureSpanBridge {
      * @param alias the name of the entry within this file to be imported, or null to import the first entry
      *              that contains a certificate and private key
      * @param pkcs12Password the password to use to decrypt the specified PKCS#12 file
-     * @throws IOException if the specified key store file cannot be read
-     * @throws IOException if the specified alias is not present in the file, or does not contain a private key
-     * @throws IOException if the Key Store or Cert Store cannot be written
-     * @throws IOException if the Key Store or Cert Store is corrupt
-     * @throws IOException if there is an existing Key Store encrypted with a password other than the current password
+     * @throws IOException if the specified key store file cannot be read; or,
+     *                     if the specified alias is not present in the file, or does not contain a private key; or,
+     *                     if the Key Store or Cert Store cannot be written; or,
+     *                     if the Key Store or Cert Store is corrupt; or,
+     *                     if there is an existing Key Store encrypted with a password other than the current password
      */
     void importClientCert(File pkcs12Path, String alias, char[] pkcs12Password) throws IOException;
 

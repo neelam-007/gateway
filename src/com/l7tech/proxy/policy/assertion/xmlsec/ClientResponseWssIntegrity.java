@@ -75,6 +75,10 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
         }
         
         final Message response = context.getResponse();
+        if (!response.isSoap()) {
+            log.info("Response is not SOAP; response integrity is therefore not applicable");
+            return AssertionStatus.NOT_APPLICABLE;
+        }
         final XmlKnob responseXml = response.getXmlKnob();
         final SecurityKnob responseSec = response.getSecurityKnob();
         Document soapmsg = responseXml.getDocumentReadOnly();

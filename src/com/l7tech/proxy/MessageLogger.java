@@ -38,7 +38,8 @@ public class MessageLogger implements RequestInterceptor {
     public void onFrontEndRequest(PolicyApplicationContext context) {
         if (!log.isLoggable(Level.FINE)) return;
         try {
-            log.fine("Received client request: " + XmlUtil.nodeToString(context.getRequest().getXmlKnob().getOriginalDocument()));
+            String requestStr = toString(context.getRequest().getMimeKnob());
+            log.fine("Received client request: " + requestStr);
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error examining client request", e);
         }

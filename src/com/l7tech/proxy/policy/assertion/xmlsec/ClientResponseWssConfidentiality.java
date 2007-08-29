@@ -5,6 +5,7 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.common.security.token.EncryptedElement;
 import com.l7tech.common.xml.xpath.XpathExpression;
+import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
@@ -53,8 +54,13 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
             log.fine("This is intended for another recipient, there is nothing to validate here.");
             return AssertionStatus.NONE;
         }
-        Document soapmsg = context.getResponse().getXmlKnob().getDocumentReadOnly();
-        ProcessorResult wssRes = context.getResponse().getSecurityKnob().getProcessorResult();
+        final Message response = context.getResponse();
+        if (!response.isSoap()) {
+            log.info("Response is not SOAP; response confidentiality is therefore not applicable");
+            return AssertionStatus.NOT_APPLICABLE;
+        }
+        Document soapmsg = response.getXmlKnob().getDocumentReadOnly();
+        ProcessorResult wssRes = response.getSecurityKnob().getProcessorResult();
         if (wssRes == null) {
             log.info("WSS processing was not done on this response.");
             return AssertionStatus.FAILED;

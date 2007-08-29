@@ -155,19 +155,7 @@ public class MessageProcessor {
                             handleCertStatusInvalid(context, null);
                             // FALLTHROUGH -- retry with new client certificate
                         } catch (ServerCertificateUntrustedException e) {
-                            if (context.getSsg().isFederatedGateway()) {
-                                SslPeer sslPeer = CurrentSslPeer.get();
-                                if (sslPeer == ssg)
-                                    ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, null);
-                                else if (sslPeer == context.getSsg().getTrustedGateway()) {
-                                    ((Ssg)sslPeer).getRuntime().getSsgKeyStoreManager().installSsgServerCertificate((Ssg)sslPeer, context.getFederatedCredentials());
-                                } else if (sslPeer != null)
-                                    // We were talking to something else, probably a token provider.
-                                    handleSslExceptionForWsTrustTokenService(ssg, sslPeer, e);
-                                else
-                                    throw new ConfigurationException("Internal "+ Constants.APP_NAME+" error: server certificate untrusted, but no SSL peer", e);
-                            } else
-                                ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, context.getCredentialsForTrustedSsg()); // might throw BadCredentialsException
+                            handleServerCertificateUntrustedException(ssg, context, e);
                             // FALLTHROUGH allow policy to reset and retry
                         }
                     } catch (PolicyRetryableException e) {
@@ -197,6 +185,22 @@ public class MessageProcessor {
                 }
             }
         }
+    }
+
+    private void handleServerCertificateUntrustedException(Ssg ssg, PolicyApplicationContext context, ServerCertificateUntrustedException e) throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, CertificateException, KeyStoreException, HttpChallengeRequiredException, ConfigurationException {
+        if (context.getSsg().isFederatedGateway()) {
+            SslPeer sslPeer = CurrentSslPeer.get();
+            if (sslPeer == ssg)
+                ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, null);
+            else if (sslPeer == context.getSsg().getTrustedGateway()) {
+                ((Ssg)sslPeer).getRuntime().getSsgKeyStoreManager().installSsgServerCertificate((Ssg)sslPeer, context.getFederatedCredentials());
+            } else if (sslPeer != null)
+                // We were talking to something else, probably a token provider.
+                handleSslExceptionForWsTrustTokenService(ssg, sslPeer, e);
+            else
+                throw new ConfigurationException("Internal "+ Constants.APP_NAME+" error: server certificate untrusted, but no SSL peer", e);
+        } else
+            ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, context.getCredentialsForTrustedSsg()); // might throw BadCredentialsException
     }
 
     private void handleAnySslException(final PolicyApplicationContext context, SSLException e, Ssg ssg) throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException, HttpChallengeRequiredException {
@@ -487,7 +491,6 @@ public class MessageProcessor {
                     throw new PolicyRetryableException("Flushed bad secure conversation session.");
                 }
             }
-            // TODO should we reject the response if isn't SOAP, but the request used WS-SC
             // FALLTHROUGH: not handled by agent -- fall through and send it back to the client
         }
         else if (context.usedKerberosServiceTicketReference()) {
@@ -591,9 +594,9 @@ public class MessageProcessor {
      *                                        if the response from the SSG could not be undecorated
      */
     private void obtainResponse(final PolicyApplicationContext context)
-            throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,
+            throws ConfigurationException, IOException, PolicyRetryableException,
             OperationCanceledException, ClientCertificateException, BadCredentialsException,
-            KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException,
+            KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException, GeneralSecurityException,
             InvalidDocumentFormatException, ProcessorException, BadSecurityContextException, PolicyLockedException
     {
         URL url = getUrl(context);
@@ -787,14 +790,6 @@ public class MessageProcessor {
             if (LogFlags.logRawResponseStream)
                 responseBodyAsStream = new TeeInputStream(responseBodyAsStream, System.err);
 
-            if (!(outerContentType.isXml() || outerContentType.isMultipart())) {
-                final String msg = "Server returned unsupported Content-Type (" + outerContentType.getFullValue() + ")";
-                log.warning(msg);
-                logResponseError(msg, httpResponse, context);
-                checkStatus(status, responseHeaders, url, ssg);
-                throw new IOException(msg);
-            }
-
             response.initialize(Managers.createStashManager(),
                                 outerContentType,
                                 responseBodyAsStream);
@@ -822,22 +817,21 @@ public class MessageProcessor {
             });
             httpResponse = null; // no longer need to close the response
 
-            // Assert that response is XML
-            Document responseDocument = response.getXmlKnob().getDocumentWritable();
+            Document responseDocument = response.isXml() ? response.getXmlKnob().getDocumentWritable() : null;
 
             if (LogFlags.logResponse) {
                 final MimeKnob respMime = response.getMimeKnob();
-                if (LogFlags.reformatLoggedXml) {
+                if (LogFlags.reformatLoggedXml && responseDocument != null) {
                     String logStr = respMime.getOuterContentType().toString() + "\r\n" +
                             XmlUtil.nodeToFormattedString(responseDocument);
                     log.info("Got response from Gateway (reformatted):\n" + logStr);
                 } else {
-                    if (LogFlags.logAttachments && respMime.isMultipart()) {
+                    if (responseDocument == null || (LogFlags.logAttachments && respMime.isMultipart())) {
                         BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
                         try {
                             InputStream bodyStream = respMime.getEntireMessageBodyAsInputStream();
                             HexUtils.copyStream(bodyStream, baos);
-                            log.info("Got response from Gateway (unformatted, including attachments):\n" +
+                            log.info("Got " + respMime.getOuterContentType().getMainValue() + " response from Gateway (unformatted, including attachments):\n" +
                                      baos.toString(respMime.getOuterContentType().getEncoding()));
                         } finally {
                             baos.close();
@@ -867,63 +861,15 @@ public class MessageProcessor {
             }
 
             ProcessorResult processorResult = null;
-            try {
-                // TODO optimize this -- a lot of these parameter objects could be saved and reused
-                final boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
-                final SignerInfo clientSignerInfo = haveKey ? new SignerInfo(ssg.getClientCertificatePrivateKey(),
-                                                                             new X509Certificate[] { ssg.getClientCertificate() })
-                                                    : null;
-                SimpleSecurityTokenResolver tokenResolver =
-                        new SimpleSecurityTokenResolver(new X509Certificate[] { ssg.getClientCertificate(),
-                                ssg.getServerCertificate() }, clientSignerInfo == null ? null : new SignerInfo[] { clientSignerInfo })
-                        {
-                            public byte[] getSecretKeyByEncryptedKeySha1(String value) {
-                                final SecretKey encryptedKeySecretKey = context.getEncryptedKeySecretKey();
-                                final String encryptedKeySha1 = context.getEncryptedKeySha1();
-                                if (encryptedKeySecretKey == null || encryptedKeySha1 == null) return null;
-                                if (!(encryptedKeySha1.equals(value))) return null;
-                                return encryptedKeySecretKey.getEncoded();
-                            }
-
-                            public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
-                                KerberosServiceTicket tick = context.getExistingKerberosServiceTicket();
-                                if (tick == null) return null;
-                                String tickId = context.getKerberosServiceTicketId();
-                                if (tickId == null) return null;
-                                if (!(tickId.equals(kerberosSha1))) return null;
-                                return WssProcessorUtil.makeKerberosToken(tick.getGSSAPReqTicket()); 
-                            }
-                        };
-
-                final ProcessorResult processorResultRaw =
-                        wssProcessor.undecorateMessage(response,
-                                                       ssg.getServerCertificate(),
-                                                       scf,
-                                                       tokenResolver
-                        );
-                // Translate timestamp in result from SSG time to local time
-                final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();
-                processorResult = new ProcessorResultWrapper(processorResultRaw) {
-                    public WssTimestamp getTimestamp() {
-                        return new WssTimestampWrapper(wssTimestampRaw, ssg.getRuntime().getDateTranslatorFromSsg());
-                    }
-                };
-
-                // the processed security header must be deleted *if* it was explicitely addressed to us
-                if (processorResult.getProcessedActor() != null &&
-                    processorResult.getProcessedActor() == SecurityActor.L7ACTOR) {
-                    Element eltodelete = SoapUtil.getSecurityElement(responseDocument, SecurityActor.L7ACTOR.getValue());
-                    if (eltodelete == null) {
-                        log.warning("the security element was already deleted somehow?"); // should not happen
-                    } else {
-                        eltodelete.getParentNode().removeChild(eltodelete);
-                    }
+            if (response.isSoap()) {
+                try {
+                    processorResult = wssProcessResponse(context, ssg, response, scf, responseDocument);
+                } catch (MessageNotSoapException e) {
+                    /* FALLTHROUGH and use null */
                 }
-
-            } catch (MessageNotSoapException e) {
-                // Response is not SOAP.
+            }
+            if (processorResult == null) {
                 log.info("Response from Gateway is not SOAP.");
-                processorResult = null;
             }
 
             response.getSecurityKnob().setProcessorResult(processorResult);
@@ -942,6 +888,96 @@ public class MessageProcessor {
                 }
             }
         }
+    }
+
+    /**
+     * Run a response through the WSS processor.
+     * Caller is responsible for ensuring that the response is SOAP before calling this.
+     *
+     * @param context   the policy application context.  required
+     * @param ssg       the Ssg object.  Required
+     * @param response  the response to process.  Required
+     * @param scf       the SecurityContextFinder, or null to disable WS-SecureConversation support
+     * @param responseDocument  the reponse XML document.  Required
+     * @return the ProcessorResult.  Never null.
+     * @throws IOException                    if there was a network problem getting the message response from the SSG; or
+     *                                          if there was a network problem downloading a policy from the SSG
+     * @throws ServerCertificateUntrustedException
+     *                                        if a policy couldn't be downloaded because the SSG SSL certificate
+     *                                        was not recognized and needs to be (re)imported
+     * @throws OperationCanceledException     if credentials were needed to continue processing, but the user canceled
+     *                                        the logon dialog (or we are running headless).
+     * @throws BadCredentialsException        if the private key could not be decrypted with the current password
+     * @throws NoSuchAlgorithmException       if the client certificate key was not RSA
+     * @throws InvalidDocumentFormatException if the response from the SSG was not a valid SOAP document
+     * @throws ProcessorException             if the response from the SSG could not be undecorated
+     * @throws KeyStoreCorruptException       if the trust store or key store is damaged
+     * @throws HttpChallengeRequiredException if credentials are required and this Ssg is using credentials from client
+     * @throws GeneralSecurityException       if there is a problem with a key or a signature
+     * @throws SAXException                   if there is a problem with the response XML
+     * @throws BadSecurityContextException    if the response refers to an unrecognized WS-SecureConversation context
+     */
+    private ProcessorResult wssProcessResponse(final PolicyApplicationContext context,
+                                               final Ssg ssg,
+                                               Message response,
+                                               SecurityContextFinder scf,
+                                               Document responseDocument)
+            throws KeyStoreCorruptException, BadCredentialsException, HttpChallengeRequiredException,
+                   OperationCanceledException, ProcessorException, InvalidDocumentFormatException,
+                   GeneralSecurityException, BadSecurityContextException, SAXException, IOException
+    {
+        ProcessorResult processorResult;// TODO optimize this -- a lot of these parameter objects could be saved and reused
+        final boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
+        final SignerInfo clientSignerInfo = haveKey ? new SignerInfo(ssg.getClientCertificatePrivateKey(),
+                                                                     new X509Certificate[] { ssg.getClientCertificate() })
+                                            : null;
+        SimpleSecurityTokenResolver tokenResolver =
+                new SimpleSecurityTokenResolver(new X509Certificate[] { ssg.getClientCertificate(),
+                                                                        ssg.getServerCertificate() }, clientSignerInfo == null ? null : new SignerInfo[] { clientSignerInfo })
+                {
+                    public byte[] getSecretKeyByEncryptedKeySha1(String value) {
+                        final SecretKey encryptedKeySecretKey = context.getEncryptedKeySecretKey();
+                        final String encryptedKeySha1 = context.getEncryptedKeySha1();
+                        if (encryptedKeySecretKey == null || encryptedKeySha1 == null) return null;
+                        if (!(encryptedKeySha1.equals(value))) return null;
+                        return encryptedKeySecretKey.getEncoded();
+                    }
+
+                    public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
+                        KerberosServiceTicket tick = context.getExistingKerberosServiceTicket();
+                        if (tick == null) return null;
+                        String tickId = context.getKerberosServiceTicketId();
+                        if (tickId == null) return null;
+                        if (!(tickId.equals(kerberosSha1))) return null;
+                        return WssProcessorUtil.makeKerberosToken(tick.getGSSAPReqTicket());
+                    }
+                };
+
+        final ProcessorResult processorResultRaw =
+                wssProcessor.undecorateMessage(response,
+                                               ssg.getServerCertificate(),
+                                               scf,
+                                               tokenResolver
+                );
+        // Translate timestamp in result from SSG time to local time
+        final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();
+        processorResult = new ProcessorResultWrapper(processorResultRaw) {
+            public WssTimestamp getTimestamp() {
+                return new WssTimestampWrapper(wssTimestampRaw, ssg.getRuntime().getDateTranslatorFromSsg());
+            }
+        };
+
+        // the processed security header must be deleted *if* it was explicitely addressed to us
+        if (processorResult.getProcessedActor() != null &&
+            processorResult.getProcessedActor() == SecurityActor.L7ACTOR) {
+            Element eltodelete = SoapUtil.getSecurityElement(responseDocument, SecurityActor.L7ACTOR.getValue());
+            if (eltodelete == null) {
+                log.warning("the security element was already deleted somehow?"); // should not happen
+            } else {
+                eltodelete.getParentNode().removeChild(eltodelete);
+            }
+        }
+        return processorResult;
     }
 
     private void handleCertStatusStale(PolicyApplicationContext context) {

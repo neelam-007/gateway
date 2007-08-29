@@ -8,6 +8,7 @@ package com.l7tech.proxy.policy.assertion;
 
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.xpath.XpathExpression;
+import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
@@ -45,6 +46,11 @@ public class ClientResponseXpathAssertion extends ClientXpathAssertion {
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException,
             SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException
     {
+        final Message response = context.getResponse();
+        if (!response.isXml()) {
+            log.info("Response is not XML; response XPath is therefore not applicable");
+            return AssertionStatus.NOT_APPLICABLE;
+        }
         final XpathExpression xpathExpression = getXpathExpression();
         final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getResponse().getXmlKnob().getDocumentReadOnly(),
                                                                 xpathExpression.getNamespaces());

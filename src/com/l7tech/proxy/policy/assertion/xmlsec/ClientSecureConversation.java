@@ -6,6 +6,7 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
@@ -74,6 +75,11 @@ public class ClientSecureConversation extends ClientAssertion {
             IOException, SAXException, ResponseValidationException, KeyStoreCorruptException,
             PolicyAssertionException, InvalidDocumentFormatException
     {
+        final Message response = context.getResponse();
+        if (!response.isSoap()) {
+            log.info("Response is not SOAP; SecureConversation is therefore not applicable");
+            return AssertionStatus.NOT_APPLICABLE;
+        }
         // Make sure the response's WssProcessor.Results contain a reference to the Secure Conversation
         ProcessorResult pr = context.getResponse().getSecurityKnob().getProcessorResult();
         if (pr == null) {

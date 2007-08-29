@@ -3,6 +3,7 @@ package com.l7tech.proxy.gui;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.http.HttpHeaders;
 import com.l7tech.common.message.HttpHeadersKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.proxy.RequestInterceptor;
@@ -51,18 +52,28 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     /** Represents an intercept message we are keeping track of. */
     private static abstract class SavedMessage {
         private final static SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm:ss");
-        private String title;
-        private Date when;
+        private final String title;
+        private final HttpHeaders headers;
+        private final Date when;
+
+        SavedMessage(final String title, final HttpHeaders headers) {
+            this.title = title;
+            this.headers = headers;
+            this.when = new Date();
+        }
 
         SavedMessage(final String title) {
-            this.title = title;
-            this.when = new Date();
+            this(title, null);
         }
 
         abstract Component getComponent(boolean reformat);
 
         public String toString() {
             return dateFormat.format(when) + ": " + title;
+        }
+
+        protected String headersToString() {
+            return headers == null ? "" : (headers.toExternalForm() + "\n");
         }
     }
 
@@ -71,12 +82,16 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         protected String message;
 
         SavedTextMessage(final String title, final String message) {
-            super(title);
+            this(title, message, null);
+        }
+
+        SavedTextMessage(final String title, final String message, final HttpHeaders headers) {
+            super(title, headers);
             this.message = message;
         }
 
         Component getComponent(boolean reformat) {
-            JTextArea ta = new ContextMenuTextArea(message);
+            JTextArea ta = new ContextMenuTextArea(headersToString() + message);
             ta.setEditable(false);
             return ta;
         }
@@ -177,10 +192,6 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         }
     }
 
-    private static String headersToString(HttpHeaders headers) {
-        return headers == null ? "" : headers.toExternalForm();
-    }
-
     /**
      * Represents a message in SOAPEnvelope form.
      * Used for SOAPEnvelope messages to avoid keeping lots of textual copies of
@@ -193,18 +204,15 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         private boolean strWasFormatted = false;
         private String unparsed = null;
         private Document message = null;
-        private HttpHeaders headers = null;
 
         SavedXmlMessage(final String title, final Document msg, HttpHeaders headers) {
-            super(title);
+            super(title, headers);
             this.message = msg;
-            this.headers = headers;
         }
 
         SavedXmlMessage(final String title, final String unparsed, HttpHeaders headers) {
-            super(title);
+            super(title, headers);
             this.unparsed = unparsed;
-            this.headers = headers;
         }
 
         String getMessageText(boolean reformat) {
@@ -215,16 +223,16 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
                     message = XmlUtil.stringToDocument(unparsed);
                 } catch (Exception e) {
                     log.log(Level.SEVERE, e.getMessage(), e);
-                    return headersToString(headers) + "\n" + unparsed;
+                    return headersToString() + unparsed;
                 }
             }
             try {
                 if (reformat)
-                    str = headersToString(headers) + "\n" + XmlUtil.nodeToFormattedString(message);
+                    str = headersToString() + XmlUtil.nodeToFormattedString(message);
                 else
-                    str = headersToString(headers) + "\n" + XmlUtil.nodeToString(message);
+                    str = headersToString() + XmlUtil.nodeToString(message);
             } catch (IOException e) {
-                str = headersToString(headers) + "Unable to read message: " + e;
+                str = headersToString() + "Unable to read message: " + e;
             }
             strWasFormatted = reformat;
             return str;
@@ -305,9 +313,15 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     public void onFrontEndReply(PolicyApplicationContext context) {
         if (!isRecordToClient()) return;
         try {
-            final Document responseDoc = context.getResponse().getXmlKnob().getDocumentReadOnly();
-            HttpHeadersKnob hhk = (HttpHeadersKnob)context.getResponse().getKnobAlways(HttpHeadersKnob.class);
-            appendMessage(new SavedXmlMessage("To Client", responseDoc, hhk.getHeaders()));
+            final Message response = context.getResponse();
+            final HttpHeadersKnob hhk = (HttpHeadersKnob)response.getKnobAlways(HttpHeadersKnob.class);
+            final HttpHeaders headers = hhk.getHeaders();
+            if (!response.isXml()) {
+                appendMessage(new SavedTextMessage("To Client", "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + ">", headers));
+                return;
+            }
+            final Document responseDoc = response.getXmlKnob().getDocumentReadOnly();
+            appendMessage(new SavedXmlMessage("To Client", responseDoc, headers));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get response as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
@@ -334,10 +348,16 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     public void onBackEndReply(PolicyApplicationContext context) {
         if (!isRecordFromServer()) return;
         try {
-            Document responseDoc = context.getResponse().getXmlKnob().getDocumentReadOnly();
-            HttpHeadersKnob hhk = (HttpHeadersKnob)context.getResponse().getKnobAlways(HttpHeadersKnob.class);
+            final Message response = context.getResponse();
+            final HttpHeadersKnob hhk = (HttpHeadersKnob)response.getKnobAlways(HttpHeadersKnob.class);
+            final HttpHeaders headers = hhk.getHeaders();
+            if (!response.isXml()) {
+                appendMessage(new SavedTextMessage("   From Server", "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + ">", headers));
+                return;
+            }
+            Document responseDoc = response.getXmlKnob().getDocumentReadOnly();
             responseDoc = XmlUtil.stringToDocument(XmlUtil.nodeToString(responseDoc));
-            appendMessage(new SavedXmlMessage("   From Server", responseDoc, hhk.getHeaders()));
+            appendMessage(new SavedXmlMessage("   From Server", responseDoc, headers));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get response as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
