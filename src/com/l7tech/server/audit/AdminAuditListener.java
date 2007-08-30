@@ -120,6 +120,8 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 if (temp != null) level = temp;
             }
             return level;
+        } else if (genericEvent instanceof AuditRevokeAllUserCertificates) {
+            return Level.SEVERE;
         } else if (genericEvent instanceof AdminEvent) {
             return Level.INFO;
         } else {
@@ -213,7 +215,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             AdminInfo info = getAdminInfo();
             if (info == null) return null;
 
-            return new AdminAuditRecord(level(event), nodeId, 0, "<none>", "", 'D', event.getNote(), info.identityProviderOid, info.login, info.id, info.ip);
+            return new AdminAuditRecord(level(event), nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_OTHER, event.getNote(), info.identityProviderOid, info.login, info.id, info.ip);
         } else if (genericEvent instanceof LogonEvent) {
             LogonEvent le = (LogonEvent)genericEvent;
             User admin = (User)le.getSource();

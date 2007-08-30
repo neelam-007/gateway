@@ -595,9 +595,12 @@ public class LogPanel extends JPanel {
                     msg += "Admin user : " + aarec.getUserName() + "\n";
                     msg += "Admin IP   : " + arec.getIpAddress() + "\n";
                     msg += "Action     : " + fixAction(aarec.getAction()) + "\n";
-                    msg += "Entity name: " + arec.getName() + "\n";
-                    msg += "Entity id  : " + aarec.getEntityOid() + "\n";
-                    msg += "Entity type: " + fixType(aarec.getEntityClassname()) + "\n";
+                    if (AdminAuditRecord.ACTION_LOGIN!=aarec.getAction() &&
+                        AdminAuditRecord.ACTION_OTHER!=aarec.getAction()) {
+                        msg += "Entity name: " + arec.getName() + "\n";
+                        msg += "Entity id  : " + aarec.getEntityOid() + "\n";
+                        msg += "Entity type: " + fixType(aarec.getEntityClassname()) + "\n";
+                    }
                 } else if (arec instanceof MessageSummaryAuditRecord) {
                     MessageSummaryAuditRecord sum = (MessageSummaryAuditRecord)arec;
                     msg += "Event Type : Message Summary" + "\n";
@@ -795,6 +798,8 @@ public class LogPanel extends JPanel {
                 return "Object Deleted";
             case AdminAuditRecord.ACTION_LOGIN:
                 return "Admin Login";
+            case AdminAuditRecord.ACTION_OTHER:
+                return "Other";
             default:
                 return "Unknown Action '" + action + "'";
         }

@@ -13,6 +13,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RoleManager;
 
@@ -29,6 +30,9 @@ import java.util.logging.Logger;
 import java.io.UnsupportedEncodingException;
 import javax.security.auth.x500.X500Principal;
 
+import org.springframework.context.ApplicationEventPublisherAware;
+import org.springframework.context.ApplicationEventPublisher;
+
 /**
  * Server side implementation of the IdentityAdmin interface.
  * This was originally used with the Axis layer
@@ -38,12 +42,13 @@ import javax.security.auth.x500.X500Principal;
  * User: flascelles<br/>
  * Date: May 26, 2003
  */
-public class IdentityAdminImpl implements IdentityAdmin {
+public class IdentityAdminImpl implements ApplicationEventPublisherAware, IdentityAdmin {
     private ClientCertManager clientCertManager;
 
     private final LicenseManager licenseManager;
     private final RoleManager roleManager;
     private final X509Certificate certificateAuthorityCertificate;
+    private ApplicationEventPublisher applicationEventPublisher;
 
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
@@ -56,6 +61,13 @@ public class IdentityAdminImpl implements IdentityAdmin {
         this.licenseManager = licenseManager;
         this.roleManager = roleManager;
         this.certificateAuthorityCertificate = caCert;
+    }
+
+    public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+        if (this.applicationEventPublisher != null)
+            throw new IllegalStateException("applicationEventPublisher is already set");
+
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     private void checkLicense() throws RemoteException {
@@ -415,7 +427,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
             // revoke the cert in internal CA
             List<ClientCertManager.CertInfo> infos = clientCertManager.findAll();
             for (ClientCertManager.CertInfo info : infos) {
-                logger.log(Level.INFO, "Revoking certificate for user ''{0}''.", info.getLogin());
+                logger.log(Level.FINE, "Revoking certificate for user ''{0}'' [{1}/{2}].",
+                        new String[]{info.getLogin(),Long.toString(info.getProviderId()),info.getUserId()});
 
                 UserBean userBean = new UserBean();
                 userBean.setProviderId(info.getProviderId());
@@ -423,11 +436,15 @@ public class IdentityAdminImpl implements IdentityAdmin {
                 userBean.setLogin(info.getLogin());
                 if (clientCertManager.revokeUserCertIfIssuerMatches(userBean, caSubject)) {
                     revocationCount++;
-                    logger.log(Level.INFO, "Revoked certificate for user ''{0}''.", info.getLogin());
+                    logger.log(Level.INFO, "Revoked certificate for user ''{0}'' [{1}/{2}].",
+                            new String[]{info.getLogin(),Long.toString(info.getProviderId()),info.getUserId()});
                 } else {
-                    logger.log(Level.INFO, "Certificate not revoked for user ''{0}''.", info.getLogin());
+                    logger.log(Level.INFO, "Certificate not revoked for user ''{0}'' [{1}/{2}].",
+                            new String[]{info.getLogin(),Long.toString(info.getProviderId()),info.getUserId()});
                 }
             }
+
+            applicationEventPublisher.publishEvent(new AuditRevokeAllUserCertificates(this, revocationCount));
 
             // internal users should have their password "revoked" along with their cert
         } catch (FindException e) {

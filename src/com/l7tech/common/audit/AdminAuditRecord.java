@@ -24,6 +24,7 @@ public class AdminAuditRecord extends AuditRecord {
     public static final char ACTION_UPDATED = 'U';
     public static final char ACTION_DELETED = 'D';
     public static final char ACTION_LOGIN = 'L';
+    public static final char ACTION_OTHER = 'O';
 
     /**
      * Constructs a new AdminAuditRecord.
