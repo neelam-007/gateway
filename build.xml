@@ -1547,6 +1547,7 @@
                 <include name="com/l7tech/logging/SSGLogRecord.class"/>
                 <include name="com/l7tech/logging/LogMessage.class"/>
                 <include name="com/l7tech/logging/StatisticsRecord.class"/>
+                <include name="com/l7tech/common/security/xml/processor/ProcessorException.class"/>
                 <!-- <include name="com/l7tech/message/**/*"/> -->
                 <include name="com/l7tech/message/Message.class"/>
                 <include name="com/l7tech/message/Request.class"/>
