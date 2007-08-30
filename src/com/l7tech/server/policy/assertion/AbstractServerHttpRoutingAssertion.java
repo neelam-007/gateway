@@ -1,23 +1,22 @@
 package com.l7tech.server.policy.assertion;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Collection;
-import java.util.Collections;
-import java.net.URL;
-import java.net.MalformedURLException;
-
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.http.GenericHttpHeader;
+import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.identity.User;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Base class for Server HTTP routing assertions
@@ -106,7 +105,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
             try {
                 new URL("http", addr, 777, "/foo/bar");
             } catch (MalformedURLException e) {
-                auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, new String[]{addr});
+                auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, addr);
                 return false;
             }
         }
@@ -147,14 +146,14 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
                 if (id == null || id.length() < 1) id = clientUser.getId();
 
                 if (id != null && id.length() > 0) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_CHAIN_USERNAME, new String[] {id});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_CHAIN_USERNAME, id);
                     chainId = id;
                 } else
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NO_USER_ID, new String[] {id});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NO_USER_ID, id);
             } else {
                 final String login = context.getLastCredentials().getLogin();
                 if (login != null && login.length() > 0) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_CHAIN_LOGIN, new String[] {login});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_CHAIN_LOGIN, login);
                     chainId = login;
                 } else
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NO_USER);
@@ -169,7 +168,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
                                               HttpCookie.getCookieHeader(cookies)));
 
                 // there is no defined quoting or escape mechanism for HTTP cookies so we'll use URLEncoding
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADD_OUTGOING_COOKIE, new String[] {IV_USER});
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADD_OUTGOING_COOKIE, IV_USER);
             }
         }
     }

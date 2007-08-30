@@ -9,7 +9,7 @@ import com.l7tech.common.security.CertificateValidationResult;
 import com.l7tech.common.security.CertificateValidationType;
 import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 
 /**
  * @author Steve Jones

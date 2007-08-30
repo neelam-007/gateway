@@ -2,7 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.audit.AuditContext;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.http.*;
 import com.l7tech.common.message.*;

@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.comparison.server;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.external.assertions.comparison.BinaryPredicate;
 import com.l7tech.external.assertions.comparison.ComparisonAssertion;
 import com.l7tech.external.assertions.comparison.DataTypePredicate;

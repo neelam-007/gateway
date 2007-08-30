@@ -4,30 +4,29 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.audit.Audit;
+import com.l7tech.common.audit.CommonMessages;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.xml.*;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.MessageProcessingMessages;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
-import javax.wsdl.extensions.soap12.SOAP12Body;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
-import javax.wsdl.extensions.soap.*;
+import javax.wsdl.extensions.soap.SOAPBinding;
+import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.wsdl.extensions.soap12.SOAP12Body;
 import javax.xml.namespace.QName;
 import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.*;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPHeader;
 import javax.xml.transform.dom.DOMSource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1508,13 +1507,13 @@ public class SoapUtil {
      * Gets the QName(s) of the element(s) that should appear as children of the SOAP Body element for messages destined
      * for the provided operation.
      * @param bindingOperation the operation to get QNames from. Must not be null.
-     * @param bindingStyle the style from the SOAP binding element; will be used if the operation doesn't specify its own style. May be null, indicating a default of "document".
-     * @param auditor an Auditor to send error messages to.  May be null.
+     * @param bindingStyle     the style from the SOAP binding element; will be used if the operation doesn't specify its own style. May be null, indicating a default of "document".
+     * @param audit            an Audit implementation to send error messages to.  May be null.
      * @return
      */
     public static List<QName> getOperationPayloadQNames(final BindingOperation bindingOperation,
                                                final String bindingStyle,
-                                               final Auditor auditor)
+                                               final Audit audit)
     {
         //noinspection unchecked
         final List<ExtensibilityElement> bopEels = bindingOperation.getExtensibilityElements();
@@ -1564,7 +1563,7 @@ public class SoapUtil {
 
         if (operationStyle == null) operationStyle = bindingStyle;
         if (operationStyle == null) {
-            if (auditor != null) auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_NO_STYLE, bindingOperation.getName());
+            if (audit != null) audit.logAndAudit(CommonMessages.WSDL_OPERATION_NO_STYLE, bindingOperation.getName());
             operationStyle = Wsdl.STYLE_DOCUMENT;
         }
 
@@ -1602,22 +1601,22 @@ public class SoapUtil {
                 QName tq = part.getTypeName();
                 QName eq = part.getElementName();
                 if (tq != null && eq != null) {
-                    if (auditor != null) auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_PART_TYPE, part.getName());
+                    if (audit != null) audit.logAndAudit(CommonMessages.WSDL_OPERATION_PART_TYPE, part.getName());
                     return null;
                 } else if (tq != null) {
                     operationQNames.add(new QName(null, part.getName()));
-                    if (auditor != null) auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_PART_TYPE, inputMessage.getQName().getLocalPart());
+                    if (audit != null) audit.logAndAudit(CommonMessages.WSDL_OPERATION_PART_TYPE, inputMessage.getQName().getLocalPart());
                 } else if (eq != null) {
                     operationQNames.add(eq);
                 }
             }
         } else {
-            if (auditor != null) auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_BAD_STYLE, operationStyle, bindingOperation.getName());
+            if (audit != null) audit.logAndAudit(CommonMessages.WSDL_OPERATION_BAD_STYLE, operationStyle, bindingOperation.getName());
             return null;
         }
 
         if (operationQNames.isEmpty()) {
-            if (auditor != null) auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NO_QNAMES_FOR_OP, bindingOperation.getName());
+            if (audit != null) audit.logAndAudit(CommonMessages.WSDL_OPERATION_NO_QNAMES_FOR_OP, bindingOperation.getName());
         }
 
         return operationQNames;

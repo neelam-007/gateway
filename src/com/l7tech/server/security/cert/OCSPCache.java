@@ -1,20 +1,19 @@
 package com.l7tech.server.security.cert;
 
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.HashSet;
-
-import com.whirlycott.cache.Cache;
-
-import com.l7tech.server.util.HttpClientFactory;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.util.WhirlycacheFactory;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.SystemMessages;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.util.HttpClientFactory;
+import com.whirlycott.cache.Cache;
+
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Caching wrapper for OCSPClient functionality.

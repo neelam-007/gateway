@@ -1,6 +1,6 @@
 package com.l7tech.server;
 
-import com.l7tech.common.audit.AuditContext;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;

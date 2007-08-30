@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.common.audit;
 
@@ -19,7 +18,8 @@ public class Messages {
     /**
      * Reserved IDs:
      *
-     * Messages:                       0001 - 0999  (Generic messages, e.g. Exception)
+     * Messages:                       0001 - 0099  (Generic messages, e.g. Exception)
+     * CommonMessages:                 0100 - 0999
      * BootMessages:                   1000 - 1999
      * SystemMessages:                 2000 - 2999
      * MessageProcessingMessages:      3000 - 3499
@@ -47,10 +47,11 @@ public class Messages {
     public static final M EXCEPTION_WARNING_WITH_MORE_INFO  = m(4, Level.WARNING, "{0}. Exception caught! ");
     public static final M EXCEPTION_INFO                    = m(5, Level.INFO, "Exception caught! ");
     public static final M EXCEPTION_INFO_WITH_MORE_INFO     = m(6, Level.INFO, "{0}. Exception caught! ");
-    // MAX -                                                  m(0999)
+    // MAX -                                                  m(0099)
 
     static {
         // Make sure these always get loaded, so the static intializers run (1.5 safe)
+        new CommonMessages();
         new AssertionMessages();
         new BootMessages();
         new MessageProcessingMessages();

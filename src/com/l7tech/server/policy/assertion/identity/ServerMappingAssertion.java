@@ -2,7 +2,7 @@ package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.AuditDetailMessage;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;

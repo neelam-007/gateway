@@ -7,7 +7,7 @@ package com.l7tech.server.util;
 
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.cluster.ClusterPropertyManager;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.BootMessages;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.DeleteException;

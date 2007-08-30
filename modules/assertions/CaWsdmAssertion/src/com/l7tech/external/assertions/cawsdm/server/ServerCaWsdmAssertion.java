@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.cawsdm.server;
 
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.external.assertions.cawsdm.CaWsdmAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -11,7 +11,6 @@ import com.l7tech.server.module.ca_wsdm.CaWsdmObserver;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -22,13 +21,11 @@ import java.util.logging.Logger;
 public class ServerCaWsdmAssertion extends AbstractServerAssertion<CaWsdmAssertion> {
     private static final Logger logger = Logger.getLogger(ServerCaWsdmAssertion.class.getName());
 
-    private final CaWsdmAssertion assertion;
     private final Auditor auditor;
 
     public ServerCaWsdmAssertion(CaWsdmAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
 
-        this.assertion = assertion;
         this.auditor = new Auditor(this, context, logger);
     }
 

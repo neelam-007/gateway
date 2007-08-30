@@ -7,7 +7,7 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.JmsKnob;
 import com.l7tech.common.mime.ContentTypeHeader;

@@ -58,11 +58,12 @@ public class MessageProcessingMessages extends Messages {
     public static final M SR_SOAPOPERATION_NOT_SOAP         = m(3130, Level.FINE, "Service is not SOAP");
     public static final M SR_SOAPOPERATION_NO_WSDL          = m(3131, Level.FINE, "Service is SOAP but has no WSDL");
     public static final M SR_SOAPOPERATION_WSDL_NO_BINDINGS = m(3132, Level.FINE, "WSDL has no bindings");
-    public static final M SR_SOAPOPERATION_WSDL_NO_STYLE    = m(3133, Level.INFO, "Couldn''t get style for BindingOperation {0}; assuming \"document\"");
-    public static final M SR_SOAPOPERATION_WSDL_PART_TYPE   = m(3134, Level.INFO, "Part {0} has both an element and a type");
-    public static final M SR_SOAPOPERATION_WSDL_DOCLIT_TYPE = m(3135, Level.INFO, "Input message {0} in document-style operation has a type, not an element");
-    public static final M SR_SOAPOPERATION_BAD_STYLE        = m(3136, Level.INFO, "Unsupported style ''{0}'' for {1}");
-    public static final M SR_SOAPOPERATION_NO_QNAMES_FOR_OP = m(3137, Level.INFO, "Unable to find payload element QNames for BindingOperation {0}");
+    // The following are deprecated because they were "moved" to {@link CommonMessages}, but they must remain here so that they can be looked up by ID for compatibility with old audit data
+    /** @deprecated */ public static final M __UNUSED__SR_SOAPOPERATION_WSDL_NO_STYLE    = m(3133, CommonMessages.WSDL_OPERATION_NO_STYLE.getLevel(), CommonMessages.WSDL_OPERATION_NO_STYLE.getMessage());
+    /** @deprecated */ public static final M __UNUSED__SR_SOAPOPERATION_WSDL_PART_TYPE   = m(3134, CommonMessages.WSDL_OPERATION_PART_TYPE.getLevel(), CommonMessages.WSDL_OPERATION_PART_TYPE.getMessage());
+    /** @deprecated */ public static final M __UNUSED__SR_SOAPOPERATION_WSDL_DOCLIT_TYPE = m(3135, Level.INFO, "Input message {0} in document-style operation has a type, not an element");
+    /** @deprecated */ public static final M __UNUSED__SR_SOAPOPERATION_BAD_STYLE        = m(3136, CommonMessages.WSDL_OPERATION_BAD_STYLE.getLevel(), CommonMessages.WSDL_OPERATION_BAD_STYLE.getMessage());
+    /** @deprecated */ public static final M __UNUSED__SR_SOAPOPERATION_NO_QNAMES_FOR_OP = m(3137, CommonMessages.WSDL_OPERATION_NO_QNAMES_FOR_OP.getLevel(), CommonMessages.WSDL_OPERATION_NO_QNAMES_FOR_OP.getMessage());
     public static final M SR_SOAPOPERATION_NO_QNAMES_AT_ALL = m(3138, Level.INFO, "Unable to find any payload element QNames for service {0} (#{1})");
     public static final M SR_SOAPOPERATION_BAD_WSDL         = m(3139, Level.INFO, "Unable to parse WSDL for {0} service (#{1})");
     public static final M SR_SOAPOPERATION_FOUND_QNAME      = m(3140, Level.FINE, "Found payload QName \"{0}\"");

@@ -1,47 +1,36 @@
 package com.l7tech.server.transport.ftp;
 
+import com.l7tech.cluster.ClusterPropertyManager;
+import com.l7tech.common.message.FtpRequestKnob;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.server.MessageProcessor;
+import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.util.SoapFaultManager;
+import org.apache.ftpserver.DefaultFtpReply;
+import org.apache.ftpserver.ServerDataConnectionFactory;
+import org.apache.ftpserver.ftplet.*;
+import org.apache.ftpserver.interfaces.FtpServerSession;
+import org.apache.ftpserver.listener.AbstractListener;
+import org.springframework.context.ApplicationContext;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.concurrent.CountDownLatch;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
-
-import org.apache.ftpserver.ftplet.FtpException;
-import org.apache.ftpserver.ftplet.FtpletEnum;
-import org.apache.ftpserver.ftplet.FtpRequest;
-import org.apache.ftpserver.ftplet.FtpSession;
-import org.apache.ftpserver.ftplet.FtpReplyOutput;
-import org.apache.ftpserver.ftplet.DataConnection;
-import org.apache.ftpserver.ftplet.FtpReply;
-import org.apache.ftpserver.ftplet.User;
-import org.apache.ftpserver.ftplet.DataConnectionFactory;
-import org.apache.ftpserver.ftplet.DefaultFtplet;
-import org.apache.ftpserver.ftplet.DataType;
-import org.apache.ftpserver.DefaultFtpReply;
-import org.apache.ftpserver.ServerDataConnectionFactory;
-import org.apache.ftpserver.listener.AbstractListener;
-import org.apache.ftpserver.interfaces.FtpServerSession;
-import org.springframework.context.ApplicationContext;
-
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.message.FtpRequestKnob;
-import com.l7tech.common.audit.AuditContext;
-import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.server.event.FaultProcessed;
-import com.l7tech.server.policy.PolicyVersionException;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.cluster.ClusterPropertyManager;
+import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Ftplet implementation backed by our MessageProcessor.

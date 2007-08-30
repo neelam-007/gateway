@@ -8,9 +8,9 @@ package com.l7tech.server.transport.http;
 
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.server.security.cert.CertValidationProcessor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.common.security.CertificateValidationType;
 import com.l7tech.common.security.CertificateValidationResult;
-import com.l7tech.common.audit.LogOnlyAuditor;
 
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;

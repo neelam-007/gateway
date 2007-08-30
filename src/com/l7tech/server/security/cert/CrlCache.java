@@ -3,17 +3,17 @@
  */
 package com.l7tech.server.security.cert;
 
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.Audit;
 
 import java.io.IOException;
+import java.security.cert.CRLException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
-import java.security.cert.CRLException;
 
 /**
  * @author alex
  */
 public interface CrlCache {
-    String[] getCrlUrlsFromCertificate(X509Certificate cert, Auditor auditor) throws IOException;
-    X509CRL getCrl(String url, Auditor auditor) throws CRLException, IOException;
+    String[] getCrlUrlsFromCertificate(X509Certificate cert, Audit auditor) throws IOException;
+    X509CRL getCrl(String url, Audit auditor) throws CRLException, IOException;
 }

@@ -27,7 +27,7 @@ import java.io.ByteArrayOutputStream;
  * so users must always call {@link #flush()} when finished processing each message.
  * <p>
  * Call {@link #setCurrentRecord} to attach a single {@link AuditRecord} describing the SSG's current
- * operation to the context, and {@link com.l7tech.common.audit.AuditContext#addDetail} to add zero or more {@link AuditDetail} records.
+ * operation to the context, and {@link AuditContext#addDetail} to add zero or more {@link AuditDetail} records.
  * <p>
  * {@link MessageSummaryAuditRecord}s, {@link AdminAuditRecord}s and {@link AuditDetail}s that are
  * added to the context will only be persisted to the database later, when {@link #flush} is called,

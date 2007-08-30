@@ -125,7 +125,7 @@
              classpath="lib/tools/ant-jdepend.jar:lib/tools/jdepend-2.9.jar"/>
 
     <!--
-      Task definition for FindBugs 
+      Task definition for FindBugs
     -->
     <taskdef name="findbugs"
              classname="edu.umd.cs.findbugs.anttask.FindBugsTask"
@@ -184,7 +184,7 @@
         </fileset>
     </path>
 
-    <!-- 
+    <!--
       Taskdef for svn
     -->
     <taskdef name="svn" classname="org.tigris.subversion.svnant.SvnTask" classpathref="svnant.classpath" />
@@ -330,7 +330,7 @@
         <include name="com/l7tech/service/ServiceDocument.java"/>
         <include name="com/l7tech/service/ServiceStatistics.java"/>
     </patternset>
-    
+
     <!--
       License Generator library patternset (also ".")
     -->
@@ -992,11 +992,11 @@
               includes="index.xml"
               />
 
-        <zip destfile="${build.reports}/teamcity/jdepend.zip" basedir="${build.reports}/jdepend" /> 
+        <zip destfile="${build.reports}/teamcity/jdepend.zip" basedir="${build.reports}/jdepend" />
     </target>
 
     <target name="report.findbugs.checkavailable">
-        <available property="findbugs.isavailable" file="${findbugs.home}" type="dir"/>        
+        <available property="findbugs.isavailable" file="${findbugs.home}" type="dir"/>
     </target>
 
     <target name="report.findbugs" depends="compile, report.findbugs.checkavailable" if="findbugs.isavailable">
@@ -1013,7 +1013,7 @@
             <class location="${build.classes}" />
         </findbugs>
 
-        <zip destfile="${build.reports}/teamcity/findbugs.zip" basedir="${build.reports}/findbugs" /> 
+        <zip destfile="${build.reports}/teamcity/findbugs.zip" basedir="${build.reports}/findbugs" />
     </target>
 
 
@@ -1462,7 +1462,20 @@
                 <!-- Exclude unless Log4j is used -->
                 <exclude name="com/l7tech/common/util/Log4jJdkLogAppender.class"/>
 
-                <exclude name="com/l7tech/common/audit/**/*"/>
+                <include name="com/l7tech/common/audit/Audit.class"/>
+                <include name="com/l7tech/common/audit/AuditDetailMessage*.class"/>
+                <include name="com/l7tech/common/audit/Messages.class"/>
+                <include name="com/l7tech/common/audit/CommonMessages.class"/>
+                <!-- We really need some subpackages of common.audit... -->
+                <exclude name="com/l7tech/common/audit/AuditAdmin.class"/>
+                <exclude name="com/l7tech/common/audit/AuditSearchCriteria.class"/>
+                <exclude name="com/l7tech/common/audit/AuditRecord.class"/>
+                <exclude name="com/l7tech/common/audit/LogonEvent.class"/>
+                <exclude name="com/l7tech/common/audit/MessageSummaryAuditRecord.class"/>
+                <exclude name="com/l7tech/common/audit/MessageSummaryAuditDetail.class"/>
+                <exclude name="com/l7tech/common/audit/AdminAuditRecord.class"/>
+                <exclude name="com/l7tech/common/audit/SystemAuditRecord.class"/>
+                <exclude name="com/l7tech/common/audit/AuditDetail.class"/>
                 <exclude name="com/l7tech/common/alert/**/*"/>
 
                 <exclude name="com/l7tech/policy/server/**/*"/>
@@ -1630,7 +1643,7 @@
         </jar>
     </target>
 
-    <!-- 
+    <!--
       Package GClient (Always invoked by hand)
     -->
     <patternset id="gclient.libs">
@@ -1747,7 +1760,7 @@
                 <equals arg1="0" arg2="${testpackage.gclient.result}"/>
             </not>
         </condition>
-        <fail if="testpackage.gclient.fail">GClient packaging test failed.</fail>        
+        <fail if="testpackage.gclient.fail">GClient packaging test failed.</fail>
 
         <echo level="info">Obfuscating GClient.jar</echo>
         <build-zkm propertyPrefix="gclient" libDir="build/gclient/lib"/>
@@ -2128,7 +2141,7 @@
           <isset property="install.jdk64.tar.gz"/>
         </condition>
     </target>
-   
+
     <!--
       Create the SSG RPM (x86_64)
     -->
@@ -2137,7 +2150,7 @@
         <copy file="${install.jdk64.tar.gz}" tofile="${build.rpm}/SOURCES/jdk.tar.gz" overwrite="true"/>
         <rpm specFile="ssg.spec" topDir="${build.rpm}" command="-bb --target x86_64"/>
     </target>
- 
+
     <!--
       Create the SSG RPM
     -->
@@ -2410,7 +2423,7 @@
             <fileset dir="${src.root}/src/" defaultexcludes="yes">
                 <patternset refid="bridgeapi.sources"/>
             </fileset>
-            
+
             <classpath refid="project.classpath"/>
         </javadoc>
     </target>
@@ -2428,7 +2441,7 @@
             <fileset dir="${src.root}/src/" defaultexcludes="yes">
                 <patternset refid="managerapi.sources"/>
             </fileset>
-            
+
             <classpath refid="project.classpath"/>
         </javadoc>
     </target>
@@ -2928,7 +2941,7 @@
       1.5 compile target - use to check that the manager / xml vpn client still work with 1.5
     -->
     <target name="compile15" depends="clean, prepare">
-        <!-- fail if not 1.5 jdk -->        
+        <!-- fail if not 1.5 jdk -->
         <condition property="compile15.versionOk">
           <equals arg1="1.5" arg2="${java.specification.version}"/>
         </condition>
@@ -3206,7 +3219,7 @@
         <property name="install.src.lib" value="${install.src.base}/lib"/>
         <property name="install.src.lib.ext" value="${install.src.lib}/ext"/>
         <property name="install.src.mods" value="${install.src.base}/modules/lib"/>
-        <property name="install.src.aarmods" value="${install.src.base}/modules/assertions"/> 
+        <property name="install.src.aarmods" value="${install.src.base}/modules/assertions"/>
         <property name="install.src.dist" value="${install.src.base}/${install.rel.dist}"/>
         <property name="install.src.doc" value="${install.src.base}/${install.rel.doc}"/>
         <property name="install.src.jdk" value="${install.src.base}/${install.rel.jdk}"/>
@@ -3429,10 +3442,10 @@
         <echo level="info">Creating ${tarball}...</echo>
         <tar destfile="${tarball}" compression="gzip" longfile="gnu">
             <tarfileset dir="${build.dir}/install" username="gateway" group="gateway" mode="644">
-                <include name="**/*"/>                
+                <include name="**/*"/>
                 <exclude name="**/bin/*"/>
                 <exclude name="ssg/dist/*"/>
-            </tarfileset>            
+            </tarfileset>
             <tarfileset dir="${build.dir}/install" username="gateway" group="gateway" mode="755">
                 <include name="**/bin/*"/>
                 <exclude name="**/bin/*.bat"/>
@@ -3456,7 +3469,7 @@
                 <include name="**/bin/*.txt"/>
                 <include name="**/bin/*.xml"/>
             </tarfileset>
-        </tar>		
+        </tar>
         <echo level="info">BUILD COMPLETE - Produced ${tarball}!</echo>
     </target>
 
@@ -3688,7 +3701,7 @@
         <echo>Done obfuscating SystemConfigWizard.jar</echo>
         <copy tofile="build/sysconfigwizard/SystemConfigWizard.jar" file="build/obfuscation/SystemConfigWizard.jar" overwrite="true"/>
     </target>
-    
+
     <!--
       SecureSpan XML VPN Client obfuscation target
     -->
@@ -3790,7 +3803,7 @@
     <target name="makerpm" description="Enable building of rpm installer(s)">
         <echo level="info">Enabling RPM installers for build.</echo>
         <property name="makerpm" value="true"/>
-        <property name="ssg.install.enabled" value="true"/>        
+        <property name="ssg.install.enabled" value="true"/>
     </target>
 
     <!--

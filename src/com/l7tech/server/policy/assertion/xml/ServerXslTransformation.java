@@ -4,7 +4,7 @@
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.urlcache.HttpObjectCache;
 import com.l7tech.common.urlcache.AbstractUrlObjectCache;
 import com.l7tech.common.message.Message;

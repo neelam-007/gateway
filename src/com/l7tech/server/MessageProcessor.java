@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.server;
 
@@ -8,9 +7,9 @@ import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.audit.AuditContext;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.AuditDetailMessage;
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.message.*;

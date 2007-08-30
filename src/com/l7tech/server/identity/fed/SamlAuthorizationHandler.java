@@ -8,7 +8,7 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;

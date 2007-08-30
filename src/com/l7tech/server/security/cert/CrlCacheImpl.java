@@ -3,13 +3,13 @@
  */
 package com.l7tech.server.security.cert;
 
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.Audit;
 import com.l7tech.common.audit.SystemMessages;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.urlcache.AbstractUrlObjectCache;
 import com.l7tech.common.urlcache.HttpObjectCache;
 import com.l7tech.common.urlcache.LdapUrlObjectCache;
 import com.l7tech.common.util.*;
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.util.ServerCertUtils;
@@ -95,13 +95,13 @@ public class CrlCacheImpl implements CrlCache {
         }
     }
 
-    public String[] getCrlUrlsFromCertificate(X509Certificate cert, Auditor auditor) throws IOException {
+    public String[] getCrlUrlsFromCertificate(X509Certificate cert, Audit audit) throws IOException {
         String[] urls = getCachedCrlUrls(cert);
         if (urls == null) throw new IllegalStateException();
         return urls;
     }
 
-    public X509CRL getCrl(String crlUrl, Auditor auditor) throws CRLException, IOException {
+    public X509CRL getCrl(String crlUrl, Audit auditor) throws CRLException, IOException {
         X509CRL crl;
         Lock read = null, write = null;
         CrlCacheEntry crlCacheEntry = (CrlCacheEntry) crlCache.retrieve(crlUrl);

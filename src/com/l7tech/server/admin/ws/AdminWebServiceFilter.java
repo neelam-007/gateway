@@ -7,7 +7,7 @@ package com.l7tech.server.admin.ws;
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.admin.AdminLoginResult;
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.audit.AuditContext;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;

@@ -2,7 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.audit.AuditContext;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;

@@ -1,26 +1,25 @@
 package com.l7tech.external.assertions.ftpcredential.server;
 
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.message.Message;
 import com.l7tech.common.message.FtpRequestKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.external.assertions.ftpcredential.FtpCredentialAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
-
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
+import java.net.PasswordAuthentication;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Map;
-import java.net.PasswordAuthentication;
 
 /**
  * Server side implementation of the FtpCredentialAssertion.

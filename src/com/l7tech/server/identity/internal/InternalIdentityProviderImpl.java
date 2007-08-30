@@ -1,6 +1,6 @@
 package com.l7tech.server.identity.internal;
 
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;

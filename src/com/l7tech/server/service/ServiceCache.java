@@ -1,7 +1,7 @@
 package com.l7tech.server.service;
 
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.message.Message;

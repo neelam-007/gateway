@@ -1,17 +1,12 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.audit;
 
-import com.l7tech.common.audit.AuditContext;
-import com.l7tech.common.audit.AuditDetailEvent;
 import com.l7tech.common.audit.AuditDetail;
-import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.common.audit.AuditDetailEvent;
 import com.l7tech.server.event.FaultProcessed;
-
+import com.l7tech.server.event.MessageProcessed;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 

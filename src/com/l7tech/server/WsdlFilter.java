@@ -13,21 +13,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
-
-import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.message.HttpRequestKnob;
-import com.l7tech.common.message.HttpServletRequestKnob;
-import com.l7tech.common.message.HttpServletResponseKnob;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.server.service.ServiceManager;
-import com.l7tech.server.service.resolution.ServiceResolutionException;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.service.PublishedService;
 
 /**
  * Filter that intercepts WSDL requests that would otherwise go to the message processor.

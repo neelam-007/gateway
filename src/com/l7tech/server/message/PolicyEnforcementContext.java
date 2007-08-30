@@ -1,15 +1,14 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.message;
 
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.RequestId;
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.AuditContext;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.audit.AuditDetail;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
@@ -358,7 +357,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
             try {
                 vars.put(name, getVariable(name));
             } catch (NoSuchVariableException e) {
-                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[]{name});
+                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, name);
             }
         }
         return vars;

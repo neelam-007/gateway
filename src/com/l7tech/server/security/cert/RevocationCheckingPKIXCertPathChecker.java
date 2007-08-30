@@ -1,6 +1,6 @@
 package com.l7tech.server.security.cert;
 
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.security.CertificateValidationResult;
 import com.l7tech.common.util.CertUtils;
 

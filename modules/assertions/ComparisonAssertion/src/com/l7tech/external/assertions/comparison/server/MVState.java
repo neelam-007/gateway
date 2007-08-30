@@ -10,7 +10,7 @@ import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.MultiValuedEvaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.SingleValuedEvaluator;
 import com.l7tech.policy.variable.VariableMap;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 
 import java.util.Map;
 

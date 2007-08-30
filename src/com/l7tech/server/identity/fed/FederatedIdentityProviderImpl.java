@@ -6,7 +6,7 @@ package com.l7tech.server.identity.fed;
 
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;

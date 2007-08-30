@@ -3,7 +3,7 @@
  */
 package com.l7tech.server.service.resolution;
 
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;

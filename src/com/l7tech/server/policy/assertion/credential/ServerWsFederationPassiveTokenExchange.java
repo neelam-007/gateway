@@ -1,7 +1,7 @@
 package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;

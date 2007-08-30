@@ -1,35 +1,29 @@
 package com.l7tech.server.transport.ftp;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Properties;
-import java.util.Collection;
-import java.util.Collections;
-
-import org.apache.ftpserver.ftplet.Ftplet;
-import org.apache.ftpserver.ftplet.FileSystemManager;
-import org.apache.ftpserver.ftplet.UserManager;
-import org.apache.ftpserver.FtpServer;
+import com.l7tech.cluster.ClusterPropertyManager;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.audit.SystemMessages;
+import com.l7tech.server.*;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.util.SoapFaultManager;
 import org.apache.ftpserver.ConfigurableFtpServerContext;
-import org.apache.ftpserver.listener.Listener;
-import org.apache.ftpserver.interfaces.FtpServerContext;
+import org.apache.ftpserver.FtpServer;
+import org.apache.ftpserver.config.PropertiesConfiguration;
+import org.apache.ftpserver.ftplet.FileSystemManager;
+import org.apache.ftpserver.ftplet.Ftplet;
+import org.apache.ftpserver.ftplet.UserManager;
 import org.apache.ftpserver.interfaces.CommandFactory;
+import org.apache.ftpserver.interfaces.FtpServerContext;
 import org.apache.ftpserver.interfaces.IpRestrictor;
 import org.apache.ftpserver.interfaces.Ssl;
-import org.apache.ftpserver.config.PropertiesConfiguration;
+import org.apache.ftpserver.listener.Listener;
 
-import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.LifecycleBean;
-import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.LifecycleException;
-import com.l7tech.server.KeystoreUtils;
-import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.common.audit.AuditContext;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.SystemMessages;
-import com.l7tech.common.LicenseManager;
-import com.l7tech.cluster.ClusterPropertyManager;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Creates and controls the embedded FTP server.

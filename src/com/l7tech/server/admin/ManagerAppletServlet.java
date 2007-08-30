@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.admin;
 
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.ServiceMessages;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;

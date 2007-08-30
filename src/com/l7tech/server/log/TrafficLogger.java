@@ -1,11 +1,11 @@
 package com.l7tech.server.log;
 
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.util.HexUtils;

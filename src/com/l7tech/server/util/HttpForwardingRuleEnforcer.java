@@ -1,9 +1,8 @@
-
 package com.l7tech.server.util;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.HttpServletRequestKnob;

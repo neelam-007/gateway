@@ -7,15 +7,15 @@
 package com.l7tech.server.policy.assertion.alert;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 import javax.mail.MessagingException;
@@ -89,7 +89,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion implement
             fromaddr = new InternetAddress(ass.getSourceEmailAddress());
         } catch (AddressException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                                new String[] {"Unable to initialize EmailAlertAssert: invalid destination email address: " + ExceptionUtils.getMessage(e)});
+                    "Unable to initialize EmailAlertAssert: invalid destination email address: " + ExceptionUtils.getMessage(e));
             fromaddr = null;
         }
         fromAddress = fromaddr;

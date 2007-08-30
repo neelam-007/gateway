@@ -73,5 +73,12 @@ public class SystemMessages extends Messages {
     public static final M AUTH_USER_LOCKED   = m(2101, Level.INFO, "User {0} is locked.");
     public static final M AUTH_USER_EXPIRED  = m(2102, Level.INFO, "User {0} has expired.");
 
-    // MAX -                                               m(2999
+    public static final M CERT_EXPIRY_CANT_FIND  = m(2150, Level.WARNING, "Unable to find TrustedCerts to check for upcoming expirations; skipping this check");
+    public static final M CERT_EXPIRY_BAD_CERT   = m(2151, Level.WARNING, "Unable to parse TrustedCert #{0} ({1}) in order to check for expiration; skipping");
+    public static final M CERT_EXPIRY_FINE       = m(2152, Level.FINE, "TrustedCert #{0} ({1}) will expire in {2}");
+    public static final M CERT_EXPIRY_INFO       = m(2153, Level.INFO, "TrustedCert #{0} ({1}) will expire in {2}");
+    public static final M CERT_EXPIRY_WARNING    = m(2154, Level.WARNING, "TrustedCert #{0} ({1}) will expire in {2}");
+    public static final M CERT_EXPIRY_BAD_PERIOD = m(2155, Level.WARNING, "New expiry period value {0} is not a valid TimeUnit; using {1} instead");
+
+    // MAX -                                      m(2999
 }

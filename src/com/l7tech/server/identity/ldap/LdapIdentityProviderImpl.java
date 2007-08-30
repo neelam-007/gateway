@@ -3,7 +3,7 @@ package com.l7tech.server.identity.ldap;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.util.ExceptionUtils;

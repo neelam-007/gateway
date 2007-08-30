@@ -1,4 +1,6 @@
-package com.l7tech.common.audit;
+package com.l7tech.server.audit;
+
+import com.l7tech.common.audit.AuditDetailMessage;
 
 import java.util.logging.Logger;
 

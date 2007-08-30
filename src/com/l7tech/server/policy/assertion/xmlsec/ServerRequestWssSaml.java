@@ -1,9 +1,9 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.message.SecurityKnob;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.XmlSecurityToken;
@@ -14,13 +14,12 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
-import com.l7tech.cluster.DistributedMessageIdManager;
-
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;

@@ -1,11 +1,11 @@
 package com.l7tech.policy.assertion.ext;
 
-import java.lang.reflect.Method;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.server.audit.Auditor;
+
+import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An auditor for Custom Assertions.

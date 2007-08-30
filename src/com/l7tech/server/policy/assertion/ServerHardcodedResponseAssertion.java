@@ -3,7 +3,7 @@
  */
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.Messages;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.AbstractHttpResponseKnob;

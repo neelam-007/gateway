@@ -4,7 +4,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.security.xml.processor.ProcessorResult;

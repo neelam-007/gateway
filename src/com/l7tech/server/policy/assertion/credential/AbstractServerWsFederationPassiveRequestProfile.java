@@ -1,7 +1,7 @@
 package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.*;
 import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.message.XmlKnob;
@@ -233,11 +233,10 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
     /**
      *
      */
-    private Set toNames(Set cookies) {
-        Set cookieNames = new HashSet();
+    private Set<String> toNames(Set<HttpCookie> cookies) {
+        Set<String> cookieNames = new HashSet<String>();
 
-        for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
-            HttpCookie cookie = (HttpCookie) iterator.next();
+        for (HttpCookie cookie : cookies) {
             cookieNames.add(cookie.getCookieName());
         }
 

@@ -1,7 +1,7 @@
 package com.l7tech.server.util;
 
 import com.l7tech.common.audit.AuditDetail;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.Messages;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultLevel;

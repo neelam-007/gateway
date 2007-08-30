@@ -1,29 +1,28 @@
 package com.l7tech.server.policy.assertion.credential.http;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Map;
-import java.util.Collections;
-import java.io.IOException;
-
-import org.springframework.context.ApplicationContext;
-
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.security.kerberos.KerberosServiceTicket;
-import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.kerberos.KerberosClient;
 import com.l7tech.common.security.kerberos.KerberosException;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.credential.CredentialFinderException;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.springframework.context.ApplicationContext;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server implementation for Negotiate (Windows Integrated) Authentication

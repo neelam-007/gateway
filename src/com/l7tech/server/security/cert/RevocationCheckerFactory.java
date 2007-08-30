@@ -1,47 +1,27 @@
 package com.l7tech.server.security.cert;
 
+import com.l7tech.common.audit.SystemMessages;
+import com.l7tech.common.security.*;
+import com.l7tech.common.util.*;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.util.ServerCertUtils;
+import com.whirlycott.cache.Cache;
+import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
+
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
-import java.security.cert.CRLException;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509CRL;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.security.cert.*;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import com.whirlycott.cache.Cache;
-import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.SystemMessages;
-import com.l7tech.common.security.CertificateValidationResult;
-import com.l7tech.common.security.CertificateValidationType;
-import com.l7tech.common.security.RevocationCheckPolicy;
-import com.l7tech.common.security.RevocationCheckPolicyItem;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.Functions;
-import com.l7tech.common.util.WhirlycacheFactory;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.util.ServerCertUtils;
 
 /**
  * Factory for building RevocationCheckers.

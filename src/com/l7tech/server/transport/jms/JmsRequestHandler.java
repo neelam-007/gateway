@@ -7,7 +7,7 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.cluster.ClusterPropertyManager;
-import com.l7tech.common.audit.AuditContext;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.JmsKnob;
 import com.l7tech.common.message.MimeKnob;

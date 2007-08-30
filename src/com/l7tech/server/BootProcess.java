@@ -6,7 +6,7 @@ package com.l7tech.server;
 import com.l7tech.cluster.ClusterPropertyCache;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.BootMessages;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
@@ -74,7 +74,7 @@ public class BootProcess
 
         for (File goner : goners) {
             String filename = goner.toString();
-            auditor.logAndAudit(BootMessages.DELETING_ATTACHMENT, new String[]{filename});
+            auditor.logAndAudit(BootMessages.DELETING_ATTACHMENT, filename);
             goner.delete();
         }
     }
@@ -230,8 +230,8 @@ public class BootProcess
 
         auditor.logAndAudit(BootMessages.CRYPTO_INIT);
         JceProvider.init();
-        auditor.logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, new String[]{JceProvider.getAsymmetricJceProvider().getName()});
-        auditor.logAndAudit(BootMessages.CRYPTO_SYMMETRIC, new String[]{JceProvider.getSymmetricJceProvider().getName()});
+        auditor.logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, JceProvider.getAsymmetricJceProvider().getName());
+        auditor.logAndAudit(BootMessages.CRYPTO_SYMMETRIC, JceProvider.getSymmetricJceProvider().getName());
 
         String classnameString = serverConfig.getPropertyCached(ServerConfig.PARAM_SERVERCOMPONENTS);
         String[] componentClassnames = classnameString.split("\\s.*?");

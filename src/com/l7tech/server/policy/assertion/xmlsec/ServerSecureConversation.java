@@ -1,7 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.security.token.SecurityContextToken;
 import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
