@@ -151,12 +151,13 @@ Section "Policy Editor" SecCopyUI
 
   !insertmacro MUI_STARTMENU_WRITE_BEGIN
     
-    ;Create shortcuts
+    ;Create shortcuts for all users
+    SetShellVarContext all
     CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_PRODUCT}.exe" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 0
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} in Troubleshooting Mode.lnk" "$INSTDIR\${MUI_PRODUCT}.bat" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 1
-    ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall ${MUI_PRODUCT}.lnk" "$INSTDIR\Uninstall.exe"
-  
+    SetShellVarContext current
+
   !insertmacro MUI_STARTMENU_WRITE_END
   
   ;Create uninstaller
@@ -210,7 +211,13 @@ Section "Uninstall"
   ReadRegStr ${TEMP} "${MUI_STARTMENUPAGE_REGISTRY_ROOT}" "${MUI_STARTMENUPAGE_REGISTRY_KEY}" "${MUI_STARTMENUPAGE_REGISTRY_VALUENAME}"
 
   StrCmp ${TEMP} "" noshortcuts
-  
+
+    SetShellVarContext all
+    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT}.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} in Troubleshooting Mode.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Uninstall ${MUI_PRODUCT}.lnk"
+    RMDir "$SMPROGRAMS\${TEMP}" ;Only if empty, so it won't delete other shortcuts
+    SetShellVarContext current
     Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT}.lnk"
     Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} in Troubleshooting Mode.lnk"
     Delete "$SMPROGRAMS\${TEMP}\Uninstall ${MUI_PRODUCT}.lnk"

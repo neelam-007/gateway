@@ -148,10 +148,12 @@ Section "SecureSpan XML VPN Client" SecCopyUI
   !insertmacro MUI_STARTMENU_WRITE_BEGIN
 
     ;Create shortcuts
+    SetShellVarContext all
     CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
     ; other shortcuts are installed based on whether the XML VPN Client is installed as a service or not.
     ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} in Text Mode.lnk" "$INSTDIR\${MUI_PRODUCT} in Text Mode.bat" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 3
     ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall SecureSpan XML VPN Client.lnk" "$INSTDIR\Uninstall.exe"
+    SetShellVarContext current
 
   !insertmacro MUI_STARTMENU_WRITE_END
 
@@ -189,14 +191,18 @@ Section "SecureSpan XML VPN Client" SecCopyUI
 
   ; choose shortcuts to installed based on whether it's being installed in service mode or GUI mode
   skipservice:
+    SetShellVarContext all
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_PRODUCT}.exe" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 0
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} in Troubleshooting Mode.lnk" "$INSTDIR\${MUI_PRODUCT}.bat" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 1
+    SetShellVarContext current
     goto endofinstall
 
   endofserviceinstall:
+    SetShellVarContext all
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start ${MUI_PRODUCT}.lnk" "sc" 'start "SecureSpan XML VPN Client"' "$INSTDIR\${MUI_PRODUCT}.exe"
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Stop ${MUI_PRODUCT}.lnk" "sc" 'stop "SecureSpan XML VPN Client"' "$INSTDIR\${MUI_PRODUCT}.exe"
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} Config.lnk" "$INSTDIR\jre\bin\javaw.exe" '-Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dcom.l7tech.proxy.listener.maxthreads=300 -jar "$INSTDIR\Client.jar" -config' "$INSTDIR\${MUI_PRODUCT}.exe"
+    SetShellVarContext current
 
   endofinstall:
 
@@ -249,6 +255,16 @@ Section "Uninstall"
 
   StrCmp ${TEMP} "" noshortcuts
 
+    SetShellVarContext all
+    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT}.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} in Troubleshooting Mode.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} in Text Mode.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} Config.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Uninstall ${MUI_PRODUCT}.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Start ${MUI_PRODUCT}.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Stop ${MUI_PRODUCT}.lnk"
+    RMDir "$SMPROGRAMS\${TEMP}" ;Only if empty, so it won't delete other shortcuts
+    SetShellVarContext current
     Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT}.lnk"
     Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} in Troubleshooting Mode.lnk"
     Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} in Text Mode.lnk"
