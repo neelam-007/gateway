@@ -108,12 +108,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     protected void service(HttpServletRequest hrequest, HttpServletResponse hresponse)
             throws ServletException, IOException
     {
-        try {
-            licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
-        } catch (LicenseException e) {
-            // New exception to conceal original stack trace from LicenseManager
-            throw new ServletException(new LicenseException(e.getMessage()));
-        }
         if ("/".equals(hrequest.getRequestURI())) {
             try {
                 if (!serviceCache.hasCatchAllService()) {
@@ -124,6 +118,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 logger.log(Level.SEVERE, "Unexpected problem checking for catch all service resolution", e);
             }
         }
+        
+        try {
+            licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
+        } catch (LicenseException e) {
+            // New exception to conceal original stack trace from LicenseManager
+            throw new ServletException(new LicenseException(e.getMessage()));
+        }
+
         // Initialize processing context
         final Message response = new Message();
         final Message request = new Message();
