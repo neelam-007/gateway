@@ -921,18 +921,22 @@ Statement getCreateTablesStmt = null;
             stmt = privilegedConnection.createStatement();
             stmt.execute("use " + destinationDbName);
             for (Map.Entry<String, List<String>> entry : dbData.entrySet()) {
-                List<String> values = entry.getValue();
-                int size = values.size();
-                StringBuilder sql = new StringBuilder();
-                sql.append("insert into ").append(entry.getKey()).append(
-                        " values (").append(StringUtils.repeat("?, ", size -1)).append("?").append(");");
+                String tableName = entry.getKey();
+                //don't copy audits, takes too long
+                if (!"audit_main".equalsIgnoreCase(tableName)) {
+                    List<String> values = entry.getValue();
+                    int size = values.size();
+                    StringBuilder sql = new StringBuilder();
+                    sql.append("insert into ").append(entry.getKey()).append(
+                            " values (").append(StringUtils.repeat("?, ", size -1)).append("?").append(");");
 
-                pStmt = privilegedConnection.prepareStatement(sql.toString());
-                for (int i = 0; i < size; i++) {
-                    pStmt.setString(i+1 , values.get(i));
-                };
-                pStmt.addBatch();
-                pStmt.executeUpdate();
+                    pStmt = privilegedConnection.prepareStatement(sql.toString());
+                    for (int i = 0; i < size; i++) {
+                        pStmt.setString(i+1 , values.get(i));
+                    };
+                    pStmt.addBatch();
+                    pStmt.executeUpdate();
+                }
             }
         } finally {
             ResourceUtils.closeQuietly(stmt);
