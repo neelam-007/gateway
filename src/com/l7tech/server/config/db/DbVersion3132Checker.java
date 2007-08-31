@@ -1,6 +1,6 @@
 package com.l7tech.server.config.db;
 
-import java.util.Hashtable;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -17,14 +17,14 @@ public class DbVersion3132Checker extends DbVersionChecker {
 
     private String realVersion = "3.2";
 
-    public boolean doCheck(Hashtable<String, Set> tableData) {
-        boolean passed = false;
+    public boolean doCheck(Map<String, Set<String>> tableData) {
         if (tableData == null) {
-            return passed;
+            return false;
         }
-
-        Set counterTable = tableData.get(COUNTERS_TABLE);
-        Set auditTable = tableData.get(AUDIT_MESSAGE_TABLE);
+        
+        boolean passed = false;
+        Set<String> counterTable = tableData.get(COUNTERS_TABLE);
+        Set<String> auditTable = tableData.get(AUDIT_MESSAGE_TABLE);
 
         if (auditTable == null) {
             passed = false;

@@ -1,6 +1,6 @@
 package com.l7tech.server.config.db;
 
-import java.util.Hashtable;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -13,14 +13,14 @@ public class DbVersion34Checker extends DbVersionChecker {
 
     public static final String SKI_COLUMN ="ski";
 
-    public boolean doCheck(Hashtable<String, Set> tableData) {
-        boolean passed = false;
+    public boolean doCheck(Map<String, Set<String>> tableData) {
         if (tableData == null) {
-            return passed;
+            return false;
         }
 
-        Set clientCertColumns = tableData.get(CLIENT_CERT_TABLE);
-        Set trustedCertColumns= tableData.get(TRUSTED_CERT_TABLE);
+        boolean passed = false;
+        Set<String> clientCertColumns = tableData.get(CLIENT_CERT_TABLE);
+        Set<String> trustedCertColumns= tableData.get(TRUSTED_CERT_TABLE);
 
         if (clientCertColumns != null && trustedCertColumns != null) {
             passed = clientCertColumns.contains(SKI_COLUMN) && trustedCertColumns.contains(SKI_COLUMN);

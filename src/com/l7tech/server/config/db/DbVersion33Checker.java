@@ -1,6 +1,6 @@
 package com.l7tech.server.config.db;
 
-import java.util.Hashtable;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -17,14 +17,14 @@ public class DbVersion33Checker extends DbVersionChecker {
     public static final String CLUSTER_PROP_TABLE = "cluster_properties";
     public static final String SAMPLE_MSG_TABLE = "sample_messages";
 
-    public boolean doCheck(Hashtable<String, Set> tableData) {
+    public boolean doCheck(Map<String, Set<String>> tableData) {
         boolean passed = false;
         if (tableData != null) {
-            Set trustedCertColumns = tableData.get(TRUSTED_CERT_TABLE);
-            Set clientCertColumns = tableData.get(CLIENT_CERT_TABLE);
-            Set commSchemaColumns = tableData.get(COMM_SCHEMAS_TABLE);
-            Set clusterPropColumns = tableData.get(CLUSTER_PROP_TABLE);
-            Set sampleMsgColumns = tableData.get(SAMPLE_MSG_TABLE);
+            Set<String> trustedCertColumns = tableData.get(TRUSTED_CERT_TABLE);
+            Set<String> clientCertColumns = tableData.get(CLIENT_CERT_TABLE);
+            Set<String> commSchemaColumns = tableData.get(COMM_SCHEMAS_TABLE);
+            Set<String> clusterPropColumns = tableData.get(CLUSTER_PROP_TABLE);
+            Set<String> sampleMsgColumns = tableData.get(SAMPLE_MSG_TABLE);
 
             passed =  (trustedCertColumns != null) &&
                                 (clientCertColumns != null) &&

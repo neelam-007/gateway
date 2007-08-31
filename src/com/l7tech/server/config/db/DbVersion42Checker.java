@@ -1,7 +1,7 @@
 package com.l7tech.server.config.db;
 
+import java.util.Map;
 import java.util.Set;
-import java.util.Hashtable;
 
 /**
  * Version checker for version 4.2
@@ -9,10 +9,10 @@ import java.util.Hashtable;
 public class DbVersion42Checker extends DbVersionChecker {
     public static final String REVOCATION_POLICY_FILE_TABLE = "revocation_check_policy";
 
-    public boolean doCheck(Hashtable<String, Set> tableData) {
+    public boolean doCheck(Map<String, Set<String>> tableData) {
         boolean passed = false;
         if (tableData != null) {
-            Set data = tableData.get(REVOCATION_POLICY_FILE_TABLE);
+            Set<String> data = tableData.get(REVOCATION_POLICY_FILE_TABLE);
 
             if (data != null) {
                 passed = true;

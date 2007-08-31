@@ -1,6 +1,6 @@
 package com.l7tech.server.config.db;
 
-import java.util.Hashtable;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -12,14 +12,12 @@ public class DbVersion36Checker extends DbVersionChecker {
     public static final String PUBLISHED_SERVICE_TABLE = "published_service";
     public static final String HTTP_METHODS_COLUMN = "http_methods";
 
-    public boolean doCheck(Hashtable<String, Set> tableData) {
+    public boolean doCheck(Map<String, Set<String>> tableData) {
         boolean passed = false;
         if (tableData != null) {
-            Set data = tableData.get(PUBLISHED_SERVICE_TABLE);
+            Set<String> data = tableData.get(PUBLISHED_SERVICE_TABLE);
 
-            if (data != null) {
-                passed = data.contains(HTTP_METHODS_COLUMN);
-            }
+            passed = (data != null && data.contains(HTTP_METHODS_COLUMN));
         }
         return passed;
     }

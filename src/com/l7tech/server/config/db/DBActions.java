@@ -3,6 +3,7 @@ package com.l7tech.server.config.db;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.config.LicenseChecker;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
@@ -117,8 +118,10 @@ public class DBActions {
         String dbVersion = null;
         try {
             conn = getConnection(hostname, dbName, username, password);
-            dbVersion = checkDbVersion(conn);
-        } catch (SQLException e) {}
+            dbVersion = checkDbVersion(conn, dbName);
+        } catch (SQLException e) {
+            logger.warning("Error while checking the database version: " + ExceptionUtils.getMessage(e));
+        }
         return dbVersion;
     }
 
@@ -149,10 +152,9 @@ public class DBActions {
             }
         } catch (SQLException e) {
             result.setStatus(determineErrorStatus(e.getSQLState()));
-            result.setErrorMessage(e.getMessage());
+            result.setErrorMessage(ExceptionUtils.getMessage(e));
 
-            logger.warning("Could not create database. An exception occurred");
-            logger.warning(e.getMessage());
+            logger.warning("Could not create database. An exception occurred." + ExceptionUtils.getMessage(e));
         } finally {
             ResourceUtils.closeQuietly(conn);           
             ResourceUtils.closeQuietly(stmt);
@@ -196,12 +198,12 @@ public class DBActions {
                     conn.commit();
                     conn.setAutoCommit(true);
 
-                    oldVersion = checkDbVersion(conn);
+                    oldVersion = checkDbVersion(conn, databaseName);
                 }
             }
         } catch (SQLException e) {
             result.setStatus(determineErrorStatus(e.getSQLState()));
-            result.setErrorMessage(e.getMessage());
+            result.setErrorMessage(ExceptionUtils.getMessage(e));
         } finally {
             ResourceUtils.closeQuietly(stmt);
             ResourceUtils.closeQuietly(conn);
@@ -292,7 +294,7 @@ public class DBActions {
             }
         } catch (IOException e) {
             errorMsg = "Could not create the database because there was an error while reading the file \"" + osFunctions.getPathToDBCreateFile() + "\"." +
-                    " The error was: " + e.getMessage();
+                    " The error was: " + ExceptionUtils.getMessage(e);
             logger.warning(errorMsg);
             if (ui != null) ui.showErrorMessage(errorMsg);
             isOk = false;
@@ -361,7 +363,7 @@ public class DBActions {
                         } catch (IOException e) {
                             errorMsg = "There was an error while attempting to upgrade the database";
                             logger.severe(errorMsg);
-                            logger.severe(e.getMessage());
+                            logger.severe(ExceptionUtils.getMessage(e));
                             if (ui != null) ui.showErrorMessage(errorMsg);
                             isOk = true;
                         }
@@ -423,10 +425,11 @@ public class DBActions {
             licChecker.checkLicense(conn, currentVersion, BuildInfo.getProductName(), BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor());
             logger.info("License is valid and will work with this version (" + currentVersion + ").");
         } catch (InvalidLicenseException e) {
-            logger.warning(e.getMessage());
+            String message = ExceptionUtils.getMessage(e);
+            logger.warning(message);
             if (ui != null) {
-                if (!ui.getGenericUserConfirmation(e.getMessage() + "\nDo you wish to continue?")) {
-                    ui.showErrorMessage(e.getMessage());
+                if (!ui.getGenericUserConfirmation(message + "\nDo you wish to continue?")) {
+                    ui.showErrorMessage(message);
                     return false;
                 }
             }
@@ -444,19 +447,6 @@ public class DBActions {
 
     public Connection getConnection(String dburl) throws SQLException {
         return DriverManager.getConnection(dburl);
-    }
-
-//
-// PRIVATE METHODS
-//
-
-    private void dropDatabase(Statement stmt, String dbName, boolean isInfo) throws SQLException {
-        stmt.executeUpdate(SQL_DROP_DB + dbName);
-
-        if (isInfo)
-            logger.info("dropping database \"" + dbName + "\"");
-        else
-            logger.warning("dropping database \"" + dbName + "\"");
     }
 
     public void dropDatabase(String dbName, String hostname, String username, String password, boolean isInfo) {
@@ -477,12 +467,25 @@ public class DBActions {
                 stmt = conn.createStatement();
                 dropDatabase(stmt, dbName, isInfo);
             } catch (SQLException e) {
-                logger.severe("Failure while dropping the database: " + e.getMessage());
+                logger.severe("Failure while dropping the database: " + ExceptionUtils.getMessage(e));
             } finally {
                 ResourceUtils.closeQuietly(stmt);
                 ResourceUtils.closeQuietly(conn);
             }
         }
+    } 
+
+//
+// PRIVATE METHODS
+//
+
+    private void dropDatabase(Statement stmt, String dbName, boolean isInfo) throws SQLException {
+        stmt.executeUpdate(SQL_DROP_DB + dbName);
+
+        if (isInfo)
+            logger.info("dropping database \"" + dbName + "\"");
+        else
+            logger.warning("dropping database \"" + dbName + "\"");
     }
 
     private DBActionsResult checkExistingDb(DBInformation dbInfo) {
@@ -495,11 +498,12 @@ public class DBActions {
             conn = DriverManager.getConnection(connectionString, dbInfo.getUsername(), dbInfo.getPassword());
             result.setStatus(DB_SUCCESS);
         } catch (SQLException e) {
+            String message = ExceptionUtils.getMessage(e);
             result.setStatus(determineErrorStatus(e.getSQLState()));
-            result.setErrorMessage(e.getMessage());
+            result.setErrorMessage(message);
 
             logger.warning("Could not login to the database using " + dbInfo.getUsername() + ":" + dbInfo.getPassword() + "@" + dbInfo.getHostname() + "/" + dbInfo.getDbName());
-            logger.warning(e.getMessage());
+            logger.warning(message);
         } finally {
             ResourceUtils.closeQuietly(conn);
         }
@@ -554,7 +558,7 @@ public class DBActions {
             //instantiate the driver class
             Class.forName(JDBC_DRIVER_NAME);
         } catch (IOException e) {
-            logger.severe("Error while reading the database configuration file: " + e.getMessage());
+            logger.severe("Error while reading the database configuration file: " + ExceptionUtils.getMessage(e));
             throw new RuntimeException(
                         "could not load the database configuration file. Tried: " +
                                 oldConfigLocation.getAbsolutePath() + " and " + templatePartitionDir.getAbsolutePath());
@@ -591,7 +595,7 @@ public class DBActions {
     }
 
     //will return the version of the DB, or null if it cannot be determined
-    private String getDbVersion(Hashtable<String, Set> tableData) {
+    private String getDbVersion(Map<String, Set<String>> tableData) {
         String version = null;
         //make sure we're even dealing with something that smells like an SSG database
         if (ssgDbChecker.doCheck(tableData)) {
@@ -611,25 +615,41 @@ public class DBActions {
 
     //checks the database version heuristically by looking for table names, columns etc. known to have been introduced
     //in particular versions. The checks are, for the most part, self contained and the code is designed to be extensible.
-    private String checkDbVersion(Connection conn) throws SQLException {
-        Hashtable<String, Set> tableData = collectMetaInfo(conn);
+    private String checkDbVersion(Connection conn, String dbName) throws SQLException {
+        Map<String, Set<String>> tableData = collectMetaInfo(conn, dbName);
         //now we have a hashtable of tables and their columns
         return getDbVersion(tableData);
     }
 
-    private Hashtable<String, Set> collectMetaInfo(Connection conn) throws SQLException {
-        Hashtable<String, Set> tableData = new Hashtable<String, Set>();
+    private Set<String> getTableNames(Connection conn, String sourceDbName) throws SQLException {
+        Statement stmt = null;
+        try {
+            stmt = conn.createStatement();
+            stmt.execute("use " + sourceDbName);
+            Set<String> tables = new HashSet<String>();
 
-        DatabaseMetaData metadata = conn.getMetaData();
-        String[] tableTypes = {
-                "TABLE",
-        };
+            DatabaseMetaData metadata = conn.getMetaData();
+            String[] tableTypes = {
+                    "TABLE",
+            };
 
-        ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
-        while (tableNames.next()) {
-            String tableName = tableNames.getString("TABLE_NAME");
+            ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
+            while (tableNames.next()) {
+                String tableName = tableNames.getString("TABLE_NAME");
+                tables.add(tableName);
+            }
+            return tables;
+        } finally {
+            ResourceUtils.closeQuietly(stmt);
+        }
+    }
 
-            Set<String> columns = getTableColumns(tableName, metadata);
+    private Map<String, Set<String>> collectMetaInfo(Connection conn, String dbName) throws SQLException {
+        Map<String, Set<String>> tableData = new HashMap<String, Set<String>>();
+
+        Set<String> tables = getTableNames(conn, dbName);
+        for (String tableName : tables) {
+            Set<String> columns = getTableColumns(tableName, conn.getMetaData());
             if (columns != null)
                 tableData.put(tableName.toLowerCase(), columns);
         }
@@ -638,35 +658,44 @@ public class DBActions {
 
     private void makeDatabase(Statement stmt, DBInformation dbInfo, String dbCreateScript, boolean isWindows) throws SQLException, IOException {
         stmt.getConnection().setAutoCommit(false); //start transaction
-        logger.info("creating database \"" + dbInfo.getDbName() +"\"");
+        String newDbName = dbInfo.getDbName();
 
-        createDatabase(dbInfo.getDbName(), stmt);
+        logger.info("creating database \"" + newDbName +"\"");
+
+        createDatabase(stmt.getConnection(), newDbName);
 
         // fla - maybe i just want to create the database without adding tables and rows yet
         if (dbCreateScript != null) {
             executeUpdates(getCreateDbStatementsFromFile(dbCreateScript),
-                           stmt, "Creating schema for " + dbInfo.getDbName() + " database");
+                           stmt, "Creating schema for " + newDbName + " database", newDbName);
         } else {
             logger.info("Skipping creation of tables and rows");
         }
         executeUpdates(getGrantStatements(dbInfo, isWindows),
                 stmt,
-                "Creating user \"" + dbInfo.getUsername() + "\" and performing grants on " + dbInfo.getDbName() + " database");
+                "Creating user \"" + dbInfo.getUsername() + "\" and performing grants on " + newDbName + " database", newDbName);
 
         stmt.getConnection().commit();     //finish transaction
         stmt.getConnection().setAutoCommit(true);
     }
 
-    private void createDatabase(String dbName, Statement stmt) throws SQLException {
-        stmt.executeUpdate(SQL_CREATE_DB + dbName);
-        stmt.execute(SQL_USE_DB + dbName);
+    private void createDatabase(Connection dbConnection, String dbName) throws SQLException {
+        Statement stmt = null;
+        try {
+            stmt = dbConnection.createStatement();
+            stmt.executeUpdate(SQL_CREATE_DB + dbName);
+        } finally {
+            ResourceUtils.closeQuietly(stmt);
+        }
+
     }
 
-    private void executeUpdates(String[] sqlStatements, Statement stmt, String logMessage) throws SQLException {
+    private void executeUpdates(String[] sqlStatements, Statement stmt, String logMessage, String whichDb) throws SQLException {
         if (sqlStatements != null) {
             if (StringUtils.isNotEmpty(logMessage))
                 logger.info(logMessage);
 
+            stmt.execute("use " + whichDb);
             for (String sqlStmt : sqlStatements) {
                 stmt.executeUpdate(sqlStmt);
             }
@@ -707,34 +736,28 @@ public class DBActions {
         return stmts;
     }
 
-    private String[] getDbCreateStatementsFromDb(DBInformation dbInfo) throws SQLException {
+    private String[] getDbCreateStatementsFromDb(Connection dbConn, String sourceDbName) throws SQLException {
 
-        Connection conn = null;
-        Statement showTablesStmt = null;
-        Statement getCreateTablesStmt = null;
+Statement getCreateTablesStmt = null;
         List<String> list = new ArrayList<String>();
         try {
-            conn = getConnection(dbInfo.getHostname(), dbInfo.getDbName(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword());
-            showTablesStmt = conn.createStatement();
-            getCreateTablesStmt = conn.createStatement();
+            getCreateTablesStmt = dbConn.createStatement();
+            getCreateTablesStmt.execute("use " + sourceDbName);
 
-            ResultSet tablesList = showTablesStmt.executeQuery("show tables");
+            Set<String> tableNames = getTableNames(dbConn, sourceDbName);
 
             //turn off foreign key checks so that tables with constraints can be created before the constraints exists
 
             list.add("SET FOREIGN_KEY_CHECKS = 0");
-            ResultSet createTables;
-            while (tablesList.next()) {
-                String tableName = tablesList.getString(1);
-                createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
+            for (String tableName : tableNames) {
+                ResultSet createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
                 while (createTables.next()) {
                     String s = createTables.getString(2).replace("\n", "");
                     list.add(s);
                 }
             }
         } finally {
-            ResourceUtils.closeQuietly(conn);
-            ResourceUtils.closeQuietly(showTablesStmt);
+//            ResourceUtils.closeQuietly(conn);
             ResourceUtils.closeQuietly(getCreateTablesStmt);
         }
 
@@ -835,10 +858,12 @@ public class DBActions {
             if (upgradeResult.getStatus() != DB_SUCCESS) {
                 result.setStatus(DB_CANNOT_UPGRADE);
                 result.setErrorMessage(upgradeResult.getErrorMessage());
+            } else {
+                logger.info(testDbName + " was successfully upgraded.");
             }
         } catch (SQLException e) {
             result.setStatus(determineErrorStatus(e.getSQLState()));
-            result.setErrorMessage(e.getMessage());
+            result.setErrorMessage(ExceptionUtils.getMessage(e));
         } finally {
             //get rid of the temp database
             dropDatabase(testDbName, dbInfo.getHostname(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword(), true);
@@ -858,26 +883,86 @@ public class DBActions {
             return DB_UNKNOWN_FAILURE;
     }
 
-    public void copyDatabase(DBInformation dbInfo, String testDbName) throws SQLException {
-        Connection conn = null;
-        Statement stmt = null;
+    public void copyDatabase(DBInformation sourceDbInfo, String testDbName) throws SQLException {
+        Connection privilegedConnection = null;
         try {
-            conn = getConnection(dbInfo.getHostname(), "", dbInfo.getPrivUsername(), dbInfo.getPrivPassword());
-            conn.setAutoCommit(false);
+            privilegedConnection = getConnection(sourceDbInfo.getHostname(), sourceDbInfo.getDbName(), sourceDbInfo.getPrivUsername(), sourceDbInfo.getPrivPassword());
+            String sourceDbName = sourceDbInfo.getDbName();
 
-            stmt = conn.createStatement();
+            privilegedConnection.setAutoCommit(false);
+            copyDbSchema(privilegedConnection, sourceDbName, testDbName);
+            copyDatabaseContents(privilegedConnection, sourceDbName, testDbName);
+            privilegedConnection.commit();
+            privilegedConnection.setAutoCommit(true);
 
-            createDatabase(testDbName, stmt);
-            stmt.execute("use "+ testDbName);
-            executeUpdates(getDbCreateStatementsFromDb(dbInfo), stmt, "Creating a copy of " + dbInfo.getDbName() + " to test the upgrade process.");
-
-            conn.commit();
-            conn.setAutoCommit(true);
         } finally {
-            ResourceUtils.closeQuietly(conn);
+            ResourceUtils.closeQuietly(privilegedConnection);
+        }
+    }
+
+    private void copyDbSchema(Connection privilegedConnection, String sourceDbName, String destinationDbName) throws SQLException {
+        Statement copyDbStmt = null;
+        try {
+            String[] createStatements = getDbCreateStatementsFromDb(privilegedConnection, sourceDbName);
+
+            createDatabase(privilegedConnection, destinationDbName);
+            copyDbStmt = privilegedConnection.createStatement();
+            executeUpdates(createStatements, copyDbStmt, "Creating a copy of " + sourceDbName + " to test the upgrade process.", destinationDbName);
+        } finally {
+            ResourceUtils.closeQuietly(copyDbStmt);
+        }
+    }
+
+    private void copyDatabaseContents(Connection privilegedConnection, String sourceDbName, String destinationDbName) throws SQLException {
+        Statement stmt = null;
+        PreparedStatement pStmt = null;
+        try {
+            Map<String, List<String>> dbData = getDbDataStatements(privilegedConnection, sourceDbName);
+            stmt = privilegedConnection.createStatement();
+            stmt.execute("use " + destinationDbName);
+            for (Map.Entry<String, List<String>> entry : dbData.entrySet()) {
+                List<String> values = entry.getValue();
+                int size = values.size();
+                StringBuilder sql = new StringBuilder();
+                sql.append("insert into ").append(entry.getKey()).append(
+                        " values (").append(StringUtils.repeat("?, ", size -1)).append("?").append(");");
+
+                pStmt = privilegedConnection.prepareStatement(sql.toString());
+                for (int i = 0; i < size; i++) {
+                    pStmt.setString(i+1 , values.get(i));
+                };
+                pStmt.addBatch();
+                pStmt.executeUpdate();
+            }
+        } finally {
+            ResourceUtils.closeQuietly(stmt);
+            ResourceUtils.closeQuietly(pStmt);
+        }
+    }
+
+    private Map<String, List<String>> getDbDataStatements(Connection connection, String sourceDbName) throws SQLException {
+        Statement stmt = null;
+        Map<String, List<String>> tableData = new LinkedHashMap<String, List<String>>();
+        try {
+            stmt = connection.createStatement();
+            Set<String> tableNames = getTableNames(connection, sourceDbName);
+
+            stmt.execute("use " + sourceDbName);
+            for (String tableName : tableNames) {
+                ResultSet dataRs = stmt.executeQuery("select * from " + tableName);
+                ResultSetMetaData meta = dataRs.getMetaData();
+                while (dataRs.next()) {
+                    List<String> rowData = new ArrayList<String>();
+                    for (int i = 1; i <= meta.getColumnCount(); i++) {
+                        rowData.add(dataRs.getString(i));
+                    }
+                    tableData.put(tableName, rowData);
+                }
+            }
+            return tableData;
+        } finally {
             ResourceUtils.closeQuietly(stmt);
         }
-
     }
 
     public void setLicenseChecker(LicenseChecker licenseChecker) {

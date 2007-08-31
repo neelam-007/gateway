@@ -1,7 +1,7 @@
 package com.l7tech.server.config.db;
 
+import java.util.Map;
 import java.util.Set;
-import java.util.Hashtable;
 
 /**
  * User: megery
@@ -11,10 +11,10 @@ import java.util.Hashtable;
 public class DbVersion40Checker extends DbVersionChecker {
     public static final String KEYSTORE_FILE_TABLE = "keystore_file";
 
-    public boolean doCheck(Hashtable<String, Set> tableData) {
+    public boolean doCheck(Map<String, Set<String>> tableData) {
         boolean passed = false;
         if (tableData != null) {
-            Set data = tableData.get(KEYSTORE_FILE_TABLE);
+            Set<String> data = tableData.get(KEYSTORE_FILE_TABLE);
 
             if (data != null) {
                 passed = true;

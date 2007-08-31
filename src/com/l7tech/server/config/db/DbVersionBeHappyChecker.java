@@ -1,11 +1,10 @@
 package com.l7tech.server.config.db;
 
-import java.util.Set;
-import java.util.Hashtable;
-
+import com.l7tech.common.BuildInfo;
 import org.apache.commons.lang.StringUtils;
 
-import com.l7tech.common.BuildInfo;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * DB Checker that always passes the current version.
@@ -15,7 +14,7 @@ import com.l7tech.common.BuildInfo;
  */
 public class DbVersionBeHappyChecker extends DbVersionChecker {
 
-    public boolean doCheck(Hashtable<String, Set> tableData) {
+    public boolean doCheck(Map<String, Set<String>> tableData) {
         return true;
     }
 

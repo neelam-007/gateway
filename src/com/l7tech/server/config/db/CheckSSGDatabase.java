@@ -1,6 +1,6 @@
 package com.l7tech.server.config.db;
 
-import java.util.Hashtable;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -13,7 +13,7 @@ import java.util.Set;
 public class CheckSSGDatabase extends DbVersionChecker {
     private static final String PUBLISHEDSERVICE_TABLE = "published_service";
 
-    public boolean doCheck(Hashtable<String, Set> tableData){
+    public boolean doCheck(Map<String, Set<String>> tableData){
         boolean passed = false;
         Set columns = tableData.keySet();
         passed = columns.contains(PUBLISHEDSERVICE_TABLE);
