@@ -426,7 +426,6 @@
         <include name="**/servlet-api.jar"/>
         <include name="**/systray4j.jar"/>
         <include name="**/jaxen-1.1-beta-10.jar"/>
-        <include name="**/saxpath.jar"/>
         <include name="**/xbean.jar"/>
         <include name="**/jsr173_1.0_api.jar"/>
         <include name="**/xbean-saml1_1.jar"/>
@@ -472,7 +471,6 @@
         <include name="**/xmlpad.jar"/>
         <include name="**/xmlpad-res.jar"/>
         <include name="**/jaxen-1.1-beta-10.jar"/>
-        <include name="**/saxpath.jar"/>
         <include name="**/jaxrpc.jar"/>
         <include name="**/saaj.jar"/>
         <include name="**/saaj-impl.jar"/>
@@ -582,7 +580,6 @@
         <include name="**/jaxrpc.jar" unless="include.systinet"/>
         <include name="**/saaj.jar" unless="include.systinet"/>
 
-        <include name="**/saxpath.jar"/>
         <include name="**/xalan-2.7.0.jar"/>
         <include name="**/serializer-xalan-2.7.0.jar"/>
         <include name="**/jsr173_1.0_api.jar"/> <!-- StAX -->
@@ -1313,7 +1310,6 @@
         <pack-mac jarfile="${build.dir}/managerlibs/policy-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/saaj-impl.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/saaj.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/saxpath.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/spring-aop.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/spring-beans.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/spring-context.jar"/>
@@ -1677,7 +1673,6 @@
         <include name="**/qname.jar"/>
         <include name="**/saaj.jar"/>
         <include name="**/saaj-impl.jar"/>
-        <include name="**/saxpath.jar"/>
         <include name="**/servlet-api.jar"/>
         <include name="**/spring-beans.jar"/>
         <include name="**/spring-context.jar"/>
