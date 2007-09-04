@@ -49,6 +49,7 @@
                         <entry key="serviceMetricsManager"><list><value>serviceMetricsEnabled</value></list></entry>
                         <entry key="certValidationProcessor"><list><value>pkixTrust.useDefaultAnchors</value></list></entry>
                         <entry key="jmsBootProcess"><list><value>ioJmsErrorSleep</value></list></entry>
+                        <entry key="trustedCertManager"><list><value>trustedCert.expiryCheckPeriod</value></list></entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -247,8 +248,18 @@
         </constructor-arg>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
+
     <!-- server side trusted cert manager -->
-    <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TrustedCertManagerImp" parent="hibernateBean"/>
+    <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TrustedCertManagerImp"
+          parent="hibernateBean" depends-on="clusterPropertyCache">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Trusted Certificate Expiry Checker"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg ref="clusterInfoManager"/>
+    </bean>
     <!-- server side revocation check policy manager -->
     <bean id="revocationCheckPolicyManager" class="com.l7tech.server.identity.cert.RevocationCheckPolicyManagerImpl" parent="hibernateBean"/>
 

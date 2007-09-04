@@ -108,6 +108,10 @@ public class ServerConfig implements ClusterPropertyListener {
 
     public static final String PARAM_KEYSTORE_SEARCH_FOR_ALIAS = "keyStoreSearchForAlias";
 
+    public static final String PARAM_CERT_EXPIRY_CHECK_PERIOD = "trustedCert.expiryCheckPeriod";
+    public static final String PARAM_CERT_EXPIRY_FINE_AGE = "trustedCert.expiryFineAge";
+    public static final String PARAM_CERT_EXPIRY_INFO_AGE = "trustedCert.expiryInfoAge";
+    public static final String PARAM_CERT_EXPIRY_WARNING_AGE = "trustedCert.expiryWarningAge";
 
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
