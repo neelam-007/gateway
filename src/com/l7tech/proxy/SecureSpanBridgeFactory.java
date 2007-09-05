@@ -86,6 +86,13 @@ public class SecureSpanBridgeFactory {
     }
 
     /**
+     * Ensure that the default config directory (~/.l7tech by default) exists by creating it if necessary.
+     */
+    private static void ensureDefaultConfigDirectoryExists() {
+        new Ssg().getKeyStoreFile().getParentFile().mkdirs();
+    }
+
+    /**
      * Create a new SecureSpanBridge with the specified settings.  The Bridge will be configured to forward messages
      * to the specified Gateway, using the specified credentials.
      *
@@ -106,10 +113,21 @@ public class SecureSpanBridgeFactory {
             ssg.setSsgPort(options.getGatewayPort());
         if (options.getGatewaySslPort() != 0)
             ssg.setSslPort(options.getGatewaySslPort());
-        if (options.getKeyStorePath() != null)
+
+        // Bug #4165 - if keystore path is defaulting, ensure default config directory gets created
+        if (options.getKeyStorePath() == null) {
+            ensureDefaultConfigDirectoryExists();
+        } else {
             ssg.setKeyStoreFile(new File(options.getKeyStorePath()));
-        if (options.getCertStorePath() != null)
+        }
+
+        // Bug #4165 - if cert store path is defaulting, ensure default config directory gets created
+        if (options.getCertStorePath() == null) {
+            ensureDefaultConfigDirectoryExists();
+        } else {
             ssg.setTrustStoreFile(new File(options.getCertStorePath()));
+        }
+
         if (options.getUseSslByDefault() != null) {
             //noinspection UnnecessaryUnboxing
             ssg.setUseSslByDefault(options.getUseSslByDefault().booleanValue());
