@@ -195,6 +195,13 @@ public class PrivateKeyManagerWindow extends JDialog {
         loadPrivateKeys();
     }
 
+    private void showImportErrorMessage(Throwable e) {
+        String msg = ExceptionUtils.getMessage(e);
+        int dupePos = msg.indexOf("Keystore already contains an entry with the alias");
+        if (dupePos > 0) msg = msg.substring(dupePos);
+        showErrorMessage("Import Failed", "Import failed: " + msg, e);
+    }
+
     private void showErrorMessage(String title, String msg, Throwable e) {
         logger.log(Level.WARNING, msg, e);
         DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, null);
@@ -307,13 +314,13 @@ public class PrivateKeyManagerWindow extends JDialog {
         try {
             getTrustedCertAdmin().importKey(mutableKeystoreId, alias, pemChain, pkcs8Bytes);
         } catch (CertificateException e) {
-            showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
+            showImportErrorMessage(e);
         } catch (SaveException e) {
-            showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
+            showImportErrorMessage(e);
         } catch (InvalidKeyException e) {
-            showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
+            showImportErrorMessage(e);
         } catch (RemoteException e) {
-            showErrorMessage("Import Failed", "Import failed: " + ExceptionUtils.getMessage(e), e);
+            showImportErrorMessage(e);
         }
 
         loadPrivateKeys();
