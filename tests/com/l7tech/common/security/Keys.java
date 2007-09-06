@@ -181,6 +181,7 @@ public class Keys {
         FileOutputStream fo = new FileOutputStream(file);
         ks.store(fo, password);
         fo.close();
+        file.deleteOnExit();
         return ks;
     }
 
@@ -235,6 +236,12 @@ public class Keys {
         FileOutputStream fo = new FileOutputStream(keystorePropertiesPath);
         keystoreProps.store(fo, "test keystore properties");
         fo.close();
+        new File(keystorePropertiesPath).deleteOnExit();
+        File parent = new File(kPath);
+        new File(parent, "ssl.ks").deleteOnExit();
+        new File(parent, "ssl.cer").deleteOnExit();
+        new File(parent, "ca.ks").deleteOnExit();
+        new File(parent, "ca.cer").deleteOnExit();
 
         return keystoreProps;
     }

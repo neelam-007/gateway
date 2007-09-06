@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  */
 public class VirtualDirContextTest extends TestCase {
     private static final Logger log = Logger.getLogger(VirtualDirContextTest.class.getName());
-    private static final String TEST_DIR_PATH = "./_VirtualDirContextTest_";
+    private static final String TEST_DIR = "_VirtualDirContextTest_";
     private static final String FILE_CONTENT_WEBXML = "<webxml>this is a web.xml file</webxml>";
     private static final String FILE_CONTENT_INDEXHTML = "<html><head><title>This is index.html</title></head><body></body></html>";
     private static final String FILE_CONTENT_BLAHHTML = "<html><head><title>This is blah.html</title></head><body></body></html>";
@@ -67,32 +67,43 @@ public class VirtualDirContextTest extends TestCase {
      * @throws java.io.IOException if there is a problem building the test directory
      */
     private DirContext makeTestRealFilesystem() throws IOException {
-        File root = new File(TEST_DIR_PATH);
+        File temp = File.createTempFile("tmp", ".tmp");
+        temp.deleteOnExit();
+        File tempDir = temp.getParentFile();
+        File root = new File(tempDir, TEST_DIR);
         root.mkdir();
+        root.deleteOnExit();
 
         File webinf = new File(root, "WEB-INF");
         webinf.mkdir();
+        webinf.deleteOnExit();
 
         File webxml = new File(webinf, "web.xml");
         createFile(webxml, FILE_CONTENT_WEBXML);
+        webxml.deleteOnExit();
 
         File lib = new File(webinf, "lib");
         lib.mkdir();
+        lib.deleteOnExit();
 
         File foojar = new File(lib, "foo.jar");
         createFile(foojar, FILE_CONTENT_FOOJAR);
+        foojar.deleteOnExit();
 
         FileDirContext dc = new FileDirContext();
         dc.setDocBase(root.getAbsolutePath());
 
         File ssgdir = new File(root, "ssg");
         ssgdir.mkdir();
+        ssgdir.deleteOnExit();
 
         File indexhtml = new File(ssgdir, "index.html");
         createFile(indexhtml, FILE_CONTENT_INDEXHTML);
+        indexhtml.deleteOnExit();
 
         File blahhtml = new File(ssgdir, "blah.html");
         createFile(blahhtml, FILE_CONTENT_BLAHHTML);
+        blahhtml.deleteOnExit();
 
         return dc;
     }
@@ -139,7 +150,10 @@ public class VirtualDirContextTest extends TestCase {
 
         // Splice in some real files
         makeTestRealFilesystem();
-        File fsroot = new File(TEST_DIR_PATH);
+        File temp = File.createTempFile("tmp", ".tmp");
+        temp.deleteOnExit();
+        File tempDir = temp.getParentFile();
+        File fsroot = new File(tempDir, TEST_DIR);
         File ssg = new File(fsroot, "ssg");
         FileDirContext ssgContext = new FileDirContext();
         ssgContext.setDocBase(ssg.getAbsolutePath());

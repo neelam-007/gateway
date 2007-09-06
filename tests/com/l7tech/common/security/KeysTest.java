@@ -69,6 +69,7 @@ public class KeysTest extends TestCase {
         final String subject = "CN=fred";
         Keys kc = new Keys(subject);
         File f = File.createTempFile("testKeys", null);
+        f.deleteOnExit();
         final char[] password = "password".toCharArray();
         final String alias = "testSigner";
         kc.write(f.getAbsolutePath(), alias, password);

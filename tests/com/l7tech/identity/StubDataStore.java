@@ -37,7 +37,8 @@ public class StubDataStore {
     /**
      * default data store patch
      */
-    public static final String DEFAULT_STORE_PATH = "stubdata.xml";
+    public static final String DEFAULT_STORE_NAME = "stubdata";
+    public static final String DEFAULT_STORE_EXT = ".xml";
 
     StubDataStore() {
     }
@@ -50,7 +51,9 @@ public class StubDataStore {
     public synchronized static StubDataStore defaultStore() {
         if (defaultStore != null) return defaultStore;
         try {
-            defaultStore = new StubDataStore(StubDataStore.DEFAULT_STORE_PATH);
+            File storeFile = File.createTempFile(DEFAULT_STORE_NAME, DEFAULT_STORE_EXT);
+            storeFile.deleteOnExit();
+            defaultStore = new StubDataStore(storeFile.getAbsolutePath());
             return defaultStore;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -64,7 +67,7 @@ public class StubDataStore {
      */
     protected StubDataStore(String storePath)
       throws IOException, WSDLException {
-        if (!new File(storePath).exists()) {
+        if (!new File(storePath).exists() || new File(storePath).length()==0) {
             initializeSeedData(storePath);
         }
         this.reconstituteFrom(storePath);
@@ -303,7 +306,7 @@ public class StubDataStore {
         XMLEncoder encoder = null;
         try {
             File target = new File(storePath);
-            if (target.exists()) target.delete();
+            if (target.exists() && !target.canWrite()) target.delete();
             encoder =
               new XMLEncoder(new BufferedOutputStream(new FileOutputStream(storePath)));
             IdentityProviderConfig providerConfig = initialInternalProvider(encoder);
@@ -337,7 +340,7 @@ public class StubDataStore {
      */
     public static void main(String[] args) {
         try {
-            String path = DEFAULT_STORE_PATH;
+            String path = DEFAULT_STORE_NAME + DEFAULT_STORE_EXT;
             if (args.length > 0) {
                 path = args[0];
             }
