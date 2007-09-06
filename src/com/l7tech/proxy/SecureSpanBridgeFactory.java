@@ -28,6 +28,7 @@ import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
@@ -228,54 +229,60 @@ public class SecureSpanBridgeFactory {
             QName[] names = SoapUtil.getPayloadNames(message);
             String nsUri = names == null || names.length < 1 ? null : names[0].getNamespaceURI();
             PolicyAttachmentKey pak = new PolicyAttachmentKey(nsUri, soapAction, origUrl.getFile());
-            final Message request = new Message();
+            Message request = new Message();
             request.initialize(message);
-            final Message response = new Message();
-            final PolicyApplicationContext context;
-            PolicyApplicationContext contextToClose = null;
+            Message response = new Message();
+            PolicyApplicationContext context = null;
             try {
-                context = contextToClose = new PolicyApplicationContext(ssg, request, response, nri, pak, origUrl);
+                context = new PolicyApplicationContext(ssg, request, response, nri, pak, origUrl);
                 mp.processMessage(context);
                 // Copy results out before context gets closed
                 final HttpResponseKnob responseHttp = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
                 final int httpStatus = responseHttp != null ? responseHttp.getStatus() : 500;
+                // MimeResult can't use context, request, or response because they are closed by the time
+                // the user calls any methods on it, so we'll save the DOM if we have one otherwise
+                // we'll save the MIME body bytes (Bug #4166)
+                final boolean isXml = response.isXml();
+                final Document responseDoc = isXml ? response.getXmlKnob().getDocumentReadOnly() : null;
+                final byte[] responseBytes = isXml ? null : getResponseBytes(response);
+                final String responseContentType = response.getMimeKnob().getOuterContentType().getFullValue();
+                final long responseContentLength = response.getMimeKnob().getContentLength();
+
                 return new MimeResult() {
                     public int getHttpStatus() {
                         return httpStatus;
                     }
 
                     public Document getResponse() throws SAXException, IOException {
-                        return response.getXmlKnob().getDocumentReadOnly();
+                        if (responseDoc == null)
+                            throw new SAXException("Response is not XML");
+                        return responseDoc;
                     }
 
                     public boolean isResponseXml() throws IOException {
-                        return response.isXml();
+                        return isXml;
                     }
 
                     public String getContentType() throws IOException {
-                        return response.getMimeKnob().getOuterContentType().getFullValue();
+                        return responseContentType;
                     }
 
                     public long getContentLength() throws IOException {
-                        return response.getMimeKnob().getContentLength();
+                        return responseContentLength;
                     }
 
                     public InputStream getResponseStream() throws IOException {
-                        try {
-                            return response.getMimeKnob().getEntireMessageBodyAsInputStream();
-                        } catch (NoSuchPartException e) {
-                            throw new CausedIOException("Unable to read response: " + ExceptionUtils.getMessage(e), e); // can't happen
-                        }
+                        // Someday we'll find a way to properly support streaming large responses (and maybe attachments)
+                        // with the Bridge API
+                        return new ByteArrayInputStream(getResponseBytes());
                     }
 
                     public byte[] getResponseBytes() throws IOException {
-                        InputStream stream = null;
-                        try {
-                            stream = getResponseStream();
-                            return HexUtils.slurpStream(stream);
-                        } finally {
-                            ResourceUtils.closeQuietly(stream);
-                        }
+                        if (responseBytes != null)
+                            return responseBytes;
+                        if (responseDoc != null)
+                            return XmlUtil.nodeToString(responseDoc).getBytes("UTF-8");
+                        throw new IllegalStateException("Response has neither bytes nor a Document"); // can't happen
                     }
                 };
             } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
@@ -308,10 +315,28 @@ public class SecureSpanBridgeFactory {
                 throw new CausedSendException(e);
             } catch (PolicyLockedException e) {
                 throw new CausedSendException(e);
+            } catch (NoSuchPartException e) {
+                throw new CausedSendException(e); // can't happen -- currently no parts are ever read destructively
             } finally {
-                if (contextToClose != null)
-                    contextToClose.close();
+                ResourceUtils.closeQuietly(context);
                 CurrentSslPeer.clear();
+            }
+        }
+
+        /**
+         * Get the bytes of the complete body of the specified response.
+         *
+         * @param response  the response to examine. Must have a MimeKnob.
+         * @return the bytes of the entire message body.
+         * @throws IOException if there was a problem reading from the message stream
+         * @throws NoSuchPartException if any part's body is unavailable, e.g. because it was read destructively
+         */
+        private byte[] getResponseBytes(Message response) throws NoSuchPartException, IOException {
+            InputStream stream = response.getMimeKnob().getEntireMessageBodyAsInputStream();
+            try {
+                return HexUtils.slurpStream(stream);
+            } finally {
+                ResourceUtils.closeQuietly(stream);
             }
         }
 

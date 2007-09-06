@@ -5,6 +5,7 @@
 package com.l7tech.common.message;
 
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.common.util.Closeable;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -16,7 +17,7 @@ import java.util.logging.Logger;
  * Holds request and response messages during processing, and provides a place to keep state throughout
  * message processing for both policy enforcement (SSG) and policy application (SSB).
  */
-public abstract class ProcessingContext {
+public abstract class ProcessingContext implements Closeable {
     private static final Logger logger = Logger.getLogger(ProcessingContext.class.getName());
 
     private final Message request;
