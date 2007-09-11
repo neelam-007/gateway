@@ -105,7 +105,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
     protected MemberOfGroup _data;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private static final long MAX_CACHED_GROUP_AGE = 1000; // cache for very short time only (1 second)
-    private static final AtomicReference<CachedGroup> cachedGroup = new AtomicReference();
+    private final AtomicReference<CachedGroup> cachedGroup = new AtomicReference();
 
     private boolean isStale(long timestamp) {
         boolean stale = true;
