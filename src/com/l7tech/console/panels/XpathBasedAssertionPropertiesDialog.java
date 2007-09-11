@@ -498,6 +498,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             operationsTree.setRootVisible(false);
             operationsTree.setShowsRootHandles(true);
             operationsTree.setCellRenderer(wsdlTreeRenderer);
+            operationsTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
             operationsTree.getSelectionModel().addTreeSelectionListener(operationsSelectionListener);
 
             initializeSoapMessageViewer(blankMessage);
@@ -784,6 +785,9 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         public void valueChanged(TreeSelectionEvent e) {
             TreePath path = e.getNewLeadSelectionPath();
             if (path == null) {
+                populateSampleMessages(null, 0);
+                displayMessage(blankMessage);
+                currentOperation = null;
             } else {
                 final Object lpc = path.getLastPathComponent();
                 if (!((lpc instanceof BindingOperationTreeNode) || (lpc instanceof BindingTreeNode) || (lpc == NON_SOAP_NODE))) {
