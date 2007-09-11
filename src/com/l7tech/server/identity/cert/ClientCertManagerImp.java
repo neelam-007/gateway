@@ -219,7 +219,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
             if (issuer != null) {
                 try {
                     X509Certificate userCertificate = currentdata.getCertificate();
-                    if (userCertificate.getIssuerX500Principal().equals(issuer)) {
+                    if (userCertificate != null && userCertificate.getIssuerX500Principal().equals(issuer)) {
                         revoke = true;
                     }
                 } catch (CertificateException ce) {
