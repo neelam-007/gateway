@@ -262,7 +262,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
                 String typeMappingClassname = (String)meta.get(WSP_TYPE_MAPPING_CLASSNAME);
                 if (typeMappingClassname != null) {
                     try {
-                        Class typeMappingClass = Class.forName(typeMappingClassname);
+                        Class typeMappingClass = assClass.getClassLoader().loadClass(typeMappingClassname);
                         if (typeMappingClass != null)
                             return typeMappingClass.newInstance();
                     } catch (ClassNotFoundException e) {
