@@ -272,6 +272,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                                 throw new RuntimeException("Couldn't save SampleMessage", ex);
                             }
                             sampleMessagesCombo.repaint();
+                            displayMessage(smd.getMessage().getXml());
                         }
                     }
                 });
