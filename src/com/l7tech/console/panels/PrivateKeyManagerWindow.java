@@ -176,8 +176,10 @@ public class PrivateKeyManagerWindow extends JDialog {
             importButton.setEnabled(true);
         }
 
-        if (!flags.canCreateSome())
+        if (!flags.canCreateSome()) {
             createButton.setEnabled(false);
+            importButton.setEnabled(false);
+        }
     }
 
     private void doRemove(KeyTableRow certHolder) {
