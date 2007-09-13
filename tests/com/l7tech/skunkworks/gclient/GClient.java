@@ -73,7 +73,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        frame = new JFrame("GClient v0.6");
+        frame = new JFrame("GClient v0.7");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -278,6 +278,11 @@ public class GClient {
         fileMenu.add(new AbstractAction("Save Configuration...") {
             public void actionPerformed(ActionEvent e) {
                 saveConfiguration(frame);
+            }
+        });
+        fileMenu.add(new AbstractAction("Load Request Message ...") {
+            public void actionPerformed(ActionEvent e) {
+                loadRequestMessage(frame);
             }
         });
         fileMenu.addSeparator();
@@ -644,6 +649,29 @@ public class GClient {
                 ResourceUtils.closeQuietly(fis);
             }
         }
+    }
+
+    private void loadRequestMessage(JFrame frame) {
+        JFileChooser fileChooser = new JFileChooser();
+
+        int returnVal = fileChooser.showOpenDialog(frame);
+        if(returnVal == JFileChooser.APPROVE_OPTION) {
+            File selected = fileChooser.getSelectedFile();
+
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(selected);
+                requestTextArea.setText(new String(HexUtils.slurpStream(fis, 5000000)));
+                requestTextArea.setCaretPosition(0);
+            }
+            catch(Exception e) {
+                displayThrowable(e);
+            }
+            finally {
+                ResourceUtils.closeQuietly(fis);
+            }
+        }
+
     }
 
     private void openFile(Component parent) {
