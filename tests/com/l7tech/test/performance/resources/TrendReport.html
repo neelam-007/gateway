@@ -1,0 +1,202 @@
+<html>
+    <head>
+        <title><!--{title}--></title>
+        <link href="TrendReport.css" type="text/css" rel="stylesheet">
+        <script type="text/javascript">
+            /**
+             * Hide/show all columns of reports in the reports table.
+             *
+             * @param flag  true to show all; false to hide all
+             */
+            function hideShowAll(flag) {
+                var elements = document.getElementsByTagName("input");
+                for (var i = 0; i < elements.length; ++ i) {
+                    if (elements[i].className == "hideShowCheckbox") {
+                        elements[i].checked = flag;
+                    }
+                }
+
+                var display = flag ? "" : "none";
+                var rows = document.getElementById("results").rows;
+                for (var i = 0; i < rows.length; ++ i) {
+                    var cells = rows[i].cells;
+                    for (var j = 1; j < cells.length - 2; ++ j) {
+                        cells[j].style.display = display;
+                    }
+                }
+
+                undoHighlight();
+                calcStats();
+            }
+
+            /**
+             * Hide/show a specific column of report in the reports table.
+             *
+             * @param flag  true to show; false to hide
+             */
+            function hideShowColumn(columnIndex, flag) {
+                var display = flag ? "" : "none";
+                var rows = document.getElementById("results").rows;
+                for (var i = 0; i < rows.length; ++ i) {
+                    var cells = rows[i].cells;
+                    for (var j = 1; j < cells.length; ++ j) {
+                        if (j == columnIndex) {
+                            cells[j].style.display = display;
+                        }
+                    }
+                }
+
+                undoHighlight();
+                calcStats();
+            }
+
+            /**
+             * Calculates avg and stdev for each row in the results table.
+             */
+            function calcStats() {
+                var rows = document.getElementById("results").rows;
+                var avgColumnIndex = rows[0].cells.length - 2;
+                var stdevColumnIndex = rows[0].cells.length - 1;
+                for (var i = 1; i < rows.length; ++ i) {
+                    var cells = rows[i].cells;
+                    var n = 0;
+                    var sum = 0.;
+                    var sum2 = 0.;
+                    for (var j = 1; j < cells.length - 2; ++ j) {
+                        if (cells[j].style.display != "none") {
+                            var value = Number(cells[j].innerHTML);
+                            ++ n;
+                            sum += value;
+                            sum2 += value * value;
+                        }
+                    }
+                    var avg;
+                    var stdev;
+                    if (n == 0) {
+                        avg = "";
+                        stdev = "";
+                    } else {
+                        avg = sum / n;
+                        if (n == 1) {
+                            stdev = 0;
+                        } else {
+                            stdev = Math.sqrt((sum2 - n * avg * avg) / (n - 1));
+                        }
+                    }
+                    cells[avgColumnIndex].innerHTML = avg;
+                    cells[stdevColumnIndex].innerHTML = stdev;
+                }
+            }
+
+            /**
+             * Highlight values in the results table that meets the threshold.
+             */
+            function doHighlight() {
+                var percent = document.getElementById("percent").value;
+                var op = document.getElementById("op").value;
+                var target = document.getElementById("target").value;
+                var rows = document.getElementById("results").rows;
+                var avgColumnIndex = rows[0].cells.length - 2;
+                var stdevColumnIndex = rows[0].cells.length - 1;
+                for (var i = 1; i < rows.length; ++ i) {
+                    var cells = rows[i].cells;
+                    var avg, stdev = 0;
+                    if (target == "avg" || target == "stdev") {
+                        avg = Number(cells[avgColumnIndex].innerHTML);
+                        stdev = Number(cells[stdevColumnIndex].innerHTML);
+                    } else {
+                        avg = Number(cells[target].innerHTML);
+                    }
+                    for (var j = 1; j < cells.length - 2; ++ j) {
+                        var cell = cells[j];
+                        var value = cell.innerHTML;
+                        if (value != "") {
+                            var delta;  // percentage difference
+                            if (target == "stdev") {
+                                delta = (value - avg) / stdev * 100;
+                            } else {
+                                delta = (value - avg) / avg * 100;
+                            }
+                            if (op == "ge") {
+                                highlight(cell, delta >= percent);
+                            } else if (op == "le") {
+                                highlight(cell, delta <= percent);
+                            } else if (op == "outside") {
+                                highlight(cell, Math.abs(delta) >= percent);
+                            } else if (op == "within") {
+                                highlight(cell, Math.abs(delta) <= percent);
+                            }
+                        }
+                    }
+                }
+            }
+
+            /**
+             * Unhighlight all values in the results table.
+             */
+            function undoHighlight() {
+                var rows = document.getElementById("results").rows;
+                for (var i = 1; i < rows.length; ++ i) {
+                    var cells = rows[i].cells;
+                    for (var j = 1; j < cells.length; ++ j) {
+                        cells[j].style.backgroundColor = "white";
+                    }
+                }
+            }
+
+            function highlight(obj, flag) {
+                obj.style.backgroundColor = flag ? "yellow" : "white";
+            }
+        </script>
+    </head>
+    <body onload="calcStats()">
+        <h1><!--{title}--></h1>
+        <p>Created: <!--{creation time}--> by com.l7tech.test.performance.TrendReport</p>
+        <h2>Performance Reports</h2>
+        <div>
+        <div style="margin-bottom: 3px">Use checkboxes to hide/show columns in the Throughput Data table.</div>
+            <table id="reportsTable" class="bluewhite">
+                <tr>
+                    <th><input type="checkbox" checked onClick="hideShowAll(this.checked)"></th>
+                    <th>Report</th>
+                    <th>Date</th>
+                    <th>Version</th>
+                    <th>Host</th>
+                    <th>CPUs</th>
+                    <th>OS</th>
+                    <th>JVM</th>
+                    <th>Notes</th>
+                    <th>File</th>
+                </tr>
+                <!--{next report row}-->
+            </table>
+        </div>
+        <br>
+        <h2>Throughput Data <span style="font-size: smaller">(in transactions/sec)</span></h2>
+        <div style="margin-bottom: 3px">
+            <input type="button" value="Highlight:" onclick="doHighlight()"/> values
+            <input id="percent" type="text" size="2" style="text-align: right"/>%
+            <select id="op">
+                <option value="ge">&gt;=</option>
+                <option value="le">&lt;=</option>
+                <option value="outside" selected>outside (inclusive)</option>
+                <option value="within">within (inclusive)</option>
+            </select>
+            <select id="target">
+                <option value="avg">Average</option>
+                <option value="stdev">Standard Deviation</option>
+                <!--{next report option}-->
+            </select>
+            (only visible columns are used to calculate averge and std dev)
+        </div>
+        <table id="results" class="bluewhite">
+            <!--{results header}-->
+            <!--{next results row}-->
+        </table>
+        <br>
+        <h2>Throughput Charts</h2>
+        <!--{next test case img}-->
+        <h2>Notes</h2>
+        <!--{next note}-->
+    </body>
+</html>

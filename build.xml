@@ -4,6 +4,8 @@
         Ant build file for UneasyRooster
     </description>
 
+    <property environment="env"/>
+
     <!-- override configuration with user properties -->
     <property file="${user.home}/build.properties"/>
 
@@ -940,6 +942,146 @@
 
     <target name="test.junit" description="Run all JUnit tests" depends="test.work, test.intensive.work, test.modules, test.report, report.jdepend, report.findbugs, javadoc">
         <checkfail/>
+    </target>
+
+    <target name="-test.perf.init">
+        <!-- Web server root directory. -->
+        <if>
+            <os family="unix"/>
+            <then>
+                <property name="test.perf.www.dir" location="/var/www/html"/>
+            </then>
+            <elseif>
+                <os family="windows"/>
+                <then>
+                    <property name="test.perf.www.dir" location="${env.SYSTEMDRIVE}\Inetpub\wwwroot"/>
+                </then>
+            </elseif>
+            <else>
+                <fail message="Cannot assign web server root directory because OS family is unrecognized."/>
+            </else>
+        </if>
+        <fail message="Web server root directory does not exist: ${test.perf.www.dir}">
+            <condition>
+                <not>
+                    <available file="${test.perf.www.dir}" type="dir"/>
+                </not>
+            </condition>
+        </fail>
+
+        <property name="test.perf.root.dir" location="${test.perf.www.dir}/testperf"/>
+
+        <!-- Directory that stores all Japex reports. -->
+        <property name="test.perf.reports.dir" location="${test.perf.root.dir}/reports"/>
+        <mkdir dir="${test.perf.reports.dir}"/>
+
+        <!-- Directory for trend output. -->
+        <property name="test.perf.trend.dir" location="${test.perf.root.dir}/trend"/>
+        <mkdir dir="${test.perf.trend.dir}"/>
+
+        <!-- Directory for regression output. -->
+        <property name="test.perf.regression.dir" location="${test.perf.root.dir}/regression"/>
+        <mkdir dir="${test.perf.regression.dir}"/>
+    </target>
+
+    <target name="test.perf.run" description="Run performance regression tests." depends="clean.test, dev, -test.perf.init">
+        <!-- Composes desired Japex report file name and final location. -->
+        <tstamp>
+            <format property="test.perf.report.suffix" pattern="yyyy'-'MM'-'dd'.'HHmm"/>
+        </tstamp>
+        <property name="test.perf.report.name" value="${build.version.major}.${build.version.minor}${build.version.subminor}_${test.perf.report.suffix}"/>
+        <property name="test.perf.report.file" location="${test.perf.reports.dir}/${test.perf.report.name}.xml"/>
+
+        <!-- Creates temporary directory for Japex to output report.
+             This is necessary because Japex is hardcoded to output folder and file names I don't like. -->
+        <tstamp>
+            <format property="test.perf.tmp.suffix" pattern="yyyyMMddHHmmss"/>
+        </tstamp>
+        <property name="test.perf.tmp.dir" location="${build.dir}/tmp-testperf-${test.perf.tmp.suffix}"/>
+        <mkdir dir="${test.perf.tmp.dir}"/>
+
+        <!-- Runs Japex to generate report file. -->
+        <java dir="." fork="true" classname="com.sun.japex.Japex">
+            <classpath>
+                <fileset dir="lib">
+                    <include name="ant.jar"/>
+                    <include name="test/japex-1.1.jar"/>
+                    <include name="test/jdsl-1.1.jar"/>
+                </fileset>
+            </classpath>
+            <jvmarg value="-Djapex.reportsDirectory=${test.perf.tmp.dir}"/>
+            <jvmarg value="-Dlayer7.name=${test.perf.report.name}"/>
+            <jvmarg value="-Dlayer7.version=v${build.version.major}.${build.version.minor}${build.version.subminor}"/> <!-- letter 'v' to prevent Japex from parsing this as number -->
+            <jvmarg value="-Dlayer7.notes=snapshot performance test"/>
+            <jvmarg value="-Dsrc.root=${src.root}"/>
+            <arg line="-nohtml"/>
+            <arg line="-verbose"/>
+            <arg line="tests/com/l7tech/test/performance/japex-config.xml"/>
+        </java>
+
+        <!-- Moves Japex report to desired final location. -->
+        <move tofile="${test.perf.report.file}">
+            <fileset dir="${test.perf.tmp.dir}">
+                <include name="**/report.xml"/>
+            </fileset>
+        </move>
+
+        <delete dir="${test.perf.tmp.dir}"/>
+    </target>
+
+    <target name="test.perf.trend" description="Generate trend charts from existing performance reports." depends="clean.test, dev, -test.perf.init">
+        <java classname="com.l7tech.test.performance.TrendReport">
+            <classpath>
+                <fileset dir="lib">
+                    <include name="ant.jar"/>
+                    <include name="jcommon-1.0.5.jar"/>
+                    <include name="jfreechart-1.0.2.jar"/>
+                    <include name="xercesImpl.jar"/>
+                    <include name="gateway/config/commons-lang-2.3.jar"/>
+                    <include name="test/japex-1.1.jar"/>
+                </fileset>
+                <pathelement location="${build.classes}"/>
+                <pathelement location="${build.test.classes}"/>
+            </classpath>
+            <arg value="-note=You can change benchmark list in &lt;code>UneasyRooster/build.xml&lt;/code>: ant target &lt;code>test.perf.trend&lt;/code>."/>
+            <arg value="-note=Also see &lt;a href=&quot;../regression/index.html&quot;>Regression Report&lt;/a>"/>
+            <arg value="-verbose"/>
+            <arg value="Performance Trend Report"/>
+            <arg value="${test.perf.trend.dir}"/>
+            <arg value="${test.perf.reports.dir}?today?-10D"/> <!-- any report from last 10 days -->
+            <!-- add any benchmark reports here, e.g.,
+                 <arg value="${test.perf.reports.dir}/4.2 release.xml"/> -->
+        </java>
+    </target>
+
+    <target name="test.perf.regression" description="Generate regression report and e-mail from performance reports." depends="clean.test, dev, -test.perf.init">
+        <java classname="com.l7tech.test.performance.RegressionReport" fork="true">
+            <classpath>
+                <fileset dir="lib">
+                    <include name="mailapi-1.4.jar"/>
+                    <include name="smtp-1.3.2.jar"/>
+                    <include name="xercesImpl.jar"/>
+                    <include name="gateway/config/commons-lang-2.3.jar"/>
+                    <include name="test/japex-1.1.jar"/>
+                </fileset>
+                <pathelement location="${build.classes}"/>
+                <pathelement location="${build.test.classes}"/>
+            </classpath>
+            <jvmarg value="-Dmail.smtp.host=layer7-mx0"/>
+            <arg value="-alwaysEMail"/>
+            <arg value="-httpDir=testperf/regression"/>
+            <arg value="-note=View this page online &lt;a href=&quot;index.html&quot;>here&lt;/a>."/>
+            <arg value="-note=See also &lt;a href=&quot;../trend/index.html&quot;>Trend Report&lt;/a>."/>
+            <arg value="-note=You can change threshold, benchmark list and e-mail recipients in &lt;code>UneasyRooster/build.xml&lt;/code>: ant target &lt;code>test.perf.regression&lt;/code>."/>
+            <arg value="-verbose"/>
+            <arg value="Performance Regression Report"/>
+            <arg value="${test.perf.regression.dir}"/>
+            <arg value="rmak@layer7tech.com"/>
+            <arg line="2 ge avg"/>  <!-- 2% >= average -->
+            <arg value="${test.perf.reports.dir}?today?-10D"/> <!-- any report from last 10 days -->
+            <!-- add any benchmark reports here, e.g.,
+                 <arg value="${test.perf.reports.dir}/4.2 release.xml"/> -->
+        </java>
     </target>
 
     <target name="report.jdepend" depends="compile">

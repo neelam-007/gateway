@@ -1,0 +1,50 @@
+<html>
+<body bgcolor="white">
+
+Performance test framework based on <a href="https://japex.dev.java.net">Japex</a>.
+
+<p>This framework generates 3 types of reports: <i>Japex Test Reports</i>,
+<i>Trend Report</i> and <i>Regression Report</i>.</p>
+
+<p>The normal usage pattern is:
+<ol>
+    <li>Run {@link com.sun.japex.Japex}.
+        <ul>
+            <li>Input: a Japex configuration file that uses a
+                {@link com.l7tech.test.performance.JUnitDriver} to time
+                individual test methods in a JUnit {@link junit.framework.TestCase}
+                (see javadoc in {@link com.l7tech.test.performance.JUnitDriver}
+                for an example configuration file)
+            </li>
+            <li>Output: a Japex test report (XML) with timing results</li>
+        </ul>
+        Repeat for different snapshot builds to build up a series of Japex test reports.
+    </li>
+    <li>Run {@link com.l7tech.test.performance.TrendReport}.
+        <ul>
+            <li>Input: Japex test reports that carries out the same tests on different snapshot builds.</li>
+            <li>Output: a trend report (HTML) that summarizes the Japex test
+                reports using tables and charts</li>
+        </ul>
+    </li>
+    <li>Run {@link com.l7tech.test.performance.RegressionReport}.
+        <ul>
+            <li>Input: Japex test reports that carries out the same tests on different snapshot builds.</li>
+            <li>Output: a regression report (HTML) and e-mail notifications that
+                flags tests that have reached a predefined threshold.</li>
+        </ul>
+    </li>
+</ol>
+</p>
+
+<p>The recommended directory hierarchy to saves these report is:
+    <blockquote>
+        <i>web server subfolder</i><code>/</code><br/>
+        &rarr;<code>reports/</code><br/>
+        &rarr;<code>trend/</code><br/>
+        &rarr;<code>regression/</code><br/>
+    </blockquote>
+</p>
+
+</body>
+</html>

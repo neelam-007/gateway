@@ -13,6 +13,8 @@ import java.nio.channels.FileLock;
 import java.nio.channels.Channels;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Utility methods to approximate Unix-style transactional file replacement in Java.
@@ -328,5 +330,66 @@ public class FileUtils {
         } finally {
             ResourceUtils.closeQuietly(fos);
         }
+    }
+
+    /**
+     * Breaks down a file path into its canonical absolute path components. This is system-dependent.
+     *
+     * <p>Example: if a path is /a/b/c/d, the components are [a, b, c, d].
+     *
+     * @param f a file path
+     * @return a list of the individual path components
+     * @throws IOException if an I/O error occurs, which is possible because the construction of the canonical pathname may require filesystem queries
+     */
+    private static List<String> getAbsolutePathComponents(File f) throws IOException {
+        final List<String> l = new ArrayList<String>();
+        File c = f.getCanonicalFile();
+        while (c != null) {
+            l.add(0, c.getName());
+            c = c.getParentFile();
+        }
+        return l;
+    }
+
+    /**
+     * Computes the relative path of <code>target</code> with respect to <code>home</code>.
+     *
+     * @param home      the reference location
+     * @param target    the target location
+     * @return the relative path
+     * @throws IOException if an I/O error occurs, which is possible because the construction of the canonical pathname may require filesystem queries
+     */
+    public static String getRelativePath(File home, File target) throws IOException {
+        if (home.equals(target)) {
+            // Pathological case.
+            return ".." + File.separator + target.getName();
+        }
+
+        final List h = getAbsolutePathComponents(home);
+        final List t = getAbsolutePathComponents(target);
+        final StringBuilder sb = new StringBuilder();
+
+        // First eliminates common root levels.
+        int i = 0;
+		int j = 0;
+        while(i < h.size() && j < t.size() && h.get(i).equals(t.get(j))) {
+            ++ i;
+            ++ j;
+        }
+
+		// For each remaining level in the home path, add a ..
+		for (; i < h.size(); ++ i) {
+			sb.append("..");
+            sb.append(File.separator);
+		}
+
+		// For each remaining level in the file path, add the component.
+		for (; j < t.size() - 1; ++ j) {
+			sb.append(t.get(j));
+            sb.append(File.separator);
+		}
+        sb.append(t.get(j));
+
+        return sb.toString();
     }
 }

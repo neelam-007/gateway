@@ -1,0 +1,87 @@
+body {
+    margin: 10px;
+    font-family: sans-serif;
+    font-size: 12px;
+    color: black;
+    background: white;
+}
+
+a:link {
+    color: blue;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+a:visited {
+    color: blue;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+a:hover {
+    background-color: blue;
+    color: white;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+h1 {
+    margin-top: 18px;
+    margin-bottom: 10px;
+}
+
+h2 {
+    margin-top: 14px;
+    margin-bottom: 6px;
+}
+
+p {
+    margin-top: 10px;
+    margin-bottom: 0px;
+}
+
+table.bluewhite {
+	border: 2px solid #005A9C;
+	border-spacing: 2px;
+	border-collapse: collapse;
+	background-color: white;
+    font-size: 12px;
+}
+
+table.bluewhite th {
+	border: 1px solid white;
+	padding: 1px 4px 1px 4px;
+	background-color: #005A9C;
+	color: white;
+}
+
+table.bluewhite th.avg {
+    background-color: #008000;
+}
+
+table.bluewhite th.stdev {
+    background-color: #008000;
+}
+
+table.bluewhite td {
+    border: 1px solid #005A9C;
+    padding: 1px 4px 1px 4px;
+    vertical-align: top;
+}
+
+table.bluewhite td.avg {
+    background-color: #E0FFE0;
+}
+
+table.bluewhite td.stdev {
+    background-color: #E0FFE0;
+}
+
+.outlier {
+    background-color: #FFE0E0;
+}
+
+img.plot {
+	border: 1px solid #005A9C;
+	display: block;
+}

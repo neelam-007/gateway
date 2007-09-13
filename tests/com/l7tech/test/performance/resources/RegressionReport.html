@@ -1,0 +1,96 @@
+<html>
+    <head>
+        <!--{base href}-->
+        <title><!--{title}--></title>
+        <style type="text/css">
+            body {
+                margin: 10px;
+                font-family: sans-serif;
+                font-size: 12px;
+                color: black;
+                background: white;
+            }
+
+            a:link {
+                color: blue;
+                font-weight: bold;
+                text-decoration: none;
+            }
+            a:visited {
+                color: blue;
+                font-weight: bold;
+                text-decoration: none;
+            }
+            a:hover {
+                background-color: blue;
+                color: white;
+                font-weight: bold;
+                text-decoration: none;
+            }
+
+            h1 {
+                margin-top: 18px;
+                margin-bottom: 10px;
+            }
+
+            h2 {
+                margin-top: 14px;
+                margin-bottom: 6px;
+            }
+
+            p {
+                margin-top: 10px;
+                margin-bottom: 0px;
+            }
+
+            table.bluewhite {
+                border: 2px solid #005A9C;
+                border-spacing: 2px;
+                border-collapse: collapse;
+                background-color: white;
+                font-size: 12px;
+            }
+            table.bluewhite th {
+                border: 1px solid white;
+                padding: 1px 4px 1px 4px;
+                background-color: #005A9C;
+                color: white;
+            }
+            table.bluewhite td {
+                border: 1px solid #005A9C;
+                padding: 1px 4px 1px 4px;
+                vertical-align: top;
+            }
+
+            .warn {
+                background-color: yellow;
+            }
+        </style>
+    </head>
+    <body>
+        <h1><!--{title}--></h1>
+        <p>Created: <!--{creation time}--> by com.l7tech.test.performance.RegressionReport</p>
+        <h2>Threshold</h2>
+        <span style="padding-left: 10px; background-color: yellow; border: 1px solid #005A9C">&nbsp;</span>&nbsp;<!--{threshold}-->
+        <h2>Summary</h2>
+        <table class="bluewhite">
+            <tr>
+                <th rowspan="2">Test</th>
+                <!--{benchmark header 1}-->
+                <th colspan="2">Target</th>
+            </tr>
+            <tr>
+                <!--{benchmark header 2}-->
+                <!--{target header}-->
+                <th>Difference</th>
+            </tr>
+            <!--{next results row}-->
+        </table>
+        <h2>Performance Report Used as Target</h2>
+        <!--{target report}-->
+        <h2>Performance Reports Used as Benchmark</h2>
+        <!--{next benchmark report}-->
+        <h2>Notes</h2>
+        <!--{next note}-->
+    </body>
+</html>

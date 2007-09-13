@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testSuite name="Performance" xmlns="http://www.sun.com/japex/testSuite">
+    <param name="japex.classPath" value="${src.root}/lib/junit.jar"/>
+    <param name="japex.classPath" value="${src.root}/lib/tools/jdsl-1.0.jar"/>
+    <param name="japex.classPath" value="${src.root}/build/classes"/>
+    <param name="japex.classPath" value="${src.root}/build/test-classes"/>
+
+    <param name="japex.reportsDirectory" value="${japex.reportsDirectory}"/>
+    <param name="japex.resultUnit" value="tps"/>        <!-- must be tps -->
+    <param name="japex.warmupsPerDriver" value="0"/>    <!-- must be 0 -->
+    <param name="japex.runsPerDriver" value="1"/>       <!-- must be 1 -->
+    <param name="japex.warmupIterations" value="2"/>
+    <param name="japex.runIterations" value="10"/>
+
+    <param name= "layer7.name" value="${layer7.name}"/>
+    <param name= "layer7.version" value="${layer7.version}"/>
+    <param name= "layer7.notes" value="${layer7.notes}"/>
+
+    <driver name="JUnitDriver">     <!-- must be the only driver in this config -->
+        <param name="japex.driverClass" value="com.l7tech.test.performance.JUnitDriver"/>
+        <param name="description" value="Layer 7 Japex Driver"/>
+        <param name="layer7.runInInitializeDriver" value="com.l7tech.test.performance.TestCaseA.setUpClass"/>
+        <param name="layer7.runInTerminateDriver" value="com.l7tech.test.performance.TestCaseA.tearDownClass"/>
+    </driver>
+
+    <testCase name="TestCaseA.testX">
+        <param name="layer7.className" value="com.l7tech.test.performance.TestCaseA"/>
+        <param name="layer7.methodName" value="testX"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="TestCaseA.testY">
+        <param name="layer7.className" value="com.l7tech.test.performance.TestCaseA"/>
+        <param name="layer7.methodName" value="testY"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+</testSuite>
