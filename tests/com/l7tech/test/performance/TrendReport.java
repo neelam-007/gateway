@@ -5,6 +5,7 @@ package com.l7tech.test.performance;
 
 import com.l7tech.common.util.FileUtils;
 import com.sun.japex.report.TestSuiteReport;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
@@ -16,11 +17,13 @@ import org.jfree.chart.plot.DrawingSupplier;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
@@ -52,6 +55,8 @@ public class TrendReport {
     private static final String NOTES_MARKER = "<!--{next note}-->";
 
     private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd E hh:mm:ss a z");
+
+    private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
 
     private static final int CHART_WIDTH  = 800;
     private static final int CHART_HEIGHT = 200;
@@ -98,7 +103,6 @@ public class TrendReport {
             final String reportPath = reports.get(report);
             final File reportFile = new File(reportPath);
             final String reportRelativePath = FileUtils.getRelativePath(outputDir, reportFile).replace('\\', '/');
-            // TODO class="outlier"
             PerformanceUtil.insertAtMarker(html, REPORTS_ROW_MARKER,
                     "<tr>" +
                     "<td><input class=\"hideShowCheckbox\" type=\"checkbox\" checked onClick=\"hideShowColumn(" + column + ", this.checked)\"></td>" +
@@ -119,15 +123,19 @@ public class TrendReport {
         column = 0;
         for (TestSuiteReport report : reports.keySet()) {
             ++ column;
-            optionsHtml.append("<option value=\"" + column + "\">" + StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.NAME)) + "</option>");
+            optionsHtml.append("<option value=\"")
+                       .append(column)
+                       .append("\">")
+                       .append(StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.NAME)))
+                       .append("</option>");
         }
         PerformanceUtil.replaceMarkerAll(html, REPORTS_OPTION_MARKER, optionsHtml.toString());
         
         final StringBuilder headerHtml = new StringBuilder("<tr><th></th>");
         for (TestSuiteReport report : reports.keySet()) {
-            headerHtml.append("<th>");
-            headerHtml.append(StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.NAME)));
-            headerHtml.append("</th>");
+            headerHtml.append("<th>")
+                      .append(StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.NAME)))
+                      .append("</th>");
         }
         headerHtml.append("<th class=\"avg\">Average</th><th class=\"stdev\">Std Dev</th></tr>");
         PerformanceUtil.replaceMarkerAll(html, RESULTS_HEADER_MARKER, headerHtml.toString());
@@ -148,9 +156,7 @@ public class TrendReport {
                     if (testCase == null) {
                         htmlRow.append("<td></td>");
                     } else {
-                        htmlRow.append("<td>");
-                        htmlRow.append(testCase.getResult());
-                        htmlRow.append("</td>");
+                        htmlRow.append("<td>").append(testCase.getResult()).append("</td>");
                     }
                 }
             }
@@ -191,6 +197,11 @@ public class TrendReport {
 
     /**
      * Creates a chart for a test case across all reports.
+     *
+     * @param testCaseName  the Japex test case to plot
+     * @param reports       Japex test reports
+     * @param destFile      location to save the generated chart file
+     * @throws IOException  if I/O error occurs
      */
     private void createTrendChart(final String testCaseName, final Collection<TestSuiteReport> reports, final File destFile) throws IOException {
         final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
@@ -241,37 +252,5 @@ public class TrendReport {
         axis.setMaximumCategoryLabelLines(Integer.MAX_VALUE);
 
         ChartUtilities.saveChartAsPNG(destFile, chart, CHART_WIDTH, CHART_HEIGHT);
-    }
-
-    private void copyResource(final String resourceName, final String filePath) throws IOException {
-        InputStream is = null;
-        OutputStream os = null;
-        try {
-            final InputStream in = getClass().getResourceAsStream(resourceName);
-            if (in == null) {
-                throw new IOException("Resource not found: " + resourceName);
-            }
-            is = new BufferedInputStream(in);
-            os = new BufferedOutputStream(new FileOutputStream(filePath));
-            int c;
-            while ((c = is.read()) != -1) {
-                os.write(c);
-            }
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
-        }
     }
 }

@@ -77,10 +77,6 @@ table.bluewhite td.stdev {
     background-color: #E0FFE0;
 }
 
-.outlier {
-    background-color: #FFE0E0;
-}
-
 img.plot {
 	border: 1px solid #005A9C;
 	display: block;

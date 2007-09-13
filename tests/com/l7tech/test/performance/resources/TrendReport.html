@@ -4,7 +4,7 @@
         <link href="TrendReport.css" type="text/css" rel="stylesheet">
         <script type="text/javascript">
             /**
-             * Hide/show all columns of reports in the reports table.
+             * Hide/show all columns of reports in the results table.
              *
              * @param flag  true to show all; false to hide all
              */
@@ -17,135 +17,203 @@
                 }
 
                 var display = flag ? "" : "none";
-                var rows = document.getElementById("results").rows;
-                for (var i = 0; i < rows.length; ++ i) {
-                    var cells = rows[i].cells;
-                    for (var j = 1; j < cells.length - 2; ++ j) {
-                        cells[j].style.display = display;
+                var rows = document.getElementById("resultsTable").rows;
+                for (var rowIndex = 0; rowIndex < rows.length; ++ rowIndex) {
+                    var cells = rows[rowIndex].cells;
+                    for (var columnIndex = 1; columnIndex < cells.length - 2; ++ columnIndex) {
+                        cells[columnIndex].style.display = display;
                     }
                 }
 
-                undoHighlight();
+                undoHighlightThresholds();
                 calcStats();
             }
 
             /**
-             * Hide/show a specific column of report in the reports table.
+             * Hide/show a specific column of report in the results table.
              *
-             * @param flag  true to show; false to hide
+             * @param column    index of column to hide/show
+             * @param flag      true to show; false to hide
              */
-            function hideShowColumn(columnIndex, flag) {
+            function hideShowColumn(column, flag) {
                 var display = flag ? "" : "none";
-                var rows = document.getElementById("results").rows;
-                for (var i = 0; i < rows.length; ++ i) {
-                    var cells = rows[i].cells;
-                    for (var j = 1; j < cells.length; ++ j) {
-                        if (j == columnIndex) {
-                            cells[j].style.display = display;
+                var rows = document.getElementById("resultsTable").rows;
+                for (var rowIndex = 0; rowIndex < rows.length; ++ rowIndex) {
+                    var cells = rows[rowIndex].cells;
+                    for (var columnIndex = 1; columnIndex < cells.length; ++ columnIndex) {
+                        if (columnIndex == column) {
+                            cells[columnIndex].style.display = display;
                         }
                     }
                 }
 
-                undoHighlight();
+                undoHighlightThresholds();
                 calcStats();
+            }
+
+            /**
+             * Handles onclick events of the outlier checkbox.
+             */
+            function onOutlierCheckboxClicked() {
+                var rows = document.getElementById("reportsTable").rows;
+                var headers = rows[0].cells;
+                // Loop through each column.
+                for (var columnIndex = 0; columnIndex < headers.length; ++ columnIndex) {
+                    if (isOutlierColumn(columnIndex)) {
+                        if (document.getElementById("outlierCheckbox").checked) {
+                            highlightOutliers(columnIndex);
+                        } else {
+                            // Undo any outlier highlighting.
+                            for (var rowIndex = 1; rowIndex < rows.length - 1; ++ rowIndex) {
+                                rows[rowIndex].cells[columnIndex].style.backgroundColor = "white";
+                            }
+                        }
+                    }
+                }
+            }
+
+            /**
+             * Determines if a column is a candidate for outlier highlighting;
+             * those columns has the class "outlierCandidate".
+             *
+             * @param column    index of column to test
+             * @return true or false
+             */
+            function isOutlierColumn(column) {
+                var headers = document.getElementById("reportsTable").rows[0].cells;
+                var classes = headers[column].className.split(" ");
+                for (var i = 0; i < classes.length; ++ i) {
+                    if (classes[i] == "outlierCandidate") {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            /**
+             * Highlights outliers in the given column in the reports table.
+             *
+             * @param column    index of column to highlight
+             */
+            function highlightOutliers(column) {
+                var rows = document.getElementById("reportsTable").rows;
+                // First pass: find value of maximum occurrence in this column
+                var values = new Object();  // Map of value and number of occurrences
+                for (var rowIndex = 1; rowIndex < rows.length - 1; ++ rowIndex) {
+                    var value = rows[rowIndex].cells[column].innerHTML;
+                    if (values[value] == undefined) {
+                        values[value] = 1;
+                    } else {
+                        ++ values[value];
+                    }
+                }
+                var maxOccurs = 0, maxValue;
+                for (var value in values) {
+                    if (values[value] > maxOccurs) {
+                        maxOccurs = values[value];
+                        maxValue = value;
+                    }
+                }
+
+                // Second pass: highlight any cells not equal to value of maximum occurrence
+                for (var rowIndex = 1; rowIndex < rows.length - 1; ++ rowIndex) {
+                    var cell = rows[rowIndex].cells[column];
+                    cell.style.backgroundColor = cell.innerHTML == maxValue ? "white" : "pink";
+                }
             }
 
             /**
              * Calculates avg and stdev for each row in the results table.
              */
             function calcStats() {
-                var rows = document.getElementById("results").rows;
+                var rows = document.getElementById("resultsTable").rows;
                 var avgColumnIndex = rows[0].cells.length - 2;
                 var stdevColumnIndex = rows[0].cells.length - 1;
-                for (var i = 1; i < rows.length; ++ i) {
-                    var cells = rows[i].cells;
+                for (var rowIndex = 1; rowIndex < rows.length; ++ rowIndex) {
+                    var cells = rows[rowIndex].cells;
                     var n = 0;
                     var sum = 0.;
                     var sum2 = 0.;
-                    for (var j = 1; j < cells.length - 2; ++ j) {
-                        if (cells[j].style.display != "none") {
-                            var value = Number(cells[j].innerHTML);
+                    for (var columnIndex = 1; columnIndex < cells.length - 2; ++ columnIndex) {
+                        if (cells[columnIndex].style.display != "none") {
+                            var value = Number(cells[columnIndex].innerHTML);
                             ++ n;
                             sum += value;
                             sum2 += value * value;
                         }
                     }
-                    var avg;
-                    var stdev;
-                    if (n == 0) {
-                        avg = "";
-                        stdev = "";
-                    } else {
+                    var avg = 0;
+                    var stdev = 0;
+                    if (n > 0) {
                         avg = sum / n;
-                        if (n == 1) {
-                            stdev = 0;
-                        } else {
+                        if (n > 1) {
                             stdev = Math.sqrt((sum2 - n * avg * avg) / (n - 1));
                         }
                     }
-                    cells[avgColumnIndex].innerHTML = avg;
-                    cells[stdevColumnIndex].innerHTML = stdev;
+                    cells[avgColumnIndex].innerHTML = avg.toFixed(3);
+                    cells[stdevColumnIndex].innerHTML = stdev.toFixed(3);
                 }
             }
 
             /**
-             * Highlight values in the results table that meets the threshold.
+             * Highlight cells in the results table that meets the threshold.
              */
-            function doHighlight() {
+            function highlightThresholds() {
                 var percent = document.getElementById("percent").value;
-                var op = document.getElementById("op").value;
-                var target = document.getElementById("target").value;
-                var rows = document.getElementById("results").rows;
+                var comparison = document.getElementById("comparison").value;
+                var benchmark = document.getElementById("benchmark").value;
+                var rows = document.getElementById("resultsTable").rows;
                 var avgColumnIndex = rows[0].cells.length - 2;
                 var stdevColumnIndex = rows[0].cells.length - 1;
-                for (var i = 1; i < rows.length; ++ i) {
-                    var cells = rows[i].cells;
+                for (var rowIndex = 1; rowIndex < rows.length; ++ rowIndex) {
+                    var cells = rows[rowIndex].cells;
                     var avg, stdev = 0;
-                    if (target == "avg" || target == "stdev") {
+                    if (benchmark == "avg" || benchmark == "stdev") {
                         avg = Number(cells[avgColumnIndex].innerHTML);
                         stdev = Number(cells[stdevColumnIndex].innerHTML);
                     } else {
-                        avg = Number(cells[target].innerHTML);
+                        avg = Number(cells[benchmark].innerHTML);
                     }
-                    for (var j = 1; j < cells.length - 2; ++ j) {
-                        var cell = cells[j];
+                    for (var columnIndex = 1; columnIndex < cells.length - 2; ++ columnIndex) {
+                        var cell = cells[columnIndex];
                         var value = cell.innerHTML;
                         if (value != "") {
                             var delta;  // percentage difference
-                            if (target == "stdev") {
+                            if (benchmark == "stdev") {
                                 delta = (value - avg) / stdev * 100;
                             } else {
                                 delta = (value - avg) / avg * 100;
                             }
-                            if (op == "ge") {
-                                highlight(cell, delta >= percent);
-                            } else if (op == "le") {
-                                highlight(cell, delta <= percent);
-                            } else if (op == "outside") {
-                                highlight(cell, Math.abs(delta) >= percent);
-                            } else if (op == "within") {
-                                highlight(cell, Math.abs(delta) <= percent);
+
+                            var highlight = false;
+                            if (comparison == "ge") {
+                                highlight = delta >= percent;
+                            } else if (comparison == "le") {
+                                highlight = delta <= percent;
+                            } else if (comparison == "outside") {
+                                highlight = Math.abs(delta) >= percent;
+                            } else if (comparison == "within") {
+                                highlight = Math.abs(delta) <= percent;
+                            } else {
+                                alert("Programming Error: missing code to handle comparison type: " + comparison);
                             }
+                            cell.style.backgroundColor = highlight ? "yellow" : "white";
                         }
                     }
                 }
             }
 
             /**
-             * Unhighlight all values in the results table.
+             * Undo threshold highlighting all cells in the results table.
              */
-            function undoHighlight() {
-                var rows = document.getElementById("results").rows;
-                for (var i = 1; i < rows.length; ++ i) {
-                    var cells = rows[i].cells;
-                    for (var j = 1; j < cells.length; ++ j) {
-                        cells[j].style.backgroundColor = "white";
+            function undoHighlightThresholds() {
+                var rows = document.getElementById("resultsTable").rows;
+                for (var rowIndex = 1; rowIndex < rows.length; ++ rowIndex) {
+                    var cells = rows[rowIndex].cells;
+                    for (var columnIndex = 1; columnIndex < cells.length; ++ columnIndex) {
+                        cells[columnIndex].style.backgroundColor = "white";
                     }
                 }
-            }
-
-            function highlight(obj, flag) {
-                obj.style.backgroundColor = flag ? "yellow" : "white";
             }
         </script>
     </head>
@@ -161,35 +229,39 @@
                     <th>Report</th>
                     <th>Date</th>
                     <th>Version</th>
-                    <th>Host</th>
-                    <th>CPUs</th>
-                    <th>OS</th>
-                    <th>JVM</th>
+                    <th class="outlierCandidate">Host</th>
+                    <th class="outlierCandidate">CPUs</th>
+                    <th class="outlierCandidate">OS</th>
+                    <th class="outlierCandidate">JVM</th>
                     <th>Notes</th>
                     <th>File</th>
                 </tr>
                 <!--{next report row}-->
+                <tr>
+                    <th colspan="10" style="text-align: right"><input id="outlierCheckbox" type="checkbox" onclick="onOutlierCheckboxClicked()"/>highlight outlier</th>
+                </tr>
             </table>
         </div>
         <br>
         <h2>Throughput Data <span style="font-size: smaller">(in transactions/sec)</span></h2>
         <div style="margin-bottom: 3px">
-            <input type="button" value="Highlight:" onclick="doHighlight()"/> values
+            <span style="padding-left: 10px; background-color: yellow; border: 1px solid #005A9C">&nbsp;</span>
+            <input type="button" value="Highlight" onclick="highlightThresholds()"/> values
             <input id="percent" type="text" size="2" style="text-align: right"/>%
-            <select id="op">
+            <select id="comparison">
                 <option value="ge">&gt;=</option>
                 <option value="le">&lt;=</option>
                 <option value="outside" selected>outside (inclusive)</option>
                 <option value="within">within (inclusive)</option>
             </select>
-            <select id="target">
+            <select id="benchmark">
                 <option value="avg">Average</option>
                 <option value="stdev">Standard Deviation</option>
                 <!--{next report option}-->
             </select>
             (only visible columns are used to calculate averge and std dev)
         </div>
-        <table id="results" class="bluewhite">
+        <table id="resultsTable" class="bluewhite">
             <!--{results header}-->
             <!--{next results row}-->
         </table>

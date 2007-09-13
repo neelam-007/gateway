@@ -3,21 +3,22 @@
  */
 package com.l7tech.test.performance;
 
-import com.sun.japex.report.TestSuiteReport;
 import com.l7tech.common.util.FileUtils;
+import com.sun.japex.report.TestSuiteReport;
 import org.apache.commons.lang.StringEscapeUtils;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.mail.Session;
 import javax.mail.Message;
-import javax.mail.Transport;
 import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
+import javax.mail.Session;
+import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -49,6 +50,8 @@ public class RegressionReport {
     private static final String NOTES_MARKER = "<!--{next note}-->";
 
     private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd E hh:mm:ss a z");
+
+    private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
 
     public static void main(String[] args) throws Exception {
         RegressionReportParams params = new RegressionReportParams(args);
@@ -115,11 +118,11 @@ public class RegressionReport {
         PerformanceUtil.replaceMarkerAll(html, CREATION_TIME_MARKER, StringEscapeUtils.escapeHtml(LONG_DATE_FORMAT.format(new Date())));
 
         final StringBuilder thresholdHtml = new StringBuilder();
-        thresholdHtml.append(params.getPercent());
-        thresholdHtml.append("% ");
-        thresholdHtml.append(params.getComparison().htmlText);
-        thresholdHtml.append(" ");
-        thresholdHtml.append(StringEscapeUtils.escapeHtml(params.getBenchmark()));
+        thresholdHtml.append(params.getPercent())
+                     .append("% ")
+                     .append(params.getComparison().htmlText)
+                     .append(" ")
+                     .append(StringEscapeUtils.escapeHtml(params.getBenchmark()));
         PerformanceUtil.replaceMarkerAll(html, THRESHOLD_MARKER, thresholdHtml.toString());
 
         if (benchMarkIsSingleReport) {
@@ -213,22 +216,15 @@ public class RegressionReport {
                 anyFail |= fail;
 
                 final StringBuilder tr = new StringBuilder("<tr><td>" + StringEscapeUtils.escapeHtml(testCaseName) + "</td>");
-                tr.append("<td>");
-                tr.append(avg);
-                tr.append("</td>");
+                tr.append("<td>").append(NUMBER_FORMAT.format(avg)).append("</td>");
                 if (! benchMarkIsSingleReport) {
-                    tr.append("<td>");
-                    tr.append(stdev);
-                    tr.append("</td>");
+                    tr.append("<td>").append(NUMBER_FORMAT.format(stdev)).append("</td>");
                 }
-                tr.append("<td>");
-                tr.append(targetResult);
-                tr.append("</td><td");
+                tr.append("<td>").append(NUMBER_FORMAT.format(targetResult)).append("</td><td");
                 if (fail) tr.append(" class=\"warn\"");
                 tr.append(">");
                 if (delta > 0.) tr.append("+");
-                tr.append(delta);
-                tr.append("%</td></tr>\n");
+                tr.append(NUMBER_FORMAT.format(delta)).append("%</td></tr>\n");
                 PerformanceUtil.insertAtMarker(html, RESULTS_ROW_MARKER, tr.toString());
             } else {
                 // No report found to benchmark against this test case name.
