@@ -4,6 +4,7 @@ import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.LicenseException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;
 import com.l7tech.common.message.Message;
@@ -158,7 +159,11 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 }
 
                 // Ensure headers are written (e.g. invalid client cert header)
-                ((HttpServletResponseKnob)response.getHttpResponseKnob()).beginResponse();
+                HttpServletResponseKnob httpServletResponseKnob = (HttpServletResponseKnob) response.getHttpResponseKnob();
+                httpServletResponseKnob.beginResponse();
+                if ( httpServletResponseKnob.getStatus() == 0 ) {
+                    servletResponse.setStatus(HttpConstants.STATUS_OK);
+                }
 
                 if (context.getPolicyResult() != AssertionStatus.NONE) {
                     returnFault(context, servletResponse);

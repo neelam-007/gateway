@@ -14,6 +14,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -147,6 +148,9 @@ public class TokenServiceServlet extends HttpServlet {
 
             // init headers (needed for faults also)
             respKnob.beginResponse();
+            if ( respKnob.getStatus() == 0 ) {
+                res.setStatus(HttpConstants.STATUS_OK);
+            }
 
             // in case of failure, return soap fault
             if (status != AssertionStatus.NONE) {
