@@ -1043,7 +1043,7 @@
                 <pathelement location="${build.classes}"/>
                 <pathelement location="${build.test.classes}"/>
             </classpath>
-            <arg value="-note=You can change benchmark list in &lt;code>UneasyRooster/build.xml&lt;/code>: ant target &lt;code>test.perf.trend&lt;/code>."/>
+            <arg value="-note=You can change benchmark list in &lt;code>UneasyRooster/build.xml&lt;/code> Ant target &lt;code>test.perf.trend&lt;/code>."/>
             <arg value="-note=Also see &lt;a href=&quot;../regression/index.html&quot;>Regression Report&lt;/a>"/>
             <arg value="-verbose"/>
             <arg value="Performance Trend Report"/>
@@ -1072,7 +1072,7 @@
             <arg value="-httpDir=testperf/regression"/>
             <arg value="-note=View this page online &lt;a href=&quot;index.html&quot;>here&lt;/a>."/>
             <arg value="-note=See also &lt;a href=&quot;../trend/index.html&quot;>Trend Report&lt;/a>."/>
-            <arg value="-note=You can change threshold, benchmark list and e-mail recipients in &lt;code>UneasyRooster/build.xml&lt;/code>: ant target &lt;code>test.perf.regression&lt;/code>."/>
+            <arg value="-note=You can change threshold, benchmark list and e-mail recipients in &lt;code>UneasyRooster/build.xml&lt;/code> Ant target &lt;code>test.perf.regression&lt;/code>."/>
             <arg value="-verbose"/>
             <arg value="Performance Regression Report"/>
             <arg value="${test.perf.regression.dir}"/>

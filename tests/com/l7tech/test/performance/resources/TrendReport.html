@@ -135,7 +135,7 @@
                     var sum = 0.;
                     var sum2 = 0.;
                     for (var columnIndex = 1; columnIndex < cells.length - 2; ++ columnIndex) {
-                        if (cells[columnIndex].style.display != "none") {
+                        if (cells[columnIndex].style.display != "none" && cells[columnIndex].innerHTML != "") {
                             var value = Number(cells[columnIndex].innerHTML);
                             ++ n;
                             sum += value;

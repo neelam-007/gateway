@@ -191,6 +191,7 @@ public class JUnitDriver extends JapexDriverBase {
 
         final List<Method> methods = new ArrayList<Method>();
         for (String classAndMethod : s.split("\\s+")) {
+            if (classAndMethod.length() == 0) continue;
             final int dot = classAndMethod.lastIndexOf('.');
             if (dot == -1) {
                 throw new IllegalArgumentException("Missing . between class name and method name: " + classAndMethod);
@@ -233,6 +234,7 @@ public class JUnitDriver extends JapexDriverBase {
 
         final List<Method> methods = new ArrayList<Method>();
         for (String methodName : s.split("\\s+")) {
+            if (methodName.length() == 0) continue;
             final Method method = clazz.getDeclaredMethod(methodName);
             method.setAccessible(true);
             methods.add(method);

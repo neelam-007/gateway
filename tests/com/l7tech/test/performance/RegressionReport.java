@@ -71,6 +71,19 @@ public class RegressionReport {
             System.out.println("Found " + reports.size() + " Japex test reports.");
         }
 
+        // Gathers and sorts all the test case names.
+        final SortedSet<String> testCaseNames = new TreeSet<String>();
+        for (TestSuiteReport report : reports.keySet()) {
+            final List<TestSuiteReport.Driver> drivers = report.getDrivers();
+            if (drivers.size() > 1 && ! params.isNoWarning()) {
+                System.out.println("Warning: More than 1 driver found in Japex test report; ignoring all but the first: " + reports.get(report));
+            }
+            final TestSuiteReport.Driver driver = drivers.get(0);
+            for (TestSuiteReport.TestCase testCase : driver.getTestCases()) {
+                testCaseNames.add(testCase.getName());
+            }
+        }
+
         // Regression target is the latest report.
         TestSuiteReport targetReport = null;
         for (TestSuiteReport testSuiteReport : reports.keySet()) {
@@ -90,18 +103,6 @@ public class RegressionReport {
                 System.out.println("Error: target report is same as benchmark report: " + benchmark);
                 System.exit(1);
             }
-        }
-
-        // Sorts the test case names in the target report.
-        if (targetReport.getDrivers().size() > 1) {
-            if (!params.isNoWarning()) {
-                System.out.println("Warning: More than 1 driver found in target report; ignoring all but the first: " + targetReportPath);
-            }
-        }
-        final TestSuiteReport.Driver targetDriver = targetReport.getDrivers().get(0);
-        final SortedSet<String> testCaseNames = new TreeSet<String>();
-        for (TestSuiteReport.TestCase testCase : targetDriver.getTestCases()) {
-            testCaseNames.add(testCase.getName());
         }
 
         // Creates output directory if not exists.
@@ -187,15 +188,41 @@ public class RegressionReport {
                 }
             }
 
-            // Do threshold comparison.
-            final double targetResult = targetDriver.getTestCase(testCaseName).getResult();
+            double avg = 0.;
+            double stdev = 0.;
             if (n > 0) {
-                final double avg = sum / n;
-                double stdev = 0.;
-                if (n >= 2) {
+                avg = sum / n;
+                if (n > 1) {
                     stdev = Math.sqrt((sum2 - n * avg * avg) / (n - 1));
                 }
+            }
 
+            final TestSuiteReport.TestCase targetTestCase = targetReport.getDrivers().get(0).getTestCase(testCaseName);
+            if (n > 0 && targetTestCase == null) {
+                // Has benchmark but no target.
+                PerformanceUtil.insertAtMarker(html, RESULTS_ROW_MARKER,
+                        "<tr>" +
+                        "<td>" + StringEscapeUtils.escapeHtml(testCaseName) + "</td>" +
+                        "<td>" + NUMBER_FORMAT.format(avg) + "</td>" +
+                        "<td>" + NUMBER_FORMAT.format(stdev) + "</td>" +
+                        "<td></td>" +
+                        "<td></td>" +
+                        "</tr>\n"
+                );
+            } else if (n == 0 && targetTestCase != null) {
+                // No benchmark but has target.
+                PerformanceUtil.insertAtMarker(html, RESULTS_ROW_MARKER,
+                        "<tr>" +
+                        "<td>" + StringEscapeUtils.escapeHtml(testCaseName) + "</td>" +
+                        "<td></td>" +
+                        "<td></td>" +
+                        "<td>" + NUMBER_FORMAT.format(targetTestCase.getResult()) + "</td>" +
+                        "<td></td>" +
+                        "</tr>\n"
+                );
+            } else {
+                // Has benchmark and target.
+                final double targetResult = targetTestCase.getResult();
                 double delta;   // percentage difference
                 if (benchmark.equals(RegressionReportParams.STDEV)) {
                     delta = (targetResult - stdev) / stdev * 100.;
@@ -226,17 +253,6 @@ public class RegressionReport {
                 if (delta > 0.) tr.append("+");
                 tr.append(NUMBER_FORMAT.format(delta)).append("%</td></tr>\n");
                 PerformanceUtil.insertAtMarker(html, RESULTS_ROW_MARKER, tr.toString());
-            } else {
-                // No report found to benchmark against this test case name.
-                PerformanceUtil.insertAtMarker(html, RESULTS_ROW_MARKER,
-                        "<tr>" +
-                        "<td>" + StringEscapeUtils.escapeHtml(testCaseName) + "</td>" +
-                        "<td></td>" +
-                        "<td></td>" +
-                        "<td>" + targetResult + "</td>" +
-                        "<td></td>" +
-                        "</tr>\n"
-                );
             }
         }
 
