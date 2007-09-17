@@ -38,9 +38,8 @@ public class TestCaseA extends TestCase {
         try { Thread.sleep(150); } catch (InterruptedException e) {}
     }
 
-    public TestCaseA(String name) {
-        super(name);
-        System.out.println("             ***** TestCaseA{instance #" + id + "}.TestCaseA(name=\"" + name + "\")");
+    public TestCaseA() {
+        System.out.println("             ***** TestCaseA{instance #" + id + "}.TestCaseA()");
         try { Thread.sleep(150); } catch (InterruptedException e) {}
     }
 

@@ -25,7 +25,7 @@ import java.util.*;
 /**
  * Regression report generator.
  *
- * <p>This is our custom replacement of {@link com.sun.japex.RegressionTracker}.
+ * <p>(I wrote this as a custom replacement of {@link com.sun.japex.RegressionTracker}.)
  *
  * @see RegressionReportParams
  * @see com.l7tech.test.performance
@@ -233,10 +233,14 @@ public class RegressionReport {
                 final RegressionReportParams.Comparison comparison = params.getComparison();
                 final double percent = params.getPercent();
                 boolean fail;
-                if (comparison == RegressionReportParams.Comparison.ge) {
-                    fail = delta >= percent;
+                if (comparison == RegressionReportParams.Comparison.above) {
+                    fail = delta > percent;
+                } else if (comparison == RegressionReportParams.Comparison.below) {
+                    fail = delta < (-1. * percent); // delta is negative
                 } else if (comparison == RegressionReportParams.Comparison.outside) {
-                    fail = Math.abs(delta) >= percent;
+                    fail = Math.abs(delta) > percent;
+                } else if (comparison == RegressionReportParams.Comparison.within) {
+                    fail = Math.abs(delta) < percent;
                 } else {
                     throw new RuntimeException("Missing code to handle comparison type: " + comparison);
                 }

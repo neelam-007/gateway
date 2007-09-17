@@ -971,7 +971,7 @@
 
         <property name="test.perf.root.dir" location="${test.perf.www.dir}/testperf"/>
 
-        <!-- Directory that stores all Japex reports. -->
+        <!-- Directory that stores all Japex test reports. -->
         <property name="test.perf.reports.dir" location="${test.perf.root.dir}/reports"/>
         <mkdir dir="${test.perf.reports.dir}"/>
 
@@ -984,7 +984,7 @@
         <mkdir dir="${test.perf.regression.dir}"/>
     </target>
 
-    <target name="test.perf.run" description="Run performance regression tests." depends="clean.test, dev, -test.perf.init">
+    <target name="test.perf.run" description="Run performance test to generate a Japex test report." depends="clean.test, dev, -test.perf.init">
         <!-- Composes desired Japex report file name and final location. -->
         <tstamp>
             <format property="test.perf.report.suffix" pattern="yyyy'-'MM'-'dd'.'HHmm"/>
@@ -992,7 +992,7 @@
         <property name="test.perf.report.name" value="${build.version.major}.${build.version.minor}${build.version.subminor}_${test.perf.report.suffix}"/>
         <property name="test.perf.report.file" location="${test.perf.reports.dir}/${test.perf.report.name}.xml"/>
 
-        <!-- Creates temporary directory for Japex to output report.
+        <!-- Creates temporary directory for Japex to output test report.
              This is necessary because Japex is hardcoded to output folder and file names I don't like. -->
         <tstamp>
             <format property="test.perf.tmp.suffix" pattern="yyyyMMddHHmmss"/>
@@ -1000,7 +1000,7 @@
         <property name="test.perf.tmp.dir" location="${build.dir}/tmp-testperf-${test.perf.tmp.suffix}"/>
         <mkdir dir="${test.perf.tmp.dir}"/>
 
-        <!-- Runs Japex to generate report file. -->
+        <!-- Runs Japex to generate test report file. -->
         <java dir="." fork="true" classname="com.sun.japex.Japex">
             <classpath>
                 <fileset dir="lib">
@@ -1019,7 +1019,7 @@
             <arg line="tests/com/l7tech/test/performance/japex-config.xml"/>
         </java>
 
-        <!-- Moves Japex report to desired final location. -->
+        <!-- Moves Japex test report to desired final location. -->
         <move tofile="${test.perf.report.file}">
             <fileset dir="${test.perf.tmp.dir}">
                 <include name="**/report.xml"/>
@@ -1029,7 +1029,7 @@
         <delete dir="${test.perf.tmp.dir}"/>
     </target>
 
-    <target name="test.perf.trend" description="Generate trend charts from existing performance reports." depends="clean.test, dev, -test.perf.init">
+    <target name="test.perf.trend" description="Generate trend charts from Japex test reports." depends="clean.test, dev, -test.perf.init">
         <java classname="com.l7tech.test.performance.TrendReport">
             <classpath>
                 <fileset dir="lib">
@@ -1048,13 +1048,13 @@
             <arg value="-verbose"/>
             <arg value="Performance Trend Report"/>
             <arg value="${test.perf.trend.dir}"/>
-            <arg value="${test.perf.reports.dir}?today?-10D"/> <!-- any report from last 10 days -->
-            <!-- add any benchmark reports here, e.g.,
+            <arg value="${test.perf.reports.dir}?today?-10D"/> <!-- any Japex test report from last 10 days -->
+            <!-- add specific Japex test reports here, e.g.,
                  <arg value="${test.perf.reports.dir}/4.2 release.xml"/> -->
         </java>
     </target>
 
-    <target name="test.perf.regression" description="Generate regression report and e-mail from performance reports." depends="clean.test, dev, -test.perf.init">
+    <target name="test.perf.regression" description="Generate regression report and e-mail from Japex test reports." depends="clean.test, dev, -test.perf.init">
         <java classname="com.l7tech.test.performance.RegressionReport" fork="true">
             <classpath>
                 <fileset dir="lib">
@@ -1077,9 +1077,9 @@
             <arg value="Performance Regression Report"/>
             <arg value="${test.perf.regression.dir}"/>
             <arg value="rmak@layer7tech.com"/>
-            <arg line="2 ge avg"/>  <!-- 2% >= average -->
-            <arg value="${test.perf.reports.dir}?today?-10D"/> <!-- any report from last 10 days -->
-            <!-- add any benchmark reports here, e.g.,
+            <arg line="2 below avg"/>  <!-- 2% below average -->
+            <arg value="${test.perf.reports.dir}?today?-10D"/> <!-- any Japex test report from last 10 days -->
+            <!-- add specific Japex test reports here, e.g.,
                  <arg value="${test.perf.reports.dir}/4.2 release.xml"/> -->
         </java>
     </target>

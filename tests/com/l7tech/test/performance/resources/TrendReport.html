@@ -186,10 +186,10 @@
                             }
 
                             var highlight = false;
-                            if (comparison == "ge") {
-                                highlight = delta >= percent;
-                            } else if (comparison == "le") {
-                                highlight = delta <= percent;
+                            if (comparison == "above") {
+                                highlight = delta > percent;
+                            } else if (comparison == "below") {
+                                highlight = delta < (-1 * percent);    // delta is negative
                             } else if (comparison == "outside") {
                                 highlight = Math.abs(delta) >= percent;
                             } else if (comparison == "within") {
@@ -249,10 +249,10 @@
             <input type="button" value="Highlight" onclick="highlightThresholds()"/> values
             <input id="percent" type="text" size="2" style="text-align: right"/>%
             <select id="comparison">
-                <option value="ge">&gt;=</option>
-                <option value="le">&lt;=</option>
-                <option value="outside" selected>outside (inclusive)</option>
-                <option value="within">within (inclusive)</option>
+                <option value="above">above (or more)</option>
+                <option value="below">below (or more)</option>
+                <option value="outside" selected>outside</option>
+                <option value="within">within</option>
             </select>
             <select id="benchmark">
                 <option value="avg">Average</option>

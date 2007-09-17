@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * Trend report generator.
  *
- * <p>This is our custom replacement of {@link com.sun.japex.report.TrendReport}.
+ * <p>(I wrote this as a custom replacement of {@link com.sun.japex.report.TrendReport}.)
  *
  * @see TrendReportParams
  * @see com.l7tech.test.performance

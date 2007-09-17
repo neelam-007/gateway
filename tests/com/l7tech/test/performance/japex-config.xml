@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testSuite name="Performance" xmlns="http://www.sun.com/japex/testSuite">
-    <param name="japex.classPath" value="${src.root}/lib/junit.jar"/>
+
+    <!-- See javadoc of com.sun.japex.Constants and com.l7tech.test.performance.Constants
+         for description of parameters. -->
+
+    <param name="japex.classPath" value="${src.root}/lib/*.jar"/>
+    <param name="japex.classPath" value="${src.root}/lib/crypto/bc/*.jar"/>
     <param name="japex.classPath" value="${src.root}/lib/tools/jdsl-1.0.jar"/>
     <param name="japex.classPath" value="${src.root}/build/classes"/>
     <param name="japex.classPath" value="${src.root}/build/test-classes"/>
@@ -9,8 +14,8 @@
     <param name="japex.resultUnit" value="tps"/>        <!-- must be tps -->
     <param name="japex.warmupsPerDriver" value="0"/>    <!-- must be 0 -->
     <param name="japex.runsPerDriver" value="1"/>       <!-- must be 1 -->
-    <param name="japex.warmupIterations" value="2"/>
-    <param name="japex.runIterations" value="10"/>
+    <param name="japex.warmupTime" value="2"/>          <!-- 2 seconds -->
+    <param name="japex.runTime" value="10"/>            <!-- 10 seconds -->
 
     <param name= "layer7.name" value="${layer7.name}"/>
     <param name= "layer7.version" value="${layer7.version}"/>
@@ -19,20 +24,139 @@
     <driver name="JUnitDriver">     <!-- must be the only driver in this config -->
         <param name="japex.driverClass" value="com.l7tech.test.performance.JUnitDriver"/>
         <param name="description" value="Layer 7 Japex Driver"/>
-        <param name="layer7.runInInitializeDriver" value="com.l7tech.test.performance.TestCaseA.setUpClass"/>
-        <param name="layer7.runInTerminateDriver" value="com.l7tech.test.performance.TestCaseA.tearDownClass"/>
+        <param name="layer7.runInInitializeDriver" value="com.l7tech.server.PolicyProcessingPerformanceTest.setUpClass"/>
+        <param name="layer7.runInTerminateDriver" value="com.l7tech.server.PolicyProcessingPerformanceTest.tearDownClass"/>
     </driver>
 
-    <testCase name="TestCaseA.testX">
-        <param name="layer7.className" value="com.l7tech.test.performance.TestCaseA"/>
-        <param name="layer7.methodName" value="testX"/>
+    <testCase name="PolicyProcessingPerformanceTest.testSQLAttack">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testSQLAttack"/>
         <param name="layer7.runInPrepare" value="setUp"/>
         <param name="layer7.runInFinish" value="tearDown"/>
     </testCase>
 
-    <testCase name="TestCaseA.testY">
-        <param name="layer7.className" value="com.l7tech.test.performance.TestCaseA"/>
-        <param name="layer7.methodName" value="testY"/>
+    <testCase name="PolicyProcessingPerformanceTest.testSQLAttackFail">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testSQLAttackFail"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testRequestSizeLimit">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testRequestSizeLimit"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testRequestSizeLimitFail">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testRequestSizeLimitFail"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testDocumentStructure">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testDocumentStructure"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testDocumentStructureFail">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testDocumentStructureFail"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testStealthFault">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testStealthFault"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testFaultLevel">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testFaultLevel"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testXPathCreds">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testXPathCreds"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testXPathCredsFail">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testXPathCredsFail"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testUsernameToken_1">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testUsernameToken_1"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testUsernameToken_2">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testUsernameToken_2"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testUsernameTokenFail">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testUsernameTokenFail"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testHttpRoutingCookie">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testHttpRoutingCookie"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testHttpRoutingCookieNone">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testHttpRoutingCookieNone"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testHttpRoutingSticky">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testHttpRoutingSticky"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testHttpWssHeaderLeave">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testHttpWssHeaderLeave"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testHttpWssHeaderRemove">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testHttpWssHeaderRemove"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testHttpWssHeaderPromote">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testHttpWssHeaderPromote"/>
         <param name="layer7.runInPrepare" value="setUp"/>
         <param name="layer7.runInFinish" value="tearDown"/>
     </testCase>

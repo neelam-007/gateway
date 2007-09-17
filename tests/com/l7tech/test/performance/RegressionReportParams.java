@@ -16,8 +16,10 @@ public class RegressionReportParams {
 
     /** Comparison types. */
     public enum Comparison {
-        /** Greater than or equal to */ ge("&ge;"),
-        /** Outside of (inclusive). */  outside("outside of (inclusive)");
+        above("above (or more)"),
+        below("below (or more)"),
+        outside("outside"),
+        within("within");
 
         public final String htmlText;
         Comparison(String htmlText) { this.htmlText = htmlText; }

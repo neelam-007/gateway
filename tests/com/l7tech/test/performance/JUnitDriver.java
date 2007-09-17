@@ -14,11 +14,21 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A Japex driver that uses JUnit test classes.
+ * A Japex driver with facilities that parallels concepts in JUnit TestCase.
  *
- * <p>This is our custom replacement of {@link com.sun.japex.jdsl.junit.JUnitDriver}.
+ * <p>(I wrote this to replace {@link com.sun.japex.jdsl.junit.JUnitDriver}
+ * because that driver is wrong. Specifically, it incorrectly includes
+ * {@link junit.framework.TestCase#setUp()} and {@link junit.framework.TestCase#tearDown()}
+ * in performance timing.)
  *
- * <p>Example Japex configuration file:
+ * <p>This driver can time test methods in any class. But it has facilities that
+ * can call no-arg methods to set up and tear down class and instance, similar
+ * to those of JUnit {@link junit.framework.TestCase TestCase}. These methods don't
+ * have to be named setUp and tearDown, but is best kept for familiarity. And
+ * the test class does not have to be extended from JUnit <code>TestCase</code>
+ * either. But it <b>must have a no-arg constructor</b>.
+ *
+ * <p>It is best illustrated using an example Japex configuration file that uses this driver:
  * <blockquote><pre>
  * &lt;?xml version="1.0" encoding="UTF-8"?>
  * &lt;testSuite name="JapexTest" xmlns="http://www.sun.com/japex/testSuite">
@@ -26,13 +36,13 @@ import java.util.List;
  *     &lt;param name="japex.classPath" value="${japex.home}/jdsl/junit.jar"/>
  *     &lt;param name="japex.classPath" value="classes"/>
  *
- *     &lt;param name="japex.resultUnit" value="tps"/>
+ *     &lt;param name="japex.resultUnit" value="tps"/>      &lt;!-- must be tps -->
  *     &lt;param name="japex.warmupsPerDriver" value="0"/>  &lt;!-- always 0 -->
  *     &lt;param name="japex.runsPerDriver" value="1"/>     &lt;!-- always 1 -->
- *     &lt;param name="japex.warmupIterations" value="2"/>
- *     &lt;param name="japex.runIterations" value="10"/>
+ *     &lt;param name="japex.warmupIterations" value="2"/>  &lt;!-- alternatively, japex.warmupTime; can be overridden in any &lt;testCase> -->
+ *     &lt;param name="japex.runIterations" value="10"/>    &lt;!-- alternatively, japex.runTime; can be overridden in any &lt;testCase> -->
  *
- *     &lt;driver name="JUnitDriver">                       &lt;!-- always the only driver -->
+ *     &lt;driver name="JUnitDriver">                       &lt;!-- must be the only driver -->
  *         &lt;param name="japex.driverClass" value="JUnitDriver"/>
  *         &lt;param name="layer7.runInInitializeDriver" value="TestCaseA.setUpClass"/>
  *         &lt;param name="layer7.runInTerminateDriver" value="TestCaseA.tearDownClass"/>
@@ -59,13 +69,13 @@ import java.util.List;
  * <ul>
  *  <li>TestCaseA.setUpClass()
  *  <li>
- *  <li>TestCaseA constructor
+ *  <li>TestCaseA.TestCaseA() no-arg constructor
  *  <li>TestCaseA.setUp()
  *  <li>TestCaseA.testX() - 2 iterations for warm-up
  *  <li>TestCaseA.testX() - 10 iterations for performance measurement
  *  <li>TestCaseA.tearDown()
  *  <li>
- *  <li>TestCaseA constructor
+ *  <li>TestCaseA.TestCaseA() no-arg constructor
  *  <li>TestCaseA.setUp()
  *  <li>TestCaseA.testY() - 2 iterations for warm-up
  *  <li>TestCaseA.testY() - 10 iterations for performance measurement
@@ -73,6 +83,9 @@ import java.util.List;
  *  <li>
  *  <li>TestCaseA.tearDownClass()
  * </ul>
+ * See <a href="https://japex.dev.java.net/docs/manual.html">Japex Manual</a>
+ * for description of basic Japex parameters.
+ * See {@link Constants} for description of parameters specific to this driver.
  *
  * @see com.l7tech.test.performance
  * @author rmak
@@ -111,8 +124,9 @@ public class JUnitDriver extends JapexDriverBase {
                 throw new IllegalArgumentException("Missing parameter \"" + Constants.METHOD_NAME + "\".");
             }
 
+            // Instantiates an instance using the no-arg constructor.
             final Class clazz = getClass().getClassLoader().loadClass(className);
-            _object = clazz.getConstructor(String.class).newInstance(className);
+            _object = clazz.getConstructor().newInstance();
             _method = clazz.getMethod(methodName);
 
             for (Method method : parseMethods(clazz, testCase.getParam(Constants.RUN_IN_PREPARE))) {
