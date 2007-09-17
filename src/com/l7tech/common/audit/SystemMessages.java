@@ -24,12 +24,12 @@ public class SystemMessages extends Messages {
 
     public static final M SERVICE_WSDL_ERROR            = m(2016, Level.WARNING, "Service ''{0}'' WSDL error ''{1}''");
 
-    public static final M SOCKET_TIMEOUT                = m(2017, Level.WARNING, "A remote network connection timed out.");
+    public static final M SOCKET_TIMEOUT                = m(2017, Level.WARNING, "A remote network connection timed out");
 
     public static final M FTPSERVER_NOT_CONFIGURED      = m(2020, Level.INFO, "Not starting FTP server (no listeners enabled).");
     public static final M FTPSERVER_START               = m(2021, Level.INFO, "Starting FTP server with listeners [''{0}''].");
     public static final M FTPSERVER_STOP                = m(2022, Level.INFO, "Stopping FTP server.");
-    public static final M FTPSERVER_ERROR               = m(2023, Level.WARNING, "FTP server error ''{0}''.");
+    public static final M FTPSERVER_ERROR               = m(2023, Level.WARNING, "FTP server error ''{0}''");
 
     // Used by certificate validation
     public static final M CERTVAL_CANT_FIND_ISSUER      = m(2030, Level.WARNING, "Unable to locate Trusted Cert Entry for issuer with DN \"{0}\" of certificate with DN \"{1}\"");
@@ -69,17 +69,17 @@ public class SystemMessages extends Messages {
     public static final M CERTVAL_OCSP_BAD_RESPONSE_STATUS    = m(2087, Level.WARNING, "Bad status in OCSP check for responder ''{0}'': {1}");
     public static final M CERTVAL_OCSP_RECURSION              = m(2088, Level.WARNING, "Circular OCSP check for responder ''{0}''");
 
-    public static final M AUTH_USER_DISABLED = m(2100, Level.INFO, "User {0} is disabled.");
-    public static final M AUTH_USER_LOCKED   = m(2101, Level.INFO, "User {0} is locked.");
-    public static final M AUTH_USER_EXPIRED  = m(2102, Level.INFO, "User {0} has expired.");
+    public static final M AUTH_USER_DISABLED = m(2100, Level.INFO, "User {0} is disabled");
+    public static final M AUTH_USER_LOCKED   = m(2101, Level.INFO, "User {0} is locked");
+    public static final M AUTH_USER_EXPIRED  = m(2102, Level.INFO, "User {0} has expired");
 
-    public static final M CERT_EXPIRY_CANT_FIND  = m(2150, Level.WARNING, "Unable to find TrustedCerts to check for upcoming expirations; skipping this check");
-    public static final M CERT_EXPIRY_BAD_CERT   = m(2151, Level.WARNING, "Unable to parse TrustedCert #{0} ({1}) in order to check for expiration; skipping");
-    public static final M CERT_EXPIRING_FINE     = m(2152, Level.FINE, "TrustedCert #{0} ({1}) will expire in {2}");
-    public static final M CERT_EXPIRING_INFO     = m(2153, Level.INFO, "TrustedCert #{0} ({1}) will expire in {2}");
-    public static final M CERT_EXPIRING_WARNING  = m(2154, Level.WARNING, "TrustedCert #{0} ({1}) will expire in {2}");
-    public static final M CERT_EXPIRED           = m(2155, Level.WARNING, "TrustedCert #{0} ({1}) expired {2} ago");
-    public static final M CERT_EXPIRY_BAD_PERIOD = m(2156, Level.WARNING, "New expiry period value {0} is not a valid TimeUnit; using {1} instead");
+    public static final M CERT_EXPIRY_CANT_FIND  = m(2150, Level.WARNING, "Unable to find trusted certificates to check for upcoming expirations; skipping this check");
+    public static final M CERT_EXPIRY_BAD_CERT   = m(2151, Level.WARNING, "Unable to parse trusted certificate #{0} ({1}) in order to check for expiration; skipping");
+    public static final M CERT_EXPIRING_FINE     = m(2152, Level.FINE, "Trusted certificate #{0} ({1}) will expire in {2}");
+    public static final M CERT_EXPIRING_INFO     = m(2153, Level.INFO, "Trusted certificate #{0} ({1}) will expire in {2}");
+    public static final M CERT_EXPIRING_WARNING  = m(2154, Level.WARNING, "Trusted certificate #{0} ({1}) will expire in {2}");
+    public static final M CERT_EXPIRED           = m(2155, Level.WARNING, "Trusted certificate #{0} ({1}) expired {2} ago");
+    public static final M CERT_EXPIRY_BAD_PERIOD = m(2156, Level.WARNING, "New expiry period value {0} is not a valid time unit; using {1} instead");
 
     // MAX -                                      m(2999
 }

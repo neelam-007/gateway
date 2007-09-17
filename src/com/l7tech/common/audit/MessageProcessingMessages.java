@@ -33,14 +33,14 @@ public class MessageProcessingMessages extends Messages {
     public static final M LICENSE_NOT_ENABLED         = m(3020, Level.WARNING, "Message processor not enabled by license: {0}");
     public static final M METHOD_NOT_ALLOWED          = m(3021, Level.INFO, "HTTP method {0} not allowed for service {1}");
     public static final M REQUEST_INVALID_XML_FORMAT_WITH_DETAIL  = m(3022, Level.INFO, "Request XML is not well-formed [{0}]");
-    public static final M MULTIPART_NOT_ALLOWED       = m(3023, Level.INFO, "Service does not accept multipart data.");
+    public static final M MULTIPART_NOT_ALLOWED       = m(3023, Level.INFO, "Service does not accept multipart data");
     public static final M METHOD_NOT_ALLOWED_FAULT    = m(3024, Level.INFO, "HTTP method {0} not allowed");
 
     // Service resolver messages
     public static final M SR_HTTPURI_CACHEDFAIL      = m(3100, Level.FINE, "Using cached failure @\"{0}\"");
     public static final M SR_HTTPURI_PERFECT         = m(3101, Level.FINE, "Found a non-wildcard match for \"{0}\"");
-    public static final M SR_HTTPURI_WILD_NONE       = m(3102, Level.FINE, "No match possible with uri \"{0}\"");
-    public static final M SR_HTTPURI_WILD_ONE        = m(3103, Level.FINE, "One wildcard matched with uri \"{0}\"");
+    public static final M SR_HTTPURI_WILD_NONE       = m(3102, Level.FINE, "No match possible with URI \"{0}\"");
+    public static final M SR_HTTPURI_WILD_ONE        = m(3103, Level.FINE, "One wildcard matched with URI \"{0}\"");
     public static final M SR_HTTPURI_WILD_MULTI      = m(3104, Level.FINE, "Multiple wildcard matches; using \"{0}\"");
     public static final M SR_HTTPURI_REAL_URI        = m(3105, Level.FINE, "Returning real URI: \"{0}\"");
     public static final M SR_HTTPURI_URI_FROM_HEADER = m(3106, Level.FINE, "Returning URI from header: \"{0}\"");
