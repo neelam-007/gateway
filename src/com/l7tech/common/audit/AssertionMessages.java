@@ -112,7 +112,7 @@ public class AssertionMessages extends Messages {
     public static final M IP_ADDRESS_INVALID     = m(4501, Level.INFO,    "The remote address {0} is null or not in expected format");
     public static final M IP_ACCEPTED            = m(4502, Level.FINEST,  "Requestor address {0} is accepted");
     public static final M IP_REJECTED            = m(4503, Level.INFO,    "Requestor address {0} is not allowed");
-    public static final M IP_ADDRESS_UNAVAILABLE = m(4504, Level.WARNING, "Could not resolve a remote ip address from the context variable {0}.");
+    public static final M IP_ADDRESS_UNAVAILABLE = m(4504, Level.WARNING, "Could not resolve a remote IP address from the context variable {0}.");
 
     // ServerSecureConversation messages
     public static final M SC_REQUEST_NOT_SOAP                     = m(4600, Level.INFO, "Request not SOAP; unable to check for WS-SecureConversation token");
@@ -154,7 +154,7 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_X509_NO_TOKEN               = m(4803, Level.INFO, "No tokens were processed from this request; returning AUTH_REQUIRED");
     public static final M REQUEST_WSS_X509_TOO_MANY_VALID_SIG     = m(4804, Level.WARNING, true, false, "Request presented more than one valid signature from more than one client certificate");
     public static final M REQUEST_WSS_X509_CERT_LOADED            = m(4805, Level.FINE, "Certificate loaded as principal credential for CN:{0}");
-    public static final M REQUEST_WSS_X509_NO_PROVEN_CERT         = m(4806, Level.INFO, "This assertion did not find a proven X509 cert ificate to use as credentials - returning AUTH_REQUIRED");
+    public static final M REQUEST_WSS_X509_NO_PROVEN_CERT         = m(4806, Level.INFO, "This assertion did not find a proven X.509 certificate to use as credentials - returning AUTH_REQUIRED");
 
     // ServerRequestWssReplayProtection messages
     public static final M REQUEST_WSS_REPLAY_NON_SOAP                       = m(4900, Level.INFO, "Request not SOAP; cannot check for replayed signed WS-Security message");
@@ -253,8 +253,8 @@ public class AssertionMessages extends Messages {
     public static final M XSLT_NO_PI         = m(5910, Level.WARNING, "No <?xml-stylesheet?> processing instruction was found in the message; assertion fails");
     public static final M XSLT_BAD_URL       = m(5911, Level.WARNING, "Stylesheet URL {0} did not match any configured regular expression");
     // note                                      5912 used below
-    public static final M XSLT_TRANS_WARN    = m(5913, Level.INFO,    "XSL-T Warning ''{0}''.");
-    public static final M XSLT_TRANS_ERR     = m(5914, Level.INFO,    "XSL-T Error ''{0}''.");
+    public static final M XSLT_TRANS_WARN    = m(5913, Level.INFO,    "XSL-T Warning ''{0}''");
+    public static final M XSLT_TRANS_ERR     = m(5914, Level.INFO,    "XSL-T Error ''{0}''");
     public static final M XSLT_NO_PI_OK      = m(5915, Level.INFO, "No <?xml-stylesheet?> processing instruction was found in the message; assertion succeeds");
 
     // TODO move this message, now that it is shared among multiple assertion (XSLT + schema)
@@ -280,15 +280,15 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE = m(6016, Level.FINER, "Creating request as BytesMessage");
     public static final M JMS_ROUTING_ROUTE_REQUEST_WITH_NO_REPLY     = m(6017, Level.FINE, "As routed request endpoint specified NO_REPLY, JMSReplyTo and JMSCorrelationID will not be set");
     public static final M JMS_ROUTING_SET_REPLYTO_CORRELCTIONID       = m(6018, Level.FINE, "Setting JMSReplyTo and JMSCorrelationID");
-    public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #{0}");
-    public static final M JMS_ROUTING_NO_SAML_SIGNER                  = m(6020, Level.WARNING, "JmsRoutingAssertion cannot access SAML signing information");
+    public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "Jms Routing Assertion contains a reference to nonexistent JmsEndpoint #{0}");
+    public static final M JMS_ROUTING_NO_SAML_SIGNER                  = m(6020, Level.WARNING, "Jms Routing Assertion cannot access SAML signing information");
 
     // ServerFtpRoutingAssertion
     public static final M FTP_ROUTING_FAILED_UPLOAD = m(6050, Level.WARNING, "Failed to upload request to {0}: {1}");
     public static final M FTP_ROUTING_SSL_NO_CERT = m(6051, Level.WARNING, "FTP server ({0}) did not identify itself properly: {1}");
-    public static final M FTP_ROUTING_SSL_NOT_X509 = m(6052, Level.WARNING, "Cannot handle non-X.509 certifcates from FTP server ({0}).");
+    public static final M FTP_ROUTING_SSL_NOT_X509 = m(6052, Level.WARNING, "Cannot handle non-X.509 certificates from FTP server ({0})");
     public static final M FTP_ROUTING_SSL_UNTRUSTED = m(6053, Level.WARNING, "Cannot establish trust of SSL certificate from FTP server ({0}): {1}");
-    public static final M FTP_ROUTING_PASSTHRU_NO_USERNAME = m(6054, Level.WARNING, "No user name found for passing through to FTP server.");
+    public static final M FTP_ROUTING_PASSTHRU_NO_USERNAME = m(6054, Level.WARNING, "No user name found for passing through to FTP server");
 
     // ServerRequestWssSaml
     public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate SAML statement");
@@ -369,15 +369,15 @@ public class AssertionMessages extends Messages {
     public static final M HTTPFORM_TOO_BIG       = m(6806, Level.WARNING, "Field {0} is too large (>= " + 512 * 1024 + " bytes)");
 
     // HtmlFormDataAssertion
-    public static final M HTMLFORMDATA_NOT_HTTP = m(6850, Level.INFO, "Request is not HTTP.");
+    public static final M HTMLFORMDATA_NOT_HTTP = m(6850, Level.INFO, "Request is not HTTP");
     public static final M HTTP_POST_NOT_FORM_DATA = m(6851, Level.INFO, "HTTP POST does not contain HTML Form data. (content type= {0})");
     public static final M HTMLFORMDATA_METHOD_NOT_ALLOWED = m(6852, Level.WARNING, "HTTP request method not allowed: {0}");
     public static final M HTMLFORMDATA_FIELD_NOT_FOUND = m(6582, Level.WARNING, "A required Form field is missing in the request. (name={0})");
     public static final M HTMLFORMDATA_UNKNOWN_FIELD_NOT_ALLOWED = m(6853, Level.WARNING, "Unspecified Form field encountered and not allowed. (name={0})");
-    public static final M HTMLFORMDATA_UNKNOWN_FIELD_ALLOWED = m(6854, Level.FINE, "Unspecified Form field encountered but allowed through. (name={0}}");
+    public static final M HTMLFORMDATA_UNKNOWN_FIELD_ALLOWED = m(6854, Level.FINE, "Unspecified Form field encountered but allowed through. (name={0})");
     public static final M HTMLFORMDATA_FAIL_DATATYPE = m(6855, Level.WARNING, "Form field value has wrong data type. (name={0}, value={1}, data type allowed={2})");
-    public static final M HTMLFORMDATA_FAIL_MINOCCURS = m(6856, Level.WARNING, "Form field ocurrences < min allowed. (name={0}, occurs={1}, min occurs allowed={2})");
-    public static final M HTMLFORMDATA_FAIL_MAXOCCURS = m(6857, Level.WARNING, "Form field ocurrences > max allowed. (name={0}, occurs={1}, max occurs allowed={2})");
+    public static final M HTMLFORMDATA_FAIL_MINOCCURS = m(6856, Level.WARNING, "Form field occurrences < min allowed. (name={0}, occurs={1}, min occurs allowed={2})");
+    public static final M HTMLFORMDATA_FAIL_MAXOCCURS = m(6857, Level.WARNING, "Form field occurrences > max allowed. (name={0}, occurs={1}, max occurs allowed={2})");
     public static final M HTMLFORMDATA_LOCATION_NOT_ALLOWED = m(6858, Level.WARNING, "Form field is found in location not allowed. (name={0}, location not allowed={1})");
 
     // ServerThroughputQuota
@@ -395,7 +395,7 @@ public class AssertionMessages extends Messages {
     public static final M INVERSE_HTTPFORM_TOO_BIG = m(7002, Level.WARNING, "Part #{0} is too large (>= " + 512 * 1024 + " bytes)");
 
     // Echo Routing assertion
-    public static final M _UNUSED_CANNOT_ECHO_NON_XML = m(7050, Level.INFO, "Request cannot be echoed because it is not XML (Content-Type {0}).");
+    public static final M _UNUSED_CANNOT_ECHO_NON_XML = m(7050, Level.INFO, "Request cannot be echoed because it is not XML (Content-Type {0})");
     public static final M CANNOT_ECHO_NO_CTYPE        = m(7051, Level.INFO, "Requests cannot be echoed because it has no Content-Type");
 
     // ComparisonAssertion (formerly known as EqualityAssertion)
@@ -443,7 +443,7 @@ public class AssertionMessages extends Messages {
     public static final M WSFEDPASS_SERVER_HTML_INVALID     = m(7309, Level.WARNING, "Cannot parse HTML from WS-Federation server");
     public static final M WSFEDPASS_CONFIG_INVALID          = m(7310, Level.WARNING, "Invalid IP/STS URL in policy configuration");
     public static final M WSFEDPASS_AUTH_FAILED             = m(7311, Level.WARNING, "Authentication with service failed");
-    public static final M WSFEDPASS_UNAUTHORIZED            = m(7312, Level.WARNING, "Not authorized to access this service.");
+    public static final M WSFEDPASS_UNAUTHORIZED            = m(7312, Level.WARNING, "Not authorized to access this service");
 
     // ServerRequestWssKerberos messages
     public static final M REQUEST_WSS_KERBEROS_NON_SOAP               = m(7401, Level.INFO, "Request not SOAP; unable to check for WS-Security Binary Security Token");
@@ -503,8 +503,8 @@ public class AssertionMessages extends Messages {
     public static final M CUSTOM_ASSERTION_INFO               = m(8000, Level.INFO, "Assertion ''{0}''; {1}");
     public static final M CUSTOM_ASSERTION_WARN               = m(8001, Level.WARNING, "Assertion ''{0}''; {1}");
 
-    public static final M WSDLOPERATION_NOMATCH               = m(8100, Level.INFO, "Could not match WSDL operation ({0} instead of {1}).");
-    public static final M WSDLOPERATION_CANNOTIDENTIFY        = m(8101, Level.INFO, "Cannot identify any WSDL operation from request.");
+    public static final M WSDLOPERATION_NOMATCH               = m(8100, Level.INFO, "Could not match WSDL operation ({0} instead of {1})");
+    public static final M WSDLOPERATION_CANNOTIDENTIFY        = m(8101, Level.INFO, "Cannot identify any WSDL operation from request");
 
     public static final M HTTPNEGOTIATE_WARNING               = m(8200, Level.WARNING, "“Could not process Kerberos token (Negotiate); error is ''{0}''");
 
