@@ -46,6 +46,11 @@ import java.util.logging.Logger;
 public class CaWsdmObserver implements ApplicationListener {
     protected static final Logger logger = Logger.getLogger(CaWsdmObserver.class.getName());
 
+    static {
+        // Suppresses harmless empty SEVERE logs from CA Unicenter WSDM ODK.
+        org.apache.log4j.Logger.getLogger("LOCAL_REQUEST_LOG").setLevel(org.apache.log4j.Level.OFF);
+    }
+
     /** A map that automatically purges the eldest entries when a size limit is reached. */
     private class CappedLinkedHashMap<K,V> extends LinkedHashMap<K,V> {
         private final int _maxEntries;
