@@ -296,6 +296,7 @@ public class RegressionReport {
                 if (params.getCcAddresses() != null) {
                     msg.setRecipients(Message.RecipientType.CC, InternetAddress.parse(params.getCcAddresses(), false));
                 }
+                msg.setFrom(InternetAddress.parse(params.getFromAddress())[0]);
                 msg.setSubject(params.getTitle());
                 msg.setText(html.toString());
                 msg.setHeader("Content-Type", "text/html");

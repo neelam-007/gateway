@@ -42,6 +42,7 @@ public class RegressionReportParams {
     private double _percent;
     private List<ReportSpec> _reportSpecs = new ArrayList<ReportSpec>();
     private String _title;
+    private String _fromAddress;
     private String _toAddresses;
     private boolean _verbose;
 
@@ -50,7 +51,7 @@ public class RegressionReportParams {
                 "Purpose: Runs regression on Japex test reports, with the lastest as the\n" +
                 "         target and the rest as benchmark; plus sends e-mail notification if a\n" +
                 "         threshold has been crossed.\n" +
-                "Usage: java RegressionReport [option...] title outputDir toList percent comparison\n" +
+                "Usage: java RegressionReport [option...] title outputDir sender toList percent comparison\n" +
                 "           benchmark (reportFile|reportDir[?date?offset])...\n" +
                 "       E-mail server connection parameters are configured through Java Mail API system properties.\n" +
                 "Options:\n" +
@@ -63,6 +64,7 @@ public class RegressionReportParams {
                 "Required arguments:\n" +
                 "       title           report title\n" +
                 "       outputDir       directory to save regression report\n" +
+                "       sender          e-mail address of sender\n" + 
                 "       toList          comma-separated e-mail addresses\n" +
                 "       percent         percentage difference between benchmark and target\n" +
                 "       comparison      type of comparison: \"ge\" or \"outside\"\n" +
@@ -120,18 +122,19 @@ public class RegressionReportParams {
         }
 
         // Parses command line required arguments.
-        if (tokens.size() < 7) {
+        if (tokens.size() < 8) {
             displayUsageAndExit();
         }
 
         try {
             _title = tokens.get(0);
             _outputDir = tokens.get(1);
-            _toAddresses = tokens.get(2);
-            _percent = Double.parseDouble(tokens.get(3));
-            _comparison = Comparison.valueOf(tokens.get(4));
-            _benchmark = tokens.get(5);
-            _reportSpecs = ReportSpec.parse(tokens.subList(6, tokens.size()));
+            _fromAddress = tokens.get(2);
+            _toAddresses = tokens.get(3);
+            _percent = Double.parseDouble(tokens.get(4));
+            _comparison = Comparison.valueOf(tokens.get(5));
+            _benchmark = tokens.get(6);
+            _reportSpecs = ReportSpec.parse(tokens.subList(7, tokens.size()));
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
             System.exit(1);
@@ -178,6 +181,10 @@ public class RegressionReportParams {
 
     public String getTitle() {
         return _title;
+    }
+
+    public String getFromAddress() {
+        return _fromAddress;
     }
 
     public String getToAddresses() {

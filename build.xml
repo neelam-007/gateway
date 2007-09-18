@@ -707,6 +707,9 @@
             </and>
         </condition>
 
+        <!-- Performance test config -->
+        <property name="test.perf.from" value="teamcity@tyan64.l7tech.com"/>
+        <property name="test.perf.to" value=""/>
     </target>
 
     <!--
@@ -985,6 +988,8 @@
     </target>
 
     <target name="test.perf.run" description="Run performance test to generate a Japex test report." depends="clean.test, dev, -test.perf.init">
+        <echo level="info">Running performance test.</echo>
+
         <!-- Composes desired Japex report file name and final location. -->
         <tstamp>
             <format property="test.perf.report.suffix" pattern="yyyy'-'MM'-'dd'.'HHmm"/>
@@ -1027,10 +1032,13 @@
         </move>
 
         <delete dir="${test.perf.tmp.dir}"/>
+
+        <echo level="info">Performance test complete.</echo>
     </target>
 
     <target name="test.perf.trend" description="Generate trend charts from Japex test reports." depends="clean.test, dev, -test.perf.init">
-        <java classname="com.l7tech.test.performance.TrendReport">
+        <echo level="info">Running performance trend.</echo>
+        <java fork="true" classname="com.l7tech.test.performance.TrendReport">
             <classpath>
                 <fileset dir="lib">
                     <include name="ant.jar"/>
@@ -1052,9 +1060,11 @@
             <!-- add specific Japex test reports here, e.g.,
                  <arg value="${test.perf.reports.dir}/4.2 release.xml"/> -->
         </java>
+        <echo level="info">Performance trend complete.</echo>
     </target>
 
-    <target name="test.perf.regression" description="Generate regression report and e-mail from Japex test reports." depends="clean.test, dev, -test.perf.init">
+    <target name="test.perf.regression" description="Generate regression report and e-mail from Japex test reports." depends="clean.test, dev, -test.perf.init" if="test.perf.to">
+        <echo level="info">Running performance regression.</echo>
         <java classname="com.l7tech.test.performance.RegressionReport" fork="true">
             <classpath>
                 <fileset dir="lib">
@@ -1067,7 +1077,7 @@
                 <pathelement location="${build.classes}"/>
                 <pathelement location="${build.test.classes}"/>
             </classpath>
-            <jvmarg value="-Dmail.smtp.host=layer7-mx0"/>
+            <jvmarg value="-Dmail.smtp.host=mail.l7tech.com"/>
             <arg value="-alwaysEMail"/>
             <arg value="-httpDir=testperf/regression"/>
             <arg value="-note=View this page online &lt;a href=&quot;index.html&quot;>here&lt;/a>."/>
@@ -1076,12 +1086,18 @@
             <arg value="-verbose"/>
             <arg value="Performance Regression Report"/>
             <arg value="${test.perf.regression.dir}"/>
-            <arg value="rmak@layer7tech.com"/>
+            <arg value="${test.perf.from}"/>
+            <arg value="${test.perf.to}"/>
             <arg line="2 below avg"/>  <!-- 2% below average -->
             <arg value="${test.perf.reports.dir}?today?-10D"/> <!-- any Japex test report from last 10 days -->
             <!-- add specific Japex test reports here, e.g.,
                  <arg value="${test.perf.reports.dir}/4.2 release.xml"/> -->
         </java>
+        <echo level="info">Performance regression complete.</echo>
+    </target>
+
+    <target name="test.perf.nightly" description="Run nightly performance tests." depends="test.perf.run, test.perf.trend, test.perf.regression">
+        <echo level="info">Nightly performance tests complete.</echo>
     </target>
 
     <target name="report.jdepend" depends="compile">
