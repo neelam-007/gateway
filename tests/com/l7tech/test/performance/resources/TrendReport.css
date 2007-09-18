@@ -85,3 +85,7 @@ img.plot {
 td.centered {
     text-align: center;
 }
+
+td.right {
+    text-align: right;
+}

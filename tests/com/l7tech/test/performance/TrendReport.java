@@ -57,6 +57,11 @@ public class TrendReport {
     private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd E hh:mm:ss a z");
 
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
+    {
+        NUMBER_FORMAT.setMaximumFractionDigits(3);
+        NUMBER_FORMAT.setMinimumFractionDigits(3);
+        NUMBER_FORMAT.setGroupingUsed(false);   // because they confused JavaScript
+    }
 
     private static final int CHART_WIDTH  = 800;
     private static final int CHART_HEIGHT = 200;
@@ -157,11 +162,11 @@ public class TrendReport {
                     if (testCase == null) {
                         htmlRow.append("<td></td>");
                     } else {
-                        htmlRow.append("<td>").append(testCase.getResult()).append("</td>");
+                        htmlRow.append("<td class=\"right\">").append(NUMBER_FORMAT.format(testCase.getResult())).append("</td>");
                     }
                 }
             }
-            htmlRow.append("<td class=\"avg\"></td><td class=\"stdev\"></td></tr>\n");
+            htmlRow.append("<td class=\"right avg\"></td><td class=\"right stdev\"></td></tr>\n");
             PerformanceUtil.insertAtMarker(html, RESULTS_ROW_MARKER, htmlRow.toString());
         }
 

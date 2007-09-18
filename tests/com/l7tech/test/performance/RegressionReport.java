@@ -52,6 +52,10 @@ public class RegressionReport {
     private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd E hh:mm:ss a z");
 
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
+    {
+        NUMBER_FORMAT.setMaximumFractionDigits(3);
+        NUMBER_FORMAT.setMinimumFractionDigits(3);
+    }
 
     public static void main(String[] args) throws Exception {
         RegressionReportParams params = new RegressionReportParams(args);
@@ -203,8 +207,8 @@ public class RegressionReport {
                 PerformanceUtil.insertAtMarker(html, RESULTS_ROW_MARKER,
                         "<tr>" +
                         "<td>" + StringEscapeUtils.escapeHtml(testCaseName) + "</td>" +
-                        "<td>" + NUMBER_FORMAT.format(avg) + "</td>" +
-                        "<td>" + NUMBER_FORMAT.format(stdev) + "</td>" +
+                        "<td class=\"right\">" + NUMBER_FORMAT.format(avg) + "</td>" +
+                        "<td class=\"right\">" + NUMBER_FORMAT.format(stdev) + "</td>" +
                         "<td></td>" +
                         "<td></td>" +
                         "</tr>\n"
@@ -216,7 +220,7 @@ public class RegressionReport {
                         "<td>" + StringEscapeUtils.escapeHtml(testCaseName) + "</td>" +
                         "<td></td>" +
                         "<td></td>" +
-                        "<td>" + NUMBER_FORMAT.format(targetTestCase.getResult()) + "</td>" +
+                        "<td class=\"right\">" + NUMBER_FORMAT.format(targetTestCase.getResult()) + "</td>" +
                         "<td></td>" +
                         "</tr>\n"
                 );
@@ -247,13 +251,16 @@ public class RegressionReport {
                 anyFail |= fail;
 
                 final StringBuilder tr = new StringBuilder("<tr><td>" + StringEscapeUtils.escapeHtml(testCaseName) + "</td>");
-                tr.append("<td>").append(NUMBER_FORMAT.format(avg)).append("</td>");
+                tr.append("<td class=\"right\">").append(NUMBER_FORMAT.format(avg)).append("</td>");
                 if (! benchMarkIsSingleReport) {
-                    tr.append("<td>").append(NUMBER_FORMAT.format(stdev)).append("</td>");
+                    tr.append("<td class=\"right\">").append(NUMBER_FORMAT.format(stdev)).append("</td>");
                 }
-                tr.append("<td>").append(NUMBER_FORMAT.format(targetResult)).append("</td><td");
-                if (fail) tr.append(" class=\"warn\"");
-                tr.append(">");
+                tr.append("<td class=\"right\">").append(NUMBER_FORMAT.format(targetResult)).append("</td>");
+                if (fail) {
+                    tr.append("<td class=\"right warn\">");
+                } else {
+                    tr.append("<td class=\"right\">");
+                }
                 if (delta > 0.) tr.append("+");
                 tr.append(NUMBER_FORMAT.format(delta)).append("%</td></tr>\n");
                 PerformanceUtil.insertAtMarker(html, RESULTS_ROW_MARKER, tr.toString());
