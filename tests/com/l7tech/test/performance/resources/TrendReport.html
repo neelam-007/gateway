@@ -26,9 +26,6 @@
                         cells[columnIndex].style.display = display;
                     }
                 }
-
-                undoHighlightThresholds();
-                calcStats();
             }
 
             /**
@@ -48,8 +45,6 @@
                         }
                     }
                 }
-
-                undoHighlightThresholds();
             }
 
             /**
@@ -155,6 +150,7 @@
              * Calculates avg and stdev for each row in the results table.
              */
             function calcStats() {
+                undoHighlightThresholds();
                 var rows = document.getElementById("resultsTable").rows;
                 var avgColumnIndex = rows[0].cells.length - 2;
                 var stdevColumnIndex = rows[0].cells.length - 1;
