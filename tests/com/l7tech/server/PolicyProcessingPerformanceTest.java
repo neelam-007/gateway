@@ -70,7 +70,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         {"/sqlattack", "POLICY_sqlattack.xml"},
         {"/requestsizelimit", "POLICY_requestsizelimit.xml"},
         {"/documentstructure", "POLICY_documentstructure.xml"},
-        {"/stealthfault", "POLICY_stealthfault.xml"},
         {"/faultlevel", "POLICY_faultlevel.xml"},
         {"/ipaddressrange", "POLICY_iprange.xml"},
         {"/xpathcreds", "POLICY_xpathcreds.xml"},
@@ -83,16 +82,18 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         {"/httpwssheaderleave", "POLICY_httpwssheaderleave.xml"},
         {"/httpwssheaderremove", "POLICY_httpwssheaderremove.xml"},
         {"/httpwssheaderpromote", "POLICY_httpwssheaderpromote.xml"},
+        {"/schemavalrequest", "POLICY_schemavalrequest.xml"},
+        {"/schemavalresponse", "POLICY_schemavalresponse.xml"},
     };
 
     private static String REQUEST_general;
-    private static String REQUEST_sqlattack_fail;
-    private static String REQUEST_requestsizelimit_fail;
-    private static String REQUEST_documentstructure_fail;
     private static String REQUEST_xpathcreds_success;
     private static String REQUEST_usernametoken_success_1;
     private static String REQUEST_usernametoken_success_2;
     private static String REQUEST_httpwssheaderpromote_success;
+    private static String REQUEST_schemaval_request_success;
+    private static String REQUEST_schemaval_response_success;
+
     private static byte[] RESPONSE_general;
 
     private Level savedLoggerLevel;
@@ -118,13 +119,12 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         auditContext.flush(); // ensure clear
 
         REQUEST_general = new String(loadResource("REQUEST_general.xml"));
-        REQUEST_sqlattack_fail = new String(loadResource("REQUEST_sqlattack_fail.xml"));
-        REQUEST_requestsizelimit_fail = new String(loadResource("REQUEST_requestsizelimit_fail.xml"));
-        REQUEST_documentstructure_fail = new String(loadResource("REQUEST_documentstructure_fail.xml"));
         REQUEST_xpathcreds_success = new String(loadResource("REQUEST_xpathcreds_success.xml"));
         REQUEST_usernametoken_success_1 = new String(loadResource("REQUEST_usernametoken_success_1.xml"));
         REQUEST_usernametoken_success_2 = new String(loadResource("REQUEST_usernametoken_success_2.xml"));
         REQUEST_httpwssheaderpromote_success = new String(loadResource("REQUEST_httpwssheaderpromote_success.xml"));
+        REQUEST_schemaval_request_success = new String(loadResource("REQUEST_schemaval_request.xml"));
+        REQUEST_schemaval_response_success = new String(loadResource("REQUEST_schemaval_response_request.xml"));
         RESPONSE_general = loadResource("RESPONSE_general.xml");
     }
 
@@ -207,13 +207,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     }
 
     /**
-     * Test a request message that fails SQL Attack Protection Assertion.
-     */
-    public void testSQLAttackFail() throws Exception  {
-        processMessage("/sqlattack", REQUEST_sqlattack_fail, ASSERTION_STATUS_IGNORE /* AssertionStatus.BAD_REQUEST.getNumeric() */);
-    }
-
-    /**
      * Test a request message that passes Request Size Limit Assertion.
      */
     public void testRequestSizeLimit() throws Exception  {
@@ -221,34 +214,10 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     }
 
     /**
-     * Test a request message that fails Request Size Limit Assertion.
-     */
-    public void testRequestSizeLimitFail() throws Exception  {
-        try {
-            processMessage("/requestsizelimit", REQUEST_requestsizelimit_fail, ASSERTION_STATUS_IGNORE /* -1 */);
-        } catch (IOException e) {
-        }
-    }
-
-    /**
      * Test a request message that passes Document Structure Threats Assertion.
      */
     public void testDocumentStructure() throws Exception  {
         processMessage("/documentstructure", REQUEST_general, ASSERTION_STATUS_IGNORE /* AssertionStatus.NONE.getNumeric() */);
-    }
-
-    /**
-     * Test a request message that fails Document Structure Threats Assertion.
-     */
-    public void testDocumentStructureFail() throws Exception  {
-        processMessage("/documentstructure", REQUEST_documentstructure_fail, ASSERTION_STATUS_IGNORE /* AssertionStatus.BAD_REQUEST.getNumeric() */);
-    }
-
-    /**
-     * Test a request message that triggers Stealth Fault.
-     */
-    public void testStealthFault() throws Exception  {
-        processMessage("/stealthfault", REQUEST_general, ASSERTION_STATUS_IGNORE /* AssertionStatus.FALSIFIED.getNumeric() */);
     }
 
     /**
@@ -266,13 +235,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     }
 
     /**
-     * Test a request message that fails XPath Credentials Assertion.
-     */
-    public void testXPathCredsFail() throws Exception  {
-        processMessage("/xpathcreds", REQUEST_general, ASSERTION_STATUS_IGNORE /* AssertionStatus.AUTH_REQUIRED.getNumeric() */);
-    }
-
-    /**
      * Test a request message that passes Username Token Assertion.
      */
     public void testUsernameToken_1() throws Exception  {
@@ -284,13 +246,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
      */
     public void testUsernameToken_2() throws Exception  {
         processMessage("/usernametoken", REQUEST_usernametoken_success_2, ASSERTION_STATUS_IGNORE /* AssertionStatus.NONE.getNumeric() */);
-    }
-
-    /**
-     * Test a request message that fails Username Token Assertion.
-     */
-    public void testUsernameTokenFail() throws Exception  {
-        processMessage("/usernametoken", REQUEST_general, ASSERTION_STATUS_IGNORE /* AssertionStatus.AUTH_REQUIRED.getNumeric() */);
     }
 
     /**
@@ -355,6 +310,22 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/httpwssheaderpromote", REQUEST_httpwssheaderpromote_success, ASSERTION_STATUS_IGNORE);
+//        String request = new String(mockClient.getRequestBody());
+//        assertTrue("Promoted security header missing", request.indexOf("<wsse:Username>user</wsse:Username>") > 0 && request.indexOf("asdf") < 0);
+    }
+
+    public void testSchemaValidationRequest() throws Exception  {
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/schemavalrequest", REQUEST_schemaval_request_success, ASSERTION_STATUS_IGNORE);
+//        String request = new String(mockClient.getRequestBody());
+//        assertTrue("Promoted security header missing", request.indexOf("<wsse:Username>user</wsse:Username>") > 0 && request.indexOf("asdf") < 0);
+    }
+
+    public void testSchemaValidationResponse() throws Exception  {
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/schemavalresponse", REQUEST_schemaval_response_success, ASSERTION_STATUS_IGNORE);
 //        String request = new String(mockClient.getRequestBody());
 //        assertTrue("Promoted security header missing", request.indexOf("<wsse:Username>user</wsse:Username>") > 0 && request.indexOf("asdf") < 0);
     }
