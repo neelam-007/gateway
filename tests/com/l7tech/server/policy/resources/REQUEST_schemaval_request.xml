@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"       xmlns:xsd="http://www.w3.org/2001/XMLSchema"       xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Header>
+                <Header xmlns="http://www.xignite.com/services/1">
+                        <Username>me</Username>
+                        <Password>password</Password>
+                        <Tracer>blah</Tracer>
+                </Header>
+        </soap:Header>
+        <soap:Body>
+                <GetTopStories xmlns="http://www.xignite.com/services/1">
+                        <CriteriaType>Region</CriteriaType>
+                        <CategoryName>asia</CategoryName>
+                        <StoryCount>5000</StoryCount>
+                </GetTopStories>
+        </soap:Body>
+</soap:Envelope>
