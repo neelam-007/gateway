@@ -81,3 +81,7 @@ img.plot {
 	border: 1px solid #005A9C;
 	display: block;
 }
+
+td.centered {
+    text-align: center;
+}

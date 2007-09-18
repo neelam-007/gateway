@@ -3,6 +3,8 @@
         <title><!--{title}--></title>
         <link href="TrendReport.css" type="text/css" rel="stylesheet">
         <script type="text/javascript">
+            var statsCheckBoxColumn = 1;
+
             /**
              * Hide/show all columns of reports in the results table.
              *
@@ -48,7 +50,34 @@
                 }
 
                 undoHighlightThresholds();
+            }
+
+            /**
+             * Includes/excludes all reports in calculating avg & stdev.
+             *
+             * @param flag  true to include all; false to exclude all
+             */
+            function includeStatsAll(flag) {
+                var elements = document.getElementsByTagName("input");
+                for (var i = 0; i < elements.length; ++ i) {
+                    if (elements[i].className == "statsCheckbox") {
+                        elements[i].checked = flag;
+                    }
+                }
                 calcStats();
+            }
+
+            /**
+             * Determines if a column in the results table is included in
+             * calculating avg & stdev.
+             *
+             * @param column    index of column to test
+             * @return true or false
+             */
+            function isIncludeInStats(column) {
+                // Row index in reports table corresponds to column index in results table.
+                var rows = document.getElementById("reportsTable").rows;
+                return rows[column].cells[statsCheckBoxColumn].getElementsByTagName("input")[0].checked;
             }
 
             /**
@@ -135,7 +164,7 @@
                     var sum = 0.;
                     var sum2 = 0.;
                     for (var columnIndex = 1; columnIndex < cells.length - 2; ++ columnIndex) {
-                        if (cells[columnIndex].style.display != "none" && cells[columnIndex].innerHTML != "") {
+                        if (isIncludeInStats(columnIndex) && cells[columnIndex].innerHTML != "") {
                             var value = Number(cells[columnIndex].innerHTML);
                             ++ n;
                             sum += value;
@@ -222,26 +251,27 @@
         <p>Created: <!--{creation time}--> by com.l7tech.test.performance.TrendReport</p>
         <h2>Performance Reports</h2>
         <div>
-        <div style="margin-bottom: 3px">Use checkboxes to hide/show columns in the Throughput Data table.</div>
-            <table id="reportsTable" class="bluewhite">
-                <tr>
-                    <th><input type="checkbox" checked onClick="hideShowAll(this.checked)"></th>
-                    <th>Report</th>
-                    <th>Date</th>
-                    <th>Version</th>
-                    <th class="outlierCandidate">Host</th>
-                    <th class="outlierCandidate">CPUs</th>
-                    <th class="outlierCandidate">OS</th>
-                    <th class="outlierCandidate">JVM</th>
-                    <th>Notes</th>
-                    <th>File</th>
-                </tr>
-                <!--{next report row}-->
-                <tr>
-                    <th colspan="10" style="text-align: right"><input id="outlierCheckbox" type="checkbox" onclick="onOutlierCheckboxClicked()"/>highlight outlier</th>
-                </tr>
-            </table>
-        </div>
+        <table id="reportsTable" class="bluewhite">
+            <tr>
+                <th>Hide/Show in<br/>Throughput Table</th>
+                <th>Use in<br/>Avg, Std Dev</th>
+                <th>Report</th>
+                <th>Date</th>
+                <th>Version</th>
+                <th class="outlierCandidate">Host</th>
+                <th class="outlierCandidate">CPUs</th>
+                <th class="outlierCandidate">OS</th>
+                <th class="outlierCandidate">JVM</th>
+                <th>Notes</th>
+                <th>File</th>
+            </tr>
+            <!--{next report row}-->
+            <tr>
+                <th><input type="checkbox" checked onClick="hideShowAll(this.checked)"></th>
+                <th><input type="checkbox" checked onClick="includeStatsAll(this.checked)"></th>
+                <th colspan="9" style="text-align: right"><input id="outlierCheckbox" type="checkbox" onclick="onOutlierCheckboxClicked()"/>highlight outlier</th>
+            </tr>
+        </table>
         <br>
         <h2>Throughput Data <span style="font-size: smaller">(in transactions/sec)</span></h2>
         <div style="margin-bottom: 3px">
@@ -259,7 +289,7 @@
                 <option value="stdev">Standard Deviation</option>
                 <!--{next report option}-->
             </select>
-            (only visible columns are used to calculate averge and std dev)
+            (only reports checked above are used to calculate averges and standard deviations)
         </div>
         <table id="resultsTable" class="bluewhite">
             <!--{results header}-->

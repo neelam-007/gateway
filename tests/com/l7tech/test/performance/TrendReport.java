@@ -105,7 +105,8 @@ public class TrendReport {
             final String reportRelativePath = FileUtils.getRelativePath(outputDir, reportFile).replace('\\', '/');
             PerformanceUtil.insertAtMarker(html, REPORTS_ROW_MARKER,
                     "<tr>" +
-                    "<td><input class=\"hideShowCheckbox\" type=\"checkbox\" checked onClick=\"hideShowColumn(" + column + ", this.checked)\"></td>" +
+                    "<td class=\"centered\"><input class=\"hideShowCheckbox\" type=\"checkbox\" checked onClick=\"hideShowColumn(" + column + ", this.checked)\"/></td>" +
+                    "<td class=\"centered\"><input class=\"statsCheckbox\" type=\"checkbox\" checked onClick=\"calcStats()\"/></td>" +
                     "<td>" + StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.NAME)) + "</td>" +
                     "<td>" + StringEscapeUtils.escapeHtml(LONG_DATE_FORMAT.format(report.getDate().getTime())) + "</td>" +
                     "<td>" + StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.SS_VERSION)) + "</td>" +
@@ -114,7 +115,7 @@ public class TrendReport {
                     "<td>" + StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.OS_NAME) + " " + PerformanceUtil.getParameter(report, Constants.OS_ARCHITECTURE)) + "</td>" +
                     "<td>" + StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.VM_INFO)) + "</td>" +
                     "<td>" + StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.NOTES)) + "</td>" +
-                    "<td><a href=\"" + StringEscapeUtils.escapeHtml(reportRelativePath) + "\">" + StringEscapeUtils.escapeHtml(reportFile.getName()) + "</td>" +
+                    "<td><a href=\"" + StringEscapeUtils.escapeHtml(reportRelativePath) + "\">" + StringEscapeUtils.escapeHtml(reportFile.getName()) + "</a></td>" +
                     "</tr>\n"
             );
         }
