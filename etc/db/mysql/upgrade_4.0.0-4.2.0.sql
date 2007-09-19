@@ -13,7 +13,6 @@ SET FOREIGN_KEY_CHECKS=0;
 -- Table structure for revocation checking policies
 --
 
-DROP TABLE IF EXISTS revocation_check_policy;
 CREATE TABLE revocation_check_policy (
   objectid bigint(20) NOT NULL,
   version int(11) default NULL,
