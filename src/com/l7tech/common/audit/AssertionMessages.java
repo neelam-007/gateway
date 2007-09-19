@@ -280,8 +280,8 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE = m(6016, Level.FINER, "Creating request as BytesMessage");
     public static final M JMS_ROUTING_ROUTE_REQUEST_WITH_NO_REPLY     = m(6017, Level.FINE, "As routed request endpoint specified NO_REPLY, JMSReplyTo and JMSCorrelationID will not be set");
     public static final M JMS_ROUTING_SET_REPLYTO_CORRELCTIONID       = m(6018, Level.FINE, "Setting JMSReplyTo and JMSCorrelationID");
-    public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "Jms Routing Assertion contains a reference to nonexistent JmsEndpoint #{0}");
-    public static final M JMS_ROUTING_NO_SAML_SIGNER                  = m(6020, Level.WARNING, "Jms Routing Assertion cannot access SAML signing information");
+    public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "JMS Routing Assertion contains a reference to nonexistent JmsEndpoint #{0}");
+    public static final M JMS_ROUTING_NO_SAML_SIGNER                  = m(6020, Level.WARNING, "JMS Routing Assertion cannot access SAML signing information");
 
     // ServerFtpRoutingAssertion
     public static final M FTP_ROUTING_FAILED_UPLOAD = m(6050, Level.WARNING, "Failed to upload request to {0}: {1}");
