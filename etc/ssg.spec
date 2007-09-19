@@ -188,14 +188,14 @@ if [ `grep ^gateway: /etc/passwd` ]; then
     #user gateway already exists, but needs it's group membership modified
     usermod -G gateway,pkcs11 gateway
 else
-    adduser -G gateway,pkcs11 -g gateway gateway
+    useradd -G gateway,pkcs11 -g gateway gateway
 fi
 
 if [ `grep ^ssgconfig: /etc/passwd` ]; then
     #user ssgconfig already exists, but needs it's group membership modified
     usermod -G gateway,pkcs11 ssgconfig
 else
-    adduser -G gateway,pkcs11 -g gateway ssgconfig
+    useradd -G gateway,pkcs11 -g gateway ssgconfig
 fi
 
 SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
