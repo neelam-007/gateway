@@ -42,7 +42,12 @@ public class SsgConnectorManagerWindow extends JDialog {
     private PermissionFlags flags;
 
 
-    public SsgConnectorManagerWindow(Window owner) throws RemoteException {
+    public SsgConnectorManagerWindow(Frame owner) throws RemoteException {
+        super(owner, "Manage Listen Ports");
+        initialize();
+    }
+
+    public SsgConnectorManagerWindow(Dialog owner) throws RemoteException {
         super(owner, "Manage Listen Ports");
         initialize();
     }

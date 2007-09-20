@@ -32,7 +32,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private SsgConnector connector;
     private boolean confirmed = false;
 
-    public SsgConnectorPropertiesDialog(Window owner, SsgConnector connector) {
+    public SsgConnectorPropertiesDialog(Frame owner, SsgConnector connector) {
+        super(owner, "Listen Port Properties");
+        initialize(connector);
+    }
+
+    public SsgConnectorPropertiesDialog(Dialog owner, SsgConnector connector) {
         super(owner, "Listen Port Properties");
         initialize(connector);
     }
