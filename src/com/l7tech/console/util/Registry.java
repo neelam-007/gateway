@@ -7,6 +7,7 @@ import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityAdmin;
@@ -111,9 +112,14 @@ public abstract class Registry {
     public abstract RbacAdmin getRbacAdmin();
 
     /**
-      * @return the security provider implementation.
-      */
-     abstract public SecurityProvider getSecurityProvider();
+     * @return the transport admin interface implementation.
+     */
+    public abstract TransportAdmin getTransportAdmin();
+
+    /**
+     * @return the security provider implementation.
+     */
+    abstract public SecurityProvider getSecurityProvider();
 
     public ConsoleLicenseManager getLicenseManager() {
         return ConsoleLicenseManager.getInstance();
@@ -181,6 +187,10 @@ public abstract class Registry {
         }
 
         public RbacAdmin getRbacAdmin() {
+            return null;
+        }
+
+        public TransportAdmin getTransportAdmin() {
             return null;
         }
 

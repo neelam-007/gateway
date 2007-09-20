@@ -15,6 +15,7 @@ import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
@@ -41,6 +42,7 @@ public class AdminContextImpl
     private final ClusterStatusAdmin clusterStatusAdmin;
     private final KerberosAdmin kerberosAdmin;
     private final RbacAdmin rbacAdmin;
+    private final TransportAdmin transportAdmin;
 
     public AdminContextImpl(IdentityAdmin identityAdmin,
                             AuditAdmin auditAdmin,
@@ -52,7 +54,8 @@ public class AdminContextImpl
                             ClusterStatusAdmin clusterStatusAdmin,
                             SchemaAdmin schemaAdmin,
                             KerberosAdmin kerberosAdmin,
-                            RbacAdmin rbacAdmin) {
+                            RbacAdmin rbacAdmin,
+                            TransportAdmin transportAdmin) {
         this.identityAdmin = identityAdmin;
         this.auditAdmin = auditAdmin;
         this.serviceAdmin = serviceAdmin;
@@ -64,6 +67,7 @@ public class AdminContextImpl
         this.schemaAdmin = schemaAdmin;
         this.kerberosAdmin = kerberosAdmin;
         this.rbacAdmin = rbacAdmin;
+        this.transportAdmin = transportAdmin;
     }
 
     public String getVersion() {
@@ -118,6 +122,10 @@ public class AdminContextImpl
         return rbacAdmin;
     }
 
+    public TransportAdmin getTransportAdmin() throws RemoteException, SecurityException {
+        return transportAdmin;
+    }
+
     public void afterPropertiesSet() throws Exception {
         checkServices();
     }
@@ -156,6 +164,10 @@ public class AdminContextImpl
 
         if (rbacAdmin == null) {
             throw new IllegalArgumentException("RBAC Admin is required");
+        }
+
+        if (transportAdmin == null) {
+            throw new IllegalArgumentException("Transport Admin is required");
         }
     }
 }

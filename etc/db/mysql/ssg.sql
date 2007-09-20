@@ -590,6 +590,34 @@ CREATE TABLE shared_keys (
   primary key(encodingid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+-- HTTP and HTTPS listeners
+DROP TABLE IF EXISTS connector;
+CREATE TABLE connector (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  enabled tinyint(1) NOT NULL DEFAULT 0,
+  port int(8) NOT NULL,
+  scheme varchar(128) NOT NULL DEFAULT 'http',
+  secure tinyint(1) NOT NULL DEFAULT 0,
+  client_auth tinyint(1) NOT NULL DEFAULT 0,
+  keystore_oid bigint(20) NULL,
+  key_alias varchar(255) NULL,
+  PRIMARY KEY (objectid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+-- listener properties
+DROP TABLE IF EXISTS connector_property;
+CREATE TABLE connector_property (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  connector_oid bigint(20) NOT NULL,
+  name varchar(128) NOT NULL,
+  value MEDIUMTEXT NOT NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (connector_oid) REFERENCES connector (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 --
 -- Table structure for table rbac_role
 --

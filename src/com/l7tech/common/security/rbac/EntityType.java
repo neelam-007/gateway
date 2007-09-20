@@ -16,6 +16,7 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -66,6 +67,7 @@ public enum EntityType {
     AUDIT_MESSAGE("Audit Record (Message)", MessageSummaryAuditRecord.class, UNDEFINED, true),
     AUDIT_ADMIN("Audit Record (Admin)", AdminAuditRecord.class, UNDEFINED, true),
     AUDIT_SYSTEM("Audit Record (System)", SystemAuditRecord.class, UNDEFINED, true),
+    SSG_CONNECTOR("Listen Port", SsgConnector.class, com.l7tech.objectmodel.EntityType.CONNECTOR, true),
     ;
 
     private final String name;

@@ -336,6 +336,36 @@
         <property name="databytes" column="databytes" type="binary" lazy="true"/>
     </class>
 
+    <class name="com.l7tech.common.transport.SsgConnector" table="connector" lazy="false">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <version name="version"/>
+
+        <property name="name" column="name" type="string"/>
+        <property name="port" column="port" type="int"/>
+        <property name="scheme" column="scheme" type="string"/>
+        <property name="secure" column="secure" type="boolean"/>
+        <property name="clientAuth" column="client_auth" type="int"/>
+        <property name="keystoreOid" column="keystore_oid" type="long"/>
+        <property name="keyAlias" column="key_alias" type="string"/>
+        <set name="properties" inverse="true" cascade="all-delete-orphan" lazy="false">
+            <key column="connector_oid" not-null="true"/>
+            <one-to-many class="com.l7tech.common.transport.SsgConnectorProperty"/>
+        </set>
+    </class>
+
+    <class name="com.l7tech.common.transport.SsgConnectorProperty" table="connector_property" lazy="false">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <version name="version"/>
+
+        <many-to-one name="connector" column="connector_oid" not-null="true" lazy="false"/>
+        <property name="name" column="name" type="string"/>
+        <property name="value" column="value" type="string"/>
+    </class>
+    
     <class name="com.l7tech.service.SampleMessage" table="sample_messages" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>

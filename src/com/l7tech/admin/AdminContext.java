@@ -12,6 +12,7 @@ import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
@@ -109,4 +110,11 @@ public interface AdminContext {
      * @throws RemoteException   on remote communication error
      */
     RbacAdmin getRbacAdmin() throws RemoteException, SecurityException;
+
+    /**
+     * @return the transport admin interface implementation.
+     * @throws SecurityException on security error accessing the interface
+     * @throws RemoteException   on remote communication error
+     */
+    TransportAdmin getTransportAdmin() throws RemoteException, SecurityException;
 }

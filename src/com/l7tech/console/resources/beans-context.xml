@@ -73,6 +73,11 @@
         <property name="serviceInterface" value="com.l7tech.common.security.rbac.RbacAdmin"/>
     </bean>
 
+    <bean id="transportAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/TransportAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.transport.TransportAdmin"/>
+    </bean>
+
     <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
          <property name="targetClass"><value>com.l7tech.console.util.Registry</value></property>
          <property name="targetMethod"><value>setDefault</value></property>

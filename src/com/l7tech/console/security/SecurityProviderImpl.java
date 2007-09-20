@@ -33,6 +33,7 @@ import com.l7tech.spring.remoting.rmi.NamingURL;
 import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
 import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
 import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
+import com.l7tech.common.transport.TransportAdmin;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -220,6 +221,7 @@ public class SecurityProviderImpl extends SecurityProvider
                         (SchemaAdmin) applicationContext.getBean("schemaAdmin"),
                         (KerberosAdmin) applicationContext.getBean("kerberosAdmin"),
                         (RbacAdmin) applicationContext.getBean("rbacAdmin"),
+                        (TransportAdmin) applicationContext.getBean("transportAdmin"),
                         "", "");
 
         synchronized (this) {

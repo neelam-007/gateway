@@ -12,6 +12,8 @@ import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.ConsoleLicenseManager;
@@ -149,6 +151,39 @@ public class RegistryStub extends Registry {
 
             public EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException, RemoteException {
                 return new EntityHeader[] {new EntityHeader(role.getId(), com.l7tech.objectmodel.EntityType.RBAC_ROLE, role.getName(), role.getDescription())};
+            }
+        };
+    }
+
+    public TransportAdmin getTransportAdmin() {
+        return new TransportAdmin() {
+            private final SsgConnector stubAdminConnection = new SsgConnector(
+                    2323L,
+                    "stub mode admin connector",
+                    8443,
+                    "https",
+                    true,
+                    SsgConnector.CLIENT_AUTH_OPTIONAL,
+                    -1L,
+                    null
+            );
+
+            public Collection<SsgConnector> findAllSsgConnectors() throws RemoteException, FindException {
+                return Arrays.asList(stubAdminConnection);
+            }
+
+            public SsgConnector findSsgConnectorByPrimaryKey(long oid) throws RemoteException, FindException {
+                if (stubAdminConnection.getOid() == oid)
+                    return stubAdminConnection;
+                throw new FindException("no connector found with id " + oid);
+            }
+
+            public long saveSsgConnector(SsgConnector connector) throws RemoteException, SaveException, UpdateException {
+                throw new SaveException("Unable to save any connectors in stub mode");
+            }
+
+            public void deleteSsgConnector(long oid) throws RemoteException, DeleteException, FindException {
+                throw new DeleteException("Unable to delete any connectors in stub mode");
             }
         };
     }

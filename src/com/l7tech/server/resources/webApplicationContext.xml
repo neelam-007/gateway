@@ -588,6 +588,7 @@
                 <ref bean="jmsEndpointManager"/>
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
+                <ref bean="ssgConnectorManager"/>
             </list>
         </property>
         <property name="timer">
@@ -675,6 +676,8 @@
     </bean>
 
     <bean id="keystoreFileManager" class="com.l7tech.server.security.keystore.KeystoreFileManagerImpl" parent="hibernateBean"/>
+
+    <bean id="ssgConnectorManager" class="com.l7tech.server.transport.SsgConnectorManagerImpl" parent="hibernateBean"/>
 
     <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl" depends-on="gatewaySanityChecker">
         <constructor-arg ref="sharedKeyManager"/>

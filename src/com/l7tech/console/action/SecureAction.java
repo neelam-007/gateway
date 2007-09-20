@@ -33,6 +33,10 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     public static final String TRUSTSTORE_FEATURESET_NAME = "service:TrustStore";
     public static final String KEYSTORE_FEATURESET_NAME = "service:KeyStore";
     public static final String CA_FEATURESET_NAME = "service:CSRHandler";
+    public static final String FTP_INPUT_FEATURESET_NAME = "service:FtpMessageInput";
+    public static final String HTTP_INPUT_FEATURESET_NAME = "service:HttpMessageInput";
+    public static final String JMS_INPUT_FEATURESET_NAME = "service:JmsMessageInput";
+
     public static final String UI_PUBLISH_SERVICE_WIZARD = "ui:PublishServiceWizard";
     public static final String UI_PUBLISH_XML_WIZARD = "ui:PublishXmlWizard";
     public static final String UI_WSDL_CREATE_WIZARD = "ui:WsdlCreateWizard";
@@ -91,13 +95,29 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      * Create a SecureAction which will only be enabled if the user meets the admin requirement (if specified)
      * and if at least one of the specified assertion licenses is enabled.
      *
-     * @param allowedAssertionLicenses
+     * @param attemptedOperation  the operation that needs to be enabled to allow this action
+     * @param allowedAssertionLicenses  a collection of Assertion classes, any of which will, if licensed, enable this action
      */
     protected SecureAction(AttemptedOperation attemptedOperation, Collection<Class> allowedAssertionLicenses) {
         this.attemptedOperation = attemptedOperation;
         if (allowedAssertionLicenses != null)
             for (Class clazz : allowedAssertionLicenses)
                 featureSetNames.add(Assertion.getFeatureSetName(clazz));
+        initLicenseListener();
+    }
+
+    /**
+     * Create a SecureAction which will only be enabled if the user meets the admin requirement (if specified)
+     * and if at least one of the specified feature sets is enabled by the license.
+     *
+     * @param attemptedOperation  the operation that needs to be enabled to allow this action
+     * @param allowedFeatureSetNames zero or more feature set names, any of which will, if licensed, enable this action
+     */
+    protected SecureAction(AttemptedOperation attemptedOperation, String[] allowedFeatureSetNames) {
+        this.attemptedOperation = attemptedOperation;
+        for (String featureSet : allowedFeatureSetNames) {
+            featureSetNames.add(featureSet);
+        }
         initLicenseListener();
     }
 

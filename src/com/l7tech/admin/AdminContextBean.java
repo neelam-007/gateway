@@ -7,6 +7,7 @@ import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -26,7 +27,7 @@ import java.rmi.RemoteException;
  */
 public class AdminContextBean implements AdminContext, Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     
     private final IdentityAdmin identityAdmin;
     private final AuditAdmin auditAdmin;
@@ -39,6 +40,7 @@ public class AdminContextBean implements AdminContext, Serializable {
     private final ClusterStatusAdmin clusterStatusAdmin;
     private final KerberosAdmin kerberosAdmin;
     private final RbacAdmin rbacAdmin;
+    private final TransportAdmin transportAdmin;
     private final String version;
     private final String softwareVersion;
 
@@ -53,6 +55,7 @@ public class AdminContextBean implements AdminContext, Serializable {
                             SchemaAdmin schemaAdmin,
                             KerberosAdmin kerberosAdmin,
                             RbacAdmin rbacAdmin,
+                            TransportAdmin transportAdmin,
                             String version,
                             String softwareVersion) {
         this.identityAdmin = identityAdmin;
@@ -66,6 +69,7 @@ public class AdminContextBean implements AdminContext, Serializable {
         this.schemaAdmin = schemaAdmin;
         this.kerberosAdmin = kerberosAdmin;
         this.rbacAdmin = rbacAdmin;
+        this.transportAdmin = transportAdmin;
         this.version = version;
         this.softwareVersion = softwareVersion;
     }
@@ -125,5 +129,9 @@ public class AdminContextBean implements AdminContext, Serializable {
 
     public RbacAdmin getRbacAdmin() throws RemoteException, SecurityException {
         return rbacAdmin;
+    }
+
+    public TransportAdmin getTransportAdmin() throws RemoteException, SecurityException {
+        return transportAdmin;
     }
 }

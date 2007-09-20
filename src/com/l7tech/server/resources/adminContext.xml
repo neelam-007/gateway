@@ -219,6 +219,11 @@
         <constructor-arg ref="ssgKeyStoreManager"/>
     </bean>
 
+    <bean id="transportAdmin_UNSECURED" class="com.l7tech.server.transport.TransportAdminImpl">
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="ssgConnectorManager"/>
+    </bean>
+
     <!-- custom assertions admin servant -->
     <bean id="customAssertionsAdmin" class="com.l7tech.policy.assertion.ext.rmi.CustomAssertionsRegistrarImpl">
         <constructor-arg ref="licenseManager"/>

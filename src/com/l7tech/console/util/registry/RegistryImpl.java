@@ -9,6 +9,7 @@ import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
@@ -52,6 +53,7 @@ public final class RegistryImpl extends Registry
     private ClusterStatusAdmin clusterStatusAdmin;
     private KerberosAdmin kerberosAdmin;
     private RbacAdmin rbacAdmin;
+    private TransportAdmin transportAdmin;
 
     public boolean isAdminContextPresent() {
         return adminContext != null;
@@ -229,6 +231,18 @@ public final class RegistryImpl extends Registry
         try {
             rbacAdmin = adminContext.getRbacAdmin();
             return rbacAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public TransportAdmin getTransportAdmin() {
+        checkAdminContext();
+        if (transportAdmin != null)
+            return transportAdmin;
+        try {
+            transportAdmin = adminContext.getTransportAdmin();
+            return transportAdmin;
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
