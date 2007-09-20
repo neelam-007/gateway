@@ -29,6 +29,9 @@ import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.service.PublishedService;
 import junit.framework.TestCase;
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import junit.extensions.TestSetup;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -111,6 +114,32 @@ public class PolicyProcessingPerformanceTest extends TestCase {
 
     private Level savedLoggerLevel;
 
+    /**
+     * Run all tests via a test suite.
+     * @param args
+     */
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
+    }
+
+    /**
+     * Set up a test suite for all tests in PolicyProcessingPerformanceTest.
+     * @return a test suite
+     */
+    public static Test suite() {
+         final TestSuite suite = new TestSuite(PolicyProcessingPerformanceTest.class);
+         TestSetup wrapper = new TestSetup(suite) {
+             protected void setUp() throws Exception {
+                 PolicyProcessingPerformanceTest.setUpClass();
+             }
+
+             protected void tearDown() throws Exception {
+             }
+         };
+
+        return wrapper;
+    }
+
     public static void setUpClass() throws Exception {
         // Ordinarily, the application context would take care of configuring the registry,
         // but it has to be done before buildServices() is called, and buildServices() has
@@ -175,8 +204,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
 
         savedLoggerLevel = Logger.getLogger("com.l7tech.server").getLevel();
         Logger.getLogger("com.l7tech.server").setLevel(Level.OFF);
-
-        setUpClass();
     }
 
     @Override
@@ -341,48 +368,80 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         processMessage("/schemavalresponse", REQUEST_schemaval_response_success, ASSERTION_STATUS_NONE);
     }
 
+    /**
+     * Test an empty policy.
+     * @throws Exception
+     */
     public void testEmptyPolicy() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/emptypolicy", REQUEST_general, ASSERTION_STATUS_NONE);
     }
 
+    /**
+     * Test a policy with evaluate request Xpath.
+     * @throws Exception
+     */
     public void testEvaluateRequestXpath() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/evaluaterequestxpath", REQUEST_general, ASSERTION_STATUS_NONE);
     }
 
+    /**
+     * Test a policy with evaluate response Xpath.
+     * @throws Exception
+     */
     public void testEvaluateResponseXpath() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/evaluateresponsexpath", REQUEST_general, ASSERTION_STATUS_NONE);
     }
 
+    /**
+     * Test a policy with policy logic.
+     * @throws Exception
+     */
     public void testPolicyLogic() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/policylogic", REQUEST_general, ASSERTION_STATUS_NONE);
     }
 
+    /**
+     * Test a policy with regular expression.
+     * @throws Exception
+     */
     public void testRegularExpression() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/regularexpression", REQUEST_general, ASSERTION_STATUS_NONE);
     }
 
+    /**
+     * Test a policy with WSDL Operation.
+     * @throws Exception
+     */
     public void testWsdlOperation() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/wsdloperation", REQUEST_general, ASSERTION_STATUS_NONE);
     }
 
+    /**
+     * Test a policy with XSL transformation request.
+     * @throws Exception
+     */
     public void testXslTransformationRequest() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/xsltransformationrequest", REQUEST_general, ASSERTION_STATUS_NONE);
     }
 
+    /**
+     * Test a policy with XSL transformation response.
+     * @throws Exception
+     */
     public void testXslTransformationResponse() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
