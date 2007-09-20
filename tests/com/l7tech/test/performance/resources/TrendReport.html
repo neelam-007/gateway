@@ -6,11 +6,12 @@
             var statsCheckBoxColumn = 1;
 
             /**
-             * Hide/show all columns of reports in the results table.
+             * Hide/show all reports in the results table.
              *
              * @param flag  true to show all; false to hide all
              */
-            function hideShowAll(flag) {
+            function hideShowAllReports(flag) {
+                // Checks/unchecks all the hide/show checkboxes.
                 var elements = document.getElementsByTagName("input");
                 for (var i = 0; i < elements.length; ++ i) {
                     if (elements[i].className == "hideShowCheckbox") {
@@ -20,7 +21,21 @@
 
                 var display = flag ? "" : "none";
                 var rows = document.getElementById("resultsTable").rows;
-                for (var rowIndex = 0; rowIndex < rows.length; ++ rowIndex) {
+
+                // Hide/show cells in 1st <th> row.
+                var row0cells = rows[0].cells;
+                for (var columnIndex = 1; columnIndex < row0cells.length - 2; ++ columnIndex) {
+                    row0cells[columnIndex].style.display = display;
+                }
+
+                // Hide/show cells in 2nd <th> row.
+                var row1cells = rows[1].cells;
+                for (var columnIndex = 0; columnIndex < row1cells.length; ++ columnIndex) {
+                    row1cells[columnIndex].style.display = display;
+                }
+
+                // Hide/show cells in <td> rows.
+                for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
                     var cells = rows[rowIndex].cells;
                     for (var columnIndex = 1; columnIndex < cells.length - 2; ++ columnIndex) {
                         cells[columnIndex].style.display = display;
@@ -29,21 +44,29 @@
             }
 
             /**
-             * Hide/show a specific column of report in the results table.
+             * Hide/show a specific report in the results table.
              *
-             * @param column    index of column to hide/show
-             * @param flag      true to show; false to hide
+             * @param reportIndex   index of report to hide/show
+             * @param flag          true to show; false to hide
              */
-            function hideShowColumn(column, flag) {
+            function hideShowReport(reportIndex, flag) {
                 var display = flag ? "" : "none";
                 var rows = document.getElementById("resultsTable").rows;
-                for (var rowIndex = 0; rowIndex < rows.length; ++ rowIndex) {
+
+                // Hide/show cells in 1st <th> row.
+                var row0cells = rows[0].cells;
+                row0cells[1 + reportIndex].style.display = display;
+
+                // Hide/show cells in 2nd <th> row.
+                var row1cells = rows[1].cells;
+                row1cells[2 * reportIndex].style.display = display;
+                row1cells[2 * reportIndex + 1].style.display = display;
+
+                // Hide/show cells in <td> rows.
+                for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
                     var cells = rows[rowIndex].cells;
-                    for (var columnIndex = 1; columnIndex < cells.length; ++ columnIndex) {
-                        if (columnIndex == column) {
-                            cells[columnIndex].style.display = display;
-                        }
-                    }
+                    cells[1 + 2 * reportIndex].style.display = display;
+                    cells[1 + 2 * reportIndex + 1].style.display = display;
                 }
             }
 
@@ -53,6 +76,7 @@
              * @param flag  true to include all; false to exclude all
              */
             function includeStatsAll(flag) {
+                // Checks/unchecks all the include/exclude checkboxes.
                 var elements = document.getElementsByTagName("input");
                 for (var i = 0; i < elements.length; ++ i) {
                     if (elements[i].className == "statsCheckbox") {
@@ -63,16 +87,14 @@
             }
 
             /**
-             * Determines if a column in the results table is included in
-             * calculating avg & stdev.
+             * Determines if a report is included in calculating avg & stdev.
              *
-             * @param column    index of column to test
+             * @param reportIndex   index of report to test
              * @return true or false
              */
-            function isIncludeInStats(column) {
-                // Row index in reports table corresponds to column index in results table.
+            function isIncludeInStats(reportIndex) {
                 var rows = document.getElementById("reportsTable").rows;
-                return rows[column].cells[statsCheckBoxColumn].getElementsByTagName("input")[0].checked;
+                return rows[1 + reportIndex].cells[statsCheckBoxColumn].getElementsByTagName("input")[0].checked;
             }
 
             /**
@@ -152,15 +174,16 @@
             function calcStats() {
                 undoHighlightThresholds();
                 var rows = document.getElementById("resultsTable").rows;
-                var avgColumnIndex = rows[0].cells.length - 2;
-                var stdevColumnIndex = rows[0].cells.length - 1;
-                for (var rowIndex = 1; rowIndex < rows.length; ++ rowIndex) {
+                var avgColumnIndex = rows[2].cells.length - 2;
+                var stdevColumnIndex = rows[2].cells.length - 1;
+                for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
                     var cells = rows[rowIndex].cells;
                     var n = 0;
                     var sum = 0.;
                     var sum2 = 0.;
-                    for (var columnIndex = 1; columnIndex < cells.length - 2; ++ columnIndex) {
-                        if (isIncludeInStats(columnIndex) && cells[columnIndex].innerHTML != "") {
+                    for (var columnIndex = 1; columnIndex < cells.length - 2; columnIndex += 2) {
+                        var reportIndex = (columnIndex - 1) / 2;
+                        if (isIncludeInStats(reportIndex) && cells[columnIndex].innerHTML != "") {
                             var value = Number(cells[columnIndex].innerHTML);
                             ++ n;
                             sum += value;
@@ -175,8 +198,33 @@
                             stdev = Math.sqrt((sum2 - n * avg * avg) / (n - 1));
                         }
                     }
-                    cells[avgColumnIndex].innerHTML = avg.toFixed(3);
-                    cells[stdevColumnIndex].innerHTML = stdev.toFixed(3);
+                    cells[avgColumnIndex].innerHTML = avg.toFixed(1);
+                    cells[stdevColumnIndex].innerHTML = stdev.toFixed(1);
+                }
+
+                calcDiffs();
+            }
+
+            /**
+             * Calculates percentage differences of each value from avg in the results table.
+             */
+            function calcDiffs() {
+                var rows = document.getElementById("resultsTable").rows;
+                for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
+                    var cells = rows[rowIndex].cells;
+                    var avgColumnIndex = cells.length - 2;
+                    var avg = Number(cells[avgColumnIndex].innerHTML);
+                    for (var columnIndex = 1; columnIndex < cells.length - 2; columnIndex += 2) {
+                        var value = cells[columnIndex].innerHTML;
+                        if (value != "") {
+                            if (avg == 0) {
+                                cells[columnIndex + 1].innerHTML = "";
+                            } else {
+                                var diff = 100 * (value - avg) / avg;
+                                cells[columnIndex + 1].innerHTML = (diff > 0 ? "+" : "") + diff.toFixed(1) + "%";
+                            }
+                        }
+                    }
                 }
             }
 
@@ -188,18 +236,20 @@
                 var comparison = document.getElementById("comparison").value;
                 var benchmark = document.getElementById("benchmark").value;
                 var rows = document.getElementById("resultsTable").rows;
-                var avgColumnIndex = rows[0].cells.length - 2;
-                var stdevColumnIndex = rows[0].cells.length - 1;
-                for (var rowIndex = 1; rowIndex < rows.length; ++ rowIndex) {
+                for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
                     var cells = rows[rowIndex].cells;
+                    var avgColumnIndex = cells.length - 2;
+                    var stdevColumnIndex = cells.length - 1;
                     var avg, stdev = 0;
                     if (benchmark == "avg" || benchmark == "stdev") {
                         avg = Number(cells[avgColumnIndex].innerHTML);
                         stdev = Number(cells[stdevColumnIndex].innerHTML);
                     } else {
-                        avg = Number(cells[benchmark].innerHTML);
+                        // benchmark is report index
+                        var columnIndex = 1 + 2 * Number(benchmark);
+                        avg = Number(cells[columnIndex].innerHTML);
                     }
-                    for (var columnIndex = 1; columnIndex < cells.length - 2; ++ columnIndex) {
+                    for (var columnIndex = 1; columnIndex < cells.length - 2; columnIndex += 2) {
                         var cell = cells[columnIndex];
                         var value = cell.innerHTML;
                         if (value != "") {
@@ -233,9 +283,9 @@
              */
             function undoHighlightThresholds() {
                 var rows = document.getElementById("resultsTable").rows;
-                for (var rowIndex = 1; rowIndex < rows.length; ++ rowIndex) {
+                for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
                     var cells = rows[rowIndex].cells;
-                    for (var columnIndex = 1; columnIndex < cells.length; ++ columnIndex) {
+                    for (var columnIndex = 1; columnIndex < cells.length - 2; ++ columnIndex) {
                         cells[columnIndex].style.backgroundColor = "white";
                     }
                 }
@@ -250,7 +300,7 @@
         <table id="reportsTable" class="bluewhite">
             <tr>
                 <th>Hide/Show in<br/>Throughput Table</th>
-                <th>Use in<br/>Avg, Std Dev</th>
+                <th>Include in<br/>Avg, Std Dev</th>
                 <th>Report</th>
                 <th>Date</th>
                 <th>Version</th>
@@ -263,7 +313,7 @@
             </tr>
             <!--{next report row}-->
             <tr>
-                <th><input type="checkbox" checked onClick="hideShowAll(this.checked)"></th>
+                <th><input type="checkbox" checked onClick="hideShowAllReports(this.checked)"></th>
                 <th><input type="checkbox" checked onClick="includeStatsAll(this.checked)"></th>
                 <th colspan="9" style="text-align: right"><input id="outlierCheckbox" type="checkbox" onclick="onOutlierCheckboxClicked()"/>highlight outlier</th>
             </tr>
@@ -287,10 +337,14 @@
             </select>
             (only reports checked above are used to calculate averges and standard deviations)
         </div>
-        <table id="resultsTable" class="bluewhite">
-            <!--{results header}-->
-            <!--{next results row}-->
-        </table>
+        <div>
+            <table id="resultsTable" class="bluewhite">
+                <tr><th rowspan="2"></th><!--{results header row 1}--><th class="avg" rowspan="2">Average</th><th class="stdev" rowspan="2">Std Dev</th></tr>
+                <tr><!--{results header row 2}--></tr>
+                <!--{next results row}-->
+            </table>
+            (&Delta; = percentage difference from average)
+        </div>
         <br>
         <h2>Throughput Charts</h2>
         <!--{next test case img}-->

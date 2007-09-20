@@ -49,7 +49,8 @@ public class TrendReport {
     private static final String CREATION_TIME_MARKER = "<!--{creation time}-->";
     private static final String REPORTS_ROW_MARKER = "<!--{next report row}-->";
     private static final String REPORTS_OPTION_MARKER = "<!--{next report option}-->";
-    private static final String RESULTS_HEADER_MARKER = "<!--{results header}-->";
+    private static final String RESULTS_HEADER_1_MARKER = "<!--{results header row 1}-->";
+    private static final String RESULTS_HEADER_2_MARKER = "<!--{results header row 2}-->";
     private static final String RESULTS_ROW_MARKER = "<!--{next results row}-->";
     private static final String TESTCASE_IMG_MARKER = "<!--{next test case img}-->";
     private static final String NOTES_MARKER = "<!--{next note}-->";
@@ -58,8 +59,8 @@ public class TrendReport {
 
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
     {
-        NUMBER_FORMAT.setMaximumFractionDigits(3);
-        NUMBER_FORMAT.setMinimumFractionDigits(3);
+        NUMBER_FORMAT.setMaximumFractionDigits(1);
+        NUMBER_FORMAT.setMinimumFractionDigits(1);
         NUMBER_FORMAT.setGroupingUsed(false);   // because they confused JavaScript
     }
 
@@ -102,15 +103,15 @@ public class TrendReport {
         PerformanceUtil.replaceMarkerAll(html, TITLE_MARKER, params.getTitle());
         PerformanceUtil.replaceMarkerAll(html, CREATION_TIME_MARKER, LONG_DATE_FORMAT.format(new Date()));
 
-        int column = 0;
+        // Populates reportsTable.
+        int reportIndex = 0;
         for (TestSuiteReport report : reports.keySet()) {
-            ++ column;
             final String reportPath = reports.get(report);
             final File reportFile = new File(reportPath);
             final String reportRelativePath = FileUtils.getRelativePath(outputDir, reportFile).replace('\\', '/');
             PerformanceUtil.insertAtMarker(html, REPORTS_ROW_MARKER,
                     "<tr>" +
-                    "<td class=\"centered\"><input class=\"hideShowCheckbox\" type=\"checkbox\" checked onClick=\"hideShowColumn(" + column + ", this.checked)\"/></td>" +
+                    "<td class=\"centered\"><input class=\"hideShowCheckbox\" type=\"checkbox\" checked onClick=\"hideShowReport(" + reportIndex + ", this.checked)\"/></td>" +
                     "<td class=\"centered\"><input class=\"statsCheckbox\" type=\"checkbox\" checked onClick=\"calcStats()\"/></td>" +
                     "<td>" + StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.NAME)) + "</td>" +
                     "<td>" + StringEscapeUtils.escapeHtml(LONG_DATE_FORMAT.format(report.getDate().getTime())) + "</td>" +
@@ -123,35 +124,40 @@ public class TrendReport {
                     "<td><a href=\"" + StringEscapeUtils.escapeHtml(reportRelativePath) + "\">" + StringEscapeUtils.escapeHtml(reportFile.getName()) + "</a></td>" +
                     "</tr>\n"
             );
+            ++ reportIndex;
         }
 
+        // Populates threshold highlight options.
         final StringBuilder optionsHtml = new StringBuilder();
-        column = 0;
+        reportIndex = 0;
         for (TestSuiteReport report : reports.keySet()) {
-            ++ column;
             optionsHtml.append("<option value=\"")
-                       .append(column)
+                       .append(reportIndex)
                        .append("\">")
                        .append(StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.NAME)))
                        .append("</option>");
+            ++ reportIndex;
         }
         PerformanceUtil.replaceMarkerAll(html, REPORTS_OPTION_MARKER, optionsHtml.toString());
-        
-        final StringBuilder headerHtml = new StringBuilder("<tr><th></th>");
+
+        // Populates resultsTable.
+        final StringBuilder header1Html = new StringBuilder();
+        final StringBuilder header2Html = new StringBuilder();
         for (TestSuiteReport report : reports.keySet()) {
-            headerHtml.append("<th>")
-                      .append(StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.NAME)))
-                      .append("</th>");
+            header1Html.append("<th colspan=\"2\">")
+                       .append(StringEscapeUtils.escapeHtml(PerformanceUtil.getParameter(report, Constants.NAME)))
+                       .append("</th>");
+            header2Html.append("<th>tr/sec</th><th>&Delta;</th>");
         }
-        headerHtml.append("<th class=\"avg\">Average</th><th class=\"stdev\">Std Dev</th></tr>");
-        PerformanceUtil.replaceMarkerAll(html, RESULTS_HEADER_MARKER, headerHtml.toString());
+        PerformanceUtil.replaceMarkerAll(html, RESULTS_HEADER_1_MARKER, header1Html.toString());
+        PerformanceUtil.replaceMarkerAll(html, RESULTS_HEADER_2_MARKER, header2Html.toString());
 
         for (String testCaseName : testCaseNames) {
             final StringBuilder htmlRow = new StringBuilder("<tr><td><a href=\"#" + StringEscapeUtils.escapeHtml(testCaseName) + "\">" + StringEscapeUtils.escapeHtml(testCaseName) + "</a></td>");
             for (TestSuiteReport report : reports.keySet()) {
                 final List<TestSuiteReport.Driver> drivers = report.getDrivers();
                 if (drivers.size() == 0) {
-                    htmlRow.append("<td></td>");
+                    htmlRow.append("<td></td><td></td>");
                 } else {
                     if (drivers.size() > 1) {
                         if (!params.isNoWarning()) {
@@ -160,9 +166,10 @@ public class TrendReport {
                     }
                     final TestSuiteReport.TestCase testCase = drivers.get(0).getTestCase(testCaseName);
                     if (testCase == null) {
-                        htmlRow.append("<td></td>");
+                        htmlRow.append("<td></td><td></td>");
                     } else {
-                        htmlRow.append("<td class=\"right\">").append(NUMBER_FORMAT.format(testCase.getResult())).append("</td>");
+                        htmlRow.append("<td class=\"right\">").append(NUMBER_FORMAT.format(testCase.getResult())).append("</td>")
+                               .append("<td class=\"right\"></td>");    // percentage difference
                     }
                 }
             }
