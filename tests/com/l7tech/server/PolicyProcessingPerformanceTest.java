@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  */
 public class PolicyProcessingPerformanceTest extends TestCase {
     private static final Logger logger = Logger.getLogger(TokenServiceTest.class.getName());
-    private static final int ASSERTION_STATUS_IGNORE = Integer.MIN_VALUE;
+    private static final int ASSERTION_STATUS_NONE = AssertionStatus.NONE.getNumeric();
     private static final String POLICY_RES_PATH = "policy/resources/";
 
     private static ApplicationContext applicationContext = null;
@@ -84,6 +84,14 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         {"/httpwssheaderpromote", "POLICY_httpwssheaderpromote.xml"},
         {"/schemavalrequest", "POLICY_schemavalrequest.xml"},
         {"/schemavalresponse", "POLICY_schemavalresponse.xml"},
+        {"/emptypolicy", "POLICY_emptypolicy.xml"},
+        {"/evaluaterequestxpath", "POLICY_evaluaterequestxpath.xml"},
+        {"/evaluateresponsexpath", "POLICY_evaluateresponsexpath.xml"},
+        {"/policylogic", "POLICY_policylogic.xml"},
+        {"/regularexpression", "POLICY_regularexpression.xml"},
+        {"/wsdloperation", "POLICY_wsdloperation.xml", "WSDL_warehouse.wsdl"},
+        {"/xsltransformationrequest", "POLICY_xsltransformationrequest.xml"},
+        {"/xsltransformationresponse", "POLICY_xsltransformationresponse.xml"}
     };
 
     private static String REQUEST_general;
@@ -148,6 +156,8 @@ public class PolicyProcessingPerformanceTest extends TestCase {
 
         savedLoggerLevel = Logger.getLogger("com.l7tech.server").getLevel();
         Logger.getLogger("com.l7tech.server").setLevel(Level.OFF);
+
+        setUpClass();
     }
 
     @Override
@@ -203,49 +213,49 @@ public class PolicyProcessingPerformanceTest extends TestCase {
      * Test a request message that passes SQL Attack Protection Assertion.
      */
     public void testSQLAttack() throws Exception  {
-        processMessage("/sqlattack", REQUEST_general, ASSERTION_STATUS_IGNORE /* AssertionStatus.NONE.getNumeric() */);
+        processMessage("/sqlattack", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
     }
 
     /**
      * Test a request message that passes Request Size Limit Assertion.
      */
     public void testRequestSizeLimit() throws Exception  {
-        processMessage("/requestsizelimit", REQUEST_general, ASSERTION_STATUS_IGNORE /* AssertionStatus.NONE.getNumeric() */);
+        processMessage("/requestsizelimit", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
     }
 
     /**
      * Test a request message that passes Document Structure Threats Assertion.
      */
     public void testDocumentStructure() throws Exception  {
-        processMessage("/documentstructure", REQUEST_general, ASSERTION_STATUS_IGNORE /* AssertionStatus.NONE.getNumeric() */);
+        processMessage("/documentstructure", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
     }
 
     /**
      * Test a request message that triggers Fault Level Assertion.
      */
     public void testFaultLevel() throws Exception  {
-        processMessage("/faultlevel", REQUEST_general, ASSERTION_STATUS_IGNORE /* AssertionStatus.FALSIFIED.getNumeric() */);
+        processMessage("/faultlevel", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.FALSIFIED.getNumeric() */);
     }
 
     /**
      * Test a request message that passes XPath Credentials Assertion.
      */
     public void testXPathCreds() throws Exception  {
-        processMessage("/xpathcreds", REQUEST_xpathcreds_success, ASSERTION_STATUS_IGNORE /* AssertionStatus.NONE.getNumeric() */);
+        processMessage("/xpathcreds", REQUEST_xpathcreds_success, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
     }
 
     /**
      * Test a request message that passes Username Token Assertion.
      */
     public void testUsernameToken_1() throws Exception  {
-        processMessage("/usernametoken", REQUEST_usernametoken_success_1, ASSERTION_STATUS_IGNORE /* AssertionStatus.NONE.getNumeric() */);
+        processMessage("/usernametoken", REQUEST_usernametoken_success_1, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
     }
 
     /**
      * Test a request message that passes Username Token Assertion.
      */
     public void testUsernameToken_2() throws Exception  {
-        processMessage("/usernametoken", REQUEST_usernametoken_success_2, ASSERTION_STATUS_IGNORE /* AssertionStatus.NONE.getNumeric() */);
+        processMessage("/usernametoken", REQUEST_usernametoken_success_2, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
     }
 
     /**
@@ -260,7 +270,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         MockGenericHttpClient mockClient = buildMockHttpClient(responseHeaders, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
-        Result result = processMessage("/httproutecookie", REQUEST_general, ASSERTION_STATUS_IGNORE /* AssertionStatus.NONE.getNumeric() */);
+        Result result = processMessage("/httproutecookie", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
 
 //        assertTrue("Outbound request cookie missing", headerExists(mockClient.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
 //        assertTrue("Outbound response cookie missing", cookieExists(result.context.getCookies(),"cookie", "outvalue"));
@@ -275,7 +285,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         MockGenericHttpClient mockClient2 = buildMockHttpClient(responseHeaders, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient2);
 
-        Result result = processMessage("/httproutenocookie", REQUEST_general, ASSERTION_STATUS_IGNORE /* AssertionStatus.NONE.getNumeric() */);
+        Result result = processMessage("/httproutenocookie", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
 
 //        assertFalse("Outbound request cookie present", headerExists(mockClient2.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
 //        assertFalse("Outbound response cookie present", cookieExists(result2.context.getCookies(),"cookie", "outvalue"));
@@ -285,7 +295,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
-        processMessage("/httproutepassthru", REQUEST_general, ASSERTION_STATUS_IGNORE /* AssertionStatus.NONE.getNumeric() */);
+        processMessage("/httproutepassthru", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
 
 //        assertNotNull("Missing connection id", mockClient.getIdentity());
     }
@@ -293,7 +303,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     public void testHttpWssHeaderLeave() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
-        processMessage("/httpwssheaderleave", REQUEST_usernametoken_success_1, ASSERTION_STATUS_IGNORE);
+        processMessage("/httpwssheaderleave", REQUEST_usernametoken_success_1, ASSERTION_STATUS_NONE);
 //        String request = new String(mockClient.getRequestBody());
 //        assertTrue("Security header missing", request.indexOf("<wsse:Username>user</wsse:Username>") > 0);
     }
@@ -301,7 +311,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     public void testHttpWssHeaderRemove() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
-        processMessage("/httpwssheaderremove", REQUEST_usernametoken_success_1, ASSERTION_STATUS_IGNORE);
+        processMessage("/httpwssheaderremove", REQUEST_usernametoken_success_1, ASSERTION_STATUS_NONE);
 //        String request = new String(mockClient.getRequestBody());
 //        assertTrue("Security header not removed", request.indexOf("<wsse:Username>user</wsse:Username>") < 0);
     }
@@ -309,7 +319,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     public void testHttpWssHeaderPromote() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
-        processMessage("/httpwssheaderpromote", REQUEST_httpwssheaderpromote_success, ASSERTION_STATUS_IGNORE);
+        processMessage("/httpwssheaderpromote", REQUEST_httpwssheaderpromote_success, ASSERTION_STATUS_NONE);
 //        String request = new String(mockClient.getRequestBody());
 //        assertTrue("Promoted security header missing", request.indexOf("<wsse:Username>user</wsse:Username>") > 0 && request.indexOf("asdf") < 0);
     }
@@ -317,7 +327,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     public void testSchemaValidationRequest() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
-        processMessage("/schemavalrequest", REQUEST_schemaval_request_success, ASSERTION_STATUS_IGNORE);
+        processMessage("/schemavalrequest", REQUEST_schemaval_request_success, ASSERTION_STATUS_NONE);
 //        String request = new String(mockClient.getRequestBody());
 //        assertTrue("Promoted security header missing", request.indexOf("<wsse:Username>user</wsse:Username>") > 0 && request.indexOf("asdf") < 0);
     }
@@ -325,9 +335,58 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     public void testSchemaValidationResponse() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
-        processMessage("/schemavalresponse", REQUEST_schemaval_response_success, ASSERTION_STATUS_IGNORE);
+        processMessage("/schemavalresponse", REQUEST_schemaval_response_success, ASSERTION_STATUS_NONE);
 //        String request = new String(mockClient.getRequestBody());
 //        assertTrue("Promoted security header missing", request.indexOf("<wsse:Username>user</wsse:Username>") > 0 && request.indexOf("asdf") < 0);
+    }
+
+    public void testEmptyPolicy() throws Exception  {
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/emptypolicy", REQUEST_general, ASSERTION_STATUS_NONE);
+    }
+
+    public void testEvaluateRequestXpath() throws Exception  {
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/evaluaterequestxpath", REQUEST_general, ASSERTION_STATUS_NONE);
+    }
+
+    public void testEvaluateResponseXpath() throws Exception  {
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/evaluateresponsexpath", REQUEST_general, ASSERTION_STATUS_NONE);
+    }
+
+    public void testPolicyLogic() throws Exception  {
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/policylogic", REQUEST_general, ASSERTION_STATUS_NONE);
+    }
+
+    public void testRegularExpression() throws Exception  {
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/regularexpression", REQUEST_general, ASSERTION_STATUS_NONE);
+    }
+
+    public void testWsdlOperation() throws Exception  {
+        // setUpClass();
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/wsdloperation", REQUEST_general, ASSERTION_STATUS_NONE);
+    }
+
+    public void testXslTransformationRequest() throws Exception  {
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/xsltransformationrequest", REQUEST_general, ASSERTION_STATUS_NONE);
+    }
+
+    public void testXslTransformationResponse() throws Exception  {
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/xsltransformationresponse", REQUEST_general, ASSERTION_STATUS_NONE);
     }
 
     /**
@@ -338,7 +397,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     }
 
     /**
-     * @param expectedStatus    policy processing status code expected; ignored if set to {@link #ASSERTION_STATUS_IGNORE}
+     * @param expectedStatus    policy processing status code expected; ignored if set to {@link #ASSERTION_STATUS_NONE}
      */
     private PolicyProcessingPerformanceTest.Result processMessage(String uri, String message, String requestIp, int expectedStatus, boolean addAuth) throws IOException {
         MockServletContext servletContext = new MockServletContext();
@@ -350,6 +409,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         hrequest.setRemoteAddr(requestIp);
         hrequest.setRequestURI(uri);
         hrequest.setContent(message.getBytes());
+        hrequest.addHeader("SOAPAction", "http://warehouse.acme.com/ws/listProducts");
         ConnectionId.setConnectionId(new ConnectionId(0,0));
         hrequest.setAttribute("com.l7tech.server.connectionIdentifierObject", ConnectionId.getConnectionId());
 
@@ -470,7 +530,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
                 context.close();
             }
 
-            if (expectedStatus != ASSERTION_STATUS_IGNORE)
+            if (expectedStatus != ASSERTION_STATUS_NONE)
                 assertEquals("Policy status", expectedStatus, status.getNumeric());
         }
 

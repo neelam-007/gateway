@@ -1,0 +1,172 @@
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+        <wsp:All wsp:Usage="Required">
+            <L7p:SetVariable>
+                <L7p:Expression stringValue="counter5"/>
+                <L7p:VariableToSet stringValue="Prefix3.id"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Expression stringValue="12"/>
+                <L7p:VariableToSet stringValue="Prefix3.value"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Expression stringValue="hour"/>
+                <L7p:VariableToSet stringValue="Prefix3.period"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Expression stringValue="user1"/>
+                <L7p:VariableToSet stringValue="Prefix3.user"/>
+            </L7p:SetVariable>
+            <L7p:SetVariable>
+                <L7p:Expression stringValue="100"/>
+                <L7p:VariableToSet stringValue="Prefix3.max"/>
+            </L7p:SetVariable>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:TrueAssertion/>
+                </wsp:All>
+            </wsp:OneOrMore>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:TrueAssertion/>
+                </wsp:All>
+            </wsp:OneOrMore>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:TrueAssertion/>
+                </wsp:All>
+            </wsp:OneOrMore>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:FalseAssertion/>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="hi"/>
+                    </L7p:CommentAssertion>
+                    <L7p:TrueAssertion/>
+                </wsp:All>
+            </wsp:OneOrMore>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <wsp:All wsp:Usage="Required">
+                        <wsp:All wsp:Usage="Required">
+                            <wsp:All wsp:Usage="Required">
+                                <wsp:All wsp:Usage="Required">
+                                    <wsp:All wsp:Usage="Required">
+                                    <wsp:All wsp:Usage="Required">
+                                    <wsp:All wsp:Usage="Required">
+                                    <L7p:TrueAssertion/>
+                                    </wsp:All>
+                                    </wsp:All>
+                                    </wsp:All>
+                                </wsp:All>
+                            </wsp:All>
+                        </wsp:All>
+                    </wsp:All>
+                </wsp:All>
+            </wsp:OneOrMore>
+            <L7p:HttpRoutingAssertion>
+                <L7p:ProtectedServiceUrl stringValue="http://hugh/ACMEWarehouseWS/Service1.asmx"/>
+                <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Cookie"/>
+                        </L7p:item>
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="SOAPAction"/>
+                        </L7p:item>
+                    </L7p:Rules>
+                </L7p:RequestHeaderRules>
+                <L7p:RequestParamRules httpPassthroughRuleSet="included">
+                    <L7p:ForwardAll booleanValue="true"/>
+                    <L7p:Rules httpPassthroughRules="included"/>
+                </L7p:RequestParamRules>
+                <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Set-Cookie"/>
+                        </L7p:item>
+                    </L7p:Rules>
+                </L7p:ResponseHeaderRules>
+                <L7p:SamlAssertionVersion intValue="2"/>
+            </L7p:HttpRoutingAssertion>
+        </wsp:All>
+</wsp:Policy>

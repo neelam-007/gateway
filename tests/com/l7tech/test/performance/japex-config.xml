@@ -133,4 +133,59 @@
         <param name="layer7.runInFinish" value="tearDown"/>
     </testCase>
 
+    <testCase name="PolicyProcessingPerformanceTest.testEmptyPolicy">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testEmptyPolicy"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testEvaluateRequestXpath">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testEvaluateRequestXpath"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testEvaluateResponseXpath">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testEvaluateResponseXpath"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testPolicyLogic">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testPolicyLogic"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testRegularExpression">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testRegularExpression"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testWsdlOperation">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testWsdlOperation"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testXslTransformationRequest">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testXslTransformationRequest"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testXslTransformationResponse">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testXslTransformationResponse"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
 </testSuite>

@@ -1,0 +1,38 @@
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+        <wsp:All wsp:Usage="Required">
+            <L7p:XslTransformation>
+                <L7p:Direction intValue="1"/>
+                <L7p:ResourceInfo staticResourceInfo="included">
+                    <L7p:Document stringValue="&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; version=&quot;1.0&quot;&gt;   &lt;!-- Identity transform --&gt;   &lt;xsl:template match=&quot;@*|*|processing-instruction()|comment()&quot;&gt;     &lt;xsl:copy&gt;       &lt;xsl:apply-templates select=&quot;*|@*|text()|processing-instruction()|comment()&quot;&gt;&lt;/xsl:apply-templates&gt;     &lt;/xsl:copy&gt;   &lt;/xsl:template&gt; &lt;/xsl:stylesheet&gt;"/>
+                </L7p:ResourceInfo>
+                <L7p:TransformName stringValue=""/>
+            </L7p:XslTransformation>
+            <L7p:HttpRoutingAssertion>
+                <L7p:Login stringValue="ghuang"/>
+                <L7p:Password stringValue="layer7"/>
+                <L7p:ProtectedServiceUrl stringValue="http://hugh/ACMEWarehouseWS/Service1.asmx"/>
+                <L7p:Realm stringValue=""/>
+                <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Cookie"/>
+                        </L7p:item>
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="SOAPAction"/>
+                        </L7p:item>
+                    </L7p:Rules>
+                </L7p:RequestHeaderRules>
+                <L7p:RequestParamRules httpPassthroughRuleSet="included">
+                    <L7p:ForwardAll booleanValue="true"/>
+                    <L7p:Rules httpPassthroughRules="included"/>
+                </L7p:RequestParamRules>
+                <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Set-Cookie"/>
+                        </L7p:item>
+                    </L7p:Rules>
+                </L7p:ResponseHeaderRules>
+            </L7p:HttpRoutingAssertion>
+        </wsp:All>
+</wsp:Policy>
