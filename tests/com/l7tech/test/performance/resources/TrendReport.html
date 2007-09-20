@@ -292,7 +292,7 @@
             }
         </script>
     </head>
-    <body onload="calcStats()">
+    <body onload="onOutlierCheckboxClicked();calcStats()">
         <h1><!--{title}--></h1>
         <p>Created: <!--{creation time}--> by com.l7tech.test.performance.TrendReport</p>
         <h2>Performance Reports</h2>
@@ -315,7 +315,7 @@
             <tr>
                 <th><input type="checkbox" checked onClick="hideShowAllReports(this.checked)"></th>
                 <th><input type="checkbox" checked onClick="includeStatsAll(this.checked)"></th>
-                <th colspan="9" style="text-align: right"><input id="outlierCheckbox" type="checkbox" onclick="onOutlierCheckboxClicked()"/>highlight outlier</th>
+                <th colspan="9" style="text-align: right"><input id="outlierCheckbox" type="checkbox" checked onclick="onOutlierCheckboxClicked()"/>highlight outlier</th>
             </tr>
         </table>
         <br>
@@ -326,8 +326,8 @@
             <input id="percent" type="text" size="2" style="text-align: right"/>%
             <select id="comparison">
                 <option value="above">above (or more)</option>
-                <option value="below">below (or more)</option>
-                <option value="outside" selected>outside</option>
+                <option value="below" selected>below (or more)</option>
+                <option value="outside">outside</option>
                 <option value="within">within</option>
             </select>
             <select id="benchmark">
