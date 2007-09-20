@@ -188,4 +188,19 @@
         <param name="layer7.runInPrepare" value="setUp"/>
         <param name="layer7.runInFinish" value="tearDown"/>
     </testCase>
+
+    <testCase name="PolicyProcessingPerformanceTest.testWssSignedRequest">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testWssSignedRequest"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+    
+    <testCase name="PolicyProcessingPerformanceTest.testWssEncryptedRequest">
+        <param name="layer7.className" value="com.l7tech.server.PolicyProcessingPerformanceTest"/>
+        <param name="layer7.methodName" value="testWssEncryptedRequest"/>
+        <param name="layer7.runInPrepare" value="setUp"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
 </testSuite>

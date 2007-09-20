@@ -2,29 +2,31 @@ package com.l7tech.server;
 
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.http.*;
 import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.AuditContextStubInt;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.service.PublishedService;
 import junit.framework.TestCase;
 import org.springframework.context.ApplicationContext;
@@ -33,7 +35,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -91,7 +92,9 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         {"/regularexpression", "POLICY_regularexpression.xml"},
         {"/wsdloperation", "POLICY_wsdloperation.xml", "WSDL_warehouse.wsdl"},
         {"/xsltransformationrequest", "POLICY_xsltransformationrequest.xml"},
-        {"/xsltransformationresponse", "POLICY_xsltransformationresponse.xml"}
+        {"/xsltransformationresponse", "POLICY_xsltransformationresponse.xml"},
+        {"/wsssign", "POLICY_wss_signbody.xml"},
+        {"/wssenc", "POLICY_wss_encbody.xml"},
     };
 
     private static String REQUEST_general;
@@ -101,6 +104,8 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     private static String REQUEST_httpwssheaderpromote_success;
     private static String REQUEST_schemaval_request_success;
     private static String REQUEST_schemaval_response_success;
+    private static String REQUEST_signed;    
+    private static String REQUEST_encrypted;
 
     private static byte[] RESPONSE_general;
 
@@ -118,6 +123,18 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         buildServices();
 
         applicationContext = ApplicationContexts.getTestApplicationContext();
+
+        // well known test session
+        SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
+        if (sccm.getSession("http://www.layer7tech.com/uuid/00000000") == null) {
+            sccm.createContextForUser(
+                    "http://www.layer7tech.com/uuid/00000000",
+                    System.currentTimeMillis() + TimeUnit.DAYS.getMultiplier(),
+                    new UserBean(),
+                    new LoginCredentials( "test", "password".toCharArray(), CredentialFormat.CLEARTEXT, HttpBasic.class, null ),
+                    new byte[16]);
+        }
+
         messageProcessor = (MessageProcessor) applicationContext.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) applicationContext.getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
@@ -133,6 +150,8 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         REQUEST_httpwssheaderpromote_success = new String(loadResource("REQUEST_httpwssheaderpromote_success.xml"));
         REQUEST_schemaval_request_success = new String(loadResource("REQUEST_schemaval_request.xml"));
         REQUEST_schemaval_response_success = new String(loadResource("REQUEST_schemaval_response_request.xml"));
+        REQUEST_signed = new String(loadResource("REQUEST_signed.xml"));
+        REQUEST_encrypted = new String(loadResource("REQUEST_encrypted.xml"));
         RESPONSE_general = loadResource("RESPONSE_general.xml");
     }
 
@@ -234,7 +253,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
      * Test a request message that triggers Fault Level Assertion.
      */
     public void testFaultLevel() throws Exception  {
-        processMessage("/faultlevel", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.FALSIFIED.getNumeric() */);
+        processMessage("/faultlevel", REQUEST_general, AssertionStatus.FALSIFIED.getNumeric());
     }
 
     /**
@@ -270,10 +289,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         MockGenericHttpClient mockClient = buildMockHttpClient(responseHeaders, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
-        Result result = processMessage("/httproutecookie", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
-
-//        assertTrue("Outbound request cookie missing", headerExists(mockClient.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
-//        assertTrue("Outbound response cookie missing", cookieExists(result.context.getCookies(),"cookie", "outvalue"));
+        processMessage("/httproutecookie", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
     }
 
     public void testHttpRoutingCookieNone() throws Exception {
@@ -285,10 +301,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         MockGenericHttpClient mockClient2 = buildMockHttpClient(responseHeaders, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient2);
 
-        Result result = processMessage("/httproutenocookie", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
-
-//        assertFalse("Outbound request cookie present", headerExists(mockClient2.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
-//        assertFalse("Outbound response cookie present", cookieExists(result2.context.getCookies(),"cookie", "outvalue"));
+        processMessage("/httproutenocookie", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
     }
 
     public void testHttpRoutingSticky() throws Exception {
@@ -296,48 +309,36 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
         processMessage("/httproutepassthru", REQUEST_general, ASSERTION_STATUS_NONE /* AssertionStatus.NONE.getNumeric() */);
-
-//        assertNotNull("Missing connection id", mockClient.getIdentity());
     }
 
     public void testHttpWssHeaderLeave() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/httpwssheaderleave", REQUEST_usernametoken_success_1, ASSERTION_STATUS_NONE);
-//        String request = new String(mockClient.getRequestBody());
-//        assertTrue("Security header missing", request.indexOf("<wsse:Username>user</wsse:Username>") > 0);
     }
 
     public void testHttpWssHeaderRemove() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/httpwssheaderremove", REQUEST_usernametoken_success_1, ASSERTION_STATUS_NONE);
-//        String request = new String(mockClient.getRequestBody());
-//        assertTrue("Security header not removed", request.indexOf("<wsse:Username>user</wsse:Username>") < 0);
     }
 
     public void testHttpWssHeaderPromote() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/httpwssheaderpromote", REQUEST_httpwssheaderpromote_success, ASSERTION_STATUS_NONE);
-//        String request = new String(mockClient.getRequestBody());
-//        assertTrue("Promoted security header missing", request.indexOf("<wsse:Username>user</wsse:Username>") > 0 && request.indexOf("asdf") < 0);
     }
 
     public void testSchemaValidationRequest() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/schemavalrequest", REQUEST_schemaval_request_success, ASSERTION_STATUS_NONE);
-//        String request = new String(mockClient.getRequestBody());
-//        assertTrue("Promoted security header missing", request.indexOf("<wsse:Username>user</wsse:Username>") > 0 && request.indexOf("asdf") < 0);
     }
 
     public void testSchemaValidationResponse() throws Exception  {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/schemavalresponse", REQUEST_schemaval_response_success, ASSERTION_STATUS_NONE);
-//        String request = new String(mockClient.getRequestBody());
-//        assertTrue("Promoted security header missing", request.indexOf("<wsse:Username>user</wsse:Username>") > 0 && request.indexOf("asdf") < 0);
     }
 
     public void testEmptyPolicy() throws Exception  {
@@ -371,7 +372,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     }
 
     public void testWsdlOperation() throws Exception  {
-        // setUpClass();
         MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/wsdloperation", REQUEST_general, ASSERTION_STATUS_NONE);
@@ -389,17 +389,29 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         processMessage("/xsltransformationresponse", REQUEST_general, ASSERTION_STATUS_NONE);
     }
 
+    public void testWssSignedRequest() throws Exception  {
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/wsssign", REQUEST_signed, AssertionStatus.NONE.getNumeric());
+    }
+
+    public void testWssEncryptedRequest() throws Exception  {
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, RESPONSE_general);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/wssenc", REQUEST_encrypted, AssertionStatus.NONE.getNumeric());
+    }
+
     /**
      *
      */
-    private PolicyProcessingPerformanceTest.Result processMessage(String uri, String message, int expectedStatus) throws IOException {
-        return processMessage(uri, message, "10.0.0.1", expectedStatus, false);
+    private void processMessage(String uri, String message, int expectedStatus) throws IOException {
+        processMessage(uri, message, "10.0.0.1", expectedStatus, false);
     }
 
     /**
      * @param expectedStatus    policy processing status code expected; ignored if set to {@link #ASSERTION_STATUS_NONE}
      */
-    private PolicyProcessingPerformanceTest.Result processMessage(String uri, String message, String requestIp, int expectedStatus, boolean addAuth) throws IOException {
+    private void processMessage(String uri, String message, String requestIp, int expectedStatus, boolean addAuth) throws IOException {
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
@@ -530,106 +542,8 @@ public class PolicyProcessingPerformanceTest extends TestCase {
                 context.close();
             }
 
-            if (expectedStatus != ASSERTION_STATUS_NONE)
-                assertEquals("Policy status", expectedStatus, status.getNumeric());
-        }
-
-        return new PolicyProcessingPerformanceTest.Result(context, hresponse, ((AuditContextStubInt) auditContext).getLastRecord());
-    }
-
-    /**
-     *
-     */
-    private PolicyProcessingPerformanceTest.Result processJmsMessage(String message, int expectedStatus) throws IOException {
-        // Initialize processing context
-        final Message response = new Message();
-        final Message request = new Message();
-
-        ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
-        try {
-            request.initialize(TestStashManagerFactory.getInstance().createStashManager(), ctype, new ByteArrayInputStream(message.getBytes()) );
-            request.attachJmsKnob(new JmsKnob() {
-                public boolean isBytesMessage() {
-                    return true;
-                }
-                public Map<String, Object> getJmsMsgPropMap() {
-                    //noinspection unchecked
-                    return Collections.EMPTY_MAP;
-                }
-                public String getSoapAction() {
-                    return null;
-                }
-            });
-        } catch(NoSuchPartException nspe) {
-            throw new CausedIOException("Mime init error", nspe);
-        }
-
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-        context.setReplyExpected(true); // HTTP always expects to receive a reply
-
-        AssertionStatus status = AssertionStatus.UNDEFINED;
-        try {
-            context.setAuditContext(auditContext);
-            context.setSoapFaultManager(soapFaultManager);
-            context.setClusterPropertyManager(clusterPropertyManager);
-
-            status = messageProcessor.processMessage(context);
-
-            // if the policy is not successful AND the stealth flag is on, drop connection
-            if (status != AssertionStatus.NONE) {
-                SoapFaultLevel faultLevelInfo = context.getFaultlevel();
-
-                if (logger.isLoggable(Level.FINEST))
-                    logger.finest("checking for potential connection drop because status is " + status.getMessage());
-                if (faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION) {
-                    if (logger.isLoggable(Level.FINE))
-                        logger.fine("No policy found and global setting is to go stealth in this case. " +
-                                    "Instructing valve to drop connection completly." + faultLevelInfo.toString());
-                    throw new CausedIOException(ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
-                }
-            }
-
-            if (status == AssertionStatus.NONE) {
-                if (response.getKnob(MimeKnob.class) == null) {
-                    // Routing successful, but no actual response received, probably due to a one-way JMS send.
-                    logger.fine("servlet transport returning a placeholder empty response to a successful one-way message");
-                } else {
-                    // Transmit the response and return
-                    logger.fine("servlet transport returned status ?" +
-                                ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
-                }
-            } else {
-                if (logger.isLoggable(Level.FINE))
-                    logger.fine("500 (none 200?) result.");
-            }
-        } catch (Throwable e) {
-            if (e instanceof CausedIOException && e.getMessage() == ResponseKillerValve.ATTRIBUTE_FLAG_NAME) {
-                // not an error
-            } else {
-                e.printStackTrace();
-
-                // if the policy throws AND the stealth flag is set, drop connection
-                if (context.isStealthResponseMode()) {
-                    logger.log(Level.INFO, "Policy threw error and stealth mode is set. " +
-                                           "Instructing valve to drop connection completely.",
-                                           e);
-                }
-            }
-        } finally {
-            try {
-                auditContext.flush();
-            }
-            catch(Exception e) {
-                logger.log(Level.WARNING, "Unexpected exception when flushing audit data.", e);
-            }
-            finally {
-                context.close();
-            }
-
             assertEquals("Policy status", expectedStatus, status.getNumeric());
         }
-
-        return new PolicyProcessingPerformanceTest.Result(context, null, ((AuditContextStubInt) auditContext).getLastRecord());
     }
 
     /**
@@ -650,62 +564,5 @@ public class PolicyProcessingPerformanceTest extends TestCase {
                                                                      message);
 
         return mockClient;
-    }
-
-    /**
-     *
-     */
-    private static boolean headerExists(List headers, String headername, String headervaluecontains) {
-        boolean exists = false;
-
-        if (headers != null) {
-            for (Iterator headerIter = headers.iterator(); headerIter.hasNext(); ) {
-                Object headerObj = headerIter.next();
-                if (headerObj instanceof HttpHeader) {
-                    HttpHeader header = (HttpHeader) headerObj;
-                    if (headername.equals(header.getName()) &&
-                        (headervaluecontains == null || (header.getFullValue()!=null && header.getFullValue().indexOf(headervaluecontains)>=0))) {
-                        exists = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        return exists;
-    }
-
-    /**
-     *
-     */
-    private static boolean cookieExists(Set<HttpCookie> cookies, String name, String value) {
-        boolean exists = false;
-
-        if (cookies != null) {
-            for (HttpCookie cookie : cookies) {
-                if (name.equals(cookie.getCookieName()) &&
-                    (value == null || value.equals(cookie.getCookieValue()))) {
-                    exists = true;
-                    break;
-                }
-            }
-        }
-
-        return exists;
-    }
-
-    /**
-     *
-     */
-    private static final class Result {
-        private PolicyEnforcementContext context;
-        private MockHttpServletResponse response;
-        private AuditRecord audit;
-
-        Result(PolicyEnforcementContext context, MockHttpServletResponse response, AuditRecord audit) {
-            this.context = context;
-            this.response = response;
-            this.audit = audit;
-        }
     }
 }
