@@ -35,6 +35,15 @@ CREATE TABLE connector_property (
   FOREIGN KEY (connector_oid) REFERENCES connector (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+-- Create the 'Manage Listen Ports' role
+DELETE FROM rbac_permission WHERE role_oid=-750;
+DELETE FROM rbac_role WHERE objectid=-750;
+INSERT INTO rbac_role VALUES (-750,0,'Manage Listen Ports', null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)).');
+INSERT INTO rbac_permission VALUES (-751,0,-750,'READ',NULL,'SSG_CONNECTOR');
+INSERT INTO rbac_permission VALUES (-752,0,-750,'CREATE',NULL,'SSG_CONNECTOR');
+INSERT INTO rbac_permission VALUES (-753,0,-750,'UPDATE',NULL,'SSG_CONNECTOR');
+INSERT INTO rbac_permission VALUES (-754,0,-750,'DELETE',NULL,'SSG_CONNECTOR');
+
 --
 -- Reenable FK at very end of script
 --
