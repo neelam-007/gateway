@@ -15,7 +15,7 @@ public class GatewayMain {
         String rootPath = System.getProperty(PROP_SERVER_HOME);
         if (rootPath == null || rootPath.trim().length() < 1) {
             // Try using the current directory
-            File cwd = new File(".").getAbsoluteFile();
+            File cwd = new File("").getAbsoluteFile();
             if (cwd.isDirectory()) {
                 File inf = new File(cwd, "etc/inf");
                 if (inf.isDirectory()) {
