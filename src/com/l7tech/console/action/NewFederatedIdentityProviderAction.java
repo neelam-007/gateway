@@ -165,6 +165,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                             tree.setSelectionPath(new TreePath(nodePath));
                         }
                     }
+                    removeEntityListener(listener);
                 }
             });
         }
