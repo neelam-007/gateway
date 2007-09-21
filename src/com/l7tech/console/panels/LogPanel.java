@@ -131,6 +131,7 @@ public class LogPanel extends JPanel {
     private DefaultTableModel logTableModel;
     private FilteredLogTableSorter logTableSorter;
     private JLabel msgTotal;
+    private JProgressBar msgProgressBar;
     private JLabel lastUpdateTimeLabel;
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
@@ -863,6 +864,7 @@ public class LogPanel extends JPanel {
         unformattedResponseXml.setLength(0);
 
         getLogsRefreshTimer().stop();
+        getMsgProgressBar().setVisible(false);
         getFilteredLogTableSorter().onDisconnect();
 
         setHint("Disconnected");
@@ -1085,8 +1087,6 @@ public class LogPanel extends JPanel {
         }
         return msgTotal;
     }
-
-    private JProgressBar msgProgressBar;
 
     /**
      * @return the progress bar that shows message query is in progress
