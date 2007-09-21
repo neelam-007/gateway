@@ -14,8 +14,8 @@
     <param name="japex.resultUnit" value="tps"/>        <!-- must be tps -->
     <param name="japex.warmupsPerDriver" value="0"/>    <!-- must be 0 -->
     <param name="japex.runsPerDriver" value="1"/>       <!-- must be 1 -->
-    <param name="japex.warmupTime" value="2"/>          <!-- 2 seconds -->
-    <param name="japex.runTime" value="10"/>            <!-- 10 seconds -->
+    <param name="japex.warmupTime" value="30"/>         <!-- 30 seconds -->
+    <param name="japex.runTime" value="60"/>            <!-- 60 seconds -->
 
     <param name= "layer7.name" value="${layer7.name}"/>
     <param name= "layer7.version" value="${layer7.version}"/>
