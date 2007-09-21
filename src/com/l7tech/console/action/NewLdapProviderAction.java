@@ -160,6 +160,7 @@ public class NewLdapProviderAction extends NewProviderAction {
                             tree.setSelectionPath(new TreePath(nodePath));
                         }
                     }
+                    removeEntityListener(listener);
                 }
             });
         }
