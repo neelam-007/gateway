@@ -4,10 +4,13 @@
         Ant build file for UneasyRooster
     </description>
 
-    <property environment="env"/>
-
     <!-- override configuration with user properties -->
     <property file="${user.home}/build.properties"/>
+
+    <!-- set environment properties -->
+    <property environment="env"/>
+    <property name="env.HOSTNAME" value="${env.COMPUTERNAME}"/>
+    <property name="hostname" value="${env.HOSTNAME}"/>
 
     <!-- Set src.root to ${basedir} if not already set -->
     <property name="src.root" location="${basedir}"/>
@@ -710,6 +713,12 @@
         <!-- Performance test config -->
         <property name="test.perf.from" value="teamcity@tyan64.l7tech.com"/>
         <property name="test.perf.to" value=""/>
+
+        <!-- Defaults for development SSG deployments -->
+        <property name="deploy.dir" value="${build.dir}"/>
+        <property name="deploy.keys.password" value="blahblah"/>
+        <property name="deploy.db.username" value="gateway"/>
+        <property name="deploy.db.password" value="7layer"/>
     </target>
 
     <!--
@@ -1320,6 +1329,18 @@
                 <include name="**/*.aegis.xml"/>
             </fileset>
         </copy>
+        <!-- include a copy of ssglog.properties that outputs to the console at CONFIG level -->
+        <copy todir="${build.classes}" overwrite="true">
+            <fileset dir="${src.root}/etc">
+                <include name="ssglog.properties"/>
+            </fileset>
+            <filterchain>
+                <tokenfilter>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}handlers[ ]{0,32}=)[ 0-9\._\-,a-zA-Z]{0,1024}$" replace=" java.util.logging.ConsoleHandler"/>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}java.util.logging.ConsoleHandler.level[ ]{0,32}=)[ 0-9\._\-,a-zA-Z]{0,1024}$" replace=" CONFIG"/>
+                </tokenfilter>
+            </filterchain>
+        </copy>        
     </target>
 
     <!--
@@ -1411,11 +1432,82 @@
     -->
     <target name="configwizard" description="Build and package just the config wizards" depends="package.configwiz.all"/>
 
+    <!--
+      Deploy SSG for development
+    -->
+    <target name="deploy" description="Deploy a development SSG (run with ./run.sh gateway)" depends="gateway, deploy.keys">
+        <echo level="info">Creating deployment directories</echo>
+        <mkdir dir="${deploy.dir}/etc/inf/ssg"/>
+        <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/var/attachments"/>
+        <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/var/modules"/>
+        <mkdir dir="${deploy.dir}/etc/ldapTemplates"/>
+        <mkdir dir="${deploy.dir}/lib"/>
+        <mkdir dir="${deploy.dir}/logs"/>
+        <mkdir dir="${deploy.dir}/modules/assertions"/>
+        <mkdir dir="${deploy.dir}/modules/lib"/>
+        
+        <echo level="info">Copying gateway files</echo>
+        <copy file="${src.root}/etc/tomcat/server.xml" todir="${deploy.dir}/etc/conf/partitions/default_" preservelastmodified="true"/>
+        <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" todir="${deploy.dir}/etc/conf/partitions/default_" overwrite="true">
+            <filterchain>
+                <tokenfilter>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.connection.url[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${database.url}"/>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.connection.username[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${deploy.db.username}"/>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.connection.password[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${deploy.db.password}"/>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.connection.driver_class[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${database.driver}"/>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.dbcp.validationQuery[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${database.pingstmt}"/>
+                </tokenfilter>
+            </filterchain>
+        </copy>
+        <copy todir="${deploy.dir}/etc/ldapTemplates" preservelastmodified="true">
+            <fileset dir="${src.root}/etc/ldapTemplates"/>
+        </copy>
+        <copy file="${src.root}/etc/tomcat/truststore.jks" todir="${deploy.dir}/etc/conf" preservelastmodified="true"/>
+        <copy file="${src.root}/web/index.html" todir="${deploy.dir}/etc/inf/ssg" preservelastmodified="true"/>
+        <copy todir="${deploy.dir}/modules/assertions" flatten="true" preservelastmodified="true">
+            <fileset dir="${src.root}/modules/assertions" includes="**/*.aar" excludes="**/CaWsdmAssertion*.aar"/>
+        </copy>
+        <copy todir="${deploy.dir}/lib" preservelastmodified="true">
+           <fileset dir="${build.dir}/gatewaylibs"/>
+        </copy>
+        <copy file="${build.dir}/Gateway.jar" todir="${deploy.dir}/" preservelastmodified="true"/>
+        <echo level="info">Finished copying gateway files</echo>
+    </target>
+
+    <target name="deploy.keys.check">
+        <available property="deploy.keys.notrequired" file="${deploy.dir}/etc/conf/partitions/default_/keystore.properties"/>
+    </target>
+    <target name="deploy.keys" unless="deploy.keys.notrequired" depends="deploy.keys.check">
+        <echo level="info">Generating X.509 keys and configuration ...</echo>
+        <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/keys"/>
+        <copy file="${src.root}/etc/keystore.properties" todir="${deploy.dir}/etc/conf/partitions/default_" overwrite="true">
+            <filterchain>
+                <tokenfilter>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}keystoredir[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${deploy.dir}/etc/conf/partitions/default_/keys"/>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}rootcakspasswd[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${deploy.keys.password}"/>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}sslkspasswd[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${deploy.keys.password}"/>
+                </tokenfilter>
+            </filterchain>
+        </copy>
+        <java classname="com.l7tech.server.util.SetKeys$NewCa">
+            <classpath>
+                <path refid="project.classpath"/>
+                <pathelement location="${build.classes}"/>
+            </classpath>
+            <!-- hostname ksdir capass sslpass kstype -->
+            <arg value="${hostname}"/>
+            <arg value="${deploy.dir}/etc/conf/partitions/default_/keys"/>
+            <arg value="${deploy.keys.password}"/>
+            <arg value="${deploy.keys.password}"/>
+            <arg value="PKCS12"/>
+        </java>
+    </target>
+
     <target name="pack.manager" depends="pack.manager.copy, pack.manager.compress"/>
 
     <target name="pack.manager.copy">
         <mkdir dir="${build.dir}/managerlibs"/>
-        <copy todir="${build.dir}/managerlibs">
+        <copy todir="${build.dir}/managerlibs" preservelastmodified="true">
             <fileset dir="${build.dir}/lib">
                 <patternset>
                     <exclude name="**/systinet-*"/>
@@ -1532,7 +1624,7 @@
 
         <!-- packaging gateway libs -->
         <mkdir dir="${build.dir}/gatewaylibs"/>
-        <copy todir="${build.dir}/gatewaylibs">
+        <copy todir="${build.dir}/gatewaylibs" preservelastmodified="true">
             <fileset dir="${build.dir}/lib" casesensitive="yes">
                 <patternset refid="gateway.libs"/>
             </fileset>
@@ -2908,7 +3000,7 @@
         <attribute name="dir"/>
         <sequential>
             <echo level="info">Copying @{name} Jars from @{dir} to ${build.lib}</echo>
-            <copy todir="${build.lib}">
+            <copy todir="${build.lib}" preservelastmodified="true">
                 <fileset dir="@{dir}">
                     <include name="*.jar"/>
                     <include name="*.zip"/>

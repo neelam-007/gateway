@@ -16,8 +16,7 @@
                  maxThreads="150" minSpareThreads="25" maxSpareThreads="75"
                  enableLookups="false" disableUploadTimeout="true"
                  acceptCount="100" scheme="https" secure="true"
-                 clientAuth="want" sslProtocol="TLS" keystoreFile="/ssg/etc/conf/partitions/default_/keys/ssl.ks"
-                 keystorePass="blahblah" keystoreType="PKCS12" keyAlias="tomcat"
+                 clientAuth="want" sslProtocol="TLS" 
                  SSLImplementation="com.l7tech.server.tomcat.SsgSSLImplementation"/>
 
       <!-- Define a "no client cert challenges" SSL HTTP/1.1 Connector -->
@@ -25,8 +24,7 @@
                  maxThreads="20" minSpareThreads="1" maxSpareThreads="10"
                  enableLookups="false" disableUploadTimeout="true"
                  acceptCount="100" scheme="https" secure="true"
-                 clientAuth="false" sslProtocol="TLS" keystoreFile="/ssg/etc/conf/partitions/default_/keys/ssl.ks"
-                 keystorePass="blahblah" keystoreType="PKCS12" keyAlias="tomcat"
+                 clientAuth="false" sslProtocol="TLS" 
                  SSLImplementation="com.l7tech.server.tomcat.SsgSSLImplementation"/>
 
     <!-- Define the top level container in our container hierarchy -->

@@ -95,6 +95,14 @@ case "$foo" in
 	manager)
 		exec installer/Manager-*/Manager.sh $*
 		;;
+	gateway)
+		SSG_HOME="$(test -f ~/build.properties && grep deploy.dir ~/build.properties | awk -F'=' '{print $NF}' | sed 's/ //g')"
+		if [ -z "${SSG_HOME}" ] ; then SSG_HOME="$(dirname $0)/build"; fi
+		cd ${SSG_HOME}
+		exec $JAVA_HOME/bin/java $JAVA_OPTS \
+			-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl \
+			-jar Gateway.jar $*
+		;;
 	textproxy)
 		target="com.l7tech.proxy.Main";
 		exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
