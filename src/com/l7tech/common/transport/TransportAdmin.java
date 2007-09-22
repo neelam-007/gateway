@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.List;
+import java.security.KeyStoreException;
+import java.security.UnrecoverableKeyException;
 
 /**
  * Provides a remote interface for creating, reading, updating and deleting
@@ -78,4 +81,23 @@ public interface TransportAdmin {
      */
     @Secured(stereotype=DELETE_BY_ID)
     void deleteSsgConnector(long oid) throws RemoteException, DeleteException, FindException;
+
+    /**
+     * Get the names of all cipher suites available on this system.
+     *
+     * @return the list of all cipher suites, ie { "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" }
+     * @throws java.rmi.RemoteException on remote communication error
+     */
+    @Transactional(readOnly=true)
+    String[] getAllCipherSuiteNames() throws RemoteException;
+
+    /**
+     * Get the names of all cipher suites enabled by default on this system.
+     *
+     * @return the list of all cipher suites that are enabled by default,
+     *         ie { "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" }
+     * @throws java.rmi.RemoteException on remote communication error
+     */
+    @Transactional(readOnly=true)
+    String[] getDefaultCipherSuiteNames() throws RemoteException;
 }

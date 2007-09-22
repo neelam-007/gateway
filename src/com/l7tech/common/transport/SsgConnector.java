@@ -18,10 +18,14 @@ public class SsgConnector extends NamedEntityImp {
     /** Indicates that a client certificate challenge will always be sent, but the handshake will succeed anyway if the client declines it. */
     public static final int CLIENT_AUTH_OPTIONAL = 2;
 
-    private String name;
+    public static final String SCHEME_HTTP = "HTTP";
+    public static final String SCHEME_HTTPS = "HTTPS";
+    public static final String SCHEME_FTP = "FTP";
+    public static final String SCHEME_FTPS = "FTPS";
+    
     private boolean enabled = true;
     private int port;
-    private String scheme = "http";
+    private String scheme = SCHEME_HTTP;
     private boolean secure;
     private int clientAuth;
     private Long keystoreOid;
@@ -34,21 +38,13 @@ public class SsgConnector extends NamedEntityImp {
     public SsgConnector(long oid, String name, int port, String scheme, boolean secure, int clientAuth, Long keystoreOid, String keyAlias) {
         super();
         setOid(oid);
-        this.name = name;
+        setName(name);
         this.port = port;
         this.scheme = scheme;
         this.secure = secure;
         this.clientAuth = clientAuth;
         this.keystoreOid = keystoreOid;
         this.keyAlias = keyAlias;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public boolean isEnabled() {
@@ -74,8 +70,6 @@ public class SsgConnector extends NamedEntityImp {
      * @param port a TCP port from 1-65535.
      */
     public void setPort(int port) {
-        if (port < 1 || port > 65535)
-            throw new IllegalArgumentException("illegal TCP port number: " + port);
         this.port = port;
     }
 
@@ -94,10 +88,7 @@ public class SsgConnector extends NamedEntityImp {
      * @param scheme a scheme.  currently must be one of "http" or "https".
      */
     public void setScheme(String scheme) {
-        if ("http".equals(scheme) || "https".equals(scheme))
-            this.scheme = scheme;
-        else
-            throw new IllegalArgumentException("illegal scheme: " + scheme);
+        this.scheme = scheme;
     }
 
     /**
@@ -125,8 +116,8 @@ public class SsgConnector extends NamedEntityImp {
     /**
      * Check the client auth state for this connector.
      *
-     * @return one of {@link #CLIENT_AUTH_NEVER}, {@link #CLIENT_AUTH_ALWAYS}, or
-     *         {@link #CLIENT_AUTH_OPTIONAL}.
+     * @return the current client auth setting, typically one of {@link #CLIENT_AUTH_NEVER},
+               {@link #CLIENT_AUTH_ALWAYS}, or {@link #CLIENT_AUTH_OPTIONAL}.
      */
     public int getClientAuth() {
         return clientAuth;
@@ -139,15 +130,7 @@ public class SsgConnector extends NamedEntityImp {
      *         {@link #CLIENT_AUTH_OPTIONAL}.
      */
     public void setClientAuth(int clientAuth) {
-        switch (clientAuth) {
-        case CLIENT_AUTH_ALWAYS:
-        case CLIENT_AUTH_NEVER:
-        case CLIENT_AUTH_OPTIONAL:
-            this.clientAuth = clientAuth;
-            break;
-        default:
-            throw new IllegalArgumentException("illegal clientAuth value: " + clientAuth);
-        }
+        this.clientAuth = clientAuth;
     }
 
     /**
@@ -197,6 +180,12 @@ public class SsgConnector extends NamedEntityImp {
         this.keyAlias = keyAlias;
     }
 
+    /**
+     * Get an arbitrary connector property.
+     *
+     * @param key  the name of the property to get
+     * @return the requested property, or null if it is not set
+     */
     public String getProperty(String key) {
         for (SsgConnectorProperty property : properties) {
             if (key.equals(property.getName()))
@@ -205,6 +194,12 @@ public class SsgConnector extends NamedEntityImp {
         return null;
     }
 
+    /**
+     * Set an arbitrary connector property.
+     *
+     * @param key  the name of the property to set
+     * @param value the value to set it to
+     */
     public void putProperty(String key, String value) {
         for (SsgConnectorProperty property : properties) {
             if (key.equals(property.getName())) {
@@ -238,6 +233,7 @@ public class SsgConnector extends NamedEntityImp {
         this.properties = properties;
     }
 
+    /** @noinspection RedundantIfStatement*/
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -251,7 +247,6 @@ public class SsgConnector extends NamedEntityImp {
         if (secure != that.secure) return false;
         if (keyAlias != null ? !keyAlias.equals(that.keyAlias) : that.keyAlias != null) return false;
         if (keystoreOid != null ? !keystoreOid.equals(that.keystoreOid) : that.keystoreOid != null) return false;
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
         if (properties != null ? !properties.equals(that.properties) : that.properties != null) return false;
         if (scheme != null ? !scheme.equals(that.scheme) : that.scheme != null) return false;
 
@@ -260,7 +255,6 @@ public class SsgConnector extends NamedEntityImp {
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (enabled ? 1 : 0);
         result = 31 * result + port;
         result = 31 * result + (scheme != null ? scheme.hashCode() : 0);

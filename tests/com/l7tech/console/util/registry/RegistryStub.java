@@ -185,6 +185,14 @@ public class RegistryStub extends Registry {
             public void deleteSsgConnector(long oid) throws RemoteException, DeleteException, FindException {
                 throw new DeleteException("Unable to delete any connectors in stub mode");
             }
+
+            public String[] getAllCipherSuiteNames() throws RemoteException {
+                return new String[0];
+            }
+
+            public String[] getDefaultCipherSuiteNames() throws RemoteException {
+                return new String[0];
+            }
         };
     }
 

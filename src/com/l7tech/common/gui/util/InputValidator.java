@@ -29,11 +29,33 @@ import java.util.List;
 public class InputValidator implements FocusListener {
     private final String dialogTitle;
     private final Component dialogParent;
-    private final List rules = new ArrayList();
+    private final List<ValidationRule> rules = new ArrayList<ValidationRule>();
     private final Map<ModelessFeedback, String> feedbacks = new HashMap<ModelessFeedback, String>();
     private final Map<ModelessFeedback, String> hiddenFeedbacks = new HashMap<ModelessFeedback, String>();
     private final Set<Component> focusListening = new HashSet<Component>();
     private AbstractButton buttonToEnable = null;
+    private DocumentListener validatingDocumentListener = new DocumentListener() {
+        public void insertUpdate(DocumentEvent e) {
+            isValid();
+        }
+
+        public void removeUpdate(DocumentEvent e) {
+            isValid();
+        }
+
+        public void changedUpdate(DocumentEvent e) {
+            isValid();
+        }
+    };
+    private PropertyChangeListener validatingEnableStateListener = new PropertyChangeListener() {
+        public void propertyChange(PropertyChangeEvent evt) {
+            String prop = evt.getPropertyName();
+            if (prop == null || "enabled".equals(prop)) {
+                // Revalidate when monitored field is enabled or disabled
+                isValid();
+            }
+        }
+    };
 
     /**
      * Create a validator that will display validation error messages using the specified component the dialog
@@ -68,7 +90,10 @@ public class InputValidator implements FocusListener {
         }
     }
 
-    /** Register a custom validation rule that has already been configured to monitor a componenet for changes. */
+    /**
+     * Register a custom validation rule that has already been configured to monitor a componenet for changes.
+     * @param rule the rule to add
+     */
     private void addRule(ValidationRule rule) {
         if (rule == null) throw new NullPointerException();
         rules.add(rule);
@@ -82,6 +107,7 @@ public class InputValidator implements FocusListener {
 
     /**
      * Remove a validation rule.
+     * @param rule the rule to remove
      * @return true iff. a rule was removed
      */
     public boolean removeRule(ValidationRule rule) {
@@ -174,6 +200,22 @@ public class InputValidator implements FocusListener {
     }
 
     /**
+     * Configure the specified text component to trigger a validation whenever its document is changed.
+     * <p/>
+     * This must be done after any call that changes the component's documnet
+     * (for example, {@link #constrainTextFieldToNumberRange}).
+     *
+     * @param comp the component to trigger validation
+     */
+    public void validateWhenDocumentChanges(final JTextComponent comp) {
+        // TODO can we validate only the field that changed, watching for the last invalid one to become valid?
+        comp.getDocument().removeDocumentListener(validatingDocumentListener);
+        comp.getDocument().addDocumentListener(validatingDocumentListener);
+        comp.removePropertyChangeListener(validatingEnableStateListener);
+        comp.addPropertyChangeListener(validatingEnableStateListener);
+    }
+
+    /**
      * Configure the specified text component so that validation will fail if the specified rule fails.
      * <p/>
      * The field will <b>not</b> be validated if it is disabled -- validation rules for disabled fields will always
@@ -217,30 +259,7 @@ public class InputValidator implements FocusListener {
      */
     private void validateOnChange(JTextComponent comp) {
         if (buttonToEnable != null) {
-            // TODO can we validate only the field that changed, watching for the last invalid one to become valid?
-            comp.getDocument().addDocumentListener(new DocumentListener() {
-                public void insertUpdate(DocumentEvent e) {
-                    isValid();
-                }
-
-                public void removeUpdate(DocumentEvent e) {
-                    isValid();
-                }
-
-                public void changedUpdate(DocumentEvent e) {
-                    isValid();
-                }
-            });
-
-            comp.addPropertyChangeListener(new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent evt) {
-                    String prop = evt.getPropertyName();
-                    if (prop == null || "enabled".equals(prop)) {
-                        // Revalidate when monitored field is enabled or disabled
-                        isValid();
-                    }
-                }
-            });
+            validateWhenDocumentChanges(comp);
         }
     }
 
@@ -252,6 +271,7 @@ public class InputValidator implements FocusListener {
      * action listener directly.
      *
      * @param button  the button to which an ActionListener should be added.  Must not be null.
+     * @param runOnSuccess  the action to invoke if the button is pressed and validation succeeds
      */
     public void attachToButton(final AbstractButton button, final ActionListener runOnSuccess) {
         button.addActionListener(new ActionListener() {
@@ -289,9 +309,8 @@ public class InputValidator implements FocusListener {
         feedbacks.clear();
         hiddenFeedbacks.clear();
         try {
-            List errors = new ArrayList();
-            for (Iterator i = rules.iterator(); i.hasNext();) {
-                ValidationRule rule = (ValidationRule)i.next();
+            List<String> errors = new ArrayList<String>();
+            for (ValidationRule rule : rules) {
                 ModelessFeedback feedback = getFeedback(rule);
                 String err = rule.getValidationError();
                 if (err != null) {
@@ -312,7 +331,7 @@ public class InputValidator implements FocusListener {
                 }
             }
             if (buttonToEnable != null) buttonToEnable.setEnabled(errors.isEmpty());
-            return (String[])errors.toArray(new String[0]);
+            return errors.toArray(new String[0]);
         } finally {
             updateAllFeedback();
         }
@@ -357,7 +376,8 @@ public class InputValidator implements FocusListener {
 
     /**
      * Runs all validation rules, and displays an error dialog (and throws) if any fail.
-     * Returns true if validation succeeded, or false if an error dialog has already been displayed.
+     *
+     * @return true if validation succeeded, or false if an error dialog has already been displayed.
      */
     public boolean validateWithDialog() {
         String err = validate();
