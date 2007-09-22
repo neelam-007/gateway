@@ -185,7 +185,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             dlg.setModal(true);
             dlg.setTitle("Certificate Properties");
             Utilities.centerOnParentWindow(dlg);
-            dlg.setVisible(true);
+            DialogDisplayer.display(dlg);
         } catch (CertificateEncodingException e) {
             logger.log(Level.WARNING, "problem reading cert", e);
         }
