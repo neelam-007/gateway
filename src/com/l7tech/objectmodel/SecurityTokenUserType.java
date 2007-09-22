@@ -72,7 +72,7 @@ public class SecurityTokenUserType implements UserType {
             preparedStatement.setInt(index, securityTokenType.getNum());
         }
         else {
-            preparedStatement.setNull(index, Types.BLOB);
+            preparedStatement.setNull(index, Types.INTEGER);
         }
     }
 
@@ -85,7 +85,7 @@ public class SecurityTokenUserType implements UserType {
     }
 
     public int[] sqlTypes() {
-        return new int[]{ Types.BLOB };
+        return new int[]{ Types.INTEGER };
     }
 
 }

@@ -28,7 +28,7 @@
         </id>
 
         <!-- For subclasses -->
-        <discriminator column="type"/>
+        <discriminator column="type" type="int"/>
 
         <version name="version" column="version" type="integer"/>
 
