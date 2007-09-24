@@ -24,6 +24,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
     private List<String> manualSteps;
     private String logFilename = "ssgconfig0.log";
     private File manualStepsFile;
+    private static final String CONFIG_ERRORS_TEXT = getEolChar() + "*** Configuration problems detected: There were warnings and/or errors during configuration, see the logs above for details. ***" + getEolChar();
 
     public ConfigWizardConsoleResultsStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -80,7 +81,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
             }
         }
         if (wizard.isHadFailures()) {
-            printText(getEolChar() + "*** Configuration failed. There were errors during configuration, see the logs above for details. ***" + getEolChar());
+            printText(CONFIG_ERRORS_TEXT);
             printText(getEolChar() + "The wizard will now exit." + getEolChar());
         }
         else
