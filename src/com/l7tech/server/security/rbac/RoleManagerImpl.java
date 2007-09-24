@@ -6,6 +6,7 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.common.security.rbac.EntityType;
 import static com.l7tech.common.security.rbac.EntityType.ANY;
 import com.l7tech.common.security.rbac.*;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
@@ -89,6 +90,32 @@ public class RoleManagerImpl
     public void update(Role role) throws UpdateException {
         if (role.getOid() == Role.ADMIN_ROLE_OID && role.getUserAssignments().isEmpty())
             throw new UpdateException(RoleManager.ADMIN_REQUIRED);
+
+        // Merge in OIDs for any known user assignments (See bug 4176)
+        boolean needsOidMerge = false;
+        for ( UserRoleAssignment ura : role.getUserAssignments() ) {
+            if ( ura.getOid() == UserRoleAssignment.DEFAULT_OID ) {
+                needsOidMerge = true;
+                break;
+            }
+        }
+
+        if ( needsOidMerge ) {
+            try {
+                Role persistedRole = findByPrimaryKey(role.getOid());
+                Set previousAssignments = persistedRole.getUserAssignments();
+
+                for ( UserRoleAssignment ura : role.getUserAssignments() ) {
+                    if ( ura.getOid() == UserRoleAssignment.DEFAULT_OID ) {
+                        ura.setOid(getOidForAssignment(previousAssignments, ura));
+                    }
+                }
+            } catch (FindException fe) {
+                // fail on update below
+                logger.log(Level.FINE, "Find error when merging assignments for role", ExceptionUtils.getDebugException(fe));
+            }
+        }
+
         super.update(role);
     }
 
@@ -175,5 +202,19 @@ public class RoleManagerImpl
             role.setName(newName);
             update(role);
         }
+    }
+
+    private long getOidForAssignment(Set<UserRoleAssignment> userRoleAssignments, UserRoleAssignment assignment) {
+        long oid = UserRoleAssignment.DEFAULT_OID;
+
+        for ( UserRoleAssignment ura : userRoleAssignments ) {
+            if ( ura.getProviderId()==assignment.getProviderId() &&
+                 ura.getUserId().equals(assignment.getUserId())  ) {
+                oid = ura.getOid();
+                break;
+            }
+        }
+
+        return oid;
     }
 }
