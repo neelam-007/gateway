@@ -312,11 +312,14 @@ public class WsdlComposer {
         Message newInputMsg = operation.getInput().getMessage();
         newInputMsg.setQName(new QName(targetNamespace, newInputMsg.getQName().getLocalPart()));
 
-        Message newOutMessage = operation.getOutput().getMessage();
-        newOutMessage.setQName(new QName(targetNamespace, newOutMessage.getQName().getLocalPart()));
+        Output output = operation.getOutput();
+        if (output != null) {
+            Message newOutMessage = output.getMessage();
+            newOutMessage.setQName(new QName(targetNamespace, newOutMessage.getQName().getLocalPart()));
+            internalAddMessage(newOutMessage);
+        }
 
         internalAddMessage(newInputMsg);
-        internalAddMessage(newOutMessage);
 
         Map faults = operation.getFaults();
         if (faults != null) {
@@ -483,6 +486,8 @@ public class WsdlComposer {
     }
 
     private Output copyOutput(Output sourceOutput) {
+        // An one-way operation might not have any output (Bug #3697)
+        if (sourceOutput == null) return null;
         Output newOutput = delegateWsdl.createOutput();
         newOutput.setName(sourceOutput.getName());
         newOutput.setDocumentationElement(sourceOutput.getDocumentationElement());
@@ -525,7 +530,8 @@ public class WsdlComposer {
                 in.getMessage().setQName(new QName(targetNamespace, in.getMessage().getQName().getLocalPart()));
 
                 Output out = operation.getOutput();
-                out.getMessage().setQName(new QName(targetNamespace, out.getMessage().getQName().getLocalPart()));
+                if (out != null)
+                    out.getMessage().setQName(new QName(targetNamespace, out.getMessage().getQName().getLocalPart()));
 
                 for (Object o : operation.getFaults().values()) {
                     Fault f = (Fault) o;

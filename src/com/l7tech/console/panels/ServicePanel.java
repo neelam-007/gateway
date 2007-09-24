@@ -123,7 +123,7 @@ public class ServicePanel extends WizardStepPanel {
                         }
                     }
                 }
-                if (sa.getAssertion() != null && sa.getAssertion().getChildren().isEmpty()) {
+                if (sa.getAssertion() != null && sa.getAssertion().getChildren().isEmpty() && sa.getRoutingAssertion() != null) {
                     sa.getAssertion().addChild(sa.getRoutingAssertion());
                 }
             }

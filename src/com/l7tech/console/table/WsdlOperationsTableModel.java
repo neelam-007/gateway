@@ -229,7 +229,8 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
                     operation.getInput().setMessage((Message)aValue);
                 } else if (columnIndex == 2) {
                     operation = addOperation();
-                    operation.getOutput().setMessage((Message)aValue);
+                    if (operation.getOutput() != null)
+                        operation.getOutput().setMessage((Message)aValue);
                 }
                 if (operation != null) ensureInputOutputMessages(operation);
             }
@@ -250,10 +251,12 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
                 op.getInput().setMessage((Message)aValue);
             } else if (columnIndex == 2) {
                 if (aValue == null) {
-                    op.getOutput().setMessage(null);
+                    if (op.getOutput() != null)
+                        op.getOutput().setMessage(null);
                     return;
                 }
-                op.getOutput().setMessage((Message)aValue);
+                if (op.getOutput() != null)
+                    op.getOutput().setMessage((Message)aValue);
             } else {
                 throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
             }
