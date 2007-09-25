@@ -22,7 +22,10 @@ public class SsgConnector extends NamedEntityImp {
     public static final String SCHEME_HTTPS = "HTTPS";
     public static final String SCHEME_FTP = "FTP";
     public static final String SCHEME_FTPS = "FTPS";
-    
+
+    /** Custom cipher list.  If set, should be a comma-separated ordered list, ie "TLS_RSA_WITH_AES_128_CBC_SHA, SSL_RSA_WITH_3DES_EDE_CBC_SHA". */
+    public static final String PROP_CIPHERLIST = "cipherList";
+
     private boolean enabled = true;
     private int port;
     private String scheme = SCHEME_HTTP;
@@ -195,20 +198,32 @@ public class SsgConnector extends NamedEntityImp {
     }
 
     /**
-     * Set an arbitrary connector property.
+     * Set an arbitrary connector property.  Set a property to null to remove it.
      *
      * @param key  the name of the property to set
-     * @param value the value to set it to
+     * @param value the value to set it to, or null to remove the property
      */
     public void putProperty(String key, String value) {
+        SsgConnectorProperty found = null;
         for (SsgConnectorProperty property : properties) {
             if (key.equals(property.getName())) {
-                property.setValue(value);
-                return;
+                found = property;
+                break;
             }
         }
 
-        properties.add(new SsgConnectorProperty(this, key, value));
+        if (value == null) {
+            // Remove it
+            if (found != null)
+                properties.remove(found);
+            return;
+        }
+
+        // Add or update it
+        if (found == null)
+            properties.add(new SsgConnectorProperty(this, key, value));
+        else
+            found.setValue(value);
     }
 
     /**

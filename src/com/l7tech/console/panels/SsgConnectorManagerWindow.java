@@ -102,9 +102,9 @@ public class SsgConnectorManagerWindow extends JDialog {
             }
         });
 
+        loadConnectors();
         pack();
         enableOrDisableButtons();
-        loadConnectors();
     }
 
     private void doRemove() {
@@ -203,9 +203,9 @@ public class SsgConnectorManagerWindow extends JDialog {
                 rows.add(new ConnectorTableRow(connector));
             connectorTable.setData(rows);
         } catch (RemoteException e) {
-            showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
+            showErrorMessage("Deletion Failed", "Unable to delete listen port: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
-            showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
+            showErrorMessage("Deletion Failed", "Unable to delete listen port: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

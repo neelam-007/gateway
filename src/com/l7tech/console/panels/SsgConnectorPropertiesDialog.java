@@ -11,6 +11,8 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
 import java.awt.event.*;
 import java.rmi.RemoteException;
@@ -100,12 +102,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
 
-        defaultCipherListButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                populateCipherSuiteComboBox();
-            }
-        });
-
         protocolComboBox.setModel(new DefaultComboBoxModel(new Object[] {
                 SCHEME_HTTP,
                 SCHEME_HTTPS,
@@ -115,11 +111,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         protocolComboBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
-                enableOrDisableComponents();
+                enableOrDisableTabs();
             }
         });
 
-        populateCipherSuiteComboBox();
+        initializeCipherSuiteControls();
 
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, null);
         inputValidator.validateWhenDocumentChanges(nameField);
@@ -141,7 +137,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
     }
 
-    private static class CipherSuiteListModel extends AbstractListModel {
+    private class CipherSuiteListModel extends AbstractListModel {
         private final List<CipherSuiteListEntry> entries = new ArrayList<CipherSuiteListEntry>();
         private int armedEntry = -1;
 
@@ -155,13 +151,25 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         public Object getElementAt(int index) {
+            return getEntryAt(index);
+        }
+
+        public CipherSuiteListEntry getEntryAt(int index) {
             return entries.get(index);
+        }
+
+        public void swapEntries(int index1, int index2) {
+            CipherSuiteListEntry value1 = entries.get(index1);
+            CipherSuiteListEntry value2 = entries.get(index2);
+            entries.set(index2, value1);
+            entries.set(index1, value2);
+            fireContentsChanged(this, index1, index2);
         }
 
         private void arm(int index) {
             disarm();
             if (index < 0) return;
-            ButtonModel entryModel = entries.get(index).getModel();
+            ButtonModel entryModel = getEntryAt(index).getModel();
             entryModel.setArmed(true);
             entryModel.setRollover(true);
             armedEntry = index;
@@ -170,7 +178,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         private void disarm() {
             if (armedEntry >= 0) {
-                entries.get(armedEntry).getModel().setArmed(false);
+                getEntryAt(armedEntry).getModel().setArmed(false);
                 fireContentsChanged(this, armedEntry, armedEntry);
                 armedEntry = -1;
             }
@@ -178,12 +186,76 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         public void toggle(int index) {
             if (armedEntry >= 0 && armedEntry != index) disarm();
-            CipherSuiteListEntry entry = entries.get(index);
+            CipherSuiteListEntry entry = getEntryAt(index);
             ButtonModel entryModel = entry.getModel();
             entryModel.setArmed(false);
             entryModel.setRollover(false);
             entry.setSelected(!entry.isSelected());
             fireContentsChanged(this, index, index);
+        }
+
+        /**
+         * @return cipher list string corresponding to all checked cipher names in order, comma delimited, ie.
+         *         "TLS_RSA_WITH_AES_128_CBC_SHA, SSL_RSA_WITH_3DES_EDE_CBC_SHA", or null if the default
+         *         cipher list is in use.
+         */
+        public String asCipherListString() {
+            String defaultList = buildDefaultCipherListString();
+            String ourList = buildCipherListString();
+            return defaultList.equals(ourList) ? null : ourList;
+        }
+
+        private String buildCipherListString() {
+            StringBuilder ret = new StringBuilder();
+            boolean isFirst = true;
+            for (CipherSuiteListEntry entry : entries) {
+                if (entry.isSelected()) {
+                    if (!isFirst) ret.append(',');
+                    ret.append(entry.getText());
+                    isFirst = false;
+                }
+            }
+            return ret.toString();
+        }
+
+        private String buildDefaultCipherListString() {
+            StringBuilder ret = new StringBuilder();
+            boolean isFirst = true;
+            for (String cipher : allCiphers) {
+                if (defaultCiphers.contains(cipher)) {
+                    if (!isFirst) ret.append(',');
+                    ret.append(cipher);
+                    isFirst = false;
+                }
+            }
+            return ret.toString();
+        }
+
+        /**
+         * Populate the list model from the specified cipher list string.
+         * This will first build a master list of ciphers by appending any missing ciphers from allCiphers
+         * to the end of the provided cipherList, then marking as "checked" only those ciphers that were present
+         * in cipherList.
+         *
+         * @param cipherList a cipher list string, ie "TLS_RSA_WITH_AES_128_CBC_SHA, SSL_RSA_WITH_3DES_EDE_CBC_SHA",
+         *                   or null to just use the default cipher list.
+         */
+        public void setCipherListString(String cipherList) {
+            if (cipherList == null) {
+                populateCipherSuiteComboBox();
+                return;
+            }
+
+            Set<String> enabled = new LinkedHashSet<String>(Arrays.asList(cipherList.split("\\s*,\\s*")));
+            Set<String> all = new LinkedHashSet<String>(Arrays.asList(allCiphers));
+            entries.clear();
+            for (String cipher : enabled) {
+                entries.add(new CipherSuiteListEntry(cipher, true));
+            }
+            for (String cipher : all) {
+                if (!enabled.contains(cipher))
+                    entries.add(new CipherSuiteListEntry(cipher, false));
+            }
         }
     }
 
@@ -205,6 +277,72 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
     }
 
+    private void initializeCipherSuiteControls() {
+        populateCipherSuiteComboBox();
+        cipherSuiteList.setSelectionModel(new CipherSuiteListSelectionModel());
+        cipherSuiteList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        cipherSuiteList.setCellRenderer(new CipherSuiteListCellRenderer());
+        cipherSuiteList.addMouseListener(new MouseAdapter() {
+            public void mouseExited(MouseEvent e) {
+                cipherSuiteListModel.disarm();
+            }
+
+            public void mousePressed(MouseEvent e) {
+                int selectedIndex = cipherSuiteList.locationToIndex(e.getPoint());
+                if (selectedIndex < 0) return;
+                cipherSuiteListModel.disarm();
+                cipherSuiteListModel.arm(selectedIndex);
+            }
+
+            public void mouseReleased(MouseEvent e) {
+                int selectedIndex = cipherSuiteList.locationToIndex(e.getPoint());
+                if (selectedIndex < 0) return;
+                cipherSuiteListModel.toggle(selectedIndex);
+            }
+        });
+        // Change unmodified space from 'addToSelection' to 'toggleCheckBox' (ie, same as our above single-click handler)
+        cipherSuiteList.getInputMap().put(KeyStroke.getKeyStroke(' '), "toggleCheckBox");
+        cipherSuiteList.getActionMap().put("toggleCheckBox", new AbstractAction("toggleCheckBox") {
+            public void actionPerformed(ActionEvent e) {
+                int selectedIndex = cipherSuiteList.getSelectedIndex();
+                cipherSuiteListModel.toggle(selectedIndex);
+            }
+        });
+        cipherSuiteList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                enableOrDisableCipherSuiteButtons();
+            }
+        });
+
+        defaultCipherListButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                populateCipherSuiteComboBox();
+            }
+        });
+
+        moveUpButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int index = cipherSuiteList.getSelectedIndex();
+                if (index < 1) return;
+                int prevIndex = index - 1;
+                cipherSuiteListModel.swapEntries(prevIndex, index);
+                cipherSuiteList.setSelectedIndex(prevIndex);
+                cipherSuiteList.ensureIndexIsVisible(prevIndex);
+            }
+        });
+
+        moveDownButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int index = cipherSuiteList.getSelectedIndex();
+                if (index < 0 || index >= cipherSuiteListModel.getSize() - 1) return;
+                int nextIndex = index + 1;
+                cipherSuiteListModel.swapEntries(index, nextIndex);
+                cipherSuiteList.setSelectedIndex(nextIndex);
+                cipherSuiteList.ensureIndexIsVisible(nextIndex);
+            }
+        });
+    }
+
     private void populateCipherSuiteComboBox() {
         try {
             if (allCiphers == null)
@@ -217,25 +355,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 entries.add(new CipherSuiteListEntry(cipher, defaultCiphers.contains(cipher)));
             cipherSuiteListModel = new CipherSuiteListModel(entries);
             cipherSuiteList.setModel(cipherSuiteListModel);
-            cipherSuiteList.setSelectionModel(new CipherSuiteListSelectionModel());
-            cipherSuiteList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            cipherSuiteList.setCellRenderer(new CipherSuiteListCellRenderer());
-            cipherSuiteList.addMouseListener(new MouseAdapter() {
-                public void mouseExited(MouseEvent e) {
-                    cipherSuiteListModel.disarm();
-                }
-
-                public void mousePressed(MouseEvent e) {
-                    cipherSuiteListModel.disarm();
-                    int selectedIndex = cipherSuiteList.locationToIndex(e.getPoint());
-                    cipherSuiteListModel.arm(selectedIndex);
-                }
-
-                public void mouseReleased(MouseEvent e) {
-                    int selectedIndex = cipherSuiteList.locationToIndex(e.getPoint());
-                    cipherSuiteListModel.toggle(selectedIndex);
-                }
-            });
         } catch (RemoteException e) {
             showErrorMessage("Error", "Unable to load cipher suites: " + ExceptionUtils.getMessage(e), e);
         }
@@ -254,13 +373,26 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private void enableOrDisableComponents() {
+        enableOrDisableTabs();
+        enableOrDisableCipherSuiteButtons();
+    }
+
+    private void enableOrDisableTabs() {
         tabbedPane.setEnabledAt(TAB_SSL, isSslProto(getSelectedProtocol()));
         tabbedPane.setEnabledAt(TAB_FTP, isFtpProto(getSelectedProtocol()));
+    }
+
+    private void enableOrDisableCipherSuiteButtons() {
+        int index = cipherSuiteList.getSelectedIndex();
+        moveUpButton.setEnabled(index > 0);
+        moveDownButton.setEnabled(index >= 0 && index < cipherSuiteListModel.getSize() - 1);
     }
 
     private void modelToView() {
         nameField.setText(connector.getName());
         portField.setText(String.valueOf(connector.getPort()));
+        cipherSuiteListModel.setCipherListString(connector.getProperty(SsgConnector.PROP_CIPHERLIST));
+
         // TODO
         enableOrDisableComponents();
     }
@@ -268,6 +400,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private void viewToModel() {
         connector.setName(nameField.getText());
         connector.setPort(Integer.parseInt(portField.getText()));
+        connector.putProperty(SsgConnector.PROP_CIPHERLIST, cipherSuiteListModel.asCipherListString());
+
         // TODO
     }
 
