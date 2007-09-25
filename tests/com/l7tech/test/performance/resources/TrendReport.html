@@ -250,8 +250,7 @@
                         avg = Number(cells[columnIndex].innerHTML);
                     }
                     for (var columnIndex = 1; columnIndex < cells.length - 2; columnIndex += 2) {
-                        var cell = cells[columnIndex];
-                        var value = cell.innerHTML;
+                        var value = cells[columnIndex].innerHTML;
                         if (value != "") {
                             var delta;  // percentage difference
                             if (benchmark == "stdev") {
@@ -272,7 +271,8 @@
                             } else {
                                 alert("Programming Error: missing code to handle comparison type: " + comparison);
                             }
-                            cell.style.backgroundColor = highlight ? "yellow" : "white";
+                            cells[columnIndex    ].style.backgroundColor = highlight ? "yellow" : "white";
+                            cells[columnIndex + 1].style.backgroundColor = highlight ? "yellow" : "white";
                         }
                     }
                 }
@@ -335,7 +335,7 @@
                 <option value="stdev">Standard Deviation</option>
                 <!--{next report option}-->
             </select>
-            (only reports checked above are used to calculate averges and standard deviations)
+            (only reports checked above are used to calculate averages and standard deviations)
         </div>
         <div>
             <table id="resultsTable" class="bluewhite">
