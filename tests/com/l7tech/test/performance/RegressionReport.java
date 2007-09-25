@@ -40,6 +40,8 @@ public class RegressionReport {
     private static final String BASE_HREF_MARKER = "<!--{base href}-->";
     private static final String TITLE_MARKER = "<!--{title}-->";
     private static final String CREATION_TIME_MARKER = "<!--{creation time}-->";
+    private static final String CREATORE_MARKER = "<!--{creator}-->";
+    private static final String HOSTNAME_MARKER = "<!--{hostname}-->";
     private static final String THRESHOLD_MARKER = "<!--{threshold}-->";
     private static final String BENCHMARK_HEADER_1_MARKER = "<!--{benchmark header 1}-->";
     private static final String BENCHMARK_HEADER_2_MARKER = "<!--{benchmark header 2}-->";
@@ -121,6 +123,8 @@ public class RegressionReport {
         final StringBuilder html = PerformanceUtil.readResource(getClass(), HTML_TEMPLATE_PATH);
         PerformanceUtil.replaceMarkerAll(html, TITLE_MARKER, StringEscapeUtils.escapeHtml(params.getTitle()));
         PerformanceUtil.replaceMarkerAll(html, CREATION_TIME_MARKER, StringEscapeUtils.escapeHtml(LONG_DATE_FORMAT.format(new Date())));
+        PerformanceUtil.replaceMarkerAll(html, CREATORE_MARKER, TrendReport.class.getName());
+        PerformanceUtil.replaceMarkerAll(html, HOSTNAME_MARKER, InetAddress.getLocalHost().getHostName());
 
         final StringBuilder thresholdHtml = new StringBuilder();
         thresholdHtml.append(params.getPercent())

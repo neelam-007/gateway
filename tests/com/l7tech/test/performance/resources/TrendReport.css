@@ -40,12 +40,25 @@ p {
     margin-bottom: 0px;
 }
 
+table {
+    border: none;
+    font-size: 12px;
+}
+
+table.meta th {
+    border: none;
+    text-align: left;
+}
+
+table.meta td {
+    border: none;
+}
+
 table.bluewhite {
 	border: 2px solid #005A9C;
 	border-spacing: 2px;
 	border-collapse: collapse;
 	background-color: white;
-    font-size: 12px;
 }
 
 table.bluewhite th {

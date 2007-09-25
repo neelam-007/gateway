@@ -23,6 +23,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -47,6 +48,8 @@ public class TrendReport {
     // Index page HTML template markers.
     private static final String TITLE_MARKER = "<!--{title}-->";
     private static final String CREATION_TIME_MARKER = "<!--{creation time}-->";
+    private static final String CREATORE_MARKER = "<!--{creator}-->";
+    private static final String HOSTNAME_MARKER = "<!--{hostname}-->";
     private static final String REPORTS_ROW_MARKER = "<!--{next report row}-->";
     private static final String REPORTS_OPTION_MARKER = "<!--{next report option}-->";
     private static final String RESULTS_HEADER_1_MARKER = "<!--{results header row 1}-->";
@@ -102,6 +105,8 @@ public class TrendReport {
         final StringBuilder html = PerformanceUtil.readResource(getClass(), HTML_TEMPLATE_PATH);
         PerformanceUtil.replaceMarkerAll(html, TITLE_MARKER, params.getTitle());
         PerformanceUtil.replaceMarkerAll(html, CREATION_TIME_MARKER, LONG_DATE_FORMAT.format(new Date()));
+        PerformanceUtil.replaceMarkerAll(html, CREATORE_MARKER, TrendReport.class.getName());
+        PerformanceUtil.replaceMarkerAll(html, HOSTNAME_MARKER, InetAddress.getLocalHost().getHostName());
 
         // Populates reportsTable.
         int reportIndex = 0;

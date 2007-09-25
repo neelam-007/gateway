@@ -209,18 +209,39 @@
              * Calculates percentage differences of each value from avg in the results table.
              */
             function calcDiffs() {
+                var diffType;
+                var elements = document.getElementsByTagName("input");
+                for (var i = 0; i < elements.length; ++ i) {
+                    if (elements[i].name == "diffType" && elements[i].checked) {
+                        diffType = elements[i].value;
+                    }
+                }
+
                 var rows = document.getElementById("resultsTable").rows;
                 for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
                     var cells = rows[rowIndex].cells;
                     var avgColumnIndex = cells.length - 2;
                     var avg = Number(cells[avgColumnIndex].innerHTML);
+                    var stdevColumnIndex = cells.length - 1;
+                    var stdev = Number(cells[stdevColumnIndex].innerHTML);
                     for (var columnIndex = 1; columnIndex < cells.length - 2; columnIndex += 2) {
                         var value = cells[columnIndex].innerHTML;
                         if (value != "") {
-                            if (avg == 0) {
+                            var diff = undefined;
+                            if (diffType == "simple") {
+                                if (avg != 0) {
+                                    diff = 100 * (value - avg) / avg;
+                                }
+                            } else if (diffType == "stdev") {
+                                if (stdev != 0) {
+                                    diff = 100 * (value - avg) / stdev;
+                                }
+                            } else {
+                                alert("Programming Error: missing code to handle diff type: " + diffType);
+                            }
+                            if (diff == undefined) {
                                 cells[columnIndex + 1].innerHTML = "";
                             } else {
-                                var diff = 100 * (value - avg) / avg;
                                 cells[columnIndex + 1].innerHTML = (diff > 0 ? "+" : "") + diff.toFixed(1) + "%";
                             }
                         }
@@ -294,7 +315,11 @@
     </head>
     <body onload="onOutlierCheckboxClicked();calcStats()">
         <h1><!--{title}--></h1>
-        <p>Created: <!--{creation time}--> by com.l7tech.test.performance.TrendReport</p>
+        <table class="meta">
+            <tr><th>Creation Time:</th><td><!--{creation time}--></td></tr>
+            <tr><th>Creator:</th><td><!--{creator}--></td></tr>
+            <tr><th>Host Machine:</th><td><!--{hostname}--></td></tr>
+        </table>
         <h2>Performance Reports</h2>
         <div>
         <table id="reportsTable" class="bluewhite">
@@ -343,7 +368,8 @@
                 <tr><!--{results header row 2}--></tr>
                 <!--{next results row}-->
             </table>
-            (&Delta; = percentage difference from average)
+        (&Delta; = <input type="radio" name="diffType" value="simple" checked="checked" onclick="calcDiffs()"/>percentage difference from average
+                   <input type="radio" name="diffType" value="stdev" onclick="calcDiffs()"/>percentage of std dev difference from average
         </div>
         <br>
         <h2>Throughput Charts</h2>

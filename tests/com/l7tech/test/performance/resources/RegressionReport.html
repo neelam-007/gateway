@@ -43,19 +43,34 @@
                 margin-bottom: 0px;
             }
 
+            table {
+                border: none;
+                font-size: 12px;
+            }
+
+            table.meta th {
+                border: none;
+                text-align: left;
+            }
+
+            table.meta td {
+                border: none;
+            }
+
             table.bluewhite {
                 border: 2px solid #005A9C;
                 border-spacing: 2px;
                 border-collapse: collapse;
                 background-color: white;
-                font-size: 12px;
             }
+
             table.bluewhite th {
                 border: 1px solid white;
                 padding: 1px 4px 1px 4px;
                 background-color: #005A9C;
                 color: white;
             }
+
             table.bluewhite td {
                 border: 1px solid #005A9C;
                 padding: 1px 4px 1px 4px;
@@ -73,7 +88,11 @@
     </head>
     <body>
         <h1><!--{title}--></h1>
-        <p>Created: <!--{creation time}--> by com.l7tech.test.performance.RegressionReport</p>
+        <table class="meta">
+            <tr><th>Creation Time:</th><td><!--{creation time}--></td></tr>
+            <tr><th>Creator:</th><td><!--{creator}--></td></tr>
+            <tr><th>Host Machine:</th><td><!--{hostname}--></td></tr>
+        </table>
         <h2>Threshold</h2>
         <span style="padding-left: 10px; background-color: yellow; border: 1px solid #005A9C">&nbsp;</span>&nbsp;<!--{threshold}-->
         <h2>Summary <span style="font-size: smaller">(in transactions/sec)</span></h2>
