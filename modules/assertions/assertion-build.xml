@@ -33,7 +33,7 @@
             <include name="jdom.jar"/>
             <include name="asm.jar"/>
             <include name="asm-commons.jar"/>
-            <include name="javac2-l7p1.jar"/>
+            <include name="javac2.jar"/>
         </fileset>
     </path>
     <taskdef name="javac2t"
@@ -94,7 +94,7 @@
             <include name="spring-support.jar"/>
             <include name="commons-logging-1.0.4.jar"/>
             <include name="mailapi-1.4.jar"/>
-            <include name="forms_rt-l7p1.jar"/>
+            <include name="forms_rt.jar"/>
             <include name="xss4j.jar"/>
             <include name="commons-*.jar"/>
         </fileset>
