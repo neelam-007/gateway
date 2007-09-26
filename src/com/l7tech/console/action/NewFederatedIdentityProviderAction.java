@@ -1,32 +1,28 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.*;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.panels.CreateFederatedIPWizard;
-import com.l7tech.console.panels.FederatedIPGeneralPanel;
-import com.l7tech.console.panels.FederatedIPTrustedCertsPanel;
-import com.l7tech.console.panels.Wizard;
-import com.l7tech.console.panels.IdentityProviderCertificateValidationConfigPanel;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.DuplicateObjectException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.awt.*;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -96,11 +92,17 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
     }
 
     private WizardListener wizardListener = new WizardAdapter() {
+        @Override
+        public void wizardCanceled(WizardEvent e) {
+            removeEntityListener(listener);
+        }
+
         /**
          * Invoked when the wizard has finished.
          *
          * @param we the event describing the wizard finish
          */
+        @Override
         public void wizardFinished(WizardEvent we) {
 
             // update the provider
@@ -129,7 +131,11 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                             ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
                             header = null;
                         }
-                        if (header != null) fireEventProviderAdded(header);
+                        if (header == null) {
+                            removeEntityListener(listener);
+                        } else {
+                            fireEventProviderAdded(header);
+                        }
                     }
                 });
             }
