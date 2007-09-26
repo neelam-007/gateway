@@ -178,7 +178,7 @@ public class TrendReport {
                     }
                 }
             }
-            htmlRow.append("<td class=\"right avg\"></td><td class=\"right stdev\"></td></tr>\n");
+            htmlRow.append("<td class=\"stats\"></td><td class=\"stats\"></td><td class=\"stats\"></td></tr>\n");
             PerformanceUtil.insertAtMarker(html, RESULTS_ROW_MARKER, htmlRow.toString());
         }
 

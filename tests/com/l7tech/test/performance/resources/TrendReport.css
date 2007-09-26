@@ -68,11 +68,7 @@ table.bluewhite th {
 	color: white;
 }
 
-table.bluewhite th.avg {
-    background-color: #008000;
-}
-
-table.bluewhite th.stdev {
+table.bluewhite th.stats {
     background-color: #008000;
 }
 
@@ -82,12 +78,9 @@ table.bluewhite td {
     vertical-align: top;
 }
 
-table.bluewhite td.avg {
+table.bluewhite td.stats {
     background-color: #E0FFE0;
-}
-
-table.bluewhite td.stdev {
-    background-color: #E0FFE0;
+    text-align: right;
 }
 
 img.plot {

@@ -4,6 +4,9 @@
         <link href="TrendReport.css" type="text/css" rel="stylesheet">
         <script type="text/javascript">
             var statsCheckBoxColumn = 1;
+            var avgColumnFromRight = 3;
+            var stdevColumnFromRight = 2;
+            var normStdevColumnFromRight = 1;
 
             /**
              * Hide/show all reports in the results table.
@@ -24,7 +27,7 @@
 
                 // Hide/show cells in 1st <th> row.
                 var row0cells = rows[0].cells;
-                for (var columnIndex = 1; columnIndex < row0cells.length - 2; ++ columnIndex) {
+                for (var columnIndex = 1; columnIndex < row0cells.length - avgColumnFromRight; ++ columnIndex) {
                     row0cells[columnIndex].style.display = display;
                 }
 
@@ -37,7 +40,7 @@
                 // Hide/show cells in <td> rows.
                 for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
                     var cells = rows[rowIndex].cells;
-                    for (var columnIndex = 1; columnIndex < cells.length - 2; ++ columnIndex) {
+                    for (var columnIndex = 1; columnIndex < cells.length - avgColumnFromRight; ++ columnIndex) {
                         cells[columnIndex].style.display = display;
                     }
                 }
@@ -169,19 +172,20 @@
             }
 
             /**
-             * Calculates avg and stdev for each row in the results table.
+             * Calculates avg, stdev and normalized stdev for each row in the results table.
              */
             function calcStats() {
                 undoHighlightThresholds();
                 var rows = document.getElementById("resultsTable").rows;
-                var avgColumnIndex = rows[2].cells.length - 2;
-                var stdevColumnIndex = rows[2].cells.length - 1;
+                var avgColumnIndex = rows[2].cells.length - avgColumnFromRight;
+                var stdevColumnIndex = rows[2].cells.length - stdevColumnFromRight;
+                var normStdevColumnIndex = rows[2].cells.length - normStdevColumnFromRight;
                 for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
                     var cells = rows[rowIndex].cells;
                     var n = 0;
                     var sum = 0.;
                     var sum2 = 0.;
-                    for (var columnIndex = 1; columnIndex < cells.length - 2; columnIndex += 2) {
+                    for (var columnIndex = 1; columnIndex < cells.length - avgColumnFromRight; columnIndex += 2) {
                         var reportIndex = (columnIndex - 1) / 2;
                         if (isIncludeInStats(reportIndex) && cells[columnIndex].innerHTML != "") {
                             var value = Number(cells[columnIndex].innerHTML);
@@ -192,14 +196,17 @@
                     }
                     var avg = 0;
                     var stdev = 0;
+                    var normStdev = 0;
                     if (n > 0) {
                         avg = sum / n;
                         if (n > 1) {
                             stdev = Math.sqrt((sum2 - n * avg * avg) / (n - 1));
+                            normStdev = 100 * stdev / avg;
                         }
                     }
                     cells[avgColumnIndex].innerHTML = avg.toFixed(1);
                     cells[stdevColumnIndex].innerHTML = stdev.toFixed(1);
+                    cells[normStdevColumnIndex].innerHTML = normStdev.toFixed(1) + "%";
                 }
 
                 calcDiffs();
@@ -220,11 +227,11 @@
                 var rows = document.getElementById("resultsTable").rows;
                 for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
                     var cells = rows[rowIndex].cells;
-                    var avgColumnIndex = cells.length - 2;
+                    var avgColumnIndex = cells.length - avgColumnFromRight;
                     var avg = Number(cells[avgColumnIndex].innerHTML);
-                    var stdevColumnIndex = cells.length - 1;
+                    var stdevColumnIndex = cells.length - stdevColumnFromRight;
                     var stdev = Number(cells[stdevColumnIndex].innerHTML);
-                    for (var columnIndex = 1; columnIndex < cells.length - 2; columnIndex += 2) {
+                    for (var columnIndex = 1; columnIndex < cells.length - avgColumnFromRight; columnIndex += 2) {
                         var value = cells[columnIndex].innerHTML;
                         if (value != "") {
                             var diff = undefined;
@@ -259,8 +266,8 @@
                 var rows = document.getElementById("resultsTable").rows;
                 for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
                     var cells = rows[rowIndex].cells;
-                    var avgColumnIndex = cells.length - 2;
-                    var stdevColumnIndex = cells.length - 1;
+                    var avgColumnIndex = cells.length - avgColumnFromRight;
+                    var stdevColumnIndex = cells.length - stdevColumnFromRight;
                     var avg, stdev = 0;
                     if (benchmark == "avg" || benchmark == "stdev") {
                         avg = Number(cells[avgColumnIndex].innerHTML);
@@ -270,7 +277,7 @@
                         var columnIndex = 1 + 2 * Number(benchmark);
                         avg = Number(cells[columnIndex].innerHTML);
                     }
-                    for (var columnIndex = 1; columnIndex < cells.length - 2; columnIndex += 2) {
+                    for (var columnIndex = 1; columnIndex < cells.length - avgColumnFromRight; columnIndex += 2) {
                         var value = cells[columnIndex].innerHTML;
                         if (value != "") {
                             var delta;  // percentage difference
@@ -306,7 +313,7 @@
                 var rows = document.getElementById("resultsTable").rows;
                 for (var rowIndex = 2; rowIndex < rows.length; ++ rowIndex) {
                     var cells = rows[rowIndex].cells;
-                    for (var columnIndex = 1; columnIndex < cells.length - 2; ++ columnIndex) {
+                    for (var columnIndex = 1; columnIndex < cells.length - avgColumnFromRight; ++ columnIndex) {
                         cells[columnIndex].style.backgroundColor = "white";
                     }
                 }
@@ -364,12 +371,14 @@
         </div>
         <div>
             <table id="resultsTable" class="bluewhite">
-                <tr><th rowspan="2"></th><!--{results header row 1}--><th class="avg" rowspan="2">Average</th><th class="stdev" rowspan="2">Std Dev</th></tr>
+                <tr><th rowspan="2"></th><!--{results header row 1}--><th class="stats" rowspan="2">Average</th><th class="stats" rowspan="2">Std Dev</th><th class="stats" rowspan="2">Normalized<br/>Std Dev</th></tr>
                 <tr><!--{results header row 2}--></tr>
                 <!--{next results row}-->
             </table>
-        (&Delta; = <input type="radio" name="diffType" value="simple" checked="checked" onclick="calcDiffs()"/>percentage difference from average
-                   <input type="radio" name="diffType" value="stdev" onclick="calcDiffs()"/>percentage of std dev difference from average
+        &Delta; = <input type="radio" name="diffType" value="simple" checked="checked" onclick="calcDiffs()"/>percentage difference from average
+                  <input type="radio" name="diffType" value="stdev" onclick="calcDiffs()"/>percentage of std dev difference from average
+        <br/>
+        Normalized Std. Dev. = Std. Dev. &divide; Average &times; 100%
         </div>
         <br>
         <h2>Throughput Charts</h2>
