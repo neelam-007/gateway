@@ -37,10 +37,8 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 import org.xml.sax.InputSource;
 
-import com.l7tech.common.gui.util.FontUtil;
+import com.l7tech.common.gui.util.*;
 import com.l7tech.common.gui.util.SwingWorker;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
@@ -292,7 +290,7 @@ public class WsdlLocationPanel extends JPanel {
     }
 
     private void selectFile() {
-        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+        SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
             public void useFileChooser(JFileChooser fc) {
                 doSelectFile(fc);
             }

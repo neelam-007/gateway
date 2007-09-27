@@ -6,7 +6,7 @@
 package com.l7tech.console;
 
 import com.l7tech.common.util.JavaVersionChecker;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.console.util.TopComponents;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -52,45 +52,22 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
     }
 
     /**
-     * Try to create a JFileChooser, failing with a graceful error message if running as an untrusted applet.
-     *
-     * @return the JFileChooser, or null if one could not be created because this is an untrusted applet (in which
-     *         case an error message has already been displayed).
-     */
-    public static JFileChooser createJFileChooser() {
-        return doWithJFileChooser(new FileChooserUser() {
-            public void useFileChooser(JFileChooser fc) {
-                // Do nothing -- caller will use the file chooser themselves
-            }
-        });
-    }
-
-    /**
-     * Try to do something with a JFileChooser, failing with a graceful error message if running as an untrusted applet.
+     * Create a new JFileChooser and try to use it, failing with a graceful error message if running as an untrusted applet.
+     * <p/>
+     * The difference between this method and {@link FileChooserUtil#doWithJFileChooser} is that this method
+     * displays an error message if we are running as an untrusted applet, while the other
+     * method throws an exception instead.
      *
      * @param fcu  the code that will be used by the JFileChooser, or null if you intend to use the returned
      *             JFileChooser yourself.
      *             Will not be invoked if no JFileChooser can be created.
-     * @return the JFileChooser that was created, or null if one could not be created because this is an untrusted
-     *         applet (in which case an error message has already been displayed).
      */
-    public static JFileChooser doWithJFileChooser(final FileChooserUser fcu) {
-        return AccessController.doPrivileged(new PrivilegedAction<JFileChooser>() {
-            public JFileChooser run() {
-                try {
-                    JFileChooser fc = Utilities.createJFileChooser();
-                    fcu.useFileChooser(fc);
-                    return fc;
-                } catch (AccessControlException ace) {
-                    TopComponents.getInstance().showNoPrivilegesErrorMessage();
-                    return null;
-                }
-            }
-        });
-    }
-
-    public interface FileChooserUser {
-        void useFileChooser(JFileChooser fc);
+    public static void doWithJFileChooser(FileChooserUtil.FileChooserUser fcu) {
+        try {
+            FileChooserUtil.doWithJFileChooser(fcu);
+        } catch (AccessControlException ace) {
+            TopComponents.getInstance().showNoPrivilegesErrorMessage();
+        }
     }
 
     private static interface LnfSetter {

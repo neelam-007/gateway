@@ -325,35 +325,6 @@ public class Utilities {
     public static final String PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL = "com.l7tech.common.gui.util.Utilities.contextMenuAutoSelectAll";
 
     /**
-     * A factory that creates a JFileChooser, working around Java bug parade #4711700.  Will retry
-     * for up to one second.
-     * @return a new JFileChooser instance.  Never null.
-     * @throws RuntimeException if a new JFileChooser could not be created.
-     */
-    public static JFileChooser createJFileChooser() throws RuntimeException {
-        JFileChooser fc = null;
-        int tries = 40;
-        while (fc == null) {
-            try {
-                fc = new JFileChooser();
-                break;
-            } catch (NullPointerException nfe) {
-                // Bug parade 4711700 -- retry a few times before giving up
-                if (--tries < 0)
-                    throw new RuntimeException("J4711700 workaround: retry count exceeded", nfe);
-                try {
-                    Thread.sleep(25);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("J4711700 workaround: interrupted while waiting to retry", nfe);
-                }
-                logger.finest("J4711700 workaround: retrying");
-            }
-        }
-        return fc;
-    }
-
-    /**
      * Update the input map of the JDialog's <code>JLayeredPane</code> so
      * the ESC keystroke  invoke dispose on the dialog.
      *

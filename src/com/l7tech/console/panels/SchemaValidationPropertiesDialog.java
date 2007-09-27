@@ -7,19 +7,19 @@ import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlSchemaAnalizer;
 import com.l7tech.common.xml.schema.SchemaEntry;
-import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
@@ -669,7 +669,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private void readFromFile() {
-        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+        SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
             public void useFileChooser(JFileChooser fc) {
                 doRead(fc);
             }

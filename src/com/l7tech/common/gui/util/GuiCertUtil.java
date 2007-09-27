@@ -4,12 +4,7 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.Certificate;
-import java.security.PrivateKey;
-import java.security.KeyStore;
-import java.security.Key;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -59,8 +54,12 @@ public class GuiCertUtil {
      * @param privateKeyRequired True if a private key is required.
      * @param callbackHandler handler for any TextOutputCallback and PasswordCallbacks (may be null)
      * @return The ImportedData structure which may be null or empty.
+     * @throws AccessControlException if this process is running with a restrictive security manager that
+     *                                appears to prevent use of JFileChooser
      */
-    public static ImportedData importCertificate(Window parent, boolean privateKeyRequired, CallbackHandler callbackHandler){
+    public static ImportedData importCertificate(Window parent, boolean privateKeyRequired, CallbackHandler callbackHandler)
+            throws AccessControlException
+    {
         X509Certificate[] certificateChain = null;
         PrivateKey privateKey = null;
 
@@ -71,7 +70,7 @@ public class GuiCertUtil {
             }
         }
 
-        final JFileChooser fc = Utilities.createJFileChooser();
+        final JFileChooser fc = FileChooserUtil.createJFileChooser();
         FileFilter pemFilter = buildFilter(".pem", "(*.pem) PEM/BASE64 X.509 certificates.");
         FileFilter cerFilter = buildFilter(".cer", "(*.cer) DER encoded X.509 certificates.");
         FileFilter p12Filter = buildFilter(".p12", "(*.p12) PKCS 12 key store.");
@@ -301,6 +300,8 @@ public class GuiCertUtil {
      *
      * @param parent The parent Frame or Dialog for the "save as" dialog.
      * @param certificate The X509 certificate to save
+     * @throws AccessControlException if this process is running with a restrictive security manager that
+     *                                appears to prevent use of JFileChooser
      */
     public static void exportCertificate(Window parent, X509Certificate certificate) {
         if (parent !=null) {
@@ -310,7 +311,7 @@ public class GuiCertUtil {
             }
         }
 
-        final JFileChooser fc = Utilities.createJFileChooser();
+        final JFileChooser fc = FileChooserUtil.createJFileChooser();
         fc.setDialogTitle("Save certificate as ...");
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
         FileFilter pemFilter = buildFilter(".pem", "(*.pem) PEM/BASE64 X.509 certificates.");

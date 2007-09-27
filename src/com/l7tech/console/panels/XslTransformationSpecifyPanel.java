@@ -10,6 +10,7 @@ import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.ResourceUtils;
@@ -21,8 +22,8 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.SsmApplication;
 
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -193,7 +194,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
     }
 
     private void readFromFile() {
-        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+        SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
             public void useFileChooser(JFileChooser fc) {
                 doRead(fc);
             }

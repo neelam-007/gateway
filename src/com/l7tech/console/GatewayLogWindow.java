@@ -2,6 +2,7 @@ package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.panels.LogPanel;
@@ -20,8 +21,6 @@ import java.util.logging.Level;
 import java.text.SimpleDateFormat;
 import java.io.File;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * To display log records.
@@ -178,7 +177,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
      * TODO this can probably be merged with the code in GatewayAuditWindow that does the same thing
      */
     private void saveAsEventHandler() {
-        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+        SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
             public void useFileChooser(JFileChooser fc) {
                 doSave(fc);
             }

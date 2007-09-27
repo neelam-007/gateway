@@ -7,6 +7,7 @@ package com.l7tech.internal.license.gui;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.util.*;
 import com.l7tech.internal.license.LicenseSpec;
 import com.l7tech.server.GatewayFeatureSet;
@@ -617,7 +618,7 @@ public class LicenseSpecPanel extends JPanel {
 
     private class CustomEulaAction implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            final JFileChooser fc = Utilities.createJFileChooser();
+            final JFileChooser fc = FileChooserUtil.createJFileChooser();
             fc.setDialogTitle("Select custom EULA text file");
             fc.setDialogType(JFileChooser.OPEN_DIALOG);
             fc.addChoosableFileFilter(buildFileFilter(".txt", "(*.txt) Text files."));

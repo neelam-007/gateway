@@ -14,6 +14,7 @@ import com.l7tech.common.gui.widgets.LicensePanel;
 import com.l7tech.common.gui.widgets.EulaDialog;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.util.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -69,8 +70,6 @@ public class LicenseDialog extends JDialog {
                 public InputStream run() {
                     try {
                         result.call(getLicenseStreamFromFile(), null);
-                    } catch (AccessControlException e) {
-                        result.call(null, e);
                     } catch (IOException e) {
                         result.call(null, e);
                     }
@@ -127,7 +126,7 @@ public class LicenseDialog extends JDialog {
      * @throws java.io.IOException if the selected file can't be opened or read
      */
     private InputStream getLicenseStreamFromFile() throws AccessControlException, IOException {
-        JFileChooser fc = new JFileChooser();
+        JFileChooser fc = FileChooserUtil.createJFileChooser();
         fc.setFileFilter(new FileFilter() {
             public String getDescription() {
                 return "License files (*.xml)";

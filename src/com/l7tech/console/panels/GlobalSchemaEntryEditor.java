@@ -12,6 +12,7 @@ import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.gui.FilterDocument;
@@ -19,8 +20,8 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -258,7 +259,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
     }
 
     private void uploadFromFile() {
-        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+        SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
             public void useFileChooser(JFileChooser fc) {
                 doUpload(fc);
             }

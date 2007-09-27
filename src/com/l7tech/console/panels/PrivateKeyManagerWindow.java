@@ -12,6 +12,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.SaveException;
 
@@ -27,10 +28,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.cert.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -214,9 +212,15 @@ public class PrivateKeyManagerWindow extends JDialog {
             return;
         final long mutableKeystoreId = mutableKeystore.id;
 
-        GuiCertUtil.ImportedData imported = GuiCertUtil.importCertificate(this, true, new GuiPasswordCallbackHandler());
-        if (imported == null)
+        GuiCertUtil.ImportedData imported;
+        try {
+            imported = GuiCertUtil.importCertificate(this, true, new GuiPasswordCallbackHandler());
+            if (imported == null)
+                return;
+        } catch (AccessControlException ace) {
+            TopComponents.getInstance().showNoPrivilegesErrorMessage();
             return;
+        }
 
         X509Certificate[] chain = imported.getCertificateChain();
         assert chain != null && chain.length > 0;

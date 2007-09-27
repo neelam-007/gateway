@@ -6,6 +6,7 @@
 package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.ResourceUtils;
@@ -410,7 +411,7 @@ class SsgPoliciesPanel extends JPanel {
                     try {
                         policyInputStream = policyImportDialog.getPolicyInputStream();
                         if (policyInputStream == null) {
-                            JFileChooser fc = Utilities.createJFileChooser();
+                            JFileChooser fc = FileChooserUtil.createJFileChooser();
                             fc.setFileFilter(createPolicyFileFilter());
                             fc.setDialogType(JFileChooser.OPEN_DIALOG);
 
@@ -490,7 +491,7 @@ class SsgPoliciesPanel extends JPanel {
                     Policy policy = policyCache.getPolicy(pak);
                     if (policy == null) return;
 
-                    JFileChooser fc = Utilities.createJFileChooser();
+                    JFileChooser fc = FileChooserUtil.createJFileChooser();
                     fc.setFileFilter(createPolicyFileFilter());
                     fc.setDialogType(JFileChooser.SAVE_DIALOG);
 

@@ -2,6 +2,7 @@ package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
@@ -396,7 +397,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             throw new IllegalStateException("Not supported for federated SSG");
         TrustedSsgIdentityPanel trustPane = (TrustedSsgIdentityPanel)ssgIdentityPane;
 
-        JFileChooser fc = Utilities.createJFileChooser();
+        JFileChooser fc = FileChooserUtil.createJFileChooser();
         fc.setDialogTitle("Select client certificate");
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
         FileFilter fileFilter = new FileFilter() {

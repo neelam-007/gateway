@@ -1,13 +1,14 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.FontUtil;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.SsmApplication;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -75,7 +76,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         browseButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 //Create a file chooser
-                SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+                SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
                     public void useFileChooser(JFileChooser fc) {
                         int returnVal = fc.showOpenDialog(CertImportMethodsPanel.this);
 

@@ -13,6 +13,7 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.gui.ExceptionDialog;
 
 /**
@@ -106,7 +107,7 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+        SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
             public void useFileChooser(JFileChooser fc) {
                 doView(fc);
             }
