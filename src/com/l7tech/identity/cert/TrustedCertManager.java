@@ -11,6 +11,7 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.util.Cachable;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -44,6 +45,7 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
      * @return the TrustedCert with the specified Subject DN, or null if no such cert exists.
      * @throws FindException if the TrustedCert cannot be found.
      */
+    @Cachable(relevantArg=0,maxAge=1000)
     TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, CertificateException;
 
     /**

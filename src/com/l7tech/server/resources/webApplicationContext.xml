@@ -104,7 +104,13 @@
     <bean id="federatedIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
           class="com.l7tech.server.identity.fed.FederatedIdentityProviderImpl" singleton="false">
         <property name="clientCertManager" ref="clientCertManager"/>
-        <property name="trustedCertManager" ref="trustedCertManager"/>
+        <property name="trustedCertManager">
+             <!--Caching wrapper for trustedCertManager -->
+            <bean class="com.l7tech.server.util.EntityCachingFactoryBean">
+                 <constructor-arg value="com.l7tech.identity.cert.TrustedCertManager"/>
+                 <constructor-arg ref="trustedCertManager"/>
+            </bean>
+        </property>
         <property name="keystore" ref='keystore'/>
         <property name="certValidationProcessor" ref="certValidationProcessor"/>
     </bean>
