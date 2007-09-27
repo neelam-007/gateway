@@ -34,6 +34,7 @@ public class InputValidator implements FocusListener {
     private final Map<ModelessFeedback, String> hiddenFeedbacks = new HashMap<ModelessFeedback, String>();
     private final Set<Component> focusListening = new HashSet<Component>();
     private AbstractButton buttonToEnable = null;
+    private Component componentToMakeVisible = null;
     private DocumentListener validatingDocumentListener = new DocumentListener() {
         public void insertUpdate(DocumentEvent e) {
             isValid();
@@ -91,10 +92,10 @@ public class InputValidator implements FocusListener {
     }
 
     /**
-     * Register a custom validation rule that has already been configured to monitor a componenet for changes.
+     * Register a custom validation rule that has already been configured to monitor a component for changes.
      * @param rule the rule to add
      */
-    private void addRule(ValidationRule rule) {
+    public void addRule(ValidationRule rule) {
         if (rule == null) throw new NullPointerException();
         rules.add(rule);
         if (rule instanceof ComponentValidationRule) {
@@ -310,11 +311,15 @@ public class InputValidator implements FocusListener {
         hiddenFeedbacks.clear();
         try {
             List<String> errors = new ArrayList<String>();
+            componentToMakeVisible = null;
             for (ValidationRule rule : rules) {
                 ModelessFeedback feedback = getFeedback(rule);
                 String err = rule.getValidationError();
                 if (err != null) {
                     errors.add(err);
+                    if (componentToMakeVisible == null && rule instanceof ComponentValidationRule) {
+                        componentToMakeVisible = ((ComponentValidationRule)rule).getComponent();
+                    }
                     if (feedback != null) {
                         // Special rule for text components: if they have focus and are empty, don't show feedback
                         if (feedback instanceof JTextComponent) {
@@ -382,10 +387,29 @@ public class InputValidator implements FocusListener {
     public boolean validateWithDialog() {
         String err = validate();
         if (err != null) {
+            if (componentToMakeVisible != null)
+                makeComponentVisible(componentToMakeVisible);
             JOptionPane.showMessageDialog(dialogParent, err, dialogTitle, JOptionPane.ERROR_MESSAGE);
             return false;
         }
         return true;
+    }
+
+    /**
+     * Tries to make the specified component visible; if it is in a tabbed pane, tries to show the
+     * tab it's in.
+     *
+     * @param component the component to attempt to make visible.
+     */
+    private void makeComponentVisible(Component component) {
+        if (component == null)
+            return;
+        for (Container parent = component.getParent(); parent != null; component = parent, parent = component.getParent()) {
+            if (parent instanceof JTabbedPane) {
+                JTabbedPane tp = (JTabbedPane)parent;
+                tp.setSelectedComponent(component);
+            }
+        }
     }
 
     public void focusGained(FocusEvent e) {

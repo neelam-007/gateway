@@ -342,6 +342,7 @@
         </id>
         <version name="version"/>
 
+        <property name="enabled" column="enabled" type="boolean"/>
         <property name="name" column="name" type="string"/>
         <property name="port" column="port" type="int"/>
         <property name="scheme" column="scheme" type="string"/>

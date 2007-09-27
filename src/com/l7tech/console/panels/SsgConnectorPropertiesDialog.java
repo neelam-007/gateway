@@ -18,6 +18,7 @@ import java.awt.event.*;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,6 +27,28 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private static final String DIALOG_TITLE = "Listen Port Properties";
     private static final int TAB_SSL = 2;
     private static final int TAB_FTP = 3;
+
+    private static class ClientAuthType {
+        private static final Map<Integer, ClientAuthType> bycode = new ConcurrentHashMap<Integer, ClientAuthType>();
+        final int code;
+        final String label;
+        public ClientAuthType(int code, String label) {
+            this.code = code;
+            this.label = label;
+            bycode.put(code, this);
+        }
+        public String toString() {
+            return label;
+        }
+    }
+    private static final Object CA_NONE = new ClientAuthType(SsgConnector.CLIENT_AUTH_NEVER, "None");
+    private static final Object CA_OPTIONAL = new ClientAuthType(SsgConnector.CLIENT_AUTH_OPTIONAL, "Optional");
+    private static final Object CA_REQUIRED = new ClientAuthType(SsgConnector.CLIENT_AUTH_ALWAYS, "Required");
+
+    // TODO look up real values from SSG
+    private static final String INTERFACE_ANY = "*";
+    private static final String INTERFACE_INTERNAL = "1.2.3.4";
+    private static final String INTERFACE_EXTERNAL = "10.0.0.1";
 
     private JPanel contentPane;
     private JButton okButton;
@@ -53,8 +76,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private final InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
     private SsgConnector connector;
     private boolean confirmed = false;
-    private String[] allCiphers;
-    private Set<String> defaultCiphers;
     private CipherSuiteListModel cipherSuiteListModel;
 
     public SsgConnectorPropertiesDialog(Frame owner, SsgConnector connector) {
@@ -115,16 +136,69 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
 
+        clientAuthComboBox.setModel(new DefaultComboBoxModel(new Object[] {
+                CA_NONE,
+                CA_OPTIONAL,
+                CA_REQUIRED
+        }));
+
+        interfaceComboBox.setModel(new DefaultComboBoxModel(new Object[] {
+                INTERFACE_ANY,
+                INTERFACE_INTERNAL,
+                INTERFACE_EXTERNAL
+        }));
+
         initializeCipherSuiteControls();
 
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, null);
         inputValidator.validateWhenDocumentChanges(nameField);
         inputValidator.constrainTextFieldToNumberRange("Port", portField, 0, 65535);
         inputValidator.validateWhenDocumentChanges(portField);
+        inputValidator.constrainTextFieldToNumberRange("Port Range Start", portRangeStartField, 0, 65535);
+        inputValidator.constrainTextFieldToNumberRange("Port Range Count", portRangeCountField, 1, 65535);
+        inputValidator.constrainTextField(portRangeCountField, new InputValidator.ComponentValidationRule(portRangeCountField) {
+            public String getValidationError() {
+                int start;
+                try {
+                    start = Integer.parseInt(portRangeStartField.getText());
+                } catch (NumberFormatException nfe) {
+                    // If start is invalid, count doesn't matter
+                    return null;
+                }
+                try {
+                    int count = Integer.parseInt(portRangeCountField.getText());
+                    if (start + count > 65535)
+                        return "Port Range Start plus Port Range Count cannot exceed 65535";
+                    return null;
+                } catch (NumberFormatException nfe) {
+                    return "Port Range Count must be a number from 1 to 65535";
+                }
+            }
+        });
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(privateKeyComboBox) {
+            public String getValidationError() {
+                if (!privateKeyComboBox.isEnabled())
+                    return null;
+                if (privateKeyComboBox.getSelectedItem() == null)
+                    return "A private key must be selected for an SSL listener.";
+                return null;
+            }
+        });
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(cipherSuiteList) {
+            public String getValidationError() {
+                if (!cipherSuiteList.isEnabled())
+                    return null;
+                if (!cipherSuiteListModel.isAnyCipherSuiteEnabled())
+                    return "At least one cipher suite must be enabled for an SSL listener.";
+                return null;
+            }
+        });
 
         Utilities.setEscKeyStrokeDisposes(this);
 
         modelToView();
+        if (nameField.getText().length() < 1)
+            nameField.requestFocusInWindow();
     }
 
     private static class CipherSuiteListEntry extends JCheckBox {
@@ -137,13 +211,15 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
     }
 
-    private class CipherSuiteListModel extends AbstractListModel {
+    public static class CipherSuiteListModel extends AbstractListModel {
+        private final String[] allCiphers;
+        private final Set<String> defaultCiphers;
         private final List<CipherSuiteListEntry> entries = new ArrayList<CipherSuiteListEntry>();
         private int armedEntry = -1;
 
-        public CipherSuiteListModel(List<CipherSuiteListEntry> entries) {
-            this.entries.clear();
-            this.entries.addAll(entries);
+        public CipherSuiteListModel(String[] allCiphers, Set<String> defaultCiphers) {
+            this.allCiphers = allCiphers;
+            this.defaultCiphers = defaultCiphers;
         }
 
         public int getSize() {
@@ -195,6 +271,16 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         /**
+         * @return true if at least one cipher suite is checked.
+         */
+        public boolean isAnyCipherSuiteEnabled() {
+            for (CipherSuiteListEntry entry : entries) {
+                if (entry.isSelected()) return true;
+            }
+            return false;
+        }
+
+        /**
          * @return cipher list string corresponding to all checked cipher names in order, comma delimited, ie.
          *         "TLS_RSA_WITH_AES_128_CBC_SHA, SSL_RSA_WITH_3DES_EDE_CBC_SHA", or null if the default
          *         cipher list is in use.
@@ -242,7 +328,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
          */
         public void setCipherListString(String cipherList) {
             if (cipherList == null) {
-                populateCipherSuiteComboBox();
+                setDefaultCipherList();
                 return;
             }
 
@@ -256,6 +342,17 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 if (!enabled.contains(cipher))
                     entries.add(new CipherSuiteListEntry(cipher, false));
             }
+        }
+
+        /**
+         * Reset the cipher list to the defaults.
+         */
+        public void setDefaultCipherList() {
+            int oldsize = entries.size();
+            entries.clear();
+            for (String cipher : allCiphers)
+                entries.add(new CipherSuiteListEntry(cipher, defaultCiphers.contains(cipher)));
+            fireContentsChanged(this, 0, Math.max(oldsize, entries.size()));
         }
     }
 
@@ -278,7 +375,15 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private void initializeCipherSuiteControls() {
-        populateCipherSuiteComboBox();
+        try {
+            String[] allCiphers = Registry.getDefault().getTransportAdmin().getAllCipherSuiteNames();
+            LinkedHashSet<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
+                    Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames()));
+            cipherSuiteListModel = new CipherSuiteListModel(allCiphers, defaultCiphers);
+            cipherSuiteList.setModel(cipherSuiteListModel);
+        } catch (RemoteException e) {
+            showErrorMessage("Error", "Unable to load cipher suites: " + ExceptionUtils.getMessage(e), e);
+        }
         cipherSuiteList.setSelectionModel(new CipherSuiteListSelectionModel());
         cipherSuiteList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         cipherSuiteList.setCellRenderer(new CipherSuiteListCellRenderer());
@@ -316,7 +421,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         defaultCipherListButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                populateCipherSuiteComboBox();
+                cipherSuiteListModel.setDefaultCipherList();
             }
         });
 
@@ -343,23 +448,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         });
     }
 
-    private void populateCipherSuiteComboBox() {
-        try {
-            if (allCiphers == null)
-                allCiphers = Registry.getDefault().getTransportAdmin().getAllCipherSuiteNames();
-            if (defaultCiphers == null)
-                defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
-                        Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames()));
-            List<CipherSuiteListEntry> entries = new ArrayList<CipherSuiteListEntry>();
-            for (String cipher : allCiphers)
-                entries.add(new CipherSuiteListEntry(cipher, defaultCiphers.contains(cipher)));
-            cipherSuiteListModel = new CipherSuiteListModel(entries);
-            cipherSuiteList.setModel(cipherSuiteListModel);
-        } catch (RemoteException e) {
-            showErrorMessage("Error", "Unable to load cipher suites: " + ExceptionUtils.getMessage(e), e);
-        }
-    }
-
     private String getSelectedProtocol() {
         return protocolComboBox.getSelectedItem().toString();
     }
@@ -378,8 +466,22 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private void enableOrDisableTabs() {
-        tabbedPane.setEnabledAt(TAB_SSL, isSslProto(getSelectedProtocol()));
-        tabbedPane.setEnabledAt(TAB_FTP, isFtpProto(getSelectedProtocol()));
+        String proto = getSelectedProtocol();
+        boolean isSsl = isSslProto(proto);
+        boolean isFtp = isFtpProto(proto);
+
+        tabbedPane.setEnabledAt(TAB_SSL, isSsl);
+        tabbedPane.setEnabledAt(TAB_FTP, isFtp);
+        portRangeStartField.setEnabled(isFtp);  // disable controls InputValidator will ignore them when not relevant
+        portRangeCountField.setEnabled(isFtp);
+        if (!isSsl) cipherSuiteList.clearSelection();
+        cipherSuiteList.setEnabled(isSsl);
+        moveUpButton.setEnabled(isSsl);
+        moveDownButton.setEnabled(isSsl);
+        defaultCipherListButton.setEnabled(isSsl);
+        clientAuthComboBox.setEnabled(isSsl);
+        privateKeyComboBox.setEnabled(isSsl);
+        managePrivateKeysButton.setEnabled(isSsl);
     }
 
     private void enableOrDisableCipherSuiteButtons() {
@@ -388,21 +490,74 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         moveDownButton.setEnabled(index >= 0 && index < cipherSuiteListModel.getSize() - 1);
     }
 
+    private void selectPrivateKey(Long oid, String alias) {
+        if (oid != null && alias != null) {
+            privateKeyComboBox.select(oid, alias);
+        } else {
+            if (privateKeyComboBox.getModel().getSize() > 0)
+                privateKeyComboBox.setSelectedIndex(0);
+        }
+    }
+
+    /**
+     * Configure the GUI control states with information gathered from the connector instance.
+     */
     private void modelToView() {
+        protocolComboBox.setSelectedItem(connector.getScheme().trim().toUpperCase());
         nameField.setText(connector.getName());
         portField.setText(String.valueOf(connector.getPort()));
-        cipherSuiteListModel.setCipherListString(connector.getProperty(SsgConnector.PROP_CIPHERLIST));
+        enabledCheckBox.setSelected(connector.isEnabled());
+        interfaceComboBox.setSelectedItem(connector.getProperty(SsgConnector.PROP_BIND_ADDRESS)); // TODO set properly
 
-        // TODO
+        // FTP-specific properties
+        String prs = connector.getProperty(SsgConnector.PROP_PORT_RANGE_START);
+        portRangeStartField.setText(prs == null ? "" : prs);
+        String prc = connector.getProperty(SsgConnector.PROP_PORT_RANGE_COUNT);
+        portRangeCountField.setText(prc == null ? "" : prc);
+
+        // SSL-specific properties
+        cipherSuiteListModel.setCipherListString(connector.getProperty(SsgConnector.PROP_CIPHERLIST));
+        clientAuthComboBox.setSelectedItem(ClientAuthType.bycode.get(connector.getClientAuth()));
+        selectPrivateKey(connector.getKeystoreOid(), connector.getKeyAlias());
+
+        // TODO enabled endpoints
         enableOrDisableComponents();
     }
 
+    /**
+     * Configure the connector instance with information gathered from the GUI control states.
+     * Assumes caller has already checked view state against the inputValidator.
+     */
     private void viewToModel() {
+        String proto = protocolComboBox.getSelectedItem().toString();
+        connector.setScheme(proto);
         connector.setName(nameField.getText());
         connector.setPort(Integer.parseInt(portField.getText()));
+        connector.setEnabled(enabledCheckBox.isSelected());
+        String bindAddress = null; // TODO get properly from interface drop-down
+        connector.putProperty(SsgConnector.PROP_BIND_ADDRESS, bindAddress);
+
+        // FTP-specific properties
+        boolean isFtp = isFtpProto(proto);
+        String rangeStart = portRangeStartField.getText().trim();
+        String rangeCount = portRangeCountField.getText().trim();
+        connector.putProperty(SsgConnector.PROP_PORT_RANGE_START, isFtp ? rangeStart : null);
+        connector.putProperty(SsgConnector.PROP_PORT_RANGE_COUNT, isFtp ? rangeCount : null);
+
+        // SSL-specific properties
+        boolean isSsl = isSslProto(proto);
+        connector.setSecure(isSsl);
+        if (isSsl) {
+            connector.setKeystoreOid(privateKeyComboBox.getSelectedKeystoreId());
+            connector.setKeyAlias(privateKeyComboBox.getSelectedKeyAlias());
+        } else {
+            connector.setKeystoreOid(null);
+            connector.setKeyAlias(null);
+        }
+        connector.setClientAuth(((ClientAuthType)clientAuthComboBox.getSelectedItem()).code);
         connector.putProperty(SsgConnector.PROP_CIPHERLIST, cipherSuiteListModel.asCipherListString());
 
-        // TODO
+        // TODO enabled endpoints
     }
 
     public void setVisible(boolean b) {

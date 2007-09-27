@@ -23,8 +23,17 @@ public class SsgConnector extends NamedEntityImp {
     public static final String SCHEME_FTP = "FTP";
     public static final String SCHEME_FTPS = "FTPS";
 
-    /** Custom cipher list.  If set, should be a comma-separated ordered list, ie "TLS_RSA_WITH_AES_128_CBC_SHA, SSL_RSA_WITH_3DES_EDE_CBC_SHA". */
+    /** Custom cipher list.  If set, should be a comma-separated ordered list, ie "TLS_RSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA". */
     public static final String PROP_CIPHERLIST = "cipherList";
+
+    /** If a port range is required, this property holds the first port in the range. */
+    public static final String PROP_PORT_RANGE_START = "portRangeStart";
+
+    /** If a port range is required, this property holds the number of ports in the range. */
+    public static final String PROP_PORT_RANGE_COUNT = "portRangeCount";
+
+    /** If specified, this is a specified interface IP address to bind the listen port.  Otherwise, it will bind INADDR_ANY. */
+    public static final String PROP_BIND_ADDRESS = "bindAddress";
 
     private boolean enabled = true;
     private int port;

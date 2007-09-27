@@ -142,7 +142,6 @@ public class SsgConnectorManagerWindow extends JDialog {
     private void doProperties() {
         SsgConnector connector = connectorTable.getSelectedConnector();
         if (connector != null) {
-            logger.info("Connector was last edited: " + connector.getProperty("lastEdited"));
             editAndSave(connector);
         }
     }
@@ -154,7 +153,6 @@ public class SsgConnectorManagerWindow extends JDialog {
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.isConfirmed()) {
-                    connector.putProperty("lastEdited", ISO8601Date.format(new Date()));
                     try {
                         long oid = getTransportAdmin().saveSsgConnector(connector);
                         if (oid != connector.getOid()) connector.setOid(oid);
@@ -226,8 +224,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
 
         public Object getEnabled() {
-            // TODO
-            return null;
+            return connector.isEnabled() ? "Yes" : "No";
         }
 
         public Object getName() {
@@ -239,8 +236,8 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
 
         public Object getInterface() {
-            // TODO
-            return null;
+            String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+            return bindAddress == null ? "(ALL)" : bindAddress;
         }
 
         public Object getPort() {
@@ -249,7 +246,7 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         public Object getAdmin() {
             // TODO
-            return null;
+            return "Yes";
         }
     }
 
