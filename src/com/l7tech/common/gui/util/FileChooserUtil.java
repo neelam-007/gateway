@@ -71,7 +71,11 @@ public class FileChooserUtil {
             public JFileChooser run() {
                 try {
                     // Assume we are not running as an untrusted applet if we can read the current directory.
-                    System.getSecurityManager().checkRead(new File("").getAbsolutePath());
+                    SecurityManager sm = System.getSecurityManager();
+                    if ( sm != null ) {
+                        sm.checkRead(new File("").getAbsolutePath());
+                    }
+                    
                     JFileChooser fc = createJFileChooserHavePrivs();
                     if (fcu != null) fcu.useFileChooser(fc);
                     return fc;
