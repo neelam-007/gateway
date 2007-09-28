@@ -541,43 +541,52 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         final Long oid = thing.getOid();
         checkCachable(thing);
 
+        CacheInfo<ET> info = null;
+
+        // Get existing cache info
         Sync read = cacheLock.readLock();
-        Sync write = cacheLock.writeLock();
         try {
             read.acquire();
             WeakReference<CacheInfo<ET>> ref = cacheInfoByOid.get(oid);
-            read.release(); read = null;
-            CacheInfo<ET> info = ref == null ? null : ref.get();
+            info = ref == null ? null : ref.get();
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "Interrupted waiting for cache lock", e);
+            Thread.currentThread().interrupt();
+            return null;
+        } finally {
+            if (read != null) read.release();
+        }
 
+        Sync write = cacheLock.writeLock();
+        try {
+            write.acquire();
+
+            // new item to cache
             if (info == null) {
                 info = new CacheInfo<ET>();
+                WeakReference<CacheInfo<ET>> newref = new WeakReference<CacheInfo<ET>>(info);
 
-                write.acquire();
-                final WeakReference<CacheInfo<ET>> newref = new WeakReference<CacheInfo<ET>>(info);
                 cacheInfoByOid.put(oid, newref);
                 if (thing instanceof NamedEntity) {
                     cacheInfoByName.put(((NamedEntity)thing).getName(), newref);
                 }
-                write.release(); write = null;
-            } else {
-                write = null; // prevent release without acquire
             }
 
+            // set cached info 
             info.entity = thing;
             info.version = thing.getVersion();
             info.timestamp = System.currentTimeMillis();
-
-            addedToCache(thing);
-
-            return thing;
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "Interrupted waiting for cache lock", e);
             Thread.currentThread().interrupt();
             return null;
         } finally {
             if (write != null) write.release();
-            if (read != null) read.release();
         }
+
+        addedToCache(thing);
+
+        return thing;
     }
 
 
