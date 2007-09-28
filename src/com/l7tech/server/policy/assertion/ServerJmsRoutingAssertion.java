@@ -134,7 +134,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         try {
                             Thread.sleep(RETRY_DELAY);
                         } catch ( InterruptedException e ) {
-                            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"Interrupted during retry delay"});
+                            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Interrupted during retry delay");
                         }
                     } else {
                         String msg = "Tried " + MAX_OOPSES + " times to establish JMS connection and failed.";
@@ -198,7 +198,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                 final Message jmsResponse = jmsConsumer.receive( timeout );
                 context.routingFinished();
                 if ( jmsResponse == null ) {
-                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE, new String[]{String.valueOf(timeout)});
+                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE, String.valueOf(timeout));
 
                     return AssertionStatus.FAILED;
                 } else {
@@ -211,7 +211,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         final StashManager stashManager = stashManagerFactory.createStashManager();
                         context.getResponse().initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bmsg));
                     } else {
-                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, new String[]{jmsResponse.getClass().getName()});
+                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, jmsResponse.getClass().getName());
                         return AssertionStatus.FAILED;
                     }
                     auditor.logAndAudit(AssertionMessages.JMS_ROUTING_GOT_RESPONSE);
@@ -342,29 +342,37 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         JmsReplyType replyType = endpoint.getReplyType();
 
         if (replyType == JmsReplyType.NO_REPLY) {
-            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_RETURN_NO_REPLY, new String[] {toString()});
+            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_RETURN_NO_REPLY, toString());
             return null;
         } else {
             if (replyType == JmsReplyType.AUTOMATIC) {
-
-                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_RETURN_AUTOMATIC, new String[] {toString()});
-                return getTemporaryResponseQueue(auditor);
-
+                Destination dest = getTemporaryResponseQueue(auditor);
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_RETURN_AUTOMATIC, getName(dest), toString());
+                return dest;
             } else if (replyType == JmsReplyType.REPLY_TO_OTHER) {
-
-                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_RETURN_REPLY_TO_OTHER,
-                        new String[] {endpoint.getDestinationName(), toString()});
-                return getEndpointResponseDestination(auditor);
-
+                Destination dest = getEndpointResponseDestination(auditor);
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_RETURN_REPLY_TO_OTHER, getName(dest), toString());
+                return dest;
             } else {
-
                 String rt = (replyType == null ? "<null>" : replyType.toString());
                 String msg = "Unknown JmsReplyType " + rt;
-                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNKNOW_JMS_REPLY_TYPE, new String[] {rt});
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNKNOW_JMS_REPLY_TYPE, rt);
                 throw new java.lang.IllegalStateException(msg);
 
             }
         }
+    }
+
+    private String getName(Destination destination) throws JMSException {
+        String name = "unknown";
+
+        if ( destination instanceof Queue ) {
+            name = ((Queue) destination).getQueueName();
+        } else if ( destination instanceof Topic ) {
+            name = ((Topic) destination).getTopicName();
+        }
+
+        return name;
     }
 
     private Destination getEndpointResponseDestination(Auditor auditor) throws JMSException, NamingException, JmsConfigException, FindException {
@@ -463,7 +471,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             JmsEndpoint endpoint = getRoutedRequestEndpoint();
             if ( endpoint == null ) {
                 auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NON_EXISTENT_ENDPOINT,
-                        new String[] {String.valueOf(data.getEndpointOid()), data.getEndpointName()});
+                        String.valueOf(data.getEndpointOid()) + "/" + data.getEndpointName());
             } else {
                 JmsConnection jmsConn = mgr.findByPrimaryKey( endpoint.getConnectionOid() );
                 synchronized(jmsInfoSync) {
