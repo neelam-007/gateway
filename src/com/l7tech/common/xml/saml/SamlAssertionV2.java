@@ -76,7 +76,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
     public SamlAssertionV2(Element ass,
                            SecurityTokenResolver securityTokenResolver) throws SAXException
     {
-        super(ass,2);
+        super(ass);
 
         assertionElement = ass;
         assertionId = assertionElement.getAttribute("ID");
@@ -429,8 +429,10 @@ public final class SamlAssertionV2 extends SamlAssertion {
                 id = HexUtils.encodeBase64(HexUtils.getMd5Digest(new byte[][]{
                         getAssertionId().getBytes("UTF-8"),
                         toString(assertion.getIssuer()).getBytes("UTF-8"),
-                        BigInteger.valueOf(assertion.getIssueInstant().getTimeInMillis()).toByteArray(),
-                        subjectId.getBytes("UTF-8")
+                        BigInteger.valueOf(safeGetTimeInMillis(assertion.getIssueInstant())).toByteArray(),
+                        subjectId.getBytes("UTF-8"),
+                        safeToString(authenticationMethod).getBytes("UTF-8"),
+                        safeToString(confirmationMethod).getBytes("UTF-8")
                 }));
             }
             catch(UnsupportedEncodingException uee) {
@@ -439,6 +441,26 @@ public final class SamlAssertionV2 extends SamlAssertion {
         }
 
         return id;
+    }
+
+    private long safeGetTimeInMillis(Calendar calendar) {
+        long time = 0;
+
+        if (calendar != null) {
+            time = calendar.getTimeInMillis();
+        }
+
+        return time;
+    }
+
+    private String safeToString(Object object) {
+        String string = "";
+
+        if (object != null) {
+            string = object.toString();            
+        }
+
+        return string;
     }
 
     private String toString(NameIDType nameIDType) {

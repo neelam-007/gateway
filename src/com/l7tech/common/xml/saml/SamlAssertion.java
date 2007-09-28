@@ -18,16 +18,12 @@ import org.apache.xmlbeans.XmlObject;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * Encapsulates an abstract saml:Assertion SecurityToken.
  */
 public abstract class SamlAssertion extends X509SigningSecurityTokenImpl implements SamlSecurityToken {
-    private static final Logger logger = Logger.getLogger(SamlAssertion.class.getName());
     protected static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
-
-    private final int version;
 
     /**
      * Constructs a new SamlAssertion from an XML Element.
@@ -70,9 +66,8 @@ public abstract class SamlAssertion extends X509SigningSecurityTokenImpl impleme
      *
      * @param ass xmlassertion the xml element containing the assertion.  Must be saml:Assertion.
      */
-    protected SamlAssertion(Element ass, int version) {
+    protected SamlAssertion(Element ass) {
         super(ass);
-        this.version = version;
     }
 
     public abstract X509Certificate getIssuerCertificate();
@@ -86,6 +81,22 @@ public abstract class SamlAssertion extends X509SigningSecurityTokenImpl impleme
      * @param attestingEntity
      */
     public abstract void setAttestingEntity(X509Certificate attestingEntity);
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SamlAssertion that = (SamlAssertion) o;
+
+        if (!getAssertionId().equals(that.getAssertionId())) return false;
+        if (!getUniqueId().equals(that.getUniqueId())) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        return getUniqueId().hashCode();
+    }
 
     static class CausedSignatureException extends SignatureException {
         public CausedSignatureException() {

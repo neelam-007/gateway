@@ -72,7 +72,7 @@ public class SamlAssertionV1 extends SamlAssertion {
                          SecurityTokenResolver securityTokenResolver)
             throws SAXException
     {
-        super(ass,1);
+        super(ass);
         assertionElement = ass;
         assertionId = assertionElement.getAttribute("AssertionID");
         if (assertionId == null || assertionId.length() < 1)
@@ -135,7 +135,7 @@ public class SamlAssertionV1 extends SamlAssertion {
                     confirmationMethod = SENDER_VOUCHES;
                 } else {
                     String msg = "Could not determine the saml ConfirmationMethod (neither holder-of-key nor sender-vouches)";
-                    logger.info(msg);
+                    logger.fine(msg);
                     confirmationMethod = null;
                 }
 
@@ -399,8 +399,10 @@ public class SamlAssertionV1 extends SamlAssertion {
                 id = HexUtils.encodeBase64(HexUtils.getMd5Digest(new byte[][]{
                         getAssertionId().getBytes("UTF-8"),
                         assertion.getIssuer().getBytes("UTF-8"),
-                        BigInteger.valueOf(assertion.getIssueInstant().getTimeInMillis()).toByteArray(),
-                        subjectId.getBytes("UTF-8")
+                        BigInteger.valueOf(safeGetTimeInMillis(assertion.getIssueInstant())).toByteArray(),
+                        subjectId.getBytes("UTF-8"),
+                        safeToString(authenticationMethod).getBytes("UTF-8"),
+                        safeToString(confirmationMethod).getBytes("UTF-8")
                 }));
             }
             catch(UnsupportedEncodingException uee) {
@@ -409,6 +411,26 @@ public class SamlAssertionV1 extends SamlAssertion {
         }
 
         return id;
+    }
+
+    private long safeGetTimeInMillis(Calendar calendar) {
+        long time = 0;
+
+        if (calendar != null) {
+            time = calendar.getTimeInMillis();
+        }
+
+        return time;
+    }
+
+    private String safeToString(Object object) {
+        String string = "";
+
+        if (object != null) {
+            string = object.toString();
+        }
+
+        return string;
     }
 
     private String toString(SubjectType subject) {
