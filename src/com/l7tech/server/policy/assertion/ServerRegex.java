@@ -120,7 +120,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
             Matcher matcher = regexPattern.matcher(new String(messageBytes, 0, messageBytesLen, encoding));
             AssertionStatus assertionStatus = AssertionStatus.FAILED;
             if (isReplacement) {
-                logger.log(Level.FINE, "Replace requested: Match pattern '{0}', replace pattern '{1}'", new Object[]{regexAssertion.getRegex(), replacement});
+                logger.log(Level.FINE, "Replace requested: Match pattern ''{0}'', replace pattern ''{1}''", new Object[]{regexAssertion.getRegex(), replacement});
                 replacement = ExpandVariables.process(replacement, context.getVariableMap(varNames, auditor));
                 String result = matcher.replaceAll(replacement);
                 messagePart.setBodyBytes(result.getBytes(encoding));
