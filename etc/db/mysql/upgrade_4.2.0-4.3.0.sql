@@ -17,6 +17,7 @@ CREATE TABLE connector (
   enabled tinyint(1) NOT NULL DEFAULT 0,
   port int(8) NOT NULL,
   scheme varchar(128) NOT NULL DEFAULT 'http',
+  endpoints varchar(256) NOT NULL,
   secure tinyint(1) NOT NULL DEFAULT 0,
   client_auth tinyint(1) NOT NULL DEFAULT 0,
   keystore_oid bigint(20) NULL,

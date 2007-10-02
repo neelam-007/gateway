@@ -347,6 +347,7 @@
         <property name="port" column="port" type="int"/>
         <property name="scheme" column="scheme" type="string"/>
         <property name="secure" column="secure" type="boolean"/>
+        <property name="endpoints" column="endpoints" type="string"/>
         <property name="clientAuth" column="client_auth" type="int"/>
         <property name="keystoreOid" column="keystore_oid" type="long"/>
         <property name="keyAlias" column="key_alias" type="string"/>

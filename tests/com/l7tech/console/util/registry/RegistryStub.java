@@ -27,9 +27,12 @@ import com.l7tech.service.*;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
+import java.net.InetAddress;
 import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.Collection;
+
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -163,6 +166,7 @@ public class RegistryStub extends Registry {
                     8443,
                     "https",
                     true,
+                    SsgConnector.Endpoint.MESSAGE_INPUT.toString(),
                     SsgConnector.CLIENT_AUTH_OPTIONAL,
                     -1L,
                     null
@@ -192,6 +196,10 @@ public class RegistryStub extends Registry {
 
             public String[] getDefaultCipherSuiteNames() throws RemoteException {
                 return new String[0];
+            }
+
+            public InetAddress[] getAvailableBindAddresses() throws RemoteException {
+                return null;
             }
         };
     }

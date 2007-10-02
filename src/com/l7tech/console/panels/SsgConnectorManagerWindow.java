@@ -3,10 +3,9 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.transport.TransportAdmin;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
@@ -23,7 +22,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.rmi.RemoteException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -153,17 +154,23 @@ public class SsgConnectorManagerWindow extends JDialog {
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.isConfirmed()) {
+                    Runnable reedit = new Runnable() {
+                        public void run() {
+                            editAndSave(connector);
+                        }
+                    };
                     try {
                         long oid = getTransportAdmin().saveSsgConnector(connector);
                         if (oid != connector.getOid()) connector.setOid(oid);
+                        reedit = null;
                         loadConnectors();
                         connectorTable.setSelectedConnector(connector);
                     } catch (RemoteException e) {
-                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e);
+                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e, reedit);
                     } catch (SaveException e) {
-                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e);
+                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e, reedit);
                     } catch (UpdateException e) {
-                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e);
+                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e, reedit);
                     }
                 }
             }
@@ -208,8 +215,12 @@ public class SsgConnectorManagerWindow extends JDialog {
     }
 
     private void showErrorMessage(String title, String msg, Throwable e) {
+        showErrorMessage(title, msg, e, null);
+    }
+
+    private void showErrorMessage(String title, String msg, Throwable e, Runnable continuation) {
         logger.log(Level.WARNING, msg, e);
-        DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, null);
+        DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, continuation);
     }
 
     private static class ConnectorTableRow {

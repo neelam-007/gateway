@@ -173,7 +173,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="e9e42" class="javax.swing.JCheckBox" binding="enablePublishedServiceMessageCheckBox" default-binding="true">
+              <component id="e9e42" class="javax.swing.JCheckBox" binding="cbEnableMessageInput" default-binding="true">
                 <constraints>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
                 </constraints>
@@ -183,7 +183,7 @@
                   <text value="Enable published &amp;service message input"/>
                 </properties>
               </component>
-              <component id="93a4f" class="javax.swing.JCheckBox" binding="enableBuiltInServicesCheckBox" default-binding="true">
+              <component id="93a4f" class="javax.swing.JCheckBox" binding="cbEnableBuiltinServices" default-binding="true">
                 <constraints>
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
                 </constraints>
@@ -193,7 +193,7 @@
                   <text value="Enable &amp;built-in services"/>
                 </properties>
               </component>
-              <component id="3d65b" class="javax.swing.JCheckBox" binding="enableSecureSpanManagerAccessCheckBox" default-binding="true">
+              <component id="3d65b" class="javax.swing.JCheckBox" binding="cbEnableSsmRemote" default-binding="true">
                 <constraints>
                   <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
                 </constraints>
@@ -216,7 +216,7 @@
                   <text value="The following endpoints will be enabled on this listen port:"/>
                 </properties>
               </component>
-              <component id="a54bf" class="javax.swing.JCheckBox" binding="enableWebBasedAdministrationCheckBox" default-binding="true">
+              <component id="a54bf" class="javax.swing.JCheckBox" binding="cbEnableSsmApplet" default-binding="true">
                 <constraints>
                   <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
                 </constraints>

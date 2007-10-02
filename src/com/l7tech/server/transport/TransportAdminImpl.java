@@ -14,12 +14,18 @@ import com.l7tech.server.KeystoreUtils;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * Server-side implementation of the TransportAdmin API.
@@ -110,5 +116,22 @@ public class TransportAdminImpl implements TransportAdmin {
 
     public String[] getDefaultCipherSuiteNames() throws RemoteException {
         return getSslContext().getDefaultSSLParameters().getCipherSuites();
+    }
+
+    public InetAddress[] getAvailableBindAddresses() throws RemoteException {
+        try {
+            List<InetAddress> ret = new ArrayList<InetAddress>();
+            Enumeration<NetworkInterface> faces = NetworkInterface.getNetworkInterfaces();
+            while (faces.hasMoreElements()) {
+                NetworkInterface face = faces.nextElement();
+                Enumeration<InetAddress> addrs = face.getInetAddresses();
+                while (addrs.hasMoreElements()) {
+                    ret.add(addrs.nextElement());
+                }
+            }
+            return ret.toArray(new InetAddress[0]);
+        } catch (SocketException e) {
+            throw new RemoteException("Unable to get network interfaces: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 }

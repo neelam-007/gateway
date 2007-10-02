@@ -35,10 +35,44 @@ public class SsgConnector extends NamedEntityImp {
     /** If specified, this is a specified interface IP address to bind the listen port.  Otherwise, it will bind INADDR_ANY. */
     public static final String PROP_BIND_ADDRESS = "bindAddress";
 
+    /** Recognized endpoint names. */
+    public static enum Endpoint {
+        /** Message processor. */
+        MESSAGE_INPUT,
+
+        /** Connections from standalone SSM. */
+        ADMIN_REMOTE,
+
+        /** The admin applet. */
+        ADMIN_APPLET,
+
+        /** All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc. */
+        OTHER_SERVLETS,
+
+        /** Certificate and policy discovery. */
+        POLICYDISCO,
+
+        /** The WS-Trust security token service. */
+        STS,
+
+        /** The built-in CA service. */
+        CSRHANDLER,
+
+        /** The Bridge password change service. */
+        PASSWD,
+
+        /** The WSDL proxy service. */
+        WSDLPROXY,
+
+        /** The HTTP-based SNMP query service. */
+        SNMPQUERY,
+    }
+
     private boolean enabled = true;
-    private int port;
+    private int port = -1;
     private String scheme = SCHEME_HTTP;
     private boolean secure;
+    private String endpoints = "";
     private int clientAuth;
     private Long keystoreOid;
     private String keyAlias;
@@ -47,13 +81,14 @@ public class SsgConnector extends NamedEntityImp {
     public SsgConnector() {
     }
 
-    public SsgConnector(long oid, String name, int port, String scheme, boolean secure, int clientAuth, Long keystoreOid, String keyAlias) {
+    public SsgConnector(long oid, String name, int port, String scheme, boolean secure, String endpoints, int clientAuth, Long keystoreOid, String keyAlias) {
         super();
         setOid(oid);
         setName(name);
         this.port = port;
         this.scheme = scheme;
         this.secure = secure;
+        this.endpoints = endpoints;
         this.clientAuth = clientAuth;
         this.keystoreOid = keystoreOid;
         this.keyAlias = keyAlias;
@@ -236,6 +271,26 @@ public class SsgConnector extends NamedEntityImp {
     }
 
     /**
+     * Get the endpoints to enable on this connector.
+     * The format is a comma-delimited string of endpoint names.
+     *
+     * @return endpoint names, ie "MESSAGE_INPUT,ADMIN_APPLET,STS".  If null, the connector should be treated as disabled.
+     */
+    public String getEndpoints() {
+        return endpoints;
+    }
+
+    /**
+     * Set the endpoints to enable on this connector.
+     * The format is a comma-delimited string of endpoint names.
+     *
+     * @param endpoints endpoint names to enable, ie "MESSAGE_INPUT,ADMIN_REMOTE,CSRHANDLER".
+     */
+    public void setEndpoints(String endpoints) {
+        this.endpoints = endpoints;
+    }
+
+    /**
      * Get the extra properties of this connector.
      * <p/>
      * Should only be used by Hibernate, for serialization.
@@ -269,6 +324,7 @@ public class SsgConnector extends NamedEntityImp {
         if (enabled != that.enabled) return false;
         if (port != that.port) return false;
         if (secure != that.secure) return false;
+        if (endpoints != null ? !endpoints.equals(that.endpoints) : that.endpoints != null) return false;
         if (keyAlias != null ? !keyAlias.equals(that.keyAlias) : that.keyAlias != null) return false;
         if (keystoreOid != null ? !keystoreOid.equals(that.keystoreOid) : that.keystoreOid != null) return false;
         if (properties != null ? !properties.equals(that.properties) : that.properties != null) return false;
@@ -283,6 +339,7 @@ public class SsgConnector extends NamedEntityImp {
         result = 31 * result + port;
         result = 31 * result + (scheme != null ? scheme.hashCode() : 0);
         result = 31 * result + (secure ? 1 : 0);
+        result = 31 * result + (endpoints != null ? endpoints.hashCode() : 0);
         result = 31 * result + clientAuth;
         result = 31 * result + (keystoreOid != null ? keystoreOid.hashCode() : 0);
         result = 31 * result + (keyAlias != null ? keyAlias.hashCode() : 0);

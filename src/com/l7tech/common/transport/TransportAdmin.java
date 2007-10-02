@@ -7,11 +7,9 @@ import com.l7tech.objectmodel.*;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.InetAddress;
 import java.rmi.RemoteException;
 import java.util.Collection;
-import java.util.List;
-import java.security.KeyStoreException;
-import java.security.UnrecoverableKeyException;
 
 /**
  * Provides a remote interface for creating, reading, updating and deleting
@@ -100,4 +98,13 @@ public interface TransportAdmin {
      */
     @Transactional(readOnly=true)
     String[] getDefaultCipherSuiteNames() throws RemoteException;
+
+    /**
+     * Get all bindable internet addresses available on this Gateway node, if possible.
+     *
+     * @return an array of InetAddress instances, or null if this information is unavailable.
+     * @throws java.rmi.RemoteException on remote communication error
+     */
+    @Transactional(readOnly=true)
+    InetAddress[] getAvailableBindAddresses() throws RemoteException;
 }
