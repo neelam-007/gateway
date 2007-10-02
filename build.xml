@@ -2404,7 +2404,7 @@
     <!--
       Create the SSG RPM
     -->
-    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.x86_64">
+    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.x86_64" if="makerpm.enabled">
         <echo level="info">RPM build completed.</echo>
     </target>
 
