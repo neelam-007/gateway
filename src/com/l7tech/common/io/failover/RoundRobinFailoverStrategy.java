@@ -16,7 +16,8 @@ import java.util.logging.Level;
 
 
 /**
- * A {@link FailoverStrategy} that tries each service in-turn in round-robin order, ignoring up/down hints.
+ * A {@link FailoverStrategy} that tries all "up" services in round-robin order, using up/down hints to move
+ * services betweent he "up" and "down" lists.
  * <p>
  * This implementation is unsynchronized; see {@link AbstractFailoverStrategy#makeSynchronized}.
  */
