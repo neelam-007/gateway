@@ -155,7 +155,6 @@
 
     <!-- identity admin servant -->
     <bean id="identityAdmin_UNSECURED" class="com.l7tech.server.identity.IdentityAdminImpl">
-        <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="rootCertificate"/>
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
@@ -189,13 +188,11 @@
 
     <!-- schema admin servant -->
     <bean id="schemaAdmin_UNSECURED" class="com.l7tech.server.communityschemas.SchemaAdminImpl">
-        <constructor-arg ref="licenseManager"/>
         <property name="schemaEntryManager" ref="schemaEntryManager"/>
     </bean>
 
     <!-- jms admin servant -->
     <bean id="jmsAdmin_UNSECURED" class="com.l7tech.server.transport.jms.JmsAdminImpl">
-        <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="jmsConnectionManager"/>
         <constructor-arg ref="jmsEndpointManager"/>
         <constructor-arg ref="jmsPropertyMapper"/>
@@ -203,7 +200,6 @@
 
     <!-- FTP admin servant -->
     <bean id="ftpAdmin_UNSECURED" class="com.l7tech.server.transport.ftp.FtpAdminImpl">
-        <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="routingTrustManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="assertionRegistry"/>
@@ -220,14 +216,12 @@
     </bean>
 
     <bean id="transportAdmin_UNSECURED" class="com.l7tech.server.transport.TransportAdminImpl">
-        <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgConnectorManager"/>
         <constructor-arg ref="keystore"/>
     </bean>
 
     <!-- custom assertions admin servant -->
     <bean id="customAssertionsAdmin" class="com.l7tech.policy.assertion.ext.rmi.CustomAssertionsRegistrarImpl">
-        <constructor-arg ref="licenseManager"/>
         <property name="delegate" ref="customAssertionRegistrar"/>
     </bean>
 
@@ -248,7 +242,6 @@
     <!-- RBAC admin impl -->
     <bean id="rbacAdmin_UNSECURED" class="com.l7tech.server.security.rbac.RbacAdminImpl">
         <constructor-arg ref="roleManager"/>
-        <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="entityFinder"/>
     </bean>
 </beans>

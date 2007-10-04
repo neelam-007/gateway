@@ -8,8 +8,6 @@ package com.l7tech.admin;
 import com.l7tech.identity.AuthenticationException;
 
 import javax.security.auth.login.LoginException;
-import java.rmi.Remote;
-import java.rmi.RemoteException;
 import java.security.AccessControlException;
 
 /**
@@ -24,7 +22,7 @@ import java.security.AccessControlException;
  * @author emil
  * @version Dec 2, 2004
  */
-public interface AdminLogin extends Remote {
+public interface AdminLogin {
     /**
      * Method that returns the SHA-1 hash over admin certificate and the admin
      * password.
@@ -36,10 +34,10 @@ public interface AdminLogin extends Remote {
      * @return The Server certificate.
      * @throws AccessControlException on access denied, if the user is not of
      *         any admin role
-     * @throws RemoteException on remote communication error
      */
+    @Administrative(authenticated =false, licensed=false)
     byte[] getServerCertificate(String username)
-            throws RemoteException, AccessControlException;
+            throws AccessControlException;
 
     /**
      * Method that allows admins to login, returning an interface to
@@ -50,10 +48,10 @@ public interface AdminLogin extends Remote {
      * @return An {@link AdminLoginResult} if the login was successful, or throws. Never null.
      * @throws AccessControlException on access denied for the given credentials
      * @throws LoginException on failed login
-     * @throws RemoteException on remote communication error
      */
+    @Administrative(authenticated =false, licensed=false)
     AdminLoginResult login(String username, String password)
-            throws RemoteException, AccessControlException, LoginException;
+            throws AccessControlException, LoginException;
 
     /**
      * Method that allows admin to login using an existing session.
@@ -61,18 +59,17 @@ public interface AdminLogin extends Remote {
      * @param sessionId the session to resume
      * @return an AdminLoginResult describing the resumed session.  Never null.
      * @throws AuthenticationException if the specified session ID is invalid or no longer valid
-     * @throws RemoteException  on remote communication error
      */
+    @Administrative(authenticated =false, licensed=false)
     AdminLoginResult resume(String sessionId)
-            throws RemoteException, AuthenticationException;
+            throws AuthenticationException;
 
     /**
      * Method that allows admin to destroy an existing session.  After this method, the specified session ID
      * will not work for resume or for authentication of admin requests.
-     *
-     * @throws RemoteException  on remote communication error
      */
-    void logout() throws RemoteException;
+    @Administrative(licensed=false)
+    void logout();
 
     /**
      * Change administrator password.
@@ -84,8 +81,8 @@ public interface AdminLogin extends Remote {
      * @throws LoginException if the current password is not valid
      * @throws IllegalArgumentException if the newPassword is not acceptable
      * @throws IllegalStateException if the password cannot be changed for the user
-     * @throws RemoteException  on remote communication error
      */
+    @Administrative(licensed=false)
     void changePassword(String currentPassword, String newPassword)
-            throws LoginException, RemoteException;
+            throws LoginException;
 }

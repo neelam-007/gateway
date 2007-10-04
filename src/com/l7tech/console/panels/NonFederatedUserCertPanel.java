@@ -13,7 +13,6 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,9 +71,7 @@ class NonFederatedUserCertPanel extends UserCertPanel {
                             log.log(Level.WARNING, "ERROR Revoking certificate", e);
                         } catch (ObjectNotFoundException e) {
                             log.log(Level.WARNING, "ERROR Revoking certificate", e);
-                        } catch (RemoteException e) {
-                            log.log(Level.WARNING, "ERROR Revoking certificate", e);
-                        }
+                        } 
                     }
                 }
             });

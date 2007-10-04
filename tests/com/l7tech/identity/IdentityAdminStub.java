@@ -13,7 +13,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.service.PublishedService;
 
-import java.rmi.RemoteException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.*;
@@ -25,11 +24,11 @@ import java.util.*;
  * @version $Revision$
  */
 public class IdentityAdminStub implements IdentityAdmin {
-    public String echoVersion() throws RemoteException {
+    public String echoVersion() {
         return SecureSpanConstants.ADMIN_PROTOCOL_VERSION;
     }
 
-    public EntityHeader[] findAllIdentityProviderConfig() throws RemoteException, FindException {
+    public EntityHeader[] findAllIdentityProviderConfig() throws FindException {
         Map<Long, IdentityProviderConfig> configs = StubDataStore.defaultStore().getIdentityProviderConfigs();
         List<EntityHeader> headers = new ArrayList<EntityHeader>();
         for (Long key : configs.keySet()) {
@@ -39,15 +38,15 @@ public class IdentityAdminStub implements IdentityAdmin {
         return headers.toArray(new EntityHeader[0]);
     }
 
-    public IdentityProviderConfig findIdentityProviderConfigByID(long oid) throws RemoteException, FindException {
+    public IdentityProviderConfig findIdentityProviderConfigByID(long oid) throws FindException {
         return StubDataStore.defaultStore().getIdentityProviderConfigs().get(new Long(oid));
     }
 
-    public LdapIdentityProviderConfig[] getLdapTemplates() throws RemoteException, FindException {
+    public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
         return new LdapConfigTemplateManager().getTemplates();
     }
 
-    public long saveIdentityProviderConfig(IdentityProviderConfig config) throws RemoteException, SaveException, UpdateException {
+    public long saveIdentityProviderConfig(IdentityProviderConfig config) throws SaveException, UpdateException {
         long oid = config.getOid();
         if (oid == 0 || oid == PersistentEntity.DEFAULT_OID) {
             oid = StubDataStore.defaultStore().nextObjectId();
@@ -58,11 +57,11 @@ public class IdentityAdminStub implements IdentityAdmin {
         return oid;
     }
 
-    public void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException {
+    public void deleteIdentityProviderConfig(long oid) throws DeleteException {
         StubDataStore.defaultStore().getIdentityProviderConfigs().remove(new Long(oid));
     }
 
-    public IdentityHeader[] findAllUsers(long idProvCfgId) throws RemoteException, FindException {
+    public IdentityHeader[] findAllUsers(long idProvCfgId) throws FindException {
         Map<String, PersistentUser> users = StubDataStore.defaultStore().getUsers();
         ArrayList<IdentityHeader> results = new ArrayList<IdentityHeader>();
         for (String s : users.keySet()) {
@@ -72,7 +71,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         return results.toArray(new IdentityHeader[0]);
     }
 
-    public IdentityHeader[] searchIdentities(long idProvCfgId, EntityType[] types, String pattern) throws RemoteException, FindException {
+    public IdentityHeader[] searchIdentities(long idProvCfgId, EntityType[] types, String pattern) throws FindException {
         ArrayList<IdentityHeader> results = new ArrayList<IdentityHeader>();
         for (EntityType type : types) {
             if (type == EntityType.USER)
@@ -83,11 +82,11 @@ public class IdentityAdminStub implements IdentityAdmin {
         return results.toArray(new IdentityHeader[0]);
     }
 
-    public User findUserByID(long idProvCfgId, String userId) throws RemoteException, FindException {
+    public User findUserByID(long idProvCfgId, String userId) throws FindException {
         return StubDataStore.defaultStore().getUsers().get(userId);
     }
 
-    public User findUserByLogin(long idProvCfgId, String login) throws RemoteException, FindException {
+    public User findUserByLogin(long idProvCfgId, String login) throws FindException {
         if (login == null) return null;
         Map<String, PersistentUser> users = StubDataStore.defaultStore().getUsers();
         for (String uid : users.keySet()) {
@@ -97,12 +96,12 @@ public class IdentityAdminStub implements IdentityAdmin {
         return null;
     }
 
-    public void deleteUser(long idProvCfgId, String userId) throws RemoteException, DeleteException, ObjectNotFoundException {
+    public void deleteUser(long idProvCfgId, String userId) throws DeleteException, ObjectNotFoundException {
         Map users = StubDataStore.defaultStore().getUsers();
         users.remove(userId);
     }
 
-    public String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders) throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
+    public String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders) throws SaveException, UpdateException, ObjectNotFoundException {
         if (!(user instanceof PersistentUser)) throw new IllegalArgumentException("IdentityAdminStub only supports Internal and Federated users");
         PersistentUser pu = (PersistentUser) user;
         final StubDataStore store = StubDataStore.defaultStore();
@@ -126,7 +125,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         return pu.getId();
     }
 
-    public IdentityHeader[] findAllGroups(long idProvCfgId) throws RemoteException, FindException {
+    public IdentityHeader[] findAllGroups(long idProvCfgId) throws FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Map<String, PersistentGroup> groups = store.getGroups();
         List<IdentityHeader> results = new ArrayList<IdentityHeader>();
@@ -137,19 +136,19 @@ public class IdentityAdminStub implements IdentityAdmin {
         return results.toArray(new IdentityHeader[0]);
     }
 
-    public Group findGroupByID(long idProvCfgId, String groupId) throws RemoteException, FindException {
+    public Group findGroupByID(long idProvCfgId, String groupId) throws FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Map groups = store.getGroups();
         return (Group)groups.get(groupId);
     }
 
-    public void deleteGroup(long idProvCfgId, String groupId) throws RemoteException, DeleteException, ObjectNotFoundException {
+    public void deleteGroup(long idProvCfgId, String groupId) throws DeleteException, ObjectNotFoundException {
         final StubDataStore store = StubDataStore.defaultStore();
         Map groups = store.getGroups();
         groups.remove(groupId);
     }
 
-    public String saveGroup(long idProvCfgId, Group group, Set userHeaders) throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
+    public String saveGroup(long idProvCfgId, Group group, Set userHeaders) throws SaveException, UpdateException, ObjectNotFoundException {
         if (!(group instanceof PersistentGroup)) throw new IllegalArgumentException("IdentityAdminStub only supports Internal and Federated groups");
         PersistentGroup pg = (PersistentGroup) group;
         final StubDataStore store = StubDataStore.defaultStore();
@@ -161,24 +160,24 @@ public class IdentityAdminStub implements IdentityAdmin {
         return pg.getId();
     }
 
-    public String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException {
+    public String getUserCert(User user) throws FindException, CertificateEncodingException {
         return null; // TODO ?
     }
 
-    public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException {
+    public void revokeCert(User user) throws UpdateException, ObjectNotFoundException {
     }
 
-    public int revokeCertificates() throws RemoteException, UpdateException {
+    public int revokeCertificates() throws UpdateException {
         return 0;
     }
 
-    public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {
+    public void recordNewUserCert(User user, Certificate cert) throws UpdateException {
     }
 
-    public void testIdProviderConfig(IdentityProviderConfig cfg) throws RemoteException, InvalidIdProviderCfgException {
+    public void testIdProviderConfig(IdentityProviderConfig cfg) throws InvalidIdProviderCfgException {
     }
 
-    public Set<IdentityHeader> getGroupHeaders(long providerId, String userId) throws RemoteException, FindException {
+    public Set<IdentityHeader> getGroupHeaders(long providerId, String userId) throws FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Set<GroupMembership> memberships = store.getGroupMemberships();
         Set<IdentityHeader> results = new HashSet<IdentityHeader>();
@@ -191,7 +190,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         return results;
     }
 
-    public Set<IdentityHeader> getUserHeaders(long providerId, String groupId) throws RemoteException, FindException {
+    public Set<IdentityHeader> getUserHeaders(long providerId, String groupId) throws FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Set<GroupMembership> memberships = store.getGroupMemberships();
         Set<IdentityHeader> results = new HashSet<IdentityHeader>();

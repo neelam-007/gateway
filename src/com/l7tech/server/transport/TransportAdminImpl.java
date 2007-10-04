@@ -1,6 +1,5 @@
 package com.l7tech.server.transport;
 
-import com.l7tech.common.LicenseException;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.util.ExceptionUtils;
@@ -8,8 +7,6 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.policy.AssertionLicense;
-import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.KeystoreUtils;
 
 import javax.net.ssl.KeyManager;
@@ -17,7 +14,6 @@ import javax.net.ssl.SSLContext;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -31,32 +27,19 @@ import java.util.List;
  * Server-side implementation of the TransportAdmin API.
  */
 public class TransportAdminImpl implements TransportAdmin {
-    private final AssertionLicense licenseManager;
     private final SsgConnectorManager connectorManager;
     private final KeystoreUtils defaultKeystore;
 
-    public TransportAdminImpl(AssertionLicense licenseManager, SsgConnectorManager connectorManager, KeystoreUtils defaultKeystore) {
-        this.licenseManager = licenseManager;
+    public TransportAdminImpl(SsgConnectorManager connectorManager, KeystoreUtils defaultKeystore) {
         this.connectorManager = connectorManager;
         this.defaultKeystore = defaultKeystore;
     }
 
-    private void checkLicense() throws RemoteException {
-        try {
-            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
-        } catch (LicenseException e) {
-            // New exception to conceal original stack trace from LicenseManager
-            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
-        }
-    }
-
-    public Collection<SsgConnector> findAllSsgConnectors() throws RemoteException, FindException {
-        checkLicense();
+    public Collection<SsgConnector> findAllSsgConnectors() throws FindException {
         return connectorManager.findAll();
     }
 
-    public SsgConnector findSsgConnectorByPrimaryKey(long oid) throws RemoteException, FindException {
-        checkLicense();
+    public SsgConnector findSsgConnectorByPrimaryKey(long oid) throws FindException {
         return connectorManager.findByPrimaryKey(oid);
     }
 
@@ -72,8 +55,7 @@ public class TransportAdminImpl implements TransportAdmin {
         return false;
     }
 
-    public long saveSsgConnector(SsgConnector connector) throws RemoteException, SaveException, UpdateException {
-        checkLicense();
+    public long saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException {
         if (isCurrentAdminConnection(connector.getOid()))
             throw new UpdateException("Unable to modify connector for current admin connection");
         if (connector.getOid() == SsgConnector.DEFAULT_OID) {
@@ -84,14 +66,13 @@ public class TransportAdminImpl implements TransportAdmin {
         }
     }
 
-    public void deleteSsgConnector(long oid) throws RemoteException, DeleteException, FindException {
-        checkLicense();
+    public void deleteSsgConnector(long oid) throws DeleteException, FindException {
         if (isCurrentAdminConnection(oid))
             throw new DeleteException("Unable to delete connector for current admin connection");
         connectorManager.delete(oid);
     }
 
-    private SSLContext getSslContext() throws RemoteException {
+    private SSLContext getSslContext(){
         SSLContext context;
         try {
             final KeyManager[] keyManagers;
@@ -99,26 +80,26 @@ public class TransportAdminImpl implements TransportAdmin {
             context = SSLContext.getInstance("SSL");
             context.init(keyManagers, null, null);
         } catch (NoSuchAlgorithmException e) {
-            throw new RemoteException(ExceptionUtils.getMessage(e));
+            throw new RuntimeException(ExceptionUtils.getMessage(e));
         } catch (KeyManagementException e) {
-            throw new RemoteException(ExceptionUtils.getMessage(e));
+            throw new RuntimeException(ExceptionUtils.getMessage(e));
         } catch (KeyStoreException e) {
-            throw new RemoteException(ExceptionUtils.getMessage(e));
+            throw new RuntimeException(ExceptionUtils.getMessage(e));
         } catch (UnrecoverableKeyException e) {
-            throw new RemoteException(ExceptionUtils.getMessage(e));
+            throw new RuntimeException(ExceptionUtils.getMessage(e));
         }
         return context;
     }
 
-    public String[] getAllCipherSuiteNames() throws RemoteException {
+    public String[] getAllCipherSuiteNames() {
         return getSslContext().getSupportedSSLParameters().getCipherSuites();
     }
 
-    public String[] getDefaultCipherSuiteNames() throws RemoteException {
+    public String[] getDefaultCipherSuiteNames() {
         return getSslContext().getDefaultSSLParameters().getCipherSuites();
     }
 
-    public InetAddress[] getAvailableBindAddresses() throws RemoteException {
+    public InetAddress[] getAvailableBindAddresses() {
         try {
             List<InetAddress> ret = new ArrayList<InetAddress>();
             Enumeration<NetworkInterface> faces = NetworkInterface.getNetworkInterfaces();
@@ -131,7 +112,7 @@ public class TransportAdminImpl implements TransportAdmin {
             }
             return ret.toArray(new InetAddress[0]);
         } catch (SocketException e) {
-            throw new RemoteException("Unable to get network interfaces: " + ExceptionUtils.getMessage(e), e);
+            throw new RuntimeException("Unable to get network interfaces: " + ExceptionUtils.getMessage(e), e);
         }
     }
 }

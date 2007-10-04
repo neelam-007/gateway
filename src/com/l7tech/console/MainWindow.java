@@ -52,7 +52,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URL;
-import java.rmi.RemoteException;
 import java.rmi.server.RMIClassLoader;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
@@ -2542,8 +2541,6 @@ public class MainWindow extends JFrame implements SheetHolder {
               try {
                   licenseExpiryWarningPeriod = clusterStatusAdmin.getLicenseExpiryWarningPeriod();
                   lic = clusterStatusAdmin.getCurrentLicense();
-              } catch (RemoteException e1) {
-                  log.log(Level.WARNING, "getCurrentLicense(): " + ExceptionUtils.getMessage(e1), e1);
               } catch (InvalidLicenseException e1) {
                   licInvalid = true;
               } finally {
@@ -2554,14 +2551,14 @@ public class MainWindow extends JFrame implements SheetHolder {
               // Gather any modular assertions offered by this gateway early on as well, for the assertion palette
               try {
                   TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
-              } catch (RemoteException e) {
+              } catch (RuntimeException e) {
                   log.log(Level.WARNING, "Unable to update modular assertions: " + ExceptionUtils.getMessage(e), e);
               }
 
               String nodeName = "";
               try {
                   nodeName = clusterStatusAdmin.getSelfNodeName();
-              } catch (RemoteException e) {
+              } catch (RuntimeException e) {
                   log.log(Level.WARNING, "Cannot get the node name", e);
               }
 

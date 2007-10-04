@@ -12,7 +12,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.rmi.RemoteException;
 
 /**
  * This wizard panel allows to adminsitrator to take action on an unresolved external schema
@@ -89,9 +88,6 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
                     if (!fixed) {
                         fixed = !reg.getSchemaAdmin().findByTNS(foreignRef.getTns()).isEmpty();
                     }
-                } catch (RemoteException e) {
-                    logger.log(Level.SEVERE, "cannot check fix", e);
-                    throw new RuntimeException(e);
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, "cannot check fix", e);
                     throw new RuntimeException(e);

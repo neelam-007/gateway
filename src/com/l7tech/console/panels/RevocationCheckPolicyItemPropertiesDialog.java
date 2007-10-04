@@ -16,7 +16,6 @@ import java.util.regex.PatternSyntaxException;
 import java.text.SimpleDateFormat;
 import java.text.MessageFormat;
 import java.security.cert.CertificateException;
-import java.rmi.RemoteException;
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
@@ -452,24 +451,20 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
     private void populateTrustedCerts(List<TrustedCert> certs, List<Long> oids) throws FindException {
         TrustedCertAdmin tca = getTrustedCertAdmin();
 
-        try {
-            if ( oids.size() < 10 ) {
-                for ( Long oid : oids ) {
-                    TrustedCert cert = tca.findCertByPrimaryKey(oid);
-                    if ( cert != null ) {
-                        certs.add(cert);
-                    }
-                }
-            } else {
-                List<TrustedCert> trustedCertificates = tca.findAllCerts();
-                for ( TrustedCert cert : trustedCertificates ) {
-                    if ( oids.contains(cert.getOid()) ) {
-                        certs.add(cert);
-                    }
+        if ( oids.size() < 10 ) {
+            for ( Long oid : oids ) {
+                TrustedCert cert = tca.findCertByPrimaryKey(oid);
+                if ( cert != null ) {
+                    certs.add(cert);
                 }
             }
-        } catch( RemoteException re ) {
-            throw new RuntimeException(re);
+        } else {
+            List<TrustedCert> trustedCertificates = tca.findAllCerts();
+            for ( TrustedCert cert : trustedCertificates ) {
+                if ( oids.contains(cert.getOid()) ) {
+                    certs.add(cert);
+                }
+            }
         }
     }
 

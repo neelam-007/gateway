@@ -8,8 +8,6 @@ import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.ftp.FtpTestException;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.rmi.RemoteException;
-
 /**
  * Stub-mode FTP admin interface.
  *
@@ -29,6 +27,6 @@ public class FtpAdminStub implements FtpAdmin {
                                long clientCertKeystoreId,
                                String clientCertKeyAlias,
                                String directory,
-                               int timeout) throws RemoteException, FtpTestException {
+                               int timeout) throws FtpTestException {
     }
 }

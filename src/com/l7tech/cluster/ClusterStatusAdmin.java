@@ -10,11 +10,12 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.service.MetricsSummaryBin;
+import com.l7tech.admin.Administrative;
+
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
-import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -28,21 +29,21 @@ public interface ClusterStatusAdmin {
      * Get status for all nodes part of the cluster.
      * @return An array of ClusterNodeInfo (one for each node)
      * @throws FindException if there was a server-side problem accessing the requested information
-     * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.FIND_ENTITIES)
-    ClusterNodeInfo[] getClusterStatus() throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    ClusterNodeInfo[] getClusterStatus() throws FindException;
 
     /**
      * Get some usage statistics on a 'per-published-service' basis.
      * @return an array of ServiceUsage (one per published service). never null
-     * @throws RemoteException on remote communication error
      * @throws FindException if there was a server-side problem accessing the requested information
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.SERVICE_USAGE, stereotype=MethodStereotype.FIND_ENTITIES)
-    ServiceUsage[] getServiceUsage() throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    ServiceUsage[] getServiceUsage() throws FindException;
 
     /**
      * Allows the administrator to change the human readable name of a cluster node. The original
@@ -50,11 +51,10 @@ public interface ClusterStatusAdmin {
      *
      * @param nodeid the mac of the node for which we want to change the name
      * @param newName the new name of the node (must not be null)
-     * @throws RemoteException on remote communication error
      * @throws UpdateException if there was a server-side problem updating the requested node
      */
     @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
-    void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException;
+    void changeNodeName(String nodeid, String newName) throws UpdateException;
 
     /**
      * Allows the administrator to remove a node that is no longer part of the cluster. When a
@@ -65,37 +65,36 @@ public interface ClusterStatusAdmin {
      * call are cluster_info, service_usage and ssg_logs
      *
      * @param nodeid the mac of the stale node to remove as defined in the ClusterNodeInfo object
-     * @throws RemoteException on remote communication error
      * @throws DeleteException if there was a server-side problem deleting the requested node
      */
     @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.DELETE_BY_UNIQUE_ATTRIBUTE)
-    void removeStaleNode(String nodeid) throws RemoteException, DeleteException;
+    void removeStaleNode(String nodeid) throws DeleteException;
 
     /**
      * Get the current system time on the gateway.
      *
      * @return java.util.Date  The current system time
-     * @throws RemoteException on remote communication error
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    java.util.Date getCurrentClusterSystemTime() throws RemoteException;
+    @Administrative(licensed=false)
+    java.util.Date getCurrentClusterSystemTime();
 
     /**
      * Get the current system time zone ID on the gateway.
      *
      * @return the current system time zone on the gateway
-     * @throws RemoteException on remote communication error
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    String getCurrentClusterTimeZone() throws RemoteException;
+    @Administrative(licensed=false)
+    String getCurrentClusterTimeZone();
 
     /**
      * Get the name of node that handles the admin request.
      *
      * @return String  The node name
-     * @throws RemoteException on remote communication error
      */
-     String getSelfNodeName() throws RemoteException;
+    @Administrative(licensed=false)
+    String getSelfNodeName();
 
     /**
      * get cluster wide properties
@@ -103,7 +102,8 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.FIND_ENTITIES)
-    Collection<ClusterProperty> getAllProperties() throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    Collection<ClusterProperty> getAllProperties() throws FindException;
 
     /**
      * Get a map of all known cluster wide properties.
@@ -113,7 +113,8 @@ public interface ClusterStatusAdmin {
      * @return a Map of names / descriptions
      */
     @Transactional(readOnly=true)
-    Map getKnownProperties() throws RemoteException;
+    @Administrative(licensed=false)
+    Map getKnownProperties();
 
     /**
      * get cluster wide property
@@ -121,17 +122,20 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.FIND_ENTITY_BY_ATTRIBUTE)
-    ClusterProperty findPropertyByName(String name) throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    ClusterProperty findPropertyByName(String name) throws FindException;
 
     /**
      * set new value for the cluster-wide property. value set to null will delete the property from the table
      * @param clusterProperty
      */
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.SAVE_OR_UPDATE)
-    long saveProperty(ClusterProperty clusterProperty) throws RemoteException, SaveException, UpdateException, DeleteException;
+    @Administrative(licensed=false)            
+    long saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException;
 
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.DELETE_ENTITY)
-    void deleteProperty(ClusterProperty clusterProperty) throws DeleteException, RemoteException;
+    @Administrative(licensed=false)
+    void deleteProperty(ClusterProperty clusterProperty) throws DeleteException;
 
     /**
      * Get the currently-installed License from the LicenseManager, if it possesses a valid license.
@@ -150,10 +154,10 @@ public interface ClusterStatusAdmin {
      * @return the License currently live inside the LicenseManager, if a valid signed license is currently
      *         live, or null if no license at all is live and no license XML is present in the cluster property
      *         table.
-     * @throws RemoteException on remote communication error
      * @throws InvalidLicenseException a license is in the database but was not installed because it was invalid
      */
-    License getCurrentLicense() throws RemoteException, InvalidLicenseException;
+    @Administrative(licensed=false)
+    License getCurrentLicense() throws InvalidLicenseException;
 
     /**
      * Get the warning period for license expiry.
@@ -163,7 +167,8 @@ public interface ClusterStatusAdmin {
      *
      * @return The warning period
      */
-    long getLicenseExpiryWarningPeriod() throws RemoteException;
+    @Administrative(licensed=false)
+    long getLicenseExpiryWarningPeriod();
 
     /**
      * Check the specified license for validity with this product and, if it is valid, install it to the cluster
@@ -172,26 +177,26 @@ public interface ClusterStatusAdmin {
      * If this method returns normally, the new license was installed successfully.
      *
      * @param newLicenseXml   the license XML to install.
-     * @throws RemoteException on remote communication error
      * @throws InvalidLicenseException if the specified license XML was not valid.  The exception message explains the problem.
      * @throws UpdateException if the license was valid, but was not installed because of a database problem.
      */
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.SAVE_OR_UPDATE)
-    void installNewLicense(String newLicenseXml) throws RemoteException, UpdateException, InvalidLicenseException;
+    @Administrative(licensed=false)
+    void installNewLicense(String newLicenseXml) throws UpdateException, InvalidLicenseException;
 
     /**
      * @return whether collection of service metrics is currently enabled
-     * @throws RemoteException on remote communication error
      */
-    boolean isMetricsEnabled() throws RemoteException;
+    @Administrative(licensed=false)
+    boolean isMetricsEnabled();
 
     /**
      * Gets the time interval (in milliseconds) of the service metrics fine resolution bin.
      *
      * @return the fine bin interval in milliseconds
-     * @throws RemoteException on remote communication error
      */
-    int getMetricsFineInterval() throws RemoteException;
+    @Administrative(licensed=false)
+    int getMetricsFineInterval();
 
     /**
      * Searches for metrics bins with the given criteria and summarizes by
@@ -213,7 +218,6 @@ public interface ClusterStatusAdmin {
      *
      * @return collection of summary bins; can be empty but never <code>null</code>
      * @throws FindException if there was a server-side problem accessing the requested information
-     * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
     Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId,
@@ -222,7 +226,7 @@ public interface ClusterStatusAdmin {
                                                     final Long minPeriodStart,
                                                     final Long maxPeriodStart,
                                                     final boolean includeEmpty)
-            throws RemoteException, FindException;
+            throws FindException;
 
     /**
      * Searches for metrics bins with the given criteria and summarizes by
@@ -245,7 +249,6 @@ public interface ClusterStatusAdmin {
      *
      * @return collection of summary bins; can be empty but never <code>null</code>
      * @throws FindException if there was a server-side problem accessing the requested information
-     * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
     Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId,
@@ -253,7 +256,7 @@ public interface ClusterStatusAdmin {
                                                           final Integer resolution,
                                                           final long duration,
                                                           final boolean includeEmpty)
-            throws RemoteException, FindException;
+            throws FindException;
 
     /**
      * Searches for the latest metrics bins for the given criteria and
@@ -275,7 +278,6 @@ public interface ClusterStatusAdmin {
      *
      * @return a summary bin; <code>null</code> if no metrics bins are found
      * @throws FindException if there was a server-side problem accessing the requested information
-     * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
     MetricsSummaryBin summarizeLatest(final String clusterNodeId,
@@ -283,7 +285,7 @@ public interface ClusterStatusAdmin {
                                       final int resolution,
                                       final int duration,
                                       final boolean includeEmpty)
-            throws RemoteException, FindException;
+            throws FindException;
 
     /**
      * Describes a loaded module.
@@ -311,10 +313,9 @@ public interface ClusterStatusAdmin {
      * Get information about the modular assertions currently loaded on this cluster node.
      *
      * @return A Collection of ModuleInfo, one for each loaded module.  May be empty but never null.
-     * @throws RemoteException on remote communication error
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    Collection<ModuleInfo> getAssertionModuleInfo() throws RemoteException;
+    Collection<ModuleInfo> getAssertionModuleInfo();
 
     /** Exception thrown when a named assertion module is not currently loaded. */
     public static final class ModuleNotFoundException extends Exception {
@@ -329,6 +330,7 @@ public interface ClusterStatusAdmin {
      * @return a string describing the support for the requested capability, or null if the capability is not supported.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
+    @Administrative(licensed=false)
     String getHardwareCapability(String capability);
 
     public static final String CAPABILITY_HWXPATH = "hardwareXpath";

@@ -11,7 +11,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.rmi.RemoteException;
 import java.util.logging.Logger;
 
 /**
@@ -123,8 +122,6 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
                     return new Long(newOid);
                 }
             }
-        } catch (RemoteException e) {
-            logger.severe("Error geting tuples");
         } catch (FindException e) {
             logger.severe("Error geting tuples");
         }
@@ -147,9 +144,6 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
                     model.addElement(tuples[i].getEndpoint().getName());
                 }
             }
-        } catch (RemoteException e) {
-            logger.severe("Error geting tuples");
-            return;
         } catch (FindException e) {
             logger.severe("Error geting tuples");
             return;

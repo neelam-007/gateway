@@ -1,6 +1,5 @@
 package com.l7tech.console.action;
 
-import java.rmi.RemoteException;
 import javax.swing.*;
 
 import com.l7tech.common.gui.util.DialogDisplayer;
@@ -85,8 +84,6 @@ public class RevokeCertificatesAction extends SecureAction {
                         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), msg,
                                                       "Cannot Revoke Certificates",
                                                       JOptionPane.ERROR_MESSAGE, null);
-                    } catch (RemoteException re) {
-                        throw new RuntimeException(re);
                     }
                 }
             }

@@ -21,7 +21,6 @@ import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.*;
 import java.io.*;
 import java.net.MalformedURLException;
-import java.rmi.RemoteException;
 import java.util.*;
 
 /**
@@ -67,13 +66,12 @@ public class SoapMessageGenerator {
      * @throws WSDLException         on error parsing the wsdl
      * @throws FileNotFoundException if wsdl cannot be found
      * @throws SOAPException
-     * @throws RemoteException
      * @throws MalformedURLException
      * @throws IOException
      * @throws SAXException
      */
     public Message[] generateRequests(String wsdlResource)
-      throws WSDLException, FileNotFoundException, SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
+      throws WSDLException, FileNotFoundException, SOAPException, MalformedURLException, IOException, SAXException {
         if (wsdlResource == null) {
             throw new IllegalArgumentException();
         }
@@ -95,7 +93,7 @@ public class SoapMessageGenerator {
      * @throws FileNotFoundException if wsdl cannot be found
      */
     public Message[] generateResponses(String wsdlResource)
-      throws WSDLException, FileNotFoundException, SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
+      throws WSDLException, FileNotFoundException, SOAPException, MalformedURLException, IOException, SAXException {
         if (wsdlResource == null) {
             throw new IllegalArgumentException();
         }
@@ -116,7 +114,7 @@ public class SoapMessageGenerator {
      * @return the array of <code>SoapRequest</code> instances
      * @throws SOAPException on error generating SOAP messages
      */
-    public Message[] generateRequests(Wsdl wsdl) throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
+    public Message[] generateRequests(Wsdl wsdl) throws SOAPException, MalformedURLException, IOException, SAXException {
         this.wsdl = wsdl;
         List requests = new ArrayList();
         Collection bindings = wsdl.getBindings();
@@ -133,7 +131,7 @@ public class SoapMessageGenerator {
      * @return the array of <code>SoapRequest</code> instances
      * @throws SOAPException on error generating SOAP messages
      */
-    public Message[] generateResponses(Wsdl wsdl) throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
+    public Message[] generateResponses(Wsdl wsdl) throws SOAPException, MalformedURLException, IOException, SAXException {
         this.wsdl = wsdl;
         List requests = new ArrayList();
         Collection bindings = wsdl.getBindings();
@@ -152,13 +150,12 @@ public class SoapMessageGenerator {
      * @param request the request message
      * @return the list of SOAP messages specific to the binding specified.
      * @throws SOAPException         when error occurred in parsing SOAP message
-     * @throws RemoteException       if failed to call the remote object
      * @throws MalformedURLException if URL format is invalide
      * @throws IOException           when error occured in reading the wsdl document
      * @throws SAXException          when error occured in parsing XML
      */
     private List generateMessages(Binding binding, boolean request)
-      throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
+      throws SOAPException, MalformedURLException, IOException, SAXException {
         List bindingMessages = new ArrayList();
         List boperations = binding.getBindingOperations();
         for (Iterator iterator = boperations.iterator(); iterator.hasNext();) {
@@ -271,13 +268,12 @@ public class SoapMessageGenerator {
      * @param bindingOperation
      * @return SOAPMessage  a SOAP message
      * @throws SOAPException         when error occured in parsing SOAP message
-     * @throws RemoteException       if failed to call the remote object
      * @throws MalformedURLException if URL format is invalide
      * @throws IOException           when error occured in reading the wsdl document
      * @throws SAXException          when error occured in parsing XML
      */
     private SOAPMessage generateRequestMessage(BindingOperation bindingOperation)
-      throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
+      throws SOAPException, MalformedURLException, IOException, SAXException {
         Object[] soapEnvelope = generateEnvelope(bindingOperation);
 
         SOAPMessage soapMessage = (SOAPMessage)soapEnvelope[0];
@@ -371,13 +367,12 @@ public class SoapMessageGenerator {
      * @param bindingOperation
      * @return SOAPMessage a SOAP message
      * @throws SOAPException         when error occured in parsing SOAP message
-     * @throws RemoteException       if failed to call the remote object
      * @throws MalformedURLException if URL format is invalide
      * @throws IOException           when error occured in reading the wsdl document
      * @throws SAXException          when error occured in parsing XML
      */
     private SOAPMessage generateResponseMessage(BindingOperation bindingOperation)
-      throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
+      throws SOAPException, MalformedURLException, IOException, SAXException {
         Object[] soapEnvelope = generateEnvelope(bindingOperation);
 
         SOAPMessage soapMessage = (SOAPMessage)soapEnvelope[0];
@@ -461,13 +456,12 @@ public class SoapMessageGenerator {
      * @param bo       the binding operation
      * @param envelope the soap envelope
      * @param message  the operation message (input or output)
-     * @throws RemoteException       if failed to call the remote object
      * @throws MalformedURLException if URL format is invalide
      * @throws IOException           when error occured in reading the wsdl document
      * @throws SAXException          when error occured in parsing XML
      */
     private void processDocumentStyle(BindingOperation bo, SOAPEnvelope envelope, javax.wsdl.Message message)
-      throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
+      throws SOAPException, MalformedURLException, IOException, SAXException {
         Operation operation = bo.getOperation();
         List parts = message.getOrderedParts(null);
         if (parts == null || parts.isEmpty()) return;
@@ -522,13 +516,12 @@ public class SoapMessageGenerator {
      *
      * @param elementName the element name to search for
      * @return the array of name, type pairs or empty array if not found
-     * @throws RemoteException       if failed to call the remote object
      * @throws MalformedURLException if URL format is invalide
      * @throws IOException           when error occured in reading the wsdl document
      * @throws SAXException          when error occured in parsing XML
      */
     private NameTypePair[] getSchemaParameterElements(String elementName)
-      throws RemoteException, MalformedURLException, IOException, SAXException {
+      throws MalformedURLException, IOException, SAXException {
         List eeList;
         String targetNamespace = wsdl.getDefinition().getTargetNamespace();
         Types types = wsdl.getTypes();

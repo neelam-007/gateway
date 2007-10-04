@@ -5,7 +5,6 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.common.gui.util.DialogDisplayer;
 
-import java.rmi.RemoteException;
 import java.util.logging.Logger;
 
 /**
@@ -52,12 +51,7 @@ public class ManageKerberosAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        try {
-            DialogDisplayer.display(new KerberosDialog(TopComponents.getInstance().getTopParent()));
-        }
-        catch(RemoteException re) {
-            throw new RuntimeException("Cannot create kerberos dialog.", re);
-        }
+        DialogDisplayer.display(new KerberosDialog(TopComponents.getInstance().getTopParent()));
     }
 
 }

@@ -5,7 +5,6 @@ import com.l7tech.identity.UserBean;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
-import java.rmi.RemoteException;
 
 /**
  * The client credential manager stub mode. Just collect the credentials and
@@ -23,8 +22,7 @@ public class SecurityProviderStub extends SecurityProvider {
     }
 
     public void login(String sessionId, String host)
-            throws LoginException, VersionException, RemoteException
-    {
+            throws LoginException, VersionException {
         this.user = new UserBean("stubAdmin");
     }
 

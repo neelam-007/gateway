@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
-import java.rmi.RemoteException;
 
 /**
  * The SecureSpan Gateway's API for managaging JMS connections and endpoints.
@@ -47,20 +46,18 @@ public interface JmsAdmin {
      *
      * @return an array of {@link JmsProvider} records
      * @throws FindException   if a database problem prevented the providers from being retrieved
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(readOnly=true)
-    JmsProvider[] getProviderList() throws RemoteException, FindException;
+    JmsProvider[] getProviderList() throws FindException;
 
     /**
      * Finds all {@link JmsConnection}s in the database.
      *
      * @return an array of {@link JmsConnection}s
      * @throws FindException   if a database problem prevented the connections from being retrieved
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(readOnly=true)
-    JmsConnection[] findAllConnections() throws RemoteException, FindException;
+    JmsConnection[] findAllConnections() throws FindException;
 
     /**
      * Finds all {@link JmsEndpoint}s in the database, each wrapped in a {@link JmsTuple} that also
@@ -68,11 +65,10 @@ public interface JmsAdmin {
      *
      * @return An array of {@link JmsTuple}s. Never null.
      * @throws FindException   if a database problem prevented the endpoints and/or connections from being retrieved
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(readOnly=true)
     @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_ENTITIES)
-    JmsTuple[] findAllTuples() throws RemoteException, FindException;
+    JmsTuple[] findAllTuples() throws FindException;
 
     /**
      * Finds the {@link JmsConnection} with the given OID.
@@ -80,11 +76,10 @@ public interface JmsAdmin {
      * @param oid the OID of the connection to retrieve
      * @return the {@link JmsConnection} with the specified OID, or null if no such connection could be found
      * @throws FindException   if a database problem prevented the connection from being retrieved
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(readOnly=true)
     @Secured(types=JMS_CONNECTION, stereotype=MethodStereotype.FIND_BY_PRIMARY_KEY)
-    JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException;
+    JmsConnection findConnectionByPrimaryKey(long oid) throws FindException;
 
     /**
      * Finds the {@link JmsEndpoint} with the given OID.
@@ -92,11 +87,10 @@ public interface JmsAdmin {
      * @param oid the OID of the endpoint to retrieve
      * @return the {@link JmsEndpoint} with the specified OID, or null if no such endpoint could be found
      * @throws FindException   if a database problem prevented the endpoint from being retrieved
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(readOnly=true)
     @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_BY_PRIMARY_KEY)
-    JmsEndpoint findEndpointByPrimaryKey(long oid) throws RemoteException, FindException;
+    JmsEndpoint findEndpointByPrimaryKey(long oid) throws FindException;
 
     /**
      * Sets a flag indicating whether the {@link JmsEndpoint} with the specified OID is a message source
@@ -106,10 +100,9 @@ public interface JmsAdmin {
      * @param isMessageSource true if the endpoint with the specified OID should be polled by the SSG, or false if the SSG can use this endpoint to send outbound messages.
      * @throws FindException   if a database problem prevented the endpoint from being retrieved
      * @throws UpdateException if a database problem prevented the endpoint from being updated
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.SET_PROPERTY_BY_ID)
-    void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException, UpdateException;
+    void setEndpointMessageSource(long oid, boolean isMessageSource) throws FindException, UpdateException;
 
     /**
      * Save the specified JmsConnection to the database.
@@ -117,10 +110,9 @@ public interface JmsAdmin {
      * @param connection the JmsConnection to save
      * @return the OID assigned to the saved JmsConnection.
      * @throws SaveException   if a database problem prevented the specified JmsConnection from being saved
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Secured(types=JMS_CONNECTION, stereotype= MethodStereotype.SAVE_OR_UPDATE)
-    long saveConnection(JmsConnection connection) throws RemoteException, SaveException, VersionException;
+    long saveConnection(JmsConnection connection) throws SaveException, VersionException;
 
     /**
      * Save the specified JmsEndpoint to the database.
@@ -128,10 +120,9 @@ public interface JmsAdmin {
      * @param endpoint the JmsEndpoint to save
      * @return the OID assigned to the saved JmsEndpoint.
      * @throws SaveException   if a database problem prevented the specified JmsEndpoint from being saved
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.SAVE_OR_UPDATE)
-    long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, SaveException, VersionException;
+    long saveEndpoint(JmsEndpoint endpoint) throws SaveException, VersionException;
 
     /**
      * Deletes the {@link JmsEndpoint} with the specified OID from the database.
@@ -139,10 +130,9 @@ public interface JmsAdmin {
      * @param endpointOid the OID of the {@link JmsEndpoint} to be deleted
      * @throws FindException   if a database problem prevented the specified JmsEndpoint from being retrieved
      * @throws DeleteException if a database problem prevented the specified JmsEndpoint from being deleted
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.DELETE_BY_ID)
-    void deleteEndpoint(long endpointOid) throws RemoteException, FindException, DeleteException;
+    void deleteEndpoint(long endpointOid) throws FindException, DeleteException;
 
     /**
      * Deletes the {@link JmsConnection} with the specified OID from the database.
@@ -150,10 +140,9 @@ public interface JmsAdmin {
      * @param connectionOid the OID of the {@link JmsConnection} to be deleted
      * @throws FindException   if a database problem prevented the specified JmsConnection from being retrieved
      * @throws DeleteException if a database problem prevented the specified JmsConnection from being deleted
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Secured(types=JMS_CONNECTION, stereotype= MethodStereotype.DELETE_BY_ID)
-    void deleteConnection(long connectionOid) throws RemoteException, FindException, DeleteException;
+    void deleteConnection(long connectionOid) throws FindException, DeleteException;
 
     /**
      * Returns an array of {@link JmsEndpoint}s that belong to the {@link JmsConnection} with the provided OID.
@@ -163,11 +152,10 @@ public interface JmsAdmin {
      * @param connectionOid
      * @return an array of {@link JmsEndpoint}s. Never null.
      * @throws FindException   if a database problem prevented the endpoints from being retrieved
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(readOnly=true)
     @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_ENTITIES)
-    JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws RemoteException, FindException;
+    JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws FindException;
 
     /**
      * Test the specified JmsConnection, which may or may not exist in the database.  The Gateway will use the
@@ -176,10 +164,9 @@ public interface JmsAdmin {
      *
      * @param connection JmsConnection settings to test.  Might not yet have an OID.
      * @throws JmsTestException if the test fails
-     * @throws RemoteException  if there was a problem communicating with the Gateway
      */
     @Transactional(readOnly=true)
-    void testConnection(JmsConnection connection) throws RemoteException, JmsTestException;
+    void testConnection(JmsConnection connection) throws JmsTestException;
 
     /**
      * Test the specified JmsEndpoint on the specified JmsConnection, either or both of which may or may not exist in
@@ -189,8 +176,7 @@ public interface JmsAdmin {
      * @param connection JmsConnection settings to test.  Might not yet have an OID.
      * @param endpoint   JmsEndpoint settings to test.  Might not yet have an OID or a valid connectionOid.
      * @throws FindException   if the connection pointed to by the endpoint cannot be loaded
-     * @throws RemoteException
      */
     @Transactional(readOnly=true)
-    void testEndpoint(JmsConnection connection, JmsEndpoint endpoint) throws RemoteException, JmsTestException, FindException;
+    void testEndpoint(JmsConnection connection, JmsEndpoint endpoint) throws JmsTestException, FindException;
 }

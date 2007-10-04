@@ -5,7 +5,6 @@ import com.l7tech.common.util.HexUtils;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.rmi.RemoteException;
 
 /**
  * Methods implemented by remote admin beans that support async method execution.
@@ -40,9 +39,8 @@ public interface AsyncAdminMethods {
      *
      * @param jobId the JobId of the job whose status to check.  Required.
      * @return a job status string in the above format, or null if the specified jobId is not recognized.
-     * @throws java.rmi.RemoteException on remote communication error
      */
-    <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) throws RemoteException;
+    <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId);
 
     /**
      * Exception thrown if a JobId is unrecognized.
@@ -72,11 +70,10 @@ public interface AsyncAdminMethods {
      *
      * @param jobId the ID of the job whose result to pick up.  Required.
      * @return the result of this inactive job.  Never null.
-     * @throws java.rmi.RemoteException on remote communication error
      * @throws UnknownJobException if the specified jobId is unknown or has already been picked up.
      * @throws JobStillActiveException if the specified job is not inactive.
      */
-    <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws RemoteException, UnknownJobException, JobStillActiveException;
+    <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException;
 
     /**
      * An asynchronous completion token representing a long-running job being performed on the server.

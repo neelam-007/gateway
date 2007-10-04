@@ -11,7 +11,6 @@ import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
 import java.awt.*;
-import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -152,7 +151,7 @@ public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
         return group;
     }
 
-    protected String save() throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
+    protected String save() throws SaveException, UpdateException, ObjectNotFoundException {
         return getIdentityAdmin().saveGroup(config.getOid(), group, emptyMembers);
     }
 }

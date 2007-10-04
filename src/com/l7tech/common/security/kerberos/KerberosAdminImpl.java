@@ -1,6 +1,5 @@
 package com.l7tech.common.security.kerberos;
 
-import java.rmi.RemoteException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
@@ -17,7 +16,7 @@ public class KerberosAdminImpl implements KerberosAdmin {
 
     //- PUBLIC
 
-    public Keytab getKeytab() throws KerberosException, RemoteException {
+    public Keytab getKeytab() throws KerberosException {
         try {
             return KerberosClient.getKerberosAcceptPrincipalKeytab();
         }
@@ -27,7 +26,7 @@ public class KerberosAdminImpl implements KerberosAdmin {
         }
     }
 
-    public String getPrincipal() throws KerberosException, RemoteException {
+    public String getPrincipal() throws KerberosException {
         return KerberosClient.getKerberosAcceptPrincipal();
     }
 

@@ -40,7 +40,6 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-import java.rmi.RemoteException;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -727,8 +726,6 @@ public class LogPanel extends JPanel {
                 try {
                     ClusterProperty prop = reg.getClusterStatusAdmin().findPropertyByName(Messages.OVERRIDE_PREFIX + id);
                     if (prop != null) output = prop.getValue();
-                } catch (RemoteException e) {
-                    logger.log(Level.WARNING, "cannot get property", e);
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "cannot get property", e);
                 }
@@ -1773,8 +1770,6 @@ public class LogPanel extends JPanel {
                 } else {
                     result = Boolean.valueOf(prop.getValue());
                 }
-            } catch (RemoteException e) {
-                // keep old value
             } catch (FindException e) {
                 // keep old value
             }

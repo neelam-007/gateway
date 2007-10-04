@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.logging.Level;
@@ -214,8 +213,6 @@ public class DownloadAuditEventsWindow extends JFrame {
                 model.addElement(service);
             }
             publishedServiceList.setModel(model);
-        } catch (RemoteException e) {
-            throw new RuntimeException("Cannot get list of published services from Gateway.", e);
         } catch (FindException e) {
             throw new RuntimeException("Cannot get list of published services from Gateway.", e);
         }
@@ -378,8 +375,6 @@ public class DownloadAuditEventsWindow extends JFrame {
                         }
 
                         return Boolean.TRUE;
-                    } catch (RemoteException e) {
-                        return e;
                     } catch (IOException e) {
                         return e;
                     }

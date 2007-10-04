@@ -14,7 +14,6 @@ import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayFeatureSets;
 
-import java.rmi.RemoteException;
 import java.util.Collection;
 
 /**
@@ -23,49 +22,33 @@ import java.util.Collection;
  * @author flascelles@layer7-tech.com
  */
 public class SchemaAdminImpl implements SchemaAdmin {
-    private final LicenseManager licenseManager;
     private SchemaEntryManager schemaEntryManager;
     //private final Logger logger = Logger.getLogger(SchemaAdminImpl.class.getName());
 
-    public SchemaAdminImpl(LicenseManager licenseManager) {
-        this.licenseManager = licenseManager;
-    }
-
-    private void checkLicense() throws RemoteException {
-        try {
-            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
-        } catch (LicenseException e) {
-            // New exception to conceal original stack trace from LicenseManager
-            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
-        }
+    public SchemaAdminImpl() {
     }
 
     public void setSchemaEntryManager(SchemaEntryManager schemaEntryManager) {
         this.schemaEntryManager = schemaEntryManager;
     }
 
-    public Collection<SchemaEntry> findAllSchemas() throws RemoteException, FindException {
-        checkLicense();
+    public Collection<SchemaEntry> findAllSchemas() throws FindException {
         return schemaEntryManager.findAll();
     }
 
-    public void deleteSchemaEntry(SchemaEntry existingSchema) throws RemoteException, DeleteException {
-        checkLicense();
+    public void deleteSchemaEntry(SchemaEntry existingSchema) throws DeleteException {
         schemaEntryManager.delete(existingSchema);
     }
 
-    public Collection<SchemaEntry> findByName(String schemaName) throws RemoteException, FindException {
-        checkLicense();
+    public Collection<SchemaEntry> findByName(String schemaName) throws FindException {
         return schemaEntryManager.findByName(schemaName);
     }
 
-    public Collection<SchemaEntry> findByTNS(String tns) throws RemoteException, FindException {
-        checkLicense();
+    public Collection<SchemaEntry> findByTNS(String tns) throws FindException {
         return schemaEntryManager.findByTNS(tns);
     }
 
-    public long saveSchemaEntry(SchemaEntry entry) throws RemoteException, SaveException {
-        checkLicense();
+    public long saveSchemaEntry(SchemaEntry entry) throws SaveException {
         if (entry.getOid() != -1) {
             try {
                 schemaEntryManager.update(entry);

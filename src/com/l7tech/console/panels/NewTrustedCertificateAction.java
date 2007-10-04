@@ -9,7 +9,6 @@ import java.util.ResourceBundle;
 import java.util.Locale;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
-import java.rmi.RemoteException;
 import javax.swing.*;
 
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
@@ -177,10 +176,6 @@ public class NewTrustedCertificateAction extends SecureAction {
                                         resources.getString("save.error.title"),
                                         JOptionPane.ERROR_MESSAGE);
                             }
-                        } catch (RemoteException e) {
-                            JOptionPane.showMessageDialog(source, resources.getString("cert.remote.exception"),
-                                    resources.getString("save.error.title"),
-                                    JOptionPane.ERROR_MESSAGE);
                         } catch (VersionException e) {
                             JOptionPane.showMessageDialog(source, resources.getString("cert.version.error"),
                                     resources.getString("save.error.title"),

@@ -23,8 +23,6 @@ import com.l7tech.service.ServiceAdmin;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
-import java.rmi.RemoteException;
-
 /**
  * @author emil
  * @version Dec 2, 2004
@@ -78,51 +76,51 @@ public class AdminContextImpl
         return BuildInfo.getProductVersion();
     }
 
-    public IdentityAdmin getIdentityAdmin() throws RemoteException, SecurityException {
+    public IdentityAdmin getIdentityAdmin() throws SecurityException {
         return identityAdmin;
     }
 
-    public ServiceAdmin getServiceAdmin() throws RemoteException, SecurityException {
+    public ServiceAdmin getServiceAdmin() throws SecurityException {
         return serviceAdmin;
     }
 
-    public JmsAdmin getJmsAdmin() throws RemoteException, SecurityException {
+    public JmsAdmin getJmsAdmin() throws SecurityException {
         return jmsAdmin;
     }
 
-    public FtpAdmin getFtpAdmin() throws RemoteException, SecurityException {
+    public FtpAdmin getFtpAdmin() throws SecurityException {
         return ftpAdmin;
     }
 
-    public TrustedCertAdmin getTrustedCertAdmin() throws RemoteException, SecurityException {
+    public TrustedCertAdmin getTrustedCertAdmin() throws SecurityException {
         return trustedCertAdmin;
     }
 
-    public SchemaAdmin getSchemaAdmin() throws RemoteException, SecurityException {
+    public SchemaAdmin getSchemaAdmin() throws SecurityException {
         return schemaAdmin;
     }
 
-    public CustomAssertionsRegistrar getCustomAssertionsRegistrar() throws RemoteException, SecurityException {
+    public CustomAssertionsRegistrar getCustomAssertionsRegistrar() throws SecurityException {
         return customAssertionsRegistrar;
     }
 
-    public AuditAdmin getAuditAdmin() throws RemoteException, SecurityException {
+    public AuditAdmin getAuditAdmin() throws SecurityException {
         return auditAdmin;
     }
 
-    public ClusterStatusAdmin getClusterStatusAdmin() throws RemoteException, SecurityException {
+    public ClusterStatusAdmin getClusterStatusAdmin() throws SecurityException {
         return clusterStatusAdmin;
     }
 
-    public KerberosAdmin getKerberosAdmin() throws RemoteException, SecurityException {
+    public KerberosAdmin getKerberosAdmin() throws SecurityException {
         return kerberosAdmin;
     }
 
-    public RbacAdmin getRbacAdmin() throws RemoteException, SecurityException {
+    public RbacAdmin getRbacAdmin() throws SecurityException {
         return rbacAdmin;
     }
 
-    public TransportAdmin getTransportAdmin() throws RemoteException, SecurityException {
+    public TransportAdmin getTransportAdmin() throws SecurityException {
         return transportAdmin;
     }
 

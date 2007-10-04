@@ -27,7 +27,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.Properties;
 
@@ -721,8 +720,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
               "The Gateway has verified the existence of this JMS Queue.",
               "JMS Connection Successful",
               JOptionPane.INFORMATION_MESSAGE);
-        } catch (RemoteException e1) {
-            throw new RuntimeException("Unable to test this JMS Queue", e1);
         } catch (Exception e1) {
             JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
               "The Gateway was unable to find this JMS Queue:\n" +

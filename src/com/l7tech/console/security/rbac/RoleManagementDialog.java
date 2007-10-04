@@ -14,7 +14,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.ResourceBundle;
@@ -45,11 +44,7 @@ public class RoleManagementDialog extends JDialog {
 
     private final ActionListener roleActionListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
-            try {
-                doUpdateRoleAction(e);
-            } catch (RemoteException e1) {
-                throw new RuntimeException(e1);
-            }
+            doUpdateRoleAction(e);
         }
     };
     private JScrollPane propertyScroller;
@@ -111,11 +106,7 @@ public class RoleManagementDialog extends JDialog {
                     else if (e.getClickCount() >= 2) {
                         showEditDialog(getSelectedRole(), new Functions.UnaryVoid<Role>() {
                             public void call(Role role) {
-                                try {
-                                    updatePropertiesSummary();
-                                } catch (RemoteException re) {
-                                    throw new RuntimeException(re);
-                                }
+                                updatePropertiesSummary();
                             }
                         });
                     }
@@ -126,16 +117,12 @@ public class RoleManagementDialog extends JDialog {
         roleList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 enableEditRemoveButtons();
-                try {
-                    updatePropertiesSummary();
-                } catch (RemoteException re) {
-                    throw new RuntimeException(re);
-                }
+                updatePropertiesSummary();
             }
         });
     }
 
-    private void updatePropertiesSummary() throws RemoteException {
+    private void updatePropertiesSummary() {
         String message = null;
 
         RoleModel model = ((RoleModel) roleList.getSelectedValue());
@@ -206,7 +193,7 @@ public class RoleManagementDialog extends JDialog {
         return sorted;
     }
 
-    private Set<String> getAssignmentList(Role role) throws RemoteException {
+    private Set<String> getAssignmentList(Role role) {
         Set<String> sorted = new TreeSet<String>();
 
         if (role != null) {
@@ -259,7 +246,7 @@ public class RoleManagementDialog extends JDialog {
         editRole.setEnabled(validRowSelected);
     }
 
-    private void doUpdateRoleAction(ActionEvent e) throws RemoteException {
+    private void doUpdateRoleAction(ActionEvent e) {
         Object source = e.getSource();
         if (source == null || !(source instanceof JButton)) {
             return;
@@ -270,22 +257,14 @@ public class RoleManagementDialog extends JDialog {
             showEditDialog(new Role(), new Functions.UnaryVoid<Role>() {
                 public void call(Role newRole) {
                     if (newRole != null) populateList();
-                    try {
-                        updatePropertiesSummary();
-                    } catch (RemoteException e1) {
-                        throw new RuntimeException(e1);
-                    }
+                    updatePropertiesSummary();
                 }
             });
         } else if (srcButton == editRole) {
             showEditDialog(getSelectedRole(), new Functions.UnaryVoid<Role>() {
                 public void call(Role r) {
                     if (r != null) populateList();
-                    try {
-                        updatePropertiesSummary();
-                    } catch (RemoteException e1) {
-                        throw new RuntimeException(e1);
-                    }
+                    updatePropertiesSummary();
                 }
             });
         } else if (srcButton == removeRole) {

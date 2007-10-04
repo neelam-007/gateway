@@ -1,12 +1,10 @@
 package com.l7tech.cluster.rmi;
 
-import java.rmi.RemoteException;
 import java.util.logging.Logger;
 
 import javax.security.auth.login.LoginException;
 
 import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.beans.factory.InitializingBean;
 
 import com.l7tech.cluster.ClusterLogin;
 import com.l7tech.cluster.ClusterContext;
@@ -31,7 +29,7 @@ public class ClusterLoginImpl extends ApplicationObjectSupport implements Cluste
     /**
      *
      */
-    public ClusterContext login() throws RemoteException, LoginException {
+    public ClusterContext login() throws LoginException {
         SslRMIServerSocketFactory.Context context = SslRMIServerSocketFactory.getContext();
 
         if(context==null) {

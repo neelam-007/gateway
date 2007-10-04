@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +28,7 @@ public class AddOneOrMoreAssertionAction extends PolicyUpdatingAssertionAction {
     /**
      * @param n the assertion tree node must be composite
      */
-    public AddOneOrMoreAssertionAction(AssertionTreeNode n) throws RemoteException, FindException {
+    public AddOneOrMoreAssertionAction(AssertionTreeNode n) throws FindException {
         this(n, 0);
     }
 

@@ -27,7 +27,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.security.*;
 import java.security.cert.*;
 import java.security.interfaces.RSAPrivateKey;
@@ -94,17 +93,17 @@ public class PrivateKeyManagerWindow extends JDialog {
     private Component showingInScrollPane = null;
 
 
-    public PrivateKeyManagerWindow(JDialog owner) throws RemoteException {
+    public PrivateKeyManagerWindow(JDialog owner) {
         super(owner, resources.getString("keydialog.title"), true);
         initialize();
     }
 
-    public PrivateKeyManagerWindow(Frame owner) throws RemoteException {
+    public PrivateKeyManagerWindow(Frame owner) {
         super(owner, resources.getString("keydialog.title"), true);
         initialize();
     }
 
-    private void initialize() throws RemoteException {
+    private void initialize() {
         timerClients.put(this, Boolean.TRUE);
         flags = PermissionFlags.get(EntityType.SSG_KEY_ENTRY);
 
@@ -325,9 +324,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             showImportErrorMessage(e);
         } catch (InvalidKeyException e) {
             showImportErrorMessage(e);
-        } catch (RemoteException e) {
-            showImportErrorMessage(e);
-        }
+        } 
 
         loadPrivateKeys();
         setSelectedKeyEntry(mutableKeystoreId, alias);
@@ -529,9 +526,6 @@ public class PrivateKeyManagerWindow extends JDialog {
         } catch (AsyncAdminMethods.JobStillActiveException e) {
             logger.log(Level.WARNING, "Unable to check remote job status: " + ExceptionUtils.getMessage(e), e);
             return true;
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Unable to check remote job status: " + ExceptionUtils.getMessage(e), e);
-            return false;
         }
     }
 

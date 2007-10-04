@@ -6,14 +6,11 @@ import java.awt.event.ActionEvent;
 import java.util.Date;
 import java.util.Map;
 import java.text.SimpleDateFormat;
-import java.rmi.RemoteException;
-import java.security.AccessControlException;
 import javax.swing.*;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.kerberos.Keytab;
-import com.l7tech.common.security.kerberos.KerberosConfigException;
 import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.console.util.Registry;
 
@@ -26,12 +23,12 @@ public class KerberosDialog extends JDialog {
 
     //- PUBLIC
 
-    public KerberosDialog(Dialog parent) throws RemoteException {
+    public KerberosDialog(Dialog parent) {
         super(parent, true);
         init();
     }
 
-    public KerberosDialog(Frame parent) throws RemoteException {
+    public KerberosDialog(Frame parent) {
         super(parent, true);
         init();
     }
@@ -51,7 +48,7 @@ public class KerberosDialog extends JDialog {
     private JLabel summaryLabel;
     private JLabel encryptionTypesLabel;
 
-    private void init() throws RemoteException {
+    private void init() {
         setTitle("Kerberos Configuration");
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         Utilities.setAlwaysOnTop(this, true);
@@ -70,7 +67,7 @@ public class KerberosDialog extends JDialog {
         Utilities.centerOnScreen(this);
     }
 
-    private void initData() throws RemoteException {
+    private void initData() {
         KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
 
         if (kerberosAdmin != null) {

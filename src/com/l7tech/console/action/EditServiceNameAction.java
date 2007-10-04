@@ -11,13 +11,11 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
 
 /**
  * The <code>EditServiceNameAction</code> invokes the service name

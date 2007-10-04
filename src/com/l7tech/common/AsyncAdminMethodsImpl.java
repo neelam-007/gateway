@@ -4,7 +4,6 @@ import com.l7tech.common.util.Background;
 import com.l7tech.common.util.Closeable;
 import com.l7tech.common.util.ExceptionUtils;
 
-import java.rmi.RemoteException;
 import java.io.Serializable;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
@@ -89,8 +88,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
         return jobId;
     }
 
-    public synchronized <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) throws RemoteException
-    {
+    public synchronized <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         mustNotBeClosed();
         JobEntry entry = jobs.get(jobId);
         if (entry == null)
@@ -107,7 +105,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
                 entry.result = future.get();
                 return "inactive:completed:";
             } catch (InterruptedException e) {
-                throw new RemoteException("Interrupted while trying to get job status", e); // shouldn't happen
+                throw new RuntimeException("Interrupted while trying to get job status", e); // shouldn't happen
             } catch (ExecutionException e) {
                 Throwable t = e.getCause();
                 if (t == null) t = e;
@@ -120,7 +118,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
     }
 
     public synchronized <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId)
-            throws RemoteException, UnknownJobException, JobStillActiveException {
+            throws UnknownJobException, JobStillActiveException {
         mustNotBeClosed();
         JobEntry entry = jobs.get(jobId);
         if (entry == null)

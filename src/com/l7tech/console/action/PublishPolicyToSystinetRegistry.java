@@ -11,7 +11,6 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import java.util.logging.Level;
-import java.rmi.RemoteException;
 import java.awt.*;
 
 /**
@@ -60,20 +59,12 @@ public class PublishPolicyToSystinetRegistry extends NodeAction {
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get service", e);
             throw new RuntimeException(e);
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Cannot get service", e);
-            throw new RuntimeException(e);
         }
         String policyURL;
         String serviceConsumptionURL;
         try {
             policyURL = Registry.getDefault().getServiceManager().getPolicyURL(""+svc.getOid());
             serviceConsumptionURL = Registry.getDefault().getServiceManager().getConsumptionURL(""+svc.getOid());
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Cannot get service detail from SSG", e);
-            JOptionPane.showMessageDialog(f, "Error getting service details from SecureSpan\nGateway " +
-                                             "consult log for more information", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get service detail from SSG", e);
             JOptionPane.showMessageDialog(f, "Error getting service details from SecureSpan\nGateway " +

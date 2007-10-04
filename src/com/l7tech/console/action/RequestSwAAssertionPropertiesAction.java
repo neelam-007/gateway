@@ -19,7 +19,6 @@ import com.l7tech.objectmodel.FindException;
 import javax.swing.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.rmi.RemoteException;
 import java.awt.*;
 
 /**
@@ -83,8 +82,6 @@ public class RequestSwAAssertionPropertiesAction extends NodeAction {
                             d.addPolicyListener(listener);
                             DialogDisplayer.display(d);
                         }
-                    } catch (RemoteException e) {
-                        log.log(Level.INFO, "Error getting Published Service", e);
                     } catch (FindException e) {
                         log.log(Level.INFO, "Error getting Published Service", e);
                     }

@@ -11,7 +11,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.rmi.RemoteException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -267,8 +266,6 @@ public class EditGatewayNameDialog extends JDialog {
 
                 } catch (UpdateException e) {
                     throw new RuntimeException("Cannot rename the node: " + oldGatewayName, e);
-                } catch (RemoteException e) {
-                    throw new RuntimeException("Remote Exception. Cannot rename the node: " + oldGatewayName, e);
                 } finally {
                     dispose();
                 }

@@ -1,9 +1,9 @@
 package com.l7tech.policy.assertion.ext;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.admin.Administrative;
 
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.util.Collection;
 
 /**
@@ -18,32 +18,28 @@ public interface CustomAssertionsRegistrar {
      *
      * @param className The class to load
      * @return The class data or null
-     * @throws RemoteException on remote communication error
      */
-    byte[] getAssertionClass(String className) throws RemoteException;
+    byte[] getAssertionClass(String className);
 
     /**
      * Get the bytes for a CustomAssertion class or resource.
      *
      * @param path  the path of the resource to load.  Required.
      * @return the resource bytes, or null if not found
-     * @throws RemoteException on remote communication error
      */
-    byte[] getAssertionResourceBytes(String path) throws RemoteException;
+    byte[] getAssertionResourceBytes(String path);
 
     /**
      * @return the list of all assertions known to the runtime
-     * @throws RemoteException on remote communication error
      */
-    Collection getAssertions() throws RemoteException;
+    Collection getAssertions();
 
     /**
      * @param c the category to query for
      * @return the list of all assertions known to the runtime
      *         for a give n category
-     * @throws RemoteException on remote communication error
      */
-    Collection getAssertions(Category c) throws RemoteException;
+    Collection getAssertions(Category c);
 
     /**
      * Resolve the policy in the xml string format with the custom assertions
@@ -51,10 +47,9 @@ public interface CustomAssertionsRegistrar {
      *
      * @param xml the netity header representing the service
      * @return the policy tree
-     * @throws RemoteException on remote invocation error
      * @throws IOException     on policy format error
      */
-    Assertion resolvePolicy(String xml) throws IOException, RemoteException;
+    Assertion resolvePolicy(String xml) throws IOException;
 
     /**
      * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
@@ -65,6 +60,7 @@ public interface CustomAssertionsRegistrar {
      * @param a the assertion class
      * @return the custom assertion descriptor class or <b>null</b>
      */
+    @Administrative(licensed=false)
     CustomAssertionDescriptor getDescriptor(Class a);
 
     /**
@@ -74,5 +70,6 @@ public interface CustomAssertionsRegistrar {
      * @param assertionClassName the assertion class name
      * @return the custom assertion UI class or <b>null</b>
      */
+    @Administrative(licensed=false)
     CustomAssertionUI getUI(String assertionClassName);
 }

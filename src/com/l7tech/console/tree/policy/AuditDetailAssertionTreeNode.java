@@ -3,14 +3,12 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.panels.AuditDetailAssertionPropertiesDialog;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AuditAssertion;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 
 import javax.swing.*;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;

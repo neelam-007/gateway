@@ -32,7 +32,6 @@ import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.List;
-import java.rmi.RemoteException;
 
 /**
  *
@@ -215,11 +214,6 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 try {
                     csr = admin.generateCSR(subject.getKeystore().id, subject.getAlias(), dn.getName());
                 } catch (FindException e) {
-                    logger.log(Level.WARNING, "cannot get csr from ssg", e);
-                    DialogDisplayer.showMessageDialog(generateCSRButton, "Error getting CSR " + e.getMessage(),
-                                                      "CSR Error", JOptionPane.ERROR_MESSAGE, null);
-                    return;
-                } catch (RemoteException e) {
                     logger.log(Level.WARNING, "cannot get csr from ssg", e);
                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error getting CSR " + e.getMessage(),
                                                       "CSR Error", JOptionPane.ERROR_MESSAGE, null);

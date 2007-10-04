@@ -11,12 +11,12 @@ import com.l7tech.common.util.OpaqueId;
 import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.admin.Administrative;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
-import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.logging.Level;
@@ -35,37 +35,37 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @param oid the numeric object identifier of the record to retrieve
      * @return the {@link AuditRecord} with the given oid, or null if no such record exists.
      * @throws FindException if there was a problem retrieving Audit records from the database
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_BY_PRIMARY_KEY)
-    AuditRecord findByPrimaryKey(long oid) throws FindException, RemoteException;
+    @Administrative(licensed=false)
+    AuditRecord findByPrimaryKey(long oid) throws FindException;
 
     /**
      * Retrieves a collection of {@link AuditRecord}s matching the provided criteria.  May be empty, but never null.
      * @param criteria an {@link AuditSearchCriteria} describing the search criteria.  Must not be null.
      * @throws FindException if there was a problem retrieving Audit records from the database
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
-    Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException, RemoteException;
+    @Administrative(licensed=false)
+    Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException;
 
     /**
      * Get the level below which the server will not record audit events of type {@link MessageSummaryAuditRecord}.
      * @return the level currently applicable. Never null.
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(propagation=SUPPORTS)
-    Level serverMessageAuditThreshold() throws RemoteException;
+    @Administrative(licensed=false)
+    Level serverMessageAuditThreshold();
 
     /**
      * Get the level below which the server will not record audit detail records.
      * @return the level currently applicable. Never null.
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(propagation=SUPPORTS)
-    Level serverDetailAuditThreshold() throws RemoteException;
+    @Administrative(licensed=false)
+    Level serverDetailAuditThreshold();
 
     /**
      * Delete all sub-SEVERE AuditRecords that are more than 168 hours old (by default), while producing a new audit
@@ -73,23 +73,25 @@ public interface AuditAdmin extends GenericLogAdmin {
      *
      * {@link Level#SEVERE} AuditRecords can never be deleted.
      *
-     * @throws RemoteException if there was a problem communicating with the Gateway
+     * @throws DeleteException if there was a problem when deleting old audit records
      */
     @Secured(stereotype=DELETE_MULTI)
-    void deleteOldAuditRecords() throws RemoteException, DeleteException;
+    @Administrative(licensed=false)
+    void deleteOldAuditRecords() throws DeleteException;
 
     @Secured(stereotype=FIND_ENTITIES)
+    @Administrative(licensed=false)
     Collection<AuditRecord> findAuditRecords(String nodeid, Date startMsgDate, Date endMsgDate, int size)
-                                      throws RemoteException, FindException;
+                                      throws FindException;
 
     /**
      * Get the date for the last acknowledged audit event.
      *
      * @return The date or null if not set
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(readOnly=true)
-    Date getLastAcknowledgedAuditDate() throws RemoteException;
+    @Administrative(licensed=false)
+    Date getLastAcknowledgedAuditDate();
 
     /**
      * Set and return the date for the last acknowledged audit event.
@@ -97,9 +99,9 @@ public interface AuditAdmin extends GenericLogAdmin {
      * <p>The acknowledged time is updated to the current server time.</p>
      *
      * @return The date or null if not set
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
-    Date markLastAcknowledgedAuditDate() throws RemoteException;
+    @Administrative(licensed=false)
+    Date markLastAcknowledgedAuditDate();
 
     /**
      * Create a context for downloading audit records.  The context will expire after ten minutes of inactivity.
@@ -108,14 +110,14 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @param serviceOids       OIDs of services (thus filtering to service events only); null for no service filtering
      * @param chunkSizeInBytes  number of bytes per download chunk.  If zero, default of 8192 will be used.
      * @return a OpaqueId for passing to downloadNextChunk().  never null.
-     * @throws RemoteException if there is a problem preparing the download context.
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
+    @Administrative(licensed=false)
     OpaqueId downloadAllAudits(long fromTime,
                                long toTime,
                                long[] serviceOids,
-                               int chunkSizeInBytes) throws RemoteException;
+                               int chunkSizeInBytes);
 
     /** Represents a chunk of audits being downloaded. */
     public static final class DownloadChunk implements Serializable {
@@ -134,17 +136,17 @@ public interface AuditAdmin extends GenericLogAdmin {
      * Download the next chunk of audit records.
      * @param context the {@link OpaqueId} that was returned by a previous call to {@link #downloadAllAudits}
      * @return the next {@link DownloadChunk}, or null if the last chunk has already been sent.
-     * @throws RemoteException if there is a problem preparing the chunk.
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
-    DownloadChunk downloadNextChunk(OpaqueId context) throws RemoteException;
+    @Administrative(licensed=false)
+    DownloadChunk downloadNextChunk(OpaqueId context);
 
     /**
      * The minimum age (in hours) that an Audit record must be before it can be purged.
      * @return the minimum number of hours old that an AuditRecord must be before it can be purged.
-     * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(propagation=SUPPORTS)
-    int serverMinimumPurgeAge() throws RemoteException;
+    @Administrative(licensed=false)
+    int serverMinimumPurgeAge();
 }

@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -201,7 +200,7 @@ public class SnmpQueryServlet extends HttpServlet {
      *
      * @return a complete ServiceUsage table.  May be empty but never null.
      */
-    private synchronized ServiceUsage[] getCurrentServiceUsage() throws FindException, RemoteException {
+    private synchronized ServiceUsage[] getCurrentServiceUsage() throws FindException {
         long now = System.currentTimeMillis();
         if (serviceTable != null && now - serviceTableTime > 3500)
             serviceTable = null;

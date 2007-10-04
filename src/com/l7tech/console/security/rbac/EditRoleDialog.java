@@ -28,7 +28,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.*;
-import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
@@ -248,7 +247,7 @@ public class EditRoleDialog extends JDialog {
         private final List<UserRoleAssignment> assignments = new ArrayList<UserRoleAssignment>();
         private final List<UserHolder> holders = new ArrayList<UserHolder>();
 
-        public AssignmentListModel() throws RemoteException, FindException {
+        public AssignmentListModel() throws FindException {
             for (UserRoleAssignment assignment : role.getUserAssignments()) {
                 try {
                     UserHolder uh = new UserHolder(assignment);
@@ -270,7 +269,7 @@ public class EditRoleDialog extends JDialog {
             fireContentsChanged(userAssignmentList, 0, assignments.size());
         }
 
-        public synchronized void add(UserRoleAssignment ura) throws RemoteException, FindException, DuplicateObjectException {
+        public synchronized void add(UserRoleAssignment ura) throws FindException, DuplicateObjectException {
             try {
                 UserHolder holder = null;
                 try {
@@ -467,8 +466,6 @@ public class EditRoleDialog extends JDialog {
                         "The Role could not be saved: " + ExceptionUtils.getMessage(se),
                         "Error Saving Role",
                         JOptionPane.ERROR_MESSAGE);
-            } catch (RemoteException re) {
-                throw new RuntimeException(re);
             }
         } else {
             role = null;

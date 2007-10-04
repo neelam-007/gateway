@@ -22,7 +22,6 @@ import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -305,19 +304,11 @@ public class CertSearchPanel extends JDialog {
     }
 
     private Collection<RevocationCheckPolicy> loadRevocationCheckPolicies() throws FindException {
-        try {
-            return getTrustedCertAdmin().findAllRevocationCheckPolicies();
-        } catch (RemoteException re) {
-            throw new RuntimeException(re);
-        }
+        return getTrustedCertAdmin().findAllRevocationCheckPolicies();
     }
 
     private java.util.List<TrustedCert> findTrustedCerts() throws FindException {
-        try {
-            return getTrustedCertAdmin().findAllCerts();
-        } catch (RemoteException re) {
-            throw new RuntimeException(re);
-        }
+        return getTrustedCertAdmin().findAllCerts();
     }
 
     /**

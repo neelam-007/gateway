@@ -7,8 +7,6 @@ package com.l7tech.common.transport.ftp;
 import com.l7tech.common.security.rbac.Secured;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.rmi.RemoteException;
-
 /**
  * Remote interface for supporting FTP routing assertion.
  *
@@ -32,7 +30,6 @@ public interface FtpAdmin {
      * @param clientCertKeyAlias    key alias in keystore to use if useClientCert is true; must not be null if useClientCert is true
      * @param directory             remote directory to "cd" into; supply empty string if no "cd" wanted
      * @param timeout               connection timeout in milliseconds
-     * @throws RemoteException if remote method call failed
      * @throws FtpTestException if connection test failed
      */
     @Transactional(readOnly=true)
@@ -47,5 +44,5 @@ public interface FtpAdmin {
                         long clientCertKeystoreId,
                         String clientCertKeyAlias,
                         String directory,
-                        int timeout) throws RemoteException, FtpTestException;
+                        int timeout) throws FtpTestException;
 }

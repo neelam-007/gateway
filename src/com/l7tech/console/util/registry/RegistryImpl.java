@@ -24,7 +24,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,12 +66,8 @@ public final class RegistryImpl extends Registry
         if (identityAdmin != null) {
             return identityAdmin;
         }
-        try {
-            identityAdmin = adminContext.getIdentityAdmin();
-            return identityAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        identityAdmin = adminContext.getIdentityAdmin();
+        return identityAdmin;
     }
 
 
@@ -96,12 +91,8 @@ public final class RegistryImpl extends Registry
         if (serviceAdmin != null) {
             return serviceAdmin;
         }
-        try {
-            serviceAdmin = adminContext.getServiceAdmin();
-            return serviceAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        serviceAdmin = adminContext.getServiceAdmin();
+        return serviceAdmin;
     }
 
     /**
@@ -112,12 +103,8 @@ public final class RegistryImpl extends Registry
         if (jmsAdmin != null) {
             return jmsAdmin;
         }
-        try {
-            jmsAdmin = adminContext.getJmsAdmin();
-            return jmsAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        jmsAdmin = adminContext.getJmsAdmin();
+        return jmsAdmin;
     }
 
     /**
@@ -128,12 +115,8 @@ public final class RegistryImpl extends Registry
         if (ftpAdmin != null) {
             return ftpAdmin;
         }
-        try {
-            ftpAdmin = adminContext.getFtpAdmin();
-            return ftpAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        ftpAdmin = adminContext.getFtpAdmin();
+        return ftpAdmin;
     }
 
     /**
@@ -144,12 +127,8 @@ public final class RegistryImpl extends Registry
         if (trustedCertAdmin != null) {
             return trustedCertAdmin;
         }
-        try {
-            trustedCertAdmin = adminContext.getTrustedCertAdmin();
-            return trustedCertAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        trustedCertAdmin = adminContext.getTrustedCertAdmin();
+        return trustedCertAdmin;
     }
 
     public synchronized SchemaAdmin getSchemaAdmin() {
@@ -157,12 +136,8 @@ public final class RegistryImpl extends Registry
         if (schemaAdmin != null) {
             return schemaAdmin;
         }
-        try {
-            schemaAdmin = adminContext.getSchemaAdmin();
-            return schemaAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        schemaAdmin = adminContext.getSchemaAdmin();
+        return schemaAdmin;
     }
 
     /**
@@ -173,12 +148,8 @@ public final class RegistryImpl extends Registry
         if (customAssertionsRegistrar != null) {
             return customAssertionsRegistrar;
         }
-        try {
-            customAssertionsRegistrar = adminContext.getCustomAssertionsRegistrar();
-            return customAssertionsRegistrar;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        customAssertionsRegistrar = adminContext.getCustomAssertionsRegistrar();
+        return customAssertionsRegistrar;
     }
 
     /**
@@ -189,12 +160,8 @@ public final class RegistryImpl extends Registry
         if (auditAdmin !=null) {
             return auditAdmin;
         }
-        try {
-            auditAdmin = adminContext.getAuditAdmin();
-            return auditAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        auditAdmin = adminContext.getAuditAdmin();
+        return auditAdmin;
     }
 
     public ClusterStatusAdmin getClusterStatusAdmin() {
@@ -202,12 +169,8 @@ public final class RegistryImpl extends Registry
         if (clusterStatusAdmin !=null) {
             return clusterStatusAdmin;
         }
-        try {
-            clusterStatusAdmin = adminContext.getClusterStatusAdmin();
-            return clusterStatusAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        clusterStatusAdmin = adminContext.getClusterStatusAdmin();
+        return clusterStatusAdmin;
     }
 
     public KerberosAdmin getKerberosAdmin() {
@@ -215,12 +178,8 @@ public final class RegistryImpl extends Registry
         if (kerberosAdmin != null) {
             return kerberosAdmin;
         }
-        try {
-            kerberosAdmin = adminContext.getKerberosAdmin();
-            return kerberosAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        kerberosAdmin = adminContext.getKerberosAdmin();
+        return kerberosAdmin;
     }
 
     public RbacAdmin getRbacAdmin() {
@@ -228,24 +187,16 @@ public final class RegistryImpl extends Registry
         if (rbacAdmin != null) {
             return rbacAdmin;
         }
-        try {
-            rbacAdmin = adminContext.getRbacAdmin();
-            return rbacAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        rbacAdmin = adminContext.getRbacAdmin();
+        return rbacAdmin;
     }
 
     public TransportAdmin getTransportAdmin() {
         checkAdminContext();
         if (transportAdmin != null)
             return transportAdmin;
-        try {
-            transportAdmin = adminContext.getTransportAdmin();
-            return transportAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        transportAdmin = adminContext.getTransportAdmin();
+        return transportAdmin;
     }
 
     public SecurityProvider getSecurityProvider() {

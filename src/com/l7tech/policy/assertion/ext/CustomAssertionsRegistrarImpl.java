@@ -19,7 +19,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,9 +39,7 @@ public class CustomAssertionsRegistrarImpl
         this.assertionRegistry = assertionRegistry;
     }
 
-    public byte[] getAssertionClass(String className) throws RemoteException {
-        byte[] classData = null;
-
+    public byte[] getAssertionClass(String className) {
         // ensure a name such as "com.something.MyClass"
         if (className == null || className.lastIndexOf('.') <= className.indexOf('.'))
             return null;
@@ -51,7 +48,7 @@ public class CustomAssertionsRegistrarImpl
         return getAssertionResourceBytes(classAsResource);
     }
 
-    public byte[] getAssertionResourceBytes(String path) throws RemoteException {
+    public byte[] getAssertionResourceBytes(String path) {
         if (logger.isLoggable(Level.FINEST))
             logger.finest("Serving custom assertion resource: " + path);
 
@@ -91,9 +88,8 @@ public class CustomAssertionsRegistrarImpl
 
     /**
      * @return the list of all assertions known to the runtime
-     * @throws java.rmi.RemoteException
      */
-    public Collection getAssertions() throws RemoteException {
+    public Collection getAssertions() {
         Set customAssertionDescriptors = CustomAssertions.getDescriptors();
         return asCustomAssertionHolders(customAssertionDescriptors);
     }
@@ -102,9 +98,8 @@ public class CustomAssertionsRegistrarImpl
      * @param c the category to query for
      * @return the list of all assertions known to the runtime
      *         for a give n category
-     * @throws java.rmi.RemoteException
      */
-    public Collection getAssertions(Category c) throws RemoteException {
+    public Collection getAssertions(Category c) {
         final Set customAssertionDescriptors = CustomAssertions.getDescriptors(c);
         return asCustomAssertionHolders(customAssertionDescriptors);
     }
@@ -140,10 +135,9 @@ public class CustomAssertionsRegistrarImpl
      *
      * @param xml the netity header representing the service
      * @return the policy tree
-     * @throws java.rmi.RemoteException on remote invocation error
      * @throws IOException              on policy format error
      */
-    public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
+    public Assertion resolvePolicy(String xml) throws IOException {
         return ((WspReader)getApplicationContext().getBean("wspReader", WspReader.class)).parsePermissively(xml);
     }
 

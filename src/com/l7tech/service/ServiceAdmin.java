@@ -9,10 +9,11 @@ import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.admin.Administrative;
+
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.rmi.RemoteException;
 import java.util.Collection;
 
 /**
@@ -32,12 +33,12 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      *
      * @param serviceID The unique identifier of the service
      * @return The collection of ServiceDocuments
-     * @throws RemoteException on remote communication error
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly=true)
     @Secured(types=SERVICE, stereotype=GET_PROPERTY_BY_ID)
-    Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws FindException;
 
     /**
      * Retrieve a chunk of the available {@link PublishedService} headers  This is a version of
@@ -46,11 +47,11 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      *
      * @return array of {@link EntityHeader}s for requested subset of {@link PublishedService}s May be empty but never null.
      * @throws FindException   if there was a problem accessing the requested information.
-     * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_HEADERS)
-    EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws FindException;
 
     /**
      * Store the specified new or existing published service. If the specified {@link PublishedService} contains a
@@ -59,7 +60,6 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      *
      * @param service the published service to create or update.  Must not be null.
      * @return the unique object ID that was updated or created.
-     * @throws RemoteException on remote communication error
      * @throws SaveException   if the requested information could not be saved
      * @throws UpdateException if the requested information could not be updated
      * @throws VersionException if the service version conflict is detected
@@ -67,7 +67,7 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
     long savePublishedService(PublishedService service)
-            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException;
+            throws UpdateException, SaveException, VersionException, PolicyAssertionException;
 
     /**
      * Store the specified new or existing published service. If the specified {@link PublishedService} contains a
@@ -77,7 +77,6 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * @param service the published service to create or update.  Must not be null.
      * @param serviceDocuments the serviceDocuments to save. Null means no documents.
      * @return the unique object ID that was updated or created.
-     * @throws RemoteException on remote communication error
      * @throws SaveException   if the requested information could not be saved
      * @throws UpdateException if the requested information could not be updated
      * @throws VersionException if the service version conflict is detected
@@ -85,7 +84,7 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      */
     @Secured(stereotype=SAVE_OR_UPDATE, relevantArg=0)
     long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
-            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException;
+            throws UpdateException, SaveException, VersionException, PolicyAssertionException;
 
     /**
      * Validate the service policy and return the policy validation result. Only the server side validation rules
@@ -94,11 +93,10 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * @param serviceId the service unique ID
      * @return the policy validation result that contains policy validation warnings
      * and errors
-     *
-     * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    PolicyValidatorResult validatePolicy(String policyXml, long serviceId) throws RemoteException;
+    @Administrative(licensed=false)
+    PolicyValidatorResult validatePolicy(String policyXml, long serviceId);
 
     /**
      * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
@@ -107,14 +105,14 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * @param namePattern The string of the service name (wildcard % is supported)
      * @param caseSensitive  True if case sensitive, false otherwise.
      * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
-     * @throws RemoteException           on remote communication error
      * @throws FindException   if there was a problem accessing the requested information.
      */
     @Transactional(readOnly=true)
-    WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws RemoteException, FindException ;
+    WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws FindException ;
 
     @Transactional(readOnly=true)
-    String[] findUDDIRegistryURLs() throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    String[] findUDDIRegistryURLs() throws FindException;
 
     /**
      * Gets the ThroughputQuota counter names already defined on this gateway. This is used by the ThroughputQuota assertion
@@ -122,7 +120,8 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * @return a string array with one item for each different counter name for this gateway
      */
     @Transactional(readOnly=true)
-    String[] listExistingCounterNames() throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    String[] listExistingCounterNames() throws FindException;
 
     /**
      * Finds the {@link SampleMessage} instance with the specified OID, or null if it does not exist.
@@ -130,7 +129,8 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      */
     @Secured(types=SAMPLE_MESSAGE, stereotype=FIND_BY_PRIMARY_KEY)
     @Transactional(readOnly=true)
-    SampleMessage findSampleMessageById(long oid) throws RemoteException, FindException;
+    @Administrative(licensed=false)            
+    SampleMessage findSampleMessageById(long oid) throws FindException;
 
     /**
      * Finds any {@link EntityHeader}s belonging to the {@link PublishedService}
@@ -141,31 +141,33 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      */
     @Transactional(readOnly=true)
     @Secured(types=SAMPLE_MESSAGE, stereotype=FIND_HEADERS)
-    EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws FindException;
 
     @Secured(types=SAMPLE_MESSAGE, stereotype=SAVE_OR_UPDATE)
-    long saveSampleMessage(SampleMessage sm) throws SaveException, RemoteException;
+    long saveSampleMessage(SampleMessage sm) throws SaveException;
 
     @Secured(types=SAMPLE_MESSAGE, stereotype=DELETE_ENTITY)
-    void deleteSampleMessage(SampleMessage message) throws DeleteException, RemoteException;
+    void deleteSampleMessage(SampleMessage message) throws DeleteException;
 
     /**
      * Delete a {@link com.l7tech.service.PublishedService} by its unique identifier.
 
      * @param oid the unique identifier of the {@link com.l7tech.service.PublishedService} to delete.
-     * @throws java.rmi.RemoteException on remote communication error
      * @throws com.l7tech.objectmodel.DeleteException if the requested information could not be deleted
      */
     @Secured(stereotype= DELETE_BY_ID)
-    void deletePublishedService(String oid) throws RemoteException, DeleteException;
+    void deletePublishedService(String oid) throws DeleteException;
 
     /**
      * @param serviceoid id of the service to publish on the systinet registry
      * @return registrykey
      */
     @Transactional(readOnly=true)
-    String getPolicyURL(String serviceoid) throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    String getPolicyURL(String serviceoid) throws FindException;
 
     @Transactional(readOnly=true)
-    String getConsumptionURL(String serviceoid ) throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    String getConsumptionURL(String serviceoid ) throws FindException;
 }

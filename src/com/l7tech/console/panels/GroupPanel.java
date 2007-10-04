@@ -28,7 +28,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.rmi.RemoteException;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.logging.Level;
@@ -104,8 +103,6 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             } else {
                 throw new RuntimeException("Can't create a GroupPanel implementation for " + g.getClass().getName());
             }
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
         } catch (FindException e) {
             throw new RuntimeException(e);
         }
@@ -192,8 +189,6 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             setData(group);
         } catch (FindException e) {
             ErrorManager.getDefault().notify(Level.SEVERE, e, "Error while editing user " + groupHeader.getName());
-        } catch (RemoteException e) {
-            ErrorManager.getDefault().notify(Level.SEVERE, e, "Error while editing user " + groupHeader.getName());
         }
     }
 
@@ -201,7 +196,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
         return Registry.getDefault().getIdentityAdmin();
     }
 
-    protected abstract void loadedGroup(Group g) throws RemoteException, FindException;
+    protected abstract void loadedGroup(Group g) throws FindException;
 
     protected abstract GT newGroup(EntityHeader groupHeader);
 
@@ -489,7 +484,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
         return result;
     }
 
-    protected abstract String save() throws RemoteException, SaveException, UpdateException, ObjectNotFoundException;
+    protected abstract String save() throws SaveException, UpdateException, ObjectNotFoundException;
 
 
     /**

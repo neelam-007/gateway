@@ -28,7 +28,6 @@ import com.l7tech.service.*;
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
 import java.net.InetAddress;
-import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -121,16 +120,16 @@ public class RegistryStub extends Registry {
                 role.setDescription("Fake role for testing");
             }
 
-            public Collection<Role> findAllRoles() throws FindException, RemoteException {
+            public Collection<Role> findAllRoles() throws FindException {
                 return Arrays.asList(role);
             }
 
-            public Role findRoleByPrimaryKey(long oid) throws FindException, RemoteException {
+            public Role findRoleByPrimaryKey(long oid) throws FindException {
                 if (role.getOid() == oid) return role;
                 return null;
             }
 
-            public Collection<Permission> findCurrentUserPermissions() throws FindException, RemoteException {
+            public Collection<Permission> findCurrentUserPermissions() throws FindException {
                 return Arrays.asList(
                         new Permission(role, OperationType.CREATE, EntityType.ANY),
                         new Permission(role, OperationType.READ, EntityType.ANY),
@@ -140,19 +139,19 @@ public class RegistryStub extends Registry {
                 );
             }
 
-            public Collection<Role> findRolesForUser(User user) throws FindException, RemoteException {
+            public Collection<Role> findRolesForUser(User user) throws FindException {
                 return findAllRoles();
             }
 
-            public long saveRole(Role role) throws SaveException, RemoteException {
+            public long saveRole(Role role) throws SaveException {
                 throw new SaveException("Can't save roles in stub mode");
             }
 
-            public void deleteRole(Role selectedRole) throws DeleteException, RemoteException {
+            public void deleteRole(Role selectedRole) throws DeleteException {
                 throw new DeleteException("Can't delete roles in stub mode");
             }
 
-            public EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException, RemoteException {
+            public EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException {
                 return new EntityHeader[] {new EntityHeader(role.getId(), com.l7tech.objectmodel.EntityType.RBAC_ROLE, role.getName(), role.getDescription())};
             }
         };
@@ -172,33 +171,33 @@ public class RegistryStub extends Registry {
                     null
             );
 
-            public Collection<SsgConnector> findAllSsgConnectors() throws RemoteException, FindException {
+            public Collection<SsgConnector> findAllSsgConnectors() throws FindException {
                 return Arrays.asList(stubAdminConnection);
             }
 
-            public SsgConnector findSsgConnectorByPrimaryKey(long oid) throws RemoteException, FindException {
+            public SsgConnector findSsgConnectorByPrimaryKey(long oid) throws FindException {
                 if (stubAdminConnection.getOid() == oid)
                     return stubAdminConnection;
                 throw new FindException("no connector found with id " + oid);
             }
 
-            public long saveSsgConnector(SsgConnector connector) throws RemoteException, SaveException, UpdateException {
+            public long saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException {
                 throw new SaveException("Unable to save any connectors in stub mode");
             }
 
-            public void deleteSsgConnector(long oid) throws RemoteException, DeleteException, FindException {
+            public void deleteSsgConnector(long oid) throws DeleteException, FindException {
                 throw new DeleteException("Unable to delete any connectors in stub mode");
             }
 
-            public String[] getAllCipherSuiteNames() throws RemoteException {
+            public String[] getAllCipherSuiteNames() {
                 return new String[0];
             }
 
-            public String[] getDefaultCipherSuiteNames() throws RemoteException {
+            public String[] getDefaultCipherSuiteNames() {
                 return new String[0];
             }
 
-            public InetAddress[] getAvailableBindAddresses() throws RemoteException {
+            public InetAddress[] getAvailableBindAddresses() {
                 return null;
             }
         };
@@ -206,13 +205,13 @@ public class RegistryStub extends Registry {
 
     public SecurityProvider getSecurityProvider() {
         return new SecurityProvider() {
-            public void login(PasswordAuthentication creds, String host, boolean validateHost) throws LoginException, VersionException, RemoteException {
+            public void login(PasswordAuthentication creds, String host, boolean validateHost) throws LoginException, VersionException {
             }
 
-            public void login(String sessionId, String host) throws LoginException, VersionException, RemoteException {
+            public void login(String sessionId, String host) throws LoginException, VersionException {
             }
 
-            public void changePassword(PasswordAuthentication auth, PasswordAuthentication newAuth) throws LoginException, RemoteException {
+            public void changePassword(PasswordAuthentication auth, PasswordAuthentication newAuth) throws LoginException {
             }
 
             public void logoff() {                

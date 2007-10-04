@@ -16,7 +16,6 @@ import com.l7tech.objectmodel.DeleteException;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
-import java.rmi.RemoteException;
 import java.util.EnumSet;
 
 /**
@@ -87,8 +86,6 @@ public class DeleteAuditEventsAction extends SecureAction {
                         try {
                             auditAdmin.deleteOldAuditRecords();
                             DialogDisplayer.showMessageDialog(null, "Deletion will occur in the background.\nAn audit event has been created and will refresh\nafter every 10,000 events are deleted.", title, JOptionPane.INFORMATION_MESSAGE, null);
-                        } catch (RemoteException e) {
-                            throw new RuntimeException("Unable to delete old audit events.", e);
                         } catch (DeleteException e) {
                             throw new RuntimeException("Unable to delete old audit events.", e);
                         }
@@ -99,7 +96,7 @@ public class DeleteAuditEventsAction extends SecureAction {
                 }
             });
 
-        } catch (RemoteException e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException("Unable to delete old audit events.", e);
         }
     }

@@ -22,9 +22,8 @@ public interface ServiceManager extends EntityManager<PublishedService, EntityHe
      *
      * @param url the url target to inspect.
      * @return the payload returned at that url (hopefully)
-     * @throws java.rmi.RemoteException
      */
-    String resolveWsdlTarget(String url) throws java.rmi.RemoteException;
+    String resolveWsdlTarget(String url);
 
     @Transactional(propagation= Propagation.SUPPORTS)
     void initiateServiceCache();

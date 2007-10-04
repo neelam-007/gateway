@@ -11,7 +11,6 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
@@ -85,9 +84,6 @@ public class ExternalSchemaReference extends ExternalReference {
                 }
                 */
             }
-        } catch (RemoteException e) {
-            logger.log(Level.SEVERE, "error using schema admin layer", e);
-            throw new RuntimeException(e);
         } catch (FindException e) {
             logger.log(Level.SEVERE, "error using schema admin layer", e);
             throw new RuntimeException(e);

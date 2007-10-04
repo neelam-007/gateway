@@ -47,7 +47,6 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.rmi.RemoteException;
 import java.security.AccessControlException;
 import java.util.*;
 import java.util.logging.Level;
@@ -460,8 +459,6 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                     //}
                 }
             } catch (ObjectModelException e) {
-                throw new RuntimeException("Error trying to look for import schema in global schema");
-            }  catch (RemoteException e) {
                 throw new RuntimeException("Error trying to look for import schema in global schema");
             }
         }

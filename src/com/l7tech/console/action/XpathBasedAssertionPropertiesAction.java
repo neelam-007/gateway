@@ -15,7 +15,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -84,8 +83,6 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
                 DialogDisplayer.display(dialog);
             }
         } catch (FindException e) {
-            logger.log(Level.WARNING, "cannot get associated service", e);
-        } catch (RemoteException e) {
             logger.log(Level.WARNING, "cannot get associated service", e);
         }
     }

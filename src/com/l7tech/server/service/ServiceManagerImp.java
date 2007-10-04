@@ -30,7 +30,6 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.*;
 
-import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.logging.Level;
@@ -56,7 +55,7 @@ public class ServiceManagerImp
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ServiceAdmin.ROLE_NAME_TYPE_SUFFIX));
 
     @Transactional(propagation=SUPPORTS)
-    public String resolveWsdlTarget(String url) throws RemoteException {
+    public String resolveWsdlTarget(String url) {
         throw new UnsupportedOperationException();
     }
 

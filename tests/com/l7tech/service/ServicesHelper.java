@@ -7,7 +7,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -26,11 +25,10 @@ public class ServicesHelper {
 
     /**
      * Deletes all the test services
-     * @throws RemoteException  on remote error
      * @throws FindException on find error
      * @throws DeleteException  on delete error
      */
-    public void deleteAllServices() throws RemoteException, FindException, DeleteException {
+    public void deleteAllServices() throws FindException, DeleteException {
         EntityHeader[] headers = serviceAdmin.findAllPublishedServices();
         for (int i = 0; i < headers.length; i++) {
             EntityHeader header = headers[i];

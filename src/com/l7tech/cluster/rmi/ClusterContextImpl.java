@@ -1,7 +1,5 @@
 package com.l7tech.cluster.rmi;
 
-import java.rmi.RemoteException;
-
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.beans.factory.InitializingBean;
 
@@ -28,7 +26,7 @@ public class ClusterContextImpl extends ApplicationObjectSupport implements Clus
     /**
      *
      */
-    public GenericLogAdmin getLogAdmin() throws RemoteException, SecurityException {
+    public GenericLogAdmin getLogAdmin() throws SecurityException {
         return genericLogAdmin;
     }
 

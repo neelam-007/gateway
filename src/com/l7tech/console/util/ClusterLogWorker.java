@@ -12,7 +12,6 @@ import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
 
-import java.rmi.RemoteException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -136,8 +135,6 @@ public class ClusterLogWorker extends SwingWorker {
             clusterNodes = clusterStatusService.getClusterStatus();
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to find cluster status from server", e);
-        } catch (RemoteException e) {
-            throw new RuntimeException("Remote exception when retrieving cluster status from server", e);
         }
 
         if (clusterNodes == null) {
@@ -215,8 +212,6 @@ public class ClusterLogWorker extends SwingWorker {
                         logRequest.setEndMsgDate(new Date(oldest+1)); // end date is exclusive
                         
                     }
-                } catch (RemoteException e) {
-                    throw new RuntimeException("Unable to retrieve logs from server", e);
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
                 }
@@ -241,11 +236,7 @@ public class ClusterLogWorker extends SwingWorker {
             requests.remove(logRequest);
         }
 
-        try {
-            currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
-        } catch (RemoteException e) {
-            throw new RuntimeException("Remote exception when retrieving cluster status from server",e);
-        }
+        currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
 
         if (currentClusterSystemTime == null) {
             return null;

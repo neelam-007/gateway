@@ -18,8 +18,6 @@ import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 
-import java.rmi.RemoteException;
-
 /**
  * @author emil
  * @version Dec 2, 2004
@@ -42,79 +40,68 @@ public interface AdminContext {
     /**
      * @return the {@link com.l7tech.identity.IdentityAdmin} implementation
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
      */
-    IdentityAdmin getIdentityAdmin() throws RemoteException, SecurityException;
+    IdentityAdmin getIdentityAdmin() throws SecurityException;
 
     /**
      * @return the service managerr
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
      */
-    ServiceAdmin getServiceAdmin() throws RemoteException, SecurityException;
+    ServiceAdmin getServiceAdmin() throws SecurityException;
 
     /**
      * @return the jms provider manager
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
      */
-    JmsAdmin getJmsAdmin() throws RemoteException, SecurityException;;
+    JmsAdmin getJmsAdmin() throws SecurityException;
 
     /**
      * @return the FTP manager
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
      */
-    FtpAdmin getFtpAdmin() throws RemoteException, SecurityException;;
+    FtpAdmin getFtpAdmin() throws SecurityException;
 
     /**
      * @return the trusted certificates manager
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
      */
-    TrustedCertAdmin getTrustedCertAdmin() throws RemoteException, SecurityException;;
+    TrustedCertAdmin getTrustedCertAdmin() throws SecurityException;
 
-    SchemaAdmin getSchemaAdmin() throws RemoteException, SecurityException;
+    SchemaAdmin getSchemaAdmin() throws SecurityException;
 
     /**
      * @return the custome assertions registrar
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
      */
-    CustomAssertionsRegistrar getCustomAssertionsRegistrar() throws RemoteException, SecurityException;;
+    CustomAssertionsRegistrar getCustomAssertionsRegistrar() throws SecurityException;
 
     /**
      * @return the audit admin interface implementation.
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
      */
-    AuditAdmin getAuditAdmin() throws RemoteException, SecurityException;;
+    AuditAdmin getAuditAdmin() throws SecurityException;
 
     /**
      * @return the cluster status admin interface implementation.
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
      */
-    ClusterStatusAdmin getClusterStatusAdmin() throws RemoteException, SecurityException;
+    ClusterStatusAdmin getClusterStatusAdmin() throws SecurityException;
 
     /**
      * @return the kerberos admin interface implementation.
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
      */
-    KerberosAdmin getKerberosAdmin() throws RemoteException, SecurityException;
+    KerberosAdmin getKerberosAdmin() throws SecurityException;
 
     /**
      * @return the RBAC admin interface implementation.
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
      */
-    RbacAdmin getRbacAdmin() throws RemoteException, SecurityException;
+    RbacAdmin getRbacAdmin() throws SecurityException;
 
     /**
      * @return the transport admin interface implementation.
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
      */
-    TransportAdmin getTransportAdmin() throws RemoteException, SecurityException;
+    TransportAdmin getTransportAdmin() throws SecurityException;
 }

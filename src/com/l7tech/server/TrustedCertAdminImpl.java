@@ -25,7 +25,6 @@ import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.rmi.RemoteException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -74,51 +73,37 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
             throw new IllegalArgumentException("SsgKeyStoreManager is required");
     }
 
-    private void checkLicense() throws RemoteException {
+    private void checkLicenseHeavy() {
         try {
-            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
-        } catch (LicenseException e) {
-            // New exception to conceal original stack trace from LicenseManager
-            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
-        }
-    }
-
-    private void checkLicenseHeavy() throws RemoteException {
-        try {
-            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
             licenseManager.requireFeature(GatewayFeatureSets.SERVICE_TRUSTSTORE);
         } catch (LicenseException e) {
             // New exception to conceal original stack trace from LicenseManager
-            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
+            throw new RuntimeException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
         }
     }
 
-    private void checkLicenseKeyStore() throws RemoteException {
+    private void checkLicenseKeyStore() {
         try {
-            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
             licenseManager.requireFeature(GatewayFeatureSets.SERVICE_KEYSTORE);
         } catch (LicenseException e) {
             // New exception to conceal original stack trace from LicenseManager
-            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
+            throw new RuntimeException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
         }
     }
 
-    public List<TrustedCert> findAllCerts() throws FindException, RemoteException {
-        checkLicense();
+    public List<TrustedCert> findAllCerts() throws FindException {
         return new ArrayList<TrustedCert>(getManager().findAll());
     }
 
-    public TrustedCert findCertByPrimaryKey(final long oid) throws FindException, RemoteException {
-        checkLicense();
+    public TrustedCert findCertByPrimaryKey(final long oid) throws FindException {
         return getManager().findByPrimaryKey(oid);
     }
 
-    public TrustedCert findCertBySubjectDn(final String dn) throws FindException, RemoteException {
-        checkLicense();
+    public TrustedCert findCertBySubjectDn(final String dn) throws FindException {
         return getManager().findBySubjectDn(dn);
     }
 
-    public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, RemoteException {
+    public long saveCert(final TrustedCert cert) throws SaveException, UpdateException {
         checkLicenseHeavy();
         long oid;
 
@@ -155,22 +140,20 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         return oid;
     }
 
-    public void deleteCert(final long oid) throws FindException, DeleteException, RemoteException {
+    public void deleteCert(final long oid) throws FindException, DeleteException {
         checkLicenseHeavy();
         getManager().delete(oid);
     }
 
-    public List<RevocationCheckPolicy> findAllRevocationCheckPolicies() throws FindException, RemoteException {
-        checkLicense();
+    public List<RevocationCheckPolicy> findAllRevocationCheckPolicies() throws FindException {
         return new ArrayList<RevocationCheckPolicy>(getRevocationCheckPolicyManager().findAll());
     }
 
-    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(long oid) throws FindException, RemoteException {
-        checkLicense();
+    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(long oid) throws FindException {
         return getRevocationCheckPolicyManager().findByPrimaryKey(oid);
     }
 
-    public long saveRevocationCheckPolicy(RevocationCheckPolicy revocationCheckPolicy) throws SaveException, UpdateException, VersionException, RemoteException {
+    public long saveRevocationCheckPolicy(RevocationCheckPolicy revocationCheckPolicy) throws SaveException, UpdateException, VersionException {
         checkLicenseHeavy();
 
         long oid;
@@ -185,7 +168,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         return oid;
     }
 
-    public void deleteRevocationCheckPolicy(long oid) throws FindException, DeleteException, RemoteException {
+    public void deleteRevocationCheckPolicy(long oid) throws FindException, DeleteException {
         checkLicenseHeavy();
         getRevocationCheckPolicyManager().delete(oid);
     }
@@ -262,17 +245,14 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     }
 
     public X509Certificate getSSGRootCert() throws IOException, CertificateException {
-        checkLicense();
         return rootCertificate;
     }
 
     public X509Certificate getSSGSslCert() throws IOException, CertificateException {
-        checkLicense();
         return sslCertificate;
     }
 
     public List<KeystoreInfo> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException {
-        checkLicense();
         List<SsgKeyFinder> finders = ssgKeyStoreManager.findAll();
         List<KeystoreInfo> list = new ArrayList<KeystoreInfo>();
         for (SsgKeyFinder finder : finders) {
@@ -289,7 +269,6 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     }
 
     public List<SsgKeyEntry> findAllKeys(long keystoreId) throws IOException, CertificateException, FindException {
-        checkLicense();
         try {
             SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
 
@@ -328,7 +307,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         }
     }
 
-    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws RemoteException, FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         if (alias == null) throw new NullPointerException("alias is null");
         if (alias.length() < 1) throw new IllegalArgumentException("alias is empty");
@@ -350,7 +329,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         return registerJob(keystore.generateKeyPair(alias, new X500Principal(dn), keybits, expiryDays), X509Certificate.class);
     }
 
-    public byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException, RemoteException {
+    public byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException {
         checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
         try {
@@ -375,7 +354,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         }
     }
 
-    public void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException, RemoteException {
+    public void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException {
         checkLicenseKeyStore();
         X509Certificate[] safeChain = CertUtils.parsePemChain(pemChain);
 
@@ -404,7 +383,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     }
 
     public void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8)
-            throws SaveException, CertificateException, InvalidKeyException, RemoteException {
+            throws SaveException, CertificateException, InvalidKeyException {
         checkLicenseKeyStore();
         X509Certificate[] safeChain = CertUtils.parsePemChain(pemChain);
 

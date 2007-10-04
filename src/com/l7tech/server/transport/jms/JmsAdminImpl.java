@@ -6,17 +6,12 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.common.LicenseException;
-import com.l7tech.common.LicenseManager;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.GatewayFeatureSets;
 
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -29,32 +24,19 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class JmsAdminImpl implements JmsAdmin {
-    private final LicenseManager licenseManager;
     private final JmsConnectionManager jmsConnectionManager;
     private final JmsEndpointManager jmsEndpointManager;
     private final JmsPropertyMapper jmsPropertyMapper;
 
-    public JmsAdminImpl(LicenseManager licenseManager,
-                        JmsConnectionManager jmsConnectionManager,
+    public JmsAdminImpl(JmsConnectionManager jmsConnectionManager,
                         JmsEndpointManager jmsEndpointManager,
                         JmsPropertyMapper jmsPropertyMapper) {
-        this.licenseManager = licenseManager;
         this.jmsConnectionManager = jmsConnectionManager;
         this.jmsEndpointManager = jmsEndpointManager;
         this.jmsPropertyMapper = jmsPropertyMapper;
     }
 
-    private void checkLicense() throws RemoteException {
-        try {
-            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
-        } catch (LicenseException e) {
-            // New exception to conceal original stack trace from LicenseManager
-            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
-        }
-    }
-
-    public JmsProvider[] getProviderList() throws RemoteException, FindException {
-        checkLicense();
+    public JmsProvider[] getProviderList() throws FindException {
         return jmsConnectionManager.findAllProviders().toArray(new JmsProvider[0]);
     }
 
@@ -62,11 +44,9 @@ public class JmsAdminImpl implements JmsAdmin {
      * Finds all {@link JmsConnection}s in the database.
      *
      * @return an array of transient {@link JmsConnection}s
-     * @throws RemoteException
      * @throws FindException
      */
-    public JmsConnection[] findAllConnections() throws RemoteException, FindException {
-        checkLicense();
+    public JmsConnection[] findAllConnections() throws FindException {
         Collection found = jmsConnectionManager.findAll();
         if (found == null || found.size() < 1) return new JmsConnection[0];
 
@@ -79,8 +59,7 @@ public class JmsAdminImpl implements JmsAdmin {
         return (JmsConnection[])results.toArray(new JmsConnection[0]);
     }
 
-    public JmsAdmin.JmsTuple[] findAllTuples() throws RemoteException, FindException {
-        checkLicense();
+    public JmsAdmin.JmsTuple[] findAllTuples() throws FindException {
         JmsTuple tuple;
         ArrayList result = new ArrayList();
         Collection connections = jmsConnectionManager.findAll();
@@ -101,30 +80,24 @@ public class JmsAdminImpl implements JmsAdmin {
      * Finds the {@link JmsConnection} with the provided OID.
      *
      * @return the {@link JmsConnection} with the provided OID.
-     * @throws RemoteException
      * @throws FindException
      */
-    public JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
-        checkLicense();
+    public JmsConnection findConnectionByPrimaryKey(long oid) throws FindException {
         return jmsConnectionManager.findByPrimaryKey(oid);
     }
 
-    public JmsEndpoint findEndpointByPrimaryKey(long oid) throws RemoteException, FindException {
-        checkLicense();
+    public JmsEndpoint findEndpointByPrimaryKey(long oid) throws FindException {
         return jmsEndpointManager.findByPrimaryKey(oid);
     }
 
-    public void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException, UpdateException {
-        checkLicense();
+    public void setEndpointMessageSource(long oid, boolean isMessageSource) throws FindException, UpdateException {
         JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
         if (endpoint == null) throw new FindException("No endpoint with OID " + oid + " could be found");
         endpoint.setMessageSource(isMessageSource);
     }
 
-    public long saveConnection(JmsConnection connection) throws RemoteException, SaveException, VersionException {
+    public long saveConnection(JmsConnection connection) throws SaveException, VersionException {
         try {
-            checkLicense();
-
             long oid = connection.getOid();
             if (oid == JmsConnection.DEFAULT_OID)
                 oid = jmsConnectionManager.save(connection);
@@ -141,11 +114,9 @@ public class JmsAdminImpl implements JmsAdmin {
      *
      * @param connectionOid
      * @return an array of {@link JmsEndpoint}s
-     * @throws RemoteException
      * @throws FindException
      */
-    public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws RemoteException, FindException {
-        checkLicense();
+    public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws FindException {
         return jmsEndpointManager.findEndpointsForConnection(connectionOid);
     }
 
@@ -155,12 +126,10 @@ public class JmsAdminImpl implements JmsAdmin {
      * are valid.
      *
      * @param connection JmsConnection settings to test.  Might not yet have an OID.
-     * @throws RemoteException
      * @throws JmsTestException if a test connection could not be established
      */
-    public void testConnection(JmsConnection connection) throws RemoteException, JmsTestException {
+    public void testConnection(JmsConnection connection) throws JmsTestException {
         try {
-            checkLicense();
             JmsUtil.connect(connection).close();
         } catch (JMSException e) {
             _logger.log(Level.INFO, "Caught JMSException while testing connection", e);
@@ -183,10 +152,8 @@ public class JmsAdminImpl implements JmsAdmin {
      * @param conn     JmsConnection settings to test.  Might not yet have an OID.
      * @param endpoint JmsEndpoint settings to test.  Might not yet have an OID or a valid connectionOid.
      * @throws FindException   if the connection pointed to by the endpoint cannot be loaded
-     * @throws RemoteException
      */
-    public void testEndpoint(JmsConnection conn, JmsEndpoint endpoint) throws RemoteException, FindException, JmsTestException {
-        checkLicense();
+    public void testEndpoint(JmsConnection conn, JmsEndpoint endpoint) throws FindException, JmsTestException {
         JmsBag bag = null;
         MessageConsumer jmsQueueReceiver = null;
         QueueSender jmsQueueSender = null;
@@ -265,9 +232,8 @@ public class JmsAdminImpl implements JmsAdmin {
         }
     }
 
-    public long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, SaveException, VersionException {
+    public long saveEndpoint(JmsEndpoint endpoint) throws SaveException, VersionException {
         try {
-            checkLicense();
             long oid = endpoint.getOid();
             if (oid == JmsConnection.DEFAULT_OID)
                 oid = jmsEndpointManager.save(endpoint);
@@ -281,13 +247,11 @@ public class JmsAdminImpl implements JmsAdmin {
         }
     }
 
-    public void deleteEndpoint(long endpointOid) throws RemoteException, FindException, DeleteException {
-        checkLicense();
+    public void deleteEndpoint(long endpointOid) throws FindException, DeleteException {
         jmsEndpointManager.delete(endpointOid);
     }
 
-    public void deleteConnection(long connectionOid) throws RemoteException, FindException, DeleteException {
-        checkLicense();
+    public void deleteConnection(long connectionOid) throws FindException, DeleteException {
         jmsConnectionManager.delete(connectionOid);
     }
 

@@ -71,7 +71,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.rmi.RemoteException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.List;
@@ -248,8 +247,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                                 populateSampleMessages(currentOperation == null ? null : currentOperation.getName(), oid);
                             } catch (SaveException ex) {
                                 throw new RuntimeException("Couldn't save SampleMessage", ex);
-                            } catch (RemoteException ex) {
-                                throw new RuntimeException("Couldn't save SampleMessage", ex);
                             }
                         }
                     }
@@ -267,8 +264,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                             try {
                                 Registry.getDefault().getServiceManager().saveSampleMessage(entry.message);
                             } catch (SaveException ex) {
-                                throw new RuntimeException("Couldn't save SampleMessage", ex);
-                            } catch (RemoteException ex) {
                                 throw new RuntimeException("Couldn't save SampleMessage", ex);
                             }
                             sampleMessagesCombo.repaint();
@@ -293,8 +288,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                         Registry.getDefault().getServiceManager().deleteSampleMessage(entry.message);
                         sampleMessagesCombo.removeItem(entry);
                     } catch (DeleteException e1) {
-                        throw new RuntimeException("Couldn't delete SampleMessage", e1);
-                    } catch (RemoteException e1) {
                         throw new RuntimeException("Couldn't delete SampleMessage", e1);
                     }
                 }
@@ -508,8 +501,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         } catch (WSDLException e) {
             throw new RuntimeException(e);
         } catch (FindException e) {
-            throw new RuntimeException(e);
-        } catch (RemoteException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -17,7 +17,6 @@ import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 
 import java.io.Serializable;
-import java.rmi.RemoteException;
 
 /**
  * Replacement for old 'remote' admin context.
@@ -87,7 +86,7 @@ public class AdminContextBean implements AdminContext, Serializable {
     }
 
     public IdentityProviderConfig getInternalProviderConfig()
-      throws SecurityException, RemoteException, FindException {
+      throws SecurityException, FindException {
         return identityAdmin.findIdentityProviderConfigByID(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
     }
 
@@ -127,11 +126,11 @@ public class AdminContextBean implements AdminContext, Serializable {
         return kerberosAdmin;
     }
 
-    public RbacAdmin getRbacAdmin() throws RemoteException, SecurityException {
+    public RbacAdmin getRbacAdmin() throws SecurityException {
         return rbacAdmin;
     }
 
-    public TransportAdmin getTransportAdmin() throws RemoteException, SecurityException {
+    public TransportAdmin getTransportAdmin() throws SecurityException {
         return transportAdmin;
     }
 }

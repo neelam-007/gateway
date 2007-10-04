@@ -47,7 +47,6 @@ import java.io.IOException;
 import java.io.FileOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.rmi.RemoteException;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -189,8 +188,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             try {
                 service = subject.getServiceNode().getPublishedService();
             } catch (FindException e) {
-                log.log(Level.SEVERE, "cannot get service", e);
-            } catch (RemoteException e) {
                 log.log(Level.SEVERE, "cannot get service", e);
             }
         }
@@ -580,23 +577,19 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             callable = new Callable<PolicyValidatorResult>() {
                 public PolicyValidatorResult call() throws Exception {
                     PolicyValidatorResult result = PolicyValidator.getDefault().validate(assertion, service, licenseManager);
-                    try {
-                        if (getPublishedService() != null) {
-                            PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
-                                    validatePolicy(policyXml, getPublishedService().getOid());
-                            if (result2.getErrorCount() > 0) {
-                                for (Object o : result2.getErrors()) {
-                                    result.addError((PolicyValidatorResult.Error)o);
-                                }
-                            }
-                            if (result2.getWarningCount() > 0) {
-                                for (Object o : result2.getWarnings()) {
-                                    result.addWarning((PolicyValidatorResult.Warning)o);
-                                }
+                    if (getPublishedService() != null) {
+                        PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
+                                validatePolicy(policyXml, getPublishedService().getOid());
+                        if (result2.getErrorCount() > 0) {
+                            for (Object o : result2.getErrors()) {
+                                result.addError((PolicyValidatorResult.Error)o);
                             }
                         }
-                    } catch (RemoteException e) {
-                        log.log(Level.WARNING, "Problem running server side validation", e);
+                        if (result2.getWarningCount() > 0) {
+                            for (Object o : result2.getWarnings()) {
+                                result.addWarning((PolicyValidatorResult.Warning)o);
+                            }
+                        }
                     }
                     return result;
                 }
@@ -1074,8 +1067,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                                 validatePolicy();
                             }
                         } catch (FindException e) {
-                            log.log(Level.SEVERE, "cannot get back service", e);
-                        } catch (RemoteException e) {
                             log.log(Level.SEVERE, "cannot get back service", e);
                         }
                     }

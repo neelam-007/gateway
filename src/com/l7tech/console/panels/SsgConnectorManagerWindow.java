@@ -21,7 +21,6 @@ import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,12 +42,12 @@ public class SsgConnectorManagerWindow extends JDialog {
     private PermissionFlags flags;
 
 
-    public SsgConnectorManagerWindow(Frame owner) throws RemoteException {
+    public SsgConnectorManagerWindow(Frame owner) {
         super(owner, "Manage Listen Ports");
         initialize();
     }
 
-    public SsgConnectorManagerWindow(Dialog owner) throws RemoteException {
+    public SsgConnectorManagerWindow(Dialog owner) {
         super(owner, "Manage Listen Ports");
         initialize();
     }
@@ -114,7 +113,7 @@ public class SsgConnectorManagerWindow extends JDialog {
             return;
 
         int result = JOptionPane.showConfirmDialog(this,
-                                                   "Are you sure you want to remove the listen port \"" + connector.getName() + "\"?", 
+                                                   "Are you sure you want to remove the listen port \"" + connector.getName() + "\"?",
                                                    "Confirm Removal",
                                                    JOptionPane.YES_NO_CANCEL_OPTION,
                                                    JOptionPane.QUESTION_MESSAGE);
@@ -127,8 +126,6 @@ public class SsgConnectorManagerWindow extends JDialog {
         try {
             ta.deleteSsgConnector(connector.getOid());
             loadConnectors();
-        } catch (RemoteException e) {
-            showErrorMessage("Remove Failed", "Failed to remove listen port: " + ExceptionUtils.getMessage(e), e);
         } catch (DeleteException e) {
             showErrorMessage("Remove Failed", "Failed to remove listen port: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
@@ -165,8 +162,6 @@ public class SsgConnectorManagerWindow extends JDialog {
                         reedit = null;
                         loadConnectors();
                         connectorTable.setSelectedConnector(connector);
-                    } catch (RemoteException e) {
-                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e, reedit);
                     } catch (SaveException e) {
                         showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e, reedit);
                     } catch (UpdateException e) {
@@ -207,8 +202,6 @@ public class SsgConnectorManagerWindow extends JDialog {
             for (SsgConnector connector : connectors)
                 rows.add(new ConnectorTableRow(connector));
             connectorTable.setData(rows);
-        } catch (RemoteException e) {
-            showErrorMessage("Deletion Failed", "Unable to delete listen port: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
             showErrorMessage("Deletion Failed", "Unable to delete listen port: " + ExceptionUtils.getMessage(e), e);
         }

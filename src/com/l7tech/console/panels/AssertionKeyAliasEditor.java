@@ -12,7 +12,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
@@ -106,12 +105,7 @@ public class AssertionKeyAliasEditor extends JDialog {
 
     private void manageCustomKeys() {
         PrivateKeyManagerWindow pkmw;
-        try {
-            pkmw = new PrivateKeyManagerWindow(this);
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "problem loading key manager window", e);
-            return;
-        }
+        pkmw = new PrivateKeyManagerWindow(this);
         pkmw.pack();
         Utilities.centerOnScreen(pkmw);
         DialogDisplayer.display(pkmw, new Runnable() {

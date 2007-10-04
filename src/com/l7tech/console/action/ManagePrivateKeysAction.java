@@ -4,11 +4,9 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.panels.PrivateKeyManagerWindow;
 import com.l7tech.console.util.TopComponents;
 
-import java.rmi.RemoteException;
 import java.util.logging.Logger;
 
 /**
@@ -52,13 +50,9 @@ public class ManagePrivateKeysAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        try {
-            PrivateKeyManagerWindow pkmw = new PrivateKeyManagerWindow(TopComponents.getInstance().getTopParent());
-            pkmw.pack();
-            Utilities.centerOnScreen(pkmw);
-            DialogDisplayer.display(pkmw);
-        } catch (RemoteException e) {
-            throw new RuntimeException("Cannot Manage Private Keys: " + ExceptionUtils.getMessage(e), e);
-        }
+        PrivateKeyManagerWindow pkmw = new PrivateKeyManagerWindow(TopComponents.getInstance().getTopParent());
+        pkmw.pack();
+        Utilities.centerOnScreen(pkmw);
+        DialogDisplayer.display(pkmw);
     }
 }

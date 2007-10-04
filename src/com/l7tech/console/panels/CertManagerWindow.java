@@ -23,7 +23,6 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -134,8 +133,6 @@ public class CertManagerWindow extends JDialog {
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.find.error"),
                                                   resources.getString("view.error.title"),
                                                   JOptionPane.ERROR_MESSAGE);
-                } catch (RemoteException e) {
-                    throw new RuntimeException(e);
                 }
             }
         });
@@ -172,8 +169,6 @@ public class CertManagerWindow extends JDialog {
                         JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.delete.error"),
                                                       resources.getString("save.error.title"),
                                                       JOptionPane.ERROR_MESSAGE);
-                    } catch (RemoteException e) {
-                        throw new RuntimeException(e);
                     }
                 }
             }
@@ -207,8 +202,6 @@ public class CertManagerWindow extends JDialog {
             JOptionPane.showMessageDialog(CertManagerWindow.this, msg,
                                           resources.getString("load.error.title"),
                                           JOptionPane.ERROR_MESSAGE);
-        } catch (RemoteException re) {
-            throw new RuntimeException(re);
         }
     }
 
@@ -224,11 +217,7 @@ public class CertManagerWindow extends JDialog {
     }
 
     private Collection<RevocationCheckPolicy> loadRevocationCheckPolicies() throws FindException {
-        try {
-            return getTrustedCertAdmin().findAllRevocationCheckPolicies();
-        } catch (RemoteException re) {
-            throw new RuntimeException(re);
-        }
+        return getTrustedCertAdmin().findAllRevocationCheckPolicies();
     }
 
     /**

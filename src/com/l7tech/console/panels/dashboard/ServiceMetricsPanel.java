@@ -25,7 +25,6 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -213,13 +212,7 @@ public class ServiceMetricsPanel extends JPanel {
         rightTabbedPane.setSelectedIndex(LATEST_TAB_INDEX);
         statusLabel.setText(" ");
 
-        int fineInterval;
-        try {
-            fineInterval = getClusterStatusAdmin().getMetricsFineInterval();
-        } catch (RemoteException e) {
-            _logger.warning("Cannot get fine bin interval from gateway; defaulting to 5 seconds: " + e);
-            fineInterval = 5 * 1000;
-        }
+        int fineInterval = getClusterStatusAdmin().getMetricsFineInterval();;
 
         _fineResolution = new Resolution(MetricsBin.RES_FINE, fineInterval, FINE_CHART_TIME_RANGE);
         _hourlyResolution = new Resolution(MetricsBin.RES_HOURLY, 60 * 60 * 1000, HOURLY_CHART_TIME_RANGE);
@@ -285,13 +278,13 @@ public class ServiceMetricsPanel extends JPanel {
         _refreshTimer.start();
     } /* constructor */
 
-    private ClusterNodeInfo[] findAllClusterNodes() throws RemoteException, FindException {
+    private ClusterNodeInfo[] findAllClusterNodes() throws FindException {
         final ClusterNodeInfo[] result = getClusterStatusAdmin().getClusterStatus();
         Arrays.sort(result);
         return result;
     }
 
-    private EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
+    private EntityHeader[] findAllPublishedServices() throws FindException {
         final EntityHeader[] result = getServiceAdmin().findAllPublishedServices();
         updateServiceNames(result);
         Arrays.sort(result, new Comparator<EntityHeader>() {
@@ -308,7 +301,7 @@ public class ServiceMetricsPanel extends JPanel {
         return result;
     }
 
-    private void updateClusterNodesCombo() throws RemoteException, FindException {
+    private void updateClusterNodesCombo() throws FindException {
         final ClusterNodeInfo[] newNodes = findAllClusterNodes();
         if (!Arrays.equals(_clusterNodes, newNodes)) {
             updateComboModel(_clusterNodes, newNodes, _clusterNodeComboModel);
@@ -316,7 +309,7 @@ public class ServiceMetricsPanel extends JPanel {
         _clusterNodes = newNodes;
     }
 
-    private void updatePublishedServicesCombo() throws RemoteException, FindException {
+    private void updatePublishedServicesCombo() throws FindException {
             final EntityHeader[] newServices = findAllPublishedServices();
             if (!Arrays.equals(_publishedServices, newServices)) {
                 updateComboModel(_publishedServices, newServices, _publishedServiceComboModel);
@@ -340,12 +333,7 @@ public class ServiceMetricsPanel extends JPanel {
 
     public void updateTimeZone() {
         // Gets time zone on gateway.
-        TimeZone tz = null;
-        try {
-            tz = TimeZone.getTimeZone(getClusterStatusAdmin().getCurrentClusterTimeZone());
-        } catch (RemoteException e) {
-            // Falls through to use local time zone.
-        }
+        TimeZone tz = TimeZone.getTimeZone(getClusterStatusAdmin().getCurrentClusterTimeZone());
         if (tz == null) {
             _logger.warning("Failed to get time zone from gateway. Falling back to use local time zone for display.");
             tz = TimeZone.getDefault();
@@ -558,10 +546,6 @@ public class ServiceMetricsPanel extends JPanel {
                 _logger.log(Level.INFO, "Reconnected to SSG.");
             }
             _connected = true;
-        } catch (RemoteException e) {
-            ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to get dashboard data.");
-            _refreshTimer.stop();
-            dispose();
         } catch (RuntimeException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to get dashboard data.");
             _refreshTimer.stop();
@@ -686,11 +670,10 @@ public class ServiceMetricsPanel extends JPanel {
      * Use service display name (includes distinguishing information).
      *
      * @param headers   published services
-     * @throws RemoteException if remote communication error
      * @throws FindException if there was a problem accessing the requested information
      */
     private void updateServiceNames(EntityHeader[] headers)
-            throws RemoteException, FindException {
+            throws FindException {
         for (EntityHeader header : headers) {
             final PublishedService ps = getServiceAdmin().findServiceByID(header.getStrId());
             if (ps != null) {

@@ -14,7 +14,6 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.CertificateCheckInfo;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
@@ -48,7 +47,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.StringTokenizer;
@@ -421,15 +419,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
         // we smelt something (maybe netegrity?)
         CustomAssertionsRegistrar car = (CustomAssertionsRegistrar)getApplicationContext().getBean("customAssertionRegistrar");
-        try {
-            if (car != null && !car.getAssertions(Category.ACCESS_CONTROL).isEmpty()) {
-                checkInfos.add(new CertificateCheckInfo(Long.toString(Long.MAX_VALUE), SecureSpanConstants.NOPASS, null));
-            }
-        } catch (RemoteException e) {
-            if (ExceptionUtils.causedBy(e, LicenseException.class)) {
-                logger.log(Level.INFO, "Custom assertions unavailable or unlicensed");
-            } else
-                logger.log(Level.WARNING, "Custom assertions error", e);
+        if (car != null && !car.getAssertions(Category.ACCESS_CONTROL).isEmpty()) {
+            checkInfos.add(new CertificateCheckInfo(Long.toString(Long.MAX_VALUE), SecureSpanConstants.NOPASS, null));
         }
 
         return checkInfos;

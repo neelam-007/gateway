@@ -14,7 +14,6 @@ import com.l7tech.objectmodel.FindException;
 import javax.wsdl.WSDLException;
 import javax.swing.*;
 import java.awt.*;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 
 /**
@@ -52,11 +51,6 @@ public class OperationPropertiesAction extends SecureAction {
         PublishedService svc = null;
         try {
             svc = subject.getService();
-        } catch (RemoteException e) {
-            String msg = "error retrieving service";
-            log.log(Level.WARNING, msg, e);
-            DialogDisplayer.showMessageDialog(f, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
-            return;
         } catch (FindException e) {
             String msg = "error retrieving service";
             log.log(Level.WARNING, msg, e);

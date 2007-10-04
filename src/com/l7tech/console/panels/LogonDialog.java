@@ -29,7 +29,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.net.*;
-import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -768,7 +767,7 @@ public class LogonDialog extends JDialog {
             String msg = resources.getString("logon.invalid.service.url");
             JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.WARNING_MESSAGE);
         }
-        else if (cause instanceof RemoteException || cause instanceof IOException) {
+        else if (cause instanceof IOException) {
             log.log(Level.WARNING, "Could not connect to admin service server", e);
             String msg = MessageFormat.format(resources.getString("service.unavailable.error"), host);
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);

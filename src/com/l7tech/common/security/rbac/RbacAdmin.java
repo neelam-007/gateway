@@ -6,10 +6,11 @@ package com.l7tech.common.security.rbac;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.User;
+import com.l7tech.admin.Administrative;
+
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.rmi.RemoteException;
 import java.util.Collection;
 
 /**
@@ -27,21 +28,22 @@ public interface RbacAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
-    Collection<Role> findAllRoles() throws FindException, RemoteException;
+    Collection<Role> findAllRoles() throws FindException;
 
     /**
      * Returns the single Role with the specified OID, or null if no Role with the given OID exists.
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_BY_PRIMARY_KEY)
-    Role findRoleByPrimaryKey(long oid) throws FindException, RemoteException;
+    Role findRoleByPrimaryKey(long oid) throws FindException;
 
     /**
      * Gets the permissions of the current admin user.  This is unsecured, so that anyone running
      * the SSM can find out what functionality they can access. 
      */
     @Transactional(readOnly=true)
-    Collection<Permission> findCurrentUserPermissions() throws FindException, RemoteException;
+    @Administrative(licensed=false) 
+    Collection<Permission> findCurrentUserPermissions() throws FindException;
 
     /**
      * Gets the roles assigned to the given user.  This is unsecured, so that anyone running
@@ -50,18 +52,19 @@ public interface RbacAdmin {
      * The User cannot be null.
      */
     @Transactional(readOnly=true)
-    Collection<Role> findRolesForUser(User user) throws FindException, RemoteException;
+    @Administrative(licensed=false)
+    Collection<Role> findRolesForUser(User user) throws FindException;
     /**
      * Saves the specified Role.
      * @return the OID of the role that was saved
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long saveRole(Role role) throws SaveException, RemoteException;
+    long saveRole(Role role) throws SaveException;
 
     @Secured(stereotype=DELETE_ENTITY)
-    void deleteRole(Role selectedRole) throws DeleteException, RemoteException;
+    void deleteRole(Role selectedRole) throws DeleteException;
 
     @Transactional(readOnly=true)
     @Secured(types=EntityType.ANY, stereotype=FIND_HEADERS)
-    EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException, RemoteException;
+    EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException;
 }

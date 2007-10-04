@@ -16,7 +16,6 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URISyntaxException;
 import java.net.SocketException;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -276,11 +275,6 @@ public class WsdlLocationPanel extends JPanel {
             swd.setSize(700, 500);
             swd.setModal(true);
             DialogDisplayer.display(swd);
-        } catch (RemoteException ex) {
-            JOptionPane.showMessageDialog(mainWindow,
-                    ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
         } catch (FindException ex) {
             JOptionPane.showMessageDialog(mainWindow,
                     ex.getMessage(),

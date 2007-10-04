@@ -10,8 +10,6 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.rmi.RemoteException;
 import java.awt.*;
 
 /**
@@ -23,8 +21,6 @@ import java.awt.*;
  * Date: Jan 19, 2006<br/>
  */
 public class AddAuditAdviceAssertion implements Advice {
-    private static final Logger logger = Logger.getLogger(AddAuditAdviceAssertion.class.getName());
-
     public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof AuditDetailAssertion)) {
@@ -32,12 +28,7 @@ public class AddAuditAdviceAssertion implements Advice {
         }
 
         Level serverLevel;
-        try {
-            serverLevel = Registry.getDefault().getAuditAdmin().serverDetailAuditThreshold();
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Couldn't get server's detail threshold; using default: " + Level.INFO.getName(), e);
-            serverLevel = Level.INFO;
-        }
+        serverLevel = Registry.getDefault().getAuditAdmin().serverDetailAuditThreshold();
 
         AuditDetailAssertion subject = (AuditDetailAssertion)assertions[0];
         subject.setLevel(serverLevel.getName());

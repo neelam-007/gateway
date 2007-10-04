@@ -1,7 +1,6 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.Sheet;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
@@ -16,7 +15,6 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.awt.*;
@@ -75,9 +73,6 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
                     }
                     d = new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), svc);
                 } catch (FindException e) {
-                    log.log(Level.WARNING, e.getMessage(), e);
-                    throw new RuntimeException(e);
-                } catch (RemoteException e) {
                     log.log(Level.WARNING, e.getMessage(), e);
                     throw new RuntimeException(e);
                 }

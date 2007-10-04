@@ -10,7 +10,6 @@ import com.l7tech.common.security.rbac.MethodStereotype;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.rmi.RemoteException;
 import java.util.Collection;
 
 /**
@@ -23,17 +22,17 @@ import java.util.Collection;
 @Secured(types= EntityType.SCHEMA_ENTRY)
 public interface SchemaAdmin {
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
-    Collection<SchemaEntry> findAllSchemas() throws RemoteException, FindException;
+    Collection<SchemaEntry> findAllSchemas() throws FindException;
 
     @Secured(stereotype=MethodStereotype.DELETE_ENTITY)
-    void deleteSchemaEntry(SchemaEntry existingSchema) throws RemoteException, DeleteException;
+    void deleteSchemaEntry(SchemaEntry existingSchema) throws DeleteException;
 
     @Secured(stereotype=MethodStereotype.SAVE_OR_UPDATE)
-    long saveSchemaEntry(SchemaEntry entry) throws RemoteException, SaveException, UpdateException;
+    long saveSchemaEntry(SchemaEntry entry) throws SaveException, UpdateException;
 
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
-    Collection<SchemaEntry> findByName(String schemaName) throws RemoteException, FindException;
+    Collection<SchemaEntry> findByName(String schemaName) throws FindException;
 
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
-    Collection<SchemaEntry> findByTNS(String tns) throws RemoteException, FindException;
+    Collection<SchemaEntry> findByTNS(String tns) throws FindException;
 }

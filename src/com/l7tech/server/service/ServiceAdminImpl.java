@@ -1,11 +1,9 @@
 package com.l7tech.server.service;
 
-import com.l7tech.common.LicenseException;
 import com.l7tech.common.io.ByteLimitInputStream;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.uddi.UddiAgentException;
 import com.l7tech.common.uddi.WsdlInfo;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
@@ -14,7 +12,6 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.uddi.UddiAgent;
 import com.l7tech.server.service.uddi.UddiAgentFactory;
@@ -39,7 +36,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.*;
-import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -96,19 +92,9 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         this.wspReader = wspReader;
     }
 
-    private void checkLicense() throws RemoteException {
-        try {
-            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
-        } catch (LicenseException e) {
-            // New exception to conceal original stack trace from LicenseManager
-            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
-        }
-    }
-
     public String resolveWsdlTarget(String url) throws IOException {
         GetMethod get = null;
         try {
-            checkLicense();
             URL urltarget = new URL(url);
             HttpClient client = new HttpClient();
             HttpClientParams clientParams = client.getParams();
@@ -159,7 +145,7 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         }
     }
 
-    public PublishedService findServiceByID(String serviceID) throws RemoteException, FindException {
+    public PublishedService findServiceByID(String serviceID) throws FindException {
         long oid = toLong(serviceID);
         PublishedService service = serviceManager.findByPrimaryKey(oid);
         if (service != null) {
@@ -168,37 +154,37 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         return service;
     }
 
-    public Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws RemoteException, FindException  {
+    public Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws FindException  {
         long oid = toLong(serviceID);
         return serviceDocumentManager.findByServiceId(oid);
     }
 
-    public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
+    public EntityHeader[] findAllPublishedServices() throws FindException {
         Collection<EntityHeader> res = serviceManager.findAllHeaders();
         return collectionToHeaderArray(res);
     }
 
     public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
-                    throws RemoteException, FindException {
+                    throws FindException {
             Collection<EntityHeader> res = serviceManager.findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
     }
 
-    public PolicyValidatorResult validatePolicy(String policyXml, long serviceid) throws RemoteException {
+    public PolicyValidatorResult validatePolicy(String policyXml, long serviceid) {
         try {
             PublishedService service = serviceManager.findByPrimaryKey(serviceid);
             Assertion assertion = wspReader.parsePermissively(policyXml);
             return policyValidator.validate(assertion, service, licenseManager);
         } catch (FindException e) {
             logger.log(Level.WARNING, "cannot get existing service: " + serviceid, e);
-            throw new RemoteException("cannot get existing service: " + serviceid, e);
+            throw new RuntimeException("cannot get existing service: " + serviceid, e);
         } catch (IOException e) {
             logger.log(Level.WARNING, "cannot parse passed policy xml: " + policyXml, e);
-            throw new RemoteException("cannot parse passed policy xml", e);
+            throw new RuntimeException("cannot parse passed policy xml", e);
         } catch (InterruptedException e) {
             // Can't happen on server side
             logger.log(Level.WARNING, "validation thread interrupted", e);
-            throw new RemoteException("validation thread interrupted", e);
+            throw new RuntimeException("validation thread interrupted", e);
         }
     }
 
@@ -207,13 +193,11 @@ public final class ServiceAdminImpl implements ServiceAdmin {
      * the distinction happens on the server side by inspecting the oid of the object
      * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
      * @param service the object to be saved or upodated
-     * @throws RemoteException
      *
      */
     public long savePublishedService(PublishedService service)
-            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException
+            throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
-        checkLicense();
         long oid;
 
         if (service.getOid() > 0) {
@@ -235,12 +219,10 @@ public final class ServiceAdminImpl implements ServiceAdmin {
      * the distinction happens on the server side by inspecting the oid of the object
      * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
      * @param service the object to be saved or upodated
-     * @throws RemoteException
      */
     public long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
-            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException
+            throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
-        checkLicense();
         long oid;
         boolean newService = true;
 
@@ -274,11 +256,10 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         return oid;
     }
 
-    public void deletePublishedService(String serviceID) throws RemoteException, DeleteException {
+    public void deletePublishedService(String serviceID) throws DeleteException {
         final PublishedService service;
         try {
             long oid = toLong(serviceID);
-            checkLicense();
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
             roleManager.deleteEntitySpecificRole(SERVICE, service);
@@ -292,7 +273,7 @@ public final class ServiceAdminImpl implements ServiceAdmin {
     // PRIVATES
     // ************************************************
 
-    private EntityHeader[] collectionToHeaderArray(Collection<EntityHeader> input) throws RemoteException {
+    private EntityHeader[] collectionToHeaderArray(Collection<EntityHeader> input) {
         if (input == null) return new EntityHeader[0];
         EntityHeader[] output = new EntityHeader[input.size()];
         int count = 0;
@@ -301,14 +282,14 @@ public final class ServiceAdminImpl implements ServiceAdmin {
                 output[count] = in;
             } catch (ClassCastException e) {
                 logger.log(Level.SEVERE, null, e);
-                throw new RemoteException("Collection contained something other than a EntityHeader", e);
+                throw new RuntimeException("Collection contained something other than a EntityHeader", e);
             }
             ++count;
         }
         return output;
     }
 
-    public String[] findUDDIRegistryURLs() throws RemoteException, FindException {
+    public String[] findUDDIRegistryURLs() throws FindException {
         Properties uddiProps;
         try {
             uddiProps = uddiAgentFactory.getUddiProperties();
@@ -341,11 +322,9 @@ public final class ServiceAdminImpl implements ServiceAdmin {
      * @param namePattern  The string of the service name (wildcard % is supported)
      * @param caseSensitive  True if case sensitive, false otherwise.
      * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
-     * @throws RemoteException  on remote communication error
      * @throws FindException   if there was a problem accessing the requested information.
      */
-    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws RemoteException, FindException {
-        checkLicense();
+    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws FindException {
         try {
             UddiAgent uddiAgent = uddiAgentFactory.getUddiAgent();
             return uddiAgent.getWsdlByServiceName(uddiURL, namePattern, caseSensitive);
@@ -356,21 +335,20 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         }
     }
 
-    public String[] listExistingCounterNames() throws RemoteException, FindException {
+    public String[] listExistingCounterNames() throws FindException {
         // get all the names for the counters
         return counterIDManager.getDistinctCounterNames();
     }
 
-    public SampleMessage findSampleMessageById(long oid) throws RemoteException, FindException {
+    public SampleMessage findSampleMessageById(long oid) throws FindException {
         return sampleMessageManager.findByPrimaryKey(oid);
     }
 
-    public EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws RemoteException, FindException {
+    public EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws FindException {
         return sampleMessageManager.findHeaders(serviceOid, operationName);
     }
 
-    public long saveSampleMessage(SampleMessage sm) throws SaveException, RemoteException {
-        checkLicense();
+    public long saveSampleMessage(SampleMessage sm) throws SaveException {
         long oid = sm.getOid();
         if (sm.getOid() == SampleMessage.DEFAULT_OID) {
             oid = sampleMessageManager.save(sm);
@@ -384,8 +362,7 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         return oid;
     }
 
-    public void deleteSampleMessage(SampleMessage message) throws DeleteException, RemoteException {
-        checkLicense();
+    public void deleteSampleMessage(SampleMessage message) throws DeleteException {
         sampleMessageManager.delete(message);
     }
 
@@ -472,11 +449,11 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         return hconf;
     }
 
-    public String getPolicyURL(String serviceoid) throws RemoteException, FindException {
+    public String getPolicyURL(String serviceoid) throws FindException {
         return registryPublicationManager.getExternalSSGPolicyURL(serviceoid);
     }
 
-    public String getConsumptionURL(String serviceoid) throws RemoteException, FindException {
+    public String getConsumptionURL(String serviceoid) throws FindException {
         return registryPublicationManager.getExternalSSGConsumptionURL(serviceoid);
     }
 

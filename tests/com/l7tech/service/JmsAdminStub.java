@@ -10,7 +10,6 @@ import com.l7tech.common.transport.jms.*;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.*;
 
-import java.rmi.RemoteException;
 import java.util.*;
 
 /**
@@ -30,11 +29,11 @@ public class JmsAdminStub implements JmsAdmin {
         endpoints = StubDataStore.defaultStore().getJmsEndpoints();
     }
 
-    public JmsProvider[] getProviderList() throws RemoteException {
+    public JmsProvider[] getProviderList() {
         return providers;
     }
 
-    public synchronized JmsConnection[] findAllConnections() throws RemoteException, FindException {
+    public synchronized JmsConnection[] findAllConnections() throws FindException {
         Collection list = new ArrayList();
         for (Iterator i = connections.keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
@@ -43,7 +42,7 @@ public class JmsAdminStub implements JmsAdmin {
         return (JmsConnection[]) list.toArray(new JmsConnection[0]);
     }
 
-    public JmsAdmin.JmsTuple[] findAllTuples() throws RemoteException, FindException {
+    public JmsAdmin.JmsTuple[] findAllTuples() throws FindException {
         List found = new ArrayList();
         Set keys = endpoints.keySet();
         for (Iterator i = keys.iterator(); i.hasNext();) {
@@ -53,11 +52,11 @@ public class JmsAdminStub implements JmsAdmin {
         return (JmsTuple[]) found.toArray(new JmsTuple[0]);
     }
 
-    public synchronized JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
+    public synchronized JmsConnection findConnectionByPrimaryKey(long oid) throws FindException {
         return (JmsConnection) connections.get(new Long(oid));
     }
 
-    public synchronized long saveConnection(JmsConnection connection) throws RemoteException, SaveException, VersionException {
+    public synchronized long saveConnection(JmsConnection connection) throws SaveException, VersionException {
         long oid = connection.getOid();
         if (oid == 0 || oid == PersistentEntity.DEFAULT_OID) {
             oid = StubDataStore.defaultStore().nextObjectId();
@@ -68,13 +67,13 @@ public class JmsAdminStub implements JmsAdmin {
         return oid;
     }
 
-    public synchronized void deleteConnection(long id) throws RemoteException, DeleteException {
+    public synchronized void deleteConnection(long id) throws DeleteException {
         if (connections.remove(new Long(id)) == null) {
-            throw new RemoteException("Could not find jms connection oid= " + id);
+            throw new RuntimeException("Could not find jms connection oid= " + id);
         }
     }
 
-    public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws RemoteException, FindException {
+    public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws FindException {
         List found = new ArrayList();
         Set keys = endpoints.keySet();
         for (Iterator i = keys.iterator(); i.hasNext();) {
@@ -85,7 +84,7 @@ public class JmsAdminStub implements JmsAdmin {
         return (JmsEndpoint[]) found.toArray(new JmsEndpoint[0]);
     }
 
-    public synchronized JmsEndpoint findEndpointByPrimaryKey(long oid) throws RemoteException, FindException {
+    public synchronized JmsEndpoint findEndpointByPrimaryKey(long oid) throws FindException {
         JmsEndpoint e = (JmsEndpoint)endpoints.get(new Long(oid));
         if (e == null )
             throw new FindException("No endpoint with OID " + oid + " is known");
@@ -93,12 +92,12 @@ public class JmsAdminStub implements JmsAdmin {
             return e;
     }
 
-    public void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException {
+    public void setEndpointMessageSource(long oid, boolean isMessageSource) throws FindException {
         JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
         endpoint.setMessageSource(isMessageSource);        
     }
 
-    public synchronized long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, SaveException, VersionException {
+    public synchronized long saveEndpoint(JmsEndpoint endpoint) throws SaveException, VersionException {
         long oid = endpoint.getOid();
         if (oid == 0 || oid == JmsEndpoint.DEFAULT_OID) {
             oid = StubDataStore.defaultStore().nextObjectId();
@@ -108,17 +107,17 @@ public class JmsAdminStub implements JmsAdmin {
         return oid;
     }
 
-    public void deleteEndpoint( long endpointOid ) throws RemoteException, FindException, DeleteException {
+    public void deleteEndpoint( long endpointOid ) throws FindException, DeleteException {
         endpoints.remove(new Long(endpointOid));
     }
 
-    public void testConnection(JmsConnection connection) throws RemoteException, JmsTestException {
+    public void testConnection(JmsConnection connection) throws JmsTestException {
         // automatic success in stub mode, unless the name contains "FAIL"
         if (connection.getName().indexOf("FAIL") >= 0)
             throw new JmsTestException("Invalid JMS connection settings");
     }
 
-    public void testEndpoint(JmsConnection connection, JmsEndpoint endpoint) throws RemoteException, JmsTestException {
+    public void testEndpoint(JmsConnection connection, JmsEndpoint endpoint) throws JmsTestException {
         // automatic success in stub mode, unless the name contains "FAIL"
         if (endpoint.getName().indexOf("FAIL") >= 0)
             throw new JmsTestException("Invalid Destination name");

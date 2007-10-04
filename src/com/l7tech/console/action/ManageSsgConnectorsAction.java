@@ -8,7 +8,6 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.panels.SsgConnectorManagerWindow;
 import com.l7tech.console.util.TopComponents;
 
-import java.rmi.RemoteException;
 import java.util.logging.Logger;
 
 /**
@@ -34,13 +33,9 @@ public class ManageSsgConnectorsAction extends SecureAction {
     }
 
     protected void performAction() {
-        try {
-            SsgConnectorManagerWindow pkmw = new SsgConnectorManagerWindow(TopComponents.getInstance().getTopParent());
-            pkmw.pack();
-            Utilities.centerOnScreen(pkmw);
-            DialogDisplayer.display(pkmw);
-        } catch (RemoteException e) {
-            throw new RuntimeException("Cannot Manage Listen Ports: " + ExceptionUtils.getMessage(e), e);
-        }
+        SsgConnectorManagerWindow pkmw = new SsgConnectorManagerWindow(TopComponents.getInstance().getTopParent());
+        pkmw.pack();
+        Utilities.centerOnScreen(pkmw);
+        DialogDisplayer.display(pkmw);
     }
 }

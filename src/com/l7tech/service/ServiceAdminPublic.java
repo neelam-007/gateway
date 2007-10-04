@@ -9,12 +9,13 @@ import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.admin.Administrative;
+
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.rmi.RemoteException;
 
 /**
  * Defines the operations to be exposed as admin web service.
@@ -30,11 +31,11 @@ public interface ServiceAdminPublic {
      *
      * @return array of entity headers for all existing published services.  May be empty but never null.
      * @throws FindException   if there was a problem accessing the requested information.
-     * @throws RemoteException on remote communication error
      */
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     @Transactional(readOnly=true)
-    EntityHeader[] findAllPublishedServices() throws RemoteException, FindException;
+    @Administrative(licensed=false)            
+    EntityHeader[] findAllPublishedServices() throws FindException;
 
     /**
      * Retrieve a specified published service given its service ID.
@@ -42,11 +43,11 @@ public interface ServiceAdminPublic {
      * @param oid the unique identifier of the service
      * @return the requested {@link PublishedService}, or null if no service with that service ID was found
      * @throws FindException   if there was a problem accessing the requested information.
-     * @throws RemoteException on remote communication error
      */
     @Secured(stereotype=MethodStereotype.FIND_BY_PRIMARY_KEY)
     @Transactional(readOnly=true)
-    PublishedService findServiceByID(String oid) throws RemoteException, FindException;
+    @Administrative(licensed=false)
+    PublishedService findServiceByID(String oid) throws FindException;
 
     /**
      * Get a wsdl document from a URL. The WSDL document will be resolved by the gateway so that the manager
@@ -57,10 +58,9 @@ public interface ServiceAdminPublic {
      * userinfo type credentials
      * @return the contents resolved by this url
      *
-     * @throws RemoteException on remote communication error or if the remote service returned something else than 200
      * @throws IOException thrown on I/O error accessing the WSDL url
      * @throws MalformedURLException thrown on malformed WSDL url
      */
     @Transactional(propagation=SUPPORTS)
-    String resolveWsdlTarget(String url) throws RemoteException, IOException, MalformedURLException;
+    String resolveWsdlTarget(String url) throws IOException, MalformedURLException;
 }

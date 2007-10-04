@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
-import java.rmi.RemoteException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Collection;
@@ -43,9 +42,6 @@ public class JMSEndpointReference extends ExternalReference {
                 endpointName = jmsEndpoint.getName();
                 jmsConnection = admin.findConnectionByPrimaryKey(jmsEndpoint.getConnectionOid());
             }
-        } catch (RemoteException e) {
-            logger.log(Level.SEVERE, "cannot retrieve endpoint. partial reference will be built", e);
-            jmsConnection = null;
         } catch (FindException e){
             logger.log(Level.SEVERE, "cannot retrieve endpoint. partial reference will be built", e);
             jmsConnection = null;
@@ -262,8 +258,6 @@ public class JMSEndpointReference extends ExternalReference {
         try {
             JmsEndpoint endpoint = admin.findEndpointByPrimaryKey(oid);
             if (endpoint != null) return endpoint.getName();
-        } catch (RemoteException e) {
-            logger.warning("could not retreive the JMS endpoint from oid " + oid);
         } catch (FindException e) {
             logger.warning("could not retreive the JMS endpoint from oid " + oid);
         }

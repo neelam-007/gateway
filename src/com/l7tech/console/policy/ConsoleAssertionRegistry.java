@@ -4,6 +4,7 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
+import com.l7tech.common.LicenseException;
 import com.l7tech.console.action.DefaultAssertionPropertiesAction;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
 import com.l7tech.console.panels.DefaultAssertionPropertiesEditor;
@@ -27,7 +28,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.rmi.RemoteException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -81,7 +81,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         putDefaultGetter(PROPERTIES_EDITOR_FACTORY, new PropertiesEditorFactoryMetadataFinder());
     }
 
-    public void updateModularAssertions() throws RemoteException {
+    public void updateModularAssertions() {
         for (Assertion prototype : modulePrototypes)
             unregisterAssertion(prototype);
         if (!TopComponents.getInstance().isApplet())
@@ -98,8 +98,24 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                 logger.fine("Gateway does not support modular assertions");
                 return;
             }
+            else if (ExceptionUtils.causedBy(e, LicenseException.class)) {
+                logger.fine("Gateway license error when getting modular assertion info");
+                throw e;
+            }
+            else if (ExceptionUtils.causedBy(e, LicenseException.class)) {
+                logger.fine("Gateway license error when getting modular assertion info");
+                throw e;
+            }
+            else if (ExceptionUtils.causedBy(e, LicenseException.class)) {
+                logger.fine("Gateway license error when getting modular assertion info");
+                throw e;
+            }
+            else if (ExceptionUtils.causedBy(e, LicenseException.class)) {
+                logger.fine("Gateway license error when getting modular assertion info");
+                throw e;
+            }
 
-            throw new RemoteException("Unexpected error getting modular assertion info: " + ExceptionUtils.getMessage(e), e);
+            throw new RuntimeException("Unexpected error getting modular assertion info: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

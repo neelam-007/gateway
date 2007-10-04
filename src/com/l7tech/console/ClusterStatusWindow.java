@@ -29,7 +29,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
@@ -1132,13 +1131,6 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
                                             dsnDialogResources.getString("delete.stale.node.error.title"),
                                             JOptionPane.ERROR_MESSAGE);
 
-                                    } catch (RemoteException e) {
-                                        logger.warning("Remote Exception. Cannot delete the node: " + nodeNameSelected);
-                                        JOptionPane.
-                                          showMessageDialog(ClusterStatusWindow.this,
-                                            dsnDialogResources.getString("delete.stale.node.error.remote.exception"),
-                                            dsnDialogResources.getString("delete.stale.node.error.title"),
-                                            JOptionPane.ERROR_MESSAGE);
                                     }
                                 }
                             });

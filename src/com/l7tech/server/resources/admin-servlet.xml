@@ -4,7 +4,9 @@
 
     <bean id="httpInvokerParent" abstract="true">
         <property name="remoteInvocationExecutor">
-            <bean class="com.l7tech.spring.remoting.http.SecureRemoteInvocationExecutor"/>
+            <bean class="com.l7tech.spring.remoting.http.SecureRemoteInvocationExecutor">
+                <constructor-arg ref="licenseManager"/>
+            </bean>
         </property>
     </bean>
 

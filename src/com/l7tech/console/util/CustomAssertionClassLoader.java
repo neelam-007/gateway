@@ -1,6 +1,5 @@
 package com.l7tech.console.util;
 
-import java.rmi.RemoteException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.net.URL;
@@ -64,12 +63,7 @@ public class CustomAssertionClassLoader extends ClassLoader {
             return null;
         }
 
-        try {
-            return car.getAssertionResourceBytes(path);
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Unable to load custom/modular assertion class or resource: " + ExceptionUtils.getMessage(e), e);
-            return null;
-        }
+        return car.getAssertionResourceBytes(path);
     }
 
     public InputStream getResourceAsStream(String name) {

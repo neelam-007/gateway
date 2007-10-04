@@ -24,7 +24,6 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
-import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
@@ -37,7 +36,6 @@ import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
-import java.rmi.RemoteException;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlException;
 import java.security.NoSuchAlgorithmException;
@@ -68,7 +66,7 @@ public class AdminLoginImpl
     private X509Certificate serverCertificate;
 
     public AdminLoginResult login(String username, String password)
-            throws RemoteException, AccessControlException, LoginException
+            throws AccessControlException, LoginException
     {
         if (username == null || password == null) {
             throw new AccessControlException("Username and password are both required");
@@ -158,7 +156,7 @@ public class AdminLoginImpl
                     BuildInfo.getProductVersion());
     }
 
-    public void changePassword(final String currentPassword, final String newPassword) throws LoginException, RemoteException {
+    public void changePassword(final String currentPassword, final String newPassword) throws LoginException {
         if (currentPassword == null || newPassword == null) {
             throw new AccessControlException("currentPassword and newPassword are both required");
         }
@@ -215,7 +213,7 @@ public class AdminLoginImpl
         }
     }
 
-    public AdminLoginResult resume(String sessionId) throws RemoteException, AuthenticationException {
+    public AdminLoginResult resume(String sessionId) throws AuthenticationException {
         Principal userObj = sessionManager.resumeSession(sessionId);
         if (!(userObj instanceof User)) {
             logger.log(Level.WARNING,  "Authentication failed: attempt to resume unrecognized session");
@@ -236,7 +234,7 @@ public class AdminLoginImpl
         }
     }
 
-    public void logout() throws RemoteException {
+    public void logout() {
         User user = JaasUtils.getCurrentUser();
         sessionManager.destroySession(user);
     }
@@ -262,10 +260,9 @@ public class AdminLoginImpl
      * @return The hash.
      * @throws java.security.AccessControlException
      *                                  on access denied for the given credentials
-     * @throws java.rmi.RemoteException on remote communicatiOn error
      */
     public byte[] getServerCertificate(String username)
-      throws RemoteException, AccessControlException {
+      throws AccessControlException {
         try {
             String digestWith = null;
 

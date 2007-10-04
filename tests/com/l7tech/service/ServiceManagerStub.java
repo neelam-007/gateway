@@ -16,7 +16,6 @@ import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,7 +55,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * @param url
      * @return a string containing the xml document
      */
-    public String resolveWsdlTarget(String url) throws RemoteException {
+    public String resolveWsdlTarget(String url) {
         try {
             Wsdl wsdl =
               Wsdl.newInstance(null, new InputStreamReader(new URL(url).openStream()));
@@ -64,9 +63,9 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
             wsdl.toWriter(sw);
             return sw.toString();
         } catch (WSDLException e) {
-            throw new RemoteException("resolveWsdlTarget()", e);
+            throw new RuntimeException("resolveWsdlTarget()", e);
         } catch (java.io.IOException e) {
-            throw new RemoteException("resolveWsdlTarget()", e);
+            throw new RuntimeException("resolveWsdlTarget()", e);
         }
     }
 

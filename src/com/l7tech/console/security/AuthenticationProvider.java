@@ -9,7 +9,6 @@ import com.l7tech.common.VersionException;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
-import java.rmi.RemoteException;
 
 /**
  * The SSM <code>AuthenticationProvider</code> implementations provide authentications
@@ -30,7 +29,7 @@ public interface AuthenticationProvider {
      * @see com.l7tech.console.security.SecurityProviderImpl
      */
     void login(PasswordAuthentication creds, String host, boolean validateHost)
-      throws LoginException, VersionException, RemoteException;
+      throws LoginException, VersionException;
 
     /**
      * Connect to a session that is already established and waiting for us.
@@ -41,7 +40,7 @@ public interface AuthenticationProvider {
      * @see com.l7tech.console.security.SecurityProviderImpl
      */
     void login(String sessionId, String host)
-      throws LoginException, VersionException, RemoteException;
+      throws LoginException, VersionException;
 
     /**
      * Change password.
@@ -53,7 +52,7 @@ public interface AuthenticationProvider {
      * @throws IllegalArgumentException If the new credentials are not acceptable.
      */
     void changePassword(PasswordAuthentication auth, PasswordAuthentication newAuth) 
-      throws LoginException, RemoteException;
+      throws LoginException;
 
     /**
      * Logoff the session

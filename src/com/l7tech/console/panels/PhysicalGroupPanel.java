@@ -12,7 +12,6 @@ import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.rmi.RemoteException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -25,7 +24,7 @@ public class PhysicalGroupPanel extends GroupPanel {
         super( ipc );
     }
 
-    protected void loadedGroup(Group g) throws RemoteException, FindException {
+    protected void loadedGroup(Group g) throws FindException {
         groupMembers = getIdentityAdmin().getUserHeaders(config.getOid(), group.getId());
     }
 
@@ -49,7 +48,7 @@ public class PhysicalGroupPanel extends GroupPanel {
         return groupMembers;
     }
 
-    protected String save() throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
+    protected String save() throws SaveException, UpdateException, ObjectNotFoundException {
         return getIdentityAdmin().saveGroup(config.getOid(), group, groupMembers);
     }
 

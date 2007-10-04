@@ -1,6 +1,5 @@
 package com.l7tech.common.security.kerberos;
 
-import java.rmi.RemoteException;
 import java.util.Map;
 
 /**
@@ -26,7 +25,7 @@ public interface KerberosAdmin  {
      * @return the SPN (e.g. http/gateway.qawin2003.com@QAWIN2003.COM)
      * @throws KerberosException if the log in fails.
      */
-    public String getPrincipal() throws KerberosException, RemoteException;
+    public String getPrincipal() throws KerberosException;
 
     /**
      * Get the configured Keytab.
@@ -37,7 +36,7 @@ public interface KerberosAdmin  {
      * @return the Keytab or null if non is available.
      * @throws KerberosException if a Keytab is present but invalid.
      */
-    public Keytab getKeytab() throws KerberosException, RemoteException;
+    public Keytab getKeytab() throws KerberosException;
 
     /**
      * Get the Kerberos configuration for the SSG.

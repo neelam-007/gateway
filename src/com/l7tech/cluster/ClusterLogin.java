@@ -1,6 +1,5 @@
 package com.l7tech.cluster;
 
-import java.rmi.RemoteException;
 import javax.security.auth.login.LoginException;
 
 /**
@@ -17,8 +16,7 @@ public interface ClusterLogin {
      * Login for remote nodes.
      *
      * @return the context to use.
-     * @throws RemoteException on error
      * @throws LoginException on login error
      */
-    public ClusterContext login() throws RemoteException, LoginException;
+    public ClusterContext login() throws LoginException;
 }

@@ -30,7 +30,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -190,8 +189,6 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
                 for (ClusterNodeInfo nodeInfo : nodeInfos) {
                     nodeIdNames.put(nodeInfo.getNodeIdentifier(), nodeInfo.getName());
                 }
-            } catch (RemoteException e) {
-                // Leave the map empty.
             } catch (FindException e) {
                 // Leave the map empty.
             }

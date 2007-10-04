@@ -5,7 +5,6 @@ import java.awt.Frame;
 import java.awt.Component;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.Locale;
@@ -284,9 +283,7 @@ public class ManageCertificateValidationDialog extends JDialog {
                         JOptionPane.showMessageDialog(ManageCertificateValidationDialog.this, msg,
                                                       resources.getString("error.validationproperty.title"),
                                                       JOptionPane.ERROR_MESSAGE);
-                    } catch (RemoteException re) {
-                        throw new RuntimeException(re);
-                    } 
+                    }
                 }
             }
         }
@@ -316,8 +313,6 @@ public class ManageCertificateValidationDialog extends JDialog {
                         JOptionPane.showMessageDialog(ManageCertificateValidationDialog.this, msg,
                                                       resources.getString("error.revocationpolicyadd.title"),
                                                       JOptionPane.ERROR_MESSAGE);
-                    } catch (RemoteException re) {
-                        throw new RuntimeException(re);
                     } catch (VersionException ve) {
                         throw new RuntimeException(ve);
                     }
@@ -348,8 +343,6 @@ public class ManageCertificateValidationDialog extends JDialog {
                 JOptionPane.showMessageDialog(ManageCertificateValidationDialog.this, msg,
                                               resources.getString("error.revocationpolicydelete.title"),
                                               JOptionPane.ERROR_MESSAGE);
-            } catch (RemoteException re) {
-                throw new RuntimeException(re);
             }
         }
     }
@@ -375,8 +368,6 @@ public class ManageCertificateValidationDialog extends JDialog {
                             JOptionPane.showMessageDialog(ManageCertificateValidationDialog.this, msg,
                                                           resources.getString("error.revocationpolicyedit.title"),
                                                           JOptionPane.ERROR_MESSAGE);
-                        } catch (RemoteException re) {
-                            throw new RuntimeException(re);
                         } catch (VersionException ve) {
                             throw new RuntimeException(ve);
                         }
@@ -407,8 +398,6 @@ public class ManageCertificateValidationDialog extends JDialog {
             JOptionPane.showMessageDialog(this.getParent(), msg,
                                           resources.getString("error.revocationpolicyfind.title"),
                                           JOptionPane.ERROR_MESSAGE);
-        } catch (RemoteException re) {
-            throw new RuntimeException(re);
         }
     }
 
@@ -439,8 +428,6 @@ public class ManageCertificateValidationDialog extends JDialog {
             JOptionPane.showMessageDialog(this.getParent(), msg,
                                           resources.getString("error.revocationpolicyfind.title"),
                                           JOptionPane.ERROR_MESSAGE);
-        } catch (RemoteException re) {
-            throw new RuntimeException(re);
         }
     }
 

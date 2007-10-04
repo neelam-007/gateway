@@ -4,19 +4,14 @@
 
 package com.l7tech.server.transport.ftp;
 
-import com.l7tech.common.LicenseException;
-import com.l7tech.common.LicenseManager;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.ftp.FtpTestException;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 
 import java.lang.reflect.InvocationTargetException;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.X509TrustManager;
@@ -27,28 +22,16 @@ import javax.net.ssl.X509TrustManager;
  */
 public class FtpAdminImpl implements FtpAdmin {
     private static final Logger _logger = Logger.getLogger(FtpAdminImpl.class.getName());
-    private final LicenseManager _licenseManager;
     private final X509TrustManager _x509TrustManager;
     private final SsgKeyStoreManager _ssgKeyStoreManager;
     private final ServerAssertionRegistry _serverAssertionRegistry;
 
-    public FtpAdminImpl(LicenseManager licenseManager,
-                        X509TrustManager x509TrustManager,
+    public FtpAdminImpl(X509TrustManager x509TrustManager,
                         SsgKeyStoreManager ssgKeyStoreManager,
                         ServerAssertionRegistry serverAssertionRegistry) {
-        _licenseManager = licenseManager;
         _x509TrustManager = x509TrustManager;
         _ssgKeyStoreManager = ssgKeyStoreManager;
         _serverAssertionRegistry = serverAssertionRegistry;
-    }
-
-    private void checkLicense() throws RemoteException {
-        try {
-            _licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
-        } catch (LicenseException e) {
-            // New exception to conceal original stack trace from LicenseManager
-            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
-        }
     }
 
     /**
@@ -66,7 +49,6 @@ public class FtpAdminImpl implements FtpAdmin {
      * @param clientCertKeyAlias    key alias in keystore to use if useClientCert is true; must not be null if useClientCert is true
      * @param directory             remote directory to "cd" into; supply empty string if no "cd" wanted
      * @param timeout               connection timeout in milliseconds
-     * @throws RemoteException if remote method call failed
      * @throws FtpTestException if connection test failed
      */
     public void testConnection(boolean isFtps,
@@ -80,8 +62,7 @@ public class FtpAdminImpl implements FtpAdmin {
                                long clientCertKeystoreId,
                                String clientCertKeyAlias,
                                String directory,
-                               int timeout) throws RemoteException, FtpTestException {
-        checkLicense();
+                               int timeout) throws FtpTestException {
         try {
             // Need to use reflection for modular assertion.
             Assertion ftpRoutingAssertion = _serverAssertionRegistry.findByExternalName("FtpRoutingAssertion");

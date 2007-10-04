@@ -28,7 +28,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -109,8 +108,6 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             try {
                 cert = getTrustedCertAdmin().findCertByPrimaryKey(oid);
                 if (cert != null) certs.add(cert);
-            } catch (RemoteException re) {
-                throw new RuntimeException(re);
             } catch (FindException e) {
                 JOptionPane.showMessageDialog(this, resources.getString("cert.find.error"),
                         resources.getString("load.error.title"),
@@ -354,7 +351,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
     };
 
-    private boolean isCertTrustedByAnotherProvider(TrustedCert trustedCert) throws RemoteException, FindException {
+    private boolean isCertTrustedByAnotherProvider(TrustedCert trustedCert) throws FindException {
         if (fedIdProvConfigs.isEmpty()) {
             IdentityAdmin idadmin = Registry.getDefault().getIdentityAdmin();
             EntityHeader[] providerHeaders = idadmin.findAllIdentityProviderConfig();
@@ -411,11 +408,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     }
 
     private Collection<RevocationCheckPolicy> loadRevocationCheckPolicies() throws FindException {
-        try {
-            return getTrustedCertAdmin().findAllRevocationCheckPolicies();
-        } catch (RemoteException re) {
-            throw new RuntimeException(re);
-        }
+        return getTrustedCertAdmin().findAllRevocationCheckPolicies();
     }
 
     private WizardListener wizardListener = new WizardAdapter() {

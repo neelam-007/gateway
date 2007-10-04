@@ -7,7 +7,6 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 
-import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,8 +32,6 @@ class UserHolder {
             EntityHeader[] hs;
             try {
                 hs = identityAdmin.findAllIdentityProviderConfig();
-            } catch (RemoteException e) {
-                throw new RuntimeException(e);
             } catch (FindException e) {
                 throw new RuntimeException(e);
             }
@@ -53,7 +50,7 @@ class UserHolder {
         }
     }
 
-    public UserHolder(UserRoleAssignment ura) throws RemoteException, FindException, NoSuchUserException {
+    public UserHolder(UserRoleAssignment ura) throws FindException, NoSuchUserException {
         initIdpMap();
         this.userRoleAssignment = ura;
         User u = identityAdmin.findUserByID(ura.getProviderId(), ura.getUserId());

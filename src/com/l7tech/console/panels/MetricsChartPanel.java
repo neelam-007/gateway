@@ -40,7 +40,6 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
-import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -508,13 +507,9 @@ public class MetricsChartPanel extends ChartPanel {
         _messageRates = new TimeTableXYDataset();
 
         // Gets the time zone to use from gateway.
-        try {
-            final Registry registry = Registry.getDefault();
-            if (registry.isAdminContextPresent()) {
-                _timeZone = TimeZone.getTimeZone(registry.getClusterStatusAdmin().getCurrentClusterTimeZone());
-            }
-        } catch (RemoteException e) {
-            // Falls through to use local time zone.
+        final Registry registry = Registry.getDefault();
+        if (registry.isAdminContextPresent()) {
+            _timeZone = TimeZone.getTimeZone(registry.getClusterStatusAdmin().getCurrentClusterTimeZone());
         }
         if (_timeZone == null) {
             _logger.warning("Failed to get time zone from gateway. Falling back to use local time zone for display.");
@@ -1086,9 +1081,6 @@ public class MetricsChartPanel extends ChartPanel {
                 _gatewayAuditWindow.getLogPane().setMsgFilterService(serviceSelected == null ? "" : serviceSelected.getName());
 
                 _gatewayAuditWindow.displayAudits(records);
-            } catch (RemoteException e) {
-                _logger.warning("Failed to query for audit events: " + e.getMessage());
-                errDialogMsg = e.getMessage();
             } catch (FindException e) {
                 _logger.warning("Failed to query for audit events: " + e.getMessage());
                 errDialogMsg = e.getMessage();

@@ -1,8 +1,6 @@
 package com.l7tech.policy.assertion.ext.rmi;
 
-import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionDescriptor;
@@ -12,7 +10,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.util.Collection;
 
 /**
@@ -23,43 +20,25 @@ public class CustomAssertionsRegistrarImpl
   extends ApplicationObjectSupport implements CustomAssertionsRegistrar, InitializingBean {
     protected CustomAssertionsRegistrar delegate;
 
-    private final LicenseManager licenseManager;
-
-    public CustomAssertionsRegistrarImpl(LicenseManager licenseManager) {
-        if (licenseManager == null)
-            throw new IllegalArgumentException("License manager required");
-        this.licenseManager = licenseManager;
-    }
-
-    private void checkLicense() throws RemoteException {
-        try {
-            licenseManager.requireFeature("service:Admin");
-        } catch (LicenseException e) {
-            // New exception to conceal original stack trace from LicenseManager
-            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
-        }
+    public CustomAssertionsRegistrarImpl() {
     }
 
     public void setDelegate(CustomAssertionsRegistrar delegate) {
         this.delegate = delegate;
     }
 
-    public byte[] getAssertionClass(String className) throws RemoteException {
-        checkLicense();
+    public byte[] getAssertionClass(String className) {
         return delegate.getAssertionClass(className);
     }
 
-    public byte[] getAssertionResourceBytes(String path) throws RemoteException {
-        checkLicense();
+    public byte[] getAssertionResourceBytes(String path) {
         return delegate.getAssertionResourceBytes(path);
     }
 
     /**
      * @return the list of all assertions known to the runtime
-     * @throws java.rmi.RemoteException
      */
-    public Collection getAssertions() throws RemoteException {
-        checkLicense();
+    public Collection getAssertions() {
         return delegate.getAssertions();
     }
 
@@ -67,10 +46,8 @@ public class CustomAssertionsRegistrarImpl
      * @param c the category to query for
      * @return the list of all assertions known to the runtime
      *         for a give n category
-     * @throws java.rmi.RemoteException
      */
-    public Collection getAssertions(Category c) throws RemoteException {
-        checkLicense();
+    public Collection getAssertions(Category c) {
         return delegate.getAssertions(c);
     }
 
@@ -102,11 +79,9 @@ public class CustomAssertionsRegistrarImpl
      *
      * @param xml the netity header representing the service
      * @return the policy tree
-     * @throws java.rmi.RemoteException on remote invocation error
      * @throws java.io.IOException      on policy format error
      */
-    public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
-        checkLicense();
+    public Assertion resolvePolicy(String xml) throws IOException {
         return delegate.resolvePolicy(xml);
     }
 

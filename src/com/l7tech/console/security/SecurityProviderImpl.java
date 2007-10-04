@@ -44,7 +44,6 @@ import org.springframework.remoting.RemoteAccessException;
 import javax.security.auth.login.LoginException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
-import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -81,8 +80,7 @@ public class SecurityProviderImpl extends SecurityProvider
      * If successful, those credentials will be cached for future admin ws calls.
      */
     public void login(PasswordAuthentication creds, String host, boolean validate)
-            throws LoginException, VersionException, RemoteException
-    {
+            throws LoginException, VersionException {
         boolean authenticated = false;
         serverCertificateChain = null;
         resetCredentials();
@@ -166,8 +164,7 @@ public class SecurityProviderImpl extends SecurityProvider
 
     // Called by the Applet to connect to the server
     public void login(String sessionId, String host)
-            throws LoginException, VersionException, RemoteException
-    {
+            throws LoginException, VersionException {
         boolean authenticated = false;
 
         final AdminLogin adminLogin;
@@ -238,7 +235,7 @@ public class SecurityProviderImpl extends SecurityProvider
      * Change admin password.
      */
     public void changePassword(final PasswordAuthentication auth, final PasswordAuthentication newAuth)
-            throws LoginException, RemoteException {
+            throws LoginException {
         AdminLogin adminLogin = (AdminLogin) applicationContext.getBean("adminLogin", AdminLogin.class);
         adminLogin.changePassword(new String(auth.getPassword()), new String(newAuth.getPassword()));
     }
@@ -257,8 +254,6 @@ public class SecurityProviderImpl extends SecurityProvider
                     public void run() {
                         try {
                             adminLogin.logout();
-                        } catch (RemoteException e) {
-                            logger.log(Level.WARNING, "Error logging out old admin session: " + ExceptionUtils.getMessage(e), e);
                         } finally {
                             getConfigurableHttpInvokerRequestExecutor().clearSessionIfMatches(cookie);
                         }
@@ -374,7 +369,7 @@ public class SecurityProviderImpl extends SecurityProvider
      * Ensure that the server knows our password and the cert matches the SSL cert.
      */
     private void validateServer(PasswordAuthentication credentials, X509Certificate serverCertificate, AdminLogin adminLogin, String host)
-      throws RemoteException, SecurityException {
+      throws SecurityException {
         byte[] certificate = adminLogin.getServerCertificate(credentials.getUserName());
         try {
             String password = new String(credentials.getPassword());

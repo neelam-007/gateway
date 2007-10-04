@@ -26,7 +26,6 @@ import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -147,12 +146,8 @@ public class CertPropertiesWindow extends JDialog {
     public static Collection<RevocationCheckPolicy> loadRevocationCheckPolicies() throws FindException {
         Collection<RevocationCheckPolicy> policies = new ArrayList();
 
-        try {
-            TrustedCertAdmin tca = getTrustedCertAdmin();
-            policies = new ArrayList( tca.findAllRevocationCheckPolicies() );
-        } catch (RemoteException re) {
-            throw new RuntimeException(re);
-        }
+        TrustedCertAdmin tca = getTrustedCertAdmin();
+        policies = new ArrayList( tca.findAllRevocationCheckPolicies() );
 
         return policies;
     }
@@ -243,11 +238,6 @@ public class CertPropertiesWindow extends JDialog {
                                                   resources.getString("save.error.title"),
                                                   JOptionPane.ERROR_MESSAGE);
 
-                } catch (RemoteException e) {
-                    logger.severe("Unable to execute remote call due to remote exception");
-                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.remote.exception"),
-                                                  resources.getString("save.error.title"),
-                                                  JOptionPane.ERROR_MESSAGE);
                 } catch (VersionException e) {
                     logger.warning("Unable to save the trusted certificate: " + trustedCert.getName() + "; version exception.");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.version.error"),
@@ -362,8 +352,6 @@ public class CertPropertiesWindow extends JDialog {
                 TrustedCertAdmin tca = getTrustedCertAdmin();
                 policies.addAll( tca.findAllRevocationCheckPolicies() );
                 populated = true;
-            } catch (RemoteException re) {
-                throw new RuntimeException(re);
             } catch (FindException fe) {
                 logger.log(Level.WARNING, "Unable to load certificate data from server", fe);
                 JOptionPane.showMessageDialog(this,

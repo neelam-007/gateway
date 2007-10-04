@@ -33,7 +33,6 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.rmi.RemoteException;
 
 /**
  * A dialog to view/edit/add/remove cluster-wide properties
@@ -228,11 +227,7 @@ public class ClusterPropertyDialog extends JDialog {
         if (reg != null && reg.getClusterStatusAdmin() != null) {
 
             if (knownProperties == null) {
-                try {
-                    knownProperties = reg.getClusterStatusAdmin().getKnownProperties();
-                } catch(RemoteException e) {
-                    logger.log(Level.SEVERE, "Error getting list of available properties", e);
-                }
+                knownProperties = reg.getClusterStatusAdmin().getKnownProperties();
             }
 
             final CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, new ClusterProperty(), knownProperties, flags.canUpdateSome());
@@ -246,8 +241,6 @@ public class ClusterPropertyDialog extends JDialog {
 
                     try {
                         reg.getClusterStatusAdmin().saveProperty(dlg.getProperty());
-                    } catch (RemoteException e) {
-                        logger.log(Level.SEVERE, "exception setting property", e);
                     } catch (DuplicateObjectException e) {
                         ExceptionDialog dialog = ExceptionDialog.createExceptionDialog(
                                 ClusterPropertyDialog.this, "Cluster-Wide Property Error", null,
@@ -294,8 +287,6 @@ public class ClusterPropertyDialog extends JDialog {
                     if (canEdit) {
                         try {
                             reg.getClusterStatusAdmin().saveProperty(prop);
-                        }  catch (RemoteException e) {
-                            logger.log(Level.SEVERE, "exception setting property", e);
                         } catch (SaveException e) {
                             logger.log(Level.SEVERE, "exception setting property", e);
                         } catch (UpdateException e) {
@@ -319,8 +310,6 @@ public class ClusterPropertyDialog extends JDialog {
         if (reg != null && reg.getClusterStatusAdmin() != null) {
             try {
                 reg.getClusterStatusAdmin().deleteProperty(prop);
-            } catch (RemoteException e) {
-                logger.log(Level.SEVERE, "exception removing property", e);
             } catch (DeleteException e) {
                 logger.log(Level.SEVERE, "exception removing property", e);
             }
@@ -361,8 +350,6 @@ public class ClusterPropertyDialog extends JDialog {
                         properties.add(property);
                 }
 
-            } catch (RemoteException e) {
-                logger.log(Level.SEVERE, "exception getting properties", e);
             } catch (FindException e) {
                 logger.log(Level.SEVERE, "exception getting properties", e);
             }

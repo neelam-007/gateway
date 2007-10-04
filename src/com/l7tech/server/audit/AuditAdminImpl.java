@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.rmi.RemoteException;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
@@ -97,15 +96,15 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         this.clusterPropertyManager = clusterPropertyManager;
     }
 
-    public AuditRecord findByPrimaryKey( final long oid ) throws FindException, RemoteException {
+    public AuditRecord findByPrimaryKey( final long oid ) throws FindException {
         return auditRecordManager.findByPrimaryKey(oid);
     }
 
-    public Collection<AuditRecord> find(final AuditSearchCriteria criteria) throws FindException, RemoteException {
+    public Collection<AuditRecord> find(final AuditSearchCriteria criteria) throws FindException {
         return auditRecordManager.find(criteria);
     }
 
-    public void deleteOldAuditRecords() throws RemoteException, DeleteException {
+    public void deleteOldAuditRecords() throws DeleteException {
         auditRecordManager.deleteOldAuditRecords();
     }
 
@@ -254,13 +253,13 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         }
 
         private final Object chunkSerializer = new Object();
-        public DownloadChunk nextChunk() throws RemoteException {
+        public DownloadChunk nextChunk() {
             synchronized (chunkSerializer) {
                 return doNextChunk();
             }
         }
 
-        private DownloadChunk doNextChunk() throws RemoteException {
+        private DownloadChunk doNextChunk() {
             setLastUsed();
             checkForException();
             byte[] chunk = new byte[chunkLength];
@@ -292,18 +291,18 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
                 return new DownloadChunk(auditsDownloaded, approxTotalAudits, got);
             } catch (IOException e) {
                 close();
-                throw new RemoteException("Unable to read exported audit stream", e);
+                throw new RuntimeException("Unable to read exported audit stream", e);
             } catch (InterruptedException e) {
                 close();
-                throw new RemoteException("Unable to read exported audit stream", e);
+                throw new RuntimeException("Unable to read exported audit stream", e);
             }
         }
 
-        public void checkForException() throws RemoteException {
+        public void checkForException() {
             final Throwable producerException = getProducerException();
             if (producerException != null) {
                 close();
-                throw new RemoteException("Audit .zip producer thread exception: " + producerException.getMessage(), producerException);
+                throw new RuntimeException("Audit .zip producer thread exception: " + producerException.getMessage(), producerException);
             }
         }
 
@@ -347,7 +346,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     public OpaqueId downloadAllAudits(long fromTime,
                                       long toTime,
                                       long[] serviceOids,
-                                      int chunkSizeInBytes) throws RemoteException {
+                                      int chunkSizeInBytes) {
         try {
             final DownloadContext downloadContext;
             downloadContext = new DownloadContext(fromTime, toTime, serviceOids, 0, (AuditExporter)applicationContext.getBean("auditExporter"), keystore.getSslCert(), keystore.getSSLPrivateKey());
@@ -355,18 +354,18 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
             downloadContexts.put(downloadContext.getOpaqueId(), downloadContext);
             return downloadContext.getOpaqueId();
         } catch (KeyStoreException e) {
-            throw new RemoteException("Server configuration error: unable to prepare keys for signing exported audits", e);
+            throw new RuntimeException("Server configuration error: unable to prepare keys for signing exported audits", e);
         } catch (IOException e) {
-            throw new RemoteException("IO error while preparing to export audits", e);
+            throw new RuntimeException("IO error while preparing to export audits", e);
         } catch (CertificateException e) {
-            throw new RemoteException("Server configuration error: unable to prepare certificate for signing exported audits", e);
+            throw new RuntimeException("Server configuration error: unable to prepare certificate for signing exported audits", e);
         }
     }
 
-    public DownloadChunk downloadNextChunk(OpaqueId context) throws RemoteException {
+    public DownloadChunk downloadNextChunk(OpaqueId context) {
         DownloadContext downloadContext = downloadContexts.get(context);
         if (downloadContext == null)
-            throw new RemoteException("No such download context is pending");
+            throw new RuntimeException("No such download context is pending");
         downloadContext.checkForException();
         DownloadChunk chunk = downloadContext.nextChunk();
         if (chunk == null || chunk.chunk == null)
@@ -382,19 +381,18 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
      * @param startMsgDate The starting date
      * @param endMsgDate The ending date 
      * @param size The maximum number of records to return
-     * @throws RemoteException
      * @throws FindException
      */
     public Collection<AuditRecord> findAuditRecords(final String nodeid,
                                                     final Date startMsgDate,
                                                     final Date endMsgDate,
                                                     final int size)
-                                             throws RemoteException, FindException {
+                                             throws FindException {
         logger.finest("Get audits interval ["+startMsgDate+", "+endMsgDate+"] for node '"+nodeid+"'");
         return auditRecordManager.find(new AuditSearchCriteria(startMsgDate, endMsgDate, null, null, null, nodeid, -1, -1, size));
     }
 
-    public Date getLastAcknowledgedAuditDate() throws RemoteException {
+    public Date getLastAcknowledgedAuditDate() {
         Date date = null;
         String value = null;
 
@@ -415,7 +413,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         return date;
     }
 
-    public Date markLastAcknowledgedAuditDate() throws RemoteException {
+    public Date markLastAcknowledgedAuditDate() {
         Date date = new Date();
         String value = Long.toString(date.getTime());
 
@@ -448,7 +446,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
                                        final Date startMsgDate,
                                        final Date endMsgDate,
                                        final int size)
-                                throws RemoteException, FindException {
+                                throws FindException {
         logger.finest("Get logs interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
         return logRecordManager.find(nodeid, startMsgNumber, size);
     }
@@ -490,11 +488,11 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         return refreshInterval;
     }
 
-    public Level serverMessageAuditThreshold() throws RemoteException {
+    public Level serverMessageAuditThreshold() {
         return getAuditLevel(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD, "message", AuditContext.DEFAULT_MESSAGE_THRESHOLD);
     }
 
-    public Level serverDetailAuditThreshold() throws RemoteException {
+    public Level serverDetailAuditThreshold() {
         return getAuditLevel(ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD, "detail", AuditContext.DEFAULT_ASSOCIATED_LOGS_THRESHOLD);
     }
 
@@ -516,13 +514,13 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         return output;
     }
 
-    public int serverMinimumPurgeAge() throws RemoteException {
+    public int serverMinimumPurgeAge() {
         String sAge = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
         int age = 168;
         try {
             return Integer.valueOf(sAge);
         } catch (NumberFormatException nfe) {
-            throw new RemoteException("Configured minimum age value '" + sAge +
+            throw new RuntimeException("Configured minimum age value '" + sAge +
                                       "' is not a valid number. Using " + age + " (one week) by default" );
         }
     }

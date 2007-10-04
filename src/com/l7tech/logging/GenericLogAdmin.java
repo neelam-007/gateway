@@ -10,7 +10,6 @@ import com.l7tech.objectmodel.FindException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.rmi.RemoteException;
 import java.util.Date;
 
 /**
@@ -77,7 +76,7 @@ public interface GenericLogAdmin {
      *
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate, int size) throws RemoteException, FindException;
+    SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate, int size) throws FindException;
 
     /**
      * Get the configured refresh period for the log type.

@@ -3,18 +3,13 @@
  */
 package com.l7tech.server.security.rbac;
 
-import com.l7tech.common.LicenseException;
-import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.JaasUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
-import com.l7tech.server.GatewayFeatureSets;
 
-import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,26 +23,14 @@ public class RbacAdminImpl implements RbacAdmin {
     private static final Logger logger = Logger.getLogger(RbacAdminImpl.class.getName());
 
     private final RoleManager roleManager;
-    private final LicenseManager licenseManager;
     private final EntityFinder entityFinder;
 
-    public RbacAdminImpl(RoleManager roleManager, LicenseManager licenseManager, EntityFinder entityFinder) {
+    public RbacAdminImpl(RoleManager roleManager, EntityFinder entityFinder) {
         this.roleManager = roleManager;
-        this.licenseManager = licenseManager;
         this.entityFinder = entityFinder;
     }
 
-    private void checkLicense() throws RemoteException {
-        try {
-            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
-        } catch (LicenseException e) {
-            // New exception to conceal original stack trace from LicenseManager
-            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
-        }
-    }
-
-    public Collection<Role> findAllRoles() throws FindException, RemoteException {
-        checkLicense();
+    public Collection<Role> findAllRoles() throws FindException {
         final Collection<Role> roles = roleManager.findAll();
         for (Role role : roles) {
             attachEntities(role);
@@ -55,13 +38,12 @@ public class RbacAdminImpl implements RbacAdmin {
         return roles;
     }
 
-    public Role findRoleByPrimaryKey(long oid) throws FindException, RemoteException {
-        checkLicense();
+    public Role findRoleByPrimaryKey(long oid) throws FindException {
         return attachEntities(roleManager.findByPrimaryKey(oid));
     }
 
 
-    public Collection<Permission> findCurrentUserPermissions() throws FindException, RemoteException {
+    public Collection<Permission> findCurrentUserPermissions() throws FindException {
         User u = JaasUtils.getCurrentUser();
         if (u == null) throw new FindException("Couldn't get current user");
         Set<Permission> perms = new HashSet<Permission>();
@@ -76,7 +58,7 @@ public class RbacAdminImpl implements RbacAdmin {
         return perms;
     }
 
-    public Collection<Role> findRolesForUser(User user) throws FindException, RemoteException {
+    public Collection<Role> findRolesForUser(User user) throws FindException {
         if (user == null) throw new IllegalArgumentException("User cannot be null.");
         return roleManager.getAssignedRoles(user);
     }
@@ -110,8 +92,7 @@ public class RbacAdminImpl implements RbacAdmin {
         return theRole;
     }
 
-    public long saveRole(Role role) throws SaveException, RemoteException {
-        checkLicense();
+    public long saveRole(Role role) throws SaveException {
         if (role.getOid() == Role.DEFAULT_OID) {
             return roleManager.save(role);
         } else {
@@ -125,13 +106,11 @@ public class RbacAdminImpl implements RbacAdmin {
         }
     }
 
-    public void deleteRole(Role role) throws DeleteException, RemoteException {
-        checkLicense();
+    public void deleteRole(Role role) throws DeleteException {
         roleManager.delete(role);
     }
 
-    public EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException, RemoteException {
-        checkLicense();
+    public EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException {
         return entityFinder.findAll(entityClass);
     }
 }

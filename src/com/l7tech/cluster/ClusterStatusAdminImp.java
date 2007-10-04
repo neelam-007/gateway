@@ -26,7 +26,6 @@ import com.l7tech.service.MetricsSummaryBin;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -74,19 +73,19 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
             throw new IllegalArgumentException("Server Config manager is required");
     }
 
-    private void checkLicense() throws RemoteException {
+    private void checkLicense() {
         try {
             licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
         } catch (LicenseException e) {
             // New exception to conceal original stack trace from LicenseManager
-            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
+            throw new RuntimeException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
         }
     }
 
     /**
      * get status for all nodes recorded as part of the cluster.
      */
-    public ClusterNodeInfo[] getClusterStatus() throws FindException, RemoteException {
+    public ClusterNodeInfo[] getClusterStatus() throws FindException {
         Collection res = clusterInfoManager.retrieveClusterStatus();
         Object[] resarray = res.toArray();
         ClusterNodeInfo[] output = new ClusterNodeInfo[res.size()];
@@ -99,7 +98,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     /**
      * get service usage as currently recorded in database.
      */
-    public ServiceUsage[] getServiceUsage() throws FindException, RemoteException {
+    public ServiceUsage[] getServiceUsage() throws FindException {
         Collection res = serviceUsageManager.getAll();
         Object[] resarray = res.toArray();
         ServiceUsage[] output = new ServiceUsage[res.size()];
@@ -116,7 +115,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      * @param nodeid  the mac of the node for which we want to change the name
      * @param newName the new name of the node (must not be null)
      */
-    public void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException {
+    public void changeNodeName(String nodeid, String newName) throws UpdateException {
         checkLicense();
         clusterInfoManager.renameNode(nodeid, newName);
     }
@@ -130,7 +129,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      *
      * @param nodeid the mac of the stale node to remove
      */
-    public void removeStaleNode(String nodeid) throws RemoteException, DeleteException {
+    public void removeStaleNode(String nodeid) throws DeleteException {
         checkLicense();
         logger.info("removing stale node: " + nodeid);
         clusterInfoManager.deleteNode(nodeid);
@@ -148,11 +147,11 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      *
      * @return long  The current system time in milli seconds
      */
-    public java.util.Date getCurrentClusterSystemTime() throws RemoteException {
+    public java.util.Date getCurrentClusterSystemTime() {
         return Calendar.getInstance().getTime();
     }
 
-    public String getCurrentClusterTimeZone() throws RemoteException {
+    public String getCurrentClusterTimeZone() {
         return TimeZone.getDefault().getID();
     }
 
@@ -161,15 +160,15 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      *
      * @return String  The node name
      */
-    public String getSelfNodeName() throws RemoteException {
+    public String getSelfNodeName() {
         return clusterInfoManager.getSelfNodeInf().getName();
     }
 
-    public Collection<ClusterProperty> getAllProperties() throws RemoteException, FindException {
+    public Collection<ClusterProperty> getAllProperties() throws FindException {
         return clusterPropertyManager.findAll();
     }
 
-    public Map<String, String[]> getKnownProperties() throws RemoteException {
+    public Map<String, String[]> getKnownProperties() {
         Map<String,String> namesToDesc =  serverConfig.getClusterPropertyNames();
         Map<String,String> namesToDefs =  serverConfig.getClusterPropertyDefaults();
 
@@ -181,11 +180,11 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return Collections.unmodifiableMap(known);
     }
 
-    public ClusterProperty findPropertyByName(String key) throws RemoteException, FindException {
+    public ClusterProperty findPropertyByName(String key) throws FindException {
         return clusterPropertyManager.findByUniqueName(key);
     }
 
-    public long saveProperty(ClusterProperty clusterProperty) throws RemoteException, SaveException, UpdateException, DeleteException {
+    public long saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException {
         if (!("license".equals(clusterProperty.getName())))
             checkLicense();
         long oid = clusterProperty.getOid();
@@ -198,17 +197,17 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     }
 
     @Secured(types = EntityType.CLUSTER_PROPERTY, stereotype = MethodStereotype.DELETE_ENTITY)
-    public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException, RemoteException {
+    public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException {
         if ("license".equals(clusterProperty.getName()))
             throw new DeleteException("Can't delete license");
         clusterPropertyManager.delete(clusterProperty);
     }
 
-    public License getCurrentLicense() throws RemoteException, InvalidLicenseException {
+    public License getCurrentLicense() throws InvalidLicenseException {
         return licenseManager.getCurrentLicense();
     }
 
-    public long getLicenseExpiryWarningPeriod() throws RemoteException {
+    public long getLicenseExpiryWarningPeriod() {
         long expiryWarnPeriod = 0;
         String propertyName = "license.expiryWarnAge";
         String propStr = serverConfig.getPropertyCached(propertyName);
@@ -222,39 +221,39 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return expiryWarnPeriod;
     }
 
-    public void installNewLicense(String newLicenseXml) throws RemoteException, InvalidLicenseException, UpdateException {
+    public void installNewLicense(String newLicenseXml) throws InvalidLicenseException, UpdateException {
         licenseManager.installNewLicense(newLicenseXml);
 
         // Make sure we don't return until any module updating has been dealt with
         assertionRegistry.runNeededScan();
     }
 
-    public boolean isMetricsEnabled() throws RemoteException {
+    public boolean isMetricsEnabled() {
         return serviceMetricsManager.isEnabled();
     }
 
-    public int getMetricsFineInterval() throws RemoteException {
+    public int getMetricsFineInterval() {
         return serviceMetricsManager.getFineInterval();
     }
 
-    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, final boolean includeEmpty) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, final boolean includeEmpty) throws FindException {
         checkLicense();
         return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, maxPeriodStart, includeEmpty);
     }
 
-    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration, final boolean includeEmpty) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration, final boolean includeEmpty) throws FindException {
         checkLicense();
         final long minPeriodStart = System.currentTimeMillis() - duration;
         return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, null, includeEmpty);
     }
 
-    public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration, final boolean includeEmpty) throws RemoteException, FindException {
+    public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration, final boolean includeEmpty) throws FindException {
         checkLicense();
         return serviceMetricsManager.summarizeLatest(nodeId, serviceOids, resolution, duration, includeEmpty);
     }
 
     @Transactional(propagation = Propagation.SUPPORTS)
-    public Collection<ModuleInfo> getAssertionModuleInfo() throws RemoteException {
+    public Collection<ModuleInfo> getAssertionModuleInfo() {
         checkLicense();
 
         Collection<ModuleInfo> ret = new ArrayList<ModuleInfo>();

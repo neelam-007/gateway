@@ -7,7 +7,6 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
-import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Vector;
@@ -26,7 +25,7 @@ public class UserRoleAssignmentsPanel extends JPanel {
 
     private User user;
 
-    public UserRoleAssignmentsPanel(User whichUser) throws FindException, RemoteException {
+    public UserRoleAssignmentsPanel(User whichUser) throws FindException {
         this.user = whichUser;
         rolesLabel.setText(MessageFormat.format(genericLabel, user.getName()));
 
@@ -40,7 +39,7 @@ public class UserRoleAssignmentsPanel extends JPanel {
 
     }
 
-    private Collection<Role> getAssignedRolesForUser() throws FindException, RemoteException {
+    private Collection<Role> getAssignedRolesForUser() throws FindException {
         RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
         return rbacAdmin.findRolesForUser(user);
     }

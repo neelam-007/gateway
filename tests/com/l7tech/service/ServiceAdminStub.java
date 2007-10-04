@@ -1,7 +1,6 @@
 package com.l7tech.service;
 
 import com.l7tech.common.uddi.WsdlInfo;
-import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -12,10 +11,8 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.console.util.Registry;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.logging.Logger;
@@ -34,9 +31,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * Retreive the actual PublishedService object from it's oid.
      *
      * @param oid
-     * @throws RemoteException
      */
-    public PublishedService findServiceByID(String oid) throws RemoteException, FindException {
+    public PublishedService findServiceByID(String oid) throws FindException {
         return serviceManager.findByPrimaryKey(toLong(oid));
     }
 
@@ -48,7 +44,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @param url
      * @return a string containing the xml document
      */
-    public String resolveWsdlTarget(String url) throws RemoteException {
+    public String resolveWsdlTarget(String url) {
         return serviceManager.resolveWsdlTarget(url);
     }
 
@@ -56,10 +52,9 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * saves a published service along with it's policy assertions
      *
      * @param service
-     * @throws RemoteException
      */
     public long savePublishedService(PublishedService service)
-            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException {
+            throws UpdateException, SaveException, VersionException, PolicyAssertionException {
         return serviceManager.save(service);
     }
 
@@ -68,10 +63,9 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @param service
      * @param docs ignored
-     * @throws RemoteException
      */
     public long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> docs)
-            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException {
+            throws UpdateException, SaveException, VersionException, PolicyAssertionException {
         return serviceManager.save(service);
     }
 
@@ -80,10 +74,9 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @param serviceID The service id
      * @return The documents
-     * @throws RemoteException on remote error
      * @throws FindException on find error
      */
-    public Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws RemoteException, FindException {
+    public Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws FindException {
         return Collections.EMPTY_LIST;
     }
 
@@ -91,9 +84,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * deletes the service
      *
      * @param id service id
-     * @throws RemoteException
      */
-    public void deletePublishedService(String id) throws RemoteException, DeleteException {
+    public void deletePublishedService(String id) throws DeleteException {
         PublishedService service = null;
         try {
             long oid = toLong(id);
@@ -107,15 +99,15 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
 
     }
 
-    public PolicyValidatorResult validatePolicy(String policyXml, long serviceId) throws RemoteException {
+    public PolicyValidatorResult validatePolicy(String policyXml, long serviceId) {
         try {
             PublishedService service = serviceManager.findByPrimaryKey(serviceId);
             Assertion assertion = WspReader.getDefault().parsePermissively(policyXml);
             return policyValidator.validate(assertion, service, Registry.getDefault().getLicenseManager());
         } catch (FindException e) {
-            throw new RemoteException("cannot get existing service: " + serviceId, e);
+            throw new RuntimeException("cannot get existing service: " + serviceId, e);
         } catch (IOException e) {
-            throw new RemoteException("cannot parse passed policy xml", e);
+            throw new RuntimeException("cannot parse passed policy xml", e);
         } catch (InterruptedException e) {
             throw new RuntimeException("validation thread interrupted", e);
         }
@@ -129,7 +121,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
+    public EntityHeader[] findAllPublishedServices() throws FindException {
         Collection res = serviceManager.findAllHeaders();
         return collectionToHeaderArray(res);
     }
@@ -141,8 +133,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
-      throws RemoteException {
+    public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) {
         throw new RuntimeException("Not Implemented");
     }
 
@@ -153,9 +144,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @param namePattern  The string of the service name (wildcard % is supported)
      * @param caseSensitive  True if case sensitive, false otherwise.
      * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
-     * @throws RemoteException  on remote communication error
      */
-    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws RemoteException, FindException {
+    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws FindException {
         WsdlInfo[] siList = new WsdlInfo[3];
 
         siList[0]= new WsdlInfo("Google Service", "http://api.google.com/GoogleSearch.wsdl");
@@ -165,7 +155,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return siList;
     }
 
-    public String[] findUDDIRegistryURLs() throws RemoteException, FindException {
+    public String[] findUDDIRegistryURLs() throws FindException {
         String[] urlList = new String[3];
         urlList[0] = "http://whale.l7tech.com:8080/uddi/inquiry";
         urlList[1] = "http://bones.l7tech.com:8080/uddi/inquiry";
@@ -174,15 +164,15 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return urlList;
     }
 
-    public String[] listExistingCounterNames() throws RemoteException, FindException {
+    public String[] listExistingCounterNames() throws FindException {
         return new String[0];
     }
 
-    public SampleMessage findSampleMessageById(long oid) throws RemoteException, FindException {
+    public SampleMessage findSampleMessageById(long oid) throws FindException {
         return null;
     }
 
-    public EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws RemoteException, FindException {
+    public EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws FindException {
         return new EntityHeader[0];
     }
 
@@ -222,14 +212,14 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @throws NumberFormatException    on parse error
      */
     private long toLong(String serviceID)
-      throws IllegalArgumentException, NumberFormatException {
+      throws IllegalArgumentException {
         if (serviceID == null) {
             throw new IllegalArgumentException();
         }
         return Long.parseLong(serviceID);
     }
 
-    private EntityHeader[] collectionToHeaderArray(Collection input) throws RemoteException {
+    private EntityHeader[] collectionToHeaderArray(Collection input) {
         if (input == null) return new EntityHeader[0];
         EntityHeader[] output = new EntityHeader[input.size()];
         int count = 0;
@@ -238,18 +228,18 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
             try {
                 output[count] = (EntityHeader)i.next();
             } catch (ClassCastException e) {
-                throw new RemoteException("Collection contained something other than a EntityHeader", e);
+                throw new RuntimeException("Collection contained something other than a EntityHeader", e);
             }
             ++count;
         }
         return output;
     }
 
-    public String getPolicyURL(String serviceoid) throws RemoteException, FindException {
+    public String getPolicyURL(String serviceoid) throws FindException {
         throw new RuntimeException("Not Implemented");
     }
 
-    public String getConsumptionURL(String serviceoid) throws RemoteException, FindException {
+    public String getConsumptionURL(String serviceoid) throws FindException {
         throw new RuntimeException("Not Implemented");
     }
 }

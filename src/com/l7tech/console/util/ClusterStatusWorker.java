@@ -14,7 +14,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 
-import java.rmi.RemoteException;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -119,8 +118,6 @@ public class ClusterStatusWorker extends SwingWorker {
                 cluster = clusterStatusService.getClusterStatus();
             } catch (FindException e) {
                 logger.log(Level.WARNING, "Unable to find cluster status from server", e);
-            } catch (RemoteException e) {
-                throw new RuntimeException("Remote exception when retrieving cluster status from server",e);
             }
 
             if (cluster == null) {
@@ -164,8 +161,6 @@ public class ClusterStatusWorker extends SwingWorker {
                 serviceStats = clusterStatusService.getServiceUsage();
             } catch (FindException e) {
                 logger.log(Level.WARNING, "Unable to find service statistics from server", e);
-            } catch (RemoteException e) {
-                throw new RuntimeException("Remote exception when retrieving service statistics from server", e);
             }
 
             if (serviceStats == null) {
@@ -198,8 +193,6 @@ public class ClusterStatusWorker extends SwingWorker {
                     }
 
                 }
-            } catch (RemoteException e) {
-                throw new RuntimeException("Remote exception when retrieving published services from server",e);
             } catch (FindException e) {
                 logger.log(Level.WARNING, "Unable to find all published services from server", e);
             }
@@ -233,11 +226,7 @@ public class ClusterStatusWorker extends SwingWorker {
                 clusterRequestCount += serviceStats[i].getRequests();
             }
 
-            try {
-                currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
-            } catch (RemoteException e) {
-                throw new RuntimeException("Remote exception when retrieving cluster status from server",e);
-            }
+            currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
 
             if (currentClusterSystemTime == null) {
                 return null;

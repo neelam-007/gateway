@@ -22,7 +22,6 @@ import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.rmi.RemoteException;
 
 /**
  * A dialog for editing a ThroughputQuota dialog.
@@ -82,8 +81,6 @@ public class ThroughputQuotaForm extends JDialog {
             for (int i = 0; i < gatewayCounter.length; i++) {
                 listofexistingcounternames.add(gatewayCounter[i]);
             }
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "cannot get counters from gateway", e);
         } catch (FindException e) {
             logger.log(Level.WARNING, "cannot get counters from gateway", e);
         }

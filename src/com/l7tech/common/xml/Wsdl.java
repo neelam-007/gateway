@@ -37,7 +37,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1356,7 +1355,6 @@ public class Wsdl {
      * @param def the wsdl definition
      * @param getter
      *  @return Element the "schema" element in the wsdl
-     * @throws RemoteException       if failed to call the remote object
      * @throws MalformedURLException if URL format is invalide
      * @throws IOException           when error occured in reading the wsdl document
      * @throws SAXException          when error occured in parsing XML

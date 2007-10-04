@@ -16,7 +16,6 @@ import com.l7tech.common.util.CertUtils;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.io.IOException;
 import java.security.cert.CertificateException;
@@ -60,8 +59,6 @@ public class FederatedUserCertPanel extends UserCertPanel {
                         } catch (UpdateException e) {
                             log.log(Level.WARNING, "ERROR Removing certificate", e);
                         } catch (ObjectNotFoundException e) {
-                            log.log(Level.WARNING, "ERROR Removing certificate", e);
-                        } catch (RemoteException e) {
                             log.log(Level.WARNING, "ERROR Removing certificate", e);
                         }
                     }

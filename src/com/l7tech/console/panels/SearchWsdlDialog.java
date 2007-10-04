@@ -17,15 +17,12 @@ import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.rmi.RemoteException;
 import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.security.AccessControlException;
-
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -50,12 +47,12 @@ public class SearchWsdlDialog extends JDialog {
     private JComboBox uddiURLcomboBox;
     private static final Logger logger = Logger.getLogger(SearchWsdlDialog.class.getName());
 
-    public SearchWsdlDialog(JDialog parent) throws RemoteException, FindException {
+    public SearchWsdlDialog(JDialog parent) throws FindException {
         super(parent, resources.getString("window.title"), true);
         initialize();
     }
 
-    public SearchWsdlDialog(JFrame parent) throws RemoteException, FindException {
+    public SearchWsdlDialog(JFrame parent) throws FindException {
         super(parent, resources.getString("window.title"), true);
         initialize();
     }
@@ -74,7 +71,7 @@ public class SearchWsdlDialog extends JDialog {
         return enabled;
     }
 
-    private void initialize() throws RemoteException, FindException {
+    private void initialize() throws FindException {
         Utilities.setAlwaysOnTop(this, true);
 
         Container p = getContentPane();
@@ -88,9 +85,6 @@ public class SearchWsdlDialog extends JDialog {
 
         try {
             uddiRegistryURLs = seriveAdmin.findUDDIRegistryURLs();
-        } catch(RemoteException re) {
-            logger.warning("Remote Exception caught. Unable to get the URLs of UDDI Registries");
-            throw re;
         } catch(FindException fe) {
             logger.warning("Exception caught. Unable to get the URLs of UDDI Registries");
             throw fe;
@@ -156,10 +150,6 @@ public class SearchWsdlDialog extends JDialog {
 
                             WsdlInfo[] urls = seriveAdmin.findWsdlUrlsFromUDDIRegistry((String) uddiURLcomboBox.getSelectedItem(), searchString, caseSensitiveCheckBox.isSelected());
                             return urls;
-                        } catch (RemoteException e) {
-                            logger.log(Level.WARNING, "error finding wsdl urls from uddi", e);
-                            JOptionPane.showMessageDialog(SearchWsdlDialog.this, "Remote Exception, " + e.getMessage(), "Search UDDI Registry", JOptionPane.ERROR_MESSAGE);
-                            return null;
                         } catch (FindException e) {
                             logger.log(Level.WARNING, "error finding wsdl urls from uddi", e);
                             JOptionPane.showMessageDialog(SearchWsdlDialog.this, "Find Exception, " + e.getMessage(), "Search UDDI Registry", JOptionPane.ERROR_MESSAGE);

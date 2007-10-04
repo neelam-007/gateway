@@ -17,7 +17,6 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.InetAddress;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -110,18 +109,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         managePrivateKeysButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                try {
-                    final PrivateKeyManagerWindow pkmw = new PrivateKeyManagerWindow(TopComponents.getInstance().getTopParent());
-                    pkmw.pack();
-                    Utilities.centerOnScreen(pkmw);
-                    DialogDisplayer.display(pkmw, new Runnable() {
-                        public void run() {
-                            privateKeyComboBox.repopulate();
-                        }
-                    });
-                } catch (RemoteException e1) {
-                    showErrorMessage("Error", "Unable to manage private keys: " + ExceptionUtils.getMessage(e1), e1);
-                }
+                final PrivateKeyManagerWindow pkmw = new PrivateKeyManagerWindow(TopComponents.getInstance().getTopParent());
+                pkmw.pack();
+                Utilities.centerOnScreen(pkmw);
+                DialogDisplayer.display(pkmw, new Runnable() {
+                    public void run() {
+                        privateKeyComboBox.repopulate();
+                    }
+                });
             }
         });
 
@@ -193,7 +188,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         });
         inputValidator.addRule(new InputValidator.ComponentValidationRule(cbEnableMessageInput) {
             public String getValidationError() {
-                if ((!enabledCheckBox.isSelected()) || 
+                if ((!enabledCheckBox.isSelected()) ||
                     cbEnableBuiltinServices.isSelected() ||
                     cbEnableMessageInput.isSelected() ||
                     cbEnableSsmApplet.isSelected() ||
@@ -217,15 +212,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         Vector<String> entries = new Vector<String>();
 
         entries.add(INTERFACE_ANY);
-        try {
-            InetAddress[] addrs = Registry.getDefault().getTransportAdmin().getAvailableBindAddresses();
-            for (InetAddress addr : addrs) {
-                entries.add(addr.getHostAddress());
-            }
-        } catch (RemoteException e) {
-            showErrorMessage("Error", "Unable to get interface addresses: " + ExceptionUtils.getMessage(e), e);
+        InetAddress[] addrs = Registry.getDefault().getTransportAdmin().getAvailableBindAddresses();
+        for (InetAddress addr : addrs) {
+            entries.add(addr.getHostAddress());
         }
-
 
         interfaceComboBoxModel = new DefaultComboBoxModel(entries);
         interfaceComboBox.setModel(interfaceComboBoxModel);
@@ -264,7 +254,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
          * Set the "armed" state for the checkbox at the specified index.
          * Any currently-armed checkbox will be disarmed.
          * <p/>
-         * The "armed" state is normally shown on mousedown to show that a checkbox is toggling. 
+         * The "armed" state is normally shown on mousedown to show that a checkbox is toggling.
          *
          * @param index index of list entry to arm
          */
@@ -433,15 +423,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private void initializeCipherSuiteControls() {
-        try {
-            String[] allCiphers = Registry.getDefault().getTransportAdmin().getAllCipherSuiteNames();
-            LinkedHashSet<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
-                    Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames()));
-            cipherSuiteListModel = new CipherSuiteListModel(allCiphers, defaultCiphers);
-            cipherSuiteList.setModel(cipherSuiteListModel);
-        } catch (RemoteException e) {
-            showErrorMessage("Error", "Unable to load cipher suites: " + ExceptionUtils.getMessage(e), e);
-        }
+        String[] allCiphers = Registry.getDefault().getTransportAdmin().getAllCipherSuiteNames();
+        LinkedHashSet<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
+                Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames()));
+        cipherSuiteListModel = new CipherSuiteListModel(allCiphers, defaultCiphers);
+        cipherSuiteList.setModel(cipherSuiteListModel);
         cipherSuiteList.setSelectionModel(new CipherSuiteListSelectionModel());
         cipherSuiteList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         cipherSuiteList.setCellRenderer(new ComponentListCellRenderer());

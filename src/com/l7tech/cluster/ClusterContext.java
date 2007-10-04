@@ -1,7 +1,5 @@
 package com.l7tech.cluster;
 
-import java.rmi.RemoteException;
-
 import com.l7tech.logging.GenericLogAdmin;
 
 /**
@@ -12,6 +10,6 @@ import com.l7tech.logging.GenericLogAdmin;
  */
 public interface ClusterContext {
 
-    public GenericLogAdmin getLogAdmin() throws RemoteException, SecurityException;
+    public GenericLogAdmin getLogAdmin() throws SecurityException;
 
 }

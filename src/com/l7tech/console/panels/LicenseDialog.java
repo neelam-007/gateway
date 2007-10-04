@@ -28,7 +28,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.*;
@@ -296,8 +295,6 @@ public class LicenseDialog extends JDialog {
             licensePanel.setLicenseError(ExceptionUtils.getMessage(e));
             showingLicenseOrError = true;
             pack();
-        } catch (RemoteException e) {
-            logger.log(Level.SEVERE, "Unable to get current license: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

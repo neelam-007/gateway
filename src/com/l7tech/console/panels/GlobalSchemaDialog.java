@@ -30,7 +30,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Level;
@@ -126,8 +125,6 @@ public class GlobalSchemaDialog extends JDialog {
         globalSchemas.clear();
         try {
             globalSchemas.addAll(reg.getSchemaAdmin().findAllSchemas());
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "cannot get schemas from gateway", e);
         } catch (FindException e) {
             logger.log(Level.WARNING, "cannot get schemas from gateway", e);
         }
@@ -235,8 +232,6 @@ public class GlobalSchemaDialog extends JDialog {
             Throwable err = null;
             try {
                 reg.getSchemaAdmin().saveSchemaEntry(newEntry);
-            } catch (RemoteException e) {
-                err = e;
             } catch (SaveException e) {
                 err = e;
             } catch (UpdateException e) {
@@ -340,10 +335,6 @@ public class GlobalSchemaDialog extends JDialog {
                 String msg = "Error trying to look for import schema in global schema";
                 logger.log(Level.SEVERE, msg, e);
                 throw new RuntimeException(msg);
-            } catch (RemoteException e) {
-                String msg = "Error trying to look for import schema in global schema";
-                logger.log(Level.SEVERE, msg, e);
-                throw new RuntimeException(msg);
             }
         }
         if (!unresolvedImportsList.isEmpty()) {
@@ -423,8 +414,6 @@ public class GlobalSchemaDialog extends JDialog {
         SchemaEntry todelete = globalSchemas.get(schemaTable.getSelectedRow());
         try {
             reg.getSchemaAdmin().deleteSchemaEntry(todelete);
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Cannot remove global schema from gateway", e);
         } catch (DeleteException e) {
             logger.log(Level.WARNING, "Cannot remove global schema from gateway", e);
         }

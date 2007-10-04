@@ -18,7 +18,6 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.io.StringReader;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,7 +51,7 @@ public class ServiceNode extends EntityHeaderNode {
         }
     }
 
-    public PublishedService getPublishedService() throws FindException, RemoteException {
+    public PublishedService getPublishedService() throws FindException {
         return svc != null ? svc : (svc = refreshPublishedService());
     }
 
@@ -61,10 +60,9 @@ public class ServiceNode extends EntityHeaderNode {
      * If the service has been deleted, this will prune it from the services tree before returning.
      *
      * @throws com.l7tech.objectmodel.FindException  if unable to find service, possibly because it was deleted
-     * @throws java.rmi.RemoteException  on remote communication error
      * @return the published service.  Never null.
      */
-    public PublishedService refreshPublishedService() throws RemoteException, FindException {
+    public PublishedService refreshPublishedService() throws FindException {
         EntityHeader eh = getEntityHeader();
         svc = Registry.getDefault().getServiceManager().findServiceByID(eh.getStrId());
         // throw something if null, the service may have been deleted

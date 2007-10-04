@@ -9,7 +9,6 @@ import com.l7tech.console.logging.ErrorManager;
 import javax.swing.Timer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -77,8 +76,6 @@ public class AuditAlertChecker {
         } catch (RemoteAccessException e) {
             // bzilla #3741, we may no longer be connected
             logger.log(Level.WARNING, "Could not access SSG to update this. Perhaps the connection to the SSG timed out.", e);
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
         } catch (FindException e) {
             logger.warning("Error while checking for new Audits: [" + e.getMessage() + "]");
         }
@@ -93,13 +90,9 @@ public class AuditAlertChecker {
     }
 
     public void updateAuditsAcknowledgedTime() {
-        try {
-            AuditAdmin admin = auditAdmin;
-            if (admin != null) {
-                lastAcknowledged = admin.markLastAcknowledgedAuditDate();
-            }
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
+        AuditAdmin admin = auditAdmin;
+        if (admin != null) {
+            lastAcknowledged = admin.markLastAcknowledgedAuditDate();
         }
     }
 

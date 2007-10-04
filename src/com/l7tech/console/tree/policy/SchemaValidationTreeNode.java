@@ -4,10 +4,8 @@ import com.l7tech.console.action.SchemaValidationPropertiesAction;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -71,8 +69,6 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
             return (Action[])list.toArray(new Action[]{});
         } catch (FindException e) {
             log.log(Level.WARNING, "cannot get service", e);
-        } catch (RemoteException e) {
-            log.log(Level.WARNING, "cannot get service", e);
         }
         return null;
     }
@@ -86,8 +82,6 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
         try {
             return new SchemaValidationPropertiesAction(this, getService());
         } catch (FindException e) {
-            log.log(Level.WARNING, "cannot get service", e);
-        } catch (RemoteException e) {
             log.log(Level.WARNING, "cannot get service", e);
         }
         return null;
@@ -105,7 +99,6 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
     public SchemaValidation getAssertion() {return nodeAssertion;}
 
     private SchemaValidation nodeAssertion;
-    private PublishedService service;
 
     private final Logger log = Logger.getLogger(getClass().getName());
 }

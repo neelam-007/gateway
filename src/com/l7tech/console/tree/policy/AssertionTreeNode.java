@@ -26,7 +26,6 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -343,8 +342,6 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "Could not import the policy", e);
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Could not import the policy", e);
         } catch (InvalidPolicyStreamException e) {
             logger.log(Level.WARNING, "Could not import the policy", e);
         }
@@ -358,7 +355,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return getServiceNode(this);
     }
 
-    public PublishedService getService() throws RemoteException, FindException {
+    public PublishedService getService() throws FindException {
         ServiceNode sn = getServiceNodeCookie();
         if (sn == null) return null;
         return sn.getPublishedService();

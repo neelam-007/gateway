@@ -16,7 +16,6 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.AuditAssertion;
 
 import javax.swing.*;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 
 /**
@@ -43,12 +42,7 @@ public class AuditAssertionPropertiesAction extends SecureAction {
 
     protected void performAction() {
         Level thresold;
-        try {
-            thresold = Registry.getDefault().getAuditAdmin().serverMessageAuditThreshold();
-        } catch (RemoteException e) {
-            logger.log(Level.SEVERE, "Cannot call AuditAdmin.serverMessageAuditThreshold", e);
-            thresold = Level.INFO;
-        }
+        thresold = Registry.getDefault().getAuditAdmin().serverMessageAuditThreshold();
 
         final AuditAssertionDialog aad = new AuditAssertionDialog(TopComponents.getInstance().getTopParent(), subject.getAssertion(), thresold.getName());
         aad.pack();

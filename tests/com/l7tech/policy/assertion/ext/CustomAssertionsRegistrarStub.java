@@ -6,7 +6,6 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
 
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -35,19 +34,18 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
         CustomAssertions.register(eh);
     }
 
-    public byte[] getAssertionClass(String className) throws RemoteException {
+    public byte[] getAssertionClass(String className) {
         return null;
     }
 
-    public byte[] getAssertionResourceBytes(String path) throws RemoteException {
+    public byte[] getAssertionResourceBytes(String path) {
         return null;
     }
 
     /**
      * @return the list of all assertions known to the runtime
-     * @throws java.rmi.RemoteException
      */
-    public Collection getAssertions() throws RemoteException {
+    public Collection getAssertions() {
         Set customAssertionDescriptors = CustomAssertions.getAllDescriptors();
         return asCustomAssertionHolders(customAssertionDescriptors);
     }
@@ -56,9 +54,8 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @param c the category to query for
      * @return the list of all assertions known to the runtime
      *         for a give n category
-     * @throws java.rmi.RemoteException
      */
-    public Collection getAssertions(Category c) throws RemoteException {
+    public Collection getAssertions(Category c) {
         final Set customAssertionDescriptors = CustomAssertions.getDescriptors(c);
         return asCustomAssertionHolders(customAssertionDescriptors);
     }
@@ -80,10 +77,9 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      *
      * @param xml the netity header representing the service
      * @return the policy tree
-     * @throws java.rmi.RemoteException on remote invocation error
      * @throws IOException              on policy format error
      */
-    public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
+    public Assertion resolvePolicy(String xml) throws IOException {
         return WspReader.getDefault().parsePermissively(xml);
     }
 

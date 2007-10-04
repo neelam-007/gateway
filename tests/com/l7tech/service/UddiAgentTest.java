@@ -4,7 +4,6 @@ import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 
-import java.rmi.RemoteException;
 import java.util.logging.Logger;
 
 /**
@@ -36,8 +35,6 @@ public class UddiAgentTest {
             } else {
                 logger.warning("ServiceAdmin returns a NULL list");
             }
-        } catch (RemoteException e) {
-            e.printStackTrace();
         } catch (FindException e) {
             e.printStackTrace();
         }

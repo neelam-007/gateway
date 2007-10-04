@@ -20,7 +20,6 @@ import com.l7tech.policy.assertion.BridgeRoutingAssertion;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.awt.*;
@@ -72,9 +71,6 @@ public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
                     }
                     d = new BridgeRoutingAssertionPropertiesDialog(f, (BridgeRoutingAssertion)node.asAssertion(), svc);
                 } catch (FindException e) {
-                    log.log(Level.WARNING, e.getMessage(), e);
-                    throw new RuntimeException(e);
-                } catch (RemoteException e) {
                     log.log(Level.WARNING, e.getMessage(), e);
                     throw new RuntimeException(e);
                 }

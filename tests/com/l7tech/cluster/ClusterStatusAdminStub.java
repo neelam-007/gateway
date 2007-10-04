@@ -11,7 +11,6 @@ import com.l7tech.service.MetricsSummaryBin;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.rmi.RemoteException;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,7 +24,7 @@ import java.util.Map;
 public class ClusterStatusAdminStub implements ClusterStatusAdmin{
     private static License license = null;
 
-    public String getCurrentClusterTimeZone() throws RemoteException {
+    public String getCurrentClusterTimeZone() {
         throw new UnsupportedOperationException();
     }
 
@@ -100,51 +99,51 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         return serviceUsage;
     }
 
-    public void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException {
+    public void changeNodeName(String nodeid, String newName) throws UpdateException {
         throw new UnsupportedOperationException();
     }
 
-    public void removeStaleNode(String nodeid) throws RemoteException, DeleteException {
+    public void removeStaleNode(String nodeid) throws DeleteException {
         throw new UnsupportedOperationException();
     }
 
-    public java.util.Date getCurrentClusterSystemTime() throws RemoteException {
+    public java.util.Date getCurrentClusterSystemTime() {
         return Calendar.getInstance().getTime();
     }
 
-    public String getSelfNodeName() throws RemoteException {
+    public String getSelfNodeName() {
         return "No name from test stub";
     }
 
-    public Collection<ClusterProperty> getAllProperties() throws RemoteException, FindException {
+    public Collection<ClusterProperty> getAllProperties() throws FindException {
         throw new UnsupportedOperationException();
     }
 
-    public Map getKnownProperties() throws RemoteException {
+    public Map getKnownProperties() {
         throw new UnsupportedOperationException();        
     }
 
-    public ClusterProperty findPropertyByName(String key) throws RemoteException, FindException {
+    public ClusterProperty findPropertyByName(String key) throws FindException {
         throw new UnsupportedOperationException();
     }
 
-    public long saveProperty(ClusterProperty clusterProperty) throws RemoteException, SaveException, UpdateException, DeleteException {
+    public long saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException {
         throw new UnsupportedOperationException();
     }
 
-    public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException, RemoteException {
+    public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException {
         throw new UnsupportedOperationException();
     }
 
-    public License getCurrentLicense() throws RemoteException, InvalidLicenseException {
+    public License getCurrentLicense() throws InvalidLicenseException {
         return license;
     }
 
-    public long getLicenseExpiryWarningPeriod() throws RemoteException {
+    public long getLicenseExpiryWarningPeriod() {
         return 0;
     }
 
-    public void installNewLicense(String newLicenseXml) throws RemoteException, InvalidLicenseException {
+    public void installNewLicense(String newLicenseXml) throws InvalidLicenseException {
         try {
             license = new License(newLicenseXml, null, GatewayFeatureSets.getFeatureSetExpander());
         } catch (Exception e) {
@@ -152,28 +151,28 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         }
     }
 
-    public boolean isMetricsEnabled() throws RemoteException {
+    public boolean isMetricsEnabled() {
         throw new UnsupportedOperationException();
     }
 
-    public int getMetricsFineInterval() throws RemoteException {
+    public int getMetricsFineInterval() {
         throw new UnsupportedOperationException();
     }
 
-    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, final boolean includeEmpty) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, final boolean includeEmpty) throws FindException {
         throw new UnsupportedOperationException();
     }
 
-    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration, final boolean includeEmpty) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration, final boolean includeEmpty) throws FindException {
         throw new UnsupportedOperationException();
     }
 
-    public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration, final boolean includeEmpty) throws RemoteException, FindException {
+    public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration, final boolean includeEmpty) throws FindException {
         throw new UnsupportedOperationException();
     }
 
     @Transactional(propagation = Propagation.SUPPORTS)
-    public Collection<ModuleInfo> getAssertionModuleInfo() throws RemoteException {
+    public Collection<ModuleInfo> getAssertionModuleInfo() {
         return Collections.emptyList();
     }
 

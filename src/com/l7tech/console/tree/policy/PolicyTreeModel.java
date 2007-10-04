@@ -22,7 +22,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
-import java.rmi.RemoteException;
 import java.util.EventListener;
 import java.util.Set;
 
@@ -257,8 +256,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
               (AssertionTreeNode)parent, index);
             pc.advices = Advices.getAdvices(a);
             pc.proceed();
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
         } catch (FindException e) {
             throw new RuntimeException(e);
         }
@@ -306,8 +303,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
                     policy, event, service, this, newChild, (AssertionTreeNode)parent, index);
             pc.advices = new Advice[]{new PolicyValidatorAdvice()};
             pc.proceed();
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
         } catch (FindException e) {
             throw new RuntimeException(e);
         }
@@ -400,8 +395,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
             try {
                 service = sn.getPublishedService();
             } catch (FindException e) {
-                throw new RuntimeException(e);
-            } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
         }

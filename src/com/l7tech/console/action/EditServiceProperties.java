@@ -21,7 +21,6 @@ import com.l7tech.service.ServiceDocument;
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.Collection;
 
@@ -65,9 +64,6 @@ public class EditServiceProperties extends ServiceNodeAction {
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get service", e);
             throw new RuntimeException(e);
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Cannot get service", e);
-            throw new RuntimeException(e);
         }
 
         Functions.UnaryVoid<Boolean> callback = new Functions.UnaryVoid<Boolean>() {
@@ -97,8 +93,6 @@ public class EditServiceProperties extends ServiceNodeAction {
                             pe.changeSubjectName(serviceNode.getName());
                             pe.updateHeadings();
                         }
-                    } catch (RemoteException e) {
-                        logger.log(Level.WARNING, "problem modifying policy editor title");
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "problem modifying policy editor title");
                     }
