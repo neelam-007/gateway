@@ -102,18 +102,6 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                 logger.fine("Gateway license error when getting modular assertion info");
                 throw e;
             }
-            else if (ExceptionUtils.causedBy(e, LicenseException.class)) {
-                logger.fine("Gateway license error when getting modular assertion info");
-                throw e;
-            }
-            else if (ExceptionUtils.causedBy(e, LicenseException.class)) {
-                logger.fine("Gateway license error when getting modular assertion info");
-                throw e;
-            }
-            else if (ExceptionUtils.causedBy(e, LicenseException.class)) {
-                logger.fine("Gateway license error when getting modular assertion info");
-                throw e;
-            }
 
             throw new RuntimeException("Unexpected error getting modular assertion info: " + ExceptionUtils.getMessage(e), e);
         }

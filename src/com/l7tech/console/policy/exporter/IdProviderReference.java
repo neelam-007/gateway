@@ -50,6 +50,8 @@ public class IdProviderReference extends ExternalReference {
         if (idAdmin != null) {
             try {
                 config = idAdmin.findIdentityProviderConfigByID(providerId);
+            } catch (RuntimeException e) {
+                logger.log(Level.WARNING, "error finding id provider config", e);
             } catch (FindException e) {
                 logger.log(Level.WARNING, "error finding id provider config", e);
             }
@@ -146,6 +148,8 @@ public class IdProviderReference extends ExternalReference {
             configOnThisSystem = idAdmin.findIdentityProviderConfigByID(getProviderId());
         } catch (FindException e) {
             logger.log(Level.WARNING, "error getting id provider config", e);
+        } catch (RuntimeException e) {
+            logger.log(Level.WARNING, "error getting id provider config", e);
         }
         if (configOnThisSystem != null && configOnThisSystem.getName().equals(getProviderName())) {
             // PERFECT MATCH!
@@ -161,11 +165,17 @@ public class IdProviderReference extends ExternalReference {
         } catch (FindException e) {
             logger.log(Level.WARNING, "error getting all id provider config", e);
             return false;
+        } catch (RuntimeException e) {
+            logger.log(Level.WARNING, "error getting all id provider config", e);
+            return false;
         }
         if (allConfigHeaders != null) {
             for (EntityHeader header : allConfigHeaders) {
                 try {
                     configOnThisSystem = idAdmin.findIdentityProviderConfigByID(header.getOid());
+                } catch (RuntimeException e) {
+                    logger.log(Level.WARNING, "cannot get id provider config", e);
+                    continue;
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "cannot get id provider config", e);
                     continue;
@@ -350,6 +360,8 @@ public class IdProviderReference extends ExternalReference {
                 }
             }
         } catch (FindException e) {
+            logger.log(Level.WARNING, "problem getting identity", e);
+        } catch (RuntimeException e) {
             logger.log(Level.WARNING, "problem getting identity", e);
         }
     }

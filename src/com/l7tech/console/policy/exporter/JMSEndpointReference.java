@@ -42,6 +42,9 @@ public class JMSEndpointReference extends ExternalReference {
                 endpointName = jmsEndpoint.getName();
                 jmsConnection = admin.findConnectionByPrimaryKey(jmsEndpoint.getConnectionOid());
             }
+        } catch (RuntimeException e) {
+            logger.log(Level.SEVERE, "cannot retrieve endpoint. partial reference will be built", e);
+            jmsConnection = null;
         } catch (FindException e){
             logger.log(Level.SEVERE, "cannot retrieve endpoint. partial reference will be built", e);
             jmsConnection = null;

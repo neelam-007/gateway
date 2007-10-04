@@ -19,6 +19,7 @@ public interface CustomAssertionsRegistrar {
      * @param className The class to load
      * @return The class data or null
      */
+    @Administrative(licensed=false)
     byte[] getAssertionClass(String className);
 
     /**
@@ -27,11 +28,13 @@ public interface CustomAssertionsRegistrar {
      * @param path  the path of the resource to load.  Required.
      * @return the resource bytes, or null if not found
      */
+    @Administrative(licensed=false)
     byte[] getAssertionResourceBytes(String path);
 
     /**
      * @return the list of all assertions known to the runtime
      */
+    @Administrative(licensed=false)
     Collection getAssertions();
 
     /**
@@ -39,6 +42,7 @@ public interface CustomAssertionsRegistrar {
      * @return the list of all assertions known to the runtime
      *         for a give n category
      */
+    @Administrative(licensed=false)
     Collection getAssertions(Category c);
 
     /**
@@ -49,6 +53,7 @@ public interface CustomAssertionsRegistrar {
      * @return the policy tree
      * @throws IOException     on policy format error
      */
+    @Administrative(licensed=false)
     Assertion resolvePolicy(String xml) throws IOException;
 
     /**

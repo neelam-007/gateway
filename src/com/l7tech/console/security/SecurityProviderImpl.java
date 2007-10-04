@@ -254,6 +254,8 @@ public class SecurityProviderImpl extends SecurityProvider
                     public void run() {
                         try {
                             adminLogin.logout();
+                        } catch (RuntimeException e) {
+                            logger.log(Level.WARNING, "Error logging out old admin session: " + ExceptionUtils.getMessage(e), e);
                         } finally {
                             getConfigurableHttpInvokerRequestExecutor().clearSessionIfMatches(cookie);
                         }

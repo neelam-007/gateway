@@ -84,6 +84,9 @@ public class ExternalSchemaReference extends ExternalReference {
                 }
                 */
             }
+        } catch (RuntimeException e) {
+            logger.log(Level.SEVERE, "error using schema admin layer", e);
+            throw new RuntimeException(e);
         } catch (FindException e) {
             logger.log(Level.SEVERE, "error using schema admin layer", e);
             throw new RuntimeException(e);

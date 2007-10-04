@@ -63,7 +63,12 @@ public class CustomAssertionClassLoader extends ClassLoader {
             return null;
         }
 
-        return car.getAssertionResourceBytes(path);
+        try {
+            return car.getAssertionResourceBytes(path);
+        } catch (RuntimeException e) {
+            logger.log(Level.WARNING, "Unable to load custom/modular assertion class or resource: " + ExceptionUtils.getMessage(e), e);
+            return null;
+        }
     }
 
     public InputStream getResourceAsStream(String name) {

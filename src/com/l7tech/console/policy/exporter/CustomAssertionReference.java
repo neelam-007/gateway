@@ -4,6 +4,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.LicenseException;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.Assertion;
@@ -14,6 +16,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * A reference to a CustomAssertion type. This reference is exported alongside
@@ -131,16 +134,23 @@ public class CustomAssertionReference extends ExternalReference {
     boolean verifyReference() {
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         Collection assertins = null;
-        assertins = cr.getAssertions();
-        for (Iterator iterator = assertins.iterator(); iterator.hasNext();) {
-            CustomAssertionHolder cah = (CustomAssertionHolder)iterator.next();
-            String thisname = cah.getCustomAssertion().getName();
-            if (thisname != null && thisname.equals(customAssertionName)) {
-                // WE HAVE A MATCH!
-                logger.fine("Custom assertion " + customAssertionName + " found on local system.");
-                localizeType = LocaliseAction.IGNORE;
-                return true;
+        try {
+            assertins = cr.getAssertions();
+            for (Iterator iterator = assertins.iterator(); iterator.hasNext();) {
+                CustomAssertionHolder cah = (CustomAssertionHolder)iterator.next();
+                String thisname = cah.getCustomAssertion().getName();
+                if (thisname != null && thisname.equals(customAssertionName)) {
+                    // WE HAVE A MATCH!
+                    logger.fine("Custom assertion " + customAssertionName + " found on local system.");
+                    localizeType = LocaliseAction.IGNORE;
+                    return true;
+                }
             }
+        } catch (RuntimeException e) {
+            if (ExceptionUtils.causedBy(e, LicenseException.class)) {
+                logger.log(Level.INFO, "Custom assertions unavailable or unlicensed");
+            } else
+                logger.log(Level.WARNING, "Cannot get remote assertions", e);
         }
         logger.warning("the custom assertion " + customAssertionName + " does not seem to exist on this system.");
         return false;
