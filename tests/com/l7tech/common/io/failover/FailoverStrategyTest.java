@@ -193,6 +193,31 @@ public class FailoverStrategyTest extends TestCase {
         // TODO test two servers going down
     }
 
+    public void testBug4232_OrderedStickyAllServersDownProbed() throws Exception {
+        // Simulate 3 server failure (Bug #4232)
+        OrderedStickyFailoverStrategy s = new OrderedStickyFailoverStrategy(new Object[] { SA, SB, SC });
+        s.setProbeTime(100);
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        Thread.sleep(110);
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        Thread.sleep(110);
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+        s.reportFailure(s.selectService());
+
+    }
+
     public void testBug1718_OrderedStickyAllServersDown() throws Exception {
         OrderedStickyFailoverStrategy s = new OrderedStickyFailoverStrategy(twoservers);
 

@@ -74,7 +74,7 @@ public class OrderedStickyFailoverStrategy extends AbstractFailoverStrategy {
 
         if (current >= servers.length) {
             // Nothing is up, so cycle through all downed servers
-            if (nextdown < 0 || nextdown > servers.length)
+            if (nextdown < 0 || nextdown >= servers.length)
                 nextdown = 0;
             return servers[nextdown++];
         }
