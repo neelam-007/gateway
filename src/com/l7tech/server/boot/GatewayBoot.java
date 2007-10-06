@@ -9,6 +9,7 @@ import com.l7tech.server.BootProcess;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.tomcat.*;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
@@ -43,8 +44,6 @@ public class GatewayBoot {
     protected static final Logger logger = Logger.getLogger(GatewayBoot.class.getName());
     public static final String SHUTDOWN_FILENAME = "SHUTDOWN.NOW";
     private static final long SHUTDOWN_POLL_INTERVAL = 1987L;
-    private static final String RESOURCE_PREFIX = "com/l7tech/server/resources/";
-    private static final String CONNECTOR_ATTR_KEYSTORE_PASS = "keystorePass";
 
     private final File ssgHome;
     private final File inf;
@@ -147,7 +146,7 @@ public class GatewayBoot {
     private VirtualDirEntry loadEntry(String name) {
         InputStream is = null;
         try {
-            String fullname = RESOURCE_PREFIX + name;
+            String fullname = HttpTransportModule.RESOURCE_PREFIX + name;
             is = getClass().getClassLoader().getResourceAsStream(fullname);
             if (is == null)
                 throw new MissingResourceException("Missing resource: " + fullname, getClass().getName(), fullname);
@@ -412,14 +411,14 @@ public class GatewayBoot {
 
         // If the connector is trying to add an encrypted password, decrypt it first.
         // If it can't be decrypted, ignore it and fall back to the password from keystore.properties.
-        String kspass = overrideAttrs.get(CONNECTOR_ATTR_KEYSTORE_PASS);
+        String kspass = overrideAttrs.get(HttpTransportModule.CONNECTOR_ATTR_KEYSTORE_PASS);
         if (masterPasswordManager.looksLikeEncryptedPassword(kspass)) {
             try {
                 char[] decrypted = masterPasswordManager.decryptPassword(kspass);
-                overrideAttrs.put(CONNECTOR_ATTR_KEYSTORE_PASS, new String(decrypted));
+                overrideAttrs.put(HttpTransportModule.CONNECTOR_ATTR_KEYSTORE_PASS, new String(decrypted));
             } catch (ParseException e) {
                 logger.log(Level.WARNING, "Unable to decrypt encrypted password in server.xml -- falling back to password from keystore.properties: " + ExceptionUtils.getMessage(e));
-                overrideAttrs.remove(CONNECTOR_ATTR_KEYSTORE_PASS);
+                overrideAttrs.remove(HttpTransportModule.CONNECTOR_ATTR_KEYSTORE_PASS);
             }
         }
 

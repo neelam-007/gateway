@@ -37,6 +37,7 @@ public class EntityInvalidationEvent extends ApplicationEvent {
         if(entityClass==null) throw new IllegalArgumentException("entityClass must not be null");
         if(!PersistentEntity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException("PersistentEntity must be assignable from entityClass");
         if(entityIds==null) throw new IllegalArgumentException("entityIds must not be null");
+        if (entityOps.length != entityIds.length) throw new IllegalArgumentException("entityIds must have the same length as entityOps");
 
         this.entityClass = entityClass;
         long[] myEntityIds = new long[entityIds.length];

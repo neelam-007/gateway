@@ -29,7 +29,6 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class SsgSSLImplementation extends SSLImplementation {
-    private static final String PROP_SERVER_HOME = "com.l7tech.server.home";
 
     //- PUBLIC
 
@@ -73,41 +72,7 @@ public class SsgSSLImplementation extends SSLImplementation {
      * @return The wrapped SSL ServerSocketFactory
      */
     public ServerSocketFactory getServerSocketFactory() {
-        ServerSocketFactory ssf = new SsgServerSocketFactory(delegate.getServerSocketFactory());
-
-        File base = new File(System.getProperty(PROP_SERVER_HOME, "/ssg"));
-        File conf = new File(base, "etc/conf");
-        File trustStore = new File(conf, "truststore.jks");
-
-        ssf.setAttribute("truststorePass", "changeit");
-        ssf.setAttribute("truststoreType", "JKS");
-        ssf.setAttribute("truststoreFile", trustStore.getAbsolutePath());
-        ssf.setAttribute("truststoreAlgorithm", "AXPK");
-
-        File propFile = new File(conf, "SsgSSLImplementation.properties");
-        if (propFile.exists()) {
-            logger.config("Loading connector properties from '"+propFile.getAbsolutePath()+"'.");
-            Properties props = new Properties();
-            InputStream in = null;
-            try {
-                in = new FileInputStream(propFile);
-                props.load(in);
-                for (Map.Entry<Object, Object> entry : props.entrySet()) {
-                    ssf.setAttribute((String)entry.getKey(), entry.getValue());
-                }
-            }
-            catch(IOException ioe) {
-                logger.log(Level.WARNING, "Error reading connector properties.", ioe);
-            }
-            finally {
-                ResourceUtils.closeQuietly(in);
-            }
-        }
-        else {
-            logger.fine("No SsgSSLImplementation properties found ["+propFile.getAbsolutePath()+"]; using default properties");
-        }
-
-        return ssf;
+        return new SsgJSSESocketFactory();
     }
 
     /**

@@ -2,8 +2,7 @@ package com.l7tech.common.transport;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Describes a port on which the Gateway will listen for incoming requests.
@@ -239,6 +238,18 @@ public class SsgConnector extends NamedEntityImp {
                 return property.getValue();
         }
         return null;
+    }
+
+    /**
+     * Get a list of all extra properties set on this connector.
+     *
+     * @return a List of Strings.  May be empty, but never null.
+     */
+    public List<String> getPropertyNames() {
+        List<String> propertyNames = new ArrayList<String>();
+        for (SsgConnectorProperty property : properties)
+            propertyNames.add(property.getName());
+        return Collections.unmodifiableList(propertyNames);
     }
 
     /**

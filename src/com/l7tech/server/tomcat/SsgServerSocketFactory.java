@@ -1,5 +1,7 @@
 package com.l7tech.server.tomcat;
 
+import com.l7tech.common.io.SSLSocketWrapper;
+import com.l7tech.common.io.SocketWrapper;
 import org.apache.tomcat.util.net.ServerSocketFactory;
 
 import javax.net.ssl.SSLSocket;
@@ -8,14 +10,11 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.nio.channels.SocketChannel;
-
-import com.l7tech.common.io.SSLSocketWrapper;
-import com.l7tech.common.io.SocketWrapper;
 
 
 /**
@@ -25,7 +24,6 @@ import com.l7tech.common.io.SocketWrapper;
  * @version $Revision$
  */
 public class SsgServerSocketFactory extends ServerSocketFactory {
-    private static final String ATTR_CIPHERNAMES = "ciphernames"; // comma separated list of enabled ciphers, ie TLS_RSA_WITH_AES_128_CBC_SHA 
 
     //- PUBLIC
 
@@ -64,13 +62,13 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
             logger.log(Level.FINE, "Accepted connection.");
         }
 
+        return wrapSocket(accepted);
+    }
+
+    public static Socket wrapSocket(final Socket accepted) {
         final Socket wrapped;
         if (accepted instanceof SSLSocket) {
             SSLSocket sslSocket = (SSLSocket)accepted;
-            if (sslCipherNames != null) {
-                logger.log(Level.FINE, "Setting custom cipher suites on SSL connection");
-                sslSocket.setEnabledCipherSuites(sslCipherNames);
-            }
             wrapped = new SSLSocketWrapper(sslSocket) {
                 boolean dispatched = false;
 
@@ -157,27 +155,8 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
      */
     public void setAttribute(String s, Object o) {
         delegate.setAttribute(s, o);
-        if (ATTR_CIPHERNAMES.equalsIgnoreCase(s)) {
-            String[] strings = o == null ? null : o.toString().split("[, ]");
-            logger.log(Level.INFO, o == null ? "Using no custom SSL cipher list" : ("Using custom SSL cipher list: " + o.toString()));
-            if (logger.isLoggable(Level.INFO)) {
-                if (strings == null) {
-                    logger.info("Using no custom SSL cipher list");
-                } else {
-                    StringBuffer sb = new StringBuffer("Using custom cipher list: ");
-                    for (String string : strings) {
-                        sb.append(string).append(",");
-                    }
-                    logger.info(sb.toString());
-                }
-            }
-            sslCipherNames = strings;
-        }
     }
 
-    /**
-     * Invokes delegate
-     */
     public static void addListener(Listener listener) {
         dispatchingListener.addListener(listener);
     }
@@ -201,15 +180,14 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
      * Listener that dispatches to a List of registered listeners.
      */
     private static class DispatchingListener implements Listener {
-        private static final List listeners = new CopyOnWriteArrayList();
+        private static final List<Listener> listeners = new CopyOnWriteArrayList<Listener>();
 
         void addListener(Listener listener) {
             listeners.add(listener);
         }
 
         public void onGetInputStream(Socket accepted) {
-            for (Object listener1 : listeners) {
-                Listener listener = (Listener)listener1;
+            for (Listener listener : listeners) {
                 try {
                     listener.onGetInputStream(accepted);
                 }

@@ -66,6 +66,8 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
      * If the object is an instance of PrivateKeyable that requests a specific private key, that private key will
      * be returned.  Otherwise the default private key will be returned.
      *
+     * TODO move this somewhere more reasonable (com.l7tech.server.policy.assertion?)
+     *
      * @param ctx  the Spring context.  Required.
      * @param maybePrivateKeyable  an Object that might be an instance of PrivateKeyable.  Optional.
      * @return The SslSignerInfo to use for the specified object.  Never null.

@@ -512,11 +512,13 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
 
     private void processEntityInvalidationEvent(final EntityInvalidationEvent eie) {
         if (TrustedCert.class.isAssignableFrom(eie.getEntityClass())) {
+            final long[] ids = eie.getEntityIds();
+            final char[] ops = eie.getEntityOperations();
             lock.writeLock().lock();
             try {
-                nextOid: for (int i = 0; i < eie.getEntityIds().length; i++) {
-                    long oid = eie.getEntityIds()[i];
-                    char op = eie.getEntityOperations()[i];
+                nextOid: for (int i = 0; i < ids.length; i++) {
+                    long oid = ids[i];
+                    char op = ops[i];
                     switch(op) {
                         case EntityInvalidationEvent.CREATE:
                         case EntityInvalidationEvent.UPDATE:
@@ -545,11 +547,13 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                 lock.writeLock().unlock();
             }
         } else if (RevocationCheckPolicy.class.isAssignableFrom(eie.getEntityClass())) {
+            final long[] ids = eie.getEntityIds();
+            final char[] ops = eie.getEntityOperations();
             lock.writeLock().lock();
             try {
-                nextOid: for (int i = 0; i < eie.getEntityIds().length; i++) {
-                    long oid = eie.getEntityIds()[i];
-                    char op = eie.getEntityOperations()[i];
+                nextOid: for (int i = 0; i < ids.length; i++) {
+                    long oid = ids[i];
+                    char op = ops[i];
                     switch(op) {
                         case EntityInvalidationEvent.CREATE:
                         case EntityInvalidationEvent.UPDATE:
