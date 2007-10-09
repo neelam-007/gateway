@@ -2,39 +2,42 @@ package com.l7tech.server.util;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.lang.reflect.Method;
 
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.aop.ThrowsAdvice;
 
 import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.ConstraintViolationException;
 
 /**
- * MethodInterceptor that translates server exceptions to client exceptions.
- * 
+ * Advice that translates integrity constraint violations into client exceptions.
+ *
+ * <p>If a {@link DataIntegrityViolationException} is thrown from Spring and the
+ * invoked method permits {@link ConstraintViolationException} to be thrown then
+ * this advice will translate the exception.</p>
+ *
  * @author Steve Jones
  */
-public class ExceptionFilteringInterceptor implements MethodInterceptor {
+public class ExceptionFilteringInterceptor implements ThrowsAdvice {
 
     //- PUBLIC
 
-    public Object invoke(MethodInvocation methodInvocation) throws Throwable {
-        try {
-            return methodInvocation.proceed();
-        } catch (DataIntegrityViolationException dive) {
-            Class[] canThrow = methodInvocation.getMethod().getExceptionTypes();
-            if ( ArrayUtils.contains(canThrow, ConstraintViolationException.class) ) {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.log(Level.FINE,
-                            "Filtering DataIntegrityViolationException as ConstraintViolationException",
-                            ExceptionUtils.getDebugException(dive));
-                }
-                throw new ConstraintViolationException(dive.getMessage());
+    public void afterThrowing(final Method method,
+                              final Object[] args,
+                              final Object target,
+                              final DataIntegrityViolationException dive) throws ConstraintViolationException {
+        Class[] canThrow = method.getExceptionTypes();
+        if ( ArrayUtils.contains(canThrow, ConstraintViolationException.class) ) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE,
+                        "Filtering DataIntegrityViolationException as ConstraintViolationException",
+                        ExceptionUtils.getDebugException(dive));
             }
 
-            throw dive;
+            //
+            throw new ConstraintViolationException(dive.getMessage());            
         }
     }
 
