@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.policy.assertion.identity;
@@ -12,7 +12,6 @@ import com.l7tech.objectmodel.IdentityHeader;
  * Asserts that the requestor is a member of a particular group.
  *
  * @author alex
- * @version $Revision$
  */
 public class MemberOfGroup extends IdentityAssertion {
     public MemberOfGroup() {
@@ -37,7 +36,7 @@ public class MemberOfGroup extends IdentityAssertion {
 
     public MemberOfGroup(long providerOid, String groupName, String groupID) {
         super(providerOid);
-        _groupName = groupName;
+        this._groupName = groupName;
         this.groupId = groupID;
     }
 

@@ -11,7 +11,6 @@ import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.util.NamespaceFactory;
 import org.w3c.dom.Element;
 
-import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -151,7 +150,7 @@ public class DecorationRequirements {
     /**
      * populate this with Element objects
      */
-    public Set getElementsToSign() {
+    public Set<Element> getElementsToSign() {
         return elementsToSign;
     }
 
@@ -295,6 +294,22 @@ public class DecorationRequirements {
      */
     public String getSignatureConfirmation() {
         return signatureConfirmation;
+    }
+
+    /**
+     * @return true if any SAML assertion(s) referenced from a Signature should use References to a non-schema-compliant
+     * wsu:Id attribute in the assertion instead of using the STR dereference transform.
+     */
+    public boolean isSuppressSamlStrTransform() {
+        return suppressSamlStrTransform;
+    }
+
+    /**
+     * @param suppressSamlStrTransform true if any SAML assertion(s) referenced from a Signature should use References
+     * to a non-schema-compliant wsu:Id attribute in the assertion instead of using the STR dereference transform.
+     */
+    public void setSuppressSamlStrTransform(boolean suppressSamlStrTransform) {
+        this.suppressSamlStrTransform = suppressSamlStrTransform;
     }
 
     public interface SecureConversationSession {
@@ -525,10 +540,10 @@ public class DecorationRequirements {
     private SecureConversationSession secureConversationSession = null;
     private boolean includeTimestamp = true;
     private boolean signTimestamp;
-    private Set elementsToEncrypt = new LinkedHashSet();
+    private Set<Element> elementsToEncrypt = new LinkedHashSet<Element>();
     private String encryptionAlgorithm = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
     private String keyEncryptionAlgorithm = null;
-    private Set elementsToSign = new LinkedHashSet();
+    private Set<Element> elementsToSign = new LinkedHashSet<Element>();
     private NamespaceFactory namespaceFactory = new NamespaceFactory();
     private Date timestampCreatedDate = null;
     private int timestampTimeoutMillis = 0;
@@ -545,4 +560,5 @@ public class DecorationRequirements {
     private boolean includeKerberosTicketId = false;
     private boolean encryptUsernameToken = false;
     private boolean useDerivedKeys = false;
+    private boolean suppressSamlStrTransform = false;
 }

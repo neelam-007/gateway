@@ -4,6 +4,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
+import com.l7tech.common.security.saml.NameIdentifierInclusionType;
 import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
@@ -538,6 +539,15 @@ public class WspReaderTest extends TestCase {
         assertEquals(AssertionResourceType.STATIC, ri.getType());
         StaticResourceInfo sri = (StaticResourceInfo)ri;
         assertNotNull(sri.getDocument());
+    }
+
+    public void testSamlIssuerAssertion() throws Exception {
+        SamlIssuerAssertion sia = new SamlIssuerAssertion();
+        sia.setNameIdentifierType(NameIdentifierInclusionType.NONE);
+        String xml = WspWriter.getPolicyXml(sia);
+
+        SamlIssuerAssertion sia2 = (SamlIssuerAssertion) wspReader.parseStrictly(xml);
+        assertEquals(sia2.getNameIdentifierType(), NameIdentifierInclusionType.NONE);
     }
 
     private static final String BUG_3456_POLICY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

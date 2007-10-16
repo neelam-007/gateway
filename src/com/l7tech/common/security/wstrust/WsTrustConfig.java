@@ -5,20 +5,19 @@
 
 package com.l7tech.common.security.wstrust;
 
-import org.w3c.dom.*;
-import org.xml.sax.SAXException;
+import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.token.XmlSecurityToken;
-import com.l7tech.common.security.token.SamlSecurityToken;
-import com.l7tech.common.xml.WsTrustRequestType;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.WsTrustRequestType;
+import org.w3c.dom.*;
+import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
-import java.util.Map;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Encapsulates a version of WS-Trust.
@@ -135,16 +134,17 @@ public abstract class WsTrustConfig {
         if (base != null) {
             Element baseEl = XmlUtil.createAndPrependElementNS(rst, "Base", getWstNs(), "wst");
             Element tokenEl = base.asElement();
+            if (tokenEl == null) throw new IllegalStateException("Couldn't get Element for Base security token");
 
             // Ensure all prefixes inherited from token's original context are available to the token
             Node n = tokenEl;
-            Map declaredTokenNamespaces = new HashMap();
-            Map usedTokenNamespaces = new HashMap();
+            Map<String, String> declaredTokenNamespaces = new HashMap<String, String>();
+            Map<String, String> usedTokenNamespaces = new HashMap<String, String>();
             while (n != null) {
                 if (n.getPrefix() != null && n.getNamespaceURI() != null)
                     usedTokenNamespaces.put(n.getPrefix(), n.getNamespaceURI());
                 if (n.getNodeType() == Node.ELEMENT_NODE) {
-                    NamedNodeMap attrs = ((Element)n).getAttributes();
+                    NamedNodeMap attrs = n.getAttributes();
                     for (int i = 0; i < attrs.getLength(); i++) {
                         Attr attr = (Attr) attrs.item(i);
                         if ("xmlns".equalsIgnoreCase(attr.getPrefix())) {
@@ -159,9 +159,8 @@ public abstract class WsTrustConfig {
                 n = next;
             }
 
-            for (Iterator i = usedTokenNamespaces.keySet().iterator(); i.hasNext();) {
-                String prefix = (String) i.next();
-                String uri = (String)usedTokenNamespaces.get(prefix);
+            for (String prefix : usedTokenNamespaces.keySet()) {
+                String uri = usedTokenNamespaces.get(prefix);
                 if (declaredTokenNamespaces.containsKey(prefix) && declaredTokenNamespaces.get(prefix).equals(uri)) {
                     // Already there
                 } else {

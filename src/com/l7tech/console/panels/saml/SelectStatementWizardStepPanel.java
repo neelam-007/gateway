@@ -6,10 +6,7 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.policy.assertion.xmlsec.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -50,10 +47,10 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
 
     public void readSettings(Object settings)
       throws IllegalArgumentException {
-        RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
-        SamlAuthenticationStatement auths = requestWssSaml.getAuthenticationStatement();
-        SamlAuthorizationStatement athz = requestWssSaml.getAuthorizationStatement();
-        SamlAttributeStatement atts = requestWssSaml.getAttributeStatement();
+        SamlPolicyAssertion assertion = (SamlPolicyAssertion) settings;
+        SamlAuthenticationStatement auths = assertion.getAuthenticationStatement();
+        SamlAuthorizationStatement athz = assertion.getAuthorizationStatement();
+        SamlAttributeStatement atts = assertion.getAttributeStatement();
 
         if (auths == null && athz == null && atts == null) {
             authenticationStatementRadioButton.setSelected(true);
@@ -61,37 +58,36 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
             authenticationStatementRadioButton.setSelected(true);
         } else if (athz !=null) {
             authorizationDecisionStatementRadioButton.setSelected(true);
-        } else if (atts !=null) {
+        } else
             attributeStatementRadioButton.setSelected(true);
-        }
     }
 
     public void storeSettings(Object settings)
       throws IllegalArgumentException {
-        RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
+        SamlPolicyAssertion assertion = (SamlPolicyAssertion)settings;
         if (authenticationStatementRadioButton.isSelected()) {
-            SamlAuthenticationStatement atts = requestWssSaml.getAuthenticationStatement();
+            SamlAuthenticationStatement atts = assertion.getAuthenticationStatement();
             if (atts == null) {
-                requestWssSaml.setAuthenticationStatement(new SamlAuthenticationStatement());
+                assertion.setAuthenticationStatement(new SamlAuthenticationStatement());
             }
         } else {
-            requestWssSaml.setAuthenticationStatement(null);
+            assertion.setAuthenticationStatement(null);
         }
         if (authorizationDecisionStatementRadioButton.isSelected()) {
-            SamlAuthorizationStatement athzs = requestWssSaml.getAuthorizationStatement();
+            SamlAuthorizationStatement athzs = assertion.getAuthorizationStatement();
             if (athzs == null) {
-                requestWssSaml.setAuthorizationStatement(new SamlAuthorizationStatement());
+                assertion.setAuthorizationStatement(new SamlAuthorizationStatement());
             }
         } else {
-            requestWssSaml.setAuthorizationStatement(null);
+            assertion.setAuthorizationStatement(null);
         }
         if (attributeStatementRadioButton.isSelected()) {
-            SamlAttributeStatement atts = requestWssSaml.getAttributeStatement();
+            SamlAttributeStatement atts = assertion.getAttributeStatement();
             if (atts == null) {
-                requestWssSaml.setAttributeStatement(new SamlAttributeStatement());
+                assertion.setAttributeStatement(new SamlAttributeStatement());
             }
         } else {
-            requestWssSaml.setAttributeStatement(null);
+            assertion.setAttributeStatement(null);
         }
     }
 

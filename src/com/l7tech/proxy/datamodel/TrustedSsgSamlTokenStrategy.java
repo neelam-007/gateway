@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.proxy.datamodel;
@@ -47,10 +45,11 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
         log.log(Level.INFO, "Applying for SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         SamlAssertion s;
         // TODO extract the strategies for getting tokenServer client cert, private key, and server cert
+        String tokenServiceUri = System.getProperty(TrustedSsgSamlTokenStrategy.class.getName() + ".ssgTokenServiceUri", SecureSpanConstants.TOKEN_SERVICE_FILE);
         URL url = new URL("http",
                           tokenServerSsg.getSsgAddress(),
                           tokenServerSsg.getSsgPort(),
-                          SecureSpanConstants.TOKEN_SERVICE_FILE);
+                          tokenServiceUri);
 
         Date timestampCreatedDate = tokenServerSsg.getRuntime().getDateTranslatorToSsg().translate(new Date());
 

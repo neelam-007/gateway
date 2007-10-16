@@ -19,6 +19,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import java.io.FileOutputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
@@ -42,8 +43,7 @@ public class SignedSamlTest extends TestCase {
      * create the <code>TestSuite</code> for the SignedSamlTest <code>TestCase</code>
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite(SignedSamlTest.class);
-        return suite;
+        return new TestSuite(SignedSamlTest.class);
     }
 
     public void setUp() throws Exception {
@@ -60,42 +60,80 @@ public class SignedSamlTest extends TestCase {
         System.out.println("CA private key: " + caPrivateKey);
         System.out.println("CA public key: " + caPublicKey);
         System.out.println("CA cert: " + caCertChain[0]);
-        System.out.println("CA PEM:\n" + new String(CertUtils.encodeAsPEM(caCertChain[0])));
+        System.out.println("CA PEM:\n" + CertUtils.encodeAsPEM(caCertChain[0]));
 
         System.out.println("Client private key: " + clientPrivateKey);
         System.out.println("Client public key: " + clientPublicKey);
         System.out.println("Client cert: " + clientCertChain[0]);
-        System.out.println("Client PEM:\n" + new String(CertUtils.encodeAsPEM(clientCertChain[0])));
+        System.out.println("Client PEM:\n" + CertUtils.encodeAsPEM(clientCertChain[0]));
     }
 
-    private Document getUnsignedHolderOfKeyAssertion(String id, boolean useThumbprintForSubject) throws CertificateException, SignatureException {
+    private Document getUnsignedHolderOfKeyAssertion(String id, boolean useThumbprintForSubject, int samlVersion) throws CertificateException, SignatureException {
         LoginCredentials creds = new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, RequestWssX509Cert.class, null, clientCertChain[0]);
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddressUtil.getLocalHost());
         samlOptions.setSignAssertion(false);
+        samlOptions.setVersion(samlVersion);
         SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
         samlOptions.setId(id);
         return generator.createAssertion(subjectStatement, samlOptions);
     }
 
-    public Document getSignedHolderOfKey(final String assertionId, boolean useThumbprintForSignature, boolean useThumbprintForSubject) throws Exception {
-        final Document assertionDoc = getUnsignedHolderOfKeyAssertion(assertionId, useThumbprintForSubject);
+    private Document getUnsignedHolderOfKeyAssertionTwoStatements(String id, boolean useThumbprintForSubject, int samlVersion) throws CertificateException, SignatureException {
+        LoginCredentials creds = new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, RequestWssX509Cert.class, null, clientCertChain[0]);
+        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+        samlOptions.setClientAddress(InetAddressUtil.getLocalHost());
+        samlOptions.setVersion(samlVersion);
+        samlOptions.setSignAssertion(false);
+        SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
+
+        final KeyInfoInclusionType keyInfoType = useThumbprintForSubject ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
+        SubjectStatement authnStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null);
+        SubjectStatement attrStatement = SubjectStatement.createAttributeStatement(creds, SubjectStatement.HOLDER_OF_KEY, "foo", "bar", "baz", keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null);
+        SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
+        samlOptions.setId(id);
+        return generator.createAssertion(new SubjectStatement[] { authnStatement, attrStatement }, samlOptions);
+    }
+
+    public Document getSignedHolderOfKey(final String assertionId,
+                                         boolean useThumbprintForSignature,
+                                         boolean useThumbprintForSubject,
+                                         boolean useTwoStatements,
+                                         int samlVersion)
+            throws Exception
+    {
+        final Document assertionDoc = useTwoStatements ?
+                getUnsignedHolderOfKeyAssertionTwoStatements(assertionId, useThumbprintForSubject, samlVersion) :
+                getUnsignedHolderOfKeyAssertion(assertionId, useThumbprintForSubject, samlVersion);
 
         String s2 = XmlUtil.nodeToFormattedString(assertionDoc);
         System.out.println("Before signing: " + s2);
-        SamlAssertionGenerator.signAssertion(new SamlAssertionGenerator.Options(), assertionDoc, caPrivateKey, caCertChain, useThumbprintForSignature);
+        final SamlAssertionGenerator.Options opts = new SamlAssertionGenerator.Options();
+        opts.setId(assertionId);
+        opts.setSignAssertion(true);
+        opts.setVersion(samlVersion);
+        SamlAssertionGenerator.signAssertion(opts, assertionDoc, caPrivateKey, caCertChain, useThumbprintForSignature ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT);
         return assertionDoc;
     }
 
     public void testRequestSignedWithSamlToken() throws Exception {
-        Document req = getRequestSignedWithSamlToken(false, false);
+        Document req = getRequestSignedWithSamlToken(false, false, false, 1);
         log.info("Signed request using saml token: " + XmlUtil.nodeToFormattedString(req));
     }
 
     public void testRequestSignedWithSamlTokenWithThumbprint() throws Exception {
-        Document req = getRequestSignedWithSamlToken(true, true);
+        Document req = getRequestSignedWithSamlToken(true, true, false, 1);
+        log.info("Signed request using saml token: " + XmlUtil.nodeToFormattedString(req));
+    }
+
+
+    public void testRequestSignedWithSamlTokenTwoStatements() throws Exception {
+        Document req = getRequestSignedWithSamlToken(false, false, true, 2);
+        final FileOutputStream fos = new FileOutputStream("/tmp/saml2statements.xml");
+        XmlUtil.nodeToOutputStream(req, fos);
+        fos.close();
         log.info("Signed request using saml token: " + XmlUtil.nodeToFormattedString(req));
     }
 
@@ -119,7 +157,7 @@ public class SignedSamlTest extends TestCase {
         SubjectStatement statement =
           SubjectStatement.createAuthenticationStatement(LoginCredentials.makeCertificateCredentials(clientCertChain[0],
                                                                                                      RequestWssX509Cert.class),
-                                                         SubjectStatement.HOLDER_OF_KEY, false);
+                                                         SubjectStatement.HOLDER_OF_KEY, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null);
         ag.attachStatement(request, statement, samlOptions);
         return request;
     }
@@ -156,7 +194,7 @@ public class SignedSamlTest extends TestCase {
         samlOptions.setProofOfPosessionRequired(false);
         samlOptions.setId(bstId);
         final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass());
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, false);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
         samlOptions.setId(bstId);
         Document samlsvAssertion = generator.createAssertion(subjectStatement, samlOptions);
@@ -166,7 +204,7 @@ public class SignedSamlTest extends TestCase {
         return request;
     }
 
-    public Document getRequestSignedWithSamlToken(boolean useThumbprintForSignature, boolean useThumbprintForSubject) throws Exception {
+    public Document getRequestSignedWithSamlToken(boolean useThumbprintForSignature, boolean useThumbprintForSubject, boolean useTwoStatements, int samlVersion) throws Exception {
         Document request = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         assertNotNull(request);
         Element body = XmlUtil.findOnlyOneChildElementByName(request.getDocumentElement(),
@@ -194,7 +232,7 @@ public class SignedSamlTest extends TestCase {
         assertTrue(bstId.length() > 0);
 
         // Create saml assertion using the same ID
-        Document assertionDoc = getSignedHolderOfKey(bstId, useThumbprintForSignature, useThumbprintForSubject);
+        Document assertionDoc = getSignedHolderOfKey(bstId, useThumbprintForSignature, useThumbprintForSubject, useTwoStatements, samlVersion);
         assertNotNull(assertionDoc);
         Element samlAssertion = assertionDoc.getDocumentElement();
         assertNotNull(samlAssertion);

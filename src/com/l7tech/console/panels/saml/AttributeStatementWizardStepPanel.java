@@ -5,8 +5,8 @@ package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -28,11 +28,13 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     private JPanel mainPanel;
     private JLabel titleLabel;
     private boolean showTitleLabel;
+    private final boolean issueMode;
     private JScrollPane attributeTableScrollPane;
     private JTable attributeTable;
     private JButton addAttributeButton;
     private JButton removeButton;
     private JButton editButton;
+    private JLabel attributeTableLabel;
     private DefaultTableModel attributesTableModel;
     private int samlVersion;
     private static final String ANY = "<any>";
@@ -40,27 +42,37 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     /**
      * Creates new form AttributeStatementWizardStepPanel
      */
-    public AttributeStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
+    public AttributeStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, boolean issueMode) {
         super(next);
         this.showTitleLabel = showTitleLabel;
+        this.issueMode = issueMode;
         initialize();
     }
 
     /**
       * Creates new form AttributeStatementWizardStepPanel
       */
-     public AttributeStatementWizardStepPanel(WizardStepPanel next) {
-         this(next, true);
+     public AttributeStatementWizardStepPanel(WizardStepPanel next, boolean issueMode) {
+         this(next, true, issueMode);
      }
 
     /**
      * Creates new form AttributeStatementWizardStepPanel
      */
-    public AttributeStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner) {
+    public AttributeStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, boolean issueMode, JDialog owner) {
         super(next);
         this.showTitleLabel = showTitleLabel;
+        this.issueMode = issueMode;
         setOwner(owner);
         initialize();
+    }
+
+    public AttributeStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog parent) {
+        this(next, showTitleLabel, false, parent);
+    }
+
+    public AttributeStatementWizardStepPanel(WizardStepPanel next) {
+        this(next, true, false);
     }
 
     /**
@@ -77,7 +89,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        RequestWssSaml assertion = (RequestWssSaml)settings;
+        SamlPolicyAssertion assertion = (SamlPolicyAssertion)settings;
         SamlAttributeStatement statement = assertion.getAttributeStatement();
          if (statement == null) {
              throw new IllegalArgumentException();
@@ -93,7 +105,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                     toString(attributesTableModel.getValueAt(i, 1)),
                     toString(attributesTableModel.getValueAt(i, 2)),
                     isAny ? null : value,
-                    isAny);
+                    isAny, Boolean.TRUE.equals(attributesTableModel.getValueAt(i,4)));
             attributes.add(att);
         }
         statement.setAttributes((SamlAttributeStatement.Attribute[])attributes.toArray(new SamlAttributeStatement.Attribute[]{}));
@@ -109,7 +121,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        RequestWssSaml assertion = (RequestWssSaml)settings;
+        SamlPolicyAssertion assertion = (SamlPolicyAssertion)settings;
         samlVersion = assertion.getVersion();
 
         SamlAttributeStatement statement = assertion.getAttributeStatement();
@@ -128,12 +140,18 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                     att.getName(),
                     att.getNamespace(),
                     att.getNameFormat(),
-                    att.isAnyValue() ? ANY : att.getValue()});
+                    att.isAnyValue() ? ANY : att.getValue(),
+                    att.isRepeatIfMulti()});
         }
     }
 
     private void initialize() {
         setLayout(new BorderLayout());
+
+        if (issueMode) {
+            attributeTableLabel.setText("Include the following attributes and values");
+        }
+
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
         if (showTitleLabel) {
@@ -141,7 +159,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         } else {
             titleLabel.getParent().remove(titleLabel);
         }
-        attributesTableModel = new DefaultTableModel(new String[]{"Name", "Namespace", "Name Format", "Value"}, 0){
+        attributesTableModel = new DefaultTableModel(new String[]{"Name", "Namespace", "Name Format", "Value", "Repeat?"}, 0){
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -174,6 +192,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                 attribute.setName(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 0)));
                 attribute.setNamespace(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 1)));
                 attribute.setNameFormat(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 2)));
+                attribute.setRepeatIfMulti(Boolean.TRUE.equals(attributesTableModel.getValueAt(row, 4)));
                 String value = AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 3));
                 if (ANY.equals(value)) {
                     attribute.setAnyValue(true);
@@ -182,7 +201,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                     attribute.setAnyValue(false);
                     attribute.setValue(value);
                 }
-                EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute, samlVersion);
+                EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute, samlVersion, issueMode);
                 editAttributeDialog.addBeanListener(new BeanAdapter() {
                     /**
                      * Fired when the bean edit is accepted.
@@ -195,6 +214,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                         attributesTableModel.setValueAt(attribute.getNamespace(), row, 1);
                         attributesTableModel.setValueAt(attribute.getNameFormat(), row, 2);
                         attributesTableModel.setValueAt(attribute.isAnyValue() ? ANY : attribute.getValue(), row, 3);
+                        attributesTableModel.setValueAt(attribute.isRepeatIfMulti(), row, 4);
                         notifyListeners();
                     }
                 });
@@ -204,7 +224,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         addAttributeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
-                EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute, samlVersion);
+                EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute, samlVersion, issueMode);
                 editAttributeDialog.addBeanListener(new BeanAdapter() {
                     /**
                      * Fired when the bean edit is accepted.
@@ -217,7 +237,9 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                                 attribute.getName(),
                                 attribute.getNamespace(),
                                 attribute.getNameFormat(),
-                                attribute.isAnyValue() ? ANY : attribute.getValue()});
+                                attribute.isAnyValue() ? ANY : attribute.getValue(),
+                                attribute.isRepeatIfMulti()
+                        });
                         notifyListeners();
                     }
                 });
@@ -235,10 +257,17 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
 
 
     public String getDescription() {
-        return
+        if (issueMode) {
+            return
+        "<html>Specify the SAML attributes that the SAML statement will include; the " +
+              "Attribute Name [required] The Attribute Namespace [optional] and the Attribute" +
+              "Value [required]</html>";
+        } else {
+            return
         "<html>Specify the SAML attributes that the SAML statement MUST describe; the " +
-          "Attribue Name [required] The Attribute Namespace [optional] and the Attribute" +
-          "Value [required]</html>";
+              "Attribute Name [required] The Attribute Namespace [optional] and the Attribute" +
+              "Value [required]</html>";
+        }
     }
 
     /**

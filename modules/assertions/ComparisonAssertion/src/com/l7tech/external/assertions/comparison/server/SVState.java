@@ -3,7 +3,6 @@
  */
 package com.l7tech.external.assertions.comparison.server;
 
-import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.external.assertions.comparison.Predicate;
 import com.l7tech.external.assertions.comparison.DataTypePredicate;
 import com.l7tech.external.assertions.comparison.BinaryPredicate;
@@ -21,7 +20,7 @@ import java.util.Map;
 class SVState extends State {
     private Object value;
 
-    SVState(final Map<Predicate, Evaluator> evaluators, Object value, VariableMap vars, Auditor auditor) {
+    SVState(final Map<Predicate, Evaluator> evaluators, Object value, Map<String, Object> vars, Auditor auditor) {
         super(evaluators, vars, auditor);
         this.value = value;
     }

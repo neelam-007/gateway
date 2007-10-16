@@ -8,6 +8,8 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
+import com.l7tech.common.security.saml.KeyInfoInclusionType;
+import com.l7tech.common.security.saml.NameIdentifierInclusionType;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.SignerInfo;
@@ -69,7 +71,8 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
         opts.setExpiryMinutes(5);
         opts.setId(SamlAssertionGenerator.generateAssertionId("SSB-SamlAssertion"));
         opts.setSignAssertion(Boolean.getBoolean(PROP_SIGN_SAML_SV));
-        opts.setUseThumbprintForSignature(true);
+        opts.setSignAssertion(Boolean.getBoolean(PROP_SIGN_SAML_SV));
+        opts.setIssuerKeyInfoType(KeyInfoInclusionType.STR_THUMBPRINT);
         if (SecurityTokenType.SAML2_ASSERTION.equals(this.getType())) {
             opts.setVersion(2);
         }
@@ -77,7 +80,7 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
         LoginCredentials credentials = new LoginCredentials(subjectUsername, null, HttpBasic.class);
         SubjectStatement authenticationStatement = SubjectStatement.createAuthenticationStatement(credentials,
                                                                                                   SubjectStatement.SENDER_VOUCHES,
-                                                                                                  true);
+                                                                                                  KeyInfoInclusionType.STR_THUMBPRINT, NameIdentifierInclusionType.FROM_CREDS, null, null);
         SamlAssertionGenerator sag = new SamlAssertionGenerator(si);
         SecurityTokenResolver thumbResolver = new SimpleSecurityTokenResolver(new X509Certificate[] { clientCertificate, ssg.getServerCertificate() });
 

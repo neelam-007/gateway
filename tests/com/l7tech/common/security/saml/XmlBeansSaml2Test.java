@@ -197,9 +197,8 @@ public class XmlBeansSaml2Test  extends TestCase {
         samlOptions.setVersion(SamlAssertionGenerator.Options.VERSION_2);
         SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
         SubjectStatement subjectStatement =
-                SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.SENDER_VOUCHES, false);
+                SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.STR_THUMBPRINT, NameIdentifierInclusionType.FROM_CREDS, null, null);
         subjectStatement.setKeyInfo(creds.getClientCert());
-        subjectStatement.setUseThumbprintForSubject(true);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
 
         Document assertionDocument = generator.createAssertion(subjectStatement, samlOptions);

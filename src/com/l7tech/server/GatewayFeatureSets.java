@@ -24,14 +24,17 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.policy.AllAssertions;
 
 import javax.servlet.http.HttpServlet;
 import java.util.*;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * Master list of Feature Sets for the SSG, hard-baked into the code so it will be obfuscated.
@@ -80,6 +83,8 @@ public class GatewayFeatureSets {
     public static final String UI_WSDL_CREATE_WIZARD = "ui:WsdlCreateWizard";
     public static final String UI_AUDIT_WINDOW = "ui:AuditWindow";
     public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
+
+    private static final String SET_MODULAR_ASSERTIONS = "set:modularAssertions";
 
     static {
         // Declare all baked-in feature sets
@@ -162,7 +167,7 @@ public class GatewayFeatureSets {
                 "Note: This feature set IS REQUIRED in order to use optional modular assertions, as well as post-release modular assertions.");
 
         GatewayFeatureSet modularAssertions =
-        fsr("set:modularAssertions", "Ability to use post-release modular assertions",
+        fsr(SET_MODULAR_ASSERTIONS, "Ability to use post-release modular assertions",
             "This is any Assertion that was not listed in AllAssertions or GatewayFeatureSets when this version of the SecureSpan code was built.  " +
               "Note: This feature set is NOT required in order to use optional modular assertions that WERE listed in GatewayFeatureSets when this " +
               "version of the SecureSpan code was built.  Enabling this implies also enabling the assertion module loader.",
@@ -211,12 +216,14 @@ public class GatewayFeatureSets {
             fs(wssc),
             ass(SpecificUser.class),
             ass(MemberOfGroup.class),
+            ass(AuthenticationAssertion.class),
+            ass(MappingAssertion.class),
+            ass(SamlIssuerAssertion.class),
             ass(HttpBasic.class),
             ass(HttpDigest.class),
             ass(SslAssertion.class), // TODO omit client cert support from this grant (when it is possible to do so)
             ass(XpathCredentialSource.class),
             ass(RequestWssX509Cert.class),
-            ass(MappingAssertion.class),
             ass(WssBasic.class),
             ass(RequestWssSaml.class),
             ass(RequestWssSaml2.class),
@@ -621,6 +628,8 @@ public class GatewayFeatureSets {
     /** Create (and register, if new) a feature set for the specified policy assertion and return it. */
     private static GatewayFeatureSet ass(Class<? extends Assertion> ass) {
         String name = getFeatureSetNameForAssertion(ass);
+        if (SET_MODULAR_ASSERTIONS.equals(name))
+            throw new IllegalArgumentException(MessageFormat.format("{0} is a built-in assertion, but is using the {1} feature set name (possibly missing from {2})", ass.getClass().getSimpleName(), SET_MODULAR_ASSERTIONS, AllAssertions.class.getSimpleName()));
         String classname = ass.getName();
         String desc = "Policy assertion: " + classname;
 

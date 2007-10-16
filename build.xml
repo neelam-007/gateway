@@ -1734,6 +1734,11 @@
                 <exclude name="com/l7tech/common/security/rbac/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
+                <include name="com/l7tech/identity/mapping/**/*"/>
+                <include name="com/l7tech/objectmodel/imp/**/*"/>
+                <include name="com/l7tech/objectmodel/NamedEntity.class"/>
+                <include name="com/l7tech/objectmodel/Entity.class"/>
+                <include name="com/l7tech/objectmodel/PersistentEntity.class"/>
                 <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
                 <exclude name="com/l7tech/common/Authorizer.class"/>
             </fileset>
@@ -1772,7 +1777,7 @@
                 <include name="com/l7tech/common/**/*"/>
                 <exclude name="com/l7tech/common/http/prov/apache/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/**/*"/>
-                <exclude name="com/l7tech/common/security/saml/**/*Statement*"/>
+                <include name="com/l7tech/common/security/saml/**/*Statement*"/>
                 <exclude name="com/l7tech/common/security/saml/**/*Assertion*"/>
                 <include name="com/l7tech/common/security/saml/SamlConstants.class"/>
                 <exclude name="com/l7tech/common/message/**/*"/>

@@ -24,7 +24,6 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -511,7 +510,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                 }
             }
             final String[] variablesUsed = ExpandVariables.getReferencedNames(sb.toString());
-            final VariableMap vars = context.getVariableMap(variablesUsed, auditor);
+            final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
 
             for (JmsMessagePropertyRule rule : ruleSet.getRules()) {
                 final String name = rule.getName();

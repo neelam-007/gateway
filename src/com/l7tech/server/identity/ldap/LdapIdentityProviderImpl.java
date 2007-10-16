@@ -19,6 +19,7 @@ import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.mapping.LdapAttributeMapping;
+import com.l7tech.identity.mapping.UsersOrGroups;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -381,7 +382,7 @@ public class LdapIdentityProviderImpl
     public Collection<IdentityHeader> search(boolean getusers, boolean getgroups, IdentityMapping mapping, Object attValue) throws FindException {
         if (mapping instanceof LdapAttributeMapping) {
             LdapAttributeMapping lam = (LdapAttributeMapping) mapping;
-            String attName = lam.getAttributeName();
+            String attName = lam.getCustomAttributeName();
 
             if (!(getusers || getgroups)) {
                 logger.info("Nothing to search for - specified EntityType not supported by this IdentityMapping");
@@ -882,8 +883,8 @@ public class LdapIdentityProviderImpl
         LdapAttributeMapping lmap = kerberosLdapAttributeMapping;
 
         if (lmap == null) {
-            lmap = new LdapAttributeMapping();
-            lmap.setAttributeName("userPrincipalName"); // TODO make this configurable in LdapIdentityProviderConfig
+            lmap = new LdapAttributeMapping(null, config.getOid(), UsersOrGroups.USERS);
+            lmap.setCustomAttributeName("userPrincipalName"); // TODO make this configurable in LdapIdentityProviderConfig
             kerberosLdapAttributeMapping = lmap;
         }
 

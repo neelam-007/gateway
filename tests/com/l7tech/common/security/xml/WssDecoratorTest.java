@@ -8,6 +8,8 @@ package com.l7tech.common.security.xml;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.MimeBodyTest;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.saml.KeyInfoInclusionType;
+import com.l7tech.common.security.saml.NameIdentifierInclusionType;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.UsernameToken;
@@ -571,7 +573,7 @@ public class WssDecoratorTest extends TestCase {
             creds = LoginCredentials.makePasswordCredentials(subjectNameIdentifierValue, "secret".toCharArray(), HttpBasic.class);
             confirmationMethod = SubjectStatement.SENDER_VOUCHES;
         }
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, confirmationMethod, false);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, confirmationMethod, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
         return generator.createAssertion(subjectStatement, samlOptions).getDocumentElement();
     }

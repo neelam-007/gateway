@@ -37,7 +37,7 @@ public class PermissiveWspVisitor implements WspVisitor {
         if (problemEncountered instanceof SecurityException) {
             logger.log(Level.WARNING, "Unable to set property " + parameterName + " of " + deserializedObject.getClass(), problemEncountered);
         } else
-            logger.log(Level.FINE, "Ignoring invalid property " + parameterName + " of " + deserializedObject.getClass());
+            logger.log(Level.INFO, "Ignoring invalid property " + parameterName + " of " + deserializedObject.getClass());
     }
 
     /** Replace the problematic element with an UnknownAssertion. */

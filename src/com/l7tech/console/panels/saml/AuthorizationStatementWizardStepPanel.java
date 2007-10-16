@@ -6,8 +6,8 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -26,32 +26,43 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
     private JTextField textFieldActionNamespace;
     private JTextField textFieldResource;
     private boolean showTitleLabel;
+    private final boolean issueMode;
 
     /**
      * Creates new form AuthorizationStatementWizardStepPanel
      */
-    public AuthorizationStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
+    public AuthorizationStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, boolean issueMode) {
         super(next);
         this.showTitleLabel = showTitleLabel;
+        this.issueMode = issueMode;
         initialize();
     }
 
     /**
      * Creates new form AuthorizationStatementWizardStepPanel
      */
-    public AuthorizationStatementWizardStepPanel(WizardStepPanel next) {
-        this(next, true);
+    public AuthorizationStatementWizardStepPanel(WizardStepPanel next, boolean issueMode) {
+        this(next, true, issueMode);
     }
 
 
     /**
      * Creates new form AuthorizationStatementWizardStepPanel
      */
-    public AuthorizationStatementWizardStepPanel(WizardStepPanel next,  boolean showTitleLabel, JDialog owner) {
+    public AuthorizationStatementWizardStepPanel(WizardStepPanel next,  boolean showTitleLabel, boolean issueMode, JDialog owner) {
         super(next);
         this.showTitleLabel = showTitleLabel;
+        this.issueMode = issueMode;
         setOwner(owner);
         initialize();
+    }
+
+    public AuthorizationStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog parent) {
+        this(next, showTitleLabel, false, parent);
+    }
+
+    public AuthorizationStatementWizardStepPanel(WizardStepPanel next) {
+        this(next, true, false);
     }
 
     /**
@@ -68,7 +79,7 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        RequestWssSaml assertion = (RequestWssSaml)settings;
+        SamlPolicyAssertion assertion = (SamlPolicyAssertion)settings;
         SamlAuthorizationStatement statement = assertion.getAuthorizationStatement();
          if (statement == null) {
              throw new IllegalArgumentException();
@@ -88,7 +99,7 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        RequestWssSaml assertion = (RequestWssSaml)settings;
+        SamlPolicyAssertion assertion = (SamlPolicyAssertion)settings;
         SamlAuthorizationStatement statement = assertion.getAuthorizationStatement();
         setSkipped(statement == null);
         if (statement == null) {
@@ -142,10 +153,16 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
 
 
     public String getDescription() {
-        return
-        "<html>Specify the Resource [required] that the SAML statement MUST describe; the " +
-          "Resource Action [required] and the Action Namespace [optional] " +
-          "and whether the message signature is required as the proof material</html>";
+        if (issueMode) {
+            return
+            "<html>Specify the Resource [required] that the SAML statement will describe; the " +
+              "Resource Action [required] and the Action Namespace [optional].</html>";
+        } else {
+            return
+            "<html>Specify the Resource [required] that the SAML statement MUST describe; the " +
+              "Resource Action [required] and the Action Namespace [optional] " +
+              "and whether the message signature is required as the proof material</html>";
+        }
     }
 
     /**

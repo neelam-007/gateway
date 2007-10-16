@@ -5,15 +5,11 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
-import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.policy.assertion.identity.*;
 
 import java.util.Iterator;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * If there is at least one identity assertion, and the user does not "pass" any of them, the result will be null
@@ -30,7 +26,6 @@ import java.util.logging.Level;
  * <br/><br/>
  * User: flascell<br/>
  * Date: Aug 14, 2003<br/>
- * $Id$
  */
 public class IdentityRule implements Filter {
     private static final Logger logger = Logger.getLogger(IdentityRule.class.getName());
@@ -135,10 +130,12 @@ public class IdentityRule implements Filter {
 
     public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user, IdentityProviderConfigManager identityProviderConfigManager) throws FilteringException {
         if (user == null) return false;
+
+        if (idassertion.getIdentityProviderOid() != user.getProviderId()) return false;
+
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
             SpecificUser userass = (SpecificUser)idassertion;
-            if (userass.getIdentityProviderOid() == user.getProviderId()) {
                 if (userass.getUserLogin() != null && userass.getUserLogin().length() > 0) {
                     if (userass.getUserLogin().equals(user.getLogin())) {
                         return true;
@@ -150,12 +147,10 @@ public class IdentityRule implements Filter {
                 } else {
                     logger.warning("The assertion " + userass.toString() + " has no login nor name to compare with");
                 }
-            }
             return false;
         } else if (idassertion instanceof MemberOfGroup) {
             MemberOfGroup grpmemship = (MemberOfGroup)idassertion;
             long idprovider = grpmemship.getIdentityProviderOid();
-            if (idprovider == user.getProviderId()) {
                 try {
                     IdentityProvider prov = identityProviderConfigManager.getIdentityProvider(idprovider);
                     if (prov == null) {
@@ -176,10 +171,8 @@ public class IdentityRule implements Filter {
                     logger.log(Level.WARNING, "Cannot get group from provider", e);
                     return false;
                 }
-            }
-            return false;
-        } else if (idassertion instanceof MappingAssertion) {
-            return true; // TODO ???
+        } else if (idassertion instanceof AuthenticationAssertion || idassertion instanceof MappingAssertion) {
+            return true;
         } else {
             throw new FilteringException("unsupported IdentityAssertion type " + idassertion.getClass().getName());
         }

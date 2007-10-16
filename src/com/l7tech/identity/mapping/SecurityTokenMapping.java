@@ -7,7 +7,7 @@ import com.l7tech.common.security.token.SecurityToken;
  * Describes how the attribute described by an {@link AttributeConfig} is implmented in a particular
  * type of {@link SecurityToken}.
  */
-public abstract class SecurityTokenMapping extends AttributeMapping {
+public abstract class SecurityTokenMapping<T extends SecurityToken> extends AttributeMapping {
     private SecurityTokenType tokenType;
 
     public SecurityTokenType getTokenType() {
@@ -18,5 +18,5 @@ public abstract class SecurityTokenMapping extends AttributeMapping {
         this.tokenType = tokenType;
     }
 
-    public abstract Object[] extractValues(SecurityToken creds);
+    public abstract Object[] extractValues(T creds);
 }

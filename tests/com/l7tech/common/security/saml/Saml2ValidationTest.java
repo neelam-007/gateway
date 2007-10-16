@@ -275,7 +275,7 @@ public class Saml2ValidationTest extends TestCase {
         templateSaml.setNameFormats(SamlConstants.ALL_NAMEIDENTIFIERS_SAML2);
 
         SamlAttributeStatement sas = new SamlAttributeStatement();
-        sas.setAttributes(new SamlAttributeStatement.Attribute[]{new SamlAttributeStatement.Attribute("Flag", null, "", "", false)});
+        sas.setAttributes(new SamlAttributeStatement.Attribute[]{new SamlAttributeStatement.Attribute("Flag", null, "", "", false, false)});
         templateSaml.setAttributeStatement(sas);
 
         // validate

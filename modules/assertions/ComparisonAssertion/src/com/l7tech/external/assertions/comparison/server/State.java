@@ -13,7 +13,6 @@ import com.l7tech.external.assertions.comparison.server.convert.ConversionExcept
 import com.l7tech.external.assertions.comparison.server.convert.ValueConverter;
 import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.VariableMap;
 
 import java.util.Collection;
 import java.util.Map;
@@ -25,7 +24,7 @@ import java.util.Map;
 abstract class State {
     protected final Map<Predicate, Evaluator> evaluators;
     protected final Auditor auditor;
-    protected final VariableMap vars;
+    protected final Map<String, Object> vars;
 
     /**
      * The {@link DataType} of any {@link DataTypePredicate} that has been observed so far in the evaluation.
@@ -43,7 +42,7 @@ abstract class State {
         return assertionResult;
     }
 
-    protected State(Map<Predicate, Evaluator> evaluators, VariableMap vars, Auditor auditor) {
+    protected State(Map<Predicate, Evaluator> evaluators, Map<String, Object> vars, Auditor auditor) {
         this.evaluators = evaluators;
         this.vars = vars;
         this.auditor = auditor;
@@ -51,7 +50,7 @@ abstract class State {
 
     protected abstract void evaluate(Predicate pred);
 
-    protected static State make(Map<Predicate, Evaluator> evaluators, Object left, VariableMap vars, Auditor auditor) {
+    protected static State make(Map<Predicate, Evaluator> evaluators, Object left, Map<String, Object> vars, Auditor auditor) {
         Class leftClass = left.getClass();
         if (leftClass.isArray()) {
             return new MVState(evaluators, (Object[])left, vars, auditor);
@@ -80,7 +79,7 @@ abstract class State {
         }
     }
 
-    protected boolean evalBinary(final Object value, final BinaryPredicate bpred, final VariableMap vars) {
+    protected boolean evalBinary(final Object value, final BinaryPredicate bpred, final Map<String, Object> vars) {
         Comparable cleft;
         if (value instanceof Comparable) {
             cleft = (Comparable)value;

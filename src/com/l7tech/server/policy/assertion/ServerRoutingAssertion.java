@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.policy.assertion;
@@ -16,6 +14,8 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
+import com.l7tech.common.security.saml.KeyInfoInclusionType;
+import com.l7tech.common.security.saml.NameIdentifierInclusionType;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -41,7 +41,6 @@ import java.net.UnknownHostException;
  * Base class for routing assertions.
  *
  * @author alex
- * @version $Revision$
  */
 public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> extends AbstractServerAssertion<RAT> implements ServerAssertion {
 
@@ -173,12 +172,12 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                 }
                 if (secHeaderToPromote != null) {
                     // do it
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_PROMOTING_ACTOR, new String[] {otherToPromote});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_PROMOTING_ACTOR, otherToPromote);
                     SoapUtil.nukeActorAttribute(secHeaderToPromote);
                 } else {
                     // this is not a big deal but might indicate something wrong
                     // with the assertion => logging as info
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_NO_SECURITY_HEADER, new String[] {otherToPromote});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_NO_SECURITY_HEADER, otherToPromote);
                 }
             }
         }
@@ -215,13 +214,14 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             }
             samlOptions.setVersion(data.getSamlAssertionVersion());
             samlOptions.setExpiryMinutes(data.getSamlAssertionExpiry());
-            samlOptions.setUseThumbprintForSignature(data.isUseThumbprintInSamlSignature());
+            samlOptions.setIssuerKeyInfoType(data.isUseThumbprintInSamlSignature() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT);
+            KeyInfoInclusionType keyInfoType = data.isUseThumbprintInSamlSubject() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
             if (data.getRecipientContext() != null)
                 samlOptions.setSecurityHeaderActor(data.getRecipientContext().getActor());
             SubjectStatement statement = SubjectStatement.createAuthenticationStatement(
                                                             svInputCredentials,
                                                             SubjectStatement.SENDER_VOUCHES,
-                                                            data.isUseThumbprintInSamlSubject());
+                                                            keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null);
             ag.attachStatement(document, statement, samlOptions);
         }
     }    

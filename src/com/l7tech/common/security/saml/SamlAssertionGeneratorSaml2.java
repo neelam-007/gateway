@@ -19,7 +19,10 @@ import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.Calendar;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * SAML Assertion Generator for SAML 2.x assertions.
@@ -53,14 +56,14 @@ public class SamlAssertionGeneratorSaml2 {
                 now,
                 options.getExpiryMinutes(),
                 options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
-                caDn);
+                caDn, options.getBeforeOffsetMinutes());
         final SubjectType subjectStatementAbstractType = assertionType.addNewSubject();
 
         if (subjectStatement instanceof AuthenticationStatement) {
             AuthenticationStatement authenticationStatement = (AuthenticationStatement) subjectStatement;
             AuthnStatementType as = assertionType.addNewAuthnStatement();
             as.setAuthnInstant(authenticationStatement.getAuthenticationInstant());
-            
+
             String authenticationMethod = authenticationStatement.getAuthenticationMethod();
             XmlObject authnContextDecl = null;
             if (SamlConstants.PASSWORD_AUTHENTICATION.equals(authenticationMethod) ||
@@ -149,12 +152,10 @@ public class SamlAssertionGeneratorSaml2 {
         } else if (subjectStatement instanceof AttributeStatement) {
             AttributeStatement as = (AttributeStatement)subjectStatement;
             AttributeStatementType attStatement = assertionType.addNewAttributeStatement();
-            AttributeStatement.Attribute[] attributes = as.getAttributes();
-            for (int i = 0; i < attributes.length; i++) {
-                AttributeStatement.Attribute attribute = attributes[i];
+            for (Attribute attribute : as.getAttributes()) {
                 AttributeType attributeType = attStatement.addNewAttribute();
                 attributeType.setName(attribute.getName());
-                attributeType.setNameFormat(attribute.getNameSpace());
+                attributeType.setNameFormat(attribute.getNamespace());
                 XmlString stringValue = XmlString.Factory.newValue(attribute.getValue());
                 attributeType.setAttributeValueArray(new XmlObject[]{stringValue});
             }
@@ -169,21 +170,22 @@ public class SamlAssertionGeneratorSaml2 {
     /**
      * Populate the subject statement assertion properties such as subject name, name qualifier
      *
-     * @param subjectStatementAbstractType the subject statement abstract type
-     * @param subjectStatement
+     * @param subjectStatement the subject statement abstract type
      * @throws CertificateEncodingException
      */
     private void populateSubjectStatement(SubjectType subjectType,
                                           SubjectStatement subjectStatement,
                                           String alternateNameId) throws CertificateEncodingException {
 
-        NameIDType nameIdentifierType = subjectType.addNewNameID();
-        nameIdentifierType.setStringValue(subjectStatement.getName());
-        if (subjectStatement.getNameFormat() != null) {
-            nameIdentifierType.setFormat(subjectStatement.getNameFormat());
-        }
-        if (subjectStatement.getNameQualifier() != null) {
-            nameIdentifierType.setNameQualifier(subjectStatement.getNameQualifier());
+        if (subjectStatement.getNameIdentifierType() != NameIdentifierInclusionType.NONE) {
+            NameIDType nameIdentifierType = subjectType.addNewNameID();
+            nameIdentifierType.setStringValue(subjectStatement.getName());
+            if (subjectStatement.getNameFormat() != null) {
+                nameIdentifierType.setFormat(subjectStatement.getNameFormat());
+            }
+            if (subjectStatement.getNameQualifier() != null) {
+                nameIdentifierType.setNameQualifier(subjectStatement.getNameQualifier());
+            }
         }
 
         String confirmationMethod = subjectStatement.getConfirmationMethod();
@@ -217,22 +219,35 @@ public class SamlAssertionGeneratorSaml2 {
             KeyInfoConfirmationDataType kicdt = (KeyInfoConfirmationDataType) subjectConfirmation.getSubjectConfirmationData();
 
             X509Certificate cert = (X509Certificate)keyInfo;
-            if (subjectStatement.isUseThumbprintForSubject()) {
-                Node node = kicdt.getDomNode();
-                NamespaceFactory nsf = new NamespaceFactory();
-                KeyInfoDetails kid = KeyInfoDetails.makeKeyId(CertUtils.getThumbprintSHA1(cert),
-                                         true,
-                                         SoapUtil.VALUETYPE_X509_THUMB_SHA1);
-                kid.createAndAppendKeyInfoElement(nsf, node);
-            } else {
-                KeyInfoType keyInfoType = kicdt.addNewKeyInfo();
-                X509DataType x509Data = keyInfoType.addNewX509Data();
-                x509Data.addX509Certificate(cert.getEncoded());
+            switch(subjectStatement.getSubjectConfirmationKeyInfoType()) {
+                case CERT:
+                    KeyInfoType keyInfoType = kicdt.addNewKeyInfo();
+                    X509DataType x509Data = keyInfoType.addNewX509Data();
+                    x509Data.addX509Certificate(cert.getEncoded());
+                    break;
+                case STR_THUMBPRINT: {
+                    Node node = kicdt.getDomNode();
+                    NamespaceFactory nsf = new NamespaceFactory();
+                    KeyInfoDetails kid = KeyInfoDetails.makeKeyId(CertUtils.getThumbprintSHA1(cert),
+                                             true,
+                                             SoapUtil.VALUETYPE_X509_THUMB_SHA1);
+                    kid.createAndAppendKeyInfoElement(nsf, node);
+                    break;
+                }
+                case STR_SKI: {
+                    Node node = kicdt.getDomNode();
+                    NamespaceFactory nsf = new NamespaceFactory();
+                    KeyInfoDetails kid = KeyInfoDetails.makeKeyId(CertUtils.getSKIBytesFromCert(cert),
+                                             SoapUtil.VALUETYPE_SKI);
+                    kid.createAndAppendKeyInfoElement(nsf, node);
+                    break;
+                }
+                case NONE:
             }
         }
     }
 
-    private AssertionType getGenericAssertion(Calendar now, int expiryMinutes, String assertionId, String caDn) {
+    private AssertionType getGenericAssertion(Calendar now, int expiryMinutes, String assertionId, String caDn, int beforeOffsetMinutes) {
         Map caMap = CertUtils.dnToAttributeMap(caDn);
         String caCn = (String)((List)caMap.get("CN")).get(0);
 
@@ -253,10 +268,7 @@ public class SamlAssertionGeneratorSaml2 {
         Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        int offset = 2;
-        String tmp = System.getProperty(SamlAssertionGenerator.BEFORE_OFFSET_SYSTEM_PROPERTY);
-        if (tmp != null) offset = Integer.parseInt(tmp);
-        calendar.add(Calendar.MINUTE, (-1 * offset)); //bzilla #3616
+        calendar.add(Calendar.MINUTE, (-1 * beforeOffsetMinutes)); //bzilla #3616
         ct.setNotBefore(calendar);
         Calendar c2 = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         c2.add(Calendar.MINUTE, expiryMinutes);
@@ -270,7 +282,7 @@ public class SamlAssertionGeneratorSaml2 {
         assertionDocument.setAssertion(assertion);
 
         XmlOptions xo = new XmlOptions();
-        Map namespaces = new LinkedHashMap();
+        Map<String, String> namespaces = new LinkedHashMap<String, String>();
         namespaces.put(SamlConstants.NS_SAML2, SamlConstants.NS_SAML2_PREFIX);
         namespaces.put(SamlConstants.AUTHENTICATION_SAML2_XMLDSIG, "saccxds");
         namespaces.put(SamlConstants.AUTHENTICATION_SAML2_PASSWORD, "saccpwd");
@@ -284,10 +296,9 @@ public class SamlAssertionGeneratorSaml2 {
     /**
      * Seems like a bug in XmlBeans that the prefixes for some elements are not set.
      */
-    private Document fixPrefixes(Document document, Map namespaces) {
-        for (Iterator nsIter=namespaces.entrySet().iterator(); nsIter.hasNext();) {
-            Map.Entry nsAndPrefix = (Map.Entry) nsIter.next();
-            fixPrefixes(document.getDocumentElement(), (String) nsAndPrefix.getValue(), (String) nsAndPrefix.getKey());
+    private Document fixPrefixes(Document document, Map<String, String> namespaces) {
+        for (Map.Entry<String, String> nsAndPrefix : namespaces.entrySet()) {
+            fixPrefixes(document.getDocumentElement(), nsAndPrefix.getValue(), nsAndPrefix.getKey());
         }
         return document;
     }
@@ -354,5 +365,130 @@ public class SamlAssertionGeneratorSaml2 {
                 fixPrefixes((Element)node, prefix, namespace);
             }
         }
+    }
+
+    public Document createStatementDocument(SubjectStatement[] statements, SamlAssertionGenerator.Options options, String caDn) throws CertificateEncodingException {
+        return assertionToDocument(createXmlBeansAssertion(statements, options, caDn));
+    }
+
+    private AssertionType createXmlBeansAssertion(SubjectStatement[] statements, SamlAssertionGenerator.Options options, String caDn) throws CertificateEncodingException {
+        Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
+        AssertionType assertionType = getGenericAssertion(
+                now,
+                options.getExpiryMinutes(),
+                options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
+                caDn, options.getBeforeOffsetMinutes());
+        final SubjectType subjectStatementAbstractType = assertionType.addNewSubject();
+
+        populateSubjectStatement(subjectStatementAbstractType, statements[0], caDn);
+
+        for (SubjectStatement subjectStatement : statements) {
+            if (subjectStatement instanceof AuthenticationStatement) {
+                AuthenticationStatement authenticationStatement = (AuthenticationStatement) subjectStatement;
+                AuthnStatementType as = assertionType.addNewAuthnStatement();
+                as.setAuthnInstant(authenticationStatement.getAuthenticationInstant());
+
+                String authenticationMethod = authenticationStatement.getAuthenticationMethod();
+                XmlObject authnContextDecl = null;
+                if (SamlConstants.PASSWORD_AUTHENTICATION.equals(authenticationMethod) ||
+                    SamlConstants.AUTHENTICATION_SAML2_PASSWORD.equals(authenticationMethod)) {
+                    authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_PASSWORD;
+
+                    x0AcClassesPassword.oasisNamesTcSAML2.AuthnContextDeclarationBaseType passwdContextDecl =
+                            x0AcClassesPassword.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
+
+                    x0AcClassesPassword.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
+                            passwdContextDecl.addNewAuthnMethod();
+
+                    x0AcClassesPassword.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
+                    x0AcClassesPassword.oasisNamesTcSAML2.PasswordType pt = abt.addNewRestrictedPassword();
+                    x0AcClassesPassword.oasisNamesTcSAML2.LengthType lt = pt.addNewLength();
+                    lt.setMin(BigInteger.valueOf(3));
+
+                    authnContextDecl = passwdContextDecl;
+                }
+                else if (SamlConstants.XML_DSIG_AUTHENTICATION.equals(authenticationMethod) ||
+                    SamlConstants.AUTHENTICATION_SAML2_XMLDSIG.equals(authenticationMethod)) {
+                    authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_XMLDSIG;
+
+                    x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnContextDeclarationBaseType digSigContextDecl =
+                            x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
+
+                    x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
+                            digSigContextDecl.addNewAuthnMethod();
+
+                    x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
+                    XmlString kv = XmlString.Factory.newInstance();
+                    kv.setStringValue(SamlConstants.AUTHENTICATION_SAML2_X509);
+                    abt.addNewDigSig().setKeyValidation(kv);
+
+                    authnContextDecl = digSigContextDecl;
+                }
+                else if (SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION.equals(authenticationMethod) ||
+                    SamlConstants.AUTHENTICATION_SAML2_TLS_CERT.equals(authenticationMethod)) {
+                    authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_TLS_CERT;
+
+                    x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnContextDeclarationBaseType tlsContextDecl =
+                            x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
+
+                    x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
+                            tlsContextDecl.addNewAuthnMethod();
+
+                    x0AcClassesTLSClient.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
+                    XmlString kv = XmlString.Factory.newInstance();
+                    kv.setStringValue(SamlConstants.AUTHENTICATION_SAML2_X509);
+                    abt.addNewDigSig().setKeyValidation(kv);
+
+                    x0AcClassesTLSClient.oasisNamesTcSAML2.AuthenticatorTransportProtocolType atpt =
+                            authnMethod.addNewAuthenticatorTransportProtocol();
+                    atpt.addNewSSL();
+
+                    authnContextDecl = tlsContextDecl;
+                }
+                else if (SamlConstants.UNSPECIFIED_AUTHENTICATION.equals(authenticationMethod)) {
+                    authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_UNSPECIFIED;
+                }
+
+                if (authenticationMethod != null) {
+                    AuthnContextType act = as.addNewAuthnContext();
+                    act.setAuthnContextClassRef(authenticationMethod);
+                    if (authnContextDecl != null) act.setAuthnContextDecl(authnContextDecl);
+                }
+
+                InetAddress clientAddress = options.getClientAddress();
+                if (clientAddress != null) {
+                    final SubjectLocalityType subjectLocality = as.addNewSubjectLocality();
+                    subjectLocality.setAddress(clientAddress.getHostAddress());
+                    subjectLocality.setDNSName(clientAddress.getCanonicalHostName());
+                }
+            } else if (subjectStatement instanceof AuthorizationStatement) {
+                AuthorizationStatement as = (AuthorizationStatement)subjectStatement;
+                AuthzDecisionStatementType atzStatement = assertionType.addNewAuthzDecisionStatement();
+                atzStatement.setResource(as.getResource());
+                atzStatement.setDecision(DecisionType.PERMIT);
+                if (as.getAction() != null) {
+                    ActionType actionType = atzStatement.addNewAction();
+                    actionType.setStringValue(as.getAction());
+                    if (as.getActionNamespace() != null) {
+                        actionType.setNamespace(as.getActionNamespace());
+                    }
+                }
+            } else if (subjectStatement instanceof AttributeStatement) {
+                AttributeStatement as = (AttributeStatement)subjectStatement;
+                AttributeStatementType attStatement = assertionType.addNewAttributeStatement();
+                Attribute[] attributes = as.getAttributes();
+                for (Attribute attribute : attributes) {
+                    AttributeType attributeType = attStatement.addNewAttribute();
+                    attributeType.setName(attribute.getName());
+                    attributeType.setNameFormat(attribute.getNamespace());
+                    XmlString stringValue = XmlString.Factory.newValue(attribute.getValue());
+                    attributeType.setAttributeValueArray(new XmlObject[]{stringValue});
+                }
+            } else {
+                throw new IllegalArgumentException("Unknown statement class " + subjectStatement.getClass());
+            }
+        }
+
+        return assertionType;
     }
 }

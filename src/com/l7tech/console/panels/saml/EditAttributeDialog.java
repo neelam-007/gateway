@@ -6,8 +6,8 @@ import com.l7tech.console.beaneditor.BeanListener;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -17,7 +17,6 @@ import java.beans.PropertyChangeSupport;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
-import java.security.AccessControlException;
 
 /**
  * Edits the SAML Attribute: name, namespace, value.
@@ -57,7 +56,7 @@ public class EditAttributeDialog extends JDialog {
 
     private JTextField attributeNameField;
     private JTextField attributeNamespaceField;
-    private JTextField attributeValueField;
+    private JTextArea attributeValueField;
     private JRadioButton nameFormatUnspecifiedRadioButton;
     private JRadioButton nameFormatURIRefRadioButton;
     private JRadioButton nameFormatBasicRadioButton;
@@ -67,15 +66,19 @@ public class EditAttributeDialog extends JDialog {
     private JRadioButton specificValueRadio;
     private JPanel nameFormatPanel;
     private JPanel mainPanel;
+    private JCheckBox repeatIfMultivaluedCheckBox;
 
-    private SamlAttributeStatement.Attribute attribute;
+    private final SamlAttributeStatement.Attribute attribute;
+    private final boolean issueMode;
 
     /**
      * @param parent the parent Frame. May be <B>null</B>
+     * @param issueMode
      */
-    public EditAttributeDialog(JDialog parent, SamlAttributeStatement.Attribute attribute, int samlVersion) {
+    public EditAttributeDialog(JDialog parent, SamlAttributeStatement.Attribute attribute, int samlVersion, boolean issueMode) {
         super(parent, true);
         this.attribute = attribute;
+        this.issueMode = issueMode;
         initResources();
         initComponents(samlVersion!=2, samlVersion!=1);
         pack();
@@ -116,7 +119,7 @@ public class EditAttributeDialog extends JDialog {
      * initialize the dialog.
      */
     private void initComponents(boolean enableNamespace, boolean enableNameFormat) {
-        setTitle(resources.getString("dialog.title"));
+        setTitle(resources.getString(issueMode ? "issueDialog.title" : "dialog.title"));
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent event) {
@@ -133,25 +136,25 @@ public class EditAttributeDialog extends JDialog {
 
         attributeNameField.setText(attribute.getName());
         attributeNamespaceField.setText(attribute.getNamespace());
+        attributeValueField.setText(attribute.getValue());
+        repeatIfMultivaluedCheckBox.setSelected(attribute.isRepeatIfMulti());
+
         String nameFormat = attribute.getNameFormat();
         if (nameFormat == null || nameFormat.length()==0 ||
             SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED.equals(nameFormat)) {
             nameFormatUnspecifiedRadioButton.setSelected(true);
             attributeNameFormatTextField.setText(SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED);
-        }
-        else if (SamlConstants.ATTRIBUTE_NAME_FORMAT_URIREFERENCE.equals(nameFormat)) {
+        } else if (SamlConstants.ATTRIBUTE_NAME_FORMAT_URIREFERENCE.equals(nameFormat)) {
             nameFormatURIRefRadioButton.setSelected(true);
             attributeNameFormatTextField.setText(SamlConstants.ATTRIBUTE_NAME_FORMAT_URIREFERENCE);
-        }
-        else if (SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC.equals(nameFormat)) {
+        } else if (SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC.equals(nameFormat)) {
             nameFormatBasicRadioButton.setSelected(true);
             attributeNameFormatTextField.setText(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
-        }
-        else {
-            nameFormatOtherRadioButton.setSelected(true);;
+        } else {
+            nameFormatOtherRadioButton.setSelected(true);
             attributeNameFormatTextField.setText(nameFormat);
         }
-        attributeValueField.setText(attribute.getValue());
+        
         getRootPane().setDefaultButton(okButton);
 
         // login button (global variable)
@@ -210,6 +213,15 @@ public class EditAttributeDialog extends JDialog {
         specificValueRadio.addActionListener(buttonEnabler);
         anyValueRadio.addActionListener(buttonEnabler);
 
+        if (issueMode) {
+            anyValueRadio.setEnabled(false);
+            anyValueRadio.setVisible(false);
+            specificValueRadio.setVisible(false);
+            repeatIfMultivaluedCheckBox.setVisible(true);
+        } else {
+            repeatIfMultivaluedCheckBox.setVisible(false);
+        }
+
         if (attribute.isAnyValue()) {
             anyValueRadio.setSelected(true);
         } else {
@@ -249,21 +261,23 @@ public class EditAttributeDialog extends JDialog {
                 cmd = actionCommand.toString();
             }
         }
-        if (cmd == null) {
-            // do nothing
-        } else if (cmd.equals(CMD_CANCEL)) {
+
+        if (cmd == null) return;
+
+        if (cmd.equals(CMD_CANCEL)) {
             fireCancelled();
             dispose();
         } else if (cmd.equals(CMD_OK)) {
             if (validateInput()) {
                 attribute.setName(attributeNameField.getText());
                 attribute.setNamespace(attributeNamespaceField.getText());
-                if (SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED
-                        .equals(attributeNameFormatTextField.getText())) {
+
+                if (SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED.equals(attributeNameFormatTextField.getText())) {
                     attribute.setNameFormat(null); // unspecified is the default
                 } else {
                     attribute.setNameFormat(attributeNameFormatTextField.getText());
                 }
+
                 if (anyValueRadio.isSelected()) {
                     attribute.setValue(null);
                     attribute.setAnyValue(true);
@@ -271,27 +285,24 @@ public class EditAttributeDialog extends JDialog {
                     attribute.setAnyValue(false);
                     attribute.setValue(attributeValueField.getText());
                 }
+                attribute.setRepeatIfMulti(repeatIfMultivaluedCheckBox.isSelected());
                 fireEditAccepted();
                 dispose();
-            } else {
-                return;
             }
         }
     }
 
     private void fireCancelled() {
         PropertyChangeListener[] listeners = beanListeners.getPropertyChangeListeners();
-        for (int i = 0; i < listeners.length; i++) {
-            PropertyChangeListener listener = listeners[i];
-            ((BeanListener)listener).onEditCancelled(this, attribute);
+        for (PropertyChangeListener listener : listeners) {
+            ((BeanListener) listener).onEditCancelled(this, attribute);
         }
     }
 
     private void fireEditAccepted() {
         PropertyChangeListener[] listeners = beanListeners.getPropertyChangeListeners();
-        for (int i = 0; i < listeners.length; i++) {
-            PropertyChangeListener listener = listeners[i];
-            ((BeanListener)listener).onEditAccepted(this, attribute);
+        for (PropertyChangeListener listener : listeners) {
+            ((BeanListener) listener).onEditAccepted(this, attribute);
         }
     }
 

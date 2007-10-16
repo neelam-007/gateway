@@ -18,6 +18,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.server.identity.mapping.AttributeConfigManagerImpl;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -57,21 +58,24 @@ public class ServerMappingAssertion extends ServerIdentityAssertion {
     }
 
     private void refreshData() {
-        attributeConfig = new AttributeConfig();
-        attributeConfig.setVariableName(assertion.getVariableName());
+        attributeConfig = new AttributeConfig(new AttributeHeader(assertion.getVariableName(), null, DataType.STRING, UsersOrGroups.BOTH));
 
-        LdapAttributeMapping lmaps = new LdapAttributeMapping();
-        lmaps.setProviderOid(assertion.getIdentityProviderOid());
-        lmaps.setAttributeName(assertion.getSearchAttributeName());
-        lmaps.setValidForUsers(assertion.isValidForUsers());
-        lmaps.setValidForGroups(assertion.isValidForGroups());
+        UsersOrGroups uog;
+        if (assertion.isValidForGroups() && assertion.isValidForUsers()) {
+            uog = UsersOrGroups.BOTH;
+        } else if (assertion.isValidForGroups()) {
+            uog = UsersOrGroups.GROUPS;
+        } else if (assertion.isValidForUsers()) {
+            uog = UsersOrGroups.USERS;
+        } else {
+            uog = null;
+        }
+        LdapAttributeMapping lmaps = new LdapAttributeMapping(attributeConfig, assertion.getIdentityProviderOid(), uog);
+        lmaps.setCustomAttributeName(assertion.getSearchAttributeName());
         identitySearchMappings = new IdentityMapping[] { lmaps };
 
-        LdapAttributeMapping lmapr = new LdapAttributeMapping();
-        lmapr.setProviderOid(assertion.getIdentityProviderOid());
-        lmapr.setAttributeName(assertion.getRetrieveAttributeName());
-        lmapr.setValidForUsers(assertion.isValidForUsers());
-        lmapr.setValidForGroups(assertion.isValidForGroups());
+        LdapAttributeMapping lmapr = new LdapAttributeMapping(attributeConfig, assertion.getIdentityProviderOid(), uog);
+        lmapr.setCustomAttributeName(assertion.getRetrieveAttributeName());
         identityRetrieveMappings = new IdentityMapping[] { lmapr };
 
         SecurityTokenMapping kmap = new KerberosSecurityTokenMapping();
@@ -168,7 +172,7 @@ public class ServerMappingAssertion extends ServerIdentityAssertion {
                     throw new AuthenticationException("Identity was neither a User nor a Group");
                 }
 
-                Object[] values = identityRetrieveMappings[0].extractValues(identity);
+                Object[] values = attributeExtractors.get(identityRetrieveMappings[0]).extractValues(identity);
                 if (values.length == 1) {
                     context.setVariable(assertion.getVariableName(), values[0]);
                     return AssertionStatus.NONE;

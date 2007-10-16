@@ -17,6 +17,7 @@ public class VariableMetadata implements Serializable {
     private final DataType type;
 
     public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type) {
+        ExpandVariables.validateName(name);
         this.name = name;
         this.prefixed = prefixed;
         this.multivalued = multivalued;

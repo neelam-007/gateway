@@ -5,25 +5,33 @@
 package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
+import com.l7tech.identity.mapping.AttributeConfig;
+import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.identity.*;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.mapping.AttributeExtractor;
+import com.l7tech.server.identity.mapping.ExtractorFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.List;
 
 /**
  * Subclasses of ServerIdentityAssertion are responsible for verifying that the entity
@@ -36,9 +44,9 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
     private final Logger logger = Logger.getLogger(ServerIdentityAssertion.class.getName());
 
     protected final Auditor auditor;
-    private final ApplicationContext applicationContext;
     private final IdentityProviderFactory identityProviderFactory;
     protected IdentityAssertion identityAssertion;
+    protected final Map<IdentityMapping, AttributeExtractor> attributeExtractors;
 
     public ServerIdentityAssertion(IdentityAssertion data, ApplicationContext ctx) {
         super(data);
@@ -47,8 +55,16 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
             throw new IllegalArgumentException("Application Context is required");
         }
         this.auditor = new Auditor(this, ctx, Logger.getLogger(getClass().getName()));
-        this.applicationContext = ctx;
-        identityProviderFactory = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory", IdentityProviderFactory.class);
+        this.identityProviderFactory = (IdentityProviderFactory) ctx.getBean("identityProviderFactory", IdentityProviderFactory.class);
+
+        Map<IdentityMapping, AttributeExtractor> extractors = new HashMap<IdentityMapping, AttributeExtractor>();
+        final IdentityMapping[] lattrs = assertion.getLookupAttributes();
+        if (lattrs != null && lattrs.length > 0) {
+            for (IdentityMapping im : lattrs) {
+                extractors.put(im, ExtractorFactory.getExtractor(im));
+            }
+        }
+        this.attributeExtractors = extractors;
     }
 
     /**
@@ -84,7 +100,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
         AssertionStatus lastStatus = AssertionStatus.UNDEFINED;
         final IdentityProvider provider;
         try {
-            provider = getIdentityProvider(context);
+            provider = getIdentityProvider();
         } catch (FindException e) {
             auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[0], e);
             // fla fix, allow the policy to continue in case the credentials be valid for
@@ -100,7 +116,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
                     return lastStatus;
                 }
             } catch (InvalidClientCertificateException icce) {
-                auditor.logAndAudit(AssertionMessages.INVALID_CERT, new String[] {pc.getLogin()});
+                auditor.logAndAudit(AssertionMessages.INVALID_CERT, pc.getLogin());
                 // set some response header so that the CP is made aware of this situation
                 context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
                                                                       SecureSpanConstants.CERT_INVALID);
@@ -112,9 +128,23 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
                 lastStatus = authFailed(pc, ae);
             }
         }
-        auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] { identityAssertion.loggingIdentity() });
+        auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, identityAssertion.loggingIdentity());
         return lastStatus;
     }
+
+    private void setUserAttributeVariables(AuthenticationResult authResult, PolicyEnforcementContext context) {
+        final IdentityMapping[] lattrs = assertion.getLookupAttributes();
+        if (lattrs == null || lattrs.length == 0) return;
+
+        for (IdentityMapping im : lattrs) {
+            AttributeExtractor extractor = attributeExtractors.get(im);
+            Object[] vals = extractor.extractValues(authResult.getUser()); // An NPE here indicates real problems, let it happen
+            if (vals == null || vals.length == 0) continue;
+            final AttributeConfig config = im.getAttributeConfig();
+            context.setVariable(IdentityAssertion.USER_VAR_PREFIX + config.getVariableName(), im.isMultivalued() ? vals : vals[0]);
+        }
+    }
+
 
     /**
      * Authenticates and calls {@link #checkUser}.  Override at will.
@@ -145,7 +175,9 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
 
         // Authentication success
         context.addAuthenticationResult(authResult);
-        auditor.logAndAudit(AssertionMessages.AUTHENTICATED, new String[] {name});
+        auditor.logAndAudit(AssertionMessages.AUTHENTICATED, name);
+
+        setUserAttributeVariables(authResult, context);
 
         // Make sure this guy matches our criteria
         return checkUser(authResult, context);
@@ -162,14 +194,14 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
 
         String logid = identityAssertion.loggingIdentity();
 
-        // Preserve old logging behavior until there's a compelling reason to change it 
-        if (identityAssertion instanceof MemberOfGroup) {
+        // Preserve old logging behavior until there's a compelling reason to change it
+        if (identityAssertion instanceof MemberOfGroup)
             logger.info("could not verify membership of group " + logid + " with credentials from " + name);
-        } else if (identityAssertion instanceof SpecificUser) {
+        else if (identityAssertion instanceof SpecificUser)
             logger.info("could not verify identity " + logid + " with credentials from " + name);
-        } else {
+        else
             logger.info("could not verify " + logid + " with credentials from " + name);
-        }
+
         return AssertionStatus.AUTH_FAILED;
     }
 
@@ -177,10 +209,10 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
      * Loads the {@link IdentityProvider} object corresponding to the
      * <code>identityProviderOid</code> property, using a cache if possible.
      *
-     * @param context
+     * @return
      * @throws FindException
      */
-    protected IdentityProvider getIdentityProvider(PolicyEnforcementContext context) throws FindException {
+    protected IdentityProvider getIdentityProvider() throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(identityAssertion.getIdentityProviderOid());
         if (provider == null) {
             auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_EXIST);

@@ -120,7 +120,6 @@
                 <L7p:Kerberos/>
                 <L7p:EncryptedUsernameToken/>
                 <L7p:WsiBspAssertion/>
-                <L7p:WsiSamlAssertion/>
                 <L7p:WsspAssertion/>
                 <L7p:FaultLevel>
                     <L7p:LevelInfo soapFaultLevel="included"/>
@@ -157,6 +156,9 @@
                     <L7p:FieldSpecs htmlFormFieldSpecArray="included"/>
                 </L7p:HtmlFormDataAssertion>
                 <L7p:CodeInjectionProtectionAssertion/>
+                <L7p:Authentication/>
+                <L7p:WsiSamlAssertion/>
+                <L7p:SamlIssuer/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

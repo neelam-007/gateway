@@ -119,6 +119,7 @@ public class AllAssertions {
         new AuthenticationAssertion(),
         new HtmlFormDataAssertion(),
         new CodeInjectionProtectionAssertion(),
+        new SamlIssuerAssertion(),
     };
 
 
@@ -170,7 +171,6 @@ public class AllAssertions {
         new RequestWssKerberos(),
         new EncryptedUsernameTokenAssertion(),
         new WsiBspAssertion(),
-        new WsiSamlAssertion(),
         new WsspAssertion(),
         new FaultLevel(),
         new RequestWssSaml2(),
@@ -191,5 +191,8 @@ public class AllAssertions {
         new CookieCredentialSourceAssertion(),
         new HtmlFormDataAssertion(),
         new CodeInjectionProtectionAssertion(),
+        new AuthenticationAssertion(),
+        new WsiSamlAssertion(),
+        new SamlIssuerAssertion(),
     };
 }

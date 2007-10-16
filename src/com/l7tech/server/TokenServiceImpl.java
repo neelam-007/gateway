@@ -1,12 +1,11 @@
 package com.l7tech.server;
 
+import com.l7tech.common.LicenseException;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.message.XmlKnob;
-import com.l7tech.common.security.saml.SamlAssertionGenerator;
-import com.l7tech.common.security.saml.SubjectStatement;
-import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.saml.*;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.X509SecurityToken;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
@@ -20,14 +19,13 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultLevel;
-import com.l7tech.common.LicenseException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -39,14 +37,14 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.event.system.TokenServiceEvent;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.server.identity.AuthenticationResult;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -62,8 +60,8 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -201,7 +199,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 logger.info(msg);
                 return status;
             }
-            Map rstTypes = getTrustTokenTypeAndRequestTypeValues(context);
+            Map<String, String> rstTypes = getTrustTokenTypeAndRequestTypeValues(context);
             Document response;
             if (isRequestForSecureConversationContext(rstTypes)) {
                 response = handleSecureConversationContextRequest(rstTypes, context, authenticatedUser, SoapUtil.WSSC_NAMESPACE);
@@ -317,15 +315,16 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         } catch (UnknownHostException e) {
             throw new TokenServiceException("Couldn't resolve client IP address", e);
         }
-        options.setUseThumbprintForSignature(useThumbprintForSignature);
+        options.setIssuerKeyInfoType(useThumbprintForSignature ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT);
         options.setSignAssertion(true);
         if (SamlConstants.NS_SAML2.equals(samlNs)) {
             options.setVersion(SamlAssertionGenerator.Options.VERSION_2);
         }
         SignerInfo signerInfo = new SignerInfo(serverPrivateKey, new X509Certificate[] { serverCert });
+        KeyInfoInclusionType keyInfoType = useThumbprintForSubject ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
         SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds,
                                                                                            SubjectStatement.HOLDER_OF_KEY,
-                                                                                           useThumbprintForSubject);
+                                                                                           keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null);
         
         // [Bugzilla #3616] the reason we are using this system property mechanism to pass this information is because
         // the saml generator is common code and can be also used in the bridge which does not have access to the
@@ -372,15 +371,14 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
 
         SecurityToken[] tokens = wssOutput.getXmlSecurityTokens();
         X509Certificate clientCert = null;
-        for (int i = 0; i < tokens.length; i++) {
-            SecurityToken token = tokens[i];
+        for (SecurityToken token : tokens) {
             if (token instanceof X509SecurityToken) {
-                X509SecurityToken x509token = (X509SecurityToken)token;
+                X509SecurityToken x509token = (X509SecurityToken) token;
                 if (x509token.isPossessionProved()) {
                     if (clientCert != null) {
                         String msg = "Request included more than one X509 security token whose key ownership " +
-                                     "was proven";
-                        logger.log(Level.WARNING,  msg);
+                                "was proven";
+                        logger.log(Level.WARNING, msg);
                         throw new TokenServiceException(msg);
                     }
                     clientCert = x509token.getCertificate();
@@ -495,12 +493,12 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * does not check things like whether the body is signed since this is the
      * responsibility of the policy
      */
-    private boolean isRequestForSecureConversationContext(Map rstTypes) {
-        String val = (String)rstTypes.get(SoapUtil.WST_TOKENTYPE);
+    private boolean isRequestForSecureConversationContext(Map<String, String> rstTypes) {
+        String val = rstTypes.get(SoapUtil.WST_TOKENTYPE);
         if (val == null || !"http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct".equals(val)) {
             return false;
         }
-        val = (String)rstTypes.get(SoapUtil.WST_REQUESTTYPE);
+        val = rstTypes.get(SoapUtil.WST_REQUESTTYPE);
         if (val == null || !val.endsWith("/trust/Issue")) {
             logger.warning("RequestType not supported." + val);
             return false;
@@ -515,12 +513,12 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * does not check things like whether the body is signed since this is the
      * responsibility of the policy
      */
-    private boolean isRequestForSecureConversationContext0502(Map rstTypes) {
-        String val = (String)rstTypes.get(SoapUtil.WST_TOKENTYPE);
+    private boolean isRequestForSecureConversationContext0502(Map<String, String> rstTypes) {
+        String val = rstTypes.get(SoapUtil.WST_TOKENTYPE);
         if (val == null || !"http://schemas.xmlsoap.org/ws/2005/02/sc/sct".equals(val)) {
             return false;
         }
-        String requestType = (String)rstTypes.get(SoapUtil.WST_REQUESTTYPE);
+        String requestType = rstTypes.get(SoapUtil.WST_REQUESTTYPE);
         if (!requestType.endsWith("/trust/Issue")) {
             logger.warning("RequestType not supported." + requestType);
             return false;
@@ -558,8 +556,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      *
      * The old way was using too much code duplication and was too innefficient.
      */
-    private Map getTrustTokenTypeAndRequestTypeValues(PolicyEnforcementContext context) throws InvalidDocumentFormatException {
-        Map output = new HashMap();
+    private Map<String, String> getTrustTokenTypeAndRequestTypeValues(PolicyEnforcementContext context) throws InvalidDocumentFormatException {
+        Map<String, String> output = new HashMap<String, String>();
         // initial value important (dont remove)
         output.put(SCNS, SoapUtil.WSSC_NAMESPACE);
         Document doc;

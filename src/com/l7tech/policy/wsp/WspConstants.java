@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.policy.wsp;
@@ -18,6 +17,7 @@ import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -36,6 +36,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.identity.mapping.*;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -310,6 +311,33 @@ public class WspConstants {
         new ArrayTypeMapping(new JmsMessagePropertyRule[0], "jmsMessagePropertyRuleArray"),
         new BeanTypeMapping(JmsMessagePropertyRuleSet.class, "jmsMessagePropertyRuleSet"),
 
+        new ArrayTypeMapping(new IdentityMapping[0], "identityMappingArray"),
+        new AbstractClassTypeMapping(IdentityMapping.class, "identityMapping"),
+        new BeanTypeMapping(LdapAttributeMapping.class, "ldapAttributeMapping"),
+        new BeanTypeMapping(InternalAttributeMapping.class, "internalAttributeMapping"),
+        new BeanTypeMapping(FederatedAttributeMapping.class, "federatedAttributeMapping"),
+        new BeanTypeMapping(AttributeConfig.class, "attributeConfig"),
+        new WspEnumTypeMapping(DataType.class, "dataType"),
+        new Java5EnumTypeMapping(UsersOrGroups.class, "usersOrGroups"),
+
+        // Make sure we get equal instances of built-in attributes (analogous to readResolve())
+        new BeanTypeMapping(AttributeHeader.class, "header") {
+            @Override
+            public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+                TypedReference tr = super.thaw(source, visitor);
+                if (tr.target instanceof AttributeHeader) {
+                    AttributeHeader ah = (AttributeHeader) tr.target;
+                    AttributeHeader canon = AttributeHeader.forName(ah.getVariableName());
+                    return canon == null ? tr : new TypedReference(AttributeHeader.class, canon);
+                }
+                return tr;
+            }
+
+            @Override
+            public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
+                return super.freeze(wspWriter, object, container);
+            }
+        }
     };
 
     final static TypeMapping[] readOnlyTypeMappings = new TypeMapping[] {

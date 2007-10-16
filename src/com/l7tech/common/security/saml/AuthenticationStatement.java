@@ -18,12 +18,12 @@ import java.util.Date;
  * @author emil
  * @version Feb 1, 2005
  */
-class AuthenticationStatement extends SubjectStatement {
-    private final String authenticationMethod;
-    private final Calendar authenticationInstant = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
+public class AuthenticationStatement extends SubjectStatement {
+    private String authenticationMethod;
+    private Calendar authenticationInstant = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
 
-    public AuthenticationStatement(LoginCredentials credentials, Confirmation confirmation, boolean useThumbprintForSubject) {
-        super(credentials, confirmation, useThumbprintForSubject);
+    public AuthenticationStatement(LoginCredentials credentials, Confirmation confirmation, KeyInfoInclusionType keyInfoType, NameIdentifierInclusionType nameIdType, String overrideNameValue, String overrideNameFormat) {
+        super(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
 
         this.authenticationMethod = mapAuthMethod(credentials.getCredentialSourceAssertion());
         long when = credentials.getAuthInstant();
@@ -52,7 +52,15 @@ class AuthenticationStatement extends SubjectStatement {
         return authenticationInstant;
     }
 
+    public void setAuthenticationInstant(Calendar authenticationInstant) {
+        this.authenticationInstant = authenticationInstant;
+    }
+
     public String getAuthenticationMethod() {
         return authenticationMethod;
+    }
+
+    public void setAuthenticationMethod(String authenticationMethod) {
+        this.authenticationMethod = authenticationMethod;
     }
 }

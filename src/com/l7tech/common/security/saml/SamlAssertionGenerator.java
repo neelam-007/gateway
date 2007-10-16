@@ -1,6 +1,7 @@
 package com.l7tech.common.security.saml;
 
 import com.ibm.xml.dsig.*;
+import com.ibm.dom.util.IndentConfig;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.KeyInfoDetails;
 import com.l7tech.common.security.xml.SignerInfo;
@@ -37,6 +38,15 @@ public class SamlAssertionGenerator {
     private final SignerInfo assertionSigner;
     private final SamlAssertionGeneratorSaml1 sag1;
     private final SamlAssertionGeneratorSaml2 sag2;
+    private static final IndentConfig nullIndentConfig = new IndentConfig() {
+        public boolean doIndentation() {
+            return false;
+        }
+
+        public int getUnit() {
+            return 0;
+        }
+    };
 
     /**
      * Instantiate the <code>SamlAssertionGenerator</code> with the assertion
@@ -55,26 +65,53 @@ public class SamlAssertionGenerator {
      * Create and return the SAML Authentication Statement assertion The SAML assertion
      * is signed by assertion signer in this Assertion Generator.
      *
-     * @param subject the subject the statement is about
+     * @param subjectStatement the subject the statement is about
      * @param options the options
      * @return the holder of key assertion for the
      * @throws SignatureException   on signature related error
      * @throws CertificateException on certificate error
      */
-    public Document createAssertion(SubjectStatement subject, Options options)
+    public Document createAssertion(SubjectStatement subjectStatement, Options options)
       throws SignatureException, CertificateException {
         final String caDn = assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
 
         Document doc = options.getVersion()==Options.VERSION_1 ?
-                sag1.createStatementDocument(subject, options, caDn) :
-                sag2.createStatementDocument(subject, options, caDn);
+                sag1.createStatementDocument(subjectStatement, options, caDn) :
+                sag2.createStatementDocument(subjectStatement, options, caDn);
 
         if (options.isSignAssertion()) signAssertion(
                 options,
                 doc,
                 assertionSigner.getPrivate(),
                 assertionSigner.getCertificateChain(),
-                options.isUseThumbprintForSignature());
+                options.getIssuerKeyInfoType());
+        return doc;
+    }
+
+    /**
+     * Create and return the SAML Authentication Statement assertion The SAML assertion
+     * is signed by assertion signer in this Assertion Generator.
+     *
+     * @param statements the Subject Statement(s) to include in the assertion
+     * @param options the options
+     * @return the holder of key assertion for the
+     * @throws SignatureException   on signature related error
+     * @throws CertificateException on certificate error
+     */
+    public Document createAssertion(SubjectStatement[] statements, Options options)
+      throws SignatureException, CertificateException {
+        final String caDn = assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
+
+        Document doc = options.getVersion()==Options.VERSION_1 ?
+                sag1.createStatementDocument(statements, options, caDn) :
+                sag2.createStatementDocument(statements, options, caDn);
+
+        if (options.isSignAssertion()) signAssertion(
+                options,
+                doc,
+                assertionSigner.getPrivate(),
+                assertionSigner.getCertificateChain(),
+                options.getIssuerKeyInfoType());
         return doc;
     }
 
@@ -104,7 +141,7 @@ public class SamlAssertionGenerator {
                     doc,
                     assertionSigner.getPrivate(),
                     assertionSigner.getCertificateChain(),
-                    options.isUseThumbprintForSignature());
+                    options.getIssuerKeyInfoType());
         }
         attachAssertion(document, doc, options);
         return doc;
@@ -148,7 +185,7 @@ public class SamlAssertionGenerator {
                                      final Document assertionDoc,
                                      final PrivateKey signingKey,
                                      final X509Certificate[] signingCertChain,
-                                     final boolean useThumbprintForSignature)
+                                     final KeyInfoInclusionType keyInfoType)
             throws SignatureException
     {
         TemplateGenerator template = new TemplateGenerator(assertionDoc, XSignature.SHA1,
@@ -212,22 +249,39 @@ public class SamlAssertionGenerator {
 
         KeyInfo keyInfo = new KeyInfo();
         Element keyInfoElement;
-        if (useThumbprintForSignature) {
-            keyInfoElement = keyInfo.getKeyInfoElement(assertionDoc);
-            // Replace cert with STR?
-            try {
-                String thumb = CertUtils.getThumbprintSHA1(signingCertChain[0]);
-                KeyInfoDetails.makeKeyId(thumb, true, SoapUtil.VALUETYPE_X509_THUMB_SHA1).
-                        populateExistingKeyInfoElement(new NamespaceFactory(), keyInfoElement);
-            } catch (Exception e) {
-                throw new SignatureException(e);
-            }
-        } else {
-            KeyInfo.X509Data x509 = new KeyInfo.X509Data();
-            x509.setCertificate(signingCertChain[0]);
-            x509.setParameters(signingCertChain[0], false, false, true);
-            keyInfo.setX509Data(new KeyInfo.X509Data[]{x509});
-            keyInfoElement = keyInfo.getKeyInfoElement(assertionDoc, template);
+        switch(keyInfoType) {
+            case STR_THUMBPRINT:
+                keyInfoElement = keyInfo.getKeyInfoElement(assertionDoc, nullIndentConfig);
+                // Replace cert with STR?
+                try {
+                    String thumb = CertUtils.getThumbprintSHA1(signingCertChain[0]);
+                    KeyInfoDetails.makeKeyId(thumb, true, SoapUtil.VALUETYPE_X509_THUMB_SHA1).
+                            populateExistingKeyInfoElement(new NamespaceFactory(), keyInfoElement);
+                } catch (Exception e) {
+                    throw new SignatureException(e);
+                }
+                break;
+            case STR_SKI:
+                keyInfoElement = keyInfo.getKeyInfoElement(assertionDoc, nullIndentConfig);
+                // Replace cert with STR?
+                try {
+                    String thumb = CertUtils.getSki(signingCertChain[0]);
+                    KeyInfoDetails.makeKeyId(thumb, true, SoapUtil.VALUETYPE_SKI).
+                            populateExistingKeyInfoElement(new NamespaceFactory(), keyInfoElement);
+                } catch (Exception e) {
+                    throw new SignatureException(e);
+                }
+                break;
+            case CERT:
+                KeyInfo.X509Data x509 = new KeyInfo.X509Data();
+                x509.setCertificate(signingCertChain[0]);
+                x509.setParameters(signingCertChain[0], false, false, true);
+                keyInfo.setX509Data(new KeyInfo.X509Data[]{x509});
+                keyInfoElement = keyInfo.getKeyInfoElement(assertionDoc, nullIndentConfig);
+                break;
+            case NONE:
+            default:
+                throw new IllegalArgumentException("KeyInfoType must be CERT, STR_THUMBPRINT or STR_SKI");
         }
 
         keyInfoElement.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns", SoapUtil.DIGSIG_URI);
@@ -299,14 +353,6 @@ public class SamlAssertionGenerator {
             this.attestingEntity = attestingEntity;
         }
 
-        public boolean isUseThumbprintForSignature() {
-            return useThumbprintForSignature;
-        }
-
-        public void setUseThumbprintForSignature(boolean useThumbprintForSignature) {
-            this.useThumbprintForSignature = useThumbprintForSignature;
-        }
-
         public int getVersion() {
             return samlVersion;
         }
@@ -323,7 +369,23 @@ public class SamlAssertionGenerator {
             this.securityHeaderActor = securityHeaderActor;
         }
 
-        private boolean useThumbprintForSignature = false;
+        public int getBeforeOffsetMinutes() {
+            return beforeOffsetMinutes;
+        }
+
+        public void setBeforeOffsetMinutes(int beforeOffsetMinutes) {
+            this.beforeOffsetMinutes = beforeOffsetMinutes;
+        }
+
+        public KeyInfoInclusionType getIssuerKeyInfoType() {
+            return issuerKeyInfoType;
+        }
+
+        public void setIssuerKeyInfoType(KeyInfoInclusionType issuerKeyInfoType) {
+            this.issuerKeyInfoType = issuerKeyInfoType;
+        }
+
+        private KeyInfoInclusionType issuerKeyInfoType = KeyInfoInclusionType.CERT;
         private boolean proofOfPosessionRequired = true;
         private int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
         private InetAddress clientAddress;
@@ -332,6 +394,7 @@ public class SamlAssertionGenerator {
         private String id = null;
         private int samlVersion = VERSION_1;
         private String securityHeaderActor = null;
+        private int beforeOffsetMinutes = 2; // TODO surely the default should be a little tighter
     }
 
     static final int DEFAULT_EXPIRY_MINUTES = 5;

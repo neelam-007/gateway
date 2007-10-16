@@ -9,10 +9,10 @@ import com.l7tech.external.assertions.comparison.Predicate;
 import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.MultiValuedEvaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.SingleValuedEvaluator;
-import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.server.audit.Auditor;
 
 import java.util.Map;
+import java.util.Arrays;
 
 /**
  * Manages the progress of a <b>multivalued value</b> through {@link ServerComparisonAssertion}.
@@ -21,7 +21,7 @@ import java.util.Map;
 class MVState extends State {
     private Object[] values;
 
-    MVState(Map<Predicate, Evaluator> evaluators, Object[] values, VariableMap vars, Auditor auditor) {
+    MVState(Map<Predicate, Evaluator> evaluators, Object[] values, Map<String, Object> vars, Auditor auditor) {
         super(evaluators, vars, auditor);
         this.values = values;
     }
@@ -65,7 +65,7 @@ class MVState extends State {
 
             predResult = tempResult;
         } else {
-            throw new IllegalStateException("Unable to evaluate predicate " + pred + " against values " + values);
+            throw new IllegalStateException("Unable to evaluate predicate " + pred + " against values " + Arrays.toString(values));
         }
 
         if (pred.isNegated()) predResult = !predResult;

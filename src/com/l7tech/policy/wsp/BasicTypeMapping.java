@@ -5,11 +5,10 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.common.util.ExceptionUtils;
 import org.w3c.dom.Element;
 
 import java.lang.reflect.Constructor;
-
-import com.l7tech.common.util.ExceptionUtils;
 
 /**
  * TypeMapping to use for basic concrete types whose values are represented most naturally by simple strings.

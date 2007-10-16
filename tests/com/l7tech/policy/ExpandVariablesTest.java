@@ -63,7 +63,7 @@ public class ExpandVariablesTest extends TestCase {
     }
 
     public void testSingleVariableNotFound() throws Exception {
-        Map variables = new HashMap();
+        Map<String, Object> variables = new HashMap<String, Object>();
         String value = "value_variable1";
         variables.put("var1", value);
 
@@ -76,6 +76,48 @@ public class ExpandVariablesTest extends TestCase {
     public void testUnterminatedRef() throws Exception {
         String[] vars = ExpandVariables.getReferencedNames("${foo");
         assertEquals(vars.length, 0);
+    }
+
+    public void testMultivalueDelimiter() throws Exception {
+        Map<String, Object> vars = new HashMap<String, Object>();
+        vars.put("foo", new String[] { "bar", "baz"});
+
+        String out1 = ExpandVariables.process("${foo}", vars);
+        assertEquals(out1, "bar, baz"); // Default delimiter is ", "
+
+        String out2 = ExpandVariables.process("<foo><val>" + "${foo|</val><val>}" + "</val></foo>", vars);
+        assertEquals(out2, "<foo><val>bar</val><val>baz</val></foo>");
+
+        String out3 = ExpandVariables.process("${foo|}", vars);
+        assertEquals(out3, "barbaz");
+
+        String out4 = ExpandVariables.process("${foo||}", vars);
+        assertEquals(out4, "bar|baz");
+    }
+
+    public void testMultivalueSubscript() throws Exception {
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("foo", new Object[] { "bar", "baz" });
+        }};
+
+        String out1 = ExpandVariables.process("${foo[0]}", vars);
+        assertEquals(out1, "bar");
+
+        String out2 = ExpandVariables.process("${foo[1]}", vars);
+        assertEquals(out2, "baz");
+
+        try {
+            ExpandVariables.process("${foo[asdf]}", vars);
+            fail("Should have thrown--non-numeric subscript");
+        } catch (IllegalArgumentException e) {
+        }
+
+        try {
+            ExpandVariables.process("${foo[-1]}", vars);
+            fail("Should have thrown--negative subscript");
+        } catch (IllegalArgumentException e) {
+        }
+
     }
 
     /**

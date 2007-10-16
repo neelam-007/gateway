@@ -1,42 +1,39 @@
 package com.l7tech.skunkworks.saml;
 
-import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.security.cert.X509Certificate;
-import java.security.PrivateKey;
-import java.util.logging.Level;
-import java.util.StringTokenizer;
-import java.net.InetAddress;
-import java.io.IOException;
-import javax.swing.*;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.auth.callback.PasswordCallback;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.GuiCertUtil;
 import com.l7tech.common.gui.ExceptionDialog;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.ArrayUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.saml.SamlAssertionGenerator;
-import com.l7tech.common.security.saml.SubjectStatement;
+import com.l7tech.common.gui.util.GuiCertUtil;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.saml.*;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.util.ArrayUtils;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.StringTokenizer;
+import java.util.logging.Level;
 
 /**
  * @author Steve Jones, $Author$
@@ -151,15 +148,15 @@ public class SamlGenerator {
         versionComboBox.setModel(new DefaultComboBoxModel(new String[]{"1.1", "2.0"}));
         subjectConfirmationComboBox.setModel(new DefaultComboBoxModel(ALL_SUBJECT_CONFIRMATIONS));
         ((DefaultComboBoxModel)subjectConfirmationComboBox.getModel()).insertElementAt(SELECTION_NONE, 0);
-        ((DefaultComboBoxModel)subjectConfirmationComboBox.getModel()).setSelectedItem(SELECTION_NONE);
+        subjectConfirmationComboBox.getModel().setSelectedItem(SELECTION_NONE);
 
         authenticationMethodComboBox.setModel(new DefaultComboBoxModel(ALL_AUTH_METHODS));
         ((DefaultComboBoxModel)authenticationMethodComboBox.getModel()).insertElementAt(SELECTION_NONE, 0);
-        ((DefaultComboBoxModel)authenticationMethodComboBox.getModel()).setSelectedItem(SELECTION_NONE);
+        authenticationMethodComboBox.getModel().setSelectedItem(SELECTION_NONE);
 
         nameIdentifierFormatComboBox.setModel(new DefaultComboBoxModel(SamlConstants.ALL_NAMEIDENTIFIERS_SAML2));
         ((DefaultComboBoxModel)nameIdentifierFormatComboBox.getModel()).insertElementAt(SELECTION_NONE, 0);
-        ((DefaultComboBoxModel)nameIdentifierFormatComboBox.getModel()).setSelectedItem(SELECTION_NONE);
+        nameIdentifierFormatComboBox.getModel().setSelectedItem(SELECTION_NONE);
 
         issuerCertButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
@@ -238,7 +235,7 @@ public class SamlGenerator {
                 samlOptions.setId(idTextField.getText());
             else
                 samlOptions.setId("saml-" + System.currentTimeMillis());
-            samlOptions.setUseThumbprintForSignature(issuerThumbprintCheckBox.isSelected());
+            samlOptions.setIssuerKeyInfoType(issuerThumbprintCheckBox.isSelected() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT);
             samlOptions.setSignAssertion(false);
 
             // Generate
@@ -257,25 +254,25 @@ public class SamlGenerator {
 
             SubjectStatement subjectStatement = null;
             boolean signonly = false;
+            boolean thumb = subjectThumbprintCheckBox.isSelected();
+            KeyInfoInclusionType keyInfoType = thumb ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
             if (!SELECTION_NONE.equals(authenticationMethod)) {
                 subjectStatement =
-                    SubjectStatement.createAuthenticationStatement(credentials, confirmationMethod, subjectThumbprintCheckBox.isSelected());
-            }
-            else if (attributeNameTextField.getText().length() > 0) {
+                    SubjectStatement.createAuthenticationStatement(credentials, confirmationMethod, keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null);
+            } else if (attributeNameTextField.getText().length() > 0) {
                 String attribute = attributeNameTextField.getText();
                 String attributeNs = attributeNamespaceTextField.getText();
                 if (attributeNs.length() == 0) attributeNs = null;
                 String attributeValue = attributeValueTextField.getText();
                 subjectStatement =
-                    SubjectStatement.createAttributeStatement(credentials, confirmationMethod, attribute, attributeNs, attributeValue, subjectThumbprintCheckBox.isSelected());
-            }
-            else if (resourceTextField.getText().length() > 0) {
+                    SubjectStatement.createAttributeStatement(credentials, confirmationMethod, attribute, attributeNs, attributeValue, keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null);
+            } else if (resourceTextField.getText().length() > 0) {
                 String resource = resourceTextField.getText();
                 String action = actionTextField.getText();
                 String actionNamespace = actionNamespaceTextField.getText();
                 if (actionNamespace.length() == 0) actionNamespace = null;
                 subjectStatement =
-                    SubjectStatement.createAuthorizationStatement(credentials, confirmationMethod, resource, action, actionNamespace, subjectThumbprintCheckBox.isSelected());
+                    SubjectStatement.createAuthorizationStatement(credentials, confirmationMethod, keyInfoType, resource, action, actionNamespace, NameIdentifierInclusionType.FROM_CREDS, null, null);
             }
             else if (inputMessageTextArea.getText().length() > 0 && signMessageCheckBox.isSelected()) {
                 signonly = true;
@@ -340,7 +337,7 @@ public class SamlGenerator {
                 if (!SELECTION_NONE.equals(nameIdentifierFormatComboBox.getSelectedItem()) ||
                     nameQualifierTextField.getText().length() > 0 ||
                     nameIdentifierTextField.getText().length() > 0) {
-                    NodeList nameIdNodeList = null;
+                    NodeList nameIdNodeList;
                     if (samlOptions.getVersion()!=2) {
                         nameIdNodeList = assertion.getDocumentElement().getElementsByTagNameNS(SamlConstants.NS_SAML, "NameIdentifier");
                     }
@@ -390,7 +387,7 @@ public class SamlGenerator {
                         assertion,
                         issuerInfo.getPrivate(),
                         issuerInfo.getCertificateChain(),
-                        samlOptions.isUseThumbprintForSignature());
+                        samlOptions.getIssuerKeyInfoType());
             }
 
             String assertionStr;
@@ -424,7 +421,7 @@ public class SamlGenerator {
                             decoReq.setSenderMessageSigningPrivateKey(issuerPrivateKey);
                         }
                     }
-                    decoReq.getElementsToSign().addAll(XmlUtil.findChildElementsByName(soapDoc.getDocumentElement(), (String[]) SoapUtil.ENVELOPE_URIS.toArray(new String[0]), "Body"));
+                    decoReq.getElementsToSign().addAll(XmlUtil.findChildElementsByName(soapDoc.getDocumentElement(), SoapUtil.ENVELOPE_URIS.toArray(new String[0]), "Body"));
 
                     // sign address if present
                     Element env = soapDoc.getDocumentElement();
@@ -459,8 +456,7 @@ public class SamlGenerator {
             public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
                 PasswordCallback passwordCallback = null;
 
-                for (int i = 0; i < callbacks.length; i++) {
-                    Callback callback = callbacks[i];
+                for (Callback callback : callbacks) {
                     if (callback instanceof PasswordCallback) {
                         passwordCallback = (PasswordCallback) callback;
                     }

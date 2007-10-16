@@ -40,6 +40,10 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
         }
     }
 
+    /**
+     * This class is almost identical to {@link com.l7tech.common.security.saml.Attribute}, but this one is used on the
+     * validation side, whereas the other is used on the issuing side.  TODO merge these two classes!
+     */
     public static class Attribute implements Cloneable, Serializable {
         private static final long serialVersionUID = 1L;
 
@@ -48,11 +52,12 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
         private String nameFormat;
         private String value;
         private boolean anyValue;
+        private boolean repeatIfMulti;
 
         public Attribute() {
         }
 
-        public Attribute(String name, String namespace, String nameFormat, String value, boolean anyValue) {
+        public Attribute(String name, String namespace, String nameFormat, String value, boolean anyValue, boolean repeatIfMulti) {
             if (name == null || (value == null && !anyValue)) {
                 throw new IllegalArgumentException();
             }
@@ -61,6 +66,7 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
             this.nameFormat = nameFormat;
             this.value = value;
             this.anyValue = anyValue;
+            this.repeatIfMulti = repeatIfMulti;
         }
 
         public String getName() {
@@ -103,6 +109,14 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
             this.anyValue = anyValue;
         }
 
+        public boolean isRepeatIfMulti() {
+            return repeatIfMulti;
+        }
+
+        public void setRepeatIfMulti(boolean repeatIfMulti) {
+            this.repeatIfMulti = repeatIfMulti;
+        }
+
         public String toString() {
             StringBuffer sb = new StringBuffer();
             sb.append("[ ")
@@ -111,6 +125,7 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
               .append(", name="+ (name == null ? "null" : name))
               .append(", value="+ (value == null ? "null" : value))
               .append(", anyValue=" + anyValue)
+              .append(", repeatIfMulti=" + repeatIfMulti)
               .append(" ]");
             return sb.toString();
         }

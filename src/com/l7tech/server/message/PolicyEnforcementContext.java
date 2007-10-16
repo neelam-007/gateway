@@ -22,7 +22,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.identity.AuthCache;
@@ -351,8 +350,8 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return value;
     }
 
-    public VariableMap getVariableMap(String[] names, Auditor auditor) {
-        VariableMap vars = new VariableMap();
+    public Map<String, Object> getVariableMap(String[] names, Auditor auditor) {
+        Map<String, Object> vars = new HashMap<String, Object>();
         for (String name : names) {
             try {
                 vars.put(name, getVariable(name));

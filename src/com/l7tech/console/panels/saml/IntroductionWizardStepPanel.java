@@ -20,12 +20,15 @@ public class IntroductionWizardStepPanel extends WizardStepPanel {
     private JPanel greetingPanel;
     private JLabel titleLabel;
     private JLabel descriptionLabel;
+    private JLabel extraTextLabel;
+    private boolean issueMode;
 
     /**
      * Creates new form WizardPanel
      */
-    public IntroductionWizardStepPanel(WizardStepPanel next) {
+    public IntroductionWizardStepPanel(WizardStepPanel next, boolean issueMode) {
         super(next);
+        this.issueMode = issueMode;
         setShowDescriptionPanel(false);
         setLayout(new BorderLayout());
         /** Set content pane */
@@ -34,11 +37,21 @@ public class IntroductionWizardStepPanel extends WizardStepPanel {
 
     }
 
+    public IntroductionWizardStepPanel(WizardStepPanel next) {
+        this(next, false);
+    }
+
     private void initialize() {
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
-        descriptionLabel.setText("<html>This wizard assists in specifying a SAML assertion and any " +
-                                 "associated <br>requirements and/or conditions against which the " +
-                                 "assertion is validated.</html>");
+        if (issueMode) {
+            descriptionLabel.setText("<html>This wizard assists in specifying the details of the SAML assertion to be issued.</html>");
+            titleLabel.setText("Welcome to the SAML wizard.");
+            extraTextLabel.setVisible(false);
+        } else {
+            descriptionLabel.setText("<html>This wizard assists in specifying a SAML assertion and any " +
+                                     "associated <br>requirements and/or conditions against which the " +
+                                     "assertion is validated.</html>");
+        }
     }
 
     /**

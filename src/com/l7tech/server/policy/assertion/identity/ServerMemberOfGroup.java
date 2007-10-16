@@ -43,7 +43,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
         if (cg != null && !isStale(cg.cacheTime)) {
             group = cg.group;
         } else {
-            GroupManager gman = getIdentityProvider(context).getGroupManager();
+            GroupManager gman = getIdentityProvider().getGroupManager();
             if (_data.getGroupId() != null) {
                 group = gman.findByPrimaryKey(_data.getGroupId());
             }
@@ -72,7 +72,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
                 return AssertionStatus.UNAUTHORIZED;
             }
 
-            GroupManager gman = getIdentityProvider(context).getGroupManager();
+            GroupManager gman = getIdentityProvider().getGroupManager();
             Boolean wasMember = authResult.getCachedGroupMembership(targetGroup);
             if (wasMember == null) {
                 if (authResult.getUser() != null &&

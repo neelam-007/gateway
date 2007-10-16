@@ -7,9 +7,13 @@ package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
+import com.l7tech.policy.assertion.SamlIssuerAssertion;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 /**
  * The SAML Conditions <code>WizardStepPanel</code>
@@ -21,7 +25,15 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     private JLabel titleLabel;
     private JCheckBox checkBoxCheckAssertionValidity;
     private JTextField textFieldAudienceRestriction;
-    private boolean showTitleLabel;
+    private JSpinner notBeforeSpinner;
+    private JSpinner notOnOrAfterSpinner;
+    private JPanel validityPanel;
+    private JLabel notBeforeLabel;
+    private JLabel notOnOrAfterLabel;
+    private JCheckBox validityCheckbox;
+
+    private final boolean showTitleLabel;
+    private final boolean issueMode;
 
     /**
      * Creates new form ConditionsWizardStepPanel
@@ -29,6 +41,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     public ConditionsWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
         super(next);
         this.showTitleLabel = showTitleLabel;
+        this.issueMode = false;
         initialize();
     }
 
@@ -36,9 +49,10 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     /**
      * Creates new form ConditionsWizardStepPanel
      */
-    public ConditionsWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner) {
+    public ConditionsWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, boolean issueMode, JDialog owner) {
         super(next);
         this.showTitleLabel = showTitleLabel;
+        this.issueMode = issueMode;
         setOwner(owner);
         initialize();
     }
@@ -50,43 +64,80 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
         this(next, true);
     }
 
-
-    /**
-     * Provides the wizard panel with the opportunity to update the
-     * settings with its current customized state.
-     * Rather than updating its settings with every change in the GUI,
-     * it should collect them, and then only save them when requested to
-     * by this method.
-     * <p/>
-     * This is a noop version that subclasses implement.
-     *
-     * @param settings the object representing wizard panel state
-     * @throws IllegalArgumentException if the the data provided
-     *                                  by the wizard are not valid.
-     */
-    public void storeSettings(Object settings) throws IllegalArgumentException {
-        RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
-        requestWssSaml.setAudienceRestriction(textFieldAudienceRestriction.getText());
-        requestWssSaml.setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
+    public ConditionsWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, boolean issueMode) {
+        this(next, showTitleLabel, issueMode, null);
     }
 
-    /**
-     * Provides the wizard with the current data--either
-     * the default data or already-modified settings. This is a
-     * noop version that subclasses implement.
-     *
-     * @param settings the object representing wizard panel state
-     * @throws IllegalArgumentException if the the data provided
-     *                                  by the wizard are not valid.
-     */
+    public ConditionsWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog parent) {
+        this(next, showTitleLabel, false, parent);
+    }
+
+    public void storeSettings(Object settings) throws IllegalArgumentException {
+        SamlPolicyAssertion ass = (SamlPolicyAssertion) settings;
+        ass.setAudienceRestriction(textFieldAudienceRestriction.getText());
+        if (issueMode) {
+            SamlIssuerAssertion sia = (SamlIssuerAssertion) ass;
+            if (validityCheckbox.isSelected()) {
+                sia.setConditionsNotBeforeSecondsInPast((Integer)notBeforeSpinner.getValue());
+                sia.setConditionsNotOnOrAfterExpirySeconds((Integer)notBeforeSpinner.getValue());
+            } else {
+                sia.setConditionsNotBeforeSecondsInPast(-1);
+                sia.setConditionsNotOnOrAfterExpirySeconds(-1);
+            }
+        } else {
+            ((RequestWssSaml)settings).setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
+        }
+    }
+
     public void readSettings(Object settings) throws IllegalArgumentException {
-        RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
+        SamlPolicyAssertion requestWssSaml = (SamlPolicyAssertion)settings;
         textFieldAudienceRestriction.setText(requestWssSaml.getAudienceRestriction());
-        checkBoxCheckAssertionValidity.setSelected(requestWssSaml.isCheckAssertionValidity());
+
+        if (issueMode) {
+            SamlIssuerAssertion ass = (SamlIssuerAssertion) requestWssSaml;
+            final int secondsInPast = ass.getConditionsNotBeforeSecondsInPast();
+            final int onOrAfterExpirySeconds = ass.getConditionsNotOnOrAfterExpirySeconds();
+            if (secondsInPast != -1 || onOrAfterExpirySeconds != -1) {
+                validityCheckbox.setSelected(true);
+                notBeforeLabel.setEnabled(true);
+                notBeforeSpinner.setEnabled(true);
+                notOnOrAfterLabel.setEnabled(true);
+                notOnOrAfterSpinner.setEnabled(true);
+            }
+
+            if (secondsInPast != -1) notBeforeSpinner.setValue(secondsInPast);
+            if (onOrAfterExpirySeconds != -1) notOnOrAfterSpinner.setValue(onOrAfterExpirySeconds);
+        } else {
+            RequestWssSaml ass = (RequestWssSaml) requestWssSaml;
+            checkBoxCheckAssertionValidity.setSelected(ass.isCheckAssertionValidity());
+        }
     }
 
     private void initialize() {
         setLayout(new BorderLayout());
+
+        if (issueMode) {
+            checkBoxCheckAssertionValidity.setVisible(false);
+            notBeforeSpinner.setModel(new SpinnerNumberModel(120, 0, 3600, 1));
+            notOnOrAfterSpinner.setModel(new SpinnerNumberModel(300, 30, 3600, 1));
+            validityCheckbox.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    final boolean b = validityCheckbox.isSelected();
+                    notBeforeLabel.setEnabled(b);
+                    notBeforeSpinner.setEnabled(b);
+                    notOnOrAfterLabel.setEnabled(b);
+                    notOnOrAfterSpinner.setEnabled(b);
+                }
+            });
+        } else {
+            validityPanel.setVisible(false);
+            validityCheckbox.setVisible(false);
+            notBeforeLabel.setVisible(false);
+            notBeforeSpinner.setVisible(false);
+            notOnOrAfterLabel.setVisible(false);
+            notOnOrAfterSpinner.setVisible(false);
+        }
+
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
         if (showTitleLabel) {
@@ -104,8 +155,13 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     }
 
     public String getDescription() {
-        return
+        if (issueMode) {
+            return
+          "<html>Specify SAML statement conditions such as assertion validity period and Audience Restriction</html>";
+        } else {
+            return
           "<html>Specify SAML statement conditions such as Audience Restriction [optional] " +
-            "and whether to check the assertion validity [optional]</html>";
+                "and whether to check the assertion validity [optional]</html>";
+        }
     }
 }

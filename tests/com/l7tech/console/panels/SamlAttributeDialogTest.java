@@ -24,7 +24,7 @@ public class SamlAttributeDialogTest {
         sba.setName("foo");
         sba.setNamespace("urn:bar");
         sba.setValue("baz");
-        EditAttributeDialog dlg = new EditAttributeDialog(new JDialog(), sba, 1);
+        EditAttributeDialog dlg = new EditAttributeDialog(new JDialog(), sba, 2, true);
         dlg.addBeanListener(new BeanListener() {
             public void onEditAccepted(Object source, Object bean) {
                 System.out.println("OK " + bean);

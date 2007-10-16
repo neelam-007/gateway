@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  *
  * $Id$
  */
@@ -9,6 +9,8 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 import java.security.cert.X509Certificate;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * The <code>SubjectStatement</code> class describes the subject that the SAML statement
@@ -19,7 +21,10 @@ import java.security.cert.X509Certificate;
  * @version Jan 31, 2005
  * @see com.l7tech.common.security.saml.SamlAssertionGenerator
  */
-public class SubjectStatement {
+public abstract class SubjectStatement {
+    protected SubjectStatement() {
+    }
+
     /**
      * holder of key confirmation type
      */
@@ -39,21 +44,26 @@ public class SubjectStatement {
     private String name = null;
     private String subjectConfirmationData = null;
     private Object keyInfo = null;
-    private boolean useThumbprintForSubject = false;
+    private KeyInfoInclusionType subjectConfirmationKeyInfoType = null;
+    private NameIdentifierInclusionType nameIdentifierType = null;
 
     /**
      * Creates the authentication statement
      *
      * @param credentials  the credentials source for subject statement
      * @param confirmation the confirmation method type
-     * @param useThumbprintForSubject if true, an X.509 subject will include just the thumbprintSHA1 of the subject cert.
-     *                                Otherwise, it will contain the entire base64-encoded signing cert.
+     * @param keyInfoType
+     * @param nameIdType
+     * @param overrideNameValue a value to override the NameIdentifier value from the credentials
+     * @param overrideNameFormat a value to override the NameIdentifier format from the credentials
      * @return the authentication statement for the subject statement, confirmation and method
      */
     public static SubjectStatement createAuthenticationStatement(LoginCredentials credentials,
                                                                  Confirmation confirmation,
-                                                                 boolean useThumbprintForSubject) {
-        return new AuthenticationStatement(credentials, confirmation, useThumbprintForSubject);
+                                                                 KeyInfoInclusionType keyInfoType,
+                                                                 NameIdentifierInclusionType nameIdType,
+                                                                 String overrideNameValue, String overrideNameFormat) {
+        return new AuthenticationStatement(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
     }
 
     /**
@@ -61,35 +71,70 @@ public class SubjectStatement {
      *
      * @param credentials  the credentials source for subject statement
      * @param confirmation the confirmation method type
-     * @param useThumbprintForSubject if true, an X.509 subject will include just the thumbprintSHA1 of the subject cert.
-     *                                Otherwise, it will contain the entire base64-encoded signing cert.
+     * @param keyInfoType
+     * @param nameIdType
+     * @param overrideNameValue a value to override the NameIdentifier value from the credentials
+     * @param overrideNameFormat a value to override the NameIdentifier format from the credentials
      * @return the authentication statement for the subject statement, confirmation and method
      */
     public static SubjectStatement createAttributeStatement(LoginCredentials credentials,
-                                                                 Confirmation confirmation,
-                                                                 String attributeName,
-                                                                 String attributeNamespaceOrFormat,
-                                                                 String attributeValue,
-                                                                 boolean useThumbprintForSubject) {
-        AttributeStatement.Attribute[] attributes = new AttributeStatement.Attribute[]{
-            new AttributeStatement.Attribute(attributeName, attributeNamespaceOrFormat, attributeValue)
+                                                            Confirmation confirmation,
+                                                            String attributeName,
+                                                            String attributeNamespaceOrFormat,
+                                                            String attributeValue,
+                                                            KeyInfoInclusionType keyInfoType,
+                                                            NameIdentifierInclusionType nameIdType,
+                                                            String overrideNameValue,
+                                                            String overrideNameFormat)
+    {
+        Attribute[] attributes = new Attribute[] {
+            new Attribute(attributeName, attributeNamespaceOrFormat, attributeValue)
         };
 
-        return new AttributeStatement(credentials, confirmation, attributes, useThumbprintForSubject);
+        return new AttributeStatement(credentials, confirmation, attributes, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
     }
+
+    /**
+     * Creates an attribute statement with multiple attributes
+     *
+     * @param credentials  the credentials source for subject statement
+     * @param confirmation the confirmation method type
+     * @param keyInfoType if true, an X.509 subject will include just the thumbprintSHA1 of the subject cert.
+     *                    Otherwise, it will contain the entire base64-encoded signing cert.
+     * @param nameIdType
+     * @param overrideNameValue a value to override the NameIdentifier value from the credentials
+     * @param overrideNameFormat a value to override the NameIdentifier format from the credentials
+     * @return the authentication statement for the subject statement, confirmation and method
+     */
+    public static SubjectStatement createAttributeStatement(LoginCredentials credentials,
+                                                            Confirmation confirmation,
+                                                            Attribute[] attributes,
+                                                            KeyInfoInclusionType keyInfoType,
+                                                            NameIdentifierInclusionType nameIdType,
+                                                            String overrideNameValue,
+                                                            String overrideNameFormat)
+    {
+        return new AttributeStatement(credentials, confirmation, attributes, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
+    }
+
 
     /**
      * Creates the authorization statement
      *
      * @param credentials  the credentials source for subject statement
      * @param confirmation the confirmation method type
-     * @return the sender vouches subject statement
+     * @param keyInfoType
+     * @param nameIdType
+     * @param overrideNameValue @return the sender vouches subject statement
+     * @param overrideNameFormat
      */
     public static SubjectStatement createAuthorizationStatement(LoginCredentials credentials,
                                                                 Confirmation confirmation,
+                                                                KeyInfoInclusionType keyInfoType,
                                                                 String resource, String action, String actionNamespace,
-                                                                boolean useThumbprintInSubject) {
-        return new AuthorizationStatement(credentials, confirmation, resource, action, actionNamespace, useThumbprintInSubject);
+                                                                NameIdentifierInclusionType nameIdType, String overrideNameValue, String overrideNameFormat)
+    {
+        return new AuthorizationStatement(credentials, confirmation, resource, action, actionNamespace, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
     }
 
     /**
@@ -97,8 +142,18 @@ public class SubjectStatement {
      *
      * @param credentials  the source of this subject statement
      * @param confirmation the cvo
+     * @param keyInfoType
+     * @param nameIdType
+     * @param overrideNameValue
+     * @param overrideNameFormat
      */
-    protected SubjectStatement(LoginCredentials credentials, Confirmation confirmation, boolean useThumbprintForSubject) {
+    protected SubjectStatement(LoginCredentials credentials,
+                               Confirmation confirmation,
+                               KeyInfoInclusionType keyInfoType,
+                               NameIdentifierInclusionType nameIdType,
+                               String overrideNameValue, 
+                               String overrideNameFormat)
+    {
         if (credentials == null) {
             throw new IllegalArgumentException();
         }
@@ -111,20 +166,31 @@ public class SubjectStatement {
             }
         }
 
-        setUseThumbprintForSubject(useThumbprintForSubject);
+        setNameIdentifierType(nameIdType);
+        setSubjectConfirmationKeyInfoType(keyInfoType);
 
-        final X509Certificate clientCert = credentials.getClientCert();
-        if (clientCert != null) {
-            setKeyInfo(clientCert);
-            setNameFormat(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT);
-            setName(clientCert.getSubjectDN().getName());
-        } else {
-            setNameFormat(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED);
-            final String login = credentials.getLogin();
-            setName(login == null ? "" : login);
+        if (nameIdType != NameIdentifierInclusionType.NONE) {
+            final X509Certificate clientCert = credentials.getClientCert();
+            if (clientCert != null) {
+                setKeyInfo(clientCert);
+                setNameFormat(overrideNameFormat == null ? SamlConstants.NAMEIDENTIFIER_X509_SUBJECT : overrideNameFormat);
+                if (overrideNameValue == null) {
+                    setName(clientCert.getSubjectDN().getName());
+                } else {
+                    setName(overrideNameValue);
+                }
+            } else {
+                setNameFormat(overrideNameFormat == null ? SamlConstants.NAMEIDENTIFIER_UNSPECIFIED : overrideNameFormat);
+                final String login = credentials.getLogin();
+                if (overrideNameValue == null) {
+                    setName(login == null ? "" : login);
+                } else {
+                    setName(overrideNameValue);
+                }
+            }
         }
 
-        setConfirmationMethod(confirmation.method);
+        setConfirmationMethod(confirmation.uri);
     }
 
     public String getName() {
@@ -148,7 +214,7 @@ public class SubjectStatement {
      *         confirmation method
      */
     public boolean isConfirmationHolderOfKey() {
-        return HOLDER_OF_KEY.method.equals(confirmationMethod);
+        return HOLDER_OF_KEY.uri.equals(confirmationMethod);
     }
 
     /**
@@ -156,15 +222,7 @@ public class SubjectStatement {
      *         confirmation method
      */
     public boolean isConfirmationSenderVouches() {
-        return SENDER_VOUCHES.method.equals(confirmationMethod);
-    }
-
-    public boolean isUseThumbprintForSubject() {
-        return useThumbprintForSubject;
-    }
-
-    public void setUseThumbprintForSubject(boolean useThumbprintForSubject) {
-        this.useThumbprintForSubject = useThumbprintForSubject;
+        return SENDER_VOUCHES.uri.equals(confirmationMethod);
     }
 
     public Object getKeyInfo() {
@@ -199,14 +257,30 @@ public class SubjectStatement {
         this.subjectConfirmationData = subjectConfirmationData;
     }
 
+    public KeyInfoInclusionType getSubjectConfirmationKeyInfoType() {
+        return subjectConfirmationKeyInfoType;
+    }
+
+    public void setSubjectConfirmationKeyInfoType(KeyInfoInclusionType subjectConfirmationKeyInfoType) {
+        this.subjectConfirmationKeyInfoType = subjectConfirmationKeyInfoType;
+    }
+
+    public NameIdentifierInclusionType getNameIdentifierType() {
+        return nameIdentifierType;
+    }
+
+    public void setNameIdentifierType(NameIdentifierInclusionType nameIdentifierType) {
+        this.nameIdentifierType = nameIdentifierType;
+    }
+
     /**
      * The confirmation method. Sender vouches, holder of key etc.
      */
     public static class Confirmation {
-        private final String method;
+        private final String uri;
 
-        private Confirmation(String method) {
-            this.method = method;
+        private Confirmation(String uri) {
+            this.uri = uri;
         }
 
         /**
@@ -218,7 +292,7 @@ public class SubjectStatement {
          * @see Object#equals(Object)
          */
         public int hashCode() {
-            return method.hashCode();
+            return uri.hashCode();
         }
 
 
@@ -233,9 +307,25 @@ public class SubjectStatement {
         public boolean equals(java.lang.Object that) {
             if (that == this) return true;
             if (!(that instanceof Confirmation)) return false;
-            return this.method.equals(((Confirmation)that).method);
+            return this.uri.equals(((Confirmation)that).uri);
+        }
+
+        static final Map<String, Confirmation> confirmationMap = new HashMap<String, Confirmation>();
+        static {
+            confirmationMap.put(SamlConstants.CONFIRMATION_HOLDER_OF_KEY, HOLDER_OF_KEY);
+            confirmationMap.put(SamlConstants.CONFIRMATION_SENDER_VOUCHES, SENDER_VOUCHES);
+            confirmationMap.put(SamlConstants.CONFIRMATION_BEARER, BEARER);
+            confirmationMap.put(SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY, HOLDER_OF_KEY);
+            confirmationMap.put(SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES, SENDER_VOUCHES);
+            confirmationMap.put(SamlConstants.CONFIRMATION_SAML2_BEARER, BEARER);
+        }
+
+        public static Confirmation forUri(String uri) {
+            return confirmationMap.get(uri);
+        }
+
+        public String getUri() {
+            return uri;
         }
     }
-
-
 }

@@ -511,4 +511,10 @@ public class AssertionMessages extends Messages {
     public static final M FTP_CREDENTIAL_NOT_FTP              = m(8300, Level.INFO, "Request not FTP; unable to extract FTP credentials.");
     public static final M FTP_CREDENTIAL_NO_AUTH              = m(8301, Level.FINE, "Not authenticated.");
     public static final M FTP_CREDENTIAL_AUTH_USER            = m(8302, Level.FINE, "Found credentials for user ''{0}''.");
+
+    public static final M SAML_ISSUER_ISSUED_AUTHN  = m(8400, Level.FINE, "Issued SAML Authentication statement");
+ 	public static final M SAML_ISSUER_ISSUED_ATTR   = m(8401, Level.FINE, "Issued SAML Attribute statement");
+ 	public static final M SAML_ISSUER_ISSUED_AUTHZ  = m(8402, Level.FINE, "Issued SAML Authorization Decision statement");
+ 	public static final M SAML_ISSUER_ADDING_ATTR   = m(8403, Level.FINE, "Adding attribute {0} = {1}");
+    public static final M SAML_ISSUER_AUTH_REQUIRED = m(8404, Level.WARNING, "NameIdentifier configured as \"From Authenticated User\", but no user has been authenticated");
 }

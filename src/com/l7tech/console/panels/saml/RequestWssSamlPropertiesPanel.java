@@ -18,7 +18,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.security.AccessControlException;
 
 /**
  * The <code>RequestWssSamlPropertiesPanel</code> edits the
@@ -92,7 +91,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
             panels.add(attributeMethodsWizardStepPanel);
             tabbedPane.add(attributeMethodsWizardStepPanel.getStepLabel(), attributeMethodsWizardStepPanel);
         }
-        SubjectConfirmationWizardStepPanel subjectConfirmationWizardStepPanel = new SubjectConfirmationWizardStepPanel(null, false, this);
+        SubjectConfirmationWizardStepPanel subjectConfirmationWizardStepPanel = new SubjectConfirmationWizardStepPanel(null, false, this, false);
         subjectConfirmationWizardStepPanel.setBorder(emptyBorder);
         panels.add(subjectConfirmationWizardStepPanel);
 

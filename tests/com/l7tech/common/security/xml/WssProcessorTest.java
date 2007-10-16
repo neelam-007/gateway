@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * @author mike
@@ -195,7 +194,7 @@ public class WssProcessorTest extends TestCase {
         SignedSamlTest sst = new SignedSamlTest("blah");
         sst.setUp();
         doTest(makeEttkTestDocument("sample signed SAML holder-of-key request",
-                                    /*TestDocuments.SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST*/sst.getRequestSignedWithSamlToken(false, false)));
+                                    /*TestDocuments.SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST*/sst.getRequestSignedWithSamlToken(false, false, false, 1)));
     }
 
     public void testSignedSamlSenderVouchesRequest() throws Exception {

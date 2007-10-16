@@ -9,6 +9,13 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesEntities;
+import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.identity.mapping.IdentityMapping;
+import com.l7tech.identity.mapping.AttributeConfig;
+
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Subclasses of IdentityAssertion are used to specify that the entity making
@@ -18,13 +25,16 @@ import com.l7tech.policy.assertion.UsesEntities;
  * @author alex
  * @version $Revision$
  */
-public abstract class IdentityAssertion extends Assertion implements UsesEntities {
-    protected IdentityAssertion() {
-        super();
-    }
+public abstract class IdentityAssertion extends Assertion implements UsesEntities, SetsVariables {
+    protected long _identityProviderOid = PersistentEntity.DEFAULT_OID;
+    private IdentityMapping[] lookupAttributes;
 
-    protected IdentityAssertion( long oid ) {
-        _identityProviderOid = oid;
+    public static final String USER_VAR_PREFIX = "authenticatedUser.";
+
+    protected IdentityAssertion() { }
+
+    protected IdentityAssertion(long providerOid) {
+        this._identityProviderOid = providerOid;
     }
 
     /**
@@ -60,5 +70,21 @@ public abstract class IdentityAssertion extends Assertion implements UsesEntitie
      */
     public abstract String loggingIdentity();
 
-    protected long _identityProviderOid = PersistentEntity.DEFAULT_OID;
+    public VariableMetadata[] getVariablesSet() {
+        if (lookupAttributes == null || lookupAttributes.length == 0) return new VariableMetadata[0];
+        List<VariableMetadata> metas = new ArrayList<VariableMetadata>();
+        for (IdentityMapping im : lookupAttributes) {
+            final AttributeConfig ac = im.getAttributeConfig();
+            metas.add(new VariableMetadata(USER_VAR_PREFIX + ac.getVariableName(), false, im.isMultivalued(), null, false, ac.getType()));
+        }
+        return metas.toArray(new VariableMetadata[0]);
+    }
+
+    public IdentityMapping[] getLookupAttributes() {
+        return lookupAttributes;
+    }
+
+    public void setLookupAttributes(IdentityMapping[] lookupAttributes) {
+        this.lookupAttributes = lookupAttributes;
+    }
 }

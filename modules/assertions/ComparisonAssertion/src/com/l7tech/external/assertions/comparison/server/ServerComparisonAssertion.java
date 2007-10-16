@@ -11,7 +11,6 @@ import com.l7tech.external.assertions.comparison.server.evaluate.EvaluatorFactor
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
@@ -54,7 +53,7 @@ public class ServerComparisonAssertion extends AbstractServerAssertion<Compariso
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        VariableMap vars = context.getVariableMap(variablesUsed, auditor);
+        Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
 
         Object left = getValue(assertion.getExpression1(), vars);
         if (left == null) {

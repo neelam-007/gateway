@@ -11,6 +11,8 @@ import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Calendar;
+import java.util.Date;
 import java.io.Serializable;
 import java.io.ObjectStreamException;
 
@@ -34,9 +36,11 @@ public final class DataType implements Serializable {
     public static final DataType FLOAT = new DataType("float", "Floating Point Number", new Class[] { BigDecimal.class, Float.TYPE, Float.class, Double.TYPE, Double.class});
     public static final DataType ELEMENT = new DataType("xml", "XML Element", new Class[] { Element.class });
     public static final DataType BOOLEAN = new DataType("boolean", "Boolean", new Class[] { Boolean.class, Boolean.TYPE });
+    public static final DataType BINARY = new DataType("binary", "Binary", new Class[] { byte[].class, String.class });
+    public static final DataType DATE_TIME = new DataType("dateTime", "Date/Time", new Class[] { Date.class, Calendar.class, Long.TYPE, Long.class });
     public static final DataType UNKNOWN = new DataType("other", "Unknown/Other", new Class[] { Object.class });
 
-    public static final DataType[] VALUES = new DataType[] { STRING, CERTIFICATE, INTEGER, DECIMAL, FLOAT, ELEMENT, BOOLEAN, UNKNOWN };
+    public static final DataType[] VALUES = new DataType[] { STRING, CERTIFICATE, INTEGER, DECIMAL, FLOAT, ELEMENT, BOOLEAN, BINARY, UNKNOWN };
 
     private final String shortName;
     private final String name;
