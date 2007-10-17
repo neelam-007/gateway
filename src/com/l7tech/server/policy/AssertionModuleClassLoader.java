@@ -215,8 +215,12 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
             URL url = resen.nextElement();
             urls.add(url);
         }
-        urls.add(findResourceFromNestedJars(name));
-        urls.add(findResourceFromDelegates(name)); // TODO should add all of them, not just one of them
+        URL r = findResourceFromNestedJars(name);
+        if (r != null)
+            urls.add(r);
+        r = findResourceFromDelegates(name);
+        if (r != null)
+            urls.add(r); // TODO should add all of them, not just one of them
         return new IteratorEnumeration<URL>(urls.iterator());
     }
 
