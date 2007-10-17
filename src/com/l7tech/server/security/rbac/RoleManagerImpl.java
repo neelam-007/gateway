@@ -71,15 +71,53 @@ public class RoleManagerImpl
     }
 
     @Transactional(readOnly=true)
-    public boolean isPermittedForAllEntities(User user, com.l7tech.common.security.rbac.EntityType type, OperationType operation) throws FindException {
-        if (user == null || type == null) throw new NullPointerException();
-        logger.log(Level.FINE, "Checking for permission to {0} any {1}", new Object[] { operation.getName(), type.getName()});
-        for (Role role : getAssignedRoles(user)) {
+    public boolean isPermittedForEntitiesOfTypes(final User authenticatedUser,
+                                                 final OperationType requiredOperation,
+                                                 final Set<EntityType> requiredTypes)
+            throws FindException
+    {
+        if (authenticatedUser == null) throw new IllegalArgumentException();
+        if (requiredTypes == null || requiredTypes.isEmpty()) throw new IllegalArgumentException();
+        if (requiredOperation == null || !OperationType.ALL_CRUD.contains(requiredOperation)) throw new IllegalArgumentException();
+
+        final Map<EntityType, Boolean> permittedTypes = new HashMap<EntityType, Boolean>();
+
+        for (Role role : getAssignedRoles(authenticatedUser)) {
             for (Permission perm : role.getPermissions()) {
                 if (perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
-                if (perm.getOperation() != operation) continue; // This permission is for a different operation
+                if (perm.getOperation() != requiredOperation) continue; // This permission is for a different operation
                 com.l7tech.common.security.rbac.EntityType ptype = perm.getEntityType();
-                if (ptype == ANY || ptype == type) return true;
+
+                if (ptype == ANY) return true; // Permitted against all types
+                permittedTypes.put(ptype, true); // Permitted for this type
+            }
+        }
+
+        if (permittedTypes.isEmpty()) return false; // Not permitted on any type
+
+        for (EntityType requiredType : requiredTypes) {
+            Boolean permittedType = permittedTypes.get(requiredType);
+            if (permittedType == null) return false; // Required type is not permitted
+        }
+
+        return true;
+    }
+
+
+    @Transactional(readOnly=true)
+    public boolean isPermittedForAnyEntityOfType(final User authenticatedUser,
+                                                 final OperationType requiredOperation,
+                                                 final EntityType requiredType)
+            throws FindException
+    {
+        if (authenticatedUser == null || requiredType == null) throw new NullPointerException();
+        logger.log(Level.FINE, "Checking for permission to {0} any {1}", new Object[] { requiredOperation.getName(), requiredType.getName()});
+        for (Role role : getAssignedRoles(authenticatedUser)) {
+            for (Permission perm : role.getPermissions()) {
+                if (perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
+                if (perm.getOperation() != requiredOperation) continue; // This permission is for a different operation
+                com.l7tech.common.security.rbac.EntityType ptype = perm.getEntityType();
+                if (ptype == ANY || ptype == requiredType) return true;
             }
         }
         return false;

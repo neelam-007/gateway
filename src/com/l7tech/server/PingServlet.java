@@ -115,7 +115,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
                     final AuthenticationResult[] results = authenticateRequestBasic(request);
                     if (results.length > 0) {
                         final User user = results[0].getUser();
-                        authenticated = _roleManager.isPermittedForAllEntities(user, EntityType.CLUSTER_INFO, OperationType.READ);
+                        authenticated = _roleManager.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.CLUSTER_INFO);
                     }
                 } catch (AuthenticationException e) {
                     authenticated = false;

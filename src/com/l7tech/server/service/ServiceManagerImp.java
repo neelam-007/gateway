@@ -337,22 +337,22 @@ public class ServiceManagerImp
             // See if we should give the current user admin permission for this service
             boolean omnipotent;
             try {
-                omnipotent = roleManager.isPermittedForAllEntities(currentUser, SERVICE, READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, SERVICE, UPDATE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, SERVICE, DELETE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, METRICS_BIN, READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, AUDIT_MESSAGE, READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, ID_PROVIDER_CONFIG, READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, CLUSTER_INFO, READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, SERVICE_USAGE, READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, JMS_CONNECTION, READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, JMS_ENDPOINT, READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, SAMPLE_MESSAGE, CREATE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, SAMPLE_MESSAGE, READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, SAMPLE_MESSAGE, UPDATE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, SAMPLE_MESSAGE, DELETE);
+                omnipotent = roleManager.isPermittedForAnyEntityOfType(currentUser, READ, SERVICE);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, UPDATE, SERVICE);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, DELETE, SERVICE);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, METRICS_BIN);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, AUDIT_MESSAGE);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, ID_PROVIDER_CONFIG);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, USER);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, GROUP);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, CLUSTER_INFO);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, SERVICE_USAGE);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, JMS_CONNECTION);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, JMS_ENDPOINT);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, CREATE, SAMPLE_MESSAGE);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, SAMPLE_MESSAGE);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, UPDATE, SAMPLE_MESSAGE);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, DELETE, SAMPLE_MESSAGE);
             } catch (FindException e) {
                 throw new SaveException("Coudln't get existing permissions", e);
             }

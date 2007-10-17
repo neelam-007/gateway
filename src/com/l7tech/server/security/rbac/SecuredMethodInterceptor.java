@@ -178,10 +178,10 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                             check.before = CheckBefore.NONE;
                             check.after = CheckAfter.NONE;
                             for (EntityType type : check.types) {
-                                if (!roleManager.isPermittedForAllEntities(user, type, UPDATE)) {
+                                if (!roleManager.isPermittedForAnyEntityOfType(user, UPDATE, type)) {
                                     throw new PermissionDeniedException(UPDATE, type);
                                 }
-                                if (!roleManager.isPermittedForAllEntities(user, type, CREATE)) {
+                                if (!roleManager.isPermittedForAnyEntityOfType(user, CREATE, type)) {
                                     throw new PermissionDeniedException(CREATE, type);
                                 }
                             }
@@ -280,7 +280,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 break;
             case ALL:
                 for (EntityType checkType : check.types) {
-                    if (!roleManager.isPermittedForAllEntities(user, checkType, check.operation)) {
+                    if (!roleManager.isPermittedForAnyEntityOfType(user, check.operation, checkType)) {
                         throw new PermissionDeniedException(check.operation, checkType);
                     }
                 }
@@ -297,7 +297,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 for (EntityType type : check.types) {
                     // Avoid needlessly querying permissions on every member of the collection if this user has
                     // blanket permissions
-                    if (!roleManager.isPermittedForAllEntities(user, type, check.operation)) {
+                    if (!roleManager.isPermittedForAnyEntityOfType(user, check.operation, type)) {
                         skip = false;
                         continue;
                     }

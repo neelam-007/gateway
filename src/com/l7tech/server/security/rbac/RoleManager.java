@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -20,12 +21,22 @@ import java.util.regex.Pattern;
 public interface RoleManager extends EntityManager<Role, EntityHeader> {
     public static final String ADMIN_REQUIRED = "At least one User must always be assigned to the Administrator role";
 
+    @Transactional(readOnly=true)
     Collection<Role> getAssignedRoles(User user) throws FindException;
 
+    @Transactional(readOnly=true)
     boolean isPermittedForEntity(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException;
 
+    /**
+     * Returns <em>true</em> if the specified operation is permitted against any entity of the specified type; false otherwise.
+     * @param authenticatedUser the User who was authenticated; must not be null
+     * @param requiredOperation the operation required; must be non-null and a member of {@link com.l7tech.common.security.rbac.OperationType#ALL_CRUD}
+     * @param requiredType the type against which the operation must be permitted; must not be null or empty
+     * @return true if the specified operation is permitted for any entity of the specified type; false otherwise
+     * @throws FindException in the event of a database problem
+     */
     @Transactional(readOnly=true)
-    boolean isPermittedForAllEntities(User user, com.l7tech.common.security.rbac.EntityType type, OperationType operation) throws FindException;
+    boolean isPermittedForAnyEntityOfType(User authenticatedUser, OperationType requiredOperation, EntityType requiredType) throws FindException;
 
     /**
      * Finds the first role in which every {@link com.l7tech.common.security.rbac.Permission}
@@ -35,6 +46,7 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
      * @return the Role in question, or null if none was found.
      * @throws FindException if there was a problem accessing the database
      */
+    @Transactional(readOnly=true)
     Role findEntitySpecificRole(PermissionMatchCallback callback) throws FindException;
 
     /**
@@ -45,7 +57,20 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
      * @param entity the Entity that is being sought.  must not be null. @return the Role in question, or null if none was found.
      * @throws FindException if there was a problem accessing the database
      */
+    @Transactional(readOnly=true)
     Role findEntitySpecificRole(EntityType etype, PersistentEntity entity) throws FindException;
+
+    /**
+     * Returns true if the specified operation is permitted for <em>all</em> of the specified types; false otherwise
+     *
+     * @param authenticatedUser the User who was authenticated; must not be null
+     * @param requiredOperation the operation required; must be non-null and a member of {@link com.l7tech.common.security.rbac.OperationType#ALL_CRUD}
+     * @param requiredTypes the Set of types against which the operation must be permitted; must not be null or empty
+     * @return true if the specified operation is permitted for <em>all</em> of the specified types; false otherwise
+     * @throws com.l7tech.objectmodel.FindException in the event of a database problem
+     */
+    @Transactional(readOnly=true)
+    boolean isPermittedForEntitiesOfTypes(User authenticatedUser, OperationType requiredOperation, Set<EntityType> requiredTypes) throws FindException;
 
     /**
      * Deletes any roles in which every {@link com.l7tech.common.security.rbac.Permission} matches the provided callback.

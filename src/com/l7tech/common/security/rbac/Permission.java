@@ -28,7 +28,8 @@ public class Permission extends PersistentEntityImp implements Cloneable {
      * Construct a new Permission attached to the given Role.
      * @param role the Role to which this Permission belongs
      * @param operation the Operation to which this Permission applies, or <code>null</code> if not yet known.
-     * @param entityType the type of entity to which this Permission applies, {@link EntityType#ANY} if it applies to any entity, or <code>null</code> if not yet known.
+     * @param entityType the type of entity to which this Permission applies, {@link EntityType#ANY} if it applies to
+     *                   any entity, or <code>null</code> if not yet known.
      */
     public Permission(Role role, OperationType operation, EntityType entityType) {
         if (role == null) throw new NullPointerException();
@@ -81,6 +82,11 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         return operation;
     }
 
+    /**
+     * If specified, this set of ScopePredicates specifies how this Permission applies to some subset of
+     * the entities of type {@link #entityType}.  If unspecified, this Permission applies to all entities of
+     * type {@link #entityType}.
+     */
     public Set<ScopePredicate> getScope() {
         return scope;
     }

@@ -3,6 +3,8 @@
  */
 package com.l7tech.common.security.rbac;
 
+import java.util.EnumSet;
+
 /**
  * @author alex
  */
@@ -14,6 +16,8 @@ public enum OperationType {
     OTHER("<other>"),
     NONE("<none>"),
     ;
+
+    public static final EnumSet<OperationType> ALL_CRUD = EnumSet.of(CREATE, READ, UPDATE, DELETE);
 
     private OperationType(String name) {
         this.opName = name;

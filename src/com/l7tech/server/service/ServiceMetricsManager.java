@@ -791,7 +791,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         }
 
         final User user = JaasUtils.getCurrentUser();
-        if (_roleManager.isPermittedForAllEntities(user, EntityType.SERVICE, OperationType.READ)) {
+        if (_roleManager.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.SERVICE)) {
             // No filtering needed.
         } else {
             Set<Long> permittedOids = new HashSet<Long>();

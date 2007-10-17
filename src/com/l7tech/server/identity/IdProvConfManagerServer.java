@@ -208,16 +208,16 @@ public class IdProvConfManagerServer
                 omnipotent &= roleManager.isPermittedForEntity(currentUser, config, OperationType.UPDATE, null);
                 omnipotent &= roleManager.isPermittedForEntity(currentUser, config, OperationType.DELETE, null);
 
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, OperationType.CREATE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, OperationType.READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, OperationType.UPDATE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, OperationType.DELETE);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, OperationType.CREATE, USER);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, OperationType.READ, USER);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, OperationType.UPDATE, USER);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, OperationType.DELETE, USER);
 
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, OperationType.CREATE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, OperationType.READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, OperationType.UPDATE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, OperationType.DELETE);
-                if (fip) omnipotent &= roleManager.isPermittedForAllEntities(currentUser, TRUSTED_CERT, OperationType.READ);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, OperationType.CREATE, GROUP);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, OperationType.READ, GROUP);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, OperationType.UPDATE, GROUP);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, OperationType.DELETE, GROUP);
+                if (fip) omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, OperationType.READ, TRUSTED_CERT);
             } catch (FindException e) {
                 throw new SaveException("Coudln't get existing permissions", e);
             }
