@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ant build file for the modular ScriptAssertion. -->
+<project name="module.assertion.Script" default="package" basedir=".">
+
+    <description>
+      Builds the modular ScriptAssertion.
+    </description>
+
+    <property name="UneasyRooster.dir" location="../../.."/>
+    <property name="moduleName" value="ScriptAssertion"/>
+    <property name="assertionList" value="com.l7tech.external.assertions.script.${moduleName}"/>
+    <property name="build.classes" location="build/classes"/>
+
+
+    <import file="../assertion-build.xml"/>
+
+
+    <target name="test" depends="-compile-tests">
+        <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">
+            <classpath>
+                <path refid="compile.test.classpath"/>
+                <pathelement location="${UneasyRooster.dir}/build/test-classes"/>
+                <pathelement location="${build.classes}"/>
+                <pathelement location="${build.classes}-test"/>
+            </classpath>
+            <formatter type="plain" unless="build.junit.xmlformat"/>
+            <formatter type="xml" if="build.junit.xmlformat"/>
+            <test name="com.l7tech.external.assertions.ScriptTest" haltonfailure="no"/>
+        </junit>
+        <checkfail/>
+    </target>
+
+
+</project>
