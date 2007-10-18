@@ -98,8 +98,8 @@
             <include name="xss4j.jar"/>
             <include name="commons-*.jar"/>
         </fileset>
-        <fileset dir="lib">
-            <include name="*.jar"/>
+        <fileset dir=".">
+            <include name="lib/*.jar"/>
         </fileset>
         <pathelement location="${UneasyRooster.dir}/build/classes"/>
     </path>
@@ -139,7 +139,6 @@
     <target name="reallycompile">
         <available property="classes.available" file="${UneasyRooster.dir}/build/classes"/>
         <fail unless="classes.available">UneasyRooster does not seem to have been built yet (missing ${UneasyRooster.dir}/build/classes).</fail>
-        <mkdir dir="lib"/>
         <mkdir dir="${build.classes}"/>
         <copy todir="${build.classes}">
             <fileset dir="src">
@@ -166,12 +165,12 @@
     <target name="-compile" depends="checkobf, reallycompile" if="localobfuscate">
         <!-- obfuscation will only occur if the please_obfuscate file is present -->
         <property name="stringed-cpath" refid="compile.classpath"/>
-        <copy file="../moduleassertion.zkm" tofile="${moduleName}.zkm" overwrite="true"/>
-        <replace file="${moduleName}.zkm" token="@@CP_VALUE@@" value="${stringed-cpath}"/>
-        <replace file="${moduleName}.zkm" token="@@OBF_TARGET@@" value="${build.classes}/*"/>
-        <replace file="${moduleName}.zkm" token="@@OBF_OUTPUT@@" value="${build.classes}"/>
-        <echo>obfuscating module assertion using ${moduleName}.zkm</echo>
-        <Zelix scriptFileName="${build.classes}/../../${moduleName}.zkm"
+        <copy file="../moduleassertion.zkm" tofile="build/${moduleName}.zkm" overwrite="true"/>
+        <replace file="build/${moduleName}.zkm" token="@@CP_VALUE@@" value="${stringed-cpath}"/>
+        <replace file="build/${moduleName}.zkm" token="@@OBF_TARGET@@" value="${build.classes}/*"/>
+        <replace file="build/${moduleName}.zkm" token="@@OBF_OUTPUT@@" value="${build.classes}"/>
+        <echo>obfuscating module assertion using build/${moduleName}.zkm</echo>
+        <Zelix scriptFileName="${build.classes}/../../build/${moduleName}.zkm"
                logFileName="obfuscation/${moduleName}obfuscation.log"
                trimLogFileName="obfuscation/${moduleName}obfuscation.log"
                isParseOnly="false"
@@ -199,8 +198,8 @@
     <!-- Create JAR file -->
     <target name="-aar" depends="-compile">
         <mkdir dir="build/AAR-INF/lib"/>
-        <copy todir="build/AAR-INF/lib">
-            <fileset dir="lib" includes="*.jar"/>
+        <copy todir="build/AAR-INF/lib" flatten="true">
+            <fileset dir="." includes="lib/*.jar"/>
         </copy>
         <jar destfile="build/${moduleName}-${build.version}.${moduleFileExtension}" duplicate="fail">
             <manifest>
