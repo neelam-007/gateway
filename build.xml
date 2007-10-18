@@ -4147,4 +4147,42 @@
             </fileset>
         </xmlbeancompiler>
     </target>
+
+    <!--
+      Macro for using the wsimport JAX-WS utility
+    -->
+    <macrodef name="wsimport">
+        <attribute name="wsdl"/>
+        <sequential>
+          <exec executable="wsimport">
+            <arg value="-d"/>
+            <arg value="build/uddiclasses"/>
+            <arg value="-p"/>
+            <arg value="com.l7tech.common.uddi.guddiv3"/>
+            <arg value="@{wsdl}"/>
+          </exec>
+        </sequential>
+    </macrodef>
+
+    <!--
+      Generate the JAX-WS classes for UDDI v3.0.2. 
+    -->
+    <target name="generate-uddi-jar">
+        <property name="build.guddi.jar" value="build/guddi-1.0.0.jar"/>
+        <mkdir dir="build/uddiclasses"/>
+
+        <echo level="info">Generating classes from WSDL/Schemas</echo>
+        <wsimport wsdl="etc/schema/uddiv3/uddi_v3_service_i.wsdl"/>
+        <wsimport wsdl="etc/schema/uddiv3/uddi_v3_service_p.wsdl"/>
+        <wsimport wsdl="etc/schema/uddiv3/uddi_v3_service_s.wsdl"/>
+
+        <echo level="info">Building JAR</echo>
+        <jar jarfile="${build.guddi.jar}" >
+            <fileset dir="build/uddiclasses">
+                <include name="**/*"/>
+            </fileset>
+        </jar>
+
+        <echo level="info">Output JAR ${build.guddi.jar} should be copied to lib/gateway/uddi/generic for use in build.</echo>
+    </target>
 </project>
