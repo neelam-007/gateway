@@ -25,7 +25,7 @@
             </classpath>
             <formatter type="plain" unless="build.junit.xmlformat"/>
             <formatter type="xml" if="build.junit.xmlformat"/>
-            <test name="com.l7tech.external.assertions.ScriptTest" haltonfailure="no"/>
+            <test name="com.l7tech.external.assertions.script.server.ServerScriptAssertionTest" haltonfailure="no"/>
         </junit>
         <checkfail/>
     </target>
