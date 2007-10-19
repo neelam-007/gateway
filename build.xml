@@ -1715,6 +1715,9 @@
                 <!-- Exclude unless Log4j is used -->
                 <exclude name="com/l7tech/common/util/Log4jJdkLogAppender.class"/>
 
+                <!-- UDDI not required -->
+                <exclude name="com/l7tech/common/uddi/**/*"/>
+
                 <include name="com/l7tech/common/audit/Audit.class"/>
                 <include name="com/l7tech/common/audit/AuditDetailMessage*.class"/>
                 <include name="com/l7tech/common/audit/Messages.class"/>

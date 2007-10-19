@@ -513,7 +513,7 @@
         <property name="schemaManager" ref="schemaManager"/>
     </bean>
 
-    <bean id="registryPublicationManager" class="com.l7tech.server.systinet.RegistryPublicationManager">
+    <bean id="registryPublicationManager" class="com.l7tech.server.uddi.RegistryPublicationManager">
         <property name="serverConfig" ref="serverConfig"/>
         <property name="keystore" ref="keystore"/>
     </bean>
