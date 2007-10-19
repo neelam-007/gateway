@@ -5,13 +5,12 @@ import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.tomcat.*;
 import com.l7tech.server.transport.SsgConnectorManager;
 import org.apache.catalina.Engine;
@@ -22,23 +21,28 @@ import org.apache.catalina.core.StandardWrapper;
 import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Embedded;
 import org.apache.naming.resources.FileDirContext;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.xml.sax.SAXException;
 
 import javax.naming.directory.DirContext;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,11 +51,19 @@ import java.util.logging.Logger;
  * <p/>
  * It listens for entity chagne events for SsgConnector to know when to start/stop HTTP connectors.
  */
-public class HttpTransportModule implements InitializingBean, ApplicationListener, DisposableBean {
+public class HttpTransportModule implements InitializingBean, ApplicationListener, DisposableBean, ApplicationContextAware {
     protected static final Logger logger = Logger.getLogger(HttpTransportModule.class.getName());
 
     public static final String RESOURCE_PREFIX = "com/l7tech/server/resources/";
     public static final String CONNECTOR_ATTR_KEYSTORE_PASS = "keystorePass";
+    public static final String CONNECTOR_ATTR_INSTANCE_ID = "httpTransportModuleInstanceId";
+    public static final String INIT_PARAM_INSTANCE_ID = "httpTransportModuleInstanceId";
+
+    private static final AtomicLong nextInstanceId = new AtomicLong(1);
+    private static final Map<Long, Reference<HttpTransportModule>> instancesById =
+            new ConcurrentHashMap<Long, Reference<HttpTransportModule>>();
+
+    private final long instanceId;
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -63,10 +75,11 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
     private final SsgConnectorManager ssgConnectorManager;
     private final Map<Long, Connector> activeConnectors = new ConcurrentHashMap<Long, Connector>();
     private final Map<Long, Throwable> connectorErrors = new ConcurrentHashMap<Long, Throwable>();
+    private ApplicationContext applicationContext;
     private Embedded embedded;
-    private StandardContext context;
     private Engine engine;
     private Host host;
+    private StandardContext context;
 
     public HttpTransportModule(ServerConfig serverConfig,
                                MasterPasswordManager masterPasswordManager,
@@ -79,6 +92,8 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         this.keystoreUtils = keystoreUtils;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
         this.ssgConnectorManager = ssgConnectorManager;
+        this.instanceId = nextInstanceId.getAndIncrement();
+        instancesById.put(instanceId, new WeakReference<HttpTransportModule>(this));
     }
 
     private void initializeServletEngine() throws LifecycleException {
@@ -86,6 +101,9 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
             // Already initialized
             return;
         }
+
+        if (applicationContext == null)
+            throw new LifecycleException("no applicationContext (afterPropertiesSet() called before setApplicationContext()?)"); // can't happen
 
         embedded = new Embedded();
         engine = embedded.createEngine();
@@ -105,6 +123,7 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         engine.addChild(host);
 
         context = (StandardContext)embedded.createContext("", s);
+        context.addParameter(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
         context.setName("");
         context.setResources(createHybridDirContext(inf));
 
@@ -205,8 +224,6 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
             embedded.start();
             context.start();
 
-            ServerXmlParser serverXml = new ServerXmlParser();
-            serverXml.load(findServerXml(serverConfig));
             startInitialConnectors();
 
             itworked = true;
@@ -214,12 +231,6 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
             throw new LifecycleException(e);
         } catch (ListenerException e) {
             throw new LifecycleException(e);
-        } catch (InvalidDocumentFormatException e) {
-            throw new LifecycleException("Unable to get Connector info from server.xml: " + ExceptionUtils.getMessage(e), e);
-        } catch (IOException e) {
-            throw new LifecycleException("Unable to get Connector info from server.xml: " + ExceptionUtils.getMessage(e), e);
-        } catch (SAXException e) {
-            throw new LifecycleException("Unable to get Connector info from server.xml: " + ExceptionUtils.getMessage(e), e);
         } finally {
             if (!itworked)
                 running.set(false);
@@ -266,24 +277,81 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
      * @throws LifecycleException if there is a problem shutting down the server
      */
     public void destroy() throws LifecycleException {
-        stop();
         try {
+            stop();
             embedded.destroy();
         } catch (org.apache.catalina.LifecycleException e) {
             throw new LifecycleException(e);
+        } finally {
+            instancesById.remove(instanceId);
         }
     }
 
     private void startInitialConnectors() throws ListenerException {
         try {
             Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
+            if (connectors.isEmpty()) {
+                // No connectors defined in DB.  As an emergency stopgap measure, try to find the
+                // old server.xml file instead.
+                // TODO remove this hack when it's no longer needed
+                logger.warning("***  No connectors defined in database.  Will check for server.xml instead");
+                addConnectorsFromServerXml();
+            }
             for (SsgConnector connector : connectors) {
-                addConnector(connector);
+                if (connector.isEnabled())
+                    addConnector(connector);
             }
 
         } catch (FindException e) {
             throw new ListenerException("Unable to find initial connectors: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    // Add an old-school connectors, by reading server.xml
+    // TODO remove this
+    private void addConnectorsFromServerXml() {
+        List<Map<String, String>> connectors;
+        try {
+            ServerXmlParser serverXml = new ServerXmlParser();
+            serverXml.load(findServerXml(serverConfig));
+            connectors = serverXml.getConnectors();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Unable to load connectors from server.xml: " + ExceptionUtils.getMessage(e), e);
+            return;
+        }
+
+        long oid = -899;
+        for (Map<String, String> connector : connectors) {
+            try {
+                addConnectorFromServerXml(oid++, connector);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Unable to start connector read from server.xml: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+    }
+
+    // Add an old-school connector, from properties read from server.xml
+    // TODO remove this
+    private void addConnectorFromServerXml(long oid, Map<String, String> connector) throws ListenerException {
+        SsgConnector c = new SsgConnector();
+        c.setEnabled(true);
+        c.setOid(oid);
+        int port = Integer.parseInt(connector.get("port"));
+        c.setPort(port);
+        c.setSecure(Boolean.valueOf(connector.get("secure")));
+        String scheme = connector.get("scheme");
+        scheme = scheme == null ? "HTTP" : scheme.toUpperCase();
+        c.setScheme(scheme);
+        c.setEndpoints("MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS");
+        c.setName("Legacy port " + port);
+
+        String auth = connector.get("clientAuth");
+        if ("want".equals(auth))
+            c.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
+        else if ("true".equals(auth))
+            c.setClientAuth(SsgConnector.CLIENT_AUTH_ALWAYS);
+
+        addConnector(c);
     }
 
     private void addConnector(SsgConnector connector) throws ListenerException {
@@ -340,7 +408,6 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
             } else {
                 m.put(SsgJSSESocketFactory.ATTR_KEYALIAS, c.getKeyAlias());
                 m.put(SsgJSSESocketFactory.ATTR_KEYSTOREOID, c.getKeystoreOid().toString());
-                m.put(SsgJSSESocketFactory.ATTR_SSGKEYSTOREMANAGER, ssgKeyStoreManager);
             }
 
             String cipherList = c.getProperty(SsgConnector.PROP_CIPHERLIST);
@@ -395,6 +462,7 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
     private void removeConnector(long oid) {
         Connector connector = activeConnectors.remove(oid);
         if (connector == null) return;
+        logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
         embedded.removeConnector(connector);
         // TODO do we need to do anything else here to ensure that it's really gone?
     }
@@ -417,7 +485,10 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
                         case EntityInvalidationEvent.CREATE:
                         case EntityInvalidationEvent.UPDATE:
                             SsgConnector c = ssgConnectorManager.findByPrimaryKey(id);
-                            addConnector(c);
+                            if (c.isEnabled())
+                                addConnector(c);
+                            else
+                                removeConnector(id);
                             break;
                         case EntityInvalidationEvent.DELETE:
                             removeConnector(id);
@@ -430,6 +501,15 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
                 }
             }
         }
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+
+    /** @return the Gateway's global ApplicationContext.  Will be present before any servlet contexts are created. */
+    public ApplicationContext getApplicationContext() {
+        return applicationContext;        
     }
 
     private static final class ListenerException extends Exception {
@@ -449,9 +529,10 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
 
         embedded.addConnector(c);
         try {
+            logger.info("Starting HTTP connector on port " + port);
             c.start();
         } catch (org.apache.catalina.LifecycleException e) {
-            throw new ListenerException("Unable to start HTTPS listener: " + ExceptionUtils.getMessage(e), e);
+            throw new ListenerException("Unable to start HTTP listener: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -467,22 +548,24 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
 
         // If the connector is trying to add an encrypted password, decrypt it first.
         // If it can't be decrypted, ignore it and fall back to the password from keystore.properties.
-        Object kspass = attrs.get(HttpTransportModule.CONNECTOR_ATTR_KEYSTORE_PASS);
+        Object kspass = attrs.get(CONNECTOR_ATTR_KEYSTORE_PASS);
         if (kspass != null && masterPasswordManager.looksLikeEncryptedPassword(kspass.toString())) {
             try {
                 char[] decrypted = masterPasswordManager.decryptPassword(kspass.toString());
-                attrs.put(HttpTransportModule.CONNECTOR_ATTR_KEYSTORE_PASS, new String(decrypted));
+                attrs.put(CONNECTOR_ATTR_KEYSTORE_PASS, new String(decrypted));
             } catch (ParseException e) {
                 logger.log(Level.WARNING, "Unable to decrypt encrypted password in server.xml -- falling back to password from keystore.properties: " + ExceptionUtils.getMessage(e));
-                attrs.remove(HttpTransportModule.CONNECTOR_ATTR_KEYSTORE_PASS);
+                attrs.remove(CONNECTOR_ATTR_KEYSTORE_PASS);
             }
         }
 
         attrs.putAll(attrs);
         setConnectorAttributes(c, attrs);
+        c.setAttribute(CONNECTOR_ATTR_INSTANCE_ID, Long.toString(instanceId));
 
         embedded.addConnector(c);
         try {
+            logger.info("Starting HTTPS connector on port " + port);
             c.start();
         } catch (org.apache.catalina.LifecycleException e) {
             throw new ListenerException("Unable to start HTTPS listener: " + ExceptionUtils.getMessage(e), e);
@@ -500,5 +583,28 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
 
     Host getHost() {
         return host;
+    }
+
+    /**
+     * Get the SsgKeyStoreManager instance made available for SSL connectors created by this transport module.
+     *
+     * @return an SsgKeyStoreManager instance.  Should never be null.
+     */
+    public SsgKeyStoreManager getSsgKeyStoreManager() {
+        return ssgKeyStoreManager;
+    }
+
+    /**
+     * Find the HttpTransportModule corresponding to the specified instance ID.
+     * <p/>
+     * This is normally used by the SsgJSSESocketFactory to locate a Connector's owner HttpTransportModule
+     * so it can get at the SsgKeyStoreManager.
+     *
+     * @param id the instance ID to search for.  Required.
+     * @return  the corresopnding HttpTransportModule instance, or null if not found.
+     */
+    public static HttpTransportModule getInstance(long id) {
+        Reference<HttpTransportModule> instance = instancesById.get(id);
+        return instance == null ? null : instance.get();
     }
 }

@@ -10,14 +10,7 @@
     <context-param>
         <param-name>contextConfigLocation</param-name>
         <param-value>
-            classpath:com/l7tech/server/resources/dataAccessContext.xml
-            classpath:com/l7tech/server/resources/webApplicationContext.xml
-            classpath:com/l7tech/server/resources/adminContext.xml
-            classpath:com/l7tech/server/resources/rbacEnforcementContext.xml
-            classpath:org/codehaus/xfire/spring/xfire.xml
-            /WEB-INF/CaWsdmObserverContext*.xml
-            /WEB-INF/addon*Context*.xml
-            /WEB-INF/addon*context*.xml
+            classpath:com/l7tech/server/transport/http/resources/webApplicationContext.xml
         </param-value>
     </context-param>
 
@@ -116,9 +109,12 @@
         <url-pattern>/ssg/webadmin/*</url-pattern>
     </filter-mapping>
 
-    <!--  Spring context loader listener that loads the spring beans -->
+    <!--
+         Spring context loader listener that loads the spring beans.
+         This version ensures that the parent context is the Gateway's global ApplicationContext.
+     -->
     <listener>
-        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+        <listener-class>com.l7tech.server.transport.http.SsgContextLoaderListener</listener-class>
     </listener>
 
     <servlet>

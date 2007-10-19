@@ -27,7 +27,7 @@ public class ApplicationContextTest  extends TestCase {
         "com/l7tech/server/resources/adminContext.xml",
         "com/l7tech/server/resources/dataAccessContext.xml",
         "com/l7tech/server/resources/rbacEnforcementContext.xml",
-        "com/l7tech/server/resources/webApplicationContext.xml"
+        "com/l7tech/server/resources/ssgApplicationContext.xml"
     };
 
     public ApplicationContextTest(String name) {

@@ -3,6 +3,7 @@ package com.l7tech.server.tomcat;
 import com.l7tech.common.security.SingleCertX509KeyManager;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import org.apache.tomcat.util.net.jsse.JSSESocketFactory;
 
 import javax.net.ssl.KeyManager;
@@ -26,8 +27,6 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
     public static final String ATTR_CIPHERNAMES = "ciphers"; // comma separated list of enabled ciphers, ie TLS_RSA_WITH_AES_128_CBC_SHA
     public static final String ATTR_KEYSTOREOID = "keystoreOid"; // identifies a keystore available from SsgKeyStoreManager instead of one from disk
     public static final String ATTR_KEYALIAS = "keyAlias"; // alias of private key within the keystore
-    public static final String ATTR_SSGKEYSTOREMANAGER = "ssgKeyStoreManager"; // a reference to the ssgKeyStoreManager bean since we don't have
-                                                                               // access to the application context because of how we are instantiated
 
     private static final String TRUSTSTORE_PASS = "changeit";
     private static KeyStore emptyKeyStore = null;
@@ -51,8 +50,10 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
     }
 
     private SsgKeyStoreManager getSsgKeyStoreManager() {
-        Object value = attributes.get(ATTR_SSGKEYSTOREMANAGER);
-        return value instanceof SsgKeyStoreManager ? (SsgKeyStoreManager)value : null;
+        Object instanceId = attributes.get(HttpTransportModule.CONNECTOR_ATTR_INSTANCE_ID);
+        if (instanceId == null) return null;
+        HttpTransportModule htm = HttpTransportModule.getInstance(Long.parseLong(instanceId.toString()));
+        return htm == null ? null : htm.getSsgKeyStoreManager();
     }
 
     protected KeyManager[] getKeyManagers(String keystoreType, String algorithm, String keyAlias) throws Exception {
@@ -62,7 +63,7 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
         if (keystoreOid != null) {
             SsgKeyStoreManager ksm = getSsgKeyStoreManager();
             if (ksm == null)
-                throw new IllegalStateException("Unable to create SSL socket -- a keystoreOid was specified, but no SsgKeyStoreManager instance was provided");
+                throw new IOException("Unable to create SSL socket -- a keystoreOid was specified, but no SsgKeyStoreManager instance was provided");
             SsgKeyEntry keyEntry = ksm.lookupKeyByKeyAlias(keyAlias, keystoreOid);
             X509Certificate[] certChain = keyEntry.getCertificateChain();
             PrivateKey privateKey = keyEntry.getPrivateKey();

@@ -751,6 +751,12 @@
         <property name="ocspCache" ref="ocspCache"/>
     </bean>
 
-
+    <bean id="httpTransportModule" class="com.l7tech.server.transport.http.HttpTransportModule">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="masterPasswordManager"/>
+        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="ssgKeyStoreManager"/>
+        <constructor-arg ref="ssgConnectorManager"/>
+    </bean>
 
 </beans>
