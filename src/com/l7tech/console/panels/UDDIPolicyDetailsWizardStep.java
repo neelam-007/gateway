@@ -1,11 +1,6 @@
 package com.l7tech.console.panels;
 
-import org.systinet.uddi.client.v3.struct.*;
-import org.systinet.uddi.client.v3.*;
-import org.systinet.uddi.InvalidParameterException;
-
 import javax.swing.*;
-import javax.xml.soap.SOAPException;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -13,10 +8,14 @@ import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Collection;
 import java.net.URL;
 import java.net.MalformedURLException;
 
 import com.l7tech.common.util.TextUtils;
+import com.l7tech.common.uddi.UDDIClient;
+import com.l7tech.common.uddi.UDDIException;
+import com.l7tech.common.uddi.UDDINamedEntity;
 
 /**
  * Wizard step in the PublishPolicyToUDDIWizard wizard pertaining
@@ -34,16 +33,13 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
     private JTextField policyNameField;
     private JTextField policyDescField;
     private JTextField policyURLField;
-    private final String policyURL;
-    private final String serviceName;
-    private boolean done = false;
     private JButton registerButton;
+    private JLabel nameLabel;
+    private JLabel keyLabel;
     private PublishPolicyToUDDIWizard.Data data;
 
-    public UDDIPolicyDetailsWizardStep(WizardStepPanel next, String policyURL, String serviceName) {
+    public UDDIPolicyDetailsWizardStep(WizardStepPanel next) {
         super(next);
-        this.policyURL = policyURL;
-        this.serviceName = serviceName;
         initialize();
     }
 
@@ -55,18 +51,9 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
         return "Policy Details";
     }
 
-    public boolean canAdvance() {
-        return done;
-    }
-
-    public boolean canFinish() {
-        return done;
-    }
-
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
-        policyNameField.setText(serviceName);
 
         KeyListener validValuesPolice = new KeyListener() {
             public void keyTyped(KeyEvent e) {
@@ -76,9 +63,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
             public void keyReleased(KeyEvent e) {}
         };
         policyNameField.addKeyListener(validValuesPolice);
-        policyURLField.setText(policyURL);
         policyURLField.addKeyListener(validValuesPolice);
-        policyDescField.setText("A policy for service " + serviceName);
         policyDescField.addKeyListener(validValuesPolice);
         registerButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
@@ -86,8 +71,11 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
                             UDDIPolicyDetailsWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                            publishPolicyReferenceToSystinet65Directory();
-                            UDDIPolicyDetailsWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                            try {
+                                publishPolicyReferenceToUDDIDirectory();
+                            } finally {
+                                UDDIPolicyDetailsWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                            }
                         }
                     });
                 }
@@ -129,104 +117,53 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
         data.setCapturedPolicyURL(policyURLField.getText());
     }
 
+    public boolean canAdvance() {
+        return keyLabel.getText().length() > 0;
+    }
+
+    private void showInfo(String info) {
+        JOptionPane.showMessageDialog(this, TextUtils.breakOnMultipleLines(info, 30), "Warning", JOptionPane.WARNING_MESSAGE);
+    }
+
     private void showError(String err) {
         JOptionPane.showMessageDialog(this, TextUtils.breakOnMultipleLines(err, 30), "Error", JOptionPane.ERROR_MESSAGE);
     }
 
-    private void publishPolicyReferenceToSystinet65Directory() {
+    private void publishPolicyReferenceToUDDIDirectory() {
         // create a tmodel to save
-        TModel tmodel = new TModel();
         try {
-            CategoryBag cbag = new CategoryBag();
-            cbag.addKeyedReference(new KeyedReference("uddi:schemas.xmlsoap.org:policytypes:2003_03", "policy", "policy"));
-            cbag.addKeyedReference(new KeyedReference("uddi:schemas.xmlsoap.org:remotepolicyreference:2003_03",
-                                                      policyURLField.getText(),
-                                                      "policy reference"
-                                                      ));
-            tmodel.setCategoryBag(cbag);
-            tmodel.setName(new Name(policyNameField.getText()));
-            DescriptionArrayList dal = new DescriptionArrayList();
-            dal.add(new Description(policyDescField.getText()));
-            OverviewDocArrayList odal = new OverviewDocArrayList();
-            OverviewDoc odoc = new OverviewDoc();
-            odoc.setOverviewURL(new OverviewURL(policyURLField.getText()));
-            odal.add(odoc);
-            tmodel.setOverviewDocArrayList(odal);
-            tmodel.setDescriptionArrayList(dal);
-        } catch (InvalidParameterException e) {
-            logger.log(Level.WARNING, "cannot construct tmodel to save", e);
-            showError("Error constructing tmodel: " + e.getMessage());
-            return;
-        }
-        // setup stuff needed to save it
-        String registryURL = data.getUddiurl();
-        /*
-        if (registryURL.indexOf("/uddi") < 1) {
-            if (registryURL.endsWith("/")) {
-                registryURL = registryURL + "uddi/";
-            } else {
-                registryURL = registryURL + "/uddi/";
+            UDDIClient uddi = data.getUddi();
+
+            String policyUrl = policyURLField.getText();
+
+            Collection<UDDINamedEntity> policyInfos = uddi.listPolicies(null, policyUrl);
+            if (policyInfos.isEmpty()) {
+                data.setPolicytModelKey(uddi.publishPolicy(policyNameField.getText(), policyDescField.getText(), policyUrl));
+                data.setPolicytModelName(policyNameField.getText());
             }
-        }
-        if (!registryURL.endsWith("/")) {
-            registryURL = registryURL + "/";
-        }
-        // remember the url once it's been 'normalized'
-        data.setUddiurl(registryURL);
-        */
-        String authInfo;
-        try {
-            UDDI_Security_PortType security = UDDISecurityStub.getInstance(registryURL + "security");
-            authInfo = security.get_authToken(new Get_authToken(data.getAccountName(), data.getAccountPasswd())).getAuthInfo();
-        } catch (SOAPException e) {
-            logger.log(Level.WARNING, "cannot get security token from " + registryURL + "security", e);
-            showError("ERROR cannot get security token from " + registryURL + "security. " + e.getMessage());
-            return;
+            else {
+                if (policyInfos.size() > 1) {
+                    logger.info("Found multiple policies for url '"+policyUrl+"', using first.");
+                }
+
+                UDDINamedEntity info = policyInfos.iterator().next();
+                data.setPolicytModelKey(info.getKey());
+                data.setPolicytModelName(info.getName());
+
+                showInfo("Found existing policy model for url.");
+            }
+
+            keyLabel.setText(data.getPolicytModelKey());
+            nameLabel.setText(data.getPolicytModelName());
+
+            notifyListeners();            
+
+            logger.info("Published policy with key: " + data.getPolicytModelKey());
         } catch (UDDIException e) {
-            logger.log(Level.WARNING, "cannot get security token from " + registryURL + "security", e);
-            showError("ERROR cannot get security token from " + registryURL + "security. " + e.getMessage());
+            logger.log(Level.WARNING, "Cannot publish policy model.", e);
+            showError("ERROR cannot publish policy model. " + e.getMessage());
             return;
-        } catch (InvalidParameterException e) {
-            logger.log(Level.WARNING, "cannot get security token from " + registryURL + "security", e);
-            showError("ERROR cannot get security token from " + registryURL + "security. " + e.getMessage());
-            return;
-        } catch (Throwable e) {
-            logger.log(Level.WARNING, "cannot get security token from " + registryURL + "security", e);
-            showError("ERROR cannot get security token from " + registryURL + "security. " + getRootCauseMsg(e));
-            return;
-        }
-        Save_tModel stm = new Save_tModel();
-        stm.setAuthInfo(authInfo);
-        data.setAuthInfo(authInfo);
-        try {
-            TModelArrayList tmal = new TModelArrayList();
-            tmal.add(tmodel);
-            stm.setTModelArrayList(tmal);
-            UDDI_Publication_PortType publishing = UDDIPublishStub.getInstance(registryURL + "publishing");
-            TModelDetail tModelDetail = publishing.save_tModel(stm);
-            TModel saved = tModelDetail.getTModelArrayList().get(0);
-            String msg = "Publication successful, policy tModel key: " + saved.getTModelKey() +
-                         " choose 'Next' below to associate this policy tModel to " +
-                         "a business service or 'Finish' to end.";
-            JOptionPane.showConfirmDialog(this, TextUtils.breakOnMultipleLines(msg, 30), "Success", JOptionPane.DEFAULT_OPTION);
-            data.setPolicytModelKey(saved.getTModelKey());
-            done = true;
-            // this causes wizard's finish or next button to become enabled (because we're now ready to continue)
-            notifyListeners();
-            registerButton.setEnabled(false);
-        } catch (SOAPException e) {
-            logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
-            showError("ERROR cannot save tModel at " + registryURL + "publishing. " + e.getMessage());
-        } catch (UDDIException e) {
-            logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
-            showError("ERROR cannot save tModel at " + registryURL + "publishing. " + e.getMessage());
-        } catch (InvalidParameterException e) {
-            logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
-            showError("ERROR cannot save tModel at " + registryURL + "publishing. " + e.getMessage());
-        }  catch (Throwable e) {
-            logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
-            showError("ERROR cannot save tModel at " + registryURL + "publishing. " + getRootCauseMsg(e));
-        }
+        } 
     }
 
     public static String getRootCauseMsg(Throwable e) {
@@ -237,5 +174,12 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
 
     public void readSettings(Object settings) throws IllegalArgumentException {
         data = (PublishPolicyToUDDIWizard.Data)settings;
+
+        policyNameField.setText(data.getPolicyName());
+        policyDescField.setText(data.getPolicyDescription());
+        policyURLField.setText( data.getCapturedPolicyURL());
+
+        keyLabel.setText(data.getPolicytModelKey() == null ? "" : data.getPolicytModelKey());
+        nameLabel.setText(data.getPolicytModelName() == null ? "" : data.getPolicytModelName());
     }
 }

@@ -2,9 +2,13 @@ package com.l7tech.server.service;
 
 import com.l7tech.common.io.ByteLimitInputStream;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
-import com.l7tech.common.uddi.UddiAgentException;
+import com.l7tech.server.service.uddi.UddiAgentException;
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResolvingComparator;
+import com.l7tech.common.util.Resolver;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.PolicyValidator;
@@ -16,7 +20,8 @@ import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.uddi.UddiAgent;
 import com.l7tech.server.service.uddi.UddiAgentFactory;
 import com.l7tech.server.sla.CounterIDManager;
-import com.l7tech.server.systinet.RegistryPublicationManager;
+import com.l7tech.server.uddi.RegistryPublicationManager;
+import com.l7tech.server.uddi.UDDITemplateManager;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
@@ -42,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,6 +73,7 @@ public final class ServiceAdminImpl implements ServiceAdmin {
     private final X509TrustManager trustManager;
     private final RoleManager roleManager;
     private final WspReader wspReader;
+    private final UDDITemplateManager uddiTemplateManager;
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
                             RegistryPublicationManager registryPublicationManager,
@@ -78,7 +85,8 @@ public final class ServiceAdminImpl implements ServiceAdmin {
                             CounterIDManager counterIDManager,
                             X509TrustManager trustManager,
                             RoleManager roleManager,
-                            WspReader wspReader) {
+                            WspReader wspReader,
+                            UDDITemplateManager uddiTemplateManager) {
         this.licenseManager = licenseManager;
         this.registryPublicationManager = registryPublicationManager;
         this.uddiAgentFactory = uddiAgentFactory;
@@ -90,6 +98,7 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         this.trustManager = trustManager;
         this.roleManager = roleManager;
         this.wspReader = wspReader;
+        this.uddiTemplateManager = uddiTemplateManager;
     }
 
     public String resolveWsdlTarget(String url) throws IOException {
@@ -327,11 +336,17 @@ public final class ServiceAdminImpl implements ServiceAdmin {
     public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws FindException {
         try {
             UddiAgent uddiAgent = uddiAgentFactory.getUddiAgent();
-            return uddiAgent.getWsdlByServiceName(uddiURL, namePattern, caseSensitive);
+            WsdlInfo[] wsdlInfo = uddiAgent.getWsdlByServiceName(uddiURL, namePattern, caseSensitive);
+            Arrays.sort(wsdlInfo, new ResolvingComparator(new Resolver<WsdlInfo,String>(){
+                public String resolve(WsdlInfo key) {
+                    return key.getName();
+                }
+            }, false));
+            return wsdlInfo;
         } catch (UddiAgentException e) {
             String msg = "Error searching UDDI registry";
             logger.log(Level.WARNING, msg, e);
-            throw new FindException(msg, e);
+            throw new FindException(msg + ": " + ExceptionUtils.getMessage(e));
         }
     }
 
@@ -457,4 +472,7 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         return registryPublicationManager.getExternalSSGConsumptionURL(serviceoid);
     }
 
+    public Collection<UDDIRegistryInfo> getUDDIRegistryInfo() {
+        return uddiTemplateManager.getTemplatesAsUDDIRegistryInfo();
+    }
 }

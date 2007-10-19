@@ -41,6 +41,7 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_SERVER_ID = "serverId";
     public static final String PARAM_KEYSTORE = "keystorePropertiesPath";
     public static final String PARAM_LDAP_TEMPLATES = "ldapTemplatesPath";
+    public static final String PARAM_UDDI_TEMPLATES = "uddiTemplatesPath";
     public static final String PARAM_HIBERNATE = "hibernatePropertiesPath";
     public static final String PARAM_SERVERXML = "serverXmlPath";
     public static final String PARAM_IPS = "ipAddresses";

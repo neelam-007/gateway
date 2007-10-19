@@ -502,13 +502,8 @@
         <include name="**/commons-httpclient-3.0.1.jar"/>
         <include name="**/commons-codec-1.2.jar"/>
         <include name="**/activation.jar"/>
-        <include name="**/systinet-uddiclient_api_v3.jar"/>
-        <include name="**/systinet-uddiclient_core.jar"/>
-        <include name="**/systinet-jaxm.jar"/>
-        <include name="**/systinet-saaj.jar"/>
-        <include name="**/systinet-wasp.jar"/>
-        <include name="**/systinet-jaxrpc.jar"/>
         <include name="**/0500-wsdl4j_1.6.2.jar"/>
+        <include name="**/guddi-1.0.0.jar"/>
     </patternset>
 
     <!--
@@ -582,7 +577,7 @@
         <include name="**/slf4j-*.jar"/>
 
         <include name="**/systinet-*.jar" if="include.systinet"/>
-        <include name="**/jaxrpc.jar" unless="include.systinet"/>
+        <include name="**/guddi-1.0.0.jar"/>
         <include name="**/saaj.jar" unless="include.systinet"/>
 
         <include name="**/xalan-2.7.0.jar"/>
@@ -1441,6 +1436,7 @@
         <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/var/attachments"/>
         <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/var/modules"/>
         <mkdir dir="${deploy.dir}/etc/ldapTemplates"/>
+        <mkdir dir="${deploy.dir}/etc/uddiTemplates"/>
         <mkdir dir="${deploy.dir}/lib"/>
         <mkdir dir="${deploy.dir}/logs"/>
         <mkdir dir="${deploy.dir}/modules/assertions"/>
@@ -1462,8 +1458,12 @@
         <copy todir="${deploy.dir}/etc/ldapTemplates" preservelastmodified="true">
             <fileset dir="${src.root}/etc/ldapTemplates"/>
         </copy>
+        <copy todir="${deploy.dir}/etc/uddiTemplates" preservelastmodified="true">
+            <fileset dir="${src.root}/etc/uddiTemplates"/>
+        </copy>
         <copy file="${src.root}/etc/tomcat/truststore.jks" todir="${deploy.dir}/etc/conf" preservelastmodified="true"/>
         <copy file="${src.root}/web/index.html" todir="${deploy.dir}/etc/inf/ssg" preservelastmodified="true"/>
+        <copy file="${build.dir}/ssg-uddi-module-genericv3.jar" todir="${deploy.dir}/modules/lib/" preservelastmodified="true"/>
         <copy todir="${deploy.dir}/modules/assertions" flatten="true" preservelastmodified="true">
             <fileset dir="${src.root}/modules/assertions" includes="**/*.aar" excludes="**/CaWsdmAssertion*.aar"/>
         </copy>
@@ -1546,9 +1546,9 @@
         <pack-mac jarfile="${build.dir}/managerlibs/concurrent-1.3.4.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/dom4j-1.6.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/forms_rt.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/guddi-1.0.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/hibernate3.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/jaxen-1.1-beta-10.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/jaxrpc.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/jcalendar-1.3.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/jcommon-1.0.5.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/jfreechart-1.0.2.jar"/>
@@ -1619,6 +1619,13 @@
             <zipfileset dir="${src.root}/etc/services/uddi-systinet" prefix="META-INF/services"/>
             <fileset dir="${build.classes}">
                 <include name="com/l7tech/server/service/uddi/impl/systinet/**"/>
+            </fileset>
+        </jar>
+
+        <jar jarfile="${build.dir}/ssg-uddi-module-genericv3.jar">
+            <zipfileset dir="${src.root}/etc/services/uddi-generic" prefix="META-INF/services"/>
+            <fileset dir="${build.classes}">
+                <include name="com/l7tech/server/service/uddi/impl/generic/**"/>
             </fileset>
         </jar>
 
@@ -2878,7 +2885,8 @@
         <checkdeps jarfile="build/Manager.jar"
                    libfilesetref="manager.testpackage.fileset"
                    resultproperty="testpackage.manager.result"
-                   failpackages="com.l7tech.internal com.l7tech.proxy"/>
+                   failpackages="com.l7tech.internal com.l7tech.proxy"
+                   ignoreclasses="com.l7tech.common.uddi.SystinetUDDIClient"/>
         <!-- This just stops idea complaining -->
         <property name="testpackage.manager.result" value=""/>
         <condition property="testpackage.manager.fail">
@@ -3049,6 +3057,10 @@
         <prepare-named-libs name="Systinet" dir="${src.root}/lib/gateway/uddi/systinet"/>
     </target>
 
+    <target name="prepare.genericuddi">
+        <prepare-named-libs name="Generic UDDI" dir="${src.root}/lib/gateway/uddi/generic"/>
+    </target>
+
     <!--
       Core prepare target
     -->
@@ -3148,7 +3160,7 @@
       update version tokens
     -->
     <target name="prepare"
-            depends="prepare.base, prepare.jms, prepare.db, prepare.systinet, keystore.properties, INTERNAL-buildinfo">
+            depends="prepare.base, prepare.jms, prepare.db, prepare.systinet, prepare.genericuddi, keystore.properties, INTERNAL-buildinfo">
 
         <!-- set up build number if it isn't already set -->
         <property file="build.number"/>
@@ -3460,6 +3472,7 @@
         <property name="install.rel.libexec" value="libexec"/>
         <property name="install.rel.logs" value="logs"/>
         <property name="install.rel.ldap" value="${install.rel.etc}/ldapTemplates"/>
+        <property name="install.rel.uddi" value="${install.rel.etc}/uddiTemplates"/>
         <property name="install.rel.conf" value="${install.rel.etc}/conf"/>
         <property name="install.rel.inf" value="${install.rel.etc}/inf"/>
         <property name="install.rel.partitions" value="partitions"/>
@@ -3495,6 +3508,7 @@
         <property name="install.src.server.xml" value="${install.src.partitionTemplate}/server.xml"/>
         <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
         <property name="install.src.ldap" value="${install.src.base}/${install.rel.ldap}"/>
+        <property name="install.src.uddi" value="${install.src.base}/${install.rel.uddi}"/>
         <property name="install.src.var" value="${install.src.base}/var"/>
         <property name="install.src.var.attachments" value="${install.src.var}/attachments"/>
 
@@ -3503,6 +3517,7 @@
         <!-- Absolute target paths -->
         <property name="install.target.base" value="/ssg"/>
         <property name="install.target.ldap" value="${install.target.base}/${install.rel.ldap}"/>
+        <property name="install.target.uddi" value="${install.target.base}/${install.rel.uddi}"/>
         <property name="install.target.jdk" value="${install.target.base}/${install.rel.jdk}"/>
         <property name="install.target.logs" value="${install.target.base}/${install.rel.logs}"/>
 
@@ -3522,6 +3537,7 @@
         <mkdir dir="${install.src.etc}"/>
         <mkdir dir="${install.src.sql}"/>
         <mkdir dir="${install.src.ldap}"/>
+        <mkdir dir="${install.src.uddi}"/>
         <mkdir dir="${install.src.bin}"/>
         <mkdir dir="${install.src.libexec}"/>
         <mkdir dir="${install.src.conf}"/>
@@ -3572,7 +3588,7 @@
         </copy>
 
         <!-- Copy modules -->
-        <copy file="${build.dir}/ssg-uddi-module-systinetv3.jar" todir="${install.src.mods}"/>
+        <copy file="${build.dir}/ssg-uddi-module-genericv3.jar" todir="${install.src.mods}"/>
 
         <!-- Copy bundled modular assertions -->
         <copy todir="${install.src.aarmods}">
@@ -3586,7 +3602,12 @@
 
         <!-- Copy LDAP templates -->
         <copy todir="${install.src.ldap}">
-            <fileset dir="${src.root}/etc/ldapTemplates" includes="**/*.xml"/>
+            <fileset dir="${src.root}/etc/ldapTemplates" includes="*.xml"/>
+        </copy>
+
+        <!-- Copy UDDI templates -->
+        <copy todir="${install.src.uddi}">
+            <fileset dir="${src.root}/etc/uddiTemplates" includes="*.xml"/>
         </copy>
 
         <!-- Copy modified / new files -->

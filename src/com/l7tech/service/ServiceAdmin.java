@@ -6,6 +6,7 @@ import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -160,7 +161,7 @@ public interface ServiceAdmin extends ServiceAdminPublic {
     void deletePublishedService(String oid) throws DeleteException;
 
     /**
-     * @param serviceoid id of the service to publish on the systinet registry
+     * @param serviceoid id of the service to publish on the systinet (or other UDDI) registry
      * @return registrykey
      */
     @Transactional(readOnly=true)
@@ -170,4 +171,8 @@ public interface ServiceAdmin extends ServiceAdminPublic {
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
     String getConsumptionURL(String serviceoid ) throws FindException;
+
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
+    public Collection<UDDIRegistryInfo> getUDDIRegistryInfo();
 }

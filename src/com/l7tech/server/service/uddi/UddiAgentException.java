@@ -1,4 +1,4 @@
-package com.l7tech.common.uddi;
+package com.l7tech.server.service.uddi;
 
 /**
  * Exception class for UDDI agents.

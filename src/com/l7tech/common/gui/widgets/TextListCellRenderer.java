@@ -22,18 +22,21 @@ public class TextListCellRenderer extends JLabel implements ListCellRenderer {
      * @param accessorFunction The function to use (must not be null)
      */
     public TextListCellRenderer(final Functions.Unary<String,Object> accessorFunction) {
-        this(accessorFunction, false);
+        this(accessorFunction, null, false);
     }
 
     /**
      * Create a ListCellRenderer that uses the given accessor to get the displayed text.
      *
      * @param accessorFunction The function to use (must not be null)
+     * @param tooltipAccessorFunction The function to use (must not be null)
      * @param useAccessorForNull True to call the accessor function for null values.
      */
     public TextListCellRenderer(final Functions.Unary<String,Object> accessorFunction,
+                                final Functions.Unary<String,Object> tooltipAccessorFunction,
                                 final boolean useAccessorForNull) {
         this.accessorFunction = accessorFunction;
+        this.tooltipAccessorFunction = tooltipAccessorFunction;
         this.useAccessorForNull = useAccessorForNull;
     }
 
@@ -47,12 +50,17 @@ public class TextListCellRenderer extends JLabel implements ListCellRenderer {
                                                    boolean cellHasFocus)
     {
         String text = "";
+        String tooltipText = null;
 
         if ( value != null || useAccessorForNull ) {
             text = accessorFunction.call(value);
+            tooltipText = tooltipAccessorFunction != null ?
+                    tooltipAccessorFunction.call(value) :
+                    null;
         }
 
         setText( text );
+        setToolTipText(tooltipText);
 
         if (isSelected) {
             setBackground(list.getSelectionBackground());
@@ -73,5 +81,6 @@ public class TextListCellRenderer extends JLabel implements ListCellRenderer {
     //- PRIVATE
 
     private final Functions.Unary<String,Object> accessorFunction;
+    private final Functions.Unary<String,Object> tooltipAccessorFunction;
     private final boolean useAccessorForNull;
 }

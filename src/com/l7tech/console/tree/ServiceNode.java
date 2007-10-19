@@ -4,7 +4,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.DeleteServiceAction;
 import com.l7tech.console.action.EditServicePolicyAction;
 import com.l7tech.console.action.EditServiceProperties;
-import com.l7tech.console.action.PublishPolicyToSystinetRegistry;
+import com.l7tech.console.action.PublishPolicyToUDDIRegistry;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
@@ -121,7 +121,7 @@ public class ServiceNode extends EntityHeaderNode {
 
         actions.add(new EditServicePolicyAction(this));
         actions.add(new EditServiceProperties(this));
-        if (s && !a) actions.add(new PublishPolicyToSystinetRegistry(this));
+        if (s && !a) actions.add(new PublishPolicyToUDDIRegistry(this));
         actions.add(new DeleteServiceAction(this));
 
         return actions.toArray(new Action[0]);

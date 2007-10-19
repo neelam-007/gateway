@@ -1,21 +1,24 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.util.TextUtils;
+import com.l7tech.common.util.ArrayUtils;
+import com.l7tech.common.uddi.UDDIClient;
+import com.l7tech.common.uddi.UDDIClientFactory;
+import com.l7tech.common.uddi.UDDIException;
+import com.l7tech.common.uddi.UDDINamedEntity;
+import com.l7tech.common.uddi.UDDIAccessControlException;
+import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
-import org.systinet.uddi.InvalidParameterException;
-import org.systinet.uddi.client.v3.UDDIException;
-import org.systinet.uddi.client.v3.UDDISecurityStub;
-import org.systinet.uddi.client.v3.UDDI_Security_PortType;
-import org.systinet.uddi.client.v3.struct.Get_authToken;
+import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
-import javax.xml.soap.SOAPException;
 import java.awt.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Collection;
 
 /**
  * Wizard step in the PublishPolicyToUDDIWizard wizard pertaining
@@ -28,16 +31,24 @@ import java.util.logging.Logger;
  * Date: Jun 12, 2006<br/>
  */
 public class UDDITargetWizardStep extends WizardStepPanel {
+    private static final Logger logger = Logger.getLogger(UDDITargetWizardStep.class.getName());
+    private static final String UDDI_TYPE = "UDDI.TYPE";
+    private static final String UDDI_URL = "UDDI.URL";
+    private static final String UDDI_ACCOUNT_NAME = "UDDI.ACCOUNT.NAME";
+
     private JPanel mainPanel;
+    private JComboBox uddiTypeComboBox;
     private JTextField uddiURLField;
     private JTextField uddiAccountNameField;
     private JTextField uddiAccountPasswdField;
-    private static final Logger logger = Logger.getLogger(UDDITargetWizardStep.class.getName());
-    public static final String UDDI_ACCOUNT_NAME = "UDDI.ACCOUNT.NAME";
-    public static final String UDDI_URL = "UDDI.URL";
-    private String panelDescription = "Provide the UDDI registry URL and account information to publish this policy";
     private JLabel descLabel;
+
     private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+    private String panelDescription = "Provide the UDDI registry URL and account information to publish this policy";
+    private String policyUrl = null;
+    private String policyName = null;
+    private String policyKey = null;
+    private UDDIRegistryInfo[] registryTypeInfo;
 
     public UDDITargetWizardStep(WizardStepPanel next) {
         super(next);
@@ -64,78 +75,63 @@ public class UDDITargetWizardStep extends WizardStepPanel {
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
-        String tmp = preferences.getString(UDDI_ACCOUNT_NAME, "");
-        uddiAccountNameField.setText(tmp);
-        tmp = preferences.getString(UDDI_URL, "");
-        uddiURLField.setText(tmp);
+
+        String uddiType = preferences.getString(UDDI_TYPE, "");
+        String uddiUrl = preferences.getString(UDDI_URL, "");
+        String uddiAccount = preferences.getString(UDDI_ACCOUNT_NAME, "");
+
+        uddiAccountNameField.setText(uddiAccount);
+        uddiURLField.setText(uddiUrl);
+
+        registryTypeInfo = loadRegistryTypeInfo();
+        String[] typeNames = toNames(registryTypeInfo);
+        uddiTypeComboBox.setModel(new DefaultComboBoxModel(typeNames));
+
+        if ( ArrayUtils.contains( typeNames, uddiType ) ) {
+            uddiTypeComboBox.setSelectedItem(uddiType);
+        } else if (typeNames.length>0) {
+            uddiTypeComboBox.setSelectedItem(typeNames[0]);
+        }
     }
 
     public boolean onNextButton() {
         // make sure values are legal
-        String tmp = uddiURLField.getText();
-        if (tmp == null || tmp.length() < 1) {
+        String url = uddiURLField.getText().trim();
+        if (url == null || url.length() < 1) {
             showError("UDDI URL cannot be empty");
             return false;
         } else {
             try {
-                new URL(tmp);
+                new URL(url);
             } catch (MalformedURLException e) {
-                showError("Invalid UDDI URL: " + tmp);
+                showError("Invalid UDDI URL: " + url);
                 return false;
             }
         }
-        String url = normalizeURL(tmp);
         uddiURLField.setText(url);
-        preferences.putProperty(UDDI_URL, url);
 
-        tmp = uddiAccountNameField.getText();
-        if (tmp == null || tmp.length() < 1) {
+        String name = uddiAccountNameField.getText();
+        if (name == null || name.length() < 0) {
             showError("UDDI account name cannot be empty");
             return false;
         }
-        String name = tmp;
-        preferences.putProperty(UDDI_ACCOUNT_NAME, name);
 
-        tmp = uddiAccountPasswdField.getText();
-        if (tmp == null || tmp.length() < 1) {
+        String password = uddiAccountPasswdField.getText();
+        if (password == null || password.length() < 0) {
             showError("UDDI account password cannot be empty");
             return false;
         }
 
+        String type = (String) uddiTypeComboBox.getSelectedItem();
+
+        // store prefs
+        preferences.putProperty(UDDI_TYPE, type);
+        preferences.putProperty(UDDI_URL, url);
+        preferences.putProperty(UDDI_ACCOUNT_NAME, name);
+
         // try the credentials
         // (bugzilla #2601 preemptively try the credentials)
-        try {
-            testAuthInfo(url, name, tmp);
-        } catch (SOAPException e) {
-            String msg = "Could not get UDDI auth_token using this target and these credentials.";
-            Throwable t = e;
-            while (t.getCause() != null) t = t.getCause();
-            showError(msg + " " + catchDispositionReport(t.getMessage()));
-            logger.log(Level.WARNING, msg, e);
-            return false;
-        } catch (UDDIException e) {
-            String msg = "Could not get UDDI auth_token using this target and these credentials.";
-            Throwable t = e;
-            while (t.getCause() != null) t = t.getCause();
-            showError(msg + " " + catchDispositionReport(t.getMessage()));
-            logger.log(Level.WARNING, msg, e);
-            return false;
-        } catch (InvalidParameterException e) {
-            String msg = "Could not get UDDI auth_token using this target and these credentials.";
-            Throwable t = e;
-            while (t.getCause() != null) t = t.getCause();
-            showError(msg + " " + catchDispositionReport(t.getMessage()));
-            logger.log(Level.WARNING, msg, e);
-            return false;
-        } catch (Exception e) {
-            String msg = "Could not get UDDI auth_token using this target and these credentials.";
-            Throwable t = e;
-            while (t.getCause() != null) t = t.getCause();
-            showError(msg + " " + catchDispositionReport(t.getMessage()));
-            logger.log(Level.WARNING, msg, e);
-            return false;
-        }
-        return true;
+        return findExistingPolicyModel(type, url, name, password);
     }
 
     private String catchDispositionReport(String msg) {
@@ -154,38 +150,106 @@ public class UDDITargetWizardStep extends WizardStepPanel {
         return output;
     }
 
-    private String normalizeURL(String uddiurl) {
-        if (uddiurl.indexOf("/uddi") < 1) {
-            if (uddiurl.endsWith("/")) {
-                uddiurl = uddiurl + "uddi/";
-            } else {
-                uddiurl = uddiurl + "/uddi/";
-            }
-        }
-        if (!uddiurl.endsWith("/")) {
-            uddiurl = uddiurl + "/";
-        }
-        return uddiurl;
+    private UDDIRegistryInfo[] loadRegistryTypeInfo() {
+        Registry registry = Registry.getDefault();
+        return registry.getServiceManager().getUDDIRegistryInfo().toArray(new UDDIRegistryInfo[0]);        
     }
 
-    private String testAuthInfo(String url, String accountName, String accountpasswd) throws SOAPException, UDDIException, InvalidParameterException {
-        String authInfo;
-        UDDI_Security_PortType security = UDDISecurityStub.getInstance(url + "security");
-        authInfo = security.get_authToken(new Get_authToken(accountName, accountpasswd)).getAuthInfo();
-        return authInfo;
+    private UDDIRegistryInfo getRegistryTypeInfo(UDDIRegistryInfo[] registryInfos, String name) {
+        UDDIRegistryInfo info = null;
+
+        for ( UDDIRegistryInfo currentInfo : registryInfos ) {
+            if ( name.equals(currentInfo.getName()) ) {
+                info = currentInfo;
+                break;
+            }
+        }
+
+        return info;
+    }
+
+    private String[] toNames(UDDIRegistryInfo[] registryInfos) {
+        String[] names = new String[registryInfos.length];
+
+        for (int i=0; i<registryInfos.length; i++) {
+            UDDIRegistryInfo info = registryInfos[i];
+            names[i] = info.getName();
+        }
+
+        return names;
+    }
+
+    private UDDIClient newUDDI(String type, String url, String accountName, String accountpasswd) {
+        UDDIRegistryInfo registryInfo = null;
+        if ( type != null ) {
+            registryInfo = getRegistryTypeInfo(registryTypeInfo, type);
+        }
+        UDDIClientFactory factory = UDDIClientFactory.getInstance();
+
+        return factory.newUDDIClient(url, registryInfo, accountName, accountpasswd, null);
+    }
+
+    private boolean findExistingPolicyModel(String type, String url, String accountName, String accountpasswd) {
+        boolean authOk = false;
+        UDDIClient uddi = newUDDI(type, url, accountName, accountpasswd);
+        try {
+            if (policyUrl != null && policyUrl.trim().length() > 0) {
+                Collection<UDDINamedEntity> policyInfos = uddi.listPolicies(null, policyUrl);
+                if (!policyInfos.isEmpty()) {
+                    if (policyInfos.size() > 1) {
+                        logger.info("Found multiple policies for url '"+policyUrl+"', using first.");
+                    }
+                    UDDINamedEntity info = policyInfos.iterator().next();
+                    policyName = info.getName();
+                    policyKey = info.getKey();
+                }
+            }
+            else { // run to check auth is ok
+                uddi.listServices("servicenameusedtocheckuddiisworkingok", true, 1, 1);
+            }
+            authOk = true;
+        }
+        catch (UDDIAccessControlException e) {
+            String msg = "Authentication failed for user '"+accountName+"'.";
+            showError(msg);
+        }
+        catch (UDDIException e) {
+            String msg = "Error when testing credentials.";
+            Throwable t = e;
+            while (t.getCause() != null) t = t.getCause();
+            showError(msg + " " + catchDispositionReport(t.getMessage()));
+            logger.log(Level.WARNING, msg, e);
+        }
+        return authOk;
+    }
+
+    public void readSettings(Object settings) throws IllegalArgumentException {
+        Data data = (Data) settings;
+        policyUrl = data.getCapturedPolicyURL();
     }
 
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        Data data = (Data)settings;
-        data.setUddiurl(uddiURLField.getText());
-        data.setAccountName(uddiAccountNameField.getText());
-        data.setAccountPasswd(uddiAccountPasswdField.getText());
+        Data data = (Data) settings;
+        data.setUddi(newUDDI(
+                (String) uddiTypeComboBox.getSelectedItem(),
+                uddiURLField.getText().trim(),
+                uddiAccountNameField.getText(),
+                uddiAccountPasswdField.getText()));
+        data.setPolicytModelKey(policyKey);
+        data.setPolicytModelName(policyName);
     }
 
     public interface Data {
-        void setUddiurl(String in);
-        void setAccountName(String in);
-        void setAccountPasswd(String in);
+        void setUddi(UDDIClient uddi);
+
+        public String getCapturedPolicyURL();
+        public void setCapturedPolicyURL(String capturedPolicyURL);
+
+        public String getPolicytModelKey();
+        public void setPolicytModelKey(String policytModelKey);
+
+        public String getPolicytModelName() ;
+        public void setPolicytModelName(String policytModelName);
     }
 
     private void showError(String err) {

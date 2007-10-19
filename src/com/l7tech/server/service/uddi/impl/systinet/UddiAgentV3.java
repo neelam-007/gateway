@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import javax.xml.soap.SOAPException;
 
@@ -32,9 +34,11 @@ import org.systinet.uddi.client.v3.struct.TModelArrayList;
 import org.systinet.uddi.client.v3.struct.TModelDetail;
 import org.systinet.uddi.client.v3.struct.TModelInstanceInfo;
 import org.systinet.uddi.client.v3.struct.TModelInstanceInfoArrayList;
+import org.systinet.uddi.client.v3.struct.CategoryBag;
+import org.systinet.uddi.client.v3.struct.KeyedReference;
 
 import com.l7tech.common.uddi.WsdlInfo;
-import com.l7tech.common.uddi.UddiAgentException;
+import com.l7tech.server.service.uddi.UddiAgentException;
 import com.l7tech.server.service.uddi.UddiAgent;
 
 /**
@@ -165,7 +169,6 @@ public class UddiAgentV3 implements UddiAgent {
      * @param caseSensitive  true if case sensitive
      * @param listHead   the starting position of the retrieval from the list
      * @return ServiceList the list of services.
-     * @throws FindException   if there was a problem accessing the requested information.
      */
     private ServiceList retrieveServiceByName(String inquiryURL, String serviceName, boolean caseSensitive, int listHead) throws UddiAgentException {
 
@@ -183,10 +186,10 @@ public class UddiAgentV3 implements UddiAgent {
             String possibleCauses = "\nPossible causes: the UDDI Registry is not running properly, or \n the host/port settings in uddi.properties file is not correct.";
             if(e.getCause() != null) {
                 logger.warning(e.getCause().getMessage() + ", " + possibleCauses);
-                throw new UddiAgentException(e.getCause().getMessage() + possibleCauses);
+                throw new UddiAgentException(e.getCause().getMessage() + possibleCauses, e);
             } else {
                 logger.warning(e.getMessage() + ", " + possibleCauses);
-                throw new UddiAgentException(e.getMessage() + possibleCauses);
+                throw new UddiAgentException(e.getMessage() + possibleCauses, e);
             }
         }
         return services;
@@ -238,7 +241,6 @@ public class UddiAgentV3 implements UddiAgent {
      * @param serviceName how the service must be categorized.
      * @param caseSensitive  True if case sensitive, false otherwise.
      * @return Object, which represents find_service UDDI call.
-     * @throws FindException   if there was a problem accessing the requested information.
      */
     private Find_service createFindServiceByName(String serviceName, boolean caseSensitive, int listHead) throws UddiAgentException {
         Find_service find_service = new Find_service();
@@ -252,6 +254,13 @@ public class UddiAgentV3 implements UddiAgent {
                 qualifierList.add("caseInsensitiveMatch");
             }
             find_service.setFindQualifierArrayList(qualifierList);
+
+            CategoryBag cb = new CategoryBag();
+            KeyedReference kr = new KeyedReference();
+            kr.setKeyValue("service");
+            kr.setTModelKey("uddi:uddi.org:wsdl:types");
+            cb.addKeyedReference(kr);
+            find_service.setCategoryBag(cb);
 
         } catch (InvalidParameterException e) {
             logger.warning("Exception caught: " + e.getMessage());
@@ -273,6 +282,14 @@ public class UddiAgentV3 implements UddiAgent {
         Find_binding find_binding = new Find_binding();
         find_binding.setServiceKey(servicesKey);
         find_binding.setMaxRows(new Integer(resultBatchSize));
+
+        CategoryBag cb = new CategoryBag();
+        KeyedReference kr = new KeyedReference();
+        kr.setKeyValue("port");
+        kr.setTModelKey("uddi:uddi.org:wsdl:types");
+        cb.addKeyedReference(kr);
+        find_binding.setCategoryBag(cb);
+
         return find_binding;
     }
 
@@ -281,7 +298,6 @@ public class UddiAgentV3 implements UddiAgent {
      *
      * @param services  the list of services whose URLs are to be retrieved.
      * @return  HashMap contains list of the serivceName/serviceURL retrieved.
-     * @throws FindException   if there was a problem accessing the requested information.
      */
     private HashMap retrieveWsdlUrl(String inquiryURL, ServiceList services) throws UddiAgentException {
         HashMap wsdlList = new HashMap();
@@ -310,6 +326,7 @@ public class UddiAgentV3 implements UddiAgent {
 
             if(btal == null) continue;
 
+            List<String> tModelKeys = new ArrayList();
             for (int j = 0; j < btal.size(); j++) {
                 BindingTemplate bt = btal.get(j);
                 TModelInstanceInfoArrayList tModelInstances = bt.getTModelInstanceInfoArrayList();
@@ -319,52 +336,56 @@ public class UddiAgentV3 implements UddiAgent {
                 for (int k = 0; k < tModelInstances.size(); k++) {
                     TModelInstanceInfo tModelInstanceInfo = tModelInstances.get(k);
                     String tModelKey = tModelInstanceInfo.getTModelKey();
+                    if (tModelInstanceInfo.getInstanceDetails()==null) continue; // binding must have name param
+                    tModelKeys.add(tModelKey);
+                }
+            }
 
-                    TModelDetail tModelDetail = null;
+            if (tModelKeys.size()==0) continue;
 
-                    try {
-                        Get_tModelDetail get_tModelDetail = createGetTModelDetail(tModelKey);
-                        tModelDetail = getTModels(get_tModelDetail, inquiryURL);
-                    } catch (UDDIException e) {
-                        logger.warning("Exception caught: " + e.getMessage());
-                        throw new UddiAgentException(e.getMessage());
-                    } catch (SOAPException e) {
-                        logger.warning("Exception caught: " + e.getMessage());
-                        throw new UddiAgentException(e.getMessage());
-                    } catch (InvalidParameterException e) {
-                        logger.warning("Exception caught: " + e.getMessage());
-                        throw new UddiAgentException(e.getMessage());
-                    }
-                    //                   printTModelDetail(tModelDetail);
-                    TModelArrayList tmal = tModelDetail.getTModelArrayList();
+            TModelDetail tModelDetail = null;
 
-                    if(tmal == null) continue;
+            try {
+                Get_tModelDetail get_tModelDetail = createGetTModelDetails(tModelKeys);
+                tModelDetail = getTModels(get_tModelDetail, inquiryURL);
+            } catch (UDDIException e) {
+                logger.warning("Exception caught: " + e.getMessage());
+                throw new UddiAgentException(e.getMessage());
+            } catch (SOAPException e) {
+                logger.warning("Exception caught: " + e.getMessage());
+                throw new UddiAgentException(e.getMessage());
+            } catch (InvalidParameterException e) {
+                logger.warning("Exception caught: " + e.getMessage());
+                throw new UddiAgentException(e.getMessage());
+            }
+            //                   printTModelDetail(tModelDetail);
+            TModelArrayList tmal = tModelDetail.getTModelArrayList();
 
-                    for (int l = 0; l < tmal.size(); l++) {
-                        TModel tm = tmal.get(l);
-                        OverviewDocArrayList odal = tm.getOverviewDocArrayList();
+            if(tmal == null) continue;
 
-                        if(odal == null) continue;
+            for (int l = 0; l < tmal.size(); l++) {
+                TModel tm = tmal.get(l);
+                OverviewDocArrayList odal = tm.getOverviewDocArrayList();
 
-                        for (int m = 0; m < odal.size(); m++) {
-                            OverviewDoc od = odal.get(m);
+                if(odal == null) continue;
 
-                            if (od != null &&
-                                    od.getOverviewURL() != null &&
-                                    od.getOverviewURL().getUseType() != null &&
-                                    od.getOverviewURL().getUseType().equalsIgnoreCase("wsdlInterface")) {
+                for (int m = 0; m < odal.size(); m++) {
+                    OverviewDoc od = odal.get(m);
 
-                                final String wsdlURL = od.getOverviewURL().getValue();
-                                final String serviceName = si.getNameArrayList().get(0).getValue();
-                                if (wsdlURL != null) {
-                                    // we don't store duplcated entry
-                                    if(!wsdlList.containsKey(serviceName) ||
-                                            (wsdlList.containsKey(serviceName) && !((String)wsdlList.get(serviceName)).equals(wsdlURL))) {
-                                        wsdlList.put(serviceName, wsdlURL);
-                                    } else {
-                                        logger.fine("Ignore the duplicated entry: Service Name = " + serviceName + ", wsdl url = " + wsdlURL);
-                                    }
-                                }
+                    if (od != null &&
+                            od.getOverviewURL() != null &&
+                            od.getOverviewURL().getUseType() != null &&
+                            od.getOverviewURL().getUseType().equalsIgnoreCase("wsdlInterface")) {
+
+                        final String wsdlURL = od.getOverviewURL().getValue();
+                        final String serviceName = si.getNameArrayList().get(0).getValue();
+                        if (wsdlURL != null) {
+                            // we don't store duplcated entry
+                            if(!wsdlList.containsKey(serviceName) ||
+                                    (wsdlList.containsKey(serviceName) && !((String)wsdlList.get(serviceName)).equals(wsdlURL))) {
+                                wsdlList.put(serviceName, wsdlURL);
+                            } else {
+                                logger.fine("Ignore the duplicated entry: Service Name = " + serviceName + ", wsdl url = " + wsdlURL);
                             }
                         }
                     }
@@ -378,13 +399,13 @@ public class UddiAgentV3 implements UddiAgent {
     /**
      * Creates and fills the Get_tModelDetail structure.
      *
-     * @param tModelKey key of tModel to be retrieved.
+     * @param tModelKeys keys of tModels to be retrieved.
      * @return Object, which represents Get_tModelDetail UDDI call.
      * @throws InvalidParameterException If the value is invalid.
      */
-    private static Get_tModelDetail createGetTModelDetail(String tModelKey) throws InvalidParameterException {
+    private static Get_tModelDetail createGetTModelDetails(List<String> tModelKeys) throws InvalidParameterException {
         Get_tModelDetail get = new Get_tModelDetail();
-        get.setTModelKeyArrayList(new StringArrayList(tModelKey));
+        get.setTModelKeyArrayList(new StringArrayList(tModelKeys.toArray(new String[0])));
         return get;
     }
 }

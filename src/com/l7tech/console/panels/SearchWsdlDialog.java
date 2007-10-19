@@ -207,6 +207,7 @@ public class SearchWsdlDialog extends JDialog {
         });
 
         pack();
+        Utilities.setDoubleClickAction(wsdlTable, selectButton);
         Utilities.centerOnScreen(this);
     }
 

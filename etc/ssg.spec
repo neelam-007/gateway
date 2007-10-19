@@ -137,6 +137,7 @@ chmod 711 %{buildroot}/ssg/libexec/*
 
 # Other stuff
 /ssg/etc/ldapTemplates
+/ssg/etc/uddiTemplates
 /ssg/etc/sql
 /ssg/etc/inf
 /ssg/lib

@@ -1,0 +1,152 @@
+package com.l7tech.common.uddi;
+
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.net.URI;
+
+import com.l7tech.common.util.SyspropUtil;
+
+/**
+ * Factory for creation of UDDIClients.
+ *
+ * <p>This will create a Generic JAX-WS based UDDI client unless the Systinet
+ * libraries are detected.</p>
+ *
+ * <p>Note that our Systinet client supports only a small subset of
+ * functionality and is deprecated.</p>
+ *
+ * <p>The default policy attachment version can be overridden using the
+ * system property <code>com.l7tech.common.uddi.defaultVersion</code>. See
+ * {@link PolicyAttachmentVersion} for valid values</p>
+ *
+ * @author Steve Jones
+ */
+public class UDDIClientFactory {
+
+    //- PUBLIC
+
+    /**
+     * Get the factory instance.
+     *
+     * @return The factory.
+     */
+    public static UDDIClientFactory getInstance() {
+        return instance;
+    }
+
+    /**
+     * Create a new UDDIClient for the specified registry type.
+     *
+     * @param url The URL for the inquiry web service or base url for all services
+     * @param uddiRegistryInfo The type of registry (if null defaults will be used)
+     * @param login The login to use (may be null)
+     * @param password The password to use (may be null, required if a login is specified)
+     * @param attachmentVersion The policy attachment version to use (if null the default version is used)
+     * @return The UDDIClient
+     */
+    public UDDIClient newUDDIClient(final String url,
+                                    final UDDIRegistryInfo uddiRegistryInfo,
+                                    final String login,
+                                    final String password,
+                                    final PolicyAttachmentVersion attachmentVersion) {
+        String inquiryUrl = url;
+        String publishUrl = url;
+        String securityUrl = url;
+
+        if ( uddiRegistryInfo != null ) {
+            String baseUrl = calculateBaseUrl(url, uddiRegistryInfo.getInquiry());
+            inquiryUrl = buildUrl(baseUrl, uddiRegistryInfo.getInquiry());
+            publishUrl = buildUrl(baseUrl, uddiRegistryInfo.getPublication());
+            securityUrl = buildUrl(baseUrl, uddiRegistryInfo.getSecurityPolicy());
+
+        }
+        return newUDDIClient(
+                inquiryUrl,
+                publishUrl,
+                securityUrl,
+                login,
+                password,
+                attachmentVersion);
+    }
+
+    /**
+     * Create a new UDDIClient.
+     *
+     * @param inquiryUrl The URL for the inquiry web service
+     * @param publishUrl The URL for the publishing web service (may be null)
+     * @param securityUrl The URL for the security web service (may be null)
+     * @param login The login to use (may be null)
+     * @param password The password to use (may be null, required if a login is specified)
+     * @param attachmentVersion The policy attachment version to use (if null the default version is used)
+     * @return The UDDIClient
+     */
+    public UDDIClient newUDDIClient(final String inquiryUrl,
+                                    final String publishUrl,
+                                    final String securityUrl,
+                                    final String login,
+                                    final String password,
+                                    final PolicyAttachmentVersion attachmentVersion) {
+        UDDIClient client;
+
+        PolicyAttachmentVersion policyAttachmentVersion = attachmentVersion == null ?
+                getDefaultPolicyAttachmentVersion() :
+                attachmentVersion;
+
+        if ( systinetAvailable ) {
+            if ( PolicyAttachmentVersion.v1_5 == policyAttachmentVersion ) {
+                throw new IllegalStateException("Systinet client does not support " + PolicyAttachmentVersion.v1_5.getName());
+            }
+            client = new SystinetUDDIClient(inquiryUrl, publishUrl, securityUrl, login, password);
+        } else {
+            client = new GenericUDDIClient(inquiryUrl, publishUrl, securityUrl, login, password, policyAttachmentVersion);
+        }
+
+        return client;
+    }
+
+    //- PRIVATE
+
+    private static final String SYSPROP_DEFAULT_VERSION = "com.l7tech.common.uddi.defaultVersion";
+    private static final UDDIClientFactory instance = new UDDIClientFactory();
+    private static final Logger logger = Logger.getLogger(UDDIClientFactory.class.getName());
+    private static final boolean systinetAvailable;
+
+    static {
+        boolean systinetDetected = false;
+        try {
+            Class.forName("org.systinet.uddi.client.v3.struct.Find_service");
+            systinetDetected = true;
+        } catch (ClassNotFoundException cnfe) {
+        }
+        systinetAvailable = systinetDetected;
+        logger.log(Level.INFO, "Using generic UDDI Client is " + (!systinetAvailable) + ".");
+    }
+
+    private UDDIClientFactory() {
+    }
+
+    private String calculateBaseUrl(String url, String suffix) {
+        String base = url;
+
+        if ( base.endsWith(suffix) ) {
+            base = base.substring(0, base.length()-suffix.length());
+        }
+
+        if ( !base.endsWith("/") ) {
+            base += "/";
+        }
+
+        return base;
+    }
+
+    private String buildUrl(String url, String suffix) {
+        return URI.create(url).resolve(suffix).toString();
+    }
+
+    private static PolicyAttachmentVersion getDefaultPolicyAttachmentVersion() {
+        String id = SyspropUtil.getString(
+                SYSPROP_DEFAULT_VERSION,
+                PolicyAttachmentVersion.v1_2.toString());
+        return PolicyAttachmentVersion.valueOf(id);
+    }
+}

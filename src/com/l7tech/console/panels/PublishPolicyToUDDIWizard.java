@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
+import com.l7tech.common.uddi.UDDIClient;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -19,12 +20,12 @@ import java.awt.event.ActionEvent;
 public class PublishPolicyToUDDIWizard extends Wizard {
     public static PublishPolicyToUDDIWizard getInstance(Frame parent, String policyURL, String policyConsumptionURL, String serviceName) {
         AssociateUDDIServiceToPolicyWizardStep astep = new AssociateUDDIServiceToPolicyWizardStep(null);
-        UDDIPolicyDetailsWizardStep dstep = new UDDIPolicyDetailsWizardStep(astep, policyURL, serviceName);
+        UDDIPolicyDetailsWizardStep dstep = new UDDIPolicyDetailsWizardStep(astep);
         UDDITargetWizardStep tstep = new UDDITargetWizardStep(dstep);
-        return new PublishPolicyToUDDIWizard(parent, tstep, policyConsumptionURL);
+        return new PublishPolicyToUDDIWizard(parent, tstep, policyURL, policyConsumptionURL, serviceName);
     }
 
-    protected PublishPolicyToUDDIWizard(Frame parent, WizardStepPanel panel, String policyConsumptionURL) {
+    protected PublishPolicyToUDDIWizard(Frame parent, WizardStepPanel panel, String policyURL, String policyConsumptionURL, String serviceName) {
         super(parent, panel);
         setTitle("Publish Policy tModel to UDDI Registry Wizard");
         getButtonHelp().addActionListener(new ActionListener() {
@@ -32,20 +33,23 @@ public class PublishPolicyToUDDIWizard extends Wizard {
                 Actions.invokeHelp(PublishPolicyToUDDIWizard.this);
             }
         });
-        wizardInput = new Data();
-        ((Data)wizardInput).setPolicyConsumptionURL(policyConsumptionURL);
+        Data data = new Data();
+        data.setCapturedPolicyURL(policyURL);
+        data.setPolicyConsumptionURL(policyConsumptionURL);
+        data.setPolicyName("Policy for " + serviceName);
+        data.setPolicyDescription("Associated Policy"); // Systinet uses this name to identify policy references
+        
+        wizardInput = data;
     }
 
     public class Data implements UDDITargetWizardStep.Data {
         private String policyName;
         private String policyDescription;
         private String capturedPolicyURL;
-        private String uddiurl;
-        private String accountName;
-        private String accountPasswd;
-        private String policytModelKey;
-        private String authInfo;
         private String policyConsumptionURL;
+        private UDDIClient uddi;
+        private String policytModelKey;
+        private String policytModelName;
 
         public String getPolicyName() {
             return policyName;
@@ -71,38 +75,12 @@ public class PublishPolicyToUDDIWizard extends Wizard {
             this.capturedPolicyURL = capturedPolicyURL;
         }
 
-        public String getUddiurl() {
-            return uddiurl;
+        public UDDIClient getUddi() {
+            return uddi;
         }
 
-        public void setUddiurl(String uddiurl) {
-            if (uddiurl.indexOf("/uddi") < 1) {
-                if (uddiurl.endsWith("/")) {
-                    uddiurl = uddiurl + "uddi/";
-                } else {
-                    uddiurl = uddiurl + "/uddi/";
-                }
-            }
-            if (!uddiurl.endsWith("/")) {
-                uddiurl = uddiurl + "/";
-            }
-            this.uddiurl = uddiurl;
-        }
-
-        public String getAccountName() {
-            return accountName;
-        }
-
-        public void setAccountName(String accountName) {
-            this.accountName = accountName;
-        }
-
-        public String getAccountPasswd() {
-            return accountPasswd;
-        }
-
-        public void setAccountPasswd(String accountPasswd) {
-            this.accountPasswd = accountPasswd;
+        public void setUddi(UDDIClient uddi) {
+            this.uddi = uddi;
         }
 
         public String getPolicytModelKey() {
@@ -113,12 +91,12 @@ public class PublishPolicyToUDDIWizard extends Wizard {
             this.policytModelKey = policytModelKey;
         }
 
-        public String getAuthInfo() {
-            return authInfo;
+        public String getPolicytModelName() {
+            return policytModelName;
         }
 
-        public void setAuthInfo(String authInfo) {
-            this.authInfo = authInfo;
+        public void setPolicytModelName(String policytModelName) {
+            this.policytModelName = policytModelName;
         }
 
         public String getPolicyConsumptionURL() {

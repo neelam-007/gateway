@@ -19,7 +19,7 @@ public class WsdlTableSorter extends FilteredDefaultTableModel {
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private boolean ascending = true;
-    private int columnToSort = 1;
+    private int columnToSort = WSDL_TABLE_SERVICE_NAME_COLUMN_INDEX;
     private Vector rawdata = new Vector();
     private Object[] sortedData = new Object[0];
 

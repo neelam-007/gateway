@@ -1,6 +1,7 @@
 package com.l7tech.service;
 
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -240,6 +241,10 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     public String getConsumptionURL(String serviceoid) throws FindException {
+        throw new RuntimeException("Not Implemented");
+    }
+
+    public Collection<UDDIRegistryInfo> getUDDIRegistryInfo() {
         throw new RuntimeException("Not Implemented");
     }
 }

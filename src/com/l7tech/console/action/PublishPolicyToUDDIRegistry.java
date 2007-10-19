@@ -14,7 +14,7 @@ import java.util.logging.Level;
 import java.awt.*;
 
 /**
- * Action corresponding to publishing a policy on a systinet registry.
+ * Action corresponding to publishing a policy on a UDDI registry.
  * <p/>
  * <p/>
  * <br/><br/>
@@ -22,8 +22,8 @@ import java.awt.*;
  * User: flascell<br/>
  * Date: Mar 8, 2006<br/>
  */
-public class PublishPolicyToSystinetRegistry extends NodeAction {
-    public PublishPolicyToSystinetRegistry(ServiceNode node) {
+public class PublishPolicyToUDDIRegistry extends NodeAction {
+    public PublishPolicyToUDDIRegistry(ServiceNode node) {
         super(node, LIC_AUTH_ASSERTIONS, null);
     }
 
@@ -42,29 +42,18 @@ public class PublishPolicyToSystinetRegistry extends NodeAction {
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
 
-        // check that systinet (only supported uddi implementation so far) is in class path
-        try {
-            Class.forName("org.systinet.uddi.client.v3.struct.Save_tModel");
-        } catch (Throwable e) {
-            logger.log(Level.INFO,  "UDDI client implementation not in class path", e);
-            JOptionPane.showMessageDialog(f, "No UDDI client implementation installed on this installation",
-                                             "Missing Component", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
         final ServiceNode serviceNode = ((ServiceNode)node);
         PublishedService svc;
         try {
             svc = serviceNode.getPublishedService();
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Cannot get service", e);
-            throw new RuntimeException(e);
+            throw new RuntimeException("Cannot get service", e);
         }
         String policyURL;
         String serviceConsumptionURL;
         try {
-            policyURL = Registry.getDefault().getServiceManager().getPolicyURL(""+svc.getOid());
-            serviceConsumptionURL = Registry.getDefault().getServiceManager().getConsumptionURL(""+svc.getOid());
+            policyURL = Registry.getDefault().getServiceManager().getPolicyURL(Long.toString(svc.getOid()));
+            serviceConsumptionURL = Registry.getDefault().getServiceManager().getConsumptionURL(Long.toString(svc.getOid()));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get service detail from SSG", e);
             JOptionPane.showMessageDialog(f, "Error getting service details from SecureSpan\nGateway " +

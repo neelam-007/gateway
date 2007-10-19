@@ -2,7 +2,6 @@ package com.l7tech.server.service.uddi;
 
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.Service;
-import com.l7tech.common.uddi.UddiAgentException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.FilterClassLoader;
 import com.l7tech.server.util.ModuleClassLoader;
@@ -49,7 +48,7 @@ public class UddiAgentFactory {
      * properties for uddi.</p>
      *
      * @return the Properties to use.
-     * @throws com.l7tech.common.uddi.UddiAgentException if an error occurs
+     * @throws UddiAgentException if an error occurs
      */
     public Properties getUddiProperties() throws UddiAgentException {
         Properties properties = new Properties();

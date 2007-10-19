@@ -1333,7 +1333,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     ServiceNode node = (ServiceNode)(servicesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent());
                     getEditPolicyMenuItem().setAction(new EditServicePolicyAction(node));
                     getServicePropertiesMenuItem().setAction(new EditServiceProperties(node));
-                    getPublishToUDDIMenuItem().setAction(new PublishPolicyToSystinetRegistry(node));
+                    getPublishToUDDIMenuItem().setAction(new PublishPolicyToUDDIRegistry(node));
                     getDeleteServiceMenuItem().setAction(new DeleteServiceAction(node) {
                         public String getName() {
                             return "Delete Service";

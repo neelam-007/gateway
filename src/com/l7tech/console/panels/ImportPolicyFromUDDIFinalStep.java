@@ -37,7 +37,8 @@ public class ImportPolicyFromUDDIFinalStep extends WizardStepPanel {
 
     public void readSettings(Object settings) throws IllegalArgumentException {
         data = (ImportPolicyFromUDDIWizard.Data)settings;
-        policyText.setText(data.getPolicyXML());
+        policyText.setText(data.getPolicyXML());   
+        policyText.setCaretPosition(0);
     }
 
     public boolean onNextButton() {

@@ -1,13 +1,5 @@
 package com.l7tech.console.panels;
 
-import org.systinet.uddi.client.v3.struct.*;
-import org.systinet.uddi.client.v3.UDDI_Inquiry_PortType;
-import org.systinet.uddi.client.v3.UDDIInquiryStub;
-import org.systinet.uddi.client.v3.UDDI_Publication_PortType;
-import org.systinet.uddi.client.v3.UDDIPublishStub;
-import org.systinet.uddi.client.base.StringArrayList;
-import org.systinet.uddi.InvalidParameterException;
-
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
@@ -16,10 +8,13 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.Collection;
 
 import com.l7tech.common.util.TextUtils;
+import com.l7tech.common.uddi.UDDIException;
+import com.l7tech.common.uddi.UDDIExistingReferenceException;
+import com.l7tech.common.uddi.UDDINamedEntity;
 
 /**
  * Wizard step in the PublishPolicyToUDDIWizard wizard that
@@ -41,6 +36,9 @@ import com.l7tech.common.util.TextUtils;
  * Date: Jun 14, 2006<br/>
  */
 public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
+    private static final Logger logger = Logger.getLogger(AssociateUDDIServiceToPolicyWizardStep.class.getName());
+    private static final int MAX_ROWS = 100;
+
     private JPanel mainPanel;
     private JTextField serviceNameField;
     private JButton listServicesButton;
@@ -48,7 +46,6 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
     private JButton updateServiceButton;
     private boolean done = false;
     private PublishPolicyToUDDIWizard.Data data;
-    private static final Logger logger = Logger.getLogger(AssociateUDDIServiceToPolicyWizardStep.class.getName());
     private ArrayList<ListMember> listData = new ArrayList<ListMember>();
 
     public AssociateUDDIServiceToPolicyWizardStep(WizardStepPanel next) {
@@ -91,47 +88,16 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
     }
 
     private void listServices() {
-        Find_service findService = new Find_service();
-        findService.setAuthInfo(data.getAuthInfo());
-
         try {
-            findService.check();
-        } catch (InvalidParameterException e) {
-            logger.log(Level.SEVERE, "Find_service structure did not check out ok", e);
-        }
-        String filter = serviceNameField.getText();
-        if (filter != null) {
-            filter = filter.toLowerCase();
-        }
-        try {
-            if (filter != null && filter.length() > 0) {
-                NameArrayList businessKey = new NameArrayList(new Name(filter));
-                findService.setNameArrayList(businessKey);
-            }
-            StringArrayList qualifierList = new StringArrayList();
-            qualifierList.add("approximateMatch");
-            qualifierList.add("caseInsensitiveMatch");
-            findService.setFindQualifierArrayList(qualifierList);
-            findService.setMaxRows(new Integer(100));
-
-            UDDI_Inquiry_PortType inquiry = UDDIInquiryStub.getInstance(data.getUddiurl() + "inquiry");
-            ServiceList uddiServiceListRes = inquiry.find_service(findService);
-
             // display those services in the list instead
             listData.clear();
-            ServiceInfoArrayList serviceInfoArrayList = uddiServiceListRes.getServiceInfoArrayList();
-            if (serviceInfoArrayList == null) {
+            Collection<UDDINamedEntity> serviceInfos = data.getUddi().listServices(serviceNameField.getText(), false, 0, MAX_ROWS);
+            if (serviceInfos.isEmpty()) {
                 showError("No services found with this filter.");
                 return;
             }
-            for (Iterator iterator = serviceInfoArrayList.iterator(); iterator.hasNext();) {
-                ServiceInfo serviceInfo = (ServiceInfo) iterator.next();
-                //String businessKey = serviceInfo.getBusinessKey();
-                //if (businessKey != null && !businessKey.startsWith("uddi:systinet")) {
-                    String name = serviceInfo.getNameArrayList().get(0).getValue();
-                    name = name.toLowerCase();
-                    listData.add(new ListMember(name, serviceInfo.getServiceKey()));
-                //}
+            for (UDDINamedEntity serviceInfo : serviceInfos) {
+                listData.add(new ListMember(serviceInfo.getName(), serviceInfo.getKey()));
             }
             serviceList.setListData(listData.toArray());
         } catch (Throwable e) {
@@ -143,102 +109,55 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
     private void updateServiceWithPolicytModel() {
         // first, get service from the service key
         String serviceKey = listData.get(serviceList.getSelectedIndex()).serviceKey;
-        ServiceDetail serviceDetail;
+
         try {
-            Get_serviceDetail getServiceDetail = new Get_serviceDetail();
-            getServiceDetail.setAuthInfo(data.getAuthInfo());
-            getServiceDetail.setServiceKeyArrayList(new StringArrayList(serviceKey));
-            UDDI_Inquiry_PortType inquiry = UDDIInquiryStub.getInstance(data.getUddiurl() + "inquiry");
-            serviceDetail = inquiry.get_serviceDetail(getServiceDetail);
-        } catch (Throwable e) {
-            logger.log(Level.SEVERE, "cannot find service or get inquiry", e);
-            showError("Cannot get service details for service key " + serviceKey + ". Consult log for more info.");
-            return;
-        }
-        if (serviceDetail.getBusinessServiceArrayList().size() != 1) {
-            String msg = "UDDI registry returned either empty serviceDetail or " +
-                         "more than one business services (" + serviceDetail.getBusinessServiceArrayList().size() + ")";
-            logger.warning(msg);
-            showError(msg);
-            return;
-        }
-        KeyedReference existingLocalpolicyreference = null;
-        BusinessService toUpdate = serviceDetail.getBusinessServiceArrayList().get(0);
-        CategoryBag cbag = toUpdate.getCategoryBag();
-        if (cbag != null && toUpdate.getCategoryBag().getKeyedReferenceArrayList() != null) {
-            KeyedReferenceArrayList kreflist = toUpdate.getCategoryBag().getKeyedReferenceArrayList();
-            for (Iterator i = kreflist.iterator(); i.hasNext(); ) {
-                KeyedReference kref = (KeyedReference)i.next();
-                if (kref.getTModelKey().equals("uddi:schemas.xmlsoap.org:localpolicyreference:2003_03")) {
-                    existingLocalpolicyreference = kref;
-                    break;
+            String policyKey = data.getPolicytModelKey();
+            String policyUrl = data.getCapturedPolicyURL();
+            String serviceUrl = null;//data.getPolicyConsumptionURL(); // null means attach to service, not endpoint
+
+            if (policyKey != null && policyKey.trim().length()>0) {
+                policyUrl = null; // don't add remote policy ref if we are adding a local one    
+            }
+
+            try {
+                //
+                // NOTE: To enable prompting of the user for reference owerwriting
+                //       replace Boolean.TRUE with null.
+                //
+                data.getUddi().referencePolicy(serviceKey, serviceUrl, false, policyKey, policyUrl, data.getPolicyDescription(), Boolean.TRUE, false);
+            } catch (UDDIExistingReferenceException e) {
+                int res = JOptionPane.showConfirmDialog(this,TextUtils.breakOnMultipleLines(
+                                      "There is already a policy associated with this item " +
+                                      "(key: " + e.getKeyValue() + "). Would you like to replace it?", 30),
+                                      "Policy tModel already associated",
+                                      JOptionPane.YES_NO_CANCEL_OPTION);
+                if (res == JOptionPane.CANCEL_OPTION) {
+                    logger.info("action cancelled.");
+                    return;
                 }
-            }
-            // we can remove this before asking user because
-            // if user refuses, the whole update is not going
-            // to occur
-            if (existingLocalpolicyreference != null) {
-                kreflist.remove(existingLocalpolicyreference);
-            }
-        }
-        if (existingLocalpolicyreference != null) {
-            int res = JOptionPane.showConfirmDialog(this,TextUtils.breakOnMultipleLines(
-                                  "There is already a policy associated to this Business " +
-                                  "Service (key: " + existingLocalpolicyreference.getKeyValue() + "). Would you like to override it?", 30),
-                                  "Policy tModel already associated",
-                                  JOptionPane.YES_NO_OPTION);
-            if (res == JOptionPane.NO_OPTION) {
-                logger.info("action cancelled.");
-                return;
-            }
-        }
-        if (cbag == null) {
-            cbag = new CategoryBag();
-            toUpdate.setCategoryBag(cbag);
-        }
-        String keyvalue = data.getPolicytModelKey();
-        String keyname = "Policy for " + data.getPolicyName();
-        try {
-            // change access point for the service
-            if (toUpdate.getBindingTemplateArrayList() != null) {
-                for (Iterator i = toUpdate.getBindingTemplateArrayList().iterator(); i.hasNext(); ) {
-                    BindingTemplate bt = (BindingTemplate)i.next();
-                    bt.setAccessPoint(new AccessPoint(data.getPolicyConsumptionURL()));
+                else if (res == JOptionPane.NO_OPTION) {
+                    data.getUddi().referencePolicy(serviceKey, serviceUrl, false, policyKey, policyUrl, data.getPolicyDescription(), Boolean.FALSE, false);
+                }
+                else {
+                    data.getUddi().referencePolicy(serviceKey, serviceUrl, false, policyKey, policyUrl, data.getPolicyDescription(), Boolean.TRUE, false);
                 }
             }
 
-            // assign policy tModel in categoryBag
-            cbag.addKeyedReference(new KeyedReference("uddi:schemas.xmlsoap.org:localpolicyreference:2003_03", keyvalue, keyname));
-
-            // update service in uddi
-            Save_service save = new Save_service();
-            save.addBusinessService(toUpdate);
-            save.setAuthInfo(data.getAuthInfo());
-            save.check();
-            UDDI_Publication_PortType publishing = UDDIPublishStub.getInstance(data.getUddiurl() + "publishing");
-            System.out.print("Save in progress ...");
-            publishing.save_service(save);
-            JOptionPane.showMessageDialog(this, "Service updated with policy tModel",
+            JOptionPane.showMessageDialog(this, "Item updated with policy reference.",
                                           "Success", JOptionPane.PLAIN_MESSAGE);
             done = true;
+            
             // this causes wizard's finish or next button to become enabled (because we're now ready to continue)
             notifyListeners();
-        } catch (Throwable e) {
+        }
+        catch (UDDIException e) {
             String msg = "could not update business service with policy tModel ref";
             logger.log(Level.WARNING, msg, e);
             showError(msg);
         }
     }
 
-    public boolean canAdvance() {
-        return done;
-    }
-
     public boolean canFinish() {
-        return done;
-    }
-
-    public boolean onNextButton() {
         return done;
     }
 

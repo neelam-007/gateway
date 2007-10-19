@@ -1,8 +1,5 @@
-package com.l7tech.server.systinet;
+package com.l7tech.server.uddi;
 
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -21,9 +18,8 @@ import java.security.cert.CertificateException;
  * User: flascell<br/>
  * Date: Mar 8, 2006<br/>
  */
-public class RegistryPublicationManager implements ApplicationContextAware {
+public class RegistryPublicationManager {
     private static final Logger logger = Logger.getLogger(RegistryPublicationManager.class.getName());
-    private ApplicationContext applicationContext;
     private ServerConfig serverConfig;
     private KeystoreUtils keystoreUtils;
     private String myhostname;
@@ -34,10 +30,6 @@ public class RegistryPublicationManager implements ApplicationContextAware {
     }
 
     public RegistryPublicationManager() {}
-
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;

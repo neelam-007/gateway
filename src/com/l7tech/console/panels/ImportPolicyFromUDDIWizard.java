@@ -1,13 +1,14 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
+import com.l7tech.common.uddi.UDDIClient;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 /**
- * A SSM Wizard allowing an administrator to pull a policy out of a Systinet UDDI registry
+ * A SSM Wizard allowing an administrator to pull a policy out of a UDDI registry
  * <p/>
  * <p/>
  * <br/><br/>
@@ -46,44 +47,19 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
     }
 
     public class Data implements UDDITargetWizardStep.Data {
-        private String uddiurl;
-        private String accountName;
-        private String accountPasswd;
+        private UDDIClient uddi;
         private String policyXML;
         private boolean confirmed = false;
+        private String capturedPolicyURL;
+        private String policytModelKey;
+        private String policytModelName;
 
-        public String getUddiurl() {
-            return uddiurl;
+        public UDDIClient getUddi() {
+            return uddi;
         }
 
-        public void setUddiurl(String uddiurl) {
-            if (uddiurl.indexOf("/uddi") < 1) {
-                if (uddiurl.endsWith("/")) {
-                    uddiurl = uddiurl + "uddi/";
-                } else {
-                    uddiurl = uddiurl + "/uddi/";
-                }
-            }
-            if (!uddiurl.endsWith("/")) {
-                uddiurl = uddiurl + "/";
-            }
-            this.uddiurl = uddiurl;
-        }
-
-        public String getAccountName() {
-            return accountName;
-        }
-
-        public void setAccountName(String accountName) {
-            this.accountName = accountName;
-        }
-
-        public String getAccountPasswd() {
-            return accountPasswd;
-        }
-
-        public void setAccountPasswd(String accountPasswd) {
-            this.accountPasswd = accountPasswd;
+        public void setUddi(UDDIClient uddi) {
+            this.uddi = uddi;
         }
 
         public String getPolicyXML() {
@@ -98,8 +74,32 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
             return confirmed;
         }
 
+        public String getCapturedPolicyURL() {
+            return capturedPolicyURL;
+        }
+
+        public void setCapturedPolicyURL(String capturedPolicyURL) {
+            this.capturedPolicyURL = capturedPolicyURL;
+        }
+
         public void setConfirmed(boolean confirmed) {
             this.confirmed = confirmed;
+        }
+
+        public String getPolicytModelKey() {
+            return policytModelKey;
+        }
+
+        public void setPolicytModelKey(String policytModelKey) {
+            this.policytModelKey = policytModelKey;
+        }
+
+        public String getPolicytModelName() {
+            return policytModelName;
+        }
+
+        public void setPolicytModelName(String policytModelName) {
+            this.policytModelName = policytModelName;
         }
     }
 }
