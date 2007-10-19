@@ -1,9 +1,8 @@
 
 This is an .AAR file that should work with 4.2 and later Gateways that allows you to do arbitrary processing in
 Javascript.  It uses the Bean Scripting Framework (BSF) so it's trivial to add support for other languages including
-Ruby, TCL, Python, Groovy, or Java but I left them out for now to keep down the size of the .AAR file.  I included a
-screenshot so you can see how it works without having to find a Gateway to dump the .AAR file onto.  I've tested it on
-my own workstation, but not on a production build.
+Ruby, TCL, Python, Groovy, or Java but I left them out for now to keep down the size of the .AAR file.
+I've tested it on my own workstation, but not on a production build.
 
 Be warned: scripts have complete, unfettered access to the system.  Don't install this .AAR file on any system where the
 local security policy wouldn't be happy with policy admins (or even random clients, if a script is sloppily written)
@@ -32,3 +31,5 @@ object model of a running Gateway (a problem with dynamic languages).
 
 To enable this to work on 4.2 I had to hack the bsf.jar to work around a bug it exposed in the AAR file classloader.
 (I've fixed the bug for 4.3.)
+
+See the examples subdirectory for some example scripts.

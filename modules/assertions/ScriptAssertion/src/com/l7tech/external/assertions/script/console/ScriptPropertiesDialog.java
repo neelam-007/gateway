@@ -17,7 +17,7 @@ public class ScriptPropertiesDialog extends JDialog implements AssertionProperti
     private JPanel topPanel;
     private JButton okButton;
     private JButton cancelButton;
-    private JTextPane scriptSource;
+    private JTextArea scriptSource;
     private JComboBox languageComboBox;
 
     private boolean confirmed = false;
@@ -49,6 +49,7 @@ public class ScriptPropertiesDialog extends JDialog implements AssertionProperti
             }
         });
 
+        Utilities.attachDefaultContextMenu(scriptSource);
         Utilities.setEscKeyStrokeDisposes(this);
         getRootPane().setDefaultButton(okButton);
         Utilities.equalizeButtonSizes(new JButton[]{okButton, cancelButton});

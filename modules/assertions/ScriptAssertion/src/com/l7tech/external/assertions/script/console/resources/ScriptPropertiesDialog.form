@@ -62,7 +62,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="7137b" class="javax.swing.JTextPane" binding="scriptSource">
+          <component id="f604d" class="javax.swing.JTextArea" binding="scriptSource">
             <constraints/>
             <properties/>
           </component>
