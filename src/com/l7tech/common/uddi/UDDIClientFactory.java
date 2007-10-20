@@ -3,6 +3,7 @@ package com.l7tech.common.uddi;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.net.URI;
+import java.lang.reflect.Constructor;
 
 import com.l7tech.common.util.SyspropUtil;
 
@@ -98,7 +99,13 @@ public class UDDIClientFactory {
             }
             client = new SystinetUDDIClient(inquiryUrl, publishUrl, securityUrl, login, password);
         } else {
-            client = new GenericUDDIClient(inquiryUrl, publishUrl, securityUrl, login, password, policyAttachmentVersion);
+            try {
+                Class genericUddiClass = Class.forName("com.l7tech.common.uddi.GenericUDDIClient");
+                Constructor constructor = genericUddiClass.getConstructor(String.class, String.class, String.class, String.class, String.class, PolicyAttachmentVersion.class);
+                client = (UDDIClient) constructor.newInstance(inquiryUrl, publishUrl, securityUrl, login, password, policyAttachmentVersion);
+            } catch (Exception e) {
+                throw new RuntimeException("Generic UDDI client error.", e);
+            }
         }
 
         return client;
