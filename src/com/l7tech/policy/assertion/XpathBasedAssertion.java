@@ -7,9 +7,9 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.common.xml.xpath.XpathExpression;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 
-import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.SOAPConstants;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +35,7 @@ public abstract class XpathBasedAssertion extends Assertion {
     /** @return a new basic namespace map containing only xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/". */
     public static Map createDefaultNamespaceMap() {
         Map nsmap = new HashMap();
-        nsmap.put(NamespaceConstants.NSPREFIX_SOAP_ENVELOPE, SOAPConstants.URI_NS_SOAP_ENVELOPE);
+        nsmap.put(SoapUtil.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_ENVELOPE);
         return nsmap;
     }
 

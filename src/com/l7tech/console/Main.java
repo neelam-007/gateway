@@ -173,6 +173,11 @@ public class Main {
 
         // Set trust manager algorithm for HTTP remoting / RMI
         System.setProperty("com.l7tech.console.trustMananagerFactoryAlgorithm", "L7TA");
+
+        // Set props for StAX
+        System.setProperty("javax.xml.stream.XMLEventFactory", "com.sun.xml.stream.events.ZephyrEventFactory");
+        System.setProperty("javax.xml.stream.XMLInputFactory", "com.sun.xml.stream.ZephyrParserFactory");
+        System.setProperty("javax.xml.stream.XMLOutputFactory", "com.sun.xml.stream.ZephyrWriterFactory");
     }
 
     /**

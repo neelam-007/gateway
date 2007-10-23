@@ -25,7 +25,6 @@ import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.soap12.SOAP12Body;
 import javax.xml.namespace.QName;
-import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.*;
 import javax.xml.transform.dom.DOMSource;
 import java.io.IOException;
@@ -52,7 +51,7 @@ public class SoapUtil {
     }
 
     // Namespace prefix constants
-    public static final String SOAP_ENV_PREFIX = NamespaceConstants.NSPREFIX_SOAP_ENVELOPE;
+    public static final String SOAP_ENV_PREFIX = "soapenv";
     public static final String XMLNS = "xmlns";
     public static final String SECURITY_NAMESPACE_PREFIX = "wsse";
 
@@ -226,16 +225,16 @@ public class SoapUtil {
     /**
      * soap envelope xpath '/soapenv:Envelope'
      */
-    public static final String SOAP_ENVELOPE_XPATH = "/" + NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":" + ENVELOPE_EL_NAME;
+    public static final String SOAP_ENVELOPE_XPATH = "/" + SOAP_ENV_PREFIX + ":" + ENVELOPE_EL_NAME;
 
     /**
      * soap body xpath '/soapenv:Envelope/soapenv:Body'
      */
-    public static final String SOAP_BODY_XPATH = SOAP_ENVELOPE_XPATH + "/" + NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":Body";
+    public static final String SOAP_BODY_XPATH = SOAP_ENVELOPE_XPATH + "/" + SOAP_ENV_PREFIX + ":Body";
     /**
      * soap header xpath '/soapenv:Envelope/soapenv:Header'
      */
-    public static final String SOAP_HEADER_XPATH = SOAP_ENVELOPE_XPATH + "/" + NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":Header";
+    public static final String SOAP_HEADER_XPATH = SOAP_ENVELOPE_XPATH + "/" + SOAP_ENV_PREFIX + ":Header";
 
     public static final String C14N_EXCLUSIVE = "http://www.w3.org/2001/10/xml-exc-c14n#";
     public static final String C14N_EXCLUSIVEWC = "http://www.w3.org/2001/10/xml-exc-c14n#WithComments";

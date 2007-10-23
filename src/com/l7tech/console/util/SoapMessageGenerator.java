@@ -17,8 +17,8 @@ import javax.wsdl.extensions.UnknownExtensibilityElement;
 import javax.wsdl.extensions.schema.Schema;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.namespace.QName;
-import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.*;
+import javax.xml.XMLConstants;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.*;
@@ -36,7 +36,9 @@ import java.util.*;
  */
 public class SoapMessageGenerator {
 
-    public static final String PREFIX_SOAP = "soapenv";
+    private static final String PREVIX_SCHEMA  ="xsd";
+    private static final String PREVIX_SCHEMA_INSTANCE  ="xsi";
+    private static final String PREFIX_SOAP = "soapenv";
     private MessageInputGenerator messageInputGenerator;
     private Wsdl wsdl;
 
@@ -249,8 +251,8 @@ public class SoapMessageGenerator {
         }
 
         String requirePrefixes[][] = {
-            {NamespaceConstants.NSPREFIX_SCHEMA_XSD, NamespaceConstants.NSURI_SCHEMA_XSD},
-            {NamespaceConstants.NSPREFIX_SCHEMA_XSI, NamespaceConstants.NSURI_SCHEMA_XSI},
+            {PREVIX_SCHEMA, XMLConstants.W3C_XML_SCHEMA_NS_URI},
+            {PREVIX_SCHEMA_INSTANCE, XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI},
             {PREFIX_SOAP, SOAPConstants.URI_NS_SOAP_ENVELOPE},
         };
 

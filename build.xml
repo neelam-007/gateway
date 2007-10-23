@@ -418,7 +418,6 @@
     <patternset id="client.libs">
         <include name="**/BrowserLauncher2-10rc4.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
-        <include name="**/jaxrpc.jar"/>
         <include name="**/kunststoff.jar"/>
         <include name="**/saaj.jar"/>
         <include name="**/0500-wsdl4j_1.6.2.jar"/>
@@ -476,7 +475,6 @@
         <include name="**/xmlpad.jar"/>
         <include name="**/xmlpad-res.jar"/>
         <include name="**/jaxen-1.1-beta-10.jar"/>
-        <include name="**/jaxrpc.jar"/>
         <include name="**/saaj.jar"/>
         <include name="**/saaj-impl.jar"/>
         <include name="**/dom4j-1.6.1.jar"/>
@@ -491,7 +489,6 @@
         <include name="**/mailapi-1.4.jar"/>
         <include name="**/antlr-2.7.7-l7p1.jar"/>
         <include name="**/log4j-1.2.14.jar"/>
-        <include name="**/jsr173_1.0_api.jar"/>
         <include name="**/xalan-2.7.0.jar"/>
         <include name="**/serializer-xalan-2.7.0.jar"/>
         <include name="**/jcalendar-1.3.2.jar"/>
@@ -504,6 +501,14 @@
         <include name="**/activation.jar"/>
         <include name="**/0500-wsdl4j_1.6.2.jar"/>
         <include name="**/guddi-1.0.0.jar"/>
+        <!-- JAX-WS RI required for Java 5 -->
+        <include name="**/jaxws*.jar"/> 
+        <include name="**/resolver.jar"/>
+        <include name="**/jsr173_1.0_api.jar"/>
+        <include name="**/jsr181-api.jar"/>
+        <include name="**/sjsxp.jar"/>
+        <include name="**/jaxb-*.jar"/>
+        <!-- End JAX-WS RI -->
     </patternset>
 
     <!--
@@ -4194,13 +4199,16 @@
     </macrodef>
 
     <!--
-      Generate the JAX-WS classes for UDDI v3.0.2. 
+      Generate the JAX-WS classes for UDDI v3.0.2.
+      NOTE: Due to JDK bug we have to generate src with 1.6 but compile with 1.5
+            http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6553734
     -->
     <target name="generate-uddi-jar">
         <property name="build.guddi.jar" value="build/guddi-1.0.0.jar"/>
         <mkdir dir="build/uddiclasses"/>
         <mkdir dir="build/uddisources"/>
 
+        <!-- Comment out this block and compile with a 1.5 JDK -->
         <echo level="info">Generating classes from WSDL/Schemas</echo>
         <wsimport wsdl="etc/schema/uddiv3/uddi_v3_service_i.wsdl"/>
         <wsimport wsdl="etc/schema/uddiv3/uddi_v3_service_p.wsdl"/>
@@ -4211,6 +4219,8 @@
         <mkdir dir="build/uddiclasses"/>
         <javac srcdir="build/uddisources" destdir="build/uddiclasses" debug="on" optimize="off"
                deprecation="on" verbose="no" target="1.5" source="1.5">
+            <!-- Classpath not needed when we can build with 1.6 -->
+            <classpath refid="project.classpath"/>
         </javac>
 
         <echo level="info">Building JAR</echo>

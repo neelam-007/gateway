@@ -2,7 +2,6 @@ package com.l7tech.common.xml.xpath;
 
 import com.l7tech.common.util.SoapUtil;
 
-import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.SOAPConstants;
 import java.io.Serializable;
 import java.util.LinkedHashMap;
@@ -28,7 +27,7 @@ public class XpathExpression extends CompilableXpath implements Serializable {
         XpathExpression xpath = new XpathExpression();
         xpath.setExpression(SoapUtil.SOAP_BODY_XPATH);
         Map<String, String> nss = new LinkedHashMap<String, String>();
-        nss.put(NamespaceConstants.NSPREFIX_SOAP_ENVELOPE, SOAPConstants.URI_NS_SOAP_ENVELOPE);
+        nss.put(SoapUtil.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_ENVELOPE);
         xpath.setNamespaces(nss);
         return xpath;
     }
