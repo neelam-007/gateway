@@ -970,11 +970,11 @@ class GenericUDDIClient implements UDDIClient {
         } else if ( hasResult(faultMessage, 10110)) {
                 exception = new UDDIAccessControlException("Session expired or invalid.");
         } else if ( hasResult(faultMessage, 10400)) {
-                exception = new UDDIAccessControlException("UDDI registry is too busy.");
+                exception = new UDDIException("UDDI registry is too busy.");
         } else if ( hasResult(faultMessage, 10040)) {
-                exception = new UDDIAccessControlException("UDDI registry version mismatch.");
+                exception = new UDDIException("UDDI registry version mismatch.");
         } else if ( hasResult(faultMessage, 10050)) {
-                exception = new UDDIAccessControlException("UDDI registry does not support a required feature.");
+                exception = new UDDIException("UDDI registry does not support a required feature.");
         } else {
             // handle general exception
             exception = new UDDIException(contextMessage + toString(faultMessage));

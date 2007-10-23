@@ -1,6 +1,7 @@
 package com.l7tech.common.uddi;
 
 import java.util.Set;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
@@ -10,7 +11,6 @@ import javax.xml.soap.SOAPBody;
 import javax.xml.soap.SOAPMessage;
 import javax.xml.soap.SOAPException;
 
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
 
 import com.l7tech.common.util.XmlUtil;
@@ -118,8 +118,8 @@ class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
     private boolean isFault(final Element body) {
         boolean fault = false;
 
-        NodeList list = body.getElementsByTagNameNS(NAMESPACE_SOAP_1_1, "Fault");
-        if ( list.getLength() == 1 ) {
+        List<Element> list = XmlUtil.findChildElementsByName(body, NAMESPACE_SOAP_1_1, "Fault");
+        if ( list.size() == 1 ) {
             fault = true;
         }
 
@@ -130,22 +130,30 @@ class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
      * Check fault for invalid data and repair if possible
      */
     private void repairIfRequired(final Element body) {
-        Element faultCodeElement = findFaultCode(body);
+        Element faultCodeElement = findFaultcode(body);
         if ( !isValidFaultCodeValue( faultCodeElement ) ) {
             repairFaultCodeValue(faultCodeElement);    
         }
     }
 
-    private Element findFaultCode(final Element body) {
-        Element faultCodeElement = null;
+    private Element findFaultcode(final Element body) {
+        Element faultcodeElement = null;
 
-        // find faultcode
-        NodeList list = body.getElementsByTagName("faultcode");
-        if ( list.getLength() == 1 ) {
-            faultCodeElement = (Element) list.item(0);    
+        Element faultElement = null;
+        List<Element> faultElementList = XmlUtil.findChildElementsByName(body, NAMESPACE_SOAP_1_1, "Fault");
+        if ( faultElementList.size() == 1 ) {
+            faultElement = faultElementList.get(0);
         }
 
-        return faultCodeElement;
+        // find faultcode
+        if ( faultElement != null ) {
+            List<Element> faultcodeElementList = XmlUtil.findChildElementsByName(faultElement, (String)null, "faultcode");
+            if ( faultcodeElementList.size() == 1 ) {
+                faultcodeElement = faultcodeElementList.get(0);
+            }
+        }
+
+        return faultcodeElement;
     }
 
     private boolean isSpecDefinedFaultCode(final String value) {
@@ -169,18 +177,14 @@ class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
     }
 
     private void repairFaultCodeValue(final Element faultCodeElement) {
-        // Always add the namespce decl to the faultcode node
-        // in JDK 1.6 SAAJ there seems to be a problem with the
-        // StAX parsers namespace handling
-        faultCodeElement.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:soap", NAMESPACE_SOAP_1_1);
-
+        String prefix = XmlUtil.getOrCreatePrefixForNamespace(faultCodeElement, NAMESPACE_SOAP_1_1, "soap");
         String value = XmlUtil.getTextValue(faultCodeElement);
 
         if ( value == null || value.trim().length()==0 ) {
             // Then we'll assume it is a server error
-            XmlUtil.setTextContent(faultCodeElement, "soap:Server");
+            XmlUtil.setTextContent(faultCodeElement, prefix + ":Server");
         } else {
-            XmlUtil.setTextContent(faultCodeElement, "soap:" + value);
+            XmlUtil.setTextContent(faultCodeElement, prefix + ":" + value);
         }
     }
 }

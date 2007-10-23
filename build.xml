@@ -565,7 +565,6 @@
           <include name="stax-api-1.0.jar"/>
         -->
         <include name="**/jdom.jar"/>
-        <include name="**/wstx-asl-3.0.1.jar"/>
         <include name="**/xfire-aegis-1.2.2.jar"/>
         <include name="**/xfire-core-1.2.2.jar"/>
         <include name="**/xfire-spring-1.2.2.jar"/>
