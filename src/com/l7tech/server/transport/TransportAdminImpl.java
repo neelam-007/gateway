@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.tomcat.ConnectionIdValve;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -50,9 +51,8 @@ public class TransportAdminImpl implements TransportAdmin {
      * @return true if this apears to match the current thread's active admin connection
      */
     private boolean isCurrentAdminConnection(long oid) {
-        // TODO!!!   find a way to get the current connector OID shoved into the thread local context for each admin call,
-        //           and then check it here
-        return false;
+        long currentConnection = ConnectionIdValve.getConnectorOid();
+        return oid == currentConnection;
     }
 
     public long saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException {

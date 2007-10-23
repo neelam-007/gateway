@@ -30,6 +30,8 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
 
     private static final String TRUSTSTORE_PASS = "changeit";
     private static KeyStore emptyKeyStore = null;
+    private long transportModuleId = -1;
+    private long connectorOid = -1;
 
     public SsgJSSESocketFactory() {
         setAttribute("truststorePass", TRUSTSTORE_PASS);
@@ -49,8 +51,34 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
         }
     }
 
+    private long getTransportModuleId() {
+        if (transportModuleId != -1)
+            return transportModuleId;
+        synchronized (this) {
+            if (transportModuleId != -1)
+                return transportModuleId;
+            Object instanceId = attributes.get(HttpTransportModule.CONNECTOR_ATTR_TRANSPORT_MODULE_ID);
+            if (instanceId == null)
+                return -1;
+            return transportModuleId = Long.parseLong(instanceId.toString());
+        }
+    }
+
+    private long getConnectorOid() {
+        if (connectorOid != -1)
+            return connectorOid;
+        synchronized (this) {
+            if (connectorOid != -1)
+                return connectorOid;
+            Object oid = attributes.get(HttpTransportModule.CONNECTOR_ATTR_CONNECTOR_OID);
+            if (oid == null)
+                return -1;
+            return connectorOid = Long.parseLong(oid.toString());
+        }
+    }
+
     private SsgKeyStoreManager getSsgKeyStoreManager() {
-        Object instanceId = attributes.get(HttpTransportModule.CONNECTOR_ATTR_INSTANCE_ID);
+        Object instanceId = attributes.get(HttpTransportModule.CONNECTOR_ATTR_TRANSPORT_MODULE_ID);
         if (instanceId == null) return null;
         HttpTransportModule htm = HttpTransportModule.getInstance(Long.parseLong(instanceId.toString()));
         return htm == null ? null : htm.getSsgKeyStoreManager();
@@ -91,6 +119,6 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
     }
 
     public Socket acceptSocket(ServerSocket socket) throws IOException {
-        return SsgServerSocketFactory.wrapSocket(super.acceptSocket(socket));
+        return SsgServerSocketFactory.wrapSocket(getTransportModuleId(), getConnectorOid(), super.acceptSocket(socket));
     }
 }

@@ -9,6 +9,7 @@ import javax.servlet.ServletException;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
+import com.l7tech.server.transport.http.HttpTransportModule;
 
 /**
  * Valve that listens for new Socket connections and stamps the thread with
@@ -23,6 +24,7 @@ import org.apache.catalina.valves.ValveBase;
  * @version $Revision$
  */
 public class ConnectionIdValve extends ValveBase {
+    private final HttpTransportModule httpTransportModule;
 
     //- PUBLIC
 
@@ -32,15 +34,19 @@ public class ConnectionIdValve extends ValveBase {
      * <p>This causes the valve to register itself for connection notifications
      * with the SsgServerSocketFactory</p>
      *
+     * @param transportModule  the HttpTransportModule that owns this ConnectionIdValve.
      * @see SsgServerSocketFactory
      * @see SsgServerSocketFactory.Listener
      */
-    public ConnectionIdValve() {
-        connectionSequenceLock = new Object();
-        connectionSequence = 0;
-        connectionId = new ThreadLocal();
+    public ConnectionIdValve(HttpTransportModule transportModule) {
+        this.httpTransportModule = transportModule;
+        this.connectionSequence = 0;
         SsgServerSocketFactory.addListener(new SsgServerSocketFactory.Listener(){
-            public void onGetInputStream(Socket accepted) {
+            public void onGetInputStream(long transportModuleInstanceId, long connectorOid, Socket accepted) {
+                if (transportModuleInstanceId != httpTransportModule.getInstanceId())
+                    // not for us
+                    return;
+
                 long id = 0;
                 synchronized(connectionSequenceLock) {
                     id = ++connectionSequence;
@@ -49,6 +55,7 @@ public class ConnectionIdValve extends ValveBase {
                     logger.log(Level.FINE, "Setting id for connection '"+id+"'.");
                 }
                 connectionId.set(Long.valueOf(id));
+                ssgConnectorOid.set(connectorOid);
             }
         });
     }
@@ -67,19 +74,32 @@ public class ConnectionIdValve extends ValveBase {
     public void invoke(Request req, Response res) throws IOException, ServletException {
         // Set the connection id for the request
         req.setAttribute(ATTRIBUTE_CONNECTION_ID, connectionId.get());
-
-        
+        req.setAttribute(ATTRIBUTE_CONNECTOR_OID, ssgConnectorOid.get());
+        req.setAttribute(ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID, httpTransportModule.getInstanceId());
 
         // Let servlet do it's thing
         getNext().invoke(req, res);
     }
 
+    /**
+     * Get the current thread's connector OID, if known.
+     *
+     * @return the thread-local connector OID, or -1 if not known.
+     */
+    public static long getConnectorOid() {
+        Long oid = ssgConnectorOid.get();
+        return oid == null ? -1 : oid;
+    }
+
     //- PRIVATE
 
     private static final String ATTRIBUTE_CONNECTION_ID = "com.l7tech.server.connectionId";
+    private static final String ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID = "com.l7tech.server.httpTransportModuleInstanceId";
+    private static final String ATTRIBUTE_CONNECTOR_OID = "com.l7tech.server.ssgConnectorOid";
     private static final Logger logger = Logger.getLogger(ConnectionIdValve.class.getName());
 
-    private ThreadLocal connectionId;
-    private Object connectionSequenceLock;
+    private static final ThreadLocal<Long> ssgConnectorOid = new ThreadLocal<Long>();
+    private final ThreadLocal<Long> connectionId = new ThreadLocal<Long>();
+    private final Object connectionSequenceLock = new Object();
     private long connectionSequence;
 }

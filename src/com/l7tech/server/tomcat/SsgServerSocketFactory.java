@@ -2,6 +2,7 @@ package com.l7tech.server.tomcat;
 
 import com.l7tech.common.io.SSLSocketWrapper;
 import com.l7tech.common.io.SocketWrapper;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import org.apache.tomcat.util.net.ServerSocketFactory;
 
 import javax.net.ssl.SSLSocket;
@@ -24,6 +25,8 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class SsgServerSocketFactory extends ServerSocketFactory {
+    private long transportModuleId = -1;
+    private long connectorOid = -1;
 
     //- PUBLIC
 
@@ -62,52 +65,77 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
             logger.log(Level.FINE, "Accepted connection.");
         }
 
-        return wrapSocket(accepted);
+        return wrapSocket(getTransportModuleId(), getConnectorOid(), accepted);
     }
 
-    public static Socket wrapSocket(final Socket accepted) {
+    private long getTransportModuleId() {
+        if (transportModuleId != -1)
+            return transportModuleId;
+        synchronized (this) {
+            if (transportModuleId != -1)
+                return transportModuleId;
+            Object instanceId = attributes.get(HttpTransportModule.CONNECTOR_ATTR_TRANSPORT_MODULE_ID);
+            if (instanceId == null)
+                return -1;
+            return transportModuleId = Long.parseLong(instanceId.toString());
+        }
+    }
+
+    private long getConnectorOid() {
+        if (connectorOid != -1)
+            return connectorOid;
+        synchronized (this) {
+            if (connectorOid != -1)
+                return connectorOid;
+            Object oid = attributes.get(HttpTransportModule.CONNECTOR_ATTR_CONNECTOR_OID);
+            if (oid == null)
+                return -1;
+            return connectorOid = Long.parseLong(oid.toString());
+        }
+    }
+
+    public static Socket wrapSocket(final long transportModuleId, final long connectorOid, final Socket accepted) {
+        HttpTransportModule.onSocketOpened(transportModuleId, connectorOid, accepted);
+
         final Socket wrapped;
+
         if (accepted instanceof SSLSocket) {
             SSLSocket sslSocket = (SSLSocket)accepted;
             wrapped = new SSLSocketWrapper(sslSocket) {
-                boolean dispatched = false;
+                private final DispatchSupport ds = new DispatchSupport(transportModuleId, connectorOid, accepted);
 
                 public SocketChannel getChannel() {
-                    maybeDispatch();
+                    ds.maybeDispatch();
                     return super.getChannel();
                 }
 
                 public InputStream getInputStream() throws IOException {
-                    maybeDispatch();
+                    ds.maybeDispatch();
                     return super.getInputStream();
                 }
 
-                private void maybeDispatch() {
-                    if (!dispatched) {
-                        dispatchingListener.onGetInputStream(accepted);
-                        dispatched = true;
-                    }
+                public synchronized void close() throws IOException {
+                    ds.onClose();
+                    super.close();
                 }
             };
         } else {
             wrapped = new SocketWrapper(accepted) {
-                boolean dispatched = false;
+                private final DispatchSupport ds = new DispatchSupport(transportModuleId, connectorOid, accepted);
 
                 public SocketChannel getChannel() {
-                    maybeDispatch();
+                    ds.maybeDispatch();
                     return super.getChannel();
                 }
 
                 public InputStream getInputStream() throws IOException {
-                    maybeDispatch();
+                    ds.maybeDispatch();
                     return super.getInputStream();
                 }
 
-                private void maybeDispatch() {
-                    if (!dispatched) {
-                        dispatchingListener.onGetInputStream(accepted);
-                        dispatched = true;
-                    }
+                public synchronized void close() throws IOException {
+                    ds.onClose();
+                    super.close();
                 }
             };
         }
@@ -165,7 +193,7 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
      * Invokes delegate
      */
     public static interface Listener {
-        public void onGetInputStream(Socket accepted);
+        public void onGetInputStream(long transportModuleInstanceId, long connectorOid, Socket accepted);
     }
 
     //- PRIVATE
@@ -174,7 +202,6 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
     private static final DispatchingListener dispatchingListener = new DispatchingListener();
 
     private final ServerSocketFactory delegate;
-    private String[] sslCipherNames = null;
 
     /**
      * Listener that dispatches to a List of registered listeners.
@@ -186,10 +213,10 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
             listeners.add(listener);
         }
 
-        public void onGetInputStream(Socket accepted) {
+        public void onGetInputStream(long transportModuleInstanceId, long connectorOid, Socket accepted) {
             for (Listener listener : listeners) {
                 try {
-                    listener.onGetInputStream(accepted);
+                    listener.onGetInputStream(transportModuleInstanceId, connectorOid, accepted);
                 }
                 catch (Exception e) {
                     logger.log(Level.WARNING, "Unexpected exception in listener.", e);
@@ -197,4 +224,35 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
             }
         }
     }
+
+    private static class DispatchSupport {
+        private final long transportModuleId;
+        private final long connectorOid;
+        private final Socket accepted;
+        boolean dispatched;
+
+        public DispatchSupport(long transportModuleId, long connectorOid, Socket accepted) {
+            this.transportModuleId = transportModuleId;
+            this.connectorOid = connectorOid;
+            this.accepted = accepted;
+            dispatched = false;
+        }
+
+        public void maybeDispatch() {
+            if (!dispatched) {
+                synchronized (this) {
+                    if (dispatched)
+                        return;
+
+                    dispatchingListener.onGetInputStream(transportModuleId, connectorOid, accepted);
+                    dispatched = true;
+                }
+            }
+        }
+
+        public void onClose() {
+            HttpTransportModule.onSocketClosed(transportModuleId, connectorOid, accepted);
+        }
+    }
+
 }

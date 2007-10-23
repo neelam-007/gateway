@@ -38,6 +38,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.net.Socket;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,7 +57,8 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
 
     public static final String RESOURCE_PREFIX = "com/l7tech/server/resources/";
     public static final String CONNECTOR_ATTR_KEYSTORE_PASS = "keystorePass";
-    public static final String CONNECTOR_ATTR_INSTANCE_ID = "httpTransportModuleInstanceId";
+    public static final String CONNECTOR_ATTR_TRANSPORT_MODULE_ID = "httpTransportModuleInstanceId";
+    public static final String CONNECTOR_ATTR_CONNECTOR_OID = "ssgConnectorOid";
     public static final String INIT_PARAM_INSTANCE_ID = "httpTransportModuleInstanceId";
 
     private static final AtomicLong nextInstanceId = new AtomicLong(1);
@@ -118,7 +120,7 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
 
         final String s = inf.getAbsolutePath();
         host = embedded.createHost(getListenAddress(), s);
-        host.getPipeline().addValve(new ConnectionIdValve());
+        host.getPipeline().addValve(new ConnectionIdValve(this));
         host.getPipeline().addValve(new ResponseKillerValve());
         engine.addChild(host);
 
@@ -354,16 +356,16 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         addConnector(c);
     }
 
-    private void addConnector(SsgConnector connector) throws ListenerException {
+    private synchronized void addConnector(SsgConnector connector) throws ListenerException {
         removeConnector(connector.getOid());
 
         Map<String, Object> connectorAttrs = asTomcatConnectorAttrs(connector);
         connectorAttrs.remove("scheme");
         final String scheme = connector.getScheme();
         if (SsgConnector.SCHEME_HTTP.equals(scheme)) {
-            addHttpConnector(connector.getPort(), connectorAttrs);
+            activeConnectors.put(connector.getOid(), addHttpConnector(connector.getPort(), connectorAttrs));
         } else if (SsgConnector.SCHEME_HTTPS.equals(scheme)) {
-            addHttpsConnector(connector.getPort(), connectorAttrs);
+            activeConnectors.put(connector.getOid(), addHttpsConnector(connector.getPort(), connectorAttrs));
         } else {
             // It's not an HTTP connector; ignore it
             logger.fine("HttpTransportModule is ignoring non-HTTP connector with scheme " + scheme);
@@ -385,6 +387,9 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         } else {
             m.put("address", bindAddress);
         }
+
+        m.put(CONNECTOR_ATTR_TRANSPORT_MODULE_ID, Long.toString(instanceId));
+        m.put(CONNECTOR_ATTR_CONNECTOR_OID, Long.toString(c.getOid()));
 
         if (SsgConnector.SCHEME_HTTPS.equals(c.getScheme())) {
             // SSL
@@ -459,12 +464,12 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         return connectorErrors.remove(oid);
     }
 
-    private void removeConnector(long oid) {
+    private synchronized void removeConnector(long oid) {
         Connector connector = activeConnectors.remove(oid);
         if (connector == null) return;
         logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
         embedded.removeConnector(connector);
-        // TODO do we need to do anything else here to ensure that it's really gone?
+        closeAllSockets(oid);
     }
 
 
@@ -512,6 +517,71 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         return applicationContext;        
     }
 
+    private final Map<Long, Map<Socket, Object>> socketsByConnector = new HashMap<Long, Map<Socket, Object>>();
+
+    private synchronized void onSocketOpened(long connectorOid, Socket accepted) {
+        Map<Socket, Object> sockets = socketsByConnector.get(connectorOid);
+        if (sockets == null) {
+            sockets = new WeakHashMap<Socket, Object>();
+            socketsByConnector.put(connectorOid, sockets);
+        }
+        sockets.put(accepted, Boolean.TRUE);
+    }
+
+    private synchronized void onSocketClosed(long connectorOid, Socket closed) {
+        Map<Socket, Object> sockets = socketsByConnector.get(connectorOid);
+        if (sockets == null)
+            return;
+        sockets.remove(closed);
+        if (sockets.isEmpty())
+            socketsByConnector.remove(connectorOid);
+    }
+
+    private void closeAllSockets(long connectorOid) {
+        Map<Socket, Object> sockets = socketsByConnector.get(connectorOid);
+        if (sockets == null || sockets.isEmpty())
+            return;
+        Collection<Socket> ks = new ArrayList<Socket>(sockets.keySet());
+        synchronized (this) {
+            for (Socket socket : ks) {
+                if (socket != null) {
+                    try {
+                        if (!socket.isClosed()) {
+                            logger.log(Level.INFO, "Force closing client connection for connector OID " + connectorOid);
+                            socket.close();
+                        }
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "Error closing client socket: " + ExceptionUtils.getMessage(e), e);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Report that a client connection has just been opened.
+     *
+     * @param transportModuleId  the ID of the HttpTransportModule instance that owns the connector.  Required
+     * @param connectorOid       the OID of the SsgConnector whose listen socket produced the connection.  Required
+     * @param accepted           the just-accepted client connection socket.  Required
+     */
+    public static void onSocketOpened(long transportModuleId, long connectorOid, Socket accepted) {
+        HttpTransportModule module = getInstance(transportModuleId);
+        if (module != null) module.onSocketOpened(connectorOid, accepted);
+    }
+
+    /**
+     * Report that a client connection has just been closed.
+     *
+     * @param transportModuleId  the ID of the HttpTransportModule instance that owns the connector.  Required
+     * @param connectorOid       the OID of the SsgConnector whose listen socket produced the connection.  Required
+     * @param closed             the just-closed client connection socket.  Required
+     */
+    public static void onSocketClosed(long transportModuleId, long connectorOid, Socket closed) {
+        HttpTransportModule module = getInstance(transportModuleId);
+        if (module != null) module.onSocketClosed(connectorOid, closed);
+    }
+
     private static final class ListenerException extends Exception {
         public ListenerException(String message) {
             super(message);
@@ -522,7 +592,7 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         }
     }
 
-    public void addHttpConnector(int port, Map<String, Object> attrs) throws ListenerException {
+    public Connector addHttpConnector(int port, Map<String, Object> attrs) throws ListenerException {
         Connector c = embedded.createConnector((String)null, port, "http");
         c.setEnableLookups(false);
         setConnectorAttributes(c, attrs);
@@ -531,12 +601,13 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         try {
             logger.info("Starting HTTP connector on port " + port);
             c.start();
+            return c;
         } catch (org.apache.catalina.LifecycleException e) {
             throw new ListenerException("Unable to start HTTP listener: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
-    public void addHttpsConnector(int port,
+    public Connector addHttpsConnector(int port,
                                   Map<String, Object> attrs)
             throws ListenerException
     {
@@ -561,12 +632,12 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
 
         attrs.putAll(attrs);
         setConnectorAttributes(c, attrs);
-        c.setAttribute(CONNECTOR_ATTR_INSTANCE_ID, Long.toString(instanceId));
 
         embedded.addConnector(c);
         try {
             logger.info("Starting HTTPS connector on port " + port);
             c.start();
+            return c;
         } catch (org.apache.catalina.LifecycleException e) {
             throw new ListenerException("Unable to start HTTPS listener: " + ExceptionUtils.getMessage(e), e);
         }
@@ -586,6 +657,20 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
     }
 
     /**
+     * Get the unique identifier for this HttpTransportModule instance.
+     * <p/>
+     * This is used because there is no way to pass non-String arguments as connector attributes,
+     * and since the socket factories are instantiated by Tomcat using reflection to invoke a nullary constructor,
+     * there is no other way to pass a reference to ourself through to our socket factories.
+     *
+     * @see #getInstance(long id)
+     * @return the unique identifier for this HttpTransportModule instance within this classloader.
+     */
+    public long getInstanceId() {
+        return instanceId;
+    }
+
+    /**
      * Get the SsgKeyStoreManager instance made available for SSL connectors created by this transport module.
      *
      * @return an SsgKeyStoreManager instance.  Should never be null.
@@ -600,6 +685,7 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
      * This is normally used by the SsgJSSESocketFactory to locate a Connector's owner HttpTransportModule
      * so it can get at the SsgKeyStoreManager.
      *
+     * @see #getInstanceId
      * @param id the instance ID to search for.  Required.
      * @return  the corresopnding HttpTransportModule instance, or null if not found.
      */

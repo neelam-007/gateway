@@ -55,7 +55,7 @@ public class TestEmbeddedServerMain {
 
         final String s = "c:/ssg/etc/inf";
         host = embedded.createHost(InetAddress.getLocalHost().getCanonicalHostName(), s);
-        host.getPipeline().addValve(new ConnectionIdValve());
+        host.getPipeline().addValve(new ConnectionIdValve(null));
         host.getPipeline().addValve(new ResponseKillerValve());        
 
         context = (StandardContext)embedded.createContext(s, s);
