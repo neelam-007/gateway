@@ -15,9 +15,10 @@ import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
+import javax.xml.XMLConstants;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Encapsulates a version of WS-Trust.
@@ -136,40 +137,46 @@ public abstract class WsTrustConfig {
             Element tokenEl = base.asElement();
             if (tokenEl == null) throw new IllegalStateException("Couldn't get Element for Base security token");
 
-            // Ensure all prefixes inherited from token's original context are available to the token
-            Node n = tokenEl;
-            Map<String, String> declaredTokenNamespaces = new HashMap<String, String>();
-            Map<String, String> usedTokenNamespaces = new HashMap<String, String>();
-            while (n != null) {
-                if (n.getPrefix() != null && n.getNamespaceURI() != null)
-                    usedTokenNamespaces.put(n.getPrefix(), n.getNamespaceURI());
-                if (n.getNodeType() == Node.ELEMENT_NODE) {
-                    NamedNodeMap attrs = n.getAttributes();
-                    for (int i = 0; i < attrs.getLength(); i++) {
-                        Attr attr = (Attr) attrs.item(i);
-                        if ("xmlns".equalsIgnoreCase(attr.getPrefix())) {
-                            declaredTokenNamespaces.put(attr.getLocalName(), attr.getValue());
-                        } else if (attr.getPrefix() != null && attr.getNamespaceURI() != null) {
-                            usedTokenNamespaces.put(attr.getPrefix(), attr.getNamespaceURI());
+            // it is not possible to tell which of the declared namespaces are "used"
+            // so we just ensure that all declared namespaces are available in the
+            // token request
+            Map requiredNamespaces = XmlUtil.getNamespaceMap(tokenEl);
+            Map declaredNamespaces = XmlUtil.getNamespaceMap(baseEl);
+
+            // import token to rst doc
+            Element importedTokenElement = (Element) msg.importNode(tokenEl, true);
+
+            // add any missing namespace decls
+            NamedNodeMap attrs = importedTokenElement.getAttributes();
+            Document factory = importedTokenElement.getOwnerDocument();
+            for (Map.Entry<String,String> entry : (Set<Map.Entry<String,String>>) requiredNamespaces.entrySet()) {
+                String prefix = entry.getKey();
+                String namespace = entry.getValue();
+
+                if ( !namespace.equals( declaredNamespaces.get(prefix) ) ) {
+                    // then prefix is not in scope or is declared but for a
+                    // different namespace
+                    if ("".equals(prefix)) {
+                        // Add NS if not redeclared on token element (default NS)
+                        if (attrs.getNamedItem(XMLConstants.XMLNS_ATTRIBUTE) == null) {
+                            Attr nsAttribute = factory.createAttribute(XMLConstants.XMLNS_ATTRIBUTE);
+                            nsAttribute.setValue(namespace);
+                            attrs.setNamedItem(nsAttribute);    
+                        }
+                    } else {
+                        // Add NS if not redeclared on token element
+                        if (attrs.getNamedItemNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, prefix) == null) {
+                            Attr nsAttribute = factory.createAttributeNS(
+                                    XMLConstants.XMLNS_ATTRIBUTE_NS_URI,
+                                    XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix);
+                            nsAttribute.setValue(namespace);
+                            attrs.setNamedItem(nsAttribute);
                         }
                     }
                 }
-                Node next = n.getNextSibling();
-                if (next == null) next = n.getFirstChild();
-                n = next;
             }
 
-            for (String prefix : usedTokenNamespaces.keySet()) {
-                String uri = usedTokenNamespaces.get(prefix);
-                if (declaredTokenNamespaces.containsKey(prefix) && declaredTokenNamespaces.get(prefix).equals(uri)) {
-                    // Already there
-                } else {
-                    String newPrefix = XmlUtil.findUnusedNamespacePrefix(tokenEl, prefix);
-                    tokenEl.setAttribute("xmlns:" + newPrefix, uri);
-                }
-            }
-
-            baseEl.appendChild(msg.importNode(tokenEl, true));
+            baseEl.appendChild(importedTokenElement);
         }
 
         // Add RequestType
