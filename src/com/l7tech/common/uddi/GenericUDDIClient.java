@@ -57,10 +57,10 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.ws.BindingProvider;
+import javax.xml.ws.Binding;
 import javax.xml.ws.handler.Handler;
 
 /**
@@ -103,6 +103,13 @@ class GenericUDDIClient implements UDDIClient {
         this.tModelKeyPolicyType = policyAttachmentVersion.getTModelKeyPolicyTypes();
         this.tModelKeyLocalPolicyReference = policyAttachmentVersion.getTModelKeyLocalPolicyReference();
         this.tModelKeyRemotePolicyReference = policyAttachmentVersion.getTModelKeyRemotePolicyReference();
+    }
+
+    /**
+     *
+     */
+    public void authenticate() throws UDDIException {
+        authToken();   
     }
 
     /**
@@ -282,10 +289,7 @@ class GenericUDDIClient implements UDDIClient {
 
             UDDIInquiryPortType inquiryPort = getInquirePort();
             
-            // java.lang.Integer maxRows, java.net.URI businessKey, java.lang.Integer listHead, 
-            // java.lang.String authInfo, com.l7tech.common.uddi.guddiv3.FindQualifiers findQualifiers, 
-            // com.l7tech.common.uddi.guddiv3.Name[] name, com.l7tech.common.uddi.guddiv3.CategoryBag categoryBag, 
-            // com.l7tech.common.uddi.guddiv3.TModelBag tModelBag, com.l7tech.common.uddi.guddiv3.Find_tModel find_tModel
+            // find service
             FindService findService = new FindService();
             findService.setAuthInfo(authToken);
             if (maxRows>0)
@@ -350,11 +354,7 @@ class GenericUDDIClient implements UDDIClient {
             UDDIInquiryPortType inquiryPort = getInquirePort();
 
             for (UDDINamedEntity info : services) {
-                // java.lang.Integer integer, java.net.URI uri, java.lang.Integer integer1,
-                // java.lang.String string, com.l7tech.common.uddi.guddiv3.FindQualifiers findQualifiers,
-                // com.l7tech.common.uddi.guddiv3.TModelBag tModelBag,
-                // com.l7tech.common.uddi.guddiv3.Find_tModel find_tModel,
-                // com.l7tech.common.uddi.guddiv3.CategoryBag categoryBag
+                // find binding
                 FindBinding findBinding = new FindBinding();
                 findBinding.setAuthInfo(authToken);
                 findBinding.setServiceKey(info.getKey());
@@ -404,15 +404,7 @@ class GenericUDDIClient implements UDDIClient {
 
             UDDIInquiryPortType inquiryPort = getInquirePort();
 
-            // java.lang.Integer integer, java.lang.Integer integer1, java.lang.String string,
-            // com.l7tech.common.uddi.guddiv3.FindQualifiers findQualifiers,
-            // com.l7tech.common.uddi.guddiv3.Name[] names,
-            // com.l7tech.common.uddi.guddiv3.IdentifierBag identifierBag,
-            // com.l7tech.common.uddi.guddiv3.CategoryBag categoryBag,
-            // com.l7tech.common.uddi.guddiv3.TModelBag tModelBag,
-            // com.l7tech.common.uddi.guddiv3.Find_tModel find_tModel,
-            // com.l7tech.common.uddi.guddiv3.DiscoveryURLs discoveryURLs,
-            // com.l7tech.common.uddi.guddiv3.Find_relatedBusinesses find_relatedBusinesses
+            // find organization
             FindBusiness findBusiness = new FindBusiness();
             findBusiness.setAuthInfo(authToken);
             if (maxRows>0)
@@ -450,7 +442,8 @@ class GenericUDDIClient implements UDDIClient {
     }
 
     /**
-     * Why does this only list local policies? (not remotely attached?)
+     * Note that this currently does not list policies that are remotely
+     * attached (only ones with tModels)
      */
     public Collection<UDDINamedEntity> listPolicies(final String policyPattern,
                                                     final String policyUrl) throws UDDIException {
@@ -473,10 +466,7 @@ class GenericUDDIClient implements UDDIClient {
 
             UDDIInquiryPortType inquiryPort = getInquirePort();
             
-            // java.lang.Integer maxRows, java.lang.Integer listHead, java.lang.String authInfo, 
-            // com.l7tech.common.uddi.guddiv3.FindQualifiers findQualifiers, 
-            // com.l7tech.common.uddi.guddiv3.Name name, com.l7tech.common.uddi.guddiv3.IdentifierBag identifierBag, 
-            // com.l7tech.common.uddi.guddiv3.CategoryBag categoryBag
+            // find policy tmodel(s)
             FindTModel findTModel = new FindTModel();
             findTModel.setAuthInfo(authToken);
             findTModel.setMaxRows(maxRows);
@@ -1045,11 +1035,17 @@ class GenericUDDIClient implements UDDIClient {
 
     private void stubConfig(Object proxy, String url) {
         BindingProvider bindingProvider = (BindingProvider) proxy;
+        Binding binding = bindingProvider.getBinding();
         Map<String,Object> context = bindingProvider.getRequestContext();
+        List<Handler> handlerChain = new ArrayList();
 
         // Add handler to fix any issues with invalid faults
-        bindingProvider.getBinding().setHandlerChain(new ArrayList(Collections.singletonList((Handler)new FaultRepairSOAPHandler())));
+        handlerChain.add(new FaultRepairSOAPHandler());
 
+        // Set handlers
+        binding.setHandlerChain(handlerChain);
+
+        // Set endpoint
         context.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
     }
 

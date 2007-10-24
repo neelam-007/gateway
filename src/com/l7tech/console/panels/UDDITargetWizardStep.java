@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.util.TextUtils;
 import com.l7tech.common.util.ArrayUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.uddi.UDDIClient;
 import com.l7tech.common.uddi.UDDIClientFactory;
 import com.l7tech.common.uddi.UDDIException;
@@ -129,25 +130,7 @@ public class UDDITargetWizardStep extends WizardStepPanel {
         preferences.putProperty(UDDI_URL, url);
         preferences.putProperty(UDDI_ACCOUNT_NAME, name);
 
-        // try the credentials
-        // (bugzilla #2601 preemptively try the credentials)
-        return findExistingPolicyModel(type, url, name, password);
-    }
-
-    private String catchDispositionReport(String msg) {
-        String output = msg;
-        if (msg != null && msg.startsWith("<dispositionReport")) {
-            int end = msg.indexOf("</errInfo>");
-            if (end > 0) {
-                int start = end-1;
-                while (start > 0) {
-                    if (msg.charAt(start) == '>') break;
-                    start--;
-                }
-                output = msg.substring(start+1, end);
-            }
-        }
-        return output;
+        return canProceed(type, url, name, password);
     }
 
     private UDDIRegistryInfo[] loadRegistryTypeInfo() {
@@ -189,25 +172,20 @@ public class UDDITargetWizardStep extends WizardStepPanel {
         return factory.newUDDIClient(url, registryInfo, accountName, accountpasswd, null);
     }
 
-    private boolean findExistingPolicyModel(String type, String url, String accountName, String accountpasswd) {
-        boolean authOk = false;
+    private boolean canProceed(String type, String url, String accountName, String accountpasswd) {
+        boolean nextOk = false;
+
         UDDIClient uddi = newUDDI(type, url, accountName, accountpasswd);
+
         try {
             if (policyUrl != null && policyUrl.trim().length() > 0) {
-                Collection<UDDINamedEntity> policyInfos = uddi.listPolicies(null, policyUrl);
-                if (!policyInfos.isEmpty()) {
-                    if (policyInfos.size() > 1) {
-                        logger.info("Found multiple policies for url '"+policyUrl+"', using first.");
-                    }
-                    UDDINamedEntity info = policyInfos.iterator().next();
-                    policyName = info.getName();
-                    policyKey = info.getKey();
-                }
+                findExistingPolicyModel(uddi);
+            } else {
+                // try the credentials
+                // (bugzilla #2601 preemptively try the credentials)
+                uddi.authenticate();
             }
-            else { // run to check auth is ok
-                uddi.listServices("servicenameusedtocheckuddiisworkingok", true, 1, 1);
-            }
-            authOk = true;
+            nextOk = true;
         }
         catch (UDDIAccessControlException e) {
             String msg = "Authentication failed for user '"+accountName+"'.";
@@ -215,12 +193,26 @@ public class UDDITargetWizardStep extends WizardStepPanel {
         }
         catch (UDDIException e) {
             String msg = "Error when testing credentials.";
-            Throwable t = e;
-            while (t.getCause() != null) t = t.getCause();
-            showError(msg + " " + catchDispositionReport(t.getMessage()));
+            showError(msg + " " + ExceptionUtils.getMessage(e));
             logger.log(Level.WARNING, msg, e);
         }
-        return authOk;
+
+
+        return nextOk;
+    }
+
+    private void findExistingPolicyModel(UDDIClient uddi) throws UDDIException {
+        Collection<UDDINamedEntity> policyInfos = uddi.listPolicies(null, policyUrl);
+
+        if ( !policyInfos.isEmpty() ) {
+            if ( policyInfos.size() > 1 ) {
+                logger.info("Found multiple policies for url '"+policyUrl+"', using first.");
+            }
+
+            UDDINamedEntity info = policyInfos.iterator().next();
+            policyName = info.getName();
+            policyKey = info.getKey();
+        }
     }
 
     public void readSettings(Object settings) throws IllegalArgumentException {

@@ -18,6 +18,19 @@ import com.l7tech.common.util.Closeable;
 public interface UDDIClient extends Closeable {
 
     /**
+     * Authenticate the credentials (if any)
+     *
+     * <p>This will get a token for the UDDI registry if any credentials are
+     * available.</p>
+     *
+     * <p>If credentials are available and this method succeeds then the
+     * credentials are valid.</p>
+     *
+      * @throws UDDIException if an error occurs
+     */
+    void authenticate() throws UDDIException;
+
+    /**
      * List services in registry.
      *
      * <p>The service name pattern uses UDDI approximate match syntax:</p>

@@ -143,6 +143,10 @@ class SystinetUDDIClient implements UDDIClient {
         return authToken != null;
     }
 
+    public void authenticate() throws UDDIException {
+        authToken();
+    }
+
     public String publishPolicy(String name, String description, String url) throws UDDIException {
         // create a tmodel to save
         TModel tmodel = new TModel();
