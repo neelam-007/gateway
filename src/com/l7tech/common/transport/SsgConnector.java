@@ -1,13 +1,19 @@
 package com.l7tech.common.transport;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.common.io.PortRange;
+import com.l7tech.common.util.ExceptionUtils;
 
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Describes a port on which the Gateway will listen for incoming requests.
  */
 public class SsgConnector extends NamedEntityImp {
+    protected static final Logger logger = Logger.getLogger(SsgConnector.class.getName());
+
     /** Indicates that a client certificate challenge will never be sent. */
     public static final int CLIENT_AUTH_NEVER = 0;
 
@@ -321,6 +327,36 @@ public class SsgConnector extends NamedEntityImp {
      */
     protected void setProperties(Set<SsgConnectorProperty> properties) {
         this.properties = properties;
+    }
+
+    /**
+     * @return a list of all TCP port ranges claimed by this connector.
+     */
+    public List<PortRange> getTcpPortsUsed() {
+        List<PortRange> ret = new ArrayList<PortRange>();
+        ret.add(new PortRange(port, port, false));
+        PortRange range = getPortRange();
+        if (range != null)
+            ret.add(range);
+        return ret;
+    }
+
+    /** @return the configured TCP port range, or null if it is not configured. */
+    private PortRange getPortRange() {
+        try {
+            String startstr = getProperty(PROP_PORT_RANGE_START);
+            if (startstr == null)
+                return null;
+            int start = Integer.parseInt(startstr);
+            String countstr = getProperty(PROP_PORT_RANGE_COUNT);
+            if (countstr == null)
+                return null;
+            int count = Integer.parseInt(countstr);
+            return new PortRange(start, start + count, false);
+        } catch (IllegalArgumentException e) {
+            logger.log(Level.WARNING, "Ignoring invalid port range settings for connector oid #" + getOid() + ": " + ExceptionUtils.getMessage(e), e);
+            return null;
+        }
     }
 
     /** @noinspection RedundantIfStatement*/

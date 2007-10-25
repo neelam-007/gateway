@@ -1,6 +1,7 @@
 package com.l7tech.server.config.ui.console;
 
 import com.l7tech.common.util.ArrayUtils;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.server.config.WizardInputValidator;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import org.apache.commons.lang.StringUtils;
@@ -27,7 +28,6 @@ public class ConsoleWizardUtils {
     private static ConsoleWizardUtils instance_ = null;
     public static final String EOL_CHAR = System.getProperty("line.separator");
 
-    private Pattern validIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
     public static String[] YES_VALUES;
     public static String[] NO_VALUES;
     public static String[] YES_NO_VALUES;
@@ -287,41 +287,6 @@ public class ConsoleWizardUtils {
         return  ArrayUtils.contains(YES_VALUES, answer);
     }
 
-    public boolean isValidIpAddress(String address) {
-
-        if (address == null) return false;
-
-        Matcher matcher = validIpAddressPattern.matcher(address);
-
-        if (matcher.matches())
-        {
-            //at least it's got a sane format.
-            int start = 0;
-            int end = 255;
-
-            for (int i = 1; i <= matcher.groupCount(); ++i) {
-                String octetString = matcher.group(i);
-                try {
-                    int octet = Integer.parseInt(octetString);
-                    if (i == 1)
-                        start = 1;
-                    else
-                        start = 0;
-
-                    if (octet < start || octet > end)
-                        return false;
-
-                } catch (NumberFormatException e) {
-                    return false;
-                }
-
-            }
-            return true;
-        }
-
-        return false;
-    }
-
     private final BufferedReader reader;
     private final PrintStream out;
 
@@ -329,7 +294,7 @@ public class ConsoleWizardUtils {
         if (StringUtils.isEmpty(timeserverLine))
             return null;
 
-        if (isValidIpAddress(timeserverLine))
+        if (InetAddressUtil.isValidIpAddress(timeserverLine))
             return timeserverLine;
 
         String resolvedIp = null;

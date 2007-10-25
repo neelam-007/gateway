@@ -9,6 +9,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * Utility methods for {@link java.net.InetAddress}.
@@ -17,6 +19,8 @@ public class InetAddressUtil {
     private static final Logger logger = Logger.getLogger(InetAddressUtil.class.getName());
 
     private static final InetAddress localHost;
+    public static final Pattern validIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
+
     static {
         InetAddress lh;
         try {
@@ -46,5 +50,40 @@ public class InetAddressUtil {
      */
     public static InetAddress getLocalHost() {
         return localHost;
+    }
+
+    public static boolean isValidIpAddress(String address) {
+
+        if (address == null) return false;
+
+        Matcher matcher = validIpAddressPattern.matcher(address);
+
+        if (matcher.matches())
+        {
+            //at least it's got a sane format.
+            int start = 0;
+            int end = 255;
+
+            for (int i = 1; i <= matcher.groupCount(); ++i) {
+                String octetString = matcher.group(i);
+                try {
+                    int octet = Integer.parseInt(octetString);
+                    if (i == 1)
+                        start = 1;
+                    else
+                        start = 0;
+
+                    if (octet < start || octet > end)
+                        return false;
+
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+
+            }
+            return true;
+        }
+
+        return false;
     }
 }
