@@ -34,8 +34,6 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
     private JTextField policyDescField;
     private JTextField policyURLField;
     private JButton registerButton;
-    private JLabel nameLabel;
-    private JLabel keyLabel;
     private PublishPolicyToUDDIWizard.Data data;
 
     public UDDIPolicyDetailsWizardStep(WizardStepPanel next) {
@@ -118,11 +116,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
     }
 
     public boolean canAdvance() {
-        return keyLabel.getText().length() > 0;
-    }
-
-    private void showInfo(String info) {
-        JOptionPane.showMessageDialog(this, TextUtils.breakOnMultipleLines(info, 30), "Warning", JOptionPane.WARNING_MESSAGE);
+        return data.getPolicytModelKey() != null && data.getPolicytModelKey().length() > 0;
     }
 
     private void showError(String err) {
@@ -139,7 +133,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
             Collection<UDDINamedEntity> policyInfos = uddi.listPolicies(null, policyUrl);
             if (policyInfos.isEmpty()) {
                 data.setPolicytModelKey(uddi.publishPolicy(policyNameField.getText(), policyDescField.getText(), policyUrl));
-                data.setPolicytModelName(policyNameField.getText());
+                data.setPolicyName(policyNameField.getText());
             }
             else {
                 if (policyInfos.size() > 1) {
@@ -148,15 +142,11 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
 
                 UDDINamedEntity info = policyInfos.iterator().next();
                 data.setPolicytModelKey(info.getKey());
-                data.setPolicytModelName(info.getName());
-
-                showInfo("Found existing policy model for url.");
+                data.setPolicyName(info.getName());
             }
 
-            keyLabel.setText(data.getPolicytModelKey());
-            nameLabel.setText(data.getPolicytModelName());
-
-            notifyListeners();            
+            notifyListeners();
+            registerButton.setEnabled(false);
 
             logger.info("Published policy with key: " + data.getPolicytModelKey());
         } catch (UDDIException e) {
@@ -179,7 +169,8 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
         policyDescField.setText(data.getPolicyDescription());
         policyURLField.setText( data.getCapturedPolicyURL());
 
-        keyLabel.setText(data.getPolicytModelKey() == null ? "" : data.getPolicytModelKey());
-        nameLabel.setText(data.getPolicytModelName() == null ? "" : data.getPolicytModelName());
+        if (canAdvance()) {
+            registerButton.setEnabled(false);            
+        }
     }
 }

@@ -228,20 +228,21 @@ public class UDDITargetWizardStep extends WizardStepPanel {
                 uddiAccountNameField.getText(),
                 uddiAccountPasswdField.getText()));
         data.setPolicytModelKey(policyKey);
-        data.setPolicytModelName(policyName);
+        if (policyName != null)
+            data.setPolicyName(policyName);
     }
 
     public interface Data {
         void setUddi(UDDIClient uddi);
 
-        public String getCapturedPolicyURL();
-        public void setCapturedPolicyURL(String capturedPolicyURL);
+        String getCapturedPolicyURL();
+        void setCapturedPolicyURL(String capturedPolicyURL);
 
-        public String getPolicytModelKey();
-        public void setPolicytModelKey(String policytModelKey);
+        String getPolicytModelKey();
+        void setPolicytModelKey(String policytModelKey);
 
-        public String getPolicytModelName() ;
-        public void setPolicytModelName(String policytModelName);
+        String getPolicyName();
+        void setPolicyName(String policyName);
     }
 
     private void showError(String err) {

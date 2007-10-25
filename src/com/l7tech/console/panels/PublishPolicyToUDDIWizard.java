@@ -49,7 +49,6 @@ public class PublishPolicyToUDDIWizard extends Wizard {
         private String policyConsumptionURL;
         private UDDIClient uddi;
         private String policytModelKey;
-        private String policytModelName;
 
         public String getPolicyName() {
             return policyName;
@@ -89,14 +88,6 @@ public class PublishPolicyToUDDIWizard extends Wizard {
 
         public void setPolicytModelKey(String policytModelKey) {
             this.policytModelKey = policytModelKey;
-        }
-
-        public String getPolicytModelName() {
-            return policytModelName;
-        }
-
-        public void setPolicytModelName(String policytModelName) {
-            this.policytModelName = policytModelName;
         }
 
         public String getPolicyConsumptionURL() {

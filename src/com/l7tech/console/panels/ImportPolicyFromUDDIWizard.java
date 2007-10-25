@@ -52,7 +52,7 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
         private boolean confirmed = false;
         private String capturedPolicyURL;
         private String policytModelKey;
-        private String policytModelName;
+        private String policyName;
 
         public UDDIClient getUddi() {
             return uddi;
@@ -94,12 +94,12 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
             this.policytModelKey = policytModelKey;
         }
 
-        public String getPolicytModelName() {
-            return policytModelName;
+        public String getPolicyName() {
+            return policyName;
         }
 
-        public void setPolicytModelName(String policytModelName) {
-            this.policytModelName = policytModelName;
+        public void setPolicyName(String policytModelName) {
+            this.policyName = policytModelName;
         }
     }
 }
