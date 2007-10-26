@@ -1,8 +1,8 @@
 package com.l7tech.common.util;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
  * Tests for TextUtils
@@ -101,5 +101,19 @@ public class TextUtilsTest extends TestCase {
 
             assertTrue("'"+ pattern + "' matches '" + text + "'.", expectedResult == TextUtils.matches(pattern, text, true, false));
         }
+    }
+
+    public void testTail() {
+        String last1Line = "line 4";
+        String last2Line = "line 3\r" + last1Line;
+        String last3Line = "line 2\n" + last2Line;
+        String last4Line = "line 1\r\n" + last3Line;
+        String text = last4Line + "\r\n";
+
+        assertEquals("Last 1 line", last1Line, TextUtils.tail(text, 1));
+        assertEquals("Last 2 lines", last2Line, TextUtils.tail(text, 2));
+        assertEquals("Last 3 lines", last3Line, TextUtils.tail(text, 3));
+        assertEquals("Last 4 lines", last4Line, TextUtils.tail(text, 4));
+        assertEquals("Last 5 lines", last4Line, TextUtils.tail(text, 5));
     }
 }

@@ -218,6 +218,10 @@
     <servlet-mapping>
         <servlet-name>ping</servlet-name>
         <url-pattern>/ssg/ping</url-pattern>
+        <url-pattern>/ssg/ping/systemInfo</url-pattern>
+        <!--
+            NOTE: Make sure url-pattern includes those defined in com.l7tech.server.PingServlet.
+        -->
     </servlet-mapping>
 
     <servlet-mapping>

@@ -6,8 +6,8 @@
 package com.l7tech.common.util;
 
 import java.util.StringTokenizer;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Utilities for text mode programs.
@@ -170,5 +170,67 @@ public class TextUtils {
         }
 
         return match;
+    }
+
+    /**
+     * Extracts trailing lines of text. This will handle Unix, Mac and Windows
+     * line endings. Any trailing line ending is trimmed from the result and
+     * is not counted as one line.
+     *
+     * @param text      multi-line text
+     * @param numLines  maximum number of trailing lines to extract
+     * @return          at most <tt>numLines</tt> lines of text with any trailing
+     *                  line end character(s) trimmed
+     * @since SecureSpan 4.3
+     */
+    public static String tail(String text, int numLines) {
+        if (numLines <= 0)
+            throw new IllegalArgumentException("number of lines must be greater than zero");
+
+        int lines = 0;
+        int i = text.length() - 1;
+        boolean wasLF = false;
+
+        int numLineEndCharsAtEnd = 0;
+        if (text.endsWith("\r\n")) {
+            numLineEndCharsAtEnd = 2;
+            i -= 2;
+        } else if (text.endsWith("\r") || text.endsWith("\n")) {
+            numLineEndCharsAtEnd = 1;
+            --i;
+        }
+
+        for (; i >= 0; --i) {
+            final char c = text.charAt(i);
+            if (c == '\n') {
+                ++ lines;
+                if (lines == numLines)
+                    break;
+                wasLF = true;
+            } else {
+                if (c == '\r') {
+                    if (! wasLF) {
+                        ++ lines;
+                        if (lines == numLines)
+                            break;
+                    }
+                }
+                wasLF = false;
+            }
+        }
+
+        if (i < 0) {
+            if (numLineEndCharsAtEnd == 0) {
+                return text;
+            } else {
+                return text.substring(0, text.length() - numLineEndCharsAtEnd);
+            }
+        } else {
+            if (numLineEndCharsAtEnd == 0) {
+                return text.substring(i + 1);
+            } else {
+                return text.substring(i + 1, text.length() - numLineEndCharsAtEnd);
+            }
+        }
     }
 }

@@ -237,6 +237,18 @@
         </property>
     </bean>
 
+    <!-- SSL hostname verifier for internode communication -->
+    <bean id="internodeHostnameVerifier" class="com.l7tech.server.transport.http.InternodeSslClientHostnameVerifier">
+        <constructor-arg ref="keystore"/>
+    </bean>
+
+    <!-- HTTP client factory for internode communication -->
+    <bean id="internodeHttpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
+        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="trustManager"/>
+        <constructor-arg ref="internodeHostnameVerifier"/>
+    </bean>
+
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
         <property name="serviceCache" ref="serviceCache"/>
