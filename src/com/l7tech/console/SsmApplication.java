@@ -6,6 +6,7 @@
 package com.l7tech.console;
 
 import com.l7tech.common.util.JavaVersionChecker;
+import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.console.util.TopComponents;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -25,7 +26,7 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
     private static final Logger logger = Logger.getLogger(SsmApplication.class.getName());
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
     private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme";
-    private static final boolean SUPPRESS_AUTO_LNF = Boolean.valueOf("com.l7tech.console.SuppressAutoLookAndFeel");
+    private static final boolean SUPPRESS_AUTO_LNF = SyspropUtil.getBoolean("com.l7tech.console.SuppressAutoLookAndFeel");
 
     private String resourcePath;
     protected MainWindow mainWindow;
