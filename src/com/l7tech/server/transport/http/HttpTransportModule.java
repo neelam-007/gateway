@@ -5,14 +5,16 @@ import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.LicenseManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.tomcat.*;
 import com.l7tech.server.transport.SsgConnectorManager;
+import com.l7tech.server.transport.TransportModule;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Connector;
@@ -21,13 +23,7 @@ import org.apache.catalina.core.StandardWrapper;
 import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Embedded;
 import org.apache.naming.resources.FileDirContext;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import javax.naming.directory.DirContext;
 import java.io.File;
@@ -37,8 +33,8 @@ import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,7 +48,7 @@ import java.util.logging.Logger;
  * <p/>
  * It listens for entity chagne events for SsgConnector to know when to start/stop HTTP connectors.
  */
-public class HttpTransportModule implements InitializingBean, ApplicationListener, DisposableBean, ApplicationContextAware {
+public class HttpTransportModule extends TransportModule {
     protected static final Logger logger = Logger.getLogger(HttpTransportModule.class.getName());
 
     public static final String RESOURCE_PREFIX = "com/l7tech/server/resources/";
@@ -74,10 +70,7 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
     private final MasterPasswordManager masterPasswordManager;
     private final KeystoreUtils keystoreUtils;
     private final SsgKeyStoreManager ssgKeyStoreManager;
-    private final SsgConnectorManager ssgConnectorManager;
     private final Map<Long, Connector> activeConnectors = new ConcurrentHashMap<Long, Connector>();
-    private final Map<Long, Throwable> connectorErrors = new ConcurrentHashMap<Long, Throwable>();
-    private ApplicationContext applicationContext;
     private Embedded embedded;
     private Engine engine;
     private Host host;
@@ -87,13 +80,14 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
                                MasterPasswordManager masterPasswordManager,
                                KeystoreUtils keystoreUtils,
                                SsgKeyStoreManager ssgKeyStoreManager,
+                               LicenseManager licenseManager,
                                SsgConnectorManager ssgConnectorManager)
     {
+        super("HTTP Transport Module", logger, GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
         this.serverConfig = serverConfig;
         this.masterPasswordManager = masterPasswordManager;
         this.keystoreUtils = keystoreUtils;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
-        this.ssgConnectorManager = ssgConnectorManager;
         this.instanceId = nextInstanceId.getAndIncrement();
         instancesById.put(instanceId, new WeakReference<HttpTransportModule>(this));
     }
@@ -103,9 +97,6 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
             // Already initialized
             return;
         }
-
-        if (applicationContext == null)
-            throw new LifecycleException("no applicationContext (afterPropertiesSet() called before setApplicationContext()?)"); // can't happen
 
         embedded = new Embedded();
         engine = embedded.createEngine();
@@ -226,12 +217,8 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
             embedded.start();
             context.start();
 
-            startInitialConnectors();
-
             itworked = true;
         } catch (org.apache.catalina.LifecycleException e) {
-            throw new LifecycleException(e);
-        } catch (ListenerException e) {
             throw new LifecycleException(e);
         } finally {
             if (!itworked)
@@ -262,7 +249,7 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
      *
      * @throws LifecycleException if there is a problem shutting down the server
      */
-    public void stop() throws LifecycleException {
+    protected void doStop() throws LifecycleException {
         if (!running.get())
             return;
         try {
@@ -278,7 +265,7 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
      *
      * @throws LifecycleException if there is a problem shutting down the server
      */
-    public void destroy() throws LifecycleException {
+    protected void doClose() throws LifecycleException {
         try {
             stop();
             embedded.destroy();
@@ -300,8 +287,14 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
                 addConnectorsFromServerXml();
             }
             for (SsgConnector connector : connectors) {
-                if (connector.isEnabled())
-                    addConnector(connector);
+                if (connector.isEnabled() && connectorIsOwnedByThisModule(connector)) {
+                    try {
+                        addConnector(connector);
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                                    ": " + ExceptionUtils.getMessage(e), e);
+                    }
+                }
             }
 
         } catch (FindException e) {
@@ -356,8 +349,10 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         addConnector(c);
     }
 
-    private synchronized void addConnector(SsgConnector connector) throws ListenerException {
+    protected synchronized void addConnector(SsgConnector connector) throws ListenerException {
         removeConnector(connector.getOid());
+        if (!connectorIsOwnedByThisModule(connector))
+            return;
 
         Map<String, Object> connectorAttrs = asTomcatConnectorAttrs(connector);
         connectorAttrs.remove("scheme");
@@ -367,8 +362,8 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         } else if (SsgConnector.SCHEME_HTTPS.equals(scheme)) {
             activeConnectors.put(connector.getOid(), addHttpsConnector(connector.getPort(), connectorAttrs));
         } else {
-            // It's not an HTTP connector; ignore it
-            logger.fine("HttpTransportModule is ignoring non-HTTP connector with scheme " + scheme);
+            // It's not an HTTP connector; ignore it.  This shouldn't be possible
+            logger.log(Level.WARNING, "HttpTransportModule is ignoring non-HTTP(S) connector with scheme " + scheme);
         }
     }
 
@@ -464,7 +459,7 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         return connectorErrors.remove(oid);
     }
 
-    private synchronized void removeConnector(long oid) {
+    protected synchronized void removeConnector(long oid) {
         Connector connector = activeConnectors.remove(oid);
         if (connector == null) return;
         logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
@@ -472,49 +467,34 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
         closeAllSockets(oid);
     }
 
-
-    public void afterPropertiesSet() throws Exception {
-        startServletEngine();
+    private final Set<String> schemes = new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_HTTP, SsgConnector.SCHEME_HTTPS));
+    protected Set<String> getSupportedSchemes() {
+        return schemes;
     }
 
-    public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (applicationEvent instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
-            if (SsgConnector.class.equals(event.getEntityClass())) {
-                long[] ids = event.getEntityIds();
-                char[] ops = event.getEntityOperations();
-                for (int i = 0; i < ids.length; i++) {
-                    long id = ids[i];
-                    try {
-                        switch (ops[i]) {
-                        case EntityInvalidationEvent.CREATE:
-                        case EntityInvalidationEvent.UPDATE:
-                            SsgConnector c = ssgConnectorManager.findByPrimaryKey(id);
-                            if (c.isEnabled())
-                                addConnector(c);
-                            else
-                                removeConnector(id);
-                            break;
-                        case EntityInvalidationEvent.DELETE:
-                            removeConnector(id);
-                            break;
-                        }
-                    } catch (Throwable t) {
-                        logger.log(Level.WARNING, "Error processing change for connector oid " + id + ": " + ExceptionUtils.getMessage(t), t);
-                        connectorErrors.put(id, t);
-                    }
-                }
-            }
+
+    public void init() {
+        try {
+            initializeServletEngine();
+        } catch (LifecycleException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
+    protected void doStart() throws LifecycleException {
+        if (isStarted())
+            return;
+        try {
+            startServletEngine();
+            startInitialConnectors();
+        } catch (ListenerException e) {
+            throw new LifecycleException("Unable to start HTTP transport module: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     /** @return the Gateway's global ApplicationContext.  Will be present before any servlet contexts are created. */
     public ApplicationContext getApplicationContext() {
-        return applicationContext;        
+        return super.getApplicationContext();
     }
 
     private final Map<Long, Map<Socket, Object>> socketsByConnector = new HashMap<Long, Map<Socket, Object>>();
@@ -580,16 +560,6 @@ public class HttpTransportModule implements InitializingBean, ApplicationListene
     public static void onSocketClosed(long transportModuleId, long connectorOid, Socket closed) {
         HttpTransportModule module = getInstance(transportModuleId);
         if (module != null) module.onSocketClosed(connectorOid, closed);
-    }
-
-    private static final class ListenerException extends Exception {
-        public ListenerException(String message) {
-            super(message);
-        }
-
-        public ListenerException(String message, Throwable cause) {
-            super(message, cause);
-        }
     }
 
     public Connector addHttpConnector(int port, Map<String, Object> attrs) throws ListenerException {

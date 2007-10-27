@@ -26,9 +26,9 @@ public class SystemMessages extends Messages {
 
     public static final M SOCKET_TIMEOUT                = m(2017, Level.WARNING, "A remote network connection timed out");
 
-    public static final M FTPSERVER_NOT_CONFIGURED      = m(2020, Level.INFO, "Not starting FTP server (no listeners enabled).");
-    public static final M FTPSERVER_START               = m(2021, Level.INFO, "Starting FTP server with listeners [''{0}''].");
-    public static final M FTPSERVER_STOP                = m(2022, Level.INFO, "Stopping FTP server.");
+    public static final M FTPSERVER_NOT_CONFIGURED      = m(2020, Level.INFO, "Not starting FTP server (no listeners enabled)."); // NO LONGER USED
+    public static final M FTPSERVER_START               = m(2021, Level.INFO, "Starting FTP server: ''{0}''");
+    public static final M FTPSERVER_STOP                = m(2022, Level.INFO, "Stopping FTP server: ''{0}''");
     public static final M FTPSERVER_ERROR               = m(2023, Level.WARNING, "FTP server error ''{0}''");
 
     // Used by certificate validation

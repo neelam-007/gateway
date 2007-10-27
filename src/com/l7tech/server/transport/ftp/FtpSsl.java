@@ -1,26 +1,21 @@
 package com.l7tech.server.transport.ftp;
 
+import com.l7tech.common.security.SingleCertX509KeyManager;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
+import org.apache.ftpserver.interfaces.Ssl;
+
+import javax.net.ssl.*;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.net.ServerSocket;
-import java.net.InetAddress;
-import java.net.Socket;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.X509ExtendedKeyManager;
-
-import org.apache.ftpserver.interfaces.Ssl;
-
-import com.l7tech.common.security.SingleCertX509KeyManager;
-import com.l7tech.server.KeystoreUtils;
 
 /**
  * Ssl implementation for the SSG.
+ * <p/>
+ * Users must remember to call {@link #setPrivateKey} before attempting to make use of this.
  *
  * @author Steve Jones
  */
@@ -31,11 +26,7 @@ public class FtpSsl implements Ssl {
     public FtpSsl() {
         // create ssl context map - the key is the
         // SSL protocol and the value is SSLContext.
-        this.sslContextMap = new ConcurrentHashMap();
-    }
-
-    public void setKeystoreUtils(final KeystoreUtils keystoreUtils) {
-        this.keystoreUtils = keystoreUtils;
+        this.sslContextMap = new ConcurrentHashMap<String, SSLContext>();
     }
 
     public boolean getClientAuthenticationRequired() {
@@ -44,6 +35,10 @@ public class FtpSsl implements Ssl {
 
     public SSLContext getSSLContext() throws GeneralSecurityException {
         return getSSLContext(sslProtocol);
+    }
+
+    public void setPrivateKey(SsgKeyEntry privateKey) {
+        this.privateKey = privateKey;
     }
 
     /**
@@ -56,17 +51,19 @@ public class FtpSsl implements Ssl {
         }
 
         // if already stored - return it
-        SSLContext ctx = (SSLContext)sslContextMap.get(protocol);
+        SSLContext ctx = sslContextMap.get(protocol);
         if(ctx != null) {
             return ctx;
         }
 
+        if (privateKey == null)
+            throw new IllegalStateException("Unable to create SSL context: No private key has been set on this FtpSsl instance");
+
         // note that extended key manager is required for engine use
-        X509ExtendedKeyManager keyManager = new SingleCertX509KeyManager(
-                keystoreUtils.getSSLCertChain(),
-                keystoreUtils.getSSLPrivateKey(),
-                "ftpssl");
-        
+        X509ExtendedKeyManager keyManager = new SingleCertX509KeyManager(privateKey.getCertificateChain(),
+                                                                         privateKey.getPrivateKey(),
+                                                                         "ftpssl-" + privateKey.getKeystoreId() + "-" + privateKey.getAlias());
+
         // create SSLContext
         ctx = SSLContext.getInstance(protocol);
         ctx.init(new KeyManager[]{keyManager},
@@ -89,7 +86,7 @@ public class FtpSsl implements Ssl {
         SSLServerSocketFactory ssocketFactory = ctx.getServerSocketFactory();
 
         // create server socket
-        SSLServerSocket serverSocket = null;
+        final SSLServerSocket serverSocket;
         if(addr == null) {
             serverSocket = (SSLServerSocket) ssocketFactory.createServerSocket(port, 100);
         }
@@ -171,8 +168,8 @@ public class FtpSsl implements Ssl {
 
     //- PRIVATE
 
-    private final Map sslContextMap;
-    private KeystoreUtils keystoreUtils;
+    private final Map<String, SSLContext> sslContextMap;
+    private SsgKeyEntry privateKey;
     private String sslProtocol = "TLS";
     private boolean clientAuthentication = false;
 }

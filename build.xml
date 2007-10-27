@@ -3417,7 +3417,6 @@
         <replace file="${install.src.hibernate.properties}" token="DB_DRIVER" value="${database.driver}"/>
         <replace file="${install.src.hibernate.properties}" token="DB_PINGSTMT" value="${database.pingstmt}"/>
 
-        <copy file="${src.root}/etc/ftpserver.properties" todir="${install.src.conf}"/>
         <copy file="${src.root}/etc/system.properties" todir="${install.src.conf}"/>
 
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}"/>

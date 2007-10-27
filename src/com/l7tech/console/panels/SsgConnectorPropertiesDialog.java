@@ -654,7 +654,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         connector.setPort(Integer.parseInt(portField.getText()));
         connector.setEnabled(enabledCheckBox.isSelected());
         String bindAddress = (String)interfaceComboBox.getSelectedItem();
-        connector.putProperty(SsgConnector.PROP_BIND_ADDRESS, bindAddress == null ? INTERFACE_ANY : bindAddress);
+        connector.putProperty(SsgConnector.PROP_BIND_ADDRESS, INTERFACE_ANY.equals(bindAddress) ? null : bindAddress);
         connector.setEndpoints(getEndpointList());
 
         // FTP-specific properties

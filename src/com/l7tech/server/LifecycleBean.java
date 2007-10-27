@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContext;
@@ -21,7 +22,7 @@ import com.l7tech.common.LicenseManager;
  *
  * @author Steve Jones
  */
-public abstract class LifecycleBean implements InitializingBean, ApplicationContextAware, ApplicationListener, ServerComponentLifecycle {
+public abstract class LifecycleBean implements InitializingBean, ApplicationContextAware, ApplicationListener, ServerComponentLifecycle, DisposableBean {
 
     //- PUBLIC
 
@@ -66,7 +67,18 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
 
     public void close() throws LifecycleException {
         doClose();
-    };
+    }
+
+    public void destroy() throws Exception {
+        stop();
+        close();
+    }
+
+    public boolean isStarted() {
+        synchronized (startLock) {
+            return this.started;
+        }
+    }
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if ( licenseFeature != null ) {
