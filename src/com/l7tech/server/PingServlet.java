@@ -11,7 +11,8 @@ import com.l7tech.common.LicenseException;
 import com.l7tech.common.http.*;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ProcResult;
+import com.l7tech.common.util.ProcUtils;
 import com.l7tech.common.util.TextUtils;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
@@ -342,31 +343,22 @@ public class PingServlet extends AuthenticatableHttpServlet {
             //
             final File scriptFile = new File(_ssgBinDir, SYSTEM_INFO_SCRIPT_NAME);
             if (scriptFile.exists()) {
-                PrintWriter scriptWriter = null;
                 String scriptOutput = null;
                 try {
-                    // Runs the script file and collects the output.
-                    final ProcessBuilder pb = new ProcessBuilder(scriptFile.getAbsolutePath());
-                    pb.directory(scriptFile.getParentFile());
-                    pb.redirectErrorStream(true);
                     if (_logger.isLoggable(Level.FINE)) {
                         _logger.fine("Running system info script: " + scriptFile.getAbsolutePath());
                     }
-                    final Process p = pb.start();
-                    scriptOutput = new String(HexUtils.slurpStream(p.getInputStream(), 1024 * 1024));
-                    p.waitFor();
-                    if (p.exitValue() != 0) {
-                        // Script failed. Prints tail part of output to log for diagnostics.
+                    final ProcResult result = ProcUtils.exec(scriptFile.getParentFile(), scriptFile);
+                    if (result.getExitStatus() == 0) {
+                        scriptOutput = new String(result.getOutput());
+                    } else {
+                        // Script failed. Prints tail part of output to log; for diagnostics.
                         // Servlet response gets only a generic error message for security reason.
-                        _logger.warning("System info script exited with " + p.exitValue() + ". Last 10 lines of output:\n" + TextUtils.tail(scriptOutput, 10));
-                        scriptOutput = "Script exited with " + p.exitValue() + ". See SSG log for details.";
+                        _logger.warning("System info script exited with " + result.getExitStatus() + ". Last 10 lines of output:\n" + TextUtils.tail(new String(result.getOutput()), 10));
+                        scriptOutput = "Script exited with " + result.getExitStatus() + ". See SSG log for details.";
                     }
                 } catch (Exception e) {
                     scriptOutput = "Failed to run system info script: " + e.toString();;
-                } finally {
-                    if (scriptWriter != null) {
-                        scriptWriter.close();
-                    }
                 }
 
                 if (scriptOutput != null) {
@@ -390,7 +382,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
     }
 
     /**
-     * Routes the system info request to the targeted node and passes on the response back.
+     * Routes the system info request to the targeted node and passes the response back.
      */
     private void routeSystemInfoRequest(final HttpServletRequest request,
                                         final HttpServletResponse response,
