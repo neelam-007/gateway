@@ -52,7 +52,6 @@ public class PartitionActions {
             {"keystoreFile", "/ssg/etc/keys/ssl.ks"},
             {"keystorePass", "blahblah"},
             {"keystoreType", "PKCS12"},
-            {"SSLImplementation", "com.l7tech.server.tomcat.SsgSSLImplementation"},
     };
 
     private static String[][] basicConnectorEndpointAttributes = new String[][] {

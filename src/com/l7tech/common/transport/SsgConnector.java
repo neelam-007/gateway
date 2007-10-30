@@ -1,12 +1,13 @@
 package com.l7tech.common.transport;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Describes a port on which the Gateway will listen for incoming requests.
@@ -51,9 +52,6 @@ public class SsgConnector extends NamedEntityImp {
         /** The admin applet. */
         ADMIN_APPLET,
 
-        /** All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc. */
-        OTHER_SERVLETS,
-
         /** Certificate and policy discovery. */
         POLICYDISCO,
 
@@ -71,8 +69,63 @@ public class SsgConnector extends NamedEntityImp {
 
         /** The HTTP-based SNMP query service. */
         SNMPQUERY,
+
+        /** All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc. */
+        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY);
+
+        private Endpoint[] enabledKids;
+        private Set<Endpoint> enabledSet;
+        private Endpoint(Endpoint... enabled) { this.enabledKids = enabled; }
+
+        /**
+         * Get the set of Endpoints enabled by enabling this Endpoint.
+         *
+         * @return the set of Endpoints that should be enabled if this endpoint is found to be enabled.
+         *         This set will always include at least this endpoint itself.
+         */
+        public synchronized Set<Endpoint> enabledSet() {
+            if (enabledSet == null)
+                enabledSet = Collections.unmodifiableSet(EnumSet.of(this, enabledKids));
+            return enabledSet;
+        }
+
+        private static final Pattern PATTERN_WS_COMMA_WS = Pattern.compile("\\s*,\\s*");
+
+        /**
+         * Parse a comma-delimited list of endpoint names into a set of Endpoint instances.
+         *
+         * @param commaDelimitedList a comma-delimited list of zero or more endpoint names.  May be empty but mustn't be null.
+         * @return a new EnumSet of Endpoint instances.  May be empty but never null.
+         * @throws IllegalArgumentException of one of the names in the list is unrecognized.
+         */
+        public static EnumSet<Endpoint> parseCommaList(String commaDelimitedList) {
+            String[] names = PATTERN_WS_COMMA_WS.split(commaDelimitedList);
+            EnumSet<Endpoint> ret = EnumSet.noneOf(Endpoint.class);
+            for (String name : names)
+                ret.add(Endpoint.valueOf(name));
+            return ret;
+        }
+
+        /**
+         * Convert the specified set of endpoints into a comma-delimited list of their names.
+         *
+         * @param endpoints a set of endpoints. Required.
+         * @return a comma-delimited list, ie "WSDLPROXY,STS".  Never null.
+         */
+        public static String asCommaList(Set<Endpoint> endpoints) {
+            StringBuilder sb = new StringBuilder();
+            EnumSet<Endpoint> canon = EnumSet.copyOf(endpoints);
+            boolean first = true;
+            for (Endpoint endpoint : canon) {
+                if (!first) sb.append(",");
+                sb.append(endpoint.toString());
+                first = false;
+            }
+            return sb.toString();
+        }
     }
 
+    private static final Object endpointSetLock = new Object();
     private boolean enabled = true;
     private int port = -1;
     private String scheme = SCHEME_HTTP;
@@ -82,6 +135,8 @@ public class SsgConnector extends NamedEntityImp {
     private Long keystoreOid;
     private String keyAlias;
     private Set<SsgConnectorProperty> properties = new HashSet<SsgConnectorProperty>();
+
+    private transient Set<Endpoint> endpointSet;
 
     public SsgConnector() {
     }
@@ -305,6 +360,43 @@ public class SsgConnector extends NamedEntityImp {
      */
     public void setEndpoints(String endpoints) {
         this.endpoints = endpoints;
+        synchronized (endpointSetLock) {
+            endpointSet = null;
+        }
+    }
+
+    /**
+     * Check if this connector offers access to the specified endpoint.
+     *
+     * @param endpoint the endpoint to check.  Required.
+     * @return  true if this connector grants access to the specified endpoint.
+     */
+    public boolean offersEndpoint(Endpoint endpoint) {
+        return endpointSet().contains(endpoint);
+    }
+
+    /**
+     * Get the endpoints to enable on this connector as a set.
+     * The returned set will be expanded to include all endpoints implied by the endpoints
+     * that are enabled explicitly; for example, if OTHER_SERVLETS is enabled, the returned set
+     * will include STS.
+     * <p/>
+     * The returned set is read-only.
+     *
+     * @return a read-only expanded Set of enabled endpoints.  Never null.
+     */
+    private Set<Endpoint> endpointSet() {
+        synchronized (endpointSetLock) {
+            if (endpointSet == null) {
+                String endpointList = getEndpoints();
+                EnumSet<Endpoint> es = endpointList == null ? EnumSet.noneOf(Endpoint.class) : Endpoint.parseCommaList(endpointList);
+                EnumSet<Endpoint> ret = EnumSet.copyOf(es);
+                for (Endpoint e : es)
+                    ret.addAll(e.enabledSet());
+                endpointSet = Collections.unmodifiableSet(ret);
+            }
+            return endpointSet;
+        }
     }
 
     /**

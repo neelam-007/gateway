@@ -33,7 +33,6 @@ explain_not_enabled() {
 
 build_paths() {
     PARTITION_DIR="${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}"
-    CONFIG_FILE="${PARTITION_DIR}/server.xml"
     ENABLED_FILE="${PARTITION_DIR}/enabled"
     FIREWALL_FILE="${PARTITION_DIR}/firewall_rules"
     GATEWAY_PID="${PARTITION_DIR}/ssg.pid"

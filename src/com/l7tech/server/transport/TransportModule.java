@@ -61,7 +61,7 @@ public abstract class TransportModule extends LifecycleBean {
     protected abstract void removeConnector(long oid);
 
     /**
-     * Get the set of schema names recognized by this transport module.
+     * Get the set of scheme names recognized by this transport module.
      *
      * @return a set of scheme names, ie "HTTP" and "HTTPS".  Never null.
      */

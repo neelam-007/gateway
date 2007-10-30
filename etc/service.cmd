@@ -86,9 +86,6 @@ if not "%PARTITIONNAMEPROPERTY%"=="" set JVMOPTIONS=%JVMOPTIONS%;-Dcom.l7tech.se
 ::          --Environment option. Fortunately, Tomcat doesn't need anything on
 ::          the PATH.
 
-if "%STARTPARAMS%"=="" set STARTPARAMS=-config;%~dp0\server.xml;start
-if "%STOPPARAMS%"=="" set STOPPARAMS=-config;%~dp0\server.xml;stop
-
 
 "%PRUNSRV%" //IS//%SERVICE_NAME% ^
 --Environment "PATH=%DLL_DIR%" ^

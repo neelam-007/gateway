@@ -165,7 +165,6 @@ public class MasterPassphraseChanger {
             } else {
                 if (file.getName().endsWith("properties"))
                     PropertyHelper.reencryptPasswordsInPlace(file, passwordEncryptor);
-                // server.xml no longer contains passwords (it defaults them from keystore.properties) so it doesn't need to be reencrypted
             }
         }
     }

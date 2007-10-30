@@ -73,8 +73,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private FilterManager clientPolicyFilterManager;
     private SoapActionResolver sactionResolver;
     private UrnResolver nsResolver;
-    private int httpPort;
-    private int httpsPort;
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
@@ -89,9 +87,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
         sactionResolver = new SoapActionResolver(appcontext);
         nsResolver = new UrnResolver(appcontext);
-
-        httpPort = serverConfig.getIntProperty(ServerConfig.PARAM_HTTPPORT, 8080);
-        httpsPort = serverConfig.getIntProperty(ServerConfig.PARAM_HTTPSPORT, 8443);
     }
 
     protected String getFeature() {
@@ -436,6 +431,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         int port = req.getServerPort();
         String proto = secureRequest ? "https" : "http";
 
+        int httpPort = serverConfig.getIntPropertyCached(ServerConfig.PARAM_HTTPPORT, 8080, 10000L);
+        int httpsPort = serverConfig.getIntPropertyCached(ServerConfig.PARAM_HTTPSPORT, 8443, 10000L);
         if (("http".equals(proto) && (port==80 || port==httpPort)) ||
             ("https".equals(proto) && (port==443 || port==httpsPort))) {
             // then see if we should switch protocols for the endpoint

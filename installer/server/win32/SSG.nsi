@@ -134,8 +134,6 @@ Section "SecureSpan Gateway" SecCopyUI
     CopyFiles "$INSTDIR\etc\conf\ssglog.properties" "$INSTDIR\etc\conf\ssglog.properties.old"
   IfFileExists "$INSTDIR\etc\conf\system.properties" 0 +2
     CopyFiles "$INSTDIR\etc\conf\system.properties" "$INSTDIR\etc\conf\system.properties.old"
-  IfFileExists "$INSTDIR\tomcat\conf\server.xml" 0 +2
-    CopyFiles "$INSTDIR\tomcat\conf\server.xml" "$INSTDIR\tomcat\conf\server.xml.old"
   IfFileExists "$INSTDIR\jdk\jre\lib\security\java.security" 0 +2
     CopyFiles "$INSTDIR\jdk\jre\lib\security\java.security" "$INSTDIR\jdk\jre\lib\security\java.security.old"
 

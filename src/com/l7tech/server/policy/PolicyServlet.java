@@ -78,8 +78,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private byte[] serverCertificate;
     private ServerConfig serverConfig;
     private ClusterPropertyManager clusterPropertyManager;
-    private int httpPort;
-    private int httpsPort;
     private static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
 
     /** A serviceoid request that comes in via this URI should be served a compatibility-mode policy. */
@@ -102,9 +100,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         catch (IOException e) {
             throw new ServletException(e);
         }
-
-        httpPort = serverConfig.getIntProperty(ServerConfig.PARAM_HTTPPORT, 8080);
-        httpsPort = serverConfig.getIntProperty(ServerConfig.PARAM_HTTPSPORT, 8443);
     }
 
     protected String getFeature() {
@@ -429,6 +424,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private void sendAuthChallenge(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
         // send error back with a hint that credentials should be provided
         String newUrl = "https://" + httpServletRequest.getServerName();
+        int httpPort = serverConfig.getIntPropertyCached(ServerConfig.PARAM_HTTPPORT, 8080, 10000L);
+        int httpsPort = serverConfig.getIntPropertyCached(ServerConfig.PARAM_HTTPSPORT, 8443, 10000L);
         if (httpServletRequest.getServerPort() == httpPort || httpServletRequest.getServerPort() == httpsPort) {
             newUrl += ":" + httpsPort;
         }

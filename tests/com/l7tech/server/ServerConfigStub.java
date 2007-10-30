@@ -31,8 +31,10 @@ public class ServerConfigStub extends ServerConfig {
      * @param name   the property name
      * @param value  the value to force it to have from now on
      */
-    public void putProperty(String name, String value) {
+    public boolean putProperty(String name, String value) {
+        super.putProperty(name, value);
         overrides.put(name, value);
         invalidateCachedProperty(name);
+        return true;
     }
 }

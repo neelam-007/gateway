@@ -1450,7 +1450,6 @@
         <mkdir dir="${deploy.dir}/modules/lib"/>
         
         <echo level="info">Copying gateway files</echo>
-        <copy file="${src.root}/etc/tomcat/server.xml" todir="${deploy.dir}/etc/conf/partitions/default_" preservelastmodified="true"/>
         <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" todir="${deploy.dir}/etc/conf/partitions/default_" overwrite="true">
             <filterchain>
                 <tokenfilter>
@@ -3516,7 +3515,6 @@
         <property name="install.src.cluster_hostname" value="${install.src.conf}/cluster_hostname"/>
         <property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
         <property name="install.src.uddi.properties" value="${install.src.conf}/uddi.properties"/>
-        <property name="install.src.server.xml" value="${install.src.partitionTemplate}/server.xml"/>
         <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
         <property name="install.src.ldap" value="${install.src.base}/${install.rel.ldap}"/>
         <property name="install.src.uddi" value="${install.src.base}/${install.rel.uddi}"/>
@@ -3622,7 +3620,6 @@
         </copy>
 
         <!-- Copy modified / new files -->
-        <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.partitionTemplate}/server.xml"/>
         <copy file="${src.root}/etc/omp.dat" tofile="${install.src.partitionTemplate}/omp.dat"/>
     </target>
 
@@ -3670,7 +3667,6 @@
 
         <copy todir="${install.src.bin}">
             <fileset dir="${src.root}/etc">
-                <include name="setkeys.sh"/>
                 <include name="md5passwd.pl"/>
                 <include name="rpass.pl"/>
                 <include name="install.pl"/>
@@ -3715,13 +3711,6 @@
 
         <copy todir="${install.src.inf}/ssg/webadmin/lib">
             <fileset dir="${build.dir}/managerlibs" includes="*" />
-        </copy>
-
-        <copy todir="${install.src.conf}">
-            <fileset dir="${src.root}/etc/tomcat">
-                <include name="truststore.jks"/>
-                <include name="SsgSSLImplementation.properties"/>
-            </fileset>
         </copy>
 
         <!-- Create tarball -->

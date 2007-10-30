@@ -2,6 +2,7 @@ package com.l7tech.server.transport;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.common.transport.SsgConnector.Endpoint;
 import com.l7tech.common.util.*;
 import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.PortRange;
@@ -35,6 +36,8 @@ public class SsgConnectorManagerImpl
 
     private final ServerConfig serverConfig;
     private final Map<Long, SsgConnector> knownConnectors = new LinkedHashMap<Long, SsgConnector>();
+    private final Map<Endpoint, SsgConnector> httpConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
+    private final Map<Endpoint, SsgConnector> httpsConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
 
     public SsgConnectorManagerImpl(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
@@ -56,6 +59,73 @@ public class SsgConnectorManagerImpl
         return EntityType.CONNECTOR;
     }
 
+    /**
+     * Find a connector that uses the specified scheme and provides access to the specified endpoint.
+     * <p/>
+     * This can be used to provide good default values for the old serverconfig properties
+     * httpPort, httpsPort, clusterhttpport, and clusterhttpsport.
+     *
+     * @param scheme  a scheme, ie SsgConnector.HTTP or SsgConnector.HTTPS.  Required.
+     * @param endpoint  an endpoint that must be supported, ie {@link SsgConnector.Endpoint#OTHER_SERVLETS}.
+     * @return an appropriate connector, or null if there is no connector with the specified scheme that
+     *         provides access to the specified endpoint.
+     * @throws com.l7tech.objectmodel.FindException if there is a problem searching for a matching connector
+     */
+    public SsgConnector find(String scheme, Endpoint endpoint) throws FindException {
+        if (scheme == null) throw new NullPointerException("scheme");
+        if (endpoint == null) throw new NullPointerException("endpoint");
+
+        Map<Endpoint, SsgConnector> cache = null;
+        if (SsgConnector.SCHEME_HTTP.equals(scheme))
+            cache = httpConnectorsByService;
+        else if (SsgConnector.SCHEME_HTTPS.equals(scheme))
+            cache = httpsConnectorsByService;
+
+        {
+            SsgConnector connector = cache == null ? null : cache.get(endpoint);
+            if (connector != null)
+                return connector;
+        }
+
+        // Cache miss.  Find a connector with the desired properties.
+        // There won't ever be a lot of these so we'll just scan all the ones with the right scheme.
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("enabled", Boolean.TRUE);
+        map.put("scheme", scheme);
+        List<SsgConnector> list = findMatching(map);
+        SsgConnector found = null;
+        for (SsgConnector c : list) {
+            if (c.offersEndpoint(endpoint) && scheme.equals(c.getScheme())) {
+                found = c;
+                break;
+            }
+        }
+
+        if (found != null && cache != null)
+            cache.put(endpoint, found);
+
+        return found;
+    }
+
+    private void savePublicPort(String varname, String scheme, Endpoint endpoint) throws FindException {
+        SsgConnector c = find(scheme, endpoint);
+        if (c == null) {
+            serverConfig.removeProperty(varname);
+        } else {
+            serverConfig.putProperty(varname, Integer.toString(c.getPort()));
+        }
+        logger.info("Default " + scheme + " port: " + serverConfig.getProperty(varname));
+    }
+
+    private void updateDefaultPorts() {
+        try {
+            savePublicPort("defaultHttpPort", SsgConnector.SCHEME_HTTP, Endpoint.OTHER_SERVLETS);
+            savePublicPort("defaultHttpsPort", SsgConnector.SCHEME_HTTPS, Endpoint.OTHER_SERVLETS);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to update default HTTP and HTTPS ports for built-in services: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
     protected void initDao() throws Exception {
         super.initDao();
 
@@ -63,10 +133,12 @@ public class SsgConnectorManagerImpl
         for (SsgConnector connector : findAll())
             knownConnectors.put(connector.getOid(), connector);
 
-        writeFirewallDropfile();
+        updateDefaultPorts();
+
         File program = getFirewallUpdater();
         if (program != null)
             logger.log(Level.INFO, "Using firewall rules updater program: " + program);
+        writeFirewallDropfile();
     }
 
     private void writeFirewallDropfile() {
@@ -199,6 +271,9 @@ public class SsgConnectorManagerImpl
                     onConnectorChanged(id);
             }
         }
+        httpConnectorsByService.clear();
+        httpsConnectorsByService.clear();
+        updateDefaultPorts();
         writeFirewallDropfile();
     }
 

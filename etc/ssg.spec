@@ -60,9 +60,7 @@ mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimed
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 mv %{buildroot}/ssg/bin/configuser_bashrc %{buildroot}/home/ssgconfig/.bashrc
-mv %{buildroot}/ssg/etc/conf/SsgSSLImplementation.properties %{buildroot}/ssg/etc/conf/SsgSSLImplementation.papertrees
 mv %{buildroot}/ssg/etc/conf/*.properties %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
-mv %{buildroot}/ssg/etc/conf/SsgSSLImplementation.papertrees %{buildroot}/ssg/etc/conf/SsgSSLImplementation.properties
 mv %{buildroot}/ssg/etc/conf/cluster_hostname-dist %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/bin/ssg-java.security %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/java.security
 mv %{buildroot}/ssg/bin/pkcs11_linux.cfg %{buildroot}/ssg/etc/conf/pkcs11.cfg

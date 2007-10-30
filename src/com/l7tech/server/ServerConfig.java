@@ -408,106 +408,9 @@ public class ServerConfig implements ClusterPropertyListener {
         return serverId;
     }
 
-
     public long getServerBootTime() {
         return _serverBootTime;
     }
-
-//    public Iterator getIpProtocolPorts() {
-//        if (_ipProtocolPorts == null) {
-//            ArrayList ipps = new ArrayList();
-//            String[] sHttpPorts = getProperty(PARAM_HTTP_PORTS).trim().split(",\\s*");
-//            ArrayList httpPortsList = new ArrayList();
-//            for (int i = 0; i < sHttpPorts.length; i++) {
-//                String s = sHttpPorts[i];
-//                try {
-//                    httpPortsList.add(new Integer(s));
-//                } catch (NumberFormatException nfe) {
-//                    logger.log(Level.SEVERE, "Couldn't parse HTTP port '" + s + "'");
-//                }
-//            }
-//
-//            int[] httpPorts = new int[httpPortsList.size()];
-//            int j = 0;
-//            for (Iterator i = httpPortsList.iterator(); i.hasNext();) {
-//                Integer integer = (Integer)i.next();
-//                httpPorts[j++] = integer.intValue();
-//            }
-//
-//            String[] sHttpsPorts = getProperty(PARAM_HTTPS_PORTS).trim().split(",\\s*");
-//            ArrayList httpsPortsList = new ArrayList();
-//            for (int i = 0; i < sHttpsPorts.length; i++) {
-//                String s = sHttpsPorts[i];
-//                try {
-//                    httpsPortsList.add(new Integer(s));
-//                } catch (NumberFormatException nfe) {
-//                    logger.log(Level.SEVERE, "Couldn't parse HTTPS port '" + s + "'");
-//                }
-//            }
-//
-//            int[] httpsPorts = new int[httpsPortsList.size()];
-//            j = 0;
-//            for (Iterator i = httpsPortsList.iterator(); i.hasNext();) {
-//                Integer integer = (Integer)i.next();
-//                httpsPorts[j++] = integer.intValue();
-//            }
-//
-//            // Collect local IP addresses (default to all addresses on all interfaces)
-//            ArrayList localIps = new ArrayList();
-//            String ipAddressesProperty = getProperty(PARAM_IPS);
-//            if (ipAddressesProperty != null) {
-//                String[] sips = ipAddressesProperty.split(",\\s*");
-//                for (int i = 0; i < sips.length; i++) {
-//                    String sip = sips[i];
-//                    try {
-//                        InetAddress addr = InetAddress.getByName(sip);
-//                        logger.info("Found IP address " + print(addr) + " from configuration. ");
-//                        localIps.add(addr);
-//                    } catch (UnknownHostException uhe) {
-//                        logger.log(Level.WARNING, "Got UnknownHostException trying to resolve IP address" + sip, uhe);
-//                    }
-//                }
-//            } else {
-//                try {
-//                    Enumeration ints = NetworkInterface.getNetworkInterfaces();
-//                    NetworkInterface net;
-//                    InetAddress ip;
-//
-//                    while (ints.hasMoreElements()) {
-//                        net = (NetworkInterface)ints.nextElement();
-//                        Enumeration ips = net.getInetAddresses();
-//                        while (ips.hasMoreElements()) {
-//                            ip = (InetAddress)ips.nextElement();
-//                            if (ip instanceof Inet4Address && (ip.getAddress()[0] & 0xff) != 127) {
-//                                // Ignore localhost for autoconfigured IPs
-//                                logger.info("Found IP address " + print(ip) + " on network interface " + net.getName());
-//                                localIps.add(ip);
-//                            }
-//                        }
-//                    }
-//                } catch (SocketException se) {
-//                    logger.log(Level.SEVERE, "Got SocketException while enumerating IP addresses!", se);
-//                }
-//            }
-//
-//            for (Iterator i = localIps.iterator(); i.hasNext();) {
-//                InetAddress ip = (InetAddress)i.next();
-//
-//                for (j = 0; j < httpPorts.length; j++) {
-//                    ipps.add(new HttpTransport.IpProtocolPort(ip, TransportProtocol.HTTP, httpPorts[j]));
-//                    logger.info("Configured HTTP on " + print(ip) + ":" + httpPorts[j]);
-//                }
-//
-//                for (j = 0; j < httpsPorts.length; j++) {
-//                    ipps.add(new HttpTransport.IpProtocolPort(ip, TransportProtocol.HTTPS, httpsPorts[j]));
-//                    logger.info("Configured HTTPS on " + print(ip) + ":" + httpsPorts[j]);
-//                }
-//            }
-//            _ipProtocolPorts = Collections.unmodifiableList(ipps);
-//        }
-//
-//        return _ipProtocolPorts.iterator();
-//    }
 
     public String getHostname() {
         String hostname;
@@ -700,6 +603,45 @@ public class ServerConfig implements ClusterPropertyListener {
             val = emergencyDefault;
         }
         return val;
+    }
+
+    /**
+     * Check if the specified property's value may be changed directly at runtime by the Gateway code.
+     *
+     * @param propName the property to check
+     * @return true if the specified property is marked as mutable
+     */
+    boolean isMutable(String propName) {
+        return "true".equals(_properties.get(propName + ".mutable"));
+    }
+
+    /**
+     * Change the value of a property on this node only, but only if the property is marked as mutable.
+     *
+     * @param propName the property to alter. required
+     * @param value  the value to set it to
+     * @return true if the property was written; false if it was not mutable
+     */
+    public boolean putProperty(String propName, String value) {
+        if (!isMutable(propName)) return false;
+        _properties.put(propName, value);
+        valueCache.remove(propName);
+
+        return true;
+    }
+
+    /**
+     * Remove a property on this node only (restoring it to its default value), but only if the property
+     * is marked as mutable.
+     *
+     * @param propName the property to alter.  required
+     * @return true if the property was removed; false if it was not mutable
+     */
+    public boolean removeProperty(String propName) {
+        if (!isMutable(propName)) return false;
+        _properties.remove(propName);
+        valueCache.remove(propName);
+        return true;
     }
 
     //- PRIVATE

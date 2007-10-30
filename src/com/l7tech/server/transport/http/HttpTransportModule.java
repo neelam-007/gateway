@@ -7,6 +7,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
@@ -27,7 +28,6 @@ import org.springframework.context.ApplicationContext;
 
 import javax.naming.directory.DirContext;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
@@ -226,13 +226,6 @@ public class HttpTransportModule extends TransportModule {
         }
     }
 
-    private File findServerXml(ServerConfig config) throws FileNotFoundException {
-        String path = config.getProperty(ServerConfig.PARAM_SERVERXML);
-        if (path == null)
-            throw new FileNotFoundException("No server.xml path configured.");
-        return new File(path);
-    }
-
     private String getListenAddress() {
         String addr;
         try {
@@ -280,11 +273,9 @@ public class HttpTransportModule extends TransportModule {
         try {
             Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
             if (connectors.isEmpty()) {
-                // No connectors defined in DB.  As an emergency stopgap measure, try to find the
-                // old server.xml file instead.
-                // TODO remove this hack when it's no longer needed
-                logger.warning("***  No connectors defined in database.  Will check for server.xml instead");
-                addConnectorsFromServerXml();
+                logger.warning("No connectors defined in database.  Will attempt to import from server.xml");
+                createFallbackConnectors();
+                connectors = ssgConnectorManager.findAll();
             }
             for (SsgConnector connector : connectors) {
                 if (connector.isEnabled() && connectorIsOwnedByThisModule(connector)) {
@@ -302,51 +293,19 @@ public class HttpTransportModule extends TransportModule {
         }
     }
 
-    // Add an old-school connectors, by reading server.xml
-    // TODO remove this
-    private void addConnectorsFromServerXml() {
-        List<Map<String, String>> connectors;
-        try {
-            ServerXmlParser serverXml = new ServerXmlParser();
-            serverXml.load(findServerXml(serverConfig));
-            connectors = serverXml.getConnectors();
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Unable to load connectors from server.xml: " + ExceptionUtils.getMessage(e), e);
-            return;
-        }
-
-        long oid = -899;
-        for (Map<String, String> connector : connectors) {
+    /**
+     * Add some connectors to the DB table, getting them from server.xml if possible, but just creating
+     * some defaults if not.
+     */
+    private void createFallbackConnectors() {
+        Collection<SsgConnector> toAdd = DefaultHttpConnectors.makeFallbackConnectors(serverConfig);
+        for (SsgConnector connector : toAdd) {
             try {
-                addConnectorFromServerXml(oid++, connector);
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, "Unable to start connector read from server.xml: " + ExceptionUtils.getMessage(e), e);
+                ssgConnectorManager.save(connector);
+            } catch (SaveException e) {
+                logger.log(Level.WARNING, "Unable to save fallback connector to DB: " + ExceptionUtils.getMessage(e), e);
             }
         }
-    }
-
-    // Add an old-school connector, from properties read from server.xml
-    // TODO remove this
-    private void addConnectorFromServerXml(long oid, Map<String, String> connector) throws ListenerException {
-        SsgConnector c = new SsgConnector();
-        c.setEnabled(true);
-        c.setOid(oid);
-        int port = Integer.parseInt(connector.get("port"));
-        c.setPort(port);
-        c.setSecure(Boolean.valueOf(connector.get("secure")));
-        String scheme = connector.get("scheme");
-        scheme = scheme == null ? "HTTP" : scheme.toUpperCase();
-        c.setScheme(scheme);
-        c.setEndpoints("MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS");
-        c.setName("Legacy port " + port);
-
-        String auth = connector.get("clientAuth");
-        if ("want".equals(auth))
-            c.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
-        else if ("true".equals(auth))
-            c.setClientAuth(SsgConnector.CLIENT_AUTH_ALWAYS);
-
-        addConnector(c);
     }
 
     protected synchronized void addConnector(SsgConnector connector) throws ListenerException {

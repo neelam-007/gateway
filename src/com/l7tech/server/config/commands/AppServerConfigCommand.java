@@ -25,10 +25,6 @@ public class AppServerConfigCommand extends BaseConfigurationCommand {
 
     private static final String BACKUP_FILE_NAME = "server_xml_upgrade_backup";
 
-    private static final String SSL_IMPLEMENTATION_ATTR_NAME = "SSLImplementation";
-    private static final String SSL_IMPLEMENTATION_ATTR_VALUE = "com.l7tech.server.tomcat.SsgSSLImplementation";
-    private static final String SECURE_CONNECTOR_XPATH = "/Server/Service/Connector[@secure=\"true\"]";
-
     private static final String SOCKET_FACTORY_ATTR_NAME = "socketFactory";
     private static final String SOCKET_FACTORY_ATTR_VALUE = "com.l7tech.server.tomcat.SsgServerSocketFactory";
     private static final String INSECURE_CONNECTOR_XPATH = "/Server/Service/Connector[@secure=\"false\" or not(@secure)]";
@@ -109,7 +105,7 @@ public class AppServerConfigCommand extends BaseConfigurationCommand {
         boolean changedInsecureConnector = doInsecureConnectorConfig(xpath, doc);
 
         //now do the secure ones
-        boolean changedSecureConnector = doSecureConnectorConfig(xpath, doc);
+        boolean changedSecureConnector = false;
 
         //now do the valves
         boolean neededValveJob = doValveConfig(xpath, doc);
@@ -125,16 +121,6 @@ public class AppServerConfigCommand extends BaseConfigurationCommand {
             return false;
         }
 
-        return true;
-    }
-
-    private boolean doSecureConnectorConfig(XPath xe, Document doc) throws XPathExpressionException {
-        NodeList connectors = (NodeList) xe.evaluate(SECURE_CONNECTOR_XPATH, doc, XPathConstants.NODESET);
-
-        if (!updateConnectors(connectors, SSL_IMPLEMENTATION_ATTR_NAME, SSL_IMPLEMENTATION_ATTR_VALUE)) {
-            logger.info("No need to update the server.xml SSLImplementation attribute since it already exists for all connectors");
-            return false;
-        }
         return true;
     }
 

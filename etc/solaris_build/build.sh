@@ -101,7 +101,6 @@ mv ssg/etc/conf/cluster_hostname-dist ssg/etc/conf/partitions/partitiontemplate_
 mv ssg/bin/ssg-java.security ssg/etc/conf/partitions/partitiontemplate_/java.security
 echo "Cleaning non-solaris scripts"
 rm ssg/bin/tcp_tune.sh
-rm ssg/bin/setkeys.sh
 rm ssg/bin/my.ini
 rm ssg/bin/pkcs11_linux.cfg
 rm ssg/bin/tarari-initd
