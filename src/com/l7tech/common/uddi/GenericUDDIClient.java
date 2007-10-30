@@ -51,6 +51,7 @@ import com.l7tech.common.uddi.guddiv3.UDDIPublicationPortType;
 import com.l7tech.common.uddi.guddiv3.UDDISecurity;
 import com.l7tech.common.uddi.guddiv3.UDDISecurityPortType;
 import com.l7tech.common.uddi.guddiv3.DispositionReport;
+import com.l7tech.common.util.SyspropUtil;
 
 import java.util.Collection;
 import java.util.ArrayList;
@@ -461,8 +462,12 @@ class GenericUDDIClient implements UDDIClient {
             if (policyUrl != null && policyUrl.trim().length() > 0)
                 cbag.getKeyedReference().add(buildKeyedReference(tModelKeyRemotePolicyReference, null, policyUrl));
             Name name = null;
-            if (policyPattern != null && policyPattern.trim().length() > 0)
+            FindQualifiers findQualifiers = null;
+            if (policyPattern != null && policyPattern.trim().length() > 0) {
+                // if approximate match is used for the URL then CentraSite will perform a prefix match ...
+                findQualifiers = buildFindQualifiers(false);
                 name = buildName(policyPattern);
+            }
 
             UDDIInquiryPortType inquiryPort = getInquirePort();
             
@@ -470,7 +475,7 @@ class GenericUDDIClient implements UDDIClient {
             FindTModel findTModel = new FindTModel();
             findTModel.setAuthInfo(authToken);
             findTModel.setMaxRows(maxRows);
-            findTModel.setFindQualifiers(buildFindQualifiers(false));
+            findTModel.setFindQualifiers(findQualifiers);
             findTModel.setName(name);
             findTModel.setCategoryBag(cbag);
             TModelList tModelList = inquiryPort.findTModel(findTModel);
@@ -1041,6 +1046,11 @@ class GenericUDDIClient implements UDDIClient {
 
         // Add handler to fix any issues with invalid faults
         handlerChain.add(new FaultRepairSOAPHandler());
+
+        // Add handler to fix namespace in on Java 5 / SSM
+        if ( "1.5".equals(SyspropUtil.getProperty("java.specification.version")) ) {
+            handlerChain.add(new NamespaceRepairSOAPHandler());
+        }
 
         // Set handlers
         binding.setHandlerChain(handlerChain);
