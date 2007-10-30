@@ -357,8 +357,10 @@ public class PingServlet extends AuthenticatableHttpServlet {
                         _logger.warning("System info script exited with " + result.getExitStatus() + ". Last 10 lines of output:\n" + TextUtils.tail(new String(result.getOutput()), 10));
                         scriptOutput = "Script exited with " + result.getExitStatus() + ". See SSG log for details.";
                     }
-                } catch (Exception e) {
-                    scriptOutput = "Failed to run system info script: " + e.toString();;
+                } catch (IOException e) {
+                    _logger.warning("Failed to run system info script: " + e.toString());
+                    // Servlet response gets only a generic error message for security reason.
+                    scriptOutput = "Failed to run script. See SSG log for details.";
                 }
 
                 if (scriptOutput != null) {
