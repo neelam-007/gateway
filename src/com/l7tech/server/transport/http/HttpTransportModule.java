@@ -1,17 +1,17 @@
 package com.l7tech.server.transport.http;
 
+import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.MasterPasswordManager;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.LicenseManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.tomcat.*;
 import com.l7tech.server.transport.SsgConnectorManager;
@@ -20,13 +20,18 @@ import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.core.StandardThreadExecutor;
 import org.apache.catalina.core.StandardWrapper;
 import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Embedded;
+import org.apache.coyote.ProtocolHandler;
+import org.apache.coyote.http11.Http11Protocol;
 import org.apache.naming.resources.FileDirContext;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.directory.DirContext;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +53,7 @@ import java.util.logging.Logger;
  * <p/>
  * It listens for entity chagne events for SsgConnector to know when to start/stop HTTP connectors.
  */
-public class HttpTransportModule extends TransportModule {
+public class HttpTransportModule extends TransportModule implements PropertyChangeListener {
     protected static final Logger logger = Logger.getLogger(HttpTransportModule.class.getName());
 
     public static final String RESOURCE_PREFIX = "com/l7tech/server/resources/";
@@ -75,6 +80,7 @@ public class HttpTransportModule extends TransportModule {
     private Engine engine;
     private Host host;
     private StandardContext context;
+    private StandardThreadExecutor executor;
 
     public HttpTransportModule(ServerConfig serverConfig,
                                MasterPasswordManager masterPasswordManager,
@@ -99,6 +105,16 @@ public class HttpTransportModule extends TransportModule {
         }
 
         embedded = new Embedded();
+
+        // Create the thread pool
+        executor = new StandardThreadExecutor();
+        executor.setName("executor");
+        executor.setDaemon(true);
+        executor.setMaxIdleTime(serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_IDLE_TIME, 60000));
+        executor.setMaxThreads(serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200));
+        executor.setMinSpareThreads(serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS, 25));
+        embedded.addExecutor(executor);
+
         engine = embedded.createEngine();
         engine.setName("ssg");
         engine.setDefaultHost(getListenAddress());
@@ -128,6 +144,28 @@ public class HttpTransportModule extends TransportModule {
         context.addServletMapping("/", "default");
 
         host.addChild(context);
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (executor == null) return; // not yet started
+        
+        final String clusterProp = ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY;
+        if (evt.getPropertyName().equals(clusterProp)) {
+            try {
+                final Object v = evt.getNewValue();
+                if (v != null) {
+                    final int threads = Integer.parseInt(v.toString());
+                    logger.info("Changing maximum HTTP/HTTPS concurrency to " + threads);
+                    executor.setMaxThreads(threads);
+                    executor.stop();
+                    executor.start();
+                }
+            } catch (NumberFormatException nfe) {
+                logger.warning("Unable to parse value of cluster property " + clusterProp + ": " + ExceptionUtils.getMessage(nfe));
+            } catch (org.apache.catalina.LifecycleException e) {
+                logger.log(Level.SEVERE, "Unable to restart executor after changing property " + clusterProp + ": " + ExceptionUtils.getMessage(e), e);
+            }
+        }
     }
 
     /**
@@ -525,6 +563,11 @@ public class HttpTransportModule extends TransportModule {
         Connector c = embedded.createConnector((String)null, port, "http");
         c.setEnableLookups(false);
         setConnectorAttributes(c, attrs);
+
+        ProtocolHandler ph = c.getProtocolHandler();
+        if (ph instanceof Http11Protocol) {
+            ((Http11Protocol)ph).setExecutor(executor);
+        }
 
         embedded.addConnector(c);
         try {

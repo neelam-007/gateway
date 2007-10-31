@@ -114,6 +114,10 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_CERT_EXPIRY_INFO_AGE = "trustedCert.expiryInfoAge";
     public static final String PARAM_CERT_EXPIRY_WARNING_AGE = "trustedCert.expiryWarningAge";
 
+    public static final String PARAM_IO_HTTP_POOL_MAX_CONCURRENCY = "ioHttpPoolMaxConcurrency";
+    public static final String PARAM_IO_HTTP_POOL_MAX_IDLE_TIME = "ioHttpPoolMaxIdleTime";
+    public static final String PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS = "ioHttpPoolMinSpareThreads";
+
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;

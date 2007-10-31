@@ -50,6 +50,7 @@
                         <entry key="certValidationProcessor"><list><value>pkixTrust.useDefaultAnchors</value></list></entry>
                         <entry key="jmsBootProcess"><list><value>ioJmsErrorSleep</value></list></entry>
                         <entry key="trustedCertManager"><list><value>trustedCert.expiryCheckPeriod</value></list></entry>
+                        <entry key="httpTransportModule"><list><value>ioHttpPoolMaxConcurrency</value></list></entry>
                     </map>
                 </constructor-arg>
             </bean>
