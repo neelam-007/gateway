@@ -23,6 +23,7 @@ import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.service.MetricsSummaryBin;
+import com.l7tech.admin.LicenseRuntimeException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,7 +79,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
             licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
         } catch (LicenseException e) {
             // New exception to conceal original stack trace from LicenseManager
-            throw new RuntimeException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
+            throw new LicenseRuntimeException(e);
         }
     }
 

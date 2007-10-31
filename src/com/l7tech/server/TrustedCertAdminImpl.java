@@ -19,6 +19,7 @@ import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.admin.LicenseRuntimeException;
 
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
@@ -78,7 +79,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
             licenseManager.requireFeature(GatewayFeatureSets.SERVICE_TRUSTSTORE);
         } catch (LicenseException e) {
             // New exception to conceal original stack trace from LicenseManager
-            throw new RuntimeException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
+            throw new LicenseRuntimeException(e);
         }
     }
 
@@ -87,7 +88,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
             licenseManager.requireFeature(GatewayFeatureSets.SERVICE_KEYSTORE);
         } catch (LicenseException e) {
             // New exception to conceal original stack trace from LicenseManager
-            throw new RuntimeException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
+            throw new LicenseRuntimeException(e);
         }
     }
 

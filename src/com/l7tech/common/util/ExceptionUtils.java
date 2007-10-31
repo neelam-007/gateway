@@ -201,6 +201,23 @@ public class ExceptionUtils {
 
         return result;
     }
+    
+    /**
+     * Replace the given (unsupported) exception with a generic Exception for which
+     * the message text is the stack trace.
+     *
+     * @param throwable The throwable to be replaced
+     * @return An Exception with a message that is the stacktrace / message for the original throwable.
+     */
+    public static Throwable textReplace(Throwable throwable, boolean stackAsText) {
+        StringWriter exceptionWriter = new StringWriter();
+        if (stackAsText)
+            throwable.printStackTrace(new PrintWriter(exceptionWriter));
+        return new Exception("Replaced exception of type '"+throwable.getClass().getName()+"', with message '"+
+                throwable.getMessage()+"'"  +
+                (stackAsText ? ", original stack was:\n" +
+                exceptionWriter.getBuffer().toString() : ""));
+    }
 
     /**
      * A deep version of {@link Throwable#toString()} that includes detail
@@ -338,23 +355,6 @@ public class ExceptionUtils {
         }
 
         return cause;
-    }
-
-    /**
-     * Replace the given (unsupported) exception with a generic Exception for which
-     * the message text is the stack trace.
-     *
-     * @param throwable The throwable to be replaced
-     * @return An Exception with a message that is the stacktrace / message for the original throwable.
-     */
-    private static Throwable textReplace(Throwable throwable, boolean stackAsText) {
-        StringWriter exceptionWriter = new StringWriter();
-        if (stackAsText)
-            throwable.printStackTrace(new PrintWriter(exceptionWriter));
-        return new Exception("Replaced exception of type '"+throwable.getClass().getName()+"', with message '"+
-                throwable.getMessage()+"'"  +
-                (stackAsText ? ", original stack was:\n" +
-                exceptionWriter.getBuffer().toString() : ""));
     }
 
     /**

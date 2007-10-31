@@ -13,13 +13,20 @@
         <property name="advice" ref="rbacAdvice"/>
     </bean>
 
-    <bean id="exceptionFilterInterceptor" class="com.l7tech.server.util.ExceptionFilteringInterceptor"/>
+    <!-- Exception advices for server side error handling -->
+    <bean id="unsupportedExceptionInterceptor" class="com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice"/>
+
+    <bean id ="mysqlFailureThrowsAdvice" class="com.l7tech.server.util.MySqlFailureThrowsAdvice"/>
+
+    <bean id="constraintViolationThrowsAdvice" class="com.l7tech.server.util.ConstraintViolationThrowsAdvice"/>
 
     <!-- Transaction and RBAC interception -->
     <bean id="rbacIntercepted" abstract="true" class="org.springframework.aop.framework.ProxyFactoryBean">
         <property name="interceptorNames">
             <list>
-                <idref bean="exceptionFilterInterceptor"/>
+                <idref bean="unsupportedExceptionInterceptor"/>
+                <idref bean="mysqlFailureThrowsAdvice"/>
+                <idref bean="constraintViolationThrowsAdvice"/>
                 <idref bean="annotationTransactionInterceptor"/>
                 <idref bean="rbacAdvisor"/>
             </list>

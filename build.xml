@@ -1787,6 +1787,10 @@
                 <exclude name="com/l7tech/internal/**/*"/>
 
                 <include name="com/l7tech/admin/Admin*.class"/>
+                <include name="com/l7tech/admin/RuntimeAdminException*.class"/>
+                <include name="com/l7tech/admin/TimeoutRuntimeException*.class"/>
+                <include name="com/l7tech/admin/LicenseRuntimeException*.class"/>
+                <include name="com/l7tech/admin/GatewayRuntimeException*.class"/>
                 <exclude name="com/l7tech/logging/rmi/**/*"/>
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <include name="com/l7tech/identity/**/*"/>

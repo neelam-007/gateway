@@ -20,7 +20,7 @@ import com.l7tech.objectmodel.ConstraintViolationException;
  *
  * @author Steve Jones
  */
-public class ExceptionFilteringInterceptor implements ThrowsAdvice {
+public class ConstraintViolationThrowsAdvice implements ThrowsAdvice {
 
     //- PUBLIC
 
@@ -43,5 +43,5 @@ public class ExceptionFilteringInterceptor implements ThrowsAdvice {
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ExceptionFilteringInterceptor.class.getName());
+    private static final Logger logger = Logger.getLogger(ConstraintViolationThrowsAdvice.class.getName());
 }

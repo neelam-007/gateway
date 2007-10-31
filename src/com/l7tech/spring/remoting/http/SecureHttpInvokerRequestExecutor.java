@@ -3,6 +3,7 @@ package com.l7tech.spring.remoting.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.logging.Logger;
@@ -20,7 +21,9 @@ import org.apache.commons.httpclient.protocol.Protocol;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
+import com.l7tech.admin.TimeoutRuntimeException;
 
 /**
  * Client side HTTP request executor.
@@ -147,7 +150,12 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
         HostConfiguration hostConfiguration = new HostConfiguration();
         hostConfiguration.setHost(host, port, protocol);
         postMethod.addRequestHeader("X-Layer7-SessionId", sessionId);
-        httpClient.executeMethod(hostConfiguration, postMethod);
+        try {
+            httpClient.executeMethod(hostConfiguration, postMethod);
+        }
+        catch (SocketTimeoutException ex) {
+            throw new TimeoutRuntimeException(ExceptionUtils.getMessage(ex));
+        }
     }
 
     //- PRIVATE

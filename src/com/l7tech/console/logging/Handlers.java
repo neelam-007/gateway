@@ -20,6 +20,8 @@ class Handlers {
      */
     static ErrorHandler[] defaultHandlers() {
         return new ErrorHandler[]{
+            new GatewayFailureErrorHandler(),
+            new LicenseErrorHandler(),
             new VersionMismatchErrorHandler(),
             new PersistenceErrorHandler(),
             new RmiErrorHandler(),
