@@ -36,6 +36,9 @@ CREATE TABLE connector_property (
   FOREIGN KEY (connector_oid) REFERENCES connector (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+-- The default connectors are NOT included here; since this is an upgrade from pre-4.3, they will be imported
+-- from server.xml and ftpserver.properties instead.
+
 -- Create the 'Manage Listen Ports' role
 DELETE FROM rbac_permission WHERE role_oid=-750;
 DELETE FROM rbac_role WHERE objectid=-750;
