@@ -7,7 +7,6 @@ import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.security.rbac.Secured;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.DeleteException;
@@ -117,7 +116,6 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      * @param newName the new name of the node (must not be null)
      */
     public void changeNodeName(String nodeid, String newName) throws UpdateException {
-        checkLicense();
         clusterInfoManager.renameNode(nodeid, newName);
     }
 
@@ -131,7 +129,6 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      * @param nodeid the mac of the stale node to remove
      */
     public void removeStaleNode(String nodeid) throws DeleteException {
-        checkLicense();
         logger.info("removing stale node: " + nodeid);
         clusterInfoManager.deleteNode(nodeid);
         serviceUsageManager.clear(nodeid);
@@ -238,25 +235,20 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     }
 
     public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, final boolean includeEmpty) throws FindException {
-        checkLicense();
         return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, maxPeriodStart, includeEmpty);
     }
 
     public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration, final boolean includeEmpty) throws FindException {
-        checkLicense();
         final long minPeriodStart = System.currentTimeMillis() - duration;
         return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, null, includeEmpty);
     }
 
     public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration, final boolean includeEmpty) throws FindException {
-        checkLicense();
         return serviceMetricsManager.summarizeLatest(nodeId, serviceOids, resolution, duration, includeEmpty);
     }
 
     @Transactional(propagation = Propagation.SUPPORTS)
     public Collection<ModuleInfo> getAssertionModuleInfo() {
-        checkLicense();
-
         Collection<ModuleInfo> ret = new ArrayList<ModuleInfo>();
         Set<AssertionModule> modules = assertionRegistry.getLoadedModules();
         for (AssertionModule module : modules) {
