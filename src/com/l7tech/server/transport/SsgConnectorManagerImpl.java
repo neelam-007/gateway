@@ -131,7 +131,7 @@ public class SsgConnectorManagerImpl
 
         // Initialize known connections
         for (SsgConnector connector : findAll())
-            knownConnectors.put(connector.getOid(), connector);
+            if (connector.isEnabled()) knownConnectors.put(connector.getOid(), connector);
 
         updateDefaultPorts();
 
@@ -189,7 +189,15 @@ public class SsgConnectorManagerImpl
     private void writeFirewallRules(OutputStream fos) {
         PrintStream ps = new PrintStream(fos);
         try {
-            for (SsgConnector connector : new ArrayList<SsgConnector>(knownConnectors.values())) {
+            final ArrayList<SsgConnector> list = new ArrayList<SsgConnector>(knownConnectors.values());
+
+            // Add a pseudo-connector for the inter-node communication port
+            int rmiPort = serverConfig.getIntProperty(ServerConfig.PARAM_CLUSTER_PORT, 2124);            
+            SsgConnector rc = new SsgConnector();
+            rc.setPort(rmiPort);
+            list.add(rc);
+
+            for (SsgConnector connector : list) {
                 String device = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
 
                 List<PortRange> ranges = connector.getTcpPortsUsed();
@@ -280,7 +288,10 @@ public class SsgConnectorManagerImpl
     private void onConnectorChanged(long id) {
         try {
             SsgConnector connector = findByPrimaryKey(id);
-            knownConnectors.put(id, connector);
+            if (connector != null && connector.isEnabled())
+                knownConnectors.put(id, connector);
+            else
+                knownConnectors.remove(id);
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to find just-added or -updated connector with oid " + id + ": " + ExceptionUtils.getMessage(e), e);
         }

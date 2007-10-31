@@ -69,9 +69,10 @@
 
     <bean id="adminSessionInvocationFactory" class="com.l7tech.spring.remoting.rmi.AdminSessionInvocationFactory"/>
 
-    <bean id="rmiPort" class="com.l7tech.spring.factory.config.SystemPropertyFactoryBean" depends-on="systemProperties">
-        <property name="propertyName" value="com.l7tech.server.clusterPort"/>
-        <property name="propertyDefault" value="2124"/>
+    <bean id="rmiPort" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean" depends-on="serverConfig">
+        <property name="targetObject" ref="serverConfig"/>
+        <property name="targetMethod" value="getIntProperty"/>
+        <property name="arguments"><list><value>clusterPort</value><value>2124</value></list></property> 
     </bean>
 
     <bean id="rmiRegistryInit" class="com.l7tech.spring.remoting.rmi.RmiRegistryInitializer" depends-on="systemProperties">

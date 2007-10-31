@@ -151,6 +151,7 @@ public class SsgConnectorManagerWindow extends JDialog {
                 if (dlg.isConfirmed()) {
                     Runnable reedit = new Runnable() {
                         public void run() {
+                            loadConnectors();
                             editAndSave(connector);
                         }
                     };

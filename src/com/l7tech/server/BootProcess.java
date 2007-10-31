@@ -3,10 +3,8 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.cluster.ClusterPropertyCache;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.BootMessages;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
@@ -17,10 +15,10 @@ import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.system.*;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.objectmodel.FindException;
-
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -199,12 +197,6 @@ public class BootProcess
 
         logger.info(BuildInfo.getLongBuildString());
         logConfiguredFactories();
-
-
-
-        ClusterPropertyCache clusterPropertyCache = (ClusterPropertyCache)applicationContext.getBean("clusterPropertyCache");
-        if (clusterPropertyCache == null) throw new LifecycleException("ClusterPropertyCache not available yet");
-        serverConfig.setClusterPropertyCache(clusterPropertyCache);
 
         GlobalTarariContext context = TarariLoader.getGlobalContext();
         if (context != null) {

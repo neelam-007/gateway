@@ -114,6 +114,11 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         executor.setMaxThreads(serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200));
         executor.setMinSpareThreads(serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS, 25));
         embedded.addExecutor(executor);
+        try {
+            executor.start();
+        } catch (org.apache.catalina.LifecycleException e) {
+            throw new LifecycleException("Unable to start executor for HTTP/HTTPS connections: " + ExceptionUtils.getMessage(e), e);
+        }
 
         engine = embedded.createEngine();
         engine.setName("ssg");

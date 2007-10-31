@@ -55,6 +55,7 @@
                 </constructor-arg>
             </bean>
         </property>
+        <property name="clusterPropertyCache" ref="clusterPropertyCache"/> 
     </bean>
 
     <bean id="masterPasswordManager" class="com.l7tech.common.security.MasterPasswordManager" factory-method="getInstance" depends-on="systemProperties"/>
@@ -136,7 +137,7 @@
           class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" singleton="false"/>
 
     <!-- server side Cluster Info manager -->
-    <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerImpl" depends-on="systemProperties">
+    <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerImpl" depends-on="clusterPropertyCache">
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="serverConfig" ref="serverConfig"/>
         <property name="keystore" ref="keystore"/>
