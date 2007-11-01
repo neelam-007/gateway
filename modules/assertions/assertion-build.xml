@@ -114,6 +114,9 @@
             <include name="whirlycache-1.0.1.jar"/>
             <include name="concurrent-1.3.4.jar"/>
         </fileset>
+        <fileset dir="${UneasyRooster.dir}/lib/gateway/tomcat">
+            <include name="*.jar"/>
+        </fileset>
         <fileset dir="${UneasyRooster.dir}/lib/crypto/bc">
             <include name="bcprov*.jar"/>
         </fileset>

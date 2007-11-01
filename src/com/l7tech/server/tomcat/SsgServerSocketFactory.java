@@ -69,8 +69,6 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
     }
 
     private long getTransportModuleId() {
-        if (transportModuleId != -1)
-            return transportModuleId;
         synchronized (this) {
             if (transportModuleId != -1)
                 return transportModuleId;
@@ -82,8 +80,6 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
     }
 
     private long getConnectorOid() {
-        if (connectorOid != -1)
-            return connectorOid;
         synchronized (this) {
             if (connectorOid != -1)
                 return connectorOid;
@@ -182,6 +178,7 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
      * Invokes delegate
      */
     public void setAttribute(String s, Object o) {
+        super.setAttribute(s, o);
         delegate.setAttribute(s, o);
     }
 

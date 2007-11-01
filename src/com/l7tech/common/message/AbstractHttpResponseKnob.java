@@ -6,35 +6,35 @@
 
 package com.l7tech.common.message;
 
+import com.l7tech.common.util.Pair;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * An abstract skeleton of an HttpResponseKnob implementation.
  */
 public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
-    private static final Logger logger = Logger.getLogger(AbstractHttpResponseKnob.class.getName());
-    protected final List headersToSend = new ArrayList();
-    protected final List challengesToSend = new ArrayList();
+    protected final List<Pair<String, Object>> headersToSend = new ArrayList<Pair<String, Object>>();
+    protected final List<String> challengesToSend = new ArrayList<String>();
     protected int statusToSet;
 
     public void setDateHeader(String name, long date) {
-        headersToSend.add(new HttpServletResponseKnob.Pair(name, new Long(date)));
+        headersToSend.add(new Pair<String, Object>(name, date));
     }
 
     public void addDateHeader(String name, long date) {
-        headersToSend.add(new HttpServletResponseKnob.Pair(name, new Long(date)));
+        headersToSend.add(new Pair<String, Object>(name, date));
     }
 
     public void setHeader(String name, String value) {
         // Clear out any previous value
-        for (Iterator i = headersToSend.iterator(); i.hasNext();) {
-            HttpServletResponseKnob.Pair pair = (HttpServletResponseKnob.Pair)i.next();
-            if (name.equals(pair.name)) i.remove();
+        for (Iterator<Pair<String, Object>> i = headersToSend.iterator(); i.hasNext();) {
+            Pair<String, Object> pair = i.next();
+            if (name.equals(pair.left)) i.remove();
         }
-        headersToSend.add(new HttpServletResponseKnob.Pair(name, value));
+        headersToSend.add(new Pair<String, Object>(name, value));
     }
 
     public void addChallenge(String value) {
@@ -42,30 +42,28 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
     }
 
     public void addHeader(String name, String value) {
-        headersToSend.add(new HttpServletResponseKnob.Pair(name, value));
+        headersToSend.add(new Pair<String, Object>(name, value));
     }
 
     public String[] getHeaderValues(String name) {
-        ArrayList<Pair> tmp = new ArrayList<Pair>();
-        for (Object aHeadersToSend : headersToSend) {
-            Pair pair = (Pair) aHeadersToSend;
-            if (name.compareToIgnoreCase(pair.getName()) == 0) {
+        ArrayList<Pair<String,Object>> tmp = new ArrayList<Pair<String,Object>>();
+        for (Pair<String,Object> pair : headersToSend) {
+            if (name.compareToIgnoreCase(pair.left) == 0) {
                 tmp.add(pair);
             }
         }
         String[] output = new String[tmp.size()];
         int i = 0;
         for (Pair pair : tmp) {
-            output[i] = pair.getValue().toString();
+            output[i] = pair.right.toString();
             i++;
         }
         return output;
     }
 
     public boolean containsHeader(String name) {
-        for (Iterator i = headersToSend.iterator(); i.hasNext();) {
-            HttpServletResponseKnob.Pair pair = (HttpServletResponseKnob.Pair)i.next();
-            if (name.equals(pair.name)) return true;
+        for (Pair<String, Object> pair : headersToSend) {
+            if (name.equals(pair.left)) return true;
         }
 
         return false;
@@ -77,23 +75,5 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
 
     public int getStatus() {
         return statusToSet;
-    }
-
-    protected static final class Pair {
-        Pair(String name, Object value) {
-            this.name = name;
-            this.value = value;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public Object getValue() {
-            return value;
-        }
-
-        final String name;
-        final Object value;
     }
 }

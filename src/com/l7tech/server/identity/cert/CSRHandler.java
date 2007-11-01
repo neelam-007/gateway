@@ -3,6 +3,7 @@ package com.l7tech.server.identity.cert;
 import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.KeystoreUtils;
@@ -15,6 +16,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.identity.AuthenticationResult;
 
 import javax.net.ssl.HostnameVerifier;
@@ -74,6 +76,10 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         return GatewayFeatureSets.SERVICE_CSRHANDLER;
     }
 
+    protected SsgConnector.Endpoint getRequiredEndpoint() {
+        return SsgConnector.Endpoint.CSRHANDLER;
+    }
+
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
 
@@ -105,6 +111,10 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway CA service not enabled by license");
+            return;
+        } catch (TransportModule.ListenerException e) {
+            logger.log(Level.WARNING, "Request not permitted on this port, returning 500", e);
+            response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway CA service not enabled on this port");
             return;
         }
 

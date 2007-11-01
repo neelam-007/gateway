@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -21,6 +22,7 @@ import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.IdentityRule;
 import com.l7tech.server.service.resolution.*;
+import com.l7tech.server.transport.TransportModule;
 import com.l7tech.service.PublishedService;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -93,6 +95,10 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return GatewayFeatureSets.SERVICE_WSDLPROXY;
     }
 
+    protected SsgConnector.Endpoint getRequiredEndpoint() {
+        return SsgConnector.Endpoint.WSDLPROXY;
+    }
+
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         PublishedService ps;
         try {
@@ -123,6 +129,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             res.getOutputStream().print("Gateway WSDL proxy service not enabled by license");
+            res.flushBuffer();
+            return;
+        } catch (TransportModule.ListenerException e) {
+            logger.log(Level.WARNING, "Service not permitted on this port, returning 500", e);
+            res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            res.getOutputStream().print("Gateway WSDL proxy service not permitted on this port");
             res.flushBuffer();
             return;
         }

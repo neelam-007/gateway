@@ -8,6 +8,7 @@ import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.http.*;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
@@ -25,6 +26,7 @@ import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.util.HttpClientFactory;
+import com.l7tech.server.transport.TransportModule;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -79,6 +81,10 @@ public class PingServlet extends AuthenticatableHttpServlet {
 
     protected String getFeature() {
         return GatewayFeatureSets.SERVICE_MESSAGEPROCESSOR;
+    }
+
+    protected SsgConnector.Endpoint getRequiredEndpoint() {
+        return SsgConnector.Endpoint.PING;
     }
 
     /** Overrided to indicate we allow HTTP Basic without SSL. */
@@ -180,6 +186,10 @@ public class PingServlet extends AuthenticatableHttpServlet {
                         _logger.fine("Failed to authenticate request: " + e.getMessage());
                     }
                     return;
+                } catch (TransportModule.ListenerException e) {
+                    _logger.warning("Ping service is not enabled for this port; returning " + HttpServletResponse.SC_SERVICE_UNAVAILABLE + ".");
+                    response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                    return;
                 }
 
                 if (authenticated) {
@@ -257,6 +267,8 @@ public class PingServlet extends AuthenticatableHttpServlet {
         } catch (IssuedCertNotPresentedException e) {
             return false;
         } catch (LicenseException e) {
+            return false;
+        } catch (TransportModule.ListenerException e) {
             return false;
         }
         if (results.length <= 0) return false;

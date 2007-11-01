@@ -2,9 +2,11 @@ package com.l7tech.server;
 
 import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.server.transport.http.HttpTransportModuleTester;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -76,6 +78,12 @@ public class MockServletApiTest extends TestCase {
      * @throws Exception
      */
     public void testInvokeMessageProcessingServlet() throws Exception {
+        HttpTransportModuleTester.setGlobalConnector(new SsgConnector() {
+            public boolean offersEndpoint(Endpoint endpoint) {
+                return true;
+            }
+        });
+
         for (int i = 0; i < soapRequests.length; i++) {
             SoapMessageGenerator.Message soapRequest = soapRequests[i];
             servletApi.reset();

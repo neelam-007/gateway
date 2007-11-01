@@ -52,8 +52,6 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
     }
 
     private long getTransportModuleId() {
-        if (transportModuleId != -1)
-            return transportModuleId;
         synchronized (this) {
             if (transportModuleId != -1)
                 return transportModuleId;

@@ -9,6 +9,7 @@ package com.l7tech.server;
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.SystemMessages;
@@ -33,6 +34,8 @@ import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.server.transport.http.HttpTransportModule;
+import com.l7tech.server.transport.TransportModule;
 import com.l7tech.service.PublishedService;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -121,9 +124,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         
         try {
             licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
+            HttpTransportModule.requireEndpoint(hrequest, SsgConnector.Endpoint.MESSAGE_INPUT);
         } catch (LicenseException e) {
             // New exception to conceal original stack trace from LicenseManager
             throw new ServletException(new LicenseException(e.getMessage()));
+        } catch (TransportModule.ListenerException e) {
+            throw new ServletException("Published service message input is not enabled on this port", e);
         }
 
         // Initialize processing context

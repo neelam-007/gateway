@@ -6,6 +6,7 @@ import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.Pair;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.GatewayFeatureSets;
@@ -24,14 +25,15 @@ import org.apache.catalina.core.StandardThreadExecutor;
 import org.apache.catalina.core.StandardWrapper;
 import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Embedded;
-import org.apache.coyote.ProtocolHandler;
-import org.apache.coyote.http11.Http11Protocol;
 import org.apache.naming.resources.FileDirContext;
+import org.apache.coyote.http11.Http11Protocol;
+import org.apache.coyote.ProtocolHandler;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.directory.DirContext;
-import java.beans.PropertyChangeListener;
+import javax.servlet.http.HttpServletRequest;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -66,6 +68,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private static final Map<Long, Reference<HttpTransportModule>> instancesById =
             new ConcurrentHashMap<Long, Reference<HttpTransportModule>>();
 
+    static boolean testMode = false; // when test mode enabled, will always use the following two fields
+    static SsgConnector testConnector;
+    static HttpTransportModule testModule;
+
     private final long instanceId;
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -75,7 +81,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private final MasterPasswordManager masterPasswordManager;
     private final KeystoreUtils keystoreUtils;
     private final SsgKeyStoreManager ssgKeyStoreManager;
-    private final Map<Long, Connector> activeConnectors = new ConcurrentHashMap<Long, Connector>();
+    private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, Connector>>();
     private Embedded embedded;
     private Engine engine;
     private Host host;
@@ -360,9 +366,11 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         connectorAttrs.remove("scheme");
         final String scheme = connector.getScheme();
         if (SsgConnector.SCHEME_HTTP.equals(scheme)) {
-            activeConnectors.put(connector.getOid(), addHttpConnector(connector.getPort(), connectorAttrs));
+            final Connector c = addHttpConnector(connector.getPort(), connectorAttrs);
+            activeConnectors.put(connector.getOid(), new Pair<SsgConnector, Connector>(connector, c));
         } else if (SsgConnector.SCHEME_HTTPS.equals(scheme)) {
-            activeConnectors.put(connector.getOid(), addHttpsConnector(connector.getPort(), connectorAttrs));
+            final Connector c = addHttpsConnector(connector.getPort(), connectorAttrs);
+            activeConnectors.put(connector.getOid(), new Pair<SsgConnector, Connector>(connector, c));
         } else {
             // It's not an HTTP connector; ignore it.  This shouldn't be possible
             logger.log(Level.WARNING, "HttpTransportModule is ignoring non-HTTP(S) connector with scheme " + scheme);
@@ -462,8 +470,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     protected synchronized void removeConnector(long oid) {
-        Connector connector = activeConnectors.remove(oid);
-        if (connector == null) return;
+        Pair<SsgConnector, Connector> entry = activeConnectors.remove(oid);
+        if (entry == null) return;
+        Connector connector = entry.right;
         logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
         embedded.removeConnector(connector);
         closeAllSockets(oid);
@@ -572,7 +581,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         ProtocolHandler ph = c.getProtocolHandler();
         if (ph instanceof Http11Protocol) {
             ((Http11Protocol)ph).setExecutor(executor);
-        }
+        } else
+            throw new ListenerException("Unable to start HTTP listener on port " + c.getPort() + ": Unrecognized protocol handler: " + ph.getClass().getName());
 
         embedded.addConnector(c);
         try {
@@ -607,8 +617,13 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             }
         }
 
-        attrs.putAll(attrs);
         setConnectorAttributes(c, attrs);
+
+        ProtocolHandler ph = c.getProtocolHandler();
+        if (ph instanceof Http11Protocol) {
+            ((Http11Protocol)ph).setExecutor(executor);
+        } else
+            throw new ListenerException("Unable to start HTTPS listener on port " + c.getPort() + ": Unrecognized protocol handler: " + ph.getClass().getName());
 
         embedded.addConnector(c);
         try {
@@ -648,6 +663,55 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     /**
+     * Find the SsgConnector instance whose listener accepted the specified HttpServletRequest,
+     * if we have enough information to make that determination.
+     *
+     * @param req the request to identify.  Required.
+     * @return the SsgConnector instance whose listener accepted this request, or null if it can't be found.
+     */
+    public static SsgConnector getConnector(HttpServletRequest req) {
+        if (testMode) return testConnector;
+
+        Long connectorOid = (Long)req.getAttribute(ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
+        if (connectorOid == null) {
+            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
+            return null;
+        }
+        Long htmId = (Long)req.getAttribute(ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID);
+        HttpTransportModule htm = getInstance(htmId);
+        if (htm == null) {
+            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID);
+            return null;
+        }
+        Pair<SsgConnector, Connector> pair = htm.activeConnectors.get(connectorOid);
+        if (pair == null) {
+            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID +
+                                      ": No active connector with oid " + connectorOid);
+            return null;
+        }
+        return pair.left;
+    }
+
+    /**
+     * Assert that the specified servlet request arrived over a connector that is configured to grant access
+     * to the specified endpoint.
+     * <p/>
+     * If this method returns, an SsgConnector instance was located, and it granted access to the specified endpoint.
+     *
+     * @param req  the request to examine.  Required.
+     * @param endpoint  the endpoint to require.  Required.
+     * @throws ListenerException if no SsgConnector could be found for this request, or a connector was found but
+     *                           was not configured to grant access to the specified endpoint.
+     */
+    public static void requireEndpoint(HttpServletRequest req, SsgConnector.Endpoint endpoint) throws ListenerException {
+        SsgConnector connector = getConnector(req);
+        if (connector == null)
+            throw new ListenerException("No connector was found for the specified request.");
+        if (!connector.offersEndpoint(endpoint))
+            throw new ListenerException("This request cannot be accepted on this port.");
+    }
+
+    /**
      * Get the SsgKeyStoreManager instance made available for SSL connectors created by this transport module.
      *
      * @return an SsgKeyStoreManager instance.  Should never be null.
@@ -667,6 +731,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * @return  the corresopnding HttpTransportModule instance, or null if not found.
      */
     public static HttpTransportModule getInstance(long id) {
+        if (testMode) return testModule;
+        
         Reference<HttpTransportModule> instance = instancesById.get(id);
         return instance == null ? null : instance.get();
     }

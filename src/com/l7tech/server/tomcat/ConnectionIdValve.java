@@ -24,7 +24,9 @@ import com.l7tech.server.transport.http.HttpTransportModule;
  * @version $Revision$
  */
 public class ConnectionIdValve extends ValveBase {
-    private final HttpTransportModule httpTransportModule;
+    public static final String ATTRIBUTE_CONNECTION_ID = "com.l7tech.server.connectionId";
+    public static final String ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID = "com.l7tech.server.httpTransportModuleInstanceId";
+    public static final String ATTRIBUTE_CONNECTOR_OID = "com.l7tech.server.ssgConnectorOid";
 
     //- PUBLIC
 
@@ -73,8 +75,10 @@ public class ConnectionIdValve extends ValveBase {
      */
     public void invoke(Request req, Response res) throws IOException, ServletException {
         // Set the connection id for the request
-        req.setAttribute(ATTRIBUTE_CONNECTION_ID, connectionId.get());
-        req.setAttribute(ATTRIBUTE_CONNECTOR_OID, ssgConnectorOid.get());
+        final Long cid = connectionId.get();
+        final Long connectorOid = ssgConnectorOid.get();
+        req.setAttribute(ATTRIBUTE_CONNECTION_ID, cid);
+        req.setAttribute(ATTRIBUTE_CONNECTOR_OID, connectorOid);
         req.setAttribute(ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID, httpTransportModule.getInstanceId());
 
         // Let servlet do it's thing
@@ -93,12 +97,9 @@ public class ConnectionIdValve extends ValveBase {
 
     //- PRIVATE
 
-    private static final String ATTRIBUTE_CONNECTION_ID = "com.l7tech.server.connectionId";
-    private static final String ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID = "com.l7tech.server.httpTransportModuleInstanceId";
-    private static final String ATTRIBUTE_CONNECTOR_OID = "com.l7tech.server.ssgConnectorOid";
     private static final Logger logger = Logger.getLogger(ConnectionIdValve.class.getName());
-
     private static final ThreadLocal<Long> ssgConnectorOid = new ThreadLocal<Long>();
+    private final HttpTransportModule httpTransportModule;
     private final ThreadLocal<Long> connectionId = new ThreadLocal<Long>();
     private final Object connectionSequenceLock = new Object();
     private long connectionSequence;

@@ -70,8 +70,11 @@ public class SsgConnector extends NamedEntityImp {
         /** The HTTP-based SNMP query service. */
         SNMPQUERY,
 
+        /** The Gateway status (Ping) servlet. */
+        PING,
+
         /** All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc. */
-        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY);
+        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, PING);
 
         private Endpoint[] enabledKids;
         private Set<Endpoint> enabledSet;

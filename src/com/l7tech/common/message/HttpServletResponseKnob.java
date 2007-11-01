@@ -6,14 +6,14 @@
 
 package com.l7tech.common.message;
 
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.util.Pair;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -22,7 +22,7 @@ import java.util.List;
  */
 public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
     private final HttpServletResponse response;
-    private final List cookiesToSend = new ArrayList();
+    private final List<Cookie> cookiesToSend = new ArrayList<Cookie>();
 
     public HttpServletResponseKnob(HttpServletResponse response) {
         if (response == null) throw new NullPointerException();
@@ -38,18 +38,16 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
      */
     public void beginResponse() {
         response.setStatus(statusToSet);
-        for (Iterator i = headersToSend.iterator(); i.hasNext();) {
-            Pair pair = (Pair)i.next();
-            final Object value = pair.value;
+        for (Pair<String, Object> pair : headersToSend) {
+            final Object value = pair.right;
             if (value instanceof Long) {
-                response.addDateHeader(pair.name, ((Long)value).longValue());
+                response.addDateHeader(pair.left, (Long)value);
             } else {
-                response.addHeader(pair.name, (String)value);
+                response.addHeader(pair.left, (String)value);
             }
         }
 
-        for (Iterator i = cookiesToSend.iterator(); i.hasNext();) {
-            Cookie cookie = (Cookie) i.next();
+        for (Cookie cookie : cookiesToSend) {
             response.addCookie(cookie);
         }
     }
@@ -65,8 +63,7 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
     public void beginChallenge() {
         Collections.sort(challengesToSend, String.CASE_INSENSITIVE_ORDER);
         Collections.reverse(challengesToSend);
-        for (Iterator i = challengesToSend.iterator(); i.hasNext();) {
-            String challenge = (String)i.next();
+        for (String challenge : challengesToSend) {
             response.addHeader("WWW-Authenticate", challenge);
         }
     }

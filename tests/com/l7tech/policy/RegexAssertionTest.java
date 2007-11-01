@@ -12,9 +12,11 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.*;
+import com.l7tech.server.transport.http.HttpTransportModuleTester;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -78,6 +80,11 @@ public class RegexAssertionTest extends TestCase {
     public void setUp() throws Exception {
         tokenCount = 0;
         getServicesHelper().deleteAllServices();
+        HttpTransportModuleTester.setGlobalConnector(new SsgConnector() {
+            public boolean offersEndpoint(Endpoint endpoint) {
+                return true;
+            }
+        });
     }
 
     public void tearDown() throws Exception {

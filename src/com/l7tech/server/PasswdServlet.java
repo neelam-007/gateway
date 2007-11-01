@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
@@ -8,10 +9,10 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.internal.InternalUserManager;
+import com.l7tech.server.transport.TransportModule;
 import sun.misc.BASE64Decoder;
 
 import javax.servlet.ServletConfig;
@@ -43,6 +44,10 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         return GatewayFeatureSets.SERVICE_PASSWD;
     }
 
+    protected SsgConnector.Endpoint getRequiredEndpoint() {
+        return SsgConnector.Endpoint.PASSWD;
+    }
+
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         if (!req.isSecure()) {
             logger.warning("Request came over insecure channel (not https). Returning 403.");
@@ -60,6 +65,10 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             sendBackError(res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway auxiliary service not enabled by license");
+            return;
+        } catch (TransportModule.ListenerException e) {
+            logger.log(Level.WARNING, "Service is not enabled on this port, returning 500", e);
+            sendBackError(res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway auxiliary service not enabled on this port");
             return;
         }
         if (results == null || results.length < 1) {

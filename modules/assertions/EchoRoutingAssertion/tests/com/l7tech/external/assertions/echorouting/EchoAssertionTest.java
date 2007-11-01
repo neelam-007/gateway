@@ -8,12 +8,14 @@ import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.ApplicationContexts;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
+import com.l7tech.server.transport.http.HttpTransportModuleTester;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
@@ -66,6 +68,11 @@ public class EchoAssertionTest extends TestCase {
     }
 
     public void setUp() throws Exception {
+        HttpTransportModuleTester.setGlobalConnector(new SsgConnector() {
+            public boolean offersEndpoint(Endpoint endpoint) {
+                return true;
+            }
+        });
     }
 
     public void tearDown() throws Exception {

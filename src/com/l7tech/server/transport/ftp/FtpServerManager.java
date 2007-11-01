@@ -179,10 +179,22 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         Collection<SsgConnector> all = ssgConnectorManager.findAll();
         List<SsgConnector> ret = new ArrayList<SsgConnector>();
         for (SsgConnector connector : all) {
-            if (connector.isEnabled() && connectorIsOwnedByThisModule(connector))
+            if (connector.isEnabled() && connectorIsOwnedByThisModule(connector)) {
                 ret.add(connector);
+            }
         }
         return ret;
+    }
+
+    protected boolean isValidConnectorConfig(SsgConnector connector) {
+        if (!super.isValidConnectorConfig(connector))
+            return false;
+        if (!connector.offersEndpoint(SsgConnector.Endpoint.MESSAGE_INPUT)) {
+            // The GUI isn't supposed to allow saving enabled FTP connectors without MESSAGE_INPUT checked
+            logger.log(Level.WARNING, "FTP connector OID " + connector.getOid() + " does not allow published service message input");
+            return false;
+        }
+        return true;
     }
 
     private void startInitialConnectors() throws LifecycleException {

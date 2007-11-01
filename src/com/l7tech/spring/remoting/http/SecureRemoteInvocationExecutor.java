@@ -9,6 +9,7 @@ import java.security.AccessController;
 import java.security.AccessControlException;
 
 import javax.security.auth.Subject;
+import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.remoting.support.RemoteInvocationExecutor;
 import org.springframework.remoting.support.RemoteInvocation;
@@ -18,7 +19,10 @@ import com.l7tech.admin.LicenseRuntimeException;
 import com.l7tech.identity.User;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.transport.http.HttpTransportModule;
+import com.l7tech.spring.remoting.RemoteUtils;
 
 /**
  * Secure invoker.
@@ -44,7 +48,9 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
      *
      */
     public Object invoke(RemoteInvocation invocation, Object targetObject)
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    {
+        requireAdminPort();
 
         // Check if the method can be invoked when not authenticated (login method, etc)
         Administrative adminAnno =
@@ -75,6 +81,20 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
         }
 
         return invocation.invoke(targetObject);
+    }
+
+    /**
+     * Assert that this request arrived over a port that enables either ADMIN_APPLET or ADMIN_REMOTE.
+     */
+    private void requireAdminPort() {
+        HttpServletRequest hreq = RemoteUtils.getHttpServletRequest();
+        if (hreq == null)
+            throw new AccessControlException("Admin request disallowed: No request context available");
+        SsgConnector connector = HttpTransportModule.getConnector(hreq);
+        if (connector == null)
+            throw new AccessControlException("Admin request disallowed: Unable to determine which connector this request came in on");
+        if (!connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET) && !connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_REMOTE))
+            throw new AccessControlException("Request not permitted on this port");
     }
 
     private void checkLicense(String methodName) {

@@ -2,6 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.HttpConstants;
@@ -29,6 +30,7 @@ import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.event.system.PolicyServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -104,6 +106,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     protected String getFeature() {
         return GatewayFeatureSets.SERVICE_POLICYDISCO;
+    }
+
+    protected SsgConnector.Endpoint getRequiredEndpoint() {
+        return SsgConnector.Endpoint.POLICYDISCO;
     }
 
     /**
@@ -266,6 +272,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             returnError(res, "Gateway policy discovery service not enabled by license");
+            return;
+        } catch (TransportModule.ListenerException e) {
+            logger.log(Level.WARNING, "Service is not permitted on this port, returning 500", e);
+            returnError(res, "Gateway policy discovery service not enabled on this port");
             return;
         }
 

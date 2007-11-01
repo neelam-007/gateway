@@ -91,6 +91,23 @@ public abstract class TransportModule extends LifecycleBean {
         return schemeIsOwnedByThisModule(connector.getScheme());
     }
 
+    /**
+     * Check if the specified connector is configured correctly for this transport module.
+     * <p/>
+     * The general contract is that for connectors owned by this module, they will only be put
+     * in service if they are enabled and this method returns true; otherwise they will
+     * be taken out of service.
+     * <p/>
+     * This method always returns true.
+     *
+     * @param connector the connector to examine.  Required.
+     * @return true if this connector configuration looks valid for this transport module; 
+     *         false if it is invalid and should be treated as though it were disabled
+     */
+    protected boolean isValidConnectorConfig(SsgConnector connector) {
+        return true;
+    }
+
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         super.onApplicationEvent(applicationEvent);
         if (applicationEvent instanceof EntityInvalidationEvent) {
@@ -107,7 +124,7 @@ public abstract class TransportModule extends LifecycleBean {
                             SsgConnector c = ssgConnectorManager.findByPrimaryKey(id);
                             if (!connectorIsOwnedByThisModule(c))
                                 break;
-                            if (c.isEnabled())
+                            if (c.isEnabled() && isValidConnectorConfig(c))
                                 addConnector(c);
                             else
                                 removeConnector(id);

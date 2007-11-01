@@ -8,6 +8,7 @@ package com.l7tech.server.admin;
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.admin.AdminLoginResult;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.ServiceMessages;
@@ -38,6 +39,7 @@ import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.spring.remoting.RemoteUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
@@ -176,6 +178,14 @@ public class ManagerAppletFilter implements Filter {
                 return;
             }
 
+            SsgConnector connector = HttpTransportModule.getConnector(hreq);
+            if (connector == null || !connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET)) {
+                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_NO_SSL);
+                hresp.setStatus(status = 404);
+                hresp.sendError(404, "Service not enabled on this port.");
+                return;
+            }
+
             passed = true;
 
             // Note that the user is authenticated before this is run
@@ -191,7 +201,7 @@ public class ManagerAppletFilter implements Filter {
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_FILTER_PASSED);
             final IOException[] ioeHolder = new IOException[1];
             final ServletException[] seHolder = new ServletException[1];
-            RemoteUtils.runWithClientHost(hreq.getRemoteAddr(), new Runnable(){
+            RemoteUtils.runWithConnectionInfo(hreq.getRemoteAddr(), hreq, new Runnable(){
                 public void run() {
                     try {
                         filterChain.doFilter(req, resp);

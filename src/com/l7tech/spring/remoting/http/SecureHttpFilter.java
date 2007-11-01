@@ -1,7 +1,9 @@
 package com.l7tech.spring.remoting.http;
 
 import com.l7tech.server.admin.AdminSessionManager;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.spring.remoting.RemoteUtils;
+import com.l7tech.common.transport.SsgConnector;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -70,7 +72,7 @@ public class SecureHttpFilter implements Filter {
                          final ServletResponse servletResponse,
                          final FilterChain filterChain) throws IOException, ServletException {
 
-        HttpServletRequest hsr = (HttpServletRequest) servletRequest;
+        final HttpServletRequest hsr = (HttpServletRequest) servletRequest;
 
         if (logger.isLoggable(Level.FINEST)) {
             logger.log(Level.FINEST, "Admin access for URI '" + hsr.getRequestURI() + "'.");
@@ -97,7 +99,7 @@ public class SecureHttpFilter implements Filter {
                 public Object run() throws Exception {
                     final IOException[] ioeHolder = new IOException[1];
                     final ServletException[] seHolder = new ServletException[1];
-                    RemoteUtils.runWithClientHost(servletRequest.getRemoteAddr(), new Runnable(){
+                    RemoteUtils.runWithConnectionInfo(servletRequest.getRemoteAddr(), hsr, new Runnable(){
                         public void run() {
                             try {
                                 filterChain.doFilter(servletRequest, servletResponse);

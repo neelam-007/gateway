@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.transport.SsgConnector.Endpoint;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -14,10 +15,12 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.ServletUtils;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
@@ -28,10 +31,13 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -79,13 +85,34 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         return bean;
     }
 
-    /** @return the license Feature that must be required for an authenticated request to succeed. */
+    /**
+     * @return the license Feature that must be required for an authenticated request to succeed.
+     *         For example, {@link com.l7tech.server.GatewayFeatureSets#SERVICE_PASSWD}.
+     */
     protected abstract String getFeature();
+
+    /**
+     * @return the endpoint name that must be enabled on the SsgConnector that received this
+     *         request in order for the request to be allowed.
+     *         For example, {@link Endpoint#PASSWD}.
+     */
+    protected abstract Endpoint getRequiredEndpoint();
+
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            HttpTransportModule.requireEndpoint(req, getRequiredEndpoint());
+        } catch (TransportModule.ListenerException e) {
+            resp.sendError(404, "Service unavailable on this port");
+            return;
+        }
+        super.service(req, resp);
+    }
 
     /**
      * Look for basic creds in the request and authenticate them against id providers available in this ssg.
      * If credentials are provided but they are invalid, this will throw a BadCredentialsException
      *
+     * @param req the request.  required
      * @return a Map&lt;User, X509Certificate&gt; containing authenticated users, and their cert from the database if any.
      *          May be empty, but never null.
      * @throws BadCredentialsException  if authorized credentials were not presented with the request
@@ -93,11 +120,14 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      *                                          certificate, and the connection came in over SSL, but the
      *                                          client failed to present this client certificate during the
      *                                          SSL handshake.
-     * @throws LicenseException   if the currently installed license does not enable use of auxilary servlets.
+     * @throws LicenseException   if the currently installed license does not enable use of the feature set
+                                  whose name is returned by {@link #getFeature}
+     * @throws com.l7tech.server.transport.TransportModule.ListenerException if this request could not be
+     *                            verified as having arrived over a connector that is configured to allow
+     *                            access to the {@link Endpoint} returned by {@link #getRequiredEndpoint}.
      */
     protected AuthenticationResult[] authenticateRequestBasic(HttpServletRequest req)
-            throws BadCredentialsException, IssuedCertNotPresentedException, LicenseException
-    {
+            throws BadCredentialsException, IssuedCertNotPresentedException, LicenseException, TransportModule.ListenerException {
 
         licenseManager.requireFeature(getFeature());
 
@@ -229,12 +259,18 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * @throws java.io.IOException on io error
      * @throws com.l7tech.identity.BadCredentialsException
      *                             on invalid credentials
+     * @throws com.l7tech.identity.IssuedCertNotPresentedException
+     *                            if this user is known to have a client cert, and had the opportunity to present it
+     *                            in an SSL handshake, but failed to do so
      * @throws LicenseException   if the currently installed license does not enable use of auxilary servlets.
+     * @throws com.l7tech.server.transport.TransportModule.ListenerException if this request could not be
+     *                            verified as having arrived over a connector that is configured to allow
+     *                            access to the {@link Endpoint} returned by {@link #getRequiredEndpoint}.
      */
     protected AuthenticationResult[] authenticateRequestBasic(HttpServletRequest req, PublishedService service)
-            throws IOException, BadCredentialsException, IssuedCertNotPresentedException, LicenseException
-    {
+            throws IOException, BadCredentialsException, IssuedCertNotPresentedException, LicenseException, TransportModule.ListenerException {
         licenseManager.requireFeature(getFeature());
+        HttpTransportModule.requireEndpoint(req, getRequiredEndpoint());
 
         // Try to authenticate against identity providers
         try {

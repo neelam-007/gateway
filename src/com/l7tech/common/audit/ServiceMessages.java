@@ -19,5 +19,6 @@ public class ServiceMessages extends Messages {
     public static final M APPLET_AUTH_FILTER_PASSED     = m(3509, Level.FINE,    "Admin applet authentication filter passed");
     public static final M APPLET_SESSION_CREATED        = m(3510, Level.INFO,    "Admin applet session created for user {0}");
     public static final M APPLET_AUTH_MODULE_CLASS_DL   = m(3511, Level.FINE,    "Admin applet request to download assertion module class: {0} from module: {1}");
+    public static final M APPLET_AUTH_PORT_NOT_ALLOWED  = m(3512, Level.WARNING, "Admin applet requests not permitted on this port");
     // MAX -                                              m(3999
 }
