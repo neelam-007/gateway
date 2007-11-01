@@ -14,17 +14,12 @@ import java.text.MessageFormat;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
 public class ErrorManager {
-    private static final Logger log = Logger.getLogger(ErrorManager.class.getName());
-    private static final ErrorManager instance = new ErrorManager();
 
-    private LinkedList handlers = new LinkedList();
-    /**
-     * inly subclasses can instantiate the class
-     */
-    protected ErrorManager() {}
+    //- PUBLIC
 
     /**
      * Singleton entry point
+     *
      * @return the eror manager singleton instance
      */
     public static ErrorManager getDefault() {
@@ -32,21 +27,25 @@ public class ErrorManager {
     }
 
     /**
-     * Pushes an handlere onto the top of the handler
-     * stack.
+     * Pushes an handler onto the top of the handler stack.
      *
      * @param eh the handler that is a new top of the stack
      */
     public void pushHandler(ErrorHandler eh) {
-        handlers.addFirst(eh);
+        synchronized (handlerLock) {
+            handlers.addFirst(eh);
+        }
     }
 
     /**
      * Removes the handler at the top of the handler stack.
+     *
      * @throws    java.util.NoSuchElementException if the stack is empty.
      */
     public void popHandler() {
-        handlers.removeFirst();
+        synchronized (handlerLock) {
+            handlers.removeFirst();
+        }
     }
 
     /**
@@ -56,7 +55,7 @@ public class ErrorManager {
      * @param t the throwable with the
      * @param message the message
      */
-    public void notify(Level level, Throwable t, String message) {
+    public void notify(final Level level, final Throwable t, final String message) {
         notify(level, t, message, null);
     }
 
@@ -68,20 +67,53 @@ public class ErrorManager {
      * @param message the message or message pattern
      * @param args the pattern arguments, may be null
      */
-    public void notify(Level level, Throwable t, String message, Object[] args) {
+    public void notify(final Level level, final Throwable t, final String message, final Object[] args) {
+        // format if required
+        String formattedMessage = message;
         if (message !=null && (args !=null && args.length > 0)) {
-            message = MessageFormat.format(message, args);
+            formattedMessage = MessageFormat.format(message, args);
         }
-        ErrorHandler[] defHandlers = Handlers.defaultHandlers();
-        ErrorHandler[] eh = new ErrorHandler[handlers.size()+defHandlers.length];
-        int index = 0;
-        for (Iterator iterator = handlers.iterator(); iterator.hasNext();) {
-            eh[index++] = (ErrorHandler)iterator.next();
+
+        // create handler list
+        ErrorHandler[] eh;
+        synchronized (handlerLock) {
+            ErrorHandler[] defHandlers = Handlers.defaultHandlers();                             
+            eh = new ErrorHandler[handlers.size()+defHandlers.length];
+            int index = 0;
+            for (Iterator iterator = handlers.iterator(); iterator.hasNext();) {
+                eh[index++] = (ErrorHandler)iterator.next();
+            }
+            for (int i = index, j = 0; i < index + defHandlers.length; i++, j++) {
+                eh[i] = defHandlers[j];
+            }
         }
-        for (int i = index, j = 0; i < index + defHandlers.length; i++, j++) {
-            eh[i] = defHandlers[j];
-        }
-        ErrorEvent ee = new DefaultErrorEvent(eh, level, t, message, log);
+
+        // process the error
+        processError(new DefaultErrorEvent(eh, level, t, formattedMessage, log));
+    }
+
+    //- PROTECTED
+
+    /**
+     * Only subclasses can instantiate the class
+     */
+    protected ErrorManager() {}
+
+    //- PRIVATE
+
+    private static final Logger log = Logger.getLogger(ErrorManager.class.getName());
+    private static final ErrorManager instance = new ErrorManager();
+
+    private Object handlerLock = new Object();
+    private LinkedList handlers = new LinkedList();
+
+    /**
+     * Process the given error event. 
+     *
+     * @param ee The event to handle
+     */
+    private void processError(final ErrorEvent ee) {
+        // queue and process / block
         ee.handle();
     }
 }

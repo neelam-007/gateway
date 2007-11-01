@@ -13,6 +13,8 @@ import com.l7tech.common.util.WeakSet;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.logging.CascadingErrorHandler;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -297,7 +299,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         }
 
         // Can't use System.exit on error (kills browser)
-        ExceptionDialog.setShutdownHandler(new Runnable() {
+        Runnable shutdownTask = new Runnable() {
             public void run() {
                 // Remove applet content
                 getApplication().getMainWindow().disconnectFromGateway();
@@ -308,7 +310,7 @@ public class AppletMain extends JApplet implements SheetHolder {
                 setJMenuBar(null);
                 if (currentRootPaneOwner == AppletMain.this)
                     currentRootPaneOwner = null;
-                
+
                 getContentPane().removeAll();
                 JLabel errorLabel = new JLabel("Layer 7 Technologies - SecureSpan Manager (Error; Reload to restart)");
                 errorLabel.setVerticalAlignment(JLabel.CENTER);
@@ -334,7 +336,9 @@ public class AppletMain extends JApplet implements SheetHolder {
                     }
                 }
             }
-        });
+        };
+        ExceptionDialog.setShutdownHandler(shutdownTask);
+        CascadingErrorHandler.setShutdownHandler(shutdownTask);
 
         // Set AWT error handler
         try {

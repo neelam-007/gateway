@@ -29,6 +29,8 @@ import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.*;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.identity.User;
 
 import javax.swing.*;
@@ -2150,6 +2152,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         initializeWindowPosition();
         initializeHTMLRenderingKit();
         installInactivityTimerEventListener();
+        installCascadingErrorHandler();
     }
 
     /**
@@ -2338,7 +2341,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
     }
 
+    private void installCascadingErrorHandler() {
+        ErrorManager errorManager = ErrorManager.getDefault();
 
+        CascadingErrorHandler handler = new CascadingErrorHandler();
+        addLogonListener(handler);
+
+        errorManager.pushHandler(handler);
+    }
 
     /**
      * invoke logon dialog

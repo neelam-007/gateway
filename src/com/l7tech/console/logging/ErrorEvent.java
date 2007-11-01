@@ -10,6 +10,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class ErrorEvent {
+    private final long time;
     private final Level level;
     private final Throwable throwable;
     private final String message;
@@ -24,10 +25,15 @@ public class ErrorEvent {
      * @param log     where the message should be logged
      */
     public ErrorEvent(Level level, Throwable t, String message, Logger log) {
+        this.time = System.currentTimeMillis();
         this.level = level;
-        throwable = t;
+        this.throwable = t;
         this.message = message;
-        logger = log;
+        this.logger = log;
+    }
+
+    public long getTime() {
+        return time;
     }
 
     public Level getLevel() {
