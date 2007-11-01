@@ -36,7 +36,7 @@ public class PublishPolicyToUDDIWizard extends Wizard {
         Data data = new Data();
         data.setCapturedPolicyURL(policyURL);
         data.setPolicyConsumptionURL(policyConsumptionURL);
-        data.setPolicyName("Policy for " + serviceName);
+        data.setPolicyName(serviceName);
         data.setPolicyDescription("Associated Policy"); // Systinet uses this name to identify policy references
         
         wizardInput = data;

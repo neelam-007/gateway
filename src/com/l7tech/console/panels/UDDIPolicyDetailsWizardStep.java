@@ -8,14 +8,12 @@ import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.Collection;
 import java.net.URL;
 import java.net.MalformedURLException;
 
 import com.l7tech.common.util.TextUtils;
 import com.l7tech.common.uddi.UDDIClient;
 import com.l7tech.common.uddi.UDDIException;
-import com.l7tech.common.uddi.UDDINamedEntity;
 
 /**
  * Wizard step in the PublishPolicyToUDDIWizard wizard pertaining
@@ -130,20 +128,13 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
 
             String policyUrl = policyURLField.getText();
 
-            Collection<UDDINamedEntity> policyInfos = uddi.listPolicies(null, policyUrl);
-            if (policyInfos.isEmpty()) {
-                data.setPolicytModelKey(uddi.publishPolicy(policyNameField.getText(), policyDescField.getText(), policyUrl));
-                data.setPolicyName(policyNameField.getText());
-            }
-            else {
-                if (policyInfos.size() > 1) {
-                    logger.info("Found multiple policies for url '"+policyUrl+"', using first.");
-                }
+            String tModelKey = uddi.publishPolicy(policyNameField.getText(), policyDescField.getText(), policyUrl);
+            data.setPolicytModelKey(tModelKey);
 
-                UDDINamedEntity info = policyInfos.iterator().next();
-                data.setPolicytModelKey(info.getKey());
-                data.setPolicyName(info.getName());
-            }
+            String msg = "Publication successful, policy tModel key: " + data.getPolicytModelKey() +
+                         " choose 'Next' below to associate this policy tModel to " +
+                         "a business service or 'Finish' to end.";
+            JOptionPane.showConfirmDialog(this, TextUtils.breakOnMultipleLines(msg, 30), "Success", JOptionPane.DEFAULT_OPTION);
 
             notifyListeners();
             registerButton.setEnabled(false);

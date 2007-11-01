@@ -44,7 +44,6 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
     private JButton listServicesButton;
     private JList serviceList;
     private JButton updateServiceButton;
-    private boolean done = false;
     private PublishPolicyToUDDIWizard.Data data;
     private ArrayList<ListMember> listData = new ArrayList<ListMember>();
 
@@ -120,32 +119,24 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             }
 
             try {
-                //
-                // NOTE: To enable prompting of the user for reference owerwriting
-                //       replace Boolean.TRUE with null.
-                //
-                data.getUddi().referencePolicy(serviceKey, serviceUrl, false, policyKey, policyUrl, data.getPolicyDescription(), Boolean.TRUE, false);
+                // add policy reference
+                data.getUddi().referencePolicy(serviceKey, serviceUrl, false, policyKey, policyUrl, data.getPolicyDescription(), null, false);
             } catch (UDDIExistingReferenceException e) {
                 int res = JOptionPane.showConfirmDialog(this,TextUtils.breakOnMultipleLines(
-                                      "There is already a policy associated with this item " +
-                                      "(key: " + e.getKeyValue() + "). Would you like to replace it?", 30),
-                                      "Policy tModel already associated",
-                                      JOptionPane.YES_NO_CANCEL_OPTION);
-                if (res == JOptionPane.CANCEL_OPTION) {
+                        "There is already a policy associated to this Business " +
+                        "Service (key: " + e.getKeyValue() + "). Would you like to override it?", 30),
+                        "Policy tModel already associated",
+                        JOptionPane.YES_NO_OPTION);
+                if (res == JOptionPane.NO_OPTION) {
                     logger.info("action cancelled.");
                     return;
-                }
-                else if (res == JOptionPane.NO_OPTION) {
-                    data.getUddi().referencePolicy(serviceKey, serviceUrl, false, policyKey, policyUrl, data.getPolicyDescription(), Boolean.FALSE, false);
-                }
-                else {
+                } else {
                     data.getUddi().referencePolicy(serviceKey, serviceUrl, false, policyKey, policyUrl, data.getPolicyDescription(), Boolean.TRUE, false);
                 }
             }
 
-            JOptionPane.showMessageDialog(this, "Item updated with policy reference.",
+            JOptionPane.showMessageDialog(this, "Service updated with policy tModel",
                                           "Success", JOptionPane.PLAIN_MESSAGE);
-            done = true;
             
             // this causes wizard's finish or next button to become enabled (because we're now ready to continue)
             notifyListeners();
@@ -155,10 +146,6 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             logger.log(Level.WARNING, msg, e);
             showError(msg);
         }
-    }
-
-    public boolean canFinish() {
-        return done;
     }
 
     public void readSettings(Object settings) throws IllegalArgumentException {
