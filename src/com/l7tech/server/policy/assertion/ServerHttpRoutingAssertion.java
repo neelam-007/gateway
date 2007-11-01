@@ -273,7 +273,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_LOGIN_INFO, new String[] {login});
                 if (domain != null && domain.length() > 0) {
                     if (host == null) {
-                        host = System.getProperty("java.rmi.server.hostname", "");
+                        host = ServerConfig.getInstance().getPropertyCached("clusterHost");
                     }
                     routedRequestParams.setNtlmAuthentication(new NtlmAuthentication(login, password.toCharArray(), domain, host));
                 } else {
