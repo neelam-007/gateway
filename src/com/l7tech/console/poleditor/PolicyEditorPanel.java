@@ -247,7 +247,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         } catch (InterruptedException e) {
             return null;
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getTargetException());
         }
     }
 
