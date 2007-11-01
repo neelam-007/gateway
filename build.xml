@@ -3668,6 +3668,7 @@
                 <include name="wipe_keydata"/>
                 <include name="zerohsm.sh"/>
                 <include name="masterkey-manage.pl"/>
+                <include name="update_firewall"/>
             </fileset>
         </copy>
 

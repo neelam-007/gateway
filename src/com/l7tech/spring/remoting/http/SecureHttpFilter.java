@@ -1,9 +1,7 @@
 package com.l7tech.spring.remoting.http;
 
 import com.l7tech.server.admin.AdminSessionManager;
-import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.spring.remoting.RemoteUtils;
-import com.l7tech.common.transport.SsgConnector;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -16,7 +14,6 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.URLDecoder;
 
 
 /**

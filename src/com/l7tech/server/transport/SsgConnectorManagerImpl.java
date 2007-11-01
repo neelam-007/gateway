@@ -30,7 +30,7 @@ public class SsgConnectorManagerImpl
 
     public static final String SYSPROP_FIREWALL_RULES_FILENAME = "com.l7tech.server.firewall.rules.filename";
     public static final String SYSPROP_FIREWALL_UPDATE_PROGRAM = "com.l7tech.server.firewall.update.program";
-    private static final String DEFAULT_FIREWALL_UPDATE_PROGRAM = "bin/partition_firewall.pl";
+    private static final String DEFAULT_FIREWALL_UPDATE_PROGRAM = "libexec/update_firewall";
     private static final String FIREWALL_RULES_FILENAME = SyspropUtil.getString(SYSPROP_FIREWALL_RULES_FILENAME,
                                                                                 "firewall_rules");
 
