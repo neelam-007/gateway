@@ -3234,6 +3234,8 @@
             <exclude name="com/l7tech/common/uddi/GenericUDDIClient*"/>
             <exclude name="com/l7tech/server/**/*"/>
             <exclude name="com/l7tech/internal/**/*"/>
+            <exclude name="com/l7tech/spring/remoting/http/SecureHttpFilter*"/>
+            <exclude name="com/l7tech/spring/remoting/http/SecureRemoteInvocationExecutor*"/>
         </javac>
     </target>
 
