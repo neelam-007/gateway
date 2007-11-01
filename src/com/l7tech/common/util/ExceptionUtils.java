@@ -37,10 +37,10 @@ public class ExceptionUtils {
      * @param cause   The cause you wish to search for, which should be some Throwable class.
      * @return An instance of the cause class if it was a cause of suspect; otherwise null.
      */
-    public static Throwable getCauseIfCausedBy(Throwable suspect, Class cause) {
+    public static <T extends Throwable> T getCauseIfCausedBy(Throwable suspect, Class<T> cause) {
         while (suspect != null) {
             if (cause.isAssignableFrom(suspect.getClass()))
-                return suspect;
+                return (T) suspect;
             suspect = suspect.getCause();
         }
         return null;
@@ -153,7 +153,7 @@ public class ExceptionUtils {
      * @param throwable The throwable to return
      * @return null, unless debugging is enabled.
      */
-    public static Throwable getDebugException(Throwable throwable) {
+    public static <T extends Throwable> T getDebugException(T throwable) {
         return JdkLoggerConfigurator.debugState() ? throwable : null;
     }
 
