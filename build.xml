@@ -3514,7 +3514,6 @@
         <property name="install.src.partitions" value="${install.src.conf}/${install.rel.partitions}"/>
         <property name="install.src.partitionTemplate" value="${install.src.partitions}/${install.rel.partitionTemplate}"/>
         <property name="install.src.defaultPartition" value="${install.src.partitions}/${install.rel.defaultPartition}"/>
-        <property name="install.src.passwords.txt" value="${install.src.base}/passwords.txt"/>
         <property name="install.src.keystore.properties" value="${install.src.conf}/keystore.properties"/>
         <property name="install.src.cluster_hostname" value="${install.src.conf}/cluster_hostname"/>
         <property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
