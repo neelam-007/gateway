@@ -157,6 +157,12 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         host.addChild(context);
     }
 
+    public boolean isLicensed() {
+        // XXX At the moment, the only way to install a license is using HTTP.
+        // Thus the HTTP subsystem must start even if it is nominally not enabled by the license.
+        return true;
+    }
+
     public void propertyChange(PropertyChangeEvent evt) {
         if (executor == null) return; // not yet started
         
@@ -344,6 +350,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     /**
      * Add some connectors to the DB table, getting them from server.xml if possible, but just creating
      * some defaults if not.
+     *
+     * @return zero or more connectors that have already been saved to the database.  Never null or empty.
      */
     private Collection<SsgConnector> createFallbackConnectors() {
         Collection<SsgConnector> toAdd = DefaultHttpConnectors.makeFallbackConnectors(serverConfig);
