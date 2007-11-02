@@ -12,7 +12,6 @@ import com.l7tech.common.uddi.UDDIClientFactory;
 import com.l7tech.common.uddi.UDDIClient;
 import com.l7tech.common.uddi.UDDIException;
 import com.l7tech.common.uddi.UDDINamedEntity;
-import com.l7tech.common.uddi.PolicyAttachmentVersion;
 
 /**
  * Agent implemented using the UDDIClient interface/factory.
@@ -22,7 +21,7 @@ import com.l7tech.common.uddi.PolicyAttachmentVersion;
 public class UDDIClientAgent implements UddiAgent {
 
     private int resultRowsMax;
-    private int resultBatchSize; //TODO use this when querying UDDI as the max rows ...
+    private int resultBatchSize;
 
     /**
      * Constructor
@@ -58,11 +57,20 @@ public class UDDIClientAgent implements UddiAgent {
         // % denotes wildcard of string (any number of characters), underscore denotes wildcard of a single character
 
         UDDIClient uddi = UDDIClientFactory.getInstance().newUDDIClient(inquiryUrl, null, null, null, null, null);
-        List<WsdlInfo> wsdlInfos = null;
+        List<WsdlInfo> wsdlInfos = new ArrayList();
         try {
-            Collection<UDDINamedEntity> services =
-                    uddi.listServiceWsdls(namePattern, caseSensitive, 0, resultRowsMax);
-            wsdlInfos = toWsdlInfos(services);
+            for (int i=0; wsdlInfos.size() < resultRowsMax; i++) {
+                int head = i*resultBatchSize;
+                if (head > 0) head++; // one based
+
+                Collection<UDDINamedEntity> services =
+                        uddi.listServiceWsdls(namePattern, caseSensitive, head, resultBatchSize);
+
+                addWsdlInfos(wsdlInfos, services);
+
+                if (!uddi.listMoreAvailable())
+                    break;
+            }
         } catch (UDDIException iue) {
             throw new UddiAgentException(iue.getMessage(), iue);
         }
@@ -88,13 +96,9 @@ public class UDDIClientAgent implements UddiAgent {
     /**
      * Process the URLs of the given services.
      */
-    private List<WsdlInfo> toWsdlInfos(Collection<UDDINamedEntity> services) {
-        List<WsdlInfo> wsdlList = new ArrayList(services.size());
-        
+    private void addWsdlInfos(List<WsdlInfo> wsdlList, Collection<UDDINamedEntity> services) {
         for ( UDDINamedEntity info : services ) {
             wsdlList.add(new WsdlInfo(info.getName(), info.getWsdlUrl()));    
         }
-
-        return wsdlList;
     }
 }
