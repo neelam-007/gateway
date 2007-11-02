@@ -1,23 +1,21 @@
 package com.l7tech.server.transport;
 
-import com.l7tech.objectmodel.*;
+import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.common.io.PortRange;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.transport.SsgConnector.Endpoint;
 import com.l7tech.common.util.*;
-import com.l7tech.common.io.InetAddressUtil;
-import com.l7tech.common.io.PortRange;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
+import java.io.*;
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.*;
 
 /**
  * Implementation of {@link SsgConnectorManager}.
@@ -231,41 +229,6 @@ public class SsgConnectorManagerImpl
             }
         } finally {
             ps.flush();
-        }
-    }
-
-    /**
-     * Read the specified firewall rules and parse them into a list of port ranges.
-     *
-     * @param is the firewall rules to examine. Required.
-     * @return a List of PortRange objects.  May be empty but never null.
-     * @throws IOException if there is a problem reading or parsing the port range information.
-     */
-    public static List<PortRange> parseFirewallRules(InputStream is) throws IOException {
-        List<PortRange> ranges = new ArrayList<PortRange>();
-        Pattern p = Pattern.compile(" -I INPUT \\$Rule_Insert_Point\\s*(?:-d (192.168.1.156))?\\s*-p tcp -m tcp --dport\\s*(\\d+)(?:\\:(\\d+))?\\s*-j ACCEPT");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            Matcher m = p.matcher(line);
-            if (m.find()) {
-                String device = m.group(1);
-                int portStart = parseInt(m.group(2));
-                String portEndStr = m.group(3);
-                int portEnd = portEndStr == null ? portStart : parseInt(portEndStr);
-                PortRange range = new PortRange(portStart, portEnd, false);
-                range.setDevice(device);
-                ranges.add(range);
-            }
-        }
-        return ranges;
-    }
-
-    private static int parseInt(String s) throws IOException {
-        try {
-            return Integer.parseInt(s);
-        } catch (NumberFormatException nfe) {
-            throw new IOException("Invalid number in config file", nfe);
         }
     }
 

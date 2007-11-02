@@ -17,6 +17,7 @@ import java.net.URLDecoder;
 import java.net.URL;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.Collection;
 
 /**
  * Utility methods for hex encoding and dealing with streams and byte buffers.
@@ -375,11 +376,30 @@ public class HexUtils {
      * Join the specified array of CharSequence into a single StringBuffer, joined with the specified delimiter.
      * @param delim   delimiter to join with.  may not be null.
      * @param tojoin  array of eg. String to join. may be null or empty.
-     * @return a new StringBuffer containing XdYdZ where X, Y and Z were memebers of tojoin and d is delim.  Returns
+     * @return a new StringBuffer containing XdYdZ where X, Y and Z were members of tojoin and d is delim.  Returns
      *         a StringBuffer containing the empty string if tojoin is null or empty.
      */
     public static StringBuffer join(String delim, CharSequence[] tojoin) {
         return join(null, delim, tojoin);
+    }
+
+    /**
+     * Join the specified array of objects toString() representations into a single StringBuffer, joined with
+     * the specified delimiter.
+     *
+     * @param delim   delimiter to join with.  may not be null.
+     * @param tojoin  array of Objects whose default toString representations to join. may be null or empty.
+     * @return a new StringBuffer containing XdYdZ where X, Y and Z were members of tojoin and d is delim.  Returns
+     *         a StringBuffer containing the empty string if tojoin is null or empty.
+     */
+    public static StringBuffer join(String delim, Collection tojoin) {
+        CharSequence[] seqs = new CharSequence[tojoin == null ? 0 : tojoin.size()];
+        if (tojoin != null) {
+            int idx = 0;
+            for (Object o : tojoin)
+                seqs[idx++] = o == null ? "" : o.toString();
+        }
+        return join(null, delim, seqs);
     }
 
     /**

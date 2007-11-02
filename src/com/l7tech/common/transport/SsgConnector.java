@@ -1,6 +1,7 @@
 package com.l7tech.common.transport;
 
 import com.l7tech.common.io.PortRange;
+import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
@@ -8,11 +9,14 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * Describes a port on which the Gateway will listen for incoming requests.
+ * TODO promote port range and bind address from properties to fields (they can still be persisted as properties)
  */
-public class SsgConnector extends NamedEntityImp {
+public class SsgConnector extends NamedEntityImp implements PortOwner {
     protected static final Logger logger = Logger.getLogger(SsgConnector.class.getName());
 
     /** Indicates that a client certificate challenge will never be sent. */
@@ -128,7 +132,6 @@ public class SsgConnector extends NamedEntityImp {
         }
     }
 
-    private static final Object endpointSetLock = new Object();
     private boolean enabled = true;
     private int port = -1;
     private String scheme = SCHEME_HTTP;
@@ -140,6 +143,8 @@ public class SsgConnector extends NamedEntityImp {
     private Set<SsgConnectorProperty> properties = new HashSet<SsgConnectorProperty>();
 
     private transient Set<Endpoint> endpointSet;
+    private transient boolean inetAddressSet = false;
+    private transient InetAddress inetAddress;
 
     public SsgConnector() {
     }
@@ -296,7 +301,7 @@ public class SsgConnector extends NamedEntityImp {
      * @param key  the name of the property to get
      * @return the requested property, or null if it is not set
      */
-    public String getProperty(String key) {
+    public synchronized String getProperty(String key) {
         for (SsgConnectorProperty property : properties) {
             if (key.equals(property.getName()))
                 return property.getValue();
@@ -309,7 +314,7 @@ public class SsgConnector extends NamedEntityImp {
      *
      * @return a List of Strings.  May be empty, but never null.
      */
-    public List<String> getPropertyNames() {
+    public synchronized List<String> getPropertyNames() {
         List<String> propertyNames = new ArrayList<String>();
         for (SsgConnectorProperty property : properties)
             propertyNames.add(property.getName());
@@ -322,7 +327,12 @@ public class SsgConnector extends NamedEntityImp {
      * @param key  the name of the property to set
      * @param value the value to set it to, or null to remove the property
      */
-    public void putProperty(String key, String value) {
+    public synchronized void putProperty(String key, String value) {
+        if (PROP_BIND_ADDRESS.equals(key)) {
+            inetAddressSet = false;
+            inetAddress = null;
+        }
+
         SsgConnectorProperty found = null;
         for (SsgConnectorProperty property : properties) {
             if (key.equals(property.getName())) {
@@ -351,7 +361,7 @@ public class SsgConnector extends NamedEntityImp {
      *
      * @return endpoint names, ie "MESSAGE_INPUT,ADMIN_APPLET,STS".  If null, the connector should be treated as disabled.
      */
-    public String getEndpoints() {
+    public synchronized String getEndpoints() {
         return endpoints;
     }
 
@@ -361,11 +371,9 @@ public class SsgConnector extends NamedEntityImp {
      *
      * @param endpoints endpoint names to enable, ie "MESSAGE_INPUT,ADMIN_REMOTE,CSRHANDLER".
      */
-    public void setEndpoints(String endpoints) {
+    public synchronized void setEndpoints(String endpoints) {
         this.endpoints = endpoints;
-        synchronized (endpointSetLock) {
-            endpointSet = null;
-        }
+        endpointSet = null;
     }
 
     /**
@@ -388,18 +396,42 @@ public class SsgConnector extends NamedEntityImp {
      *
      * @return a read-only expanded Set of enabled endpoints.  Never null.
      */
-    private Set<Endpoint> endpointSet() {
-        synchronized (endpointSetLock) {
-            if (endpointSet == null) {
-                String endpointList = getEndpoints();
-                EnumSet<Endpoint> es = endpointList == null ? EnumSet.noneOf(Endpoint.class) : Endpoint.parseCommaList(endpointList);
-                EnumSet<Endpoint> ret = EnumSet.copyOf(es);
-                for (Endpoint e : es)
-                    ret.addAll(e.enabledSet());
-                endpointSet = Collections.unmodifiableSet(ret);
-            }
-            return endpointSet;
+    private synchronized Set<Endpoint> endpointSet() {
+        if (endpointSet == null) {
+            String endpointList = getEndpoints();
+            EnumSet<Endpoint> es = endpointList == null ? EnumSet.noneOf(Endpoint.class) : Endpoint.parseCommaList(endpointList);
+            EnumSet<Endpoint> ret = EnumSet.copyOf(es);
+            for (Endpoint e : es)
+                ret.addAll(e.enabledSet());
+            endpointSet = Collections.unmodifiableSet(ret);
         }
+        return endpointSet;
+    }
+
+    /**
+     * Convenience accessor for the property {@link #PROP_BIND_ADDRESS} that converts to InetAddress,
+     * with caching.
+     *
+     * @return an InetAddress instance, or null if this connector should bind to all addresses.
+     */
+    public synchronized InetAddress getBindAddress() {
+        if (inetAddressSet)
+            return inetAddress;
+
+        String bindAddr = getProperty(PROP_BIND_ADDRESS);
+        final InetAddress result;
+        if (bindAddr == null) {
+            result = null;
+        } else {
+            try {
+                result = InetAddress.getByName(bindAddr);
+            } catch (UnknownHostException e) {
+                throw new IllegalStateException(e); // Misconfigured bind address; should be IP literal, not hostname
+            }
+        }
+
+        inetAddressSet = true;
+        return inetAddress = result;
     }
 
     /**
@@ -409,7 +441,7 @@ public class SsgConnector extends NamedEntityImp {
      *
      * @return a Set containing the extra connector properties.  May be empty but never null.
      */
-    protected Set<SsgConnectorProperty> getProperties() {
+    protected synchronized Set<SsgConnectorProperty> getProperties() {
         return properties;
     }
 
@@ -420,7 +452,9 @@ public class SsgConnector extends NamedEntityImp {
      *
      * @param properties the properties set to use
      */
-    protected void setProperties(Set<SsgConnectorProperty> properties) {
+    protected synchronized void setProperties(Set<SsgConnectorProperty> properties) {
+        inetAddressSet = false;
+        inetAddress = null;
         this.properties = properties;
     }
 
@@ -452,6 +486,35 @@ public class SsgConnector extends NamedEntityImp {
             logger.log(Level.WARNING, "Ignoring invalid port range settings for connector oid #" + getOid() + ": " + ExceptionUtils.getMessage(e), e);
             return null;
         }
+    }
+
+    public boolean isPortUsed(int port, boolean udp, InetAddress device) {
+        if (udp)
+            return false;
+
+        if (device != null) {
+            InetAddress bindAddress = getBindAddress();
+            if (bindAddress != null && !device.equals(bindAddress))
+                return false;
+        }
+
+        if (getPort() == port)
+            return true;
+
+        PortRange range = getPortRange();
+        return range != null && range.isPortUsed(port, udp, device);
+    }
+
+    public boolean isOverlapping(PortRange range) {
+        if (range.isPortUsed(getPort(), false, getBindAddress()))
+            return true;
+        final PortRange ourRange = getPortRange();
+        return ourRange != null && range.isOverlapping(ourRange);
+    }
+
+    public List<PortRange> getUsedPorts() {
+        // Currently an SsgConnector can only use TCP ports
+        return getTcpPortsUsed();
     }
 
     /** @noinspection RedundantIfStatement*/

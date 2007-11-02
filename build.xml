@@ -844,14 +844,6 @@
             <test name="com.l7tech.server.ApplicationContextTest" haltonfailure="no"/>
 
             <!--
-              Move these WS-SecurityPolicy tests to test.intensive after a release
-              or so, when it's no longer so new.
-            -->
-            <test name="com.l7tech.policy.wssp.WsspReaderTest" haltonfailure="no"/>
-            <test name="com.l7tech.policy.wssp.WsspWriterTest" haltonfailure="no"/>
-            <test name="com.l7tech.policy.wssp.WsspRoundTripTest" haltonfailure="no"/>
-
-            <!--
               Add policy tests into the com.l7tech.policy.AllPolicyTests class
             -->
             <test name="com.l7tech.policy.AllPolicyTests" haltonfailure="no" fork="yes"/>
@@ -929,6 +921,10 @@
             <test name="com.l7tech.policy.RegexAssertionTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.MasterPasswordManagerTest" haltonfailure="no"/>
             <test name="com.l7tech.server.tomcat.VirtualDirContextTest" haltonfailure="no"/>
+            <test name="com.l7tech.policy.wssp.WsspReaderTest" haltonfailure="no"/>
+            <test name="com.l7tech.policy.wssp.WsspWriterTest" haltonfailure="no"/>
+            <test name="com.l7tech.policy.wssp.WsspRoundTripTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.partition.FirewallRulesParserTest" haltonfailure="no"/>
 
             <!--
               Add possibly-slow intensive nightly tests here **
