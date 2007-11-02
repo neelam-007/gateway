@@ -157,14 +157,12 @@ public interface UDDIClient extends Closeable {
      *
      * @param serviceKey The service to udpate
      * @param serviceUrl the service endpoint URL (null for no change)
-     * @param organization true to attach to the services parent organization
      * @param policyKey The key for the local policy to reference
      * @param policyUrl The URL for the remote policy to reference
      * @param description The reference description
      * @param force Boolean.TRUE to replace an existing reference, Boolean.FALSE to add another reference null for exception on duplicate
-     * @param create true to create a new entity (service, organization or endpoint)
      * @throws UDDIException if an error occurs
      * @throws UDDIExistingReferenceException if force is not set and there is an existing (local or remote) reference
      */
-    void referencePolicy(String serviceKey, String serviceUrl, boolean organization, String policyKey, String policyUrl, String description, Boolean force, boolean create) throws UDDIException;
+    void referencePolicy(String serviceKey, String serviceUrl, String policyKey, String policyUrl, String description, Boolean force) throws UDDIException;
 }

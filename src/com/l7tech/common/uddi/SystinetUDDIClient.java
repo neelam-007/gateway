@@ -35,9 +35,9 @@ import org.systinet.uddi.client.v3.struct.Find_tModel;
 import org.systinet.uddi.client.v3.struct.TModelList;
 import org.systinet.uddi.client.v3.struct.TModelInfoArrayList;
 import org.systinet.uddi.client.v3.struct.TModelInfo;
-import org.systinet.uddi.client.v3.struct.Save_binding;
 import org.systinet.uddi.client.v3.struct.Get_tModelDetail;
 import org.systinet.uddi.client.v3.struct.ListDescription;
+import org.systinet.uddi.client.v3.struct.AccessPoint;
 import org.systinet.uddi.client.v3.UDDI_Inquiry_PortType;
 import org.systinet.uddi.client.v3.UDDIInquiryStub;
 import org.systinet.uddi.client.v3.UDDI_Security_PortType;
@@ -377,18 +377,12 @@ class SystinetUDDIClient implements UDDIClient {
         throw new UDDIException("Not supported");
     }
 
-    public void referencePolicy(String serviceKey, String serviceUrl, boolean organization, String policyKey, String policyUrl, String description, Boolean force, boolean create) throws UDDIException {
-        if (create)
-            throw new UDDIException("Create not implemented");
-
+    public void referencePolicy(String serviceKey, String serviceUrl, String policyKey, String policyUrl, String description, Boolean force) throws UDDIException {
         // first, get service from the service key
         boolean localReference = policyKey!=null && policyKey.trim().length()>0;
         boolean remoteReference = policyUrl!=null && policyUrl.trim().length()>0;
         if (!localReference && !remoteReference)
             throw new UDDIException("No policy to attach.");
-
-        if (organization)
-            throw new UDDIException("Organization attachment is not supported.");
 
         boolean isEndpoint = serviceUrl != null && serviceUrl.trim().length()>0;
         
@@ -413,31 +407,10 @@ class SystinetUDDIClient implements UDDIClient {
             throw new UDDIException(msg);
         }
 
-        //get the right bag for either service or endpoint
+        //get the bag for the service
         BusinessService toUpdate = serviceDetail.getBusinessServiceArrayList().get(0);
-        Collection<BindingTemplate> bindingTemplatesToUpdate = new ArrayList();
         Collection<CategoryBag> cbags = new ArrayList();
-        if (isEndpoint) {
-            if (toUpdate.getBindingTemplateArrayList() != null && serviceUrl != null) {
-                for (Iterator i = toUpdate.getBindingTemplateArrayList().iterator(); i.hasNext(); ) {
-                    BindingTemplate bt = (BindingTemplate) i.next();
-                    if (bt.getAccessPoint() != null &&
-                        bt.getAccessPoint().getValue() != null &&
-                        bt.getAccessPoint().getValue().equals(serviceUrl)) {
-                        CategoryBag cbag = bt.getCategoryBag();
-                        if (cbag == null) {
-                            cbag = new CategoryBag();
-                            bt.setCategoryBag(cbag);
-                        }
-                        cbags.add(cbag);
-                        bindingTemplatesToUpdate.add(bt);
-                    }
-                }
-                if (bindingTemplatesToUpdate.isEmpty())
-                    throw new UDDIException("Service has no binding for this endpoint '" + serviceUrl + "'.");
-            }
-        }
-        else {
+        {
             CategoryBag cbag = toUpdate.getCategoryBag();
             if (cbag == null) {
                 cbag = new CategoryBag();
@@ -475,25 +448,24 @@ class SystinetUDDIClient implements UDDIClient {
                 }
             }
 
-            if (!isEndpoint) {
-                // update service in uddi
-                Save_service save = new Save_service();
-                save.addBusinessService(toUpdate);
-                if (authToken != null)
-                    save.setAuthInfo(authToken);
-                UDDI_Publication_PortType publishing = UDDIPublishStub.getInstance(getPublicationUrl());
-                publishing.save_service(save);
-            } else {
-                // save the binding templates
-                Save_binding save = new Save_binding();
-                for (BindingTemplate bt : bindingTemplatesToUpdate) {
-                    save.addBindingTemplate(bt);
+            // Are we updating the endpoints?
+            if (isEndpoint) {
+                // change access point for the service
+                if (toUpdate.getBindingTemplateArrayList() != null) {
+                    for (Iterator i = toUpdate.getBindingTemplateArrayList().iterator(); i.hasNext(); ) {
+                        BindingTemplate bt = (BindingTemplate)i.next();
+                        bt.setAccessPoint(new AccessPoint(serviceUrl));
+                    }
                 }
-                if (authToken != null)
-                    save.setAuthInfo(authToken);
-                UDDI_Publication_PortType publishing = UDDIPublishStub.getInstance(getPublicationUrl());
-                publishing.save_binding(save);                
             }
+
+            // update service in uddi
+            Save_service save = new Save_service();
+            save.addBusinessService(toUpdate);
+            if (authToken != null)
+                save.setAuthInfo(authToken);
+            UDDI_Publication_PortType publishing = UDDIPublishStub.getInstance(getPublicationUrl());
+            publishing.save_service(save);
         } catch (Throwable e) {
             throw new UDDIException("Error updating service details.", e);
         }

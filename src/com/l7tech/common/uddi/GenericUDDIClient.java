@@ -4,7 +4,6 @@ import com.l7tech.common.uddi.guddiv3.AccessPoint;
 import com.l7tech.common.uddi.guddiv3.BindingDetail;
 import com.l7tech.common.uddi.guddiv3.BindingTemplate;
 import com.l7tech.common.uddi.guddiv3.BusinessDetail;
-import com.l7tech.common.uddi.guddiv3.BusinessEntity;
 import com.l7tech.common.uddi.guddiv3.BusinessInfo;
 import com.l7tech.common.uddi.guddiv3.BusinessInfos;
 import com.l7tech.common.uddi.guddiv3.BusinessList;
@@ -30,8 +29,6 @@ import com.l7tech.common.uddi.guddiv3.Name;
 import com.l7tech.common.uddi.guddiv3.OverviewDoc;
 import com.l7tech.common.uddi.guddiv3.OverviewURL;
 import com.l7tech.common.uddi.guddiv3.Result;
-import com.l7tech.common.uddi.guddiv3.SaveBinding;
-import com.l7tech.common.uddi.guddiv3.SaveBusiness;
 import com.l7tech.common.uddi.guddiv3.SaveService;
 import com.l7tech.common.uddi.guddiv3.SaveTModel;
 import com.l7tech.common.uddi.guddiv3.ServiceDetail;
@@ -691,12 +688,10 @@ class GenericUDDIClient implements UDDIClient {
      */
     public void referencePolicy(final String serviceKey, 
                                 final String serviceUrl,
-                                final boolean organization,
                                 final String policyKey,
                                 final String policyUrl,
                                 final String description,
-                                final Boolean force,
-                                final boolean create) throws UDDIException {
+                                final Boolean force) throws UDDIException {
         validateKey(serviceKey);
         validateUrl(serviceUrl);
         validateKey(policyKey);
@@ -709,11 +704,10 @@ class GenericUDDIClient implements UDDIClient {
         if (!localReference && !remoteReference)
             throw new UDDIException("No policy to attach.");
 
-        boolean isEndpoint = !organization && serviceUrl != null &&  serviceUrl.trim().length()>0;
+        boolean isEndpoint = serviceUrl != null &&  serviceUrl.trim().length()>0;
         
         String authToken = authToken();
         ServiceDetail serviceDetail;
-        BusinessDetail businessDetail = null;
         try {
             UDDIInquiryPortType inquiryPort = getInquirePort();
 
@@ -728,12 +722,6 @@ class GenericUDDIClient implements UDDIClient {
                 throw new UDDIException(msg);
             }
 
-            if (organization) {
-                GetBusinessDetail getBusinessDetail = new GetBusinessDetail();
-                getBusinessDetail.setAuthInfo(authToken);
-                getBusinessDetail.getBusinessKey().add(get(serviceDetail.getBusinessService(), "service", true).getBusinessKey());
-                businessDetail = inquiryPort.getBusinessDetail(getBusinessDetail);
-            }
         } catch (UDDIException ue) {
             throw ue;
         } catch (DispositionReportFaultMessage drfm) {
@@ -742,62 +730,10 @@ class GenericUDDIClient implements UDDIClient {
             throw new UDDIException("Error getting service details.", e);
         }
 
-        if (businessDetail != null && (businessDetail.getBusinessEntity() == null ||
-            businessDetail.getBusinessEntity().size() != 1)) {
-            String msg = "UDDI registry returned either empty businessDetail or " +
-                         "more than one business entity";
-            throw new UDDIException(msg);
-        }
-
-        //get the right bag for organization, service or endpoint
-        BusinessEntity toUpdateEnt = businessDetail != null ? get(businessDetail.getBusinessEntity(), "business", true) : null;
+        //get the bag for the service
         BusinessService toUpdate = get(serviceDetail.getBusinessService(), "service", true);
-        Collection<BindingTemplate> bindingTemplatesToUpdate = new ArrayList<BindingTemplate>();
         Collection<CategoryBag> cbags = new ArrayList<CategoryBag>();
-        if (isEndpoint) {
-            if (toUpdate.getBindingTemplates() != null && serviceUrl != null) {
-                for (BindingTemplate bt : toUpdate.getBindingTemplates().getBindingTemplate()) {
-                    if (bt.getAccessPoint() != null &&
-                        bt.getAccessPoint().getValue() != null &&
-                        bt.getAccessPoint().getValue().equals(serviceUrl)) {
-                        CategoryBag cbag = bt.getCategoryBag();
-                        if (cbag == null) {
-                            cbag = new CategoryBag();
-                            bt.setCategoryBag(cbag);
-                        }
-                        cbags.add(cbag);
-                        bindingTemplatesToUpdate.add(bt);
-                    }
-                }
-                if (bindingTemplatesToUpdate.isEmpty()) {
-                    // create binding template for endpoint
-                    BindingTemplate bindingTemplate = new BindingTemplate();
-                    bindingTemplate.setServiceKey(serviceKey);
-                    bindingTemplate.getDescription().add(buildDescription("wsdl:type representing port"));
-                    bindingTemplate.setAccessPoint(buildAccessPoint("http" , serviceUrl));
-                    CategoryBag cbag =  new CategoryBag();
-                    bindingTemplate.setCategoryBag(cbag);                    
-                    cbags.add(cbag);
-                    bindingTemplatesToUpdate.add(bindingTemplate);
-                }
-            }
-        }
-        else if (toUpdateEnt != null) {
-            CategoryBag cbag = toUpdateEnt.getCategoryBag();
-            if (cbag == null) {
-                cbag = new CategoryBag();
-                toUpdateEnt.setCategoryBag(cbag);
-            }
-            cbags.add(cbag);
-
-            //trim category bags from contained services
-            if (toUpdateEnt.getBusinessServices() != null) {
-                for (BusinessService service : toUpdateEnt.getBusinessServices().getBusinessService()) {
-                    service.setCategoryBag(null);
-                }
-            }
-        }
-        else {
+        {
             CategoryBag cbag = toUpdate.getCategoryBag();
             if (cbag == null) {
                 cbag = new CategoryBag();
@@ -836,29 +772,22 @@ class GenericUDDIClient implements UDDIClient {
                 cbag.getKeyedReference().clear();
                 cbag.getKeyedReference().addAll(updated);
             }            
-            
-            if (!isEndpoint) {
-                // update service in uddi
-                UDDIPublicationPortType publicationPort = getPublishPort();
-                if (toUpdateEnt != null) {
-                    SaveBusiness saveBusiness = new SaveBusiness();
-                    saveBusiness.setAuthInfo(authToken);
-                    saveBusiness.getBusinessEntity().add(toUpdateEnt);
-                    publicationPort.saveBusiness(saveBusiness);
-                } else {
-                    SaveService saveService = new SaveService();
-                    saveService.setAuthInfo(authToken);
-                    saveService.getBusinessService().add(toUpdate);
-                    publicationPort.saveService(saveService);
+
+            // Are we updating the endpoints?
+            if (isEndpoint) {
+                if (toUpdate.getBindingTemplates() != null && serviceUrl != null) {
+                    for (BindingTemplate bt : toUpdate.getBindingTemplates().getBindingTemplate()) {
+                        bt.setAccessPoint(buildAccessPoint("http", serviceUrl));
+                    }
                 }
-            } else {
-                // save the binding templates
-                UDDIPublicationPortType publicationPort = getPublishPort();
-                SaveBinding saveBinding = new SaveBinding();
-                saveBinding.setAuthInfo(authToken);
-                saveBinding.getBindingTemplate().addAll(bindingTemplatesToUpdate);
-                publicationPort.saveBinding(saveBinding);                
             }
+
+            // update service in uddi
+            UDDIPublicationPortType publicationPort = getPublishPort();
+            SaveService saveService = new SaveService();
+            saveService.setAuthInfo(authToken);
+            saveService.getBusinessService().add(toUpdate);
+            publicationPort.saveService(saveService);
         } catch (UDDIException ue) {
             throw ue;
         } catch (DispositionReportFaultMessage drfm) {

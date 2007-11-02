@@ -90,7 +90,15 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
         try {
             // display those services in the list instead
             listData.clear();
-            Collection<UDDINamedEntity> serviceInfos = data.getUddi().listServices(serviceNameField.getText(), false, 0, MAX_ROWS);
+            Collection<UDDINamedEntity> serviceInfos;
+
+            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            try {
+                serviceInfos = data.getUddi().listServices(serviceNameField.getText(), false, 0, MAX_ROWS);
+            } finally {
+                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            }
+
             if (serviceInfos.isEmpty()) {
                 showError("No services found with this filter.");
                 return;
@@ -112,7 +120,7 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
         try {
             String policyKey = data.getPolicytModelKey();
             String policyUrl = data.getCapturedPolicyURL();
-            String serviceUrl = null;//data.getPolicyConsumptionURL(); // null means attach to service, not endpoint
+            String serviceUrl = data.getPolicyConsumptionURL(); 
 
             if (policyKey != null && policyKey.trim().length()>0) {
                 policyUrl = null; // don't add remote policy ref if we are adding a local one    
@@ -120,7 +128,12 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
 
             try {
                 // add policy reference
-                data.getUddi().referencePolicy(serviceKey, serviceUrl, false, policyKey, policyUrl, data.getPolicyDescription(), null, false);
+                setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                try {
+                    data.getUddi().referencePolicy(serviceKey, serviceUrl, policyKey, policyUrl, data.getPolicyDescription(), null);
+                } finally {
+                    setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                }
             } catch (UDDIExistingReferenceException e) {
                 int res = JOptionPane.showConfirmDialog(this,TextUtils.breakOnMultipleLines(
                         "There is already a policy associated to this Business " +
@@ -131,7 +144,12 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
                     logger.info("action cancelled.");
                     return;
                 } else {
-                    data.getUddi().referencePolicy(serviceKey, serviceUrl, false, policyKey, policyUrl, data.getPolicyDescription(), Boolean.TRUE, false);
+                    setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                    try {
+                        data.getUddi().referencePolicy(serviceKey, serviceUrl, policyKey, policyUrl, data.getPolicyDescription(), Boolean.TRUE);
+                    } finally {
+                        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    }
                 }
             }
 
