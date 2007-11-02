@@ -223,7 +223,7 @@
                 <properties>
                   <enabled value="true"/>
                   <selected value="true"/>
-                  <text value="Enable &amp;web-based administration "/>
+                  <text value="Enable &amp;browser-based administration "/>
                 </properties>
               </component>
             </children>

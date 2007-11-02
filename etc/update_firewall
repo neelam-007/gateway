@@ -1,2 +1,3 @@
 #!/bin/sh
-sudo /ssg/bin/partition_firewall.pl $1
+
+/ssg/bin/partition_firewall.pl $1 $2

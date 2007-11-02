@@ -51,6 +51,9 @@ public class FileUtils {
      * </pre>
      * <p/>
      * We guarantee to end up in state #3 if we complete successfully.
+     * @param path  the pathname of the file to atomically overwrite.  Required.
+     * @param saver a Saver that will produce the bytes that are to be saved to this file.  Required.
+     * @throws java.io.IOException if there is a problem saving the file
      */
     public static void saveFileSafely(String path, Saver saver) throws IOException {
         FileOutputStream out = null;
@@ -153,8 +156,11 @@ public class FileUtils {
      * Safely open a file that was saved with saveFileSafely().  Handles recovery in case the most recent
      * save to the file was interrupted.
      *
-     * @param path
-     * @throws FileNotFoundException
+     * @param path  the path to the file to load.  Required.
+     * @throws FileNotFoundException if the file cannot be found
+     * @throws IOException if there is a problem reading the file
+     * @return a LastModifiedFileInputStream from which can be read the bytes of the file and its
+     *         last modified time.  Never null.
      */
     public static LastModifiedFileInputStream loadFileSafely(String path) throws IOException {
         RandomAccessFile lockRaf = null;
@@ -287,13 +293,15 @@ public class FileUtils {
     }
 
     /**
-     * deletes a non-empty directory
+     * Recursively deletes a non-empty directory and all its descendants.
+     *
+     * @param dir  the directory to delete.  Required.
+     * @return true if the directory was deleted.
      */
     public static boolean deleteDir(File dir) {
         if (dir.isDirectory()) {
             String[] children = dir.list();
-            for (int i = 0; i < children.length; i++) {
-                String child = children[i];
+            for (String child : children) {
                 boolean success = deleteDir(new File(dir, child));
                 if (!success) {
                     return false;
@@ -304,6 +312,11 @@ public class FileUtils {
         return dir.delete();
     }
 
+    /**
+     * Ensures that a parent directory exists, creating intermediate directories as necessary.
+     *
+     * @param in the path whose directory should be ensured to exist.  Required.
+     */
     public static void ensurePath(File in) {
         if (in.getParentFile() != null) {
             ensurePath(in.getParentFile());
@@ -391,5 +404,53 @@ public class FileUtils {
         sb.append(t.get(j));
 
         return sb.toString();
+    }
+
+    /**
+     * Locate a pathname in a way that is configurable via a system property, but has defaults, and ensures
+     * that the file meets certain requirements before returning.
+     * <p/>
+     * We will check for the file's existence and other requirements before returning.  However there is no
+     * guarantee that the situation won't change in between our checks and when you go to use the resulting
+     * File for something.
+     *
+     * @param thing  the name of the thing being sought, for constructing error messages.  required
+     * @param sysprop     system property to check for an overridden path to the thing. required
+     * @param defaultValue  a default value to use for the path if the system property isn't set.  required
+     * @param mustBeFile    if true, IOException will be thrown if the path doesn't point at a plain file
+     * @param mustBeDirectory  if true, IOException will be thrown if the path doesn't point at a directory
+     * @param mustBeReadable   if true, IOException will be thrown if the path points at a file that isn't readable by the current process
+     * @param mustBeWritable   if true, IOException will be thrown if the path points at a file that isn't writable by the current process
+     * @param mustBeExecutable if true, IOException will be thrown if the path points at a file that isn't executable by the current process
+     * @return the requested File.  Never null.
+     * @throws java.io.IOException if an appropriate File couldn't be located
+     */
+    public static File findConfiguredFile(String thing, String sysprop, String defaultValue,
+                                          boolean mustBeFile, boolean mustBeDirectory, boolean mustBeReadable, boolean mustBeWritable, boolean mustBeExecutable)
+            throws IOException
+    {
+        String path = SyspropUtil.getString(sysprop, defaultValue);
+        if (path == null || path.length() < 1)
+            throw new IOException("Unable to find " + thing + ": System property " + sysprop + " is not valid");
+        File file = new File(path);
+        if (!file.exists())
+            throw new IOException("Unable to find " + thing + " at path: "
+                                  + path + ".  Set system property " + sysprop + " to override.");
+        if (mustBeFile && !file.isFile())
+            throw new IOException(thing + " at path: "
+                                  + path + " is not a plain file.  Set system property " + sysprop + " to override.");
+        if (mustBeDirectory && !file.isDirectory())
+            throw new IOException(thing + " at path: "
+                                  + path + " is not a directory.  Set system property " + sysprop + " to override.");
+        if (mustBeReadable && !file.canRead())
+            throw new IOException(thing + " at path: "
+                                  + path + " is not readable by this process.  Set system property " + sysprop + " to override.");
+        if (mustBeWritable && !file.canWrite())
+            throw new IOException(thing + " at path: "
+                                  + path + " is not writable by this process.  Set system property " + sysprop + " to override.");
+        if (mustBeExecutable && !file.canExecute())
+            throw new IOException(thing + " at path: "
+                                  + path + " is not executable by this process.  Set system property " + sysprop + " to override.");
+        return file;
     }
 }

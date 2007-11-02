@@ -1,8 +1,6 @@
 package com.l7tech.server.security.keystore.sca;
 
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.ProcResult;
-import com.l7tech.common.util.ProcUtils;
+import com.l7tech.common.util.*;
 import static com.l7tech.common.util.ProcUtils.args;
 
 import java.io.File;
@@ -16,7 +14,6 @@ import java.util.logging.Logger;
 public class ScaManager {
     protected static final Logger logger = Logger.getLogger(ScaManager.class.getName());
 
-    private static final String DEFAULT_SUDO_PATH = "/usr/bin/sudo";
     private static final String DEFAULT_SCAKIOD_PATH = "/opt/sun/sca6000/bin/scakiod_load";
     private static final String DEFAULT_LOAD_KEYDATA_PATH = "/ssg/libexec/load_keydata";
     private static final String DEFAULT_SAVE_KEYDATA_PATH = "/ssg/libexec/save_keydata";
@@ -24,7 +21,6 @@ public class ScaManager {
 
     private static final String SYSPROP_BASE = ScaManager.class.getPackage().getName() + ".";
 
-    public static final String PROPERTY_SUDO_PATH = SYSPROP_BASE + "sudoPath";
     public static final String PROPERTY_LOAD_KEYDATA_PATH = SYSPROP_BASE + "loadKeydataPath";
     public static final String PROPERTY_SAVE_KEYDATA_PATH = SYSPROP_BASE + "saveKeydataPath";
     public static final String PROPERTY_WIPE_KEYDATA_PATH = SYSPROP_BASE + "wipeKeydataPath";
@@ -38,42 +34,16 @@ public class ScaManager {
     private final File saveKeydata;
     private final File wipeKeydata;
 
-
     public ScaManager() throws ScaException {
-        sudo = findFile("sudo", PROPERTY_SUDO_PATH, DEFAULT_SUDO_PATH, true, false, false, false, true);
-        scakiodLoad = findFile("scakiod_load", PROPERTY_SCAKIOD_PATH, DEFAULT_SCAKIOD_PATH, true, false, true, false, false);
-        loadKeydata = findFile("load_keydata.sh", PROPERTY_LOAD_KEYDATA_PATH, DEFAULT_LOAD_KEYDATA_PATH, true, false, false, false, false);
-        saveKeydata = findFile("save_keydata.sh", PROPERTY_SAVE_KEYDATA_PATH, DEFAULT_SAVE_KEYDATA_PATH, true, false, false, false, false);
-        wipeKeydata = findFile("wipe_keydata.sh", PROPERTY_WIPE_KEYDATA_PATH, DEFAULT_WIPE_KEYDATA_PATH, true, false, false, false, false);
-    }
-
-    private File findFile(String thing, String sysprop, String defaultValue,
-                          boolean mustBeFile, boolean mustBeDirectory, boolean mustBeReadable, boolean mustBeWritable, boolean mustBeExecutable)
-            throws ScaException
-    {
-        String path = System.getProperty(sysprop, defaultValue);
-        if (path == null || path.length() < 1)
-            throw new ScaException("Unable to find " + thing + ": System property " + sysprop + " is not valid");
-        File file = new File(path);
-        if (!file.exists())
-            throw new ScaException("Unable to find " + thing + " at path: "
-                                   + path + ".  Set system property " + sysprop + " to override.");
-        if (mustBeFile && !file.isFile())
-            throw new ScaException(thing + " at path: "
-                                   + path + " is not a plain file.  Set system property " + sysprop + " to override.");
-        if (mustBeDirectory && !file.isDirectory())
-            throw new ScaException(thing + " at path: "
-                                   + path + " is not a directory.  Set system property " + sysprop + " to override.");
-        if (mustBeReadable && !file.canRead())
-            throw new ScaException(thing + " at path: "
-                                   + path + " is not readable by the Gateway process.  Set system property " + sysprop + " to override.");
-        if (mustBeWritable && !file.canWrite())
-            throw new ScaException(thing + " at path: "
-                                   + path + " is not writable by the Gateway process.  Set system property " + sysprop + " to override.");
-        if (mustBeExecutable && !file.canExecute())
-            throw new ScaException(thing + " at path: "
-                                   + path + " is not executable by the Gateway process.  Set system property " + sysprop + " to override.");
-        return file;
+        try {
+            sudo = SudoUtils.findSudo();
+            scakiodLoad = FileUtils.findConfiguredFile("scakiod_load", PROPERTY_SCAKIOD_PATH, DEFAULT_SCAKIOD_PATH, true, false, true, false, false);
+            loadKeydata = FileUtils.findConfiguredFile("load_keydata.sh", PROPERTY_LOAD_KEYDATA_PATH, DEFAULT_LOAD_KEYDATA_PATH, true, false, false, false, false);
+            saveKeydata = FileUtils.findConfiguredFile("save_keydata.sh", PROPERTY_SAVE_KEYDATA_PATH, DEFAULT_SAVE_KEYDATA_PATH, true, false, false, false, false);
+            wipeKeydata = FileUtils.findConfiguredFile("wipe_keydata.sh", PROPERTY_WIPE_KEYDATA_PATH, DEFAULT_WIPE_KEYDATA_PATH, true, false, false, false, false);
+        } catch (IOException e) {
+            throw new ScaException(e.getMessage(), e);
+        }
     }
 
     /**

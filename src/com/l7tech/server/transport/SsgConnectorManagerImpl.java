@@ -38,9 +38,17 @@ public class SsgConnectorManagerImpl
     private final Map<Long, SsgConnector> knownConnectors = new LinkedHashMap<Long, SsgConnector>();
     private final Map<Endpoint, SsgConnector> httpConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
     private final Map<Endpoint, SsgConnector> httpsConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
+    private final File sudo;
 
     public SsgConnectorManagerImpl(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
+        File sudo = null;
+        try {
+            sudo = SudoUtils.findSudo();
+        } catch (IOException e) {
+            /* FALLTHROUGH and do without */
+        }
+        this.sudo = sudo;
     }
 
     public Class<? extends Entity> getImpClass() {
@@ -136,8 +144,8 @@ public class SsgConnectorManagerImpl
         updateDefaultPorts();
 
         File program = getFirewallUpdater();
-        if (program != null)
-            logger.log(Level.INFO, "Using firewall rules updater program: " + program);
+        if (program != null && sudo != null)
+            logger.log(Level.INFO, "Using firewall rules updater program: sudo " + program);
         writeFirewallDropfile();
     }
 
@@ -164,12 +172,14 @@ public class SsgConnectorManagerImpl
      * @param rulesFile the rules file.  Required.
      */
     private void runFirewallUpdater(String rulesFile) {
+        if (sudo == null)
+            return;
         File program = getFirewallUpdater();
         if (program == null)
             return;
 
         try {
-            ProcUtils.exec(null, program, new String[] { rulesFile, "start" }, null, false);
+            ProcUtils.exec(null, sudo, new String[] { program.getAbsolutePath(), rulesFile, "start" }, null, false);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Unable to execute firewall rules program: " + program + ": " + ExceptionUtils.getMessage(e), e);
         }
