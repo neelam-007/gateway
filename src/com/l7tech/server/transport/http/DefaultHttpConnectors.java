@@ -69,31 +69,31 @@ class DefaultHttpConnectors {
         SsgConnector http = new SsgConnector();
         http.setName("Default HTTP (8080)");
         http.setScheme(SsgConnector.SCHEME_HTTP);
-        http.setEnabled(true);
         http.setEndpoints(defaultEndpoints);
         http.setPort(8080);
+        http.setEnabled(true);
         ret.add(http);
 
         SsgConnector https = new SsgConnector();
         https.setName("Default HTTPS (8443)");
         https.setScheme(SsgConnector.SCHEME_HTTPS);
-        https.setEnabled(true);
         https.setEndpoints(defaultEndpoints);
         https.setPort(8443);
         https.setKeyAlias("SSL");
         https.setSecure(true);
         https.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
+        https.setEnabled(true);
         ret.add(https);
 
         SsgConnector httpsNocc = new SsgConnector();
-        httpsNocc.setName("Default HTTPS (8443)");
+        httpsNocc.setName("Default HTTPS (9443)");
         httpsNocc.setScheme(SsgConnector.SCHEME_HTTPS);
-        httpsNocc.setEnabled(true);
         httpsNocc.setEndpoints(defaultEndpoints);
-        httpsNocc.setPort(8443);
+        httpsNocc.setPort(9443);
         httpsNocc.setKeyAlias("SSL");
         httpsNocc.setSecure(true);
         httpsNocc.setClientAuth(SsgConnector.CLIENT_AUTH_NEVER);
+        httpsNocc.setEnabled(true);
         ret.add(httpsNocc);
 
         return ret;

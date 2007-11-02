@@ -323,8 +323,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
             if (connectors.isEmpty()) {
                 logger.warning("No connectors defined in database.  Will attempt to import from server.xml");
-                createFallbackConnectors();
-                connectors = ssgConnectorManager.findAll();
+                connectors = createFallbackConnectors();
             }
             for (SsgConnector connector : connectors) {
                 if (connector.isEnabled() && connectorIsOwnedByThisModule(connector)) {
@@ -346,7 +345,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * Add some connectors to the DB table, getting them from server.xml if possible, but just creating
      * some defaults if not.
      */
-    private void createFallbackConnectors() {
+    private Collection<SsgConnector> createFallbackConnectors() {
         Collection<SsgConnector> toAdd = DefaultHttpConnectors.makeFallbackConnectors(serverConfig);
         for (SsgConnector connector : toAdd) {
             try {
@@ -355,6 +354,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 logger.log(Level.WARNING, "Unable to save fallback connector to DB: " + ExceptionUtils.getMessage(e), e);
             }
         }
+        return toAdd;
     }
 
     protected synchronized void addConnector(SsgConnector connector) throws ListenerException {
