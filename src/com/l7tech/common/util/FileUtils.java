@@ -15,6 +15,8 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.List;
 import java.util.ArrayList;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Utility methods to approximate Unix-style transactional file replacement in Java.
@@ -448,9 +450,32 @@ public class FileUtils {
         if (mustBeWritable && !file.canWrite())
             throw new IOException(thing + " at path: "
                                   + path + " is not writable by this process.  Set system property " + sysprop + " to override.");
-        if (mustBeExecutable && !file.canExecute())
+        if (mustBeExecutable && !canExecute(file, true))
             throw new IOException(thing + " at path: "
                                   + path + " is not executable by this process.  Set system property " + sysprop + " to override.");
         return file;
+    }
+
+    /**
+     * If this code is running in a Java 6 JVM, this method is equivalent to file.canExecute().  Otherwise,
+     * it just returns fallbackResult.
+     * <p/>
+     * This method is currently very slow.
+     *
+     * @param file the file to check.  Required
+     * @param fallbackResult the result to return if the file's execute status can't be determined.
+     * @return the value of file.canExecute() if this is a Java 6 JVM; otherwise, fallbackResult
+     */
+    public static boolean canExecute(File file, boolean fallbackResult) {
+        try {
+            Method canex = File.class.getMethod("canExecute", new Class[0]);
+            return (Boolean)canex.invoke(file);
+        } catch (NoSuchMethodException e) {
+            return fallbackResult;
+        } catch (InvocationTargetException e) {
+            return fallbackResult;
+        } catch (IllegalAccessException e) {
+            return fallbackResult;
+        }
     }
 }
