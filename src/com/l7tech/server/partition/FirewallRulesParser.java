@@ -5,6 +5,7 @@ import com.l7tech.common.io.PortRange;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.Pair;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -143,17 +144,20 @@ public class FirewallRulesParser {
 
         /**
          * Get the name of the first partition found that has a known port assignment that conflicts with
-         * the specified port.
+         * any of the specified port ranges.
          *
-         * @param port  the port to check
-         * @param udp   true if port represents a UDP port
-         * @param device a device to search within, or null to match any port on any device
-         * @return the name of a conflicting partition, or null if no conflict was detected.
+         * @param ranges the port ranges to check.  Required.
+         * @param partitionNameToIgnore  name of a partition to ignore when checking for conflicts, or null to check every partition
+         * @return a Pair of (name of a conflicting partition, PortRange that conflicted), or null if no conflict was detected.
          */
-        public String getNameOfFirstConflictingPartition(int port, boolean udp, InetAddress device) {
+        public Pair<PortRange, String> findFirstConflict(Collection<? extends PortRange> ranges, String partitionNameToIgnore) {
             for (PartitionPortInfo part : parts) {
-                if (part.isPortUsed(port, udp, device))
-                    return part.getPartitionName();
+                if (part.getPartitionName().equals(partitionNameToIgnore))
+                    continue;
+                for (PortRange range : ranges) {
+                    if (part.isOverlapping(range))
+                        return new Pair<PortRange, String>(range, part.getPartitionName());
+                }
             }
             return null;
         }
@@ -179,6 +183,7 @@ public class FirewallRulesParser {
      */
     public static PortInfo getAllInfo() {
         final PartitionManager partitionManager = PartitionManager.getInstance();
+        partitionManager.enumeratePartitions(); // force it to get up-to-date info, since the Gateway process is long-running
         Set<String> partitionNames = partitionManager.getPartitionNames();
         List<PartitionPortInfo> ppis = new ArrayList<PartitionPortInfo>();
         for (String partitionName : partitionNames) {

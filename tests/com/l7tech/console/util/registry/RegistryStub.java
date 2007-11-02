@@ -4,6 +4,9 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.ClusterStatusAdminStub;
 import com.l7tech.common.TestLicenseManager;
 import com.l7tech.common.VersionException;
+import com.l7tech.common.util.Triple;
+import com.l7tech.common.util.Pair;
+import com.l7tech.common.io.PortRange;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditAdminStub;
 import com.l7tech.common.security.TrustedCertAdmin;
@@ -30,8 +33,7 @@ import java.net.PasswordAuthentication;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Collection;
-
-import org.springframework.transaction.annotation.Transactional;
+import java.util.Collections;
 
 
 /**
@@ -199,6 +201,14 @@ public class RegistryStub extends Registry {
 
             public InetAddress[] getAvailableBindAddresses() {
                 return null;
+            }
+
+            public Collection<Triple<Long, PortRange, String>> findAllPortConflicts() throws FindException {
+                return Collections.emptyList();
+            }
+
+            public Collection<Pair<PortRange, String>> findPortConflicts(SsgConnector unsavedConnector) throws FindException {
+                return Collections.emptyList();
             }
         };
     }

@@ -65,7 +65,7 @@ public class PartitionManager {
         partitions = new HashMap<String, PartitionInformation>();
     }
 
-    private void enumeratePartitions() {
+    public void enumeratePartitions() {
         partitions.clear();
         String partitionRoot = OSDetector.getOSSpecificFunctions().getPartitionBase();
 

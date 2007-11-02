@@ -6,7 +6,6 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.transport.SsgConnector;
 import static com.l7tech.common.transport.SsgConnector.*;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -49,6 +48,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private static final String INTERFACE_ANY = "(All)";
 
     private static final String WS_COMMA_WS = "\\s*,\\s*";
+
+    private final String CPROP_WASENABLED = getClass().getName() + ".wasEnabled";
 
     private JPanel contentPane;
     private JButton okButton;
@@ -139,6 +140,18 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 CA_REQUIRED
         }));
 
+        // Make sure user-initiated changes to checkbox state get recorded so we can restore them
+        final ActionListener stateSaver = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JCheckBox source = (JCheckBox)e.getSource();
+                saveCheckBoxState(source);
+            }
+        };
+        cbEnableBuiltinServices.addActionListener(stateSaver);
+        cbEnableMessageInput.addActionListener(stateSaver);
+        cbEnableSsmApplet.addActionListener(stateSaver);
+        cbEnableSsmRemote.addActionListener(stateSaver);
+
         initializeInterfaceComboBox();
 
         initializeCipherSuiteControls();
@@ -206,6 +219,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         modelToView();
         if (nameField.getText().length() < 1)
             nameField.requestFocusInWindow();
+    }
+
+    private void saveCheckBoxState(JCheckBox... boxes) {
+        for (JCheckBox box : boxes)
+            box.putClientProperty(CPROP_WASENABLED, box.isSelected());
     }
 
     private void initializeInterfaceComboBox() {
@@ -526,6 +544,27 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         clientAuthComboBox.setEnabled(isSsl);
         privateKeyComboBox.setEnabled(isSsl);
         managePrivateKeysButton.setEnabled(isSsl);
+
+        if (isFtp) {
+            setEnableAndSelect(false, true, cbEnableMessageInput);
+            setEnableAndSelect(false, false, cbEnableBuiltinServices, cbEnableSsmApplet, cbEnableSsmRemote);
+        } else {
+            enableAndRestore(cbEnableMessageInput, cbEnableBuiltinServices, cbEnableSsmApplet, cbEnableSsmRemote);
+        }
+    }
+
+    private void enableAndRestore(JCheckBox... boxes) {
+        for (JCheckBox box : boxes) {
+            box.setEnabled(true);
+            box.setSelected((Boolean)box.getClientProperty(CPROP_WASENABLED));
+        }
+    }
+
+    private void setEnableAndSelect(boolean enabled, boolean selected, JCheckBox... boxes) {
+        for (JCheckBox box : boxes) {
+            box.setSelected(selected);
+            box.setEnabled(enabled);
+        }
     }
 
     private void enableOrDisableCipherSuiteButtons() {
@@ -639,6 +678,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         cipherSuiteListModel.setCipherListString(connector.getProperty(SsgConnector.PROP_CIPHERLIST));
         clientAuthComboBox.setSelectedItem(ClientAuthType.bycode.get(connector.getClientAuth()));
         selectPrivateKey(connector.getKeystoreOid(), connector.getKeyAlias());
+
+        saveCheckBoxState(cbEnableBuiltinServices, cbEnableMessageInput, cbEnableSsmApplet, cbEnableSsmRemote);
 
         enableOrDisableComponents();
     }

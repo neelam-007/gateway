@@ -222,6 +222,7 @@
     </bean>
 
     <bean id="transportAdmin_UNSECURED" class="com.l7tech.server.transport.TransportAdminImpl">
+        <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="ssgConnectorManager"/>
         <constructor-arg ref="keystore"/>
     </bean>

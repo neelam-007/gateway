@@ -31,7 +31,7 @@ public class FirewallRulesParserTest extends TestCase {
     }
 
     public void EXAMPLE_testGetFromAllPartitions() throws Exception {
-        FirewallRulesParser.PortInfo portInfo = FirewallRulesParser.getAllInfo();
+        FirewallRulesParser.PortInfo portInfo = FirewallRulesParser.getAllInfo();        
         log.info("Got all info: " + portInfo);
     }
 

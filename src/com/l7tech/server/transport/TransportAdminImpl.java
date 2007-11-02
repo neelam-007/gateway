@@ -3,11 +3,17 @@ package com.l7tech.server.transport;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Triple;
+import com.l7tech.common.util.Pair;
+import com.l7tech.common.util.SyspropUtil;
+import com.l7tech.common.io.PortRange;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.partition.FirewallRulesParser;
 import com.l7tech.server.tomcat.ConnectionIdValve;
 
 import javax.net.ssl.KeyManager;
@@ -19,19 +25,22 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 /**
  * Server-side implementation of the TransportAdmin API.
  */
 public class TransportAdminImpl implements TransportAdmin {
+    private final ServerConfig serverConfig;
     private final SsgConnectorManager connectorManager;
     private final KeystoreUtils defaultKeystore;
 
-    public TransportAdminImpl(SsgConnectorManager connectorManager, KeystoreUtils defaultKeystore) {
+    private FirewallRulesParser.PortInfo portInfo;
+    private long portInfoUpdated = 0;
+    private Long portInfoCacheTime;
+
+    public TransportAdminImpl(ServerConfig serverConfig, SsgConnectorManager connectorManager, KeystoreUtils defaultKeystore) {
+        this.serverConfig = serverConfig;
         this.connectorManager = connectorManager;
         this.defaultKeystore = defaultKeystore;
     }
@@ -114,5 +123,109 @@ public class TransportAdminImpl implements TransportAdmin {
         } catch (SocketException e) {
             throw new RuntimeException("Unable to get network interfaces: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    public Collection<Triple<Long, PortRange, String>> findAllPortConflicts() throws FindException {
+        String ourPartitionName = serverConfig.getPropertyCached(ServerConfig.PARAM_PARTITION_NAME);
+        int clusterPort = serverConfig.getIntPropertyCached(ServerConfig.PARAM_CLUSTER_PORT, 2124, 5000L);
+        FirewallRulesParser.PortInfo portInfo = getPortInfo();
+        Collection<SsgConnector> connectors = findAllEnabledSsgConnectors();
+        Collection<Triple<Long, PortRange, String>> ret = new ArrayList<Triple<Long, PortRange, String>>();
+        for (SsgConnector connector : connectors) {
+            // Check against other connectors in our own partition
+            PortRange conflictingRange = findFirstConflict(connectors, connector);
+            if (conflictingRange != null)
+                ret.add(new Triple<Long, PortRange, String>(connector.getOid(), conflictingRange, null));
+
+            // Check against the cluster RMI port
+            if (connector.isPortUsed(clusterPort, false, null))
+                ret.add(new Triple<Long, PortRange, String>(connector.getOid(), new PortRange(clusterPort, clusterPort, false), null));
+
+            // Check against other connectors in other partitions
+            Pair<PortRange,String> conflict = portInfo.findFirstConflict(connector.getUsedPorts(), ourPartitionName);
+            if (conflict != null) {
+                String partName = conflict.right;
+                if (ourPartitionName.equals(partName)) partName = null;
+                ret.add(new Triple<Long, PortRange, String>(connector.getOid(), conflict.left, partName));
+            }
+        }
+
+        return ret;
+    }
+
+    public Collection<Pair<PortRange, String>> findPortConflicts(SsgConnector connector) throws FindException {
+        String ourPartitionName = serverConfig.getPropertyCached(ServerConfig.PARAM_PARTITION_NAME);
+        int clusterPort = serverConfig.getIntPropertyCached(ServerConfig.PARAM_CLUSTER_PORT, 2124, 5000L);
+        Collection<Pair<PortRange, String>> ret = new ArrayList<Pair<PortRange, String>>();
+
+        // Check against other connectors in our own partition first
+        Collection<SsgConnector> connectors = findAllEnabledSsgConnectors();
+        PortRange conflictingRange = findFirstConflict(connectors, connector);
+        if (conflictingRange != null)
+            ret.add(new Pair<PortRange, String>(conflictingRange, null));
+
+        // Check against the cluster RMI port
+        if (connector.isPortUsed(clusterPort, false, null))
+            ret.add(new Pair<PortRange, String>(new PortRange(clusterPort, clusterPort, false), null));        
+
+        // Check against other partitions
+        Pair<PortRange,String> conflict = getPortInfo().findFirstConflict(connector.getUsedPorts(), ourPartitionName);
+        if (conflict != null) {
+            String partName = conflict.right;
+            if (ourPartitionName.equals(partName)) partName = null;
+            ret.add(new Pair<PortRange, String>(conflict.left, partName));
+        }
+
+        return ret;
+    }
+
+    private Collection<SsgConnector> findAllEnabledSsgConnectors() throws FindException {
+        List<SsgConnector> ret = new ArrayList<SsgConnector>();
+        Collection<SsgConnector> got = connectorManager.findAll();
+        for (SsgConnector connector : got) {
+            if (connector.isEnabled())
+                ret.add(connector);
+        }
+        return ret;
+    }
+
+    /**
+     * Return the first conflicting port range found between connector and any connector in connectors.
+     * <p/>
+     * The connector will not be compared with itself, even if it (or a copy of it with the same OID)
+     * appears in connectors.
+     *
+     * @param connectors a set of connectors to check against.  Required.
+     * @param connector  the connector to check.  Required.
+     * @return the first conflicting port range from connector that was found to conflict with a port
+     *         in use by connectors, or null if no conflict was detected.
+     */
+    private PortRange findFirstConflict(Collection<SsgConnector> connectors, SsgConnector connector) {
+        PortRange conflictingRange = null;
+        for (SsgConnector otherConnector : connectors) {
+            if (otherConnector == connector || otherConnector.getOid() == connector.getOid())
+                continue;
+            List<PortRange> ranges = connector.getUsedPorts();
+            for (PortRange range : ranges) {
+                if (otherConnector.isOverlapping(range)) {
+                    conflictingRange = range;
+                    break;
+                }
+            }
+        }
+        return conflictingRange;
+    }
+
+    private long getPortInfoCacheTime() {
+        if (portInfoCacheTime == null)
+            portInfoCacheTime = SyspropUtil.getLong("com.l7tech.server.partitions.portinfo.maxCacheMillis", 2200L);
+        return portInfoCacheTime;
+    }
+
+    private synchronized FirewallRulesParser.PortInfo getPortInfo() {
+        if (portInfo != null && System.currentTimeMillis() - portInfoUpdated <= getPortInfoCacheTime())
+            return portInfo;
+        portInfoUpdated = System.currentTimeMillis();
+        return portInfo = FirewallRulesParser.getAllInfo();
     }
 }

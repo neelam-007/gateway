@@ -1,8 +1,11 @@
 package com.l7tech.common.transport;
 
+import com.l7tech.common.io.PortRange;
 import static com.l7tech.common.security.rbac.EntityType.SSG_CONNECTOR;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.util.Pair;
+import com.l7tech.common.util.Triple;
 import com.l7tech.objectmodel.*;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,8 +99,40 @@ public interface TransportAdmin {
      * Get all bindable internet addresses available on this Gateway node, if possible.
      *
      * @return an array of InetAddress instances, or null if this information is unavailable.
-     * @throws java.rmi.RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
     InetAddress[] getAvailableBindAddresses();
+
+    /**
+     * Scan for connectors that conflict with ports in use on any other partition on this node.
+     *
+     * @return zero or more 3-tuples, one per conflict detected, listing: the OID of the SsgConnector
+     *         in which the conflict was found; which of its port ranges was the problem; and, the name of
+     *         the partition with which we are in conflict.
+     *         <p/>
+     *         The name will be null if the conflict is within our own partition.
+     *         <p/>
+     *         If no conflicts are detected this array will be empty.  This method never returns null.
+     * @throws com.l7tech.objectmodel.FindException if there is a problem finding our connectors
+     */
+    @Transactional(readOnly=true)
+    public Collection<Triple<Long, PortRange, String>> findAllPortConflicts() throws FindException;
+
+    /**
+     * Check whether the specified SsgConnector would conflict with any port currently known to be in
+     * use by any partition on this node.
+     *
+     * @param unsavedConnector the connector to vet.  Required.
+     * @return zero or more pairs, one per conflict detected,
+     *         listing which of unsavedConnector's port ranges was the problem, and the name of
+     *         the partition with which we are in conflict.
+     *         <p/>
+     *         The name will be null if the conflict is within our own partition.
+     *         <p/>
+     *         If no conflicts are detected this array will be empty.  This method never returns null.
+     * @throws com.l7tech.objectmodel.FindException if there is a problem finding our connectors
+     */
+    @Transactional(readOnly=true)
+    public Collection<Pair<PortRange, String>> findPortConflicts(SsgConnector unsavedConnector) throws FindException;
+
 }

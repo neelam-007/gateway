@@ -4,11 +4,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Arrays;
 import java.net.InetAddress;
+import java.io.Serializable;
 
 /**
  * Represents a range of TCP or UDP ports.
  */
-public class PortRange implements PortOwner {
+public class PortRange implements Serializable, PortOwner {
     private final int portStart;
     private final int portEnd;
     private final boolean udp;

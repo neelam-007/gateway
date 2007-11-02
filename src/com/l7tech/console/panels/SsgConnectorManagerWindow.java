@@ -6,7 +6,11 @@ import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Pair;
+import com.l7tech.common.util.Triple;
+import com.l7tech.common.io.PortRange;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -19,9 +23,7 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,6 +37,7 @@ public class SsgConnectorManagerWindow extends JDialog {
     private JButton removeButton;
     private JButton propertiesButton;
     private JScrollPane mainScrollPane;
+    private JLabel conflictLabel;
     private ConnectorTable connectorTable;
 
     private PermissionFlags flags;
@@ -72,6 +75,7 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         connectorTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
+                reportConflicts();
                 enableOrDisableButtons();
             }
         });
@@ -100,9 +104,15 @@ public class SsgConnectorManagerWindow extends JDialog {
             }
         });
 
+        conflictLabel.setText(" ");
+
         loadConnectors();
         pack();
         enableOrDisableButtons();
+    }
+
+    private void reportConflicts() {
+        conflictLabel.setText(connectorTable.getConflictString());
     }
 
     private void doRemove() {
@@ -155,6 +165,12 @@ public class SsgConnectorManagerWindow extends JDialog {
                             editAndSave(connector);
                         }
                     };
+
+                    if (warnAboutConflicts(connector)) {
+                        reedit.run();
+                        return;
+                    }
+
                     try {
                         long oid = getTransportAdmin().saveSsgConnector(connector);
                         if (oid != connector.getOid()) connector.setOid(oid);
@@ -169,6 +185,60 @@ public class SsgConnectorManagerWindow extends JDialog {
                 }
             }
         });
+    }
+
+    /**
+     * Check if the specified possibly-unsaved connector conflicts with any other ports known to be
+     * in use in the system and, if so, display a warning dialog.
+     *
+     * @param connector the connector to check
+     * @return true if conflicts were detected and the user opted not to continue anyway;
+     *         false if no conflicts were detected or the user chose to ignore them
+     */
+    private boolean warnAboutConflicts(SsgConnector connector) {
+        try {
+            Collection<Pair<PortRange,String>> conflicts = getTransportAdmin().findPortConflicts(connector);
+            if (conflicts == null || conflicts.isEmpty())
+                return false;
+
+            Pair<PortRange, String> conflict = conflicts.iterator().next();
+            PortRange range = conflict.left;
+            if (range == null) {
+                logger.warning("Port conflict: range is null"); // can't happen
+                return false;
+            }
+            String message = explainConflict(conflict);
+
+            String cancelOption = "Cancel";
+            String saveOption = "Save Anyway";
+            String[] options = new String[] { saveOption, cancelOption };
+
+            int option = JOptionPane.showOptionDialog(TopComponents.getInstance().getTopParent(),
+                                                      message,
+                                                      "Port Conflict Detected",
+                                                      JOptionPane.CANCEL_OPTION,
+                                                      JOptionPane.WARNING_MESSAGE,
+                                                      null,
+                                                      options,
+                                                      cancelOption);
+            return option != 0;
+
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to check for port conflicts: " + ExceptionUtils.getMessage(e), e);
+            return false;
+        }
+    }
+
+    private static String explainConflict(Pair<PortRange, String> conflict) {
+        PortRange range = conflict.left;
+        String displayRange = range.getPortStart() == range.getPortEnd()
+                              ? "The port " + range.getPortStart()
+                              : "The port range from " + range.getPortStart() + " to " + range.getPortEnd();
+
+        String partition = conflict.right;
+        String displayPart = partition == null ? "" : " by the partition \"" + partition + "\"";
+
+        return displayRange + " conflicts with ports already in use" + displayPart + ".";
     }
 
     private void enableOrDisableButtons() {
@@ -201,6 +271,12 @@ public class SsgConnectorManagerWindow extends JDialog {
             for (SsgConnector connector : connectors)
                 rows.add(new ConnectorTableRow(connector));
             connectorTable.setData(rows);
+
+            Collection<Triple<Long,PortRange,String>> conflicts = transportAdmin.findAllPortConflicts();
+            for (Triple<Long, PortRange, String> conflict : conflicts) {
+                connectorTable.flagConflict(conflict);
+            }
+
         } catch (FindException e) {
             showErrorMessage("Deletion Failed", "Unable to delete listen port: " + ExceptionUtils.getMessage(e), e);
         }
@@ -217,6 +293,7 @@ public class SsgConnectorManagerWindow extends JDialog {
 
     private static class ConnectorTableRow {
         private final SsgConnector connector;
+        private Pair<PortRange, String> conflict;
 
         public ConnectorTableRow(SsgConnector connector) {
             this.connector = connector;
@@ -224,6 +301,14 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         public SsgConnector getConnector() {
             return connector;
+        }
+
+        public Pair<PortRange, String> getConflict() {
+            return conflict;
+        }
+
+        public void setConflict(Pair<PortRange, String> conflict) {
+            this.conflict = conflict;
         }
 
         public Object getEnabled() {
@@ -280,6 +365,8 @@ public class SsgConnectorManagerWindow extends JDialog {
                 col.setMaxWidth(model.getColumnMaxWidth(i));
                 TableCellRenderer hr = model.getHeaderRenderer(i, getTableHeader().getDefaultRenderer());
                 if (hr != null) col.setHeaderRenderer(hr);
+                TableCellRenderer cr = model.getCellRenderer(i, getDefaultRenderer(String.class));
+                if (cr != null) col.setCellRenderer(cr);
             }
         }
 
@@ -309,10 +396,27 @@ public class SsgConnectorManagerWindow extends JDialog {
             else
                 getSelectionModel().clearSelection();
         }
+
+        public void flagConflict(Triple<Long, PortRange, String> conflict) {
+            model.flagConflict(conflict);
+        }
+
+        public String getConflictString() {
+            int rowIndex = getSelectedRow();
+            if (rowIndex < 0)
+                return " ";
+            ConnectorTableRow row = model.getRowAt(rowIndex);
+            Pair<PortRange, String> conflict = row.getConflict();
+            if (conflict == null)
+                return " ";
+            return explainConflict(conflict);
+        }
     }
 
     private static class ConnectorTableModel extends AbstractTableModel {
-        private static abstract class Col {
+        private Map<Long, Integer> rowMap;
+
+        private abstract class Col {
             final String name;
             final int minWidth;
             final int prefWidth;
@@ -330,10 +434,41 @@ public class SsgConnectorManagerWindow extends JDialog {
             public TableCellRenderer getHeaderRenderer(final TableCellRenderer current) {
                 return null;
             }
+
+            public TableCellRenderer getCellRenderer(final TableCellRenderer current) {
+                return new TableCellRenderer() {
+                    private Color defFg;
+                    private Color defSelFg;
+                    private Color conflictColor = new Color(128, 0, 0);
+
+                    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                        if (defFg == null) {
+                            TableCellRenderer def1 = new DefaultTableCellRenderer();
+                            Component c = def1.getTableCellRendererComponent(table, value, false, false, row, column);
+                            defFg = c.getForeground();
+                            TableCellRenderer def2 = new DefaultTableCellRenderer();
+                            Component csel = def2.getTableCellRendererComponent(table, value, true, false, row, column);
+                            defSelFg = csel.getForeground();
+                        }
+
+                        Component ret = current.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                        boolean conflict = rows.get(row).getConflict() != null;
+
+                        if (isSelected) {
+                            ret.setForeground(conflict ? conflictColor : defSelFg);
+                        } else {
+                            ret.setForeground(conflict ? conflictColor : defFg);
+                        }
+
+                        return ret;
+                    }
+                };
+            }
         }
 
         private static final int NARROW_COL_WIDTH = 20;
-        private abstract static class NarrowCol extends Col {
+        private abstract class NarrowCol extends Col {
             protected NarrowCol(String name) {
                 super(name, NARROW_COL_WIDTH, NARROW_COL_WIDTH, NARROW_COL_WIDTH);
             }
@@ -351,7 +486,7 @@ public class SsgConnectorManagerWindow extends JDialog {
             }
         }
 
-        public static final Col[] columns = new Col[] {
+        public final Col[] columns = new Col[] {
                 new Col("Enabled", 60, 90, 90) {
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getEnabled();
@@ -432,7 +567,12 @@ public class SsgConnectorManagerWindow extends JDialog {
             return columns[column].getHeaderRenderer(current);
         }
 
+        public TableCellRenderer getCellRenderer(int column, final TableCellRenderer current) {
+            return columns[column].getCellRenderer(current);
+        }
+
         public void setData(List<ConnectorTableRow> rows) {
+            rowMap = null;
             this.rows.clear();
             this.rows.addAll(rows);
             fireTableDataChanged();
@@ -454,17 +594,33 @@ public class SsgConnectorManagerWindow extends JDialog {
             return rows.get(rowIndex);
         }
 
+        /** @return a Map of Connector OID -> row number */
+        private Map<Long, Integer> getRowMap() {
+            if (rowMap != null)
+                return rowMap;
+            Map<Long, Integer> ret = new LinkedHashMap<Long, Integer>();
+            for (int i = 0; i < rows.size(); i++) {
+                ConnectorTableRow row = rows.get(i);
+                final long oid = row.getConnector().getOid();
+                ret.put(oid, i);
+            }
+            return rowMap = ret;
+        }
+
         /**
          * @param oid OID of connector whose row to find
          * @return the row number of the connector with a matching oid, or -1 if no match found
          */
         public int findRowByConnectorOid(long oid) {
-            for (int i = 0; i < rows.size(); i++) {
-                ConnectorTableRow row = rows.get(i);
-                if (oid == row.getConnector().getOid())
-                    return i;
-            }
-            return -1;
+            return getRowMap().containsKey(oid) ? getRowMap().get(oid) : -1;
+        }
+
+        public void flagConflict(Triple<Long, PortRange, String> conflict) {
+            final Long oid = conflict.left;
+            if (!getRowMap().containsKey(oid)) return;
+            int rowIndex = getRowMap().get(oid);
+            rows.get(rowIndex).setConflict(new Pair<PortRange, String>(conflict.middle, conflict.right));
+            fireTableRowsUpdated(rowIndex, rowIndex);
         }
     }
 }
