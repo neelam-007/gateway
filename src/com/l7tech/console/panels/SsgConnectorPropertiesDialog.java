@@ -7,6 +7,7 @@ import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.transport.SsgConnector;
 import static com.l7tech.common.transport.SsgConnector.*;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.Pair;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 
@@ -25,8 +26,8 @@ import java.util.logging.Logger;
 public class SsgConnectorPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgConnectorPropertiesDialog.class.getName());
     private static final String DIALOG_TITLE = "Listen Port Properties";
-    private static final int TAB_SSL = 2;
-    private static final int TAB_FTP = 3;
+    private static final int TAB_SSL = 1;
+    private static final int TAB_FTP = 2;
 
     private static class ClientAuthType {
         private static final Map<Integer, ClientAuthType> bycode = new ConcurrentHashMap<Integer, ClientAuthType>();
@@ -73,12 +74,17 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private javax.swing.JCheckBox cbEnableBuiltinServices;
     private javax.swing.JCheckBox cbEnableSsmRemote;
     private javax.swing.JCheckBox cbEnableSsmApplet;
+    private JButton addPropertyButton;
+    private JButton editPropertyButton;
+    private JButton removePropertyButton;
+    private JList propertyList;
 
     private final InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
     private SsgConnector connector;
     private boolean confirmed = false;
     private CipherSuiteListModel cipherSuiteListModel;
     private DefaultComboBoxModel interfaceComboBoxModel;
+    private DefaultListModel propertyListModel = new DefaultListModel();
 
     public SsgConnectorPropertiesDialog(Frame owner, SsgConnector connector) {
         super(owner, DIALOG_TITLE);
@@ -156,6 +162,42 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         initializeCipherSuiteControls();
 
+        propertyList.setModel(propertyListModel);
+        propertyList.setCellRenderer(new DefaultListCellRenderer() {
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                //noinspection unchecked
+                Pair<String, String> prop = (Pair<String, String>)value;
+                String msg = prop.left + "=" + prop.right;
+                setText(msg);
+                return this;
+            }
+        });
+        propertyList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                enableOrDisablePropertyButtons();
+            }
+        });
+        addPropertyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                editProperty(null);
+            }
+        });
+        editPropertyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                //noinspection unchecked
+                Pair<String, String> property = (Pair<String, String>)propertyList.getSelectedValue();
+                if (property == null) return;
+                editProperty(property);
+            }
+        });
+        removePropertyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int idx = propertyList.getSelectedIndex();
+                if (idx >= 0) propertyListModel.remove(idx);
+            }
+        });
+
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, null);
         inputValidator.validateWhenDocumentChanges(nameField);
         inputValidator.constrainTextFieldToNumberRange("Port", portField, 0, 65535);
@@ -219,6 +261,26 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         modelToView();
         if (nameField.getText().length() < 1)
             nameField.requestFocusInWindow();
+    }
+
+    private void editProperty(final Pair<String, String> origPair) {
+        final Frame p = TopComponents.getInstance().getTopParent();
+        final SimplePropertyDialog dlg = origPair == null ? new SimplePropertyDialog(p) : new SimplePropertyDialog(p, origPair);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            /** @noinspection unchecked*/
+            public void run() {
+                if (dlg.isConfirmed()) {
+                    final Pair<String, String> property = dlg.getData();
+                    List<Pair<String,String>> elms = (List<Pair<String,String>>)Collections.list(propertyListModel.elements());
+                    for (Pair<String, String> elm : elms)
+                        if (elm.left.equals(property.left)) propertyListModel.removeElement(elm);
+                    if (origPair != null) propertyListModel.removeElement(origPair);
+                    propertyListModel.addElement(property);
+                }
+            }
+        });
     }
 
     private void saveCheckBoxState(JCheckBox... boxes) {
@@ -525,6 +587,13 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private void enableOrDisableComponents() {
         enableOrDisableTabs();
         enableOrDisableCipherSuiteButtons();
+        enableOrDisablePropertyButtons();
+    }
+
+    private void enableOrDisablePropertyButtons() {
+        boolean haveSel = propertyList.getSelectedIndex() >= 0;
+        editPropertyButton.setEnabled(haveSel);
+        removePropertyButton.setEnabled(haveSel);
     }
 
     private void enableOrDisableTabs() {
@@ -556,7 +625,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private void enableAndRestore(JCheckBox... boxes) {
         for (JCheckBox box : boxes) {
             box.setEnabled(true);
-            box.setSelected((Boolean)box.getClientProperty(CPROP_WASENABLED));
+            final Boolean b = (Boolean)box.getClientProperty(CPROP_WASENABLED);
+            if (b != null) box.setSelected(b);
         }
     }
 
@@ -681,6 +751,18 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         saveCheckBoxState(cbEnableBuiltinServices, cbEnableMessageInput, cbEnableSsmApplet, cbEnableSsmRemote);
 
+        List<String> propNames = new ArrayList<String>(connector.getPropertyNames());
+        // Don't show properties that are already exposed via specialized controls
+        propNames.remove(SsgConnector.PROP_BIND_ADDRESS);
+        propNames.remove(SsgConnector.PROP_CIPHERLIST);
+        propNames.remove(SsgConnector.PROP_PORT_RANGE_COUNT);
+        propNames.remove(SsgConnector.PROP_PORT_RANGE_START);
+        propertyListModel.removeAllElements();
+        for (String propName : propNames) {
+            final String value = connector.getProperty(propName);
+            if (value != null) propertyListModel.addElement(new Pair<String,String>(propName, value));
+        }
+
         enableOrDisableComponents();
     }
 
@@ -717,6 +799,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
         connector.setClientAuth(((ClientAuthType)clientAuthComboBox.getSelectedItem()).code);
         connector.putProperty(SsgConnector.PROP_CIPHERLIST, cipherSuiteListModel.asCipherListString());
+
+        // Save user-overridden properties last
+        //noinspection unchecked
+        List<Pair<String,String>> props = (List<Pair<String,String>>)Collections.list(propertyListModel.elements());
+        for (Pair<String, String> prop : props)
+            connector.putProperty(prop.left, prop.right);
     }
 
     public void setVisible(boolean b) {

@@ -447,7 +447,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 name.equals(SsgConnector.PROP_CIPHERLIST))
                 continue;
             String value = c.getProperty(name);
-            m.put(name, value);
+            if (value != null) m.put(name, value);
         }
 
         return m;

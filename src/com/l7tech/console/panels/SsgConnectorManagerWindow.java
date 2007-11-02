@@ -332,7 +332,7 @@ public class SsgConnectorManagerWindow extends JDialog {
             return connector.getPort();
         }
 
-        public Object getAM() {
+        public Object getMA() {
             return connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_REMOTE) ? "Y" : "";
         }
 
@@ -340,11 +340,11 @@ public class SsgConnectorManagerWindow extends JDialog {
             return connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET) ? "Y" : "";
         }
 
-        public Object getMP() {
+        public Object getPS() {
             return connector.offersEndpoint(SsgConnector.Endpoint.MESSAGE_INPUT) ? "Y" : "";
         }
 
-        public Object getOT() {
+        public Object getBS() {
             return connector.offersEndpoint(SsgConnector.Endpoint.OTHER_SERVLETS) ? "Y" : "";
         }
     }
@@ -517,25 +517,25 @@ public class SsgConnectorManagerWindow extends JDialog {
                     }
                 },
 
-                new NarrowCol("MP") {
+                new NarrowCol("PS") {
                     Object getValueForRow(ConnectorTableRow row) {
-                        return row.getMP();
+                        return row.getPS();
                     }
                 },
 
-                new NarrowCol("OT") {
+                new NarrowCol("BS") {
                     Object getValueForRow(ConnectorTableRow row) {
-                        return row.getOT();
+                        return row.getBS();
                     }
                 },
 
-                new NarrowCol("AM") {
+                new NarrowCol("MA") {
                     Object getValueForRow(ConnectorTableRow row) {
-                        return row.getAM();
+                        return row.getMA();
                     }
                 },
 
-                new NarrowCol("AW") {
+                new NarrowCol("PS") {
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getAW();
                     }
