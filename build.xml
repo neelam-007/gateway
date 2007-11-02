@@ -3004,7 +3004,7 @@
         </sequential>
     </macrodef>
 
-    <target name="prepare.jms" if="dev.build" depends="prepare.jms.mqseries, prepare.jms.tibco"/>
+    <target name="prepare.jms" depends="prepare.jms.mqseries, prepare.jms.tibco"/>
 
     <target name="prepare.db" depends="
         prepare.db.oracle8,
@@ -3115,11 +3115,6 @@
 
         <!-- Resources -->
         <copy todir="${build.classes}">
-            <fileset dir="${src.root}/etc/db/${database.type}">
-                <!-- <include name="hibernate.cfg.xml"/> -->
-                <include name="hibernate.properties" if="dev.build"/>
-            </fileset>
-
             <fileset dir="${src.root}/etc/db">
                 <include name="SSG.hbm.xml"/>
                 <include name="rbac.hbm.xml"/>
@@ -3130,7 +3125,7 @@
             </fileset>
 
             <fileset dir="${src.root}/etc">
-                <include name="keystore.properties" if="dev.build"/>
+                <include name="keystore.properties" if="dev.build" unless="no.dev.build"/>
                 <include name="uddi.properties"/>
                 <include name="treecache-service.xml"/>
             </fileset>
@@ -3148,15 +3143,15 @@
             </fileset>
 
             <fileset dir="${src.root}/tests">
-                <include name="com/l7tech/**/*.properties" if="dev.build"/>
-                <include name="com/l7tech/common/security/xml/test_*" if="dev.build"/>
-                <include name="com/l7tech/**/*.xml" if="dev.build"/>
-                <include name="com/l7tech/**/*.pfx" if="dev.build"/>
-                <include name="com/l7tech/**/*.crt" if="dev.build"/>
-                <include name="com/l7tech/**/*.xsd" if="dev.build"/>
-                <include name="com/l7tech/**/*.wsdl" if="dev.build"/>
-                <include name="**/resources/*" if="dev.build"/>
-                <include name="**/resources/**/*" if="dev.build"/>
+                <include name="com/l7tech/**/*.properties" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/common/security/xml/test_*" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/**/*.xml" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/**/*.pfx" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/**/*.crt" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/**/*.xsd" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/**/*.wsdl" if="dev.build" unless="no.dev.build"/>
+                <include name="**/resources/*" if="dev.build" unless="no.dev.build"/>
+                <include name="**/resources/**/*" if="dev.build" unless="no.dev.build"/>
             </fileset>
         </copy>
 
@@ -3178,7 +3173,7 @@
     <!--
       Set key store related properties
     -->
-    <target name="keystore.properties" if="dev.build">
+    <target name="keystore.properties" if="dev.build" unless="no.dev.build">
         <echo level="info">Keystore directory is ${keystoredir}</echo>
         <propertyfile file="${build.classes}/keystore.properties">
             <entry key="keystoredir" value="${keystoredir}"/>
@@ -3317,7 +3312,7 @@
         Hibernate properties token replacement target.
         This should be done ONLY for non distribution builds.
      -->
-    <target name="configure_properties.dev" depends="db.properties" if="dev.build">
+    <target name="configure_properties.dev" depends="db.properties" if="dev.build" unless="no.dev.build">
         <echo level="info">
             database.driver   = '${database.driver}'
             database.url      = '${database.url}'
@@ -3379,11 +3374,18 @@
     </target>
 
     <!--
+      Initialization for a build.
+    -->
+    <target name="init-dist">
+        <property name="no.dev.build" value="true"/>
+    </target>
+
+    <!--
       Unofficial build
     -->
     <target name="dist"
             description="Build distributable software packages [optionally use with obfuscate]"
-            depends="makensis, makerpm, pack200, clean, package">
+            depends="init-dist, makensis, makerpm, pack200, clean, package">
         <echo level="info">Moving packaged software to distribution directory.</echo>
 
         <echo level="info">Creating: ${dist.dir}</echo>
@@ -4186,7 +4188,9 @@
             <arg value="build/uddiclasses"/>
             <arg value="-p"/>
             <arg value="com.l7tech.common.uddi.guddiv3"/>
-            <arg value="@{wsdl}"/>
+            <arg value="-wsdllocation"/>
+            <arg value="resources/@{wsdl}"/>
+            <arg value="etc/schema/uddiv3/@{wsdl}"/>
           </exec>
         </sequential>
     </macrodef>
@@ -4203,9 +4207,9 @@
 
         <!-- Comment out this block and compile with a 1.5 JDK -->
         <echo level="info">Generating classes from WSDL/Schemas</echo>
-        <wsimport wsdl="etc/schema/uddiv3/uddi_v3_service_i.wsdl"/>
-        <wsimport wsdl="etc/schema/uddiv3/uddi_v3_service_p.wsdl"/>
-        <wsimport wsdl="etc/schema/uddiv3/uddi_v3_service_s.wsdl"/>
+        <wsimport wsdl="uddi_v3_service_i.wsdl"/>
+        <wsimport wsdl="uddi_v3_service_p.wsdl"/>
+        <wsimport wsdl="uddi_v3_service_s.wsdl"/>
 
         <echo level="info">Compiling for 1.5</echo>
         <delete dir="build/uddiclasses"/>
@@ -4221,6 +4225,9 @@
             <fileset dir="build/uddiclasses">
                 <include name="**/*"/>
             </fileset>
+            <zipfileset dir="etc/schema/uddiv3" prefix="com/l7tech/common/uddi/guddiv3/resources">
+                <include name="**/*"/>
+            </zipfileset>
         </jar>
 
         <echo level="info">Output JAR ${build.guddi.jar} should be copied to lib/gateway/uddi/generic for use in build.</echo>

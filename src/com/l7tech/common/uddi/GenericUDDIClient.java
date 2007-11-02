@@ -57,9 +57,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Binding;
 import javax.xml.ws.handler.Handler;
+import javax.xml.namespace.QName;
 
 /**
  * UDDIv3 client implementation using generated JAX-WS UDDI API
@@ -821,21 +823,21 @@ class GenericUDDIClient implements UDDIClient {
     //- PROTECTED
 
     protected UDDISecurityPortType getSecurityPort() {
-        UDDISecurity security = new UDDISecurity();
+        UDDISecurity security = new UDDISecurity(buildUrl("resources/uddi_v3_service_s.wsdl"), new QName(UDDIV3_NAMESPACE, "UDDISecurity"));
         UDDISecurityPortType securityPort = security.getUDDISecurityPort();
         stubConfig(securityPort, getSecurityUrl());
         return securityPort;
     }
 
     protected UDDIInquiryPortType getInquirePort() {
-        UDDIInquiry inquiry = new UDDIInquiry();
+        UDDIInquiry inquiry = new UDDIInquiry(buildUrl("resources/uddi_v3_service_i.wsdl"), new QName(UDDIV3_NAMESPACE, "UDDIInquiry"));
         UDDIInquiryPortType inquiryPort = inquiry.getUDDIInquiryPort();
         stubConfig(inquiryPort, getInquiryUrl());
         return inquiryPort;
     }
 
     protected UDDIPublicationPortType getPublishPort() {
-        UDDIPublication publication = new UDDIPublication();
+        UDDIPublication publication = new UDDIPublication(buildUrl("resources/uddi_v3_service_p.wsdl"), new QName(UDDIV3_NAMESPACE, "UDDIPublication"));
         UDDIPublicationPortType publicationPort = publication.getUDDIPublicationPort();
         stubConfig(publicationPort, getPublicationUrl());
         return publicationPort;
@@ -923,9 +925,20 @@ class GenericUDDIClient implements UDDIClient {
         return foundResult;
     }
 
+    protected URL buildUrl(String relativeUrl) {
+        URL url = UDDIInquiry.class.getResource(relativeUrl);
+
+        if (logger.isLoggable(Level.FINE))
+            logger.log(Level.FINE, "Using url ''{0}''.", url);
+
+        return url;
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(GenericUDDIClient.class.getName());
+
+    private static final String UDDIV3_NAMESPACE = "urn:uddi-org:api_v3_service";
 
     private static final String POLICY_TYPE_KEY_NAME = "policy";
     private static final String POLICY_TYPE_KEY_VALUE = "policy";
