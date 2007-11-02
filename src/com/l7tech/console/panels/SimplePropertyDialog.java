@@ -19,13 +19,13 @@ public class SimplePropertyDialog extends JDialog {
 
     private boolean confirmed = false;
 
-    public SimplePropertyDialog(Window owner) {
+    public SimplePropertyDialog(Dialog owner) {
         super(owner, "New Property");
         keyField.setEnabled(true);
         init();
     }
 
-    public SimplePropertyDialog(Window owner, Pair<String,String> property) {
+    public SimplePropertyDialog(Dialog owner, Pair<String,String> property) {
         super(owner, "Edit Property");
         keyField.setEnabled(false);
         init();
