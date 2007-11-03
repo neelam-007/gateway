@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.common.security.saml;
 
@@ -16,14 +14,13 @@ import java.util.Date;
 
 /**
  * @author emil
- * @version Feb 1, 2005
  */
 public class AuthenticationStatement extends SubjectStatement {
     private String authenticationMethod;
     private Calendar authenticationInstant = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
 
-    public AuthenticationStatement(LoginCredentials credentials, Confirmation confirmation, KeyInfoInclusionType keyInfoType, NameIdentifierInclusionType nameIdType, String overrideNameValue, String overrideNameFormat) {
-        super(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
+    public AuthenticationStatement(LoginCredentials credentials, Confirmation confirmation, KeyInfoInclusionType keyInfoType, NameIdentifierInclusionType nameIdType, String overrideNameValue, String overrideNameFormat, String nameQualifier) {
+        super(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier);
 
         this.authenticationMethod = mapAuthMethod(credentials.getCredentialSourceAssertion());
         long when = credentials.getAuthInstant();

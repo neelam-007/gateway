@@ -1,20 +1,13 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.SecureAction;
-import com.l7tech.console.panels.IdentityAssertionVariablesDialog;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
 
-import javax.swing.*;
 import javax.swing.tree.TreeNode;
 import java.util.*;
 import java.util.logging.Level;
@@ -39,7 +32,7 @@ public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode<Id
     protected String idProviderName() {
         if (provName == null) {
             long providerid = assertion.getIdentityProviderOid();
-            IdentityProviderConfig cfg = null;
+            IdentityProviderConfig cfg;
             try {
                 if (providerid == IdentityProviderConfig.DEFAULT_OID)
                     provName = NA;
@@ -132,52 +125,8 @@ public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode<Id
         receiver.setValidatorMessages(newMessages);
     }
 
-    @Override
-    public Action[] getActions() {
-        Action[] supers = super.getActions();
-        Action[] my = new Action[supers.length+1];
-        System.arraycopy(supers, 0, my, 0, supers.length);
-        my[my.length-1] = new IdentityAssertionAttributesAction(this);
-        return my;
-    }
-
     static final Logger log = Logger.getLogger(IdentityAssertionTreeNode.class.getName());
     private IdentityAssertion assertion;
     private String provName = null;
     public static final String NA = "provider not available";
-
-    private static class IdentityAssertionAttributesAction extends SecureAction {
-        private LeafAssertionTreeNode node;
-
-        private IdentityAssertionAttributesAction(LeafAssertionTreeNode node) {
-            super(null, SpecificUser.class);
-            this.node = node;
-}
-
-        public String getName() {
-            return "Attributes";
-        }
-
-        protected String iconResource() {
-            return "com/l7tech/console/resources/user16.png";
-        }
-
-        protected void performAction() {
-            final Assertion ass = node.asAssertion();
-            if (!(ass instanceof IdentityAssertion)) throw new RuntimeException();
-            IdentityAssertionVariablesDialog dlg = new IdentityAssertionVariablesDialog(TopComponents.getInstance().getTopParent(), (IdentityAssertion) ass);
-            dlg.pack();
-            Utilities.centerOnScreen(dlg);
-            DialogDisplayer.display(dlg);
-            if (dlg.isOk()) {
-                JTree tree = TopComponents.getInstance().getPolicyTree();
-                if (tree != null) {
-                    PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                    model.assertionTreeNodeChanged(node);
-                } else {
-                    log.log(Level.WARNING, "Unable to reach the palette tree.");
-                }
-            }
-        }
-    }
 }

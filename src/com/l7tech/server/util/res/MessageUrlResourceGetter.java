@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.util.res;
 
+import com.l7tech.common.audit.Audit;
 import com.l7tech.common.urlcache.UrlResolver;
 import com.l7tech.common.util.TextUtils;
 import com.l7tech.common.xml.ElementCursor;
@@ -30,15 +30,15 @@ class MessageUrlResourceGetter<R> extends UrlResourceGetter<R> {
 
     MessageUrlResourceGetter(MessageUrlResourceInfo ri,
                              UrlResolver<R> urlResolver,
-                             UrlFinder urlFinder)
+                             UrlFinder urlFinder,
+                             Audit audit)
             throws PatternSyntaxException
     {
-        super(urlResolver);
+        super(urlResolver, audit);
         if (urlFinder == null) throw new NullPointerException();
         this.urlFinder = urlFinder;
         this.allowMessagesWithoutUrl = ri.isAllowMessagesWithoutUrl();
         this.urlWhitelist = ri.makeUrlPatterns();
-
     }
 
     public void close() {

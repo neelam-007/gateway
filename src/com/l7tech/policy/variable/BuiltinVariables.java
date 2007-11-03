@@ -126,7 +126,7 @@ public class BuiltinVariables {
         return getMetadata(name, metadataByName);
     }
 
-    public static VariableMetadata getMetadata(String name, Map map) {
+    private static VariableMetadata getMetadata(String name, Map map) {
         final String lname = name.toLowerCase();
         VariableMetadata var = (VariableMetadata)map.get(lname);
         if (var != null) return var;

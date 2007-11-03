@@ -121,7 +121,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
             AssertionStatus assertionStatus = AssertionStatus.FAILED;
             if (isReplacement) {
                 logger.log(Level.FINE, "Replace requested: Match pattern ''{0}'', replace pattern ''{1}''", new Object[]{regexAssertion.getRegex(), replacement});
-                replacement = ExpandVariables.process(replacement, context.getVariableMap(varNames, auditor));
+                replacement = ExpandVariables.process(replacement, context.getVariableMap(varNames, auditor), auditor);
                 String result = matcher.replaceAll(replacement);
                 messagePart.setBodyBytes(result.getBytes(encoding));
                 assertionStatus = AssertionStatus.NONE;

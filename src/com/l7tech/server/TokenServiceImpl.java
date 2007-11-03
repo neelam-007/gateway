@@ -324,7 +324,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         KeyInfoInclusionType keyInfoType = useThumbprintForSubject ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
         SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds,
                                                                                            SubjectStatement.HOLDER_OF_KEY,
-                                                                                           keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null);
+                                                                                           keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
         
         // [Bugzilla #3616] the reason we are using this system property mechanism to pass this information is because
         // the saml generator is common code and can be also used in the bridge which does not have access to the

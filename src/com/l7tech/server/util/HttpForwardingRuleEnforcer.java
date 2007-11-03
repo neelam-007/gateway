@@ -102,7 +102,7 @@ public class HttpForwardingRuleEnforcer {
                         if (vars == null) {
                             vars = context.getVariableMap(varNames, auditor);
                         }
-                        headervalue = ExpandVariables.process(headervalue, vars);
+                        headervalue = ExpandVariables.process(headervalue, vars, auditor);
                     }
                     routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, headervalue));
                 } else if (knob != null) {
@@ -187,7 +187,7 @@ public class HttpForwardingRuleEnforcer {
                         if (vars == null) {
                             vars = context.getVariableMap(varNames, auditor);
                         }
-                        headervalue = ExpandVariables.process(headervalue, vars);
+                        headervalue = ExpandVariables.process(headervalue, vars, auditor);
                     }
                     routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, headervalue));
                 } else if (knob != null) {
@@ -258,7 +258,7 @@ public class HttpForwardingRuleEnforcer {
                         if (vars == null) {
                             vars = context.getVariableMap(varNames, auditor);
                         }
-                        paramVal = ExpandVariables.process(paramVal, vars);
+                        paramVal = ExpandVariables.process(paramVal, vars, auditor);
                     }
                     output.add(new Param(paramName, paramVal));
                 } else {
@@ -301,7 +301,7 @@ public class HttpForwardingRuleEnforcer {
                         if (vars == null) {
                             vars = context.getVariableMap(varNames, auditor);
                         }
-                        headervalue = ExpandVariables.process(headervalue, vars);
+                        headervalue = ExpandVariables.process(headervalue, vars, auditor);
                     }
                     targetForResponseHeaders.setHeader(rule.getName(), headervalue);
                 } else {
@@ -363,7 +363,7 @@ public class HttpForwardingRuleEnforcer {
                         if (vars == null) {
                             vars = context.getVariableMap(varNames, auditor);
                         }
-                        headervalue = ExpandVariables.process(headervalue, vars);
+                        headervalue = ExpandVariables.process(headervalue, vars, auditor);
                     }
                     targetForResponseHeaders.addHeader(rule.getName(), headervalue);
                 } else {

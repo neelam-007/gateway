@@ -6,7 +6,9 @@ package com.l7tech.policy.assertion;
 import com.l7tech.common.security.saml.KeyInfoInclusionType;
 import com.l7tech.common.security.saml.NameIdentifierInclusionType;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -15,6 +17,7 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -24,13 +27,49 @@ import java.util.Set;
 public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVariables, UsesVariables {
     private int conditionsNotBeforeSecondsInPast = -1;
     private int conditionsNotOnOrAfterExpirySeconds = -1;
+    /**
+     * True if the assertion should be signed with an enveloped signature (i.e. within the assertion); unrelated to {@link #decorationTypes}.
+     */
     private boolean signAssertion = true;
+    private EnumSet<DecorationType> decorationTypes;
     private String subjectConfirmationMethodUri;
     private NameIdentifierInclusionType nameIdentifierType = NameIdentifierInclusionType.FROM_CREDS;
     private String nameIdentifierFormat;
     private String nameIdentifierValue;
     private KeyInfoInclusionType signatureKeyInfoType = KeyInfoInclusionType.CERT;
     private KeyInfoInclusionType subjectConfirmationKeyInfoType = KeyInfoInclusionType.CERT;
+
+    public SamlIssuerAssertion() {
+    }
+
+    public SamlIssuerAssertion(SamlAuthenticationStatement authnStmt) {
+        this.authenticationStatement = authnStmt;
+    }
+
+    public SamlIssuerAssertion(SamlAttributeStatement attrStmt) {
+        this.attributeStatement = attrStmt;
+    }
+
+    public SamlIssuerAssertion(SamlAuthorizationStatement authzStmt) {
+        this.authorizationStatement = authzStmt;
+    }
+
+    public static enum DecorationType {
+        /** Apply decorations to request */
+        REQUEST,
+
+        /** Apply decorations to response */
+        RESPONSE,
+
+        /** Insert the assertion into the message as a child of the Security header, but don't sign it */
+        ADD_ASSERTION,
+
+        /** Insert the assertion into the message, and ensure it's signed with a message-level signature */
+        SIGN_ASSERTION,
+
+        /** Sign the SOAP Body */
+        SIGN_BODY,
+    }
 
     public NameIdentifierInclusionType getNameIdentifierType() {
         return nameIdentifierType;
@@ -54,6 +93,14 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
 
     public void setSignAssertion(boolean signAssertion) {
         this.signAssertion = signAssertion;
+    }
+
+    public EnumSet<DecorationType> getDecorationTypes() {
+        return decorationTypes;
+    }
+
+    public void setDecorationTypes(EnumSet<DecorationType> decorationTypes) {
+        this.decorationTypes = decorationTypes;
     }
 
     public String[] getVariablesUsed() {

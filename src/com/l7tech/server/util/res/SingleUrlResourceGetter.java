@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.util.res;
 
+import com.l7tech.common.audit.Audit;
 import com.l7tech.common.urlcache.UrlResolver;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.policy.SingleUrlResourceInfo;
@@ -28,10 +28,11 @@ class SingleUrlResourceGetter<R> extends UrlResourceGetter<R> {
 
     SingleUrlResourceGetter(Assertion assertion,
                             SingleUrlResourceInfo ri,
-                            UrlResolver<R> urlResolver)
+                            UrlResolver<R> urlResolver,
+                            Audit audit)
             throws ServerPolicyException
     {
-        super(urlResolver);
+        super(urlResolver, audit);
         String url = ri.getUrl();
         if (url == null) throw new ServerPolicyException(assertion, "Missing resource url");
         this.url = url;
@@ -49,7 +50,7 @@ class SingleUrlResourceGetter<R> extends UrlResourceGetter<R> {
     }
 
     public R getResource(ElementCursor message, Map vars) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
-        String actualUrl = vars == null ? url : ExpandVariables.process(url, vars);
+        String actualUrl = vars == null ? url : ExpandVariables.process(url, vars, audit);
         try {
             return fetchObject(actualUrl);
         } catch (ParseException e) {

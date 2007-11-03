@@ -16,7 +16,6 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
@@ -102,7 +101,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(RequestWssTimestamp.class, RequestWssTimestampPolicyNode.class);
         assertionMap.put(ResponseWssSecurityToken.class, ResponseWssSecurityTokenPolicyNode.class);
         assertionMap.put(RequestWssKerberos.class, KerberosTreeNode.class);
-        assertionMap.put(MappingAssertion.class, MappingAssertionPolicyNode.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionPolicyNode.class);
         assertionMap.put(WsiSamlAssertion.class, WsiSamlAssertionPolicyNode.class);
         assertionMap.put(WsspAssertion.class, WsspAssertionPolicyNode.class);

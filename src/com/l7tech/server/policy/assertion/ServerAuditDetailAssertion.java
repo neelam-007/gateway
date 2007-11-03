@@ -36,18 +36,18 @@ public class ServerAuditDetailAssertion extends AbstractServerAssertion<AuditDet
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         String detail = subject.getDetail();
-        detail = ExpandVariables.process(detail, context.getVariableMap(varsUsed, auditor));
+        detail = ExpandVariables.process(detail, context.getVariableMap(varsUsed, auditor), auditor);
 
         if (Level.FINEST.toString().equals(subject.getLevel())) {
-            auditor.logAndAudit(AssertionMessages.USERDETAIL_FINEST, new String[] {detail});
+            auditor.logAndAudit(AssertionMessages.USERDETAIL_FINEST, detail);
         } else if (Level.FINER.toString().equals(subject.getLevel())) {
-            auditor.logAndAudit(AssertionMessages.USERDETAIL_FINER, new String[] {detail});
+            auditor.logAndAudit(AssertionMessages.USERDETAIL_FINER, detail);
         } else if (Level.FINE.toString().equals(subject.getLevel())) {
-            auditor.logAndAudit(AssertionMessages.USERDETAIL_FINE, new String[] {detail});
+            auditor.logAndAudit(AssertionMessages.USERDETAIL_FINE, detail);
         } else if (Level.INFO.toString().equals(subject.getLevel())) {
-            auditor.logAndAudit(AssertionMessages.USERDETAIL_INFO, new String[] {detail});
+            auditor.logAndAudit(AssertionMessages.USERDETAIL_INFO, detail);
         } else if (Level.WARNING.toString().equals(subject.getLevel())) {
-            auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, new String[] {detail});
+            auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, detail);
         } else {
             // can't happen
             throw new RuntimeException("unexpected level " + subject.getLevel());

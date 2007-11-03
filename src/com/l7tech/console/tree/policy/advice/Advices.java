@@ -7,7 +7,6 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -111,7 +110,6 @@ public class Advices {
                 put(SqlAttackAssertion.class, ary(SqlAttackAssertionAdvice.class));
                 put(OversizedTextAssertion.class, ary(OversizedTextAssertionAdvice.class));
                 put(RequestSizeLimit.class, ary(RequestSizeLimitAdvice.class));
-                put(MappingAssertion.class, ary(MappingAssertionAdvice.class));
                 put(AuditDetailAssertion.class, ary(AddAuditAdviceAssertion.class));
                 put(Operation.class, ary(AddWSDLOperationAssertionAdvice.class));
                 put(SetVariableAssertion.class, ary(SetVariableAssertionAdvice.class));

@@ -171,7 +171,7 @@ public class IdentityRule implements Filter {
                     logger.log(Level.WARNING, "Cannot get group from provider", e);
                     return false;
                 }
-        } else if (idassertion instanceof AuthenticationAssertion || idassertion instanceof MappingAssertion) {
+        } else if (idassertion instanceof AuthenticationAssertion) {
             return true;
         } else {
             throw new FilteringException("unsupported IdentityAssertion type " + idassertion.getClass().getName());

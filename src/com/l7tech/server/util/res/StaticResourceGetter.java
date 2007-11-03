@@ -5,9 +5,9 @@
 
 package com.l7tech.server.util.res;
 
+import com.l7tech.common.audit.Audit;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.Closeable;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
@@ -28,11 +28,12 @@ class StaticResourceGetter<R> extends ResourceGetter<R> {
     private final R userObject;
 
     StaticResourceGetter(Assertion assertion,
-                                 StaticResourceInfo ri,
-                                 ResourceObjectFactory<R> rof)
+                         StaticResourceInfo ri,
+                         ResourceObjectFactory<R> rof,
+                         Audit audit)
             throws ServerPolicyException
     {
-        super();
+        super(audit);
         String doc = ri.getDocument();
         if (doc == null) throw new ServerPolicyException(assertion, "Empty static document");
         try {
@@ -48,8 +49,6 @@ class StaticResourceGetter<R> extends ResourceGetter<R> {
     public void close() {
         if (userObject instanceof java.io.Closeable) {
             ResourceUtils.closeQuietly((java.io.Closeable)userObject);
-        } else if (userObject instanceof Closeable) {
-            ResourceUtils.closeQuietly((Closeable)userObject);
         } else if (userObject != null) {
             logger.warning("ERROR: Cannot close object of type '"+userObject.getClass().getName()+"'.");
         }

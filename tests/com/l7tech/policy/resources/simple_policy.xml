@@ -149,7 +149,6 @@
                 <L7p:WSDLOperation/>
                 <L7p:HardcodedResponse/>
                 <L7p:ResponseWssSecurityToken/>
-                <L7p:IdentityMapping/>
                 <L7p:SetVariable/>
                 <L7p:CookieCredentialSource/>
                 <L7p:HtmlFormDataAssertion>

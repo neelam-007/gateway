@@ -20,7 +20,6 @@ import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
@@ -186,7 +185,6 @@ public class AllAssertions {
         new Operation(),
         new HardcodedResponseAssertion(),
         new ResponseWssSecurityToken(),
-        new MappingAssertion(),
         new SetVariableAssertion(),
         new CookieCredentialSourceAssertion(),
         new HtmlFormDataAssertion(),

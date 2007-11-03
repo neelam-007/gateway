@@ -21,7 +21,6 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
@@ -217,7 +216,6 @@ public class GatewayFeatureSets {
             ass(SpecificUser.class),
             ass(MemberOfGroup.class),
             ass(AuthenticationAssertion.class),
-            ass(MappingAssertion.class),
             ass(SamlIssuerAssertion.class),
             ass(HttpBasic.class),
             ass(HttpDigest.class),

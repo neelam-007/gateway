@@ -21,7 +21,8 @@ public class SamlIssuerAssertionWizardTest extends JFrame {
                     new AttributeStatementWizardStepPanel(
                         new SubjectConfirmationNameIdentifierWizardStepPanel(
                             new SubjectConfirmationWizardStepPanel(
-                                new ConditionsWizardStepPanel(null, true, true), true), true), true), true)), true), true);
+                                new ConditionsWizardStepPanel(
+                                        new SamlSignatureStepPanel(null, true), true, true), true), true), true), true)), true), true);
         SamlIssuerAssertion assertion = new SamlIssuerAssertion();
         Wizard w = new SamlPolicyAssertionWizard(assertion, frame, p, true);
         w.pack();

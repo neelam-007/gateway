@@ -3,10 +3,11 @@
  */
 package com.l7tech.policy.variable;
 
+import com.l7tech.common.audit.Audit;
+import com.l7tech.common.audit.CommonMessages;
+
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,11 +18,9 @@ import java.util.regex.Pattern;
  * <code>var.name</code> is the variable name.
  * The variables are passed in the <code>Map</code> of string key-value pairs. The default
  * variables are passed in constructor and optional overriding variables can be passed in
- * {@link ExpandVariables#process(String, java.util.Map)} method.
+ * {@link ExpandVariables#process(String, Map, Audit)} method.
  */
 public final class ExpandVariables {
-    private static final Logger logger = Logger.getLogger(ExpandVariables.class.getName());
-
     public static final String SYNTAX_PREFIX = "${";
     public static final String SYNTAX_SUFFIX = "}";
     
@@ -32,13 +31,13 @@ public final class ExpandVariables {
     private static final String DEFAULT_DELIMITER = ", ";
 
     private static interface Formatter {
-        String format(VariableNameSyntax syntax, Object o);
+        String format(VariableNameSyntax syntax, Object o, Audit audit);
     }
 
     private static final Formatter DEFAULT_FORMATTER = new Formatter() {
-        public String format(VariableNameSyntax syntax, Object o) {
+        public String format(VariableNameSyntax syntax, Object o, Audit audit) {
             if (!(Number.class.isAssignableFrom(o.getClass()) || CharSequence.class.isAssignableFrom(o.getClass())))
-                logger.warning("Variable '" + syntax.remainingName + "' is a " + o.getClass().getName() + ", not a String or Number; using .toString() instead");
+                audit.logAndAudit(CommonMessages.TEMPLATE_SUSPICIOUS_TOSTRING, syntax.remainingName, o.getClass().getName());
 
             return o.toString();
         }
@@ -61,7 +60,7 @@ public final class ExpandVariables {
         return (String[]) vars.toArray(new String[0]);
     }
 
-    public static Object processSingleVariableAsObject(String expr, Map vars) {
+    public static Object processSingleVariableAsObject(final String expr, final Map vars, final Audit audit) {
         if (expr == null) {
             throw new IllegalArgumentException();
         }
@@ -69,18 +68,19 @@ public final class ExpandVariables {
         Matcher matcher = oneVarPattern.matcher(expr);
         if (matcher.matches()) {
             final String rawName = matcher.group(1);
+            // TODO allow recursive syntax someday (i.e. ${foo[0]|DELIM} if foo is multi-dimensional)
             final VariableNameSyntax syntax = parseNameSyntax(rawName);
-            final Object[] newVals = getAndFilter(vars, syntax);
+            final Object[] newVals = getAndFilter(vars, syntax, audit);
             if (newVals == null || newVals.length == 0) return null;
             // TODO is it OK to return both an array and a single value for the same variable?
             if (newVals.length == 1) return newVals[0];
             return newVals;
         } else {
-            return process(expr, vars);
+            return process(expr, vars, audit);
         }
     }
 
-    private static Object[] getAndFilter(Map vars, VariableNameSyntax syntax) {
+    private static Object[] getAndFilter(Map vars, VariableNameSyntax syntax, Audit audit) {
         final Object o = vars.get(syntax.remainingName);
 
         final Object[] vals;
@@ -90,7 +90,7 @@ public final class ExpandVariables {
             vals = new Object[] {o};
         }
 
-        return syntax.filter(vals);
+        return syntax.filter(vals, audit);
     }
 
     private static VariableNameSyntax parseNameSyntax(String rawName) {
@@ -129,8 +129,8 @@ public final class ExpandVariables {
             this.remainingName = name;
         }
 
-        protected abstract Object[] filter(Object[] values);
-        protected abstract String format(Object[] values, Formatter formatter);
+        protected abstract Object[] filter(Object[] values, Audit audit);
+        protected abstract String format(Object[] values, Formatter formatter, Audit audit);
     }
 
     private static class MultivalueDelimiterSyntax extends VariableNameSyntax {
@@ -140,16 +140,16 @@ public final class ExpandVariables {
             this.delimiter = delimiter;
         }
 
-        protected Object[] filter(Object[] values) {
+        protected Object[] filter(Object[] values, Audit audit) {
             return values;
         }
 
-        protected String format(final Object[] values, final Formatter formatter) {
+        protected String format(final Object[] values, final Formatter formatter, final Audit audit) {
             if (values == null || values.length == 0) return "";
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < values.length; i++) {
                 Object value = values[i];
-                if (value != null) sb.append(formatter.format(this, value));
+                if (value != null) sb.append(formatter.format(this, value, audit));
                 if (i < values.length-1) sb.append(delimiter);
             }
             return sb.toString();
@@ -163,17 +163,17 @@ public final class ExpandVariables {
             this.subscript = subscript;
         }
 
-        protected Object[] filter(Object[] values) {
+        protected Object[] filter(Object[] values, Audit audit) {
             if (subscript > values.length-1) {
-                logger.log(Level.WARNING, "Array subscript ({0}) in {1} out of range ({2} values); returning no values", new Object[] { Integer.valueOf(subscript), remainingName, Integer.valueOf(values.length) });
+                audit.logAndAudit(CommonMessages.TEMPLATE_SUBSCRIPT_OUTOFRANGE, Integer.toString(subscript), remainingName, Integer.toString(values.length));
                 return null;
             }
             return new Object[] { values[subscript] };
         }
 
-        protected String format(Object[] values, Formatter formatter) {
+        protected String format(Object[] values, Formatter formatter, Audit audit) {
             if (values == null || values.length != 1) return "";
-            return formatter.format(this, values[0]);
+            return formatter.format(this, values[0], audit);
         }
     }
 
@@ -186,10 +186,9 @@ public final class ExpandVariables {
      * @param vars the caller supplied varialbes map that is consulted first
      * @return the message with expanded/resolved varialbes
      */
-    public static String process(String s, Map vars) {
-        if (s == null) {
-            throw new IllegalArgumentException();
-        }
+    public static String process(String s, Map vars, Audit audit) {
+        if (s == null) throw new IllegalArgumentException();
+
         Matcher matcher = regexPattern.matcher(s);
         StringBuffer sb = new StringBuffer();
 
@@ -200,12 +199,13 @@ public final class ExpandVariables {
             }
 
             final VariableNameSyntax syntax = parseNameSyntax(matcher.group(1));
-            Object[] newVals = getAndFilter(vars, syntax);
+            Object[] newVals = getAndFilter(vars, syntax, audit);
             String replacement;
             if (newVals == null || newVals.length == 0) {
                 replacement = "";
             } else {
-                replacement = syntax.format(newVals, DEFAULT_FORMATTER); // TODO support formatters for other data types!
+                // TODO support formatters for other data types!
+                replacement = syntax.format(newVals, DEFAULT_FORMATTER, audit);
             }
 
             replacement = makeDollarExplicit(replacement); // bugzilla 3022
@@ -223,18 +223,5 @@ public final class ExpandVariables {
     }
 
     private ExpandVariables() {
-    }
-
-    public static void validateName(String name) {
-        char c1 = name.charAt(1);
-        if ("$".indexOf(c1) >= 0 || !Character.isJavaIdentifierStart(c1)) // Java allows '$', we don't
-            throw new IllegalArgumentException("variable names must not start with '" + c1 + "'");
-
-        for (int i = 0; i < name.toCharArray().length; i++) {
-            char c = name.toCharArray()[i];
-            if (c == '.') continue; // We allow '.', Java doesn't
-            if (!Character.isJavaIdentifierPart(c))
-                throw new IllegalArgumentException("variable names must not contain '" + c + "'");
-        }
     }
 }

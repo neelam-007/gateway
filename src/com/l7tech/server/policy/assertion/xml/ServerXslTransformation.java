@@ -152,11 +152,8 @@ public class ServerXslTransformation
             muri = (MessageUrlResourceInfo)ri;
         allowMessagesWithNoProcessingInstruction = muri != null && muri.isAllowMessagesWithoutUrl();
 
-        this.resourceGetter = ResourceGetter.createResourceGetter(assertion,
-                                                                  ri,
-                                                                  resourceObjectfactory,
-                                                                  urlFinder,
-                                                                  getCache(springContext));
+        this.resourceGetter = ResourceGetter.createResourceGetter(
+                assertion, ri, resourceObjectfactory, urlFinder, getCache(springContext), auditor);
     }
 
     private static synchronized HttpObjectCache<CompiledStylesheet> getCache(ApplicationContext spring) {

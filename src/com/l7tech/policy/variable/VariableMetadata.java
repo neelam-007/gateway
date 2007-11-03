@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.policy.variable;
 
@@ -17,7 +17,7 @@ public class VariableMetadata implements Serializable {
     private final DataType type;
 
     public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type) {
-        ExpandVariables.validateName(name);
+        validateName(name);
         this.name = name;
         this.prefixed = prefixed;
         this.multivalued = multivalued;
@@ -90,6 +90,19 @@ public class VariableMetadata implements Serializable {
             return name + ".*";
         } else {
             return name;
+        }
+    }
+
+    private static void validateName(String name) {
+        char c1 = name.charAt(1);
+        if ("$".indexOf(c1) >= 0 || !Character.isJavaIdentifierStart(c1)) // Java allows '$', we don't
+            throw new IllegalArgumentException("variable names must not start with '" + c1 + "'");
+
+        for (int i = 0; i < name.toCharArray().length; i++) {
+            char c = name.toCharArray()[i];
+            if (c == '.') continue; // We allow '.', Java doesn't
+            if (!Character.isJavaIdentifierPart(c))
+                throw new IllegalArgumentException("variable names must not contain '" + c + "'");
         }
     }
 }

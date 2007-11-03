@@ -115,12 +115,15 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                     subjectCertIncludeCheckbox.setSelected(false);
                     break;
                 case CERT:
+                    subjectCertIncludeCheckbox.setSelected(true);
                     subjectCertLiteralRadioButton.setSelected(true);
                     break;
                 case STR_SKI:
+                    subjectCertIncludeCheckbox.setSelected(true);
                     subjectCertSkiRadioButton.setSelected(true);
                     break;
                 case STR_THUMBPRINT:
+                    subjectCertIncludeCheckbox.setSelected(true);
                     subjectCertThumbprintRadioButton.setSelected(true);
                     break;
                 default:

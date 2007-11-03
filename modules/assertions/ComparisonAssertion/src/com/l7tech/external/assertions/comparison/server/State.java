@@ -92,7 +92,7 @@ abstract class State {
         if (bpred.getOperator().isUnary()) {
             cright = null;
         } else {
-            Object right = ServerComparisonAssertion.getValue(bpred.getRightValue(), vars);
+            Object right = ServerComparisonAssertion.getValue(bpred.getRightValue(), vars, auditor);
             if (type != null) {
                 // Convert this rvalue before comparing if there's a DataTypePredicate present
                 right = convertValue(right, type);

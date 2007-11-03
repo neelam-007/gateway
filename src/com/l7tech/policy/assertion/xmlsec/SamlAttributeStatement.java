@@ -15,6 +15,13 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
         return attributes;
     }
 
+    public SamlAttributeStatement() {
+    }
+
+    public SamlAttributeStatement(Attribute... attributes) {
+        this.attributes = attributes;
+    }
+
     public void setAttributes(Attribute[] attributes) {
         if (attributes == null) {
             this.attributes = new Attribute[]{};

@@ -282,6 +282,8 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_SET_REPLYTO_CORRELCTIONID       = m(6018, Level.FINE, "Setting JMSReplyTo and JMSCorrelationID");
     public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "JMS Routing Assertion contains a reference to nonexistent JmsEndpoint #{0}");
     public static final M JMS_ROUTING_NO_SAML_SIGNER                  = m(6020, Level.WARNING, "JMS Routing Assertion cannot access SAML signing information");
+    public static final M JMS_ROUTING_CANT_CONNECT_RETRYING           = m(6021, Level.WARNING, "Failed to establish JMS connection on try #{0}.  Will retry after {1}ms.");
+    public static final M JMS_ROUTING_CANT_CONNECT_NOMORETRIES        = m(6022, Level.WARNING, "Tried {0} times to establish JMS connection and failed.");
 
     // ServerFtpRoutingAssertion
     public static final M FTP_ROUTING_FAILED_UPLOAD = m(6050, Level.WARNING, "Failed to upload request to {0}: {1}");
@@ -517,4 +519,11 @@ public class AssertionMessages extends Messages {
  	public static final M SAML_ISSUER_ISSUED_AUTHZ  = m(8402, Level.FINE, "Issued SAML Authorization Decision statement");
  	public static final M SAML_ISSUER_ADDING_ATTR   = m(8403, Level.FINE, "Adding attribute {0} = {1}");
     public static final M SAML_ISSUER_AUTH_REQUIRED = m(8404, Level.WARNING, "NameIdentifier configured as \"From Authenticated User\", but no user has been authenticated");
+    public static final M SAML_ISSUER_NOT_XML       = m(8405, Level.WARNING, "Message is not XML");
+    public static final M SAML_ISSUER_NOT_SOAP      = m(8406, Level.WARNING, "Message is not SOAP");
+    public static final M SAML_ISSUER_BAD_XML       = m(8407, Level.WARNING, "Message appeared to be SOAP but is not valid");
+    public static final M SAML_ISSUER_CANT_DECORATE = m(8408, Level.WARNING, "WS-Security decoration failed");
+
+    public static final M IDENTITY_ATTRIBUTE_NO_USER     = m(8450, Level.INFO, "No user from the expected identity provider has yet been authenticated");
+    public static final M IDENTITY_ATTRIBUTE_MULTI_USERS = m(8451, Level.INFO, "Multiple users from the expected identity provider have been authenticated; choosing the first");
 }

@@ -99,7 +99,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
             final byte[] bytes;
             if (variablesUsed.length > 0) {
                 String msg = message;
-                msg = ExpandVariables.process(msg, context.getVariableMap(variablesUsed, auditor));
+                msg = ExpandVariables.process(msg, context.getVariableMap(variablesUsed, auditor), auditor);
                 bytes = msg.getBytes(contentType.getEncoding());
             } else {
                 bytes = this.messageBytesNoVar;

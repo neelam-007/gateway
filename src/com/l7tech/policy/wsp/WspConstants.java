@@ -13,11 +13,11 @@ import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.xpath.XpathExpression;
+import com.l7tech.identity.mapping.*;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
-import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -30,13 +30,12 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
-import com.l7tech.identity.mapping.*;
+import com.l7tech.policy.variable.DataType;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -267,7 +266,6 @@ public class WspConstants {
         new AssertionMapping(new RequestWssTimestamp(), "RequestWssTimestamp"),
         new AssertionMapping(new ResponseWssSecurityToken(), "ResponseWssSecurityToken"),
         new AssertionMapping(new RequestWssKerberos(), "Kerberos"),
-        new AssertionMapping(new MappingAssertion(), "IdentityMapping"),
         new AssertionMapping(new WsiBspAssertion(), "WsiBspAssertion"),
         new AssertionMapping(new WsiSamlAssertion(), "WsiSamlAssertion"),
         new AssertionMapping(new WsspAssertion(), "WsspAssertion"),
@@ -319,6 +317,7 @@ public class WspConstants {
         new BeanTypeMapping(AttributeConfig.class, "attributeConfig"),
         new WspEnumTypeMapping(DataType.class, "dataType"),
         new Java5EnumTypeMapping(UsersOrGroups.class, "usersOrGroups"),
+        new Java5EnumSetTypeMapping(EnumSet.class, SamlIssuerAssertion.DecorationType.class, "decorationTypes"),
 
         // Make sure we get equal instances of built-in attributes (analogous to readResolve())
         new BeanTypeMapping(AttributeHeader.class, "header") {

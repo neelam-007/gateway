@@ -1,20 +1,20 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.policy.variable;
 
 import com.l7tech.common.util.EnumTranslator;
 import org.w3c.dom.Element;
 
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Calendar;
 import java.util.Date;
-import java.io.Serializable;
-import java.io.ObjectStreamException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author alex
@@ -40,7 +40,7 @@ public final class DataType implements Serializable {
     public static final DataType DATE_TIME = new DataType("dateTime", "Date/Time", new Class[] { Date.class, Calendar.class, Long.TYPE, Long.class });
     public static final DataType UNKNOWN = new DataType("other", "Unknown/Other", new Class[] { Object.class });
 
-    public static final DataType[] VALUES = new DataType[] { STRING, CERTIFICATE, INTEGER, DECIMAL, FLOAT, ELEMENT, BOOLEAN, BINARY, UNKNOWN };
+    public static final DataType[] VALUES = new DataType[] { STRING, CERTIFICATE, INTEGER, DECIMAL, FLOAT, ELEMENT, BOOLEAN, BINARY, DATE_TIME, UNKNOWN };
 
     private final String shortName;
     private final String name;
@@ -57,7 +57,6 @@ public final class DataType implements Serializable {
     public Class[] getValueClasses() {
         return valueClasses;
     }
-
 
     private DataType(String shortName, String name, Class[] classes) {
         this.shortName = shortName;

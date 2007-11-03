@@ -1,18 +1,24 @@
 package com.l7tech.policy;
 
+import com.l7tech.common.audit.Audit;
+import com.l7tech.common.audit.Messages;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Class ExpandVariablesTest.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
 public class ExpandVariablesTest extends TestCase {
+    private static final Logger logger = Logger.getLogger(ExpandVariablesTest.class.getName());
+    private Audit audit = new LogOnlyAuditor(logger);
     /**
      * test <code>ExpandVariablesTest</code> constructor
      */
@@ -30,6 +36,7 @@ public class ExpandVariablesTest extends TestCase {
 
     public void setUp() throws Exception {
         // put set up code here
+        Messages.getMessageById(0); // This really shouldn't be necessary, but somebody's gotta do it
     }
 
     public void tearDown() throws Exception {
@@ -43,7 +50,7 @@ public class ExpandVariablesTest extends TestCase {
 
         String inputMessage = "Blah message blah ${var1}";
         String expectedOutputMessage = "Blah message blah value_variable1";
-        String processedMessage = ExpandVariables.process(inputMessage, variables);
+        String processedMessage = ExpandVariables.process(inputMessage, variables, audit);
         assertTrue(processedMessage.indexOf(value) >= 0);
         assertEquals(processedMessage, expectedOutputMessage);
     }
@@ -57,7 +64,7 @@ public class ExpandVariablesTest extends TestCase {
 
         String inputMessage = "Blah message blah ${var1} and more blah ${var2}";
         String expectedOutputMessage = "Blah message blah value_variable1 and more blah value_variable2";
-        String processedMessage = ExpandVariables.process(inputMessage, variables);
+        String processedMessage = ExpandVariables.process(inputMessage, variables, audit);
         assertTrue(processedMessage.indexOf(value1) >= 0);
         assertEquals(processedMessage, expectedOutputMessage);
     }
@@ -69,7 +76,7 @@ public class ExpandVariablesTest extends TestCase {
 
         final String prefix = "Blah message blah ";
         String inputMessage = prefix + "${var2}";
-        String out = ExpandVariables.process(inputMessage, variables);
+        String out = ExpandVariables.process(inputMessage, variables, audit);
         assertEquals(out, prefix);
     }
 
@@ -82,16 +89,16 @@ public class ExpandVariablesTest extends TestCase {
         Map<String, Object> vars = new HashMap<String, Object>();
         vars.put("foo", new String[] { "bar", "baz"});
 
-        String out1 = ExpandVariables.process("${foo}", vars);
+        String out1 = ExpandVariables.process("${foo}", vars, audit);
         assertEquals(out1, "bar, baz"); // Default delimiter is ", "
 
-        String out2 = ExpandVariables.process("<foo><val>" + "${foo|</val><val>}" + "</val></foo>", vars);
+        String out2 = ExpandVariables.process("<foo><val>" + "${foo|</val><val>}" + "</val></foo>", vars, audit);
         assertEquals(out2, "<foo><val>bar</val><val>baz</val></foo>");
 
-        String out3 = ExpandVariables.process("${foo|}", vars);
+        String out3 = ExpandVariables.process("${foo|}", vars, audit);
         assertEquals(out3, "barbaz");
 
-        String out4 = ExpandVariables.process("${foo||}", vars);
+        String out4 = ExpandVariables.process("${foo||}", vars, audit);
         assertEquals(out4, "bar|baz");
     }
 
@@ -100,20 +107,24 @@ public class ExpandVariablesTest extends TestCase {
             put("foo", new Object[] { "bar", "baz" });
         }};
 
-        String out1 = ExpandVariables.process("${foo[0]}", vars);
+        String out1 = ExpandVariables.process("${foo[0]}", vars, audit);
         assertEquals(out1, "bar");
 
-        String out2 = ExpandVariables.process("${foo[1]}", vars);
+        String out2 = ExpandVariables.process("${foo[1]}", vars, audit);
         assertEquals(out2, "baz");
 
+        // Array index out of bounds -- log a warning, return empty string
+        String out3 = ExpandVariables.process("${foo[2]}", vars, audit);
+        assertEquals(out3, "");
+
         try {
-            ExpandVariables.process("${foo[asdf]}", vars);
+            ExpandVariables.process("${foo[asdf]}", vars, audit);
             fail("Should have thrown--non-numeric subscript");
         } catch (IllegalArgumentException e) {
         }
 
         try {
-            ExpandVariables.process("${foo[-1]}", vars);
+            ExpandVariables.process("${foo[-1]}", vars, audit);
             fail("Should have thrown--negative subscript");
         } catch (IllegalArgumentException e) {
         }

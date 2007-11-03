@@ -43,6 +43,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
     private boolean showTitleLabel;
     private final boolean issueMode;
 
+    private static final String AUTOMATIC = "Automatic";
     private static final String X_509_SUBJECT_NAME = "X.509 Subject Name";
     private static final String EMAIL_ADDRESS = "Email Address";
     private static final String WINDOWS_DOMAIN_QUALIFIED_NAME = "Windows Domain Qualified Name";
@@ -57,6 +58,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
             enableDisable();
         }
     };
+    private static final String FAKE_URI_AUTOMATIC = "urn:l7tech.com:automatic";
 
     /**
      * Creates new form SubjectConfirmationNameIdentifierWizardStepPanel
@@ -138,12 +140,16 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
                     break;
             }
 
+            boolean chose = false;
             for (String formatUri : nameFormatsMap.keySet()) {
                 if (formatUri.equals(sia.getNameIdentifierFormat())) {
                     nameFormatsMap.get(formatUri).setSelected(true);
+                    chose = true;
                     break;
                 }
             }
+
+            if (!chose) nameFormatsMap.get(FAKE_URI_AUTOMATIC).setSelected(true);
 
             enableDisable();
         } else {
@@ -187,7 +193,8 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
                 for (Map.Entry<String, JToggleButton> entry : nameFormatsMap.entrySet()) {
                     JToggleButton jc = entry.getValue();
                     if (jc.isSelected() && jc.isEnabled()) {
-                        sia.setNameIdentifierFormat(entry.getKey());
+                        final String uri = entry.getKey();
+                        sia.setNameIdentifierFormat(FAKE_URI_AUTOMATIC.equals(uri) ? null : uri);
                         break;
                     }
                 }
@@ -222,6 +229,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
     private void initialize() {
         setLayout(new BorderLayout());
 
+        JToggleButton automaticButton = null;
         JToggleButton x509SubjectNameButton;
         JToggleButton emailAddressButton;
         JToggleButton windowsDomainQualifiedNameButton;
@@ -232,23 +240,21 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         JToggleButton transientIdentifierButton;
 
         if (issueMode) {
+            automaticButton = new JRadioButton(AUTOMATIC);
             x509SubjectNameButton = new JRadioButton(X_509_SUBJECT_NAME);
             emailAddressButton = new JRadioButton(EMAIL_ADDRESS);
             windowsDomainQualifiedNameButton = new JRadioButton(WINDOWS_DOMAIN_QUALIFIED_NAME);
-            kerberosButton = new JRadioButton(KERBEROS_PRINCIPAL_NAME);
-            entityIdentifierButton = new JRadioButton(ENTITY_IDENTIFIER);
-            persistentIdentifierButton = new JRadioButton(PERSISTENT_IDENTIFIER);
-            transientIdentifierButton = new JRadioButton(TRANSIENT_IDENTIFIER);
             unspecifiedButton = new JRadioButton(UNSPECIFIED);
+            kerberosButton = null;
+            entityIdentifierButton = null;
+            persistentIdentifierButton = null;
+            transientIdentifierButton = null;
 
             ButtonGroup bg = new ButtonGroup();
+            bg.add(automaticButton);
             bg.add(x509SubjectNameButton);
             bg.add(emailAddressButton);
             bg.add(windowsDomainQualifiedNameButton);
-            bg.add(kerberosButton);
-            bg.add(entityIdentifierButton);
-            bg.add(persistentIdentifierButton);
-            bg.add(transientIdentifierButton);
             bg.add(unspecifiedButton);
 
             includeNameCheckBox.addActionListener(enableDisableListener);
@@ -278,14 +284,16 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
             valueFromUserRadioButton.setVisible(false);
         }
 
-        formatsButtonPanel.add(x509SubjectNameButton, constraints(0, 0));
-        formatsButtonPanel.add(emailAddressButton, constraints(0, 1));
-        formatsButtonPanel.add(windowsDomainQualifiedNameButton, constraints(0, 2));
-        formatsButtonPanel.add(kerberosButton, constraints(0, 3));
-        formatsButtonPanel.add(entityIdentifierButton, constraints(1, 0));
-        formatsButtonPanel.add(persistentIdentifierButton, constraints(1, 1));
-        formatsButtonPanel.add(transientIdentifierButton, constraints(1, 2));
-        formatsButtonPanel.add(unspecifiedButton, constraints(1, 3));
+        RC rc = new RC(0,0);
+        addButton(automaticButton, rc);
+        addButton(x509SubjectNameButton, rc);
+        addButton(emailAddressButton, rc);
+        addButton(windowsDomainQualifiedNameButton, rc);
+        addButton(kerberosButton, rc);
+        addButton(entityIdentifierButton, rc);
+        addButton(persistentIdentifierButton, rc);
+        addButton(transientIdentifierButton, rc);
+        addButton(unspecifiedButton, rc);
 
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
@@ -296,14 +304,15 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         }
 
         nameFormatsMap = new HashMap<String, JToggleButton>();
-        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT, x509SubjectNameButton);
-        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_EMAIL, emailAddressButton);
-        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_WINDOWS, windowsDomainQualifiedNameButton);
-        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED, unspecifiedButton);
-        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_KERBEROS, kerberosButton);
-        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_ENTITY, entityIdentifierButton);
-        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_PERSISTENT, persistentIdentifierButton);
-        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_TRANSIENT, transientIdentifierButton);
+        addNameFormat(FAKE_URI_AUTOMATIC, automaticButton);
+        addNameFormat(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT, x509SubjectNameButton);
+        addNameFormat(SamlConstants.NAMEIDENTIFIER_EMAIL, emailAddressButton);
+        addNameFormat(SamlConstants.NAMEIDENTIFIER_WINDOWS, windowsDomainQualifiedNameButton);
+        addNameFormat(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED, unspecifiedButton);
+        addNameFormat(SamlConstants.NAMEIDENTIFIER_KERBEROS, kerberosButton);
+        addNameFormat(SamlConstants.NAMEIDENTIFIER_ENTITY, entityIdentifierButton);
+        addNameFormat(SamlConstants.NAMEIDENTIFIER_PERSISTENT, persistentIdentifierButton);
+        addNameFormat(SamlConstants.NAMEIDENTIFIER_TRANSIENT, transientIdentifierButton);
 
         enableDisable();
 
@@ -314,6 +323,30 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
                     notifyListeners();
                 }
             });
+        }
+    }
+
+    private void addNameFormat(String uri, JToggleButton automaticButton) {
+        if (automaticButton != null) nameFormatsMap.put(uri, automaticButton);
+    }
+
+    private static class RC {
+        int row, col;
+
+        public RC(int row, int col) {
+            this.row = row;
+            this.col = col;
+        }
+    }
+
+    private void addButton(JToggleButton tb, RC rc) {
+        if (tb == null) return;
+
+        formatsButtonPanel.add(tb, new GridBagConstraints(rc.col, rc.row++, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
+
+        if (rc.row == 4) {
+            rc.row = 0;
+            rc.col++;
         }
     }
 
@@ -337,10 +370,6 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         valueSpecifiedRadio.setEnabled(enable);
         valueFromCredsRadioButton.setEnabled(enable);
         valueFromUserRadioButton.setEnabled(enable);
-    }
-
-    private GridBagConstraints constraints(int gridx, int gridy) {
-        return new GridBagConstraints(gridx, gridy, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,0,0,0), 0, 0);
     }
 
     /**
@@ -390,6 +419,8 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
             for (JToggleButton method : allFormats) {
                 method.setEnabled(v1Map.containsValue(method));
             }
+            JToggleButton autobutton = nameFormatsMap.get(FAKE_URI_AUTOMATIC);
+            if (autobutton != null) autobutton.setEnabled(true);
         }
     }
 }

@@ -205,7 +205,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
                 if (failedHost != null)
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_FAILOVER_FROM_TO,
-                                        new String[] { failedHost, host });
+                            failedHost, host);
                 URL url = new URL(u.getProtocol(), host, u.getPort(), u.getFile());
                 AssertionStatus result = tryUrl(context, url);
                 if (result == AssertionStatus.NONE) {
@@ -265,12 +265,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 if (vars == null) {
                     vars = context.getVariableMap(varNames, auditor);
                 }
-                login = ExpandVariables.process(login, vars);
-                password = ExpandVariables.process(password, vars);
-                if (domain != null) domain = ExpandVariables.process(domain, vars);
-                if (host != null) host = ExpandVariables.process(host, vars);
+                login = ExpandVariables.process(login, vars, auditor);
+                password = ExpandVariables.process(password, vars, auditor);
+                if (domain != null) domain = ExpandVariables.process(domain, vars, auditor);
+                if (host != null) host = ExpandVariables.process(host, vars, auditor);
 
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_LOGIN_INFO, new String[] {login});
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_LOGIN_INFO, login);
                 if (domain != null && domain.length() > 0) {
                     if (host == null) {
                         host = ServerConfig.getInstance().getPropertyCached("clusterHost");
@@ -461,7 +461,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             if (status != HttpConstants.STATUS_OK && retryRequested) {
                 // retry after if requested by a routing result listener
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, new String[] {url.getPath(), String.valueOf(status)});
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, url.getPath(), String.valueOf(status));
                 return reallyTryUrl(context, routedRequestParams, url, false, vars);
             }
 
@@ -555,17 +555,17 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
             // Handle missing content type error
             if (status == HttpConstants.STATUS_OK && outerContentType == null) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOCONTENTTYPE, new String[]{Integer.toString(status)});
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOCONTENTTYPE, Integer.toString(status));
                 responseOk = false;
             } else if (data.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
                 context.getResponse().initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
                 responseOk = false;
             } else if (status >= 400 && data.isFailOnErrorStatus() && !passthroughSoapFault) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, new String[] {Integer.toString(status)});
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
                 responseOk = false;
             } else if (outerContentType != null) { // response OK
                 if (responseStream == null) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_CTYPEWOUTPAYLOAD, new String[]{outerContentType.getFullValue()});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_CTYPEWOUTPAYLOAD, outerContentType.getFullValue());
                 } else {
                     StashManager stashManager = stashManagerFactory.createStashManager();
                     context.getResponse().initialize(stashManager, outerContentType, responseStream);
@@ -583,7 +583,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         if (url == null) {
             String psurl;
             if (urlUsesVariables) {
-               psurl = ExpandVariables.process(data.getProtectedServiceUrl(), context.getVariableMap(varNames, auditor));
+               psurl = ExpandVariables.process(data.getProtectedServiceUrl(), context.getVariableMap(varNames, auditor), auditor);
             } else {
                psurl = data.getProtectedServiceUrl();
             }

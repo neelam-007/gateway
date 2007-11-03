@@ -1,25 +1,24 @@
 package com.l7tech.server.log;
 
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.util.SoapFaultManager;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
-import java.util.logging.*;
+import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.io.IOException;
-
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
+import java.util.logging.*;
 
 /**
  * Handles the traffic logger functionality. Records traffic information to a log. Where and what to log
@@ -120,7 +119,7 @@ public class TrafficLogger implements ApplicationContextAware {
             if (!enabled) return;
             StringBuffer tolog = new StringBuffer();
             if (varsUsed.length > 0) {
-                tolog.append(ExpandVariables.process(detail, pec.getVariableMap(varsUsed, auditor)));
+                tolog.append(ExpandVariables.process(detail, pec.getVariableMap(varsUsed, auditor), auditor));
             } else {
                 tolog.append(detail);
             }

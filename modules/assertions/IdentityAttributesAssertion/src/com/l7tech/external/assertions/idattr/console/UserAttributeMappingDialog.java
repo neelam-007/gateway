@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2007 Layer 7 Technologies Inc.
  */
-package com.l7tech.console.panels;
+package com.l7tech.external.assertions.idattr.console;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
@@ -21,7 +21,7 @@ import java.util.ArrayList;
  * @author alex
  */
 public class UserAttributeMappingDialog extends JDialog {
-    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.UserAttributeMappingDialog");
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.idattr.console.resources.UserAttributeMappingDialog");
 
     private JRadioButton builtInAttributeRadioButton;
     private JRadioButton customAttributeRadioButton;
@@ -47,6 +47,7 @@ public class UserAttributeMappingDialog extends JDialog {
     };
 
     private boolean allowCustom = false;
+    private final String prefix;
 
     private void enableRadioState() {
         final boolean builtin = builtInAttributeRadioButton.isSelected();
@@ -55,23 +56,27 @@ public class UserAttributeMappingDialog extends JDialog {
         customAttributeRadioButton.setEnabled(allowCustom);
     }
 
-    public UserAttributeMappingDialog(Frame owner, IdentityMapping mapping, IdentityProviderConfig config) throws HeadlessException {
+    public UserAttributeMappingDialog(Frame owner, IdentityMapping mapping, IdentityProviderConfig config, String prefix) throws HeadlessException {
         super(owner, resources.getString("dialog.title"), true);
         this.mapping = mapping;
         this.config = config;
+        this.prefix = prefix;
         init();
     }
 
-    public UserAttributeMappingDialog(Dialog owner, IdentityMapping mapping, IdentityProviderConfig config) throws HeadlessException {
+    public UserAttributeMappingDialog(Dialog owner, IdentityMapping mapping, IdentityProviderConfig config, String prefix) throws HeadlessException {
         super(owner, resources.getString("dialog.title"), true);
         this.mapping = mapping;
         this.config = config;
+        this.prefix = prefix;
         init();
     }
 
     private void init() {
         Utilities.setEscKeyStrokeDisposes(this);
 
+        variablePrefixLabel.setText(prefix + " . ");
+        
         providerNameLabel.setBorder(LineBorder.createGrayLineBorder());
         providerNameLabel.setText(config.getName());
 

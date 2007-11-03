@@ -19,9 +19,10 @@ public class AttributeStatement extends SubjectStatement {
                               KeyInfoInclusionType keyInfoType,
                               NameIdentifierInclusionType nameIdType,
                               String overrideNameValue,
-                              String overrideNameFormat)
+                              String overrideNameFormat,
+                              String nameQualifier)
     {
-        super(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
+        super(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier);
         this.attributes = attributes;
     }
 

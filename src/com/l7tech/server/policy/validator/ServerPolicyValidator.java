@@ -14,15 +14,14 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.VirtualGroup;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
@@ -30,12 +29,12 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.server.EntityFinder;
 import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.transport.jms.JmsEndpointManager;
-import com.l7tech.server.EntityFinder;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.service.PublishedService;
 import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
@@ -481,8 +480,6 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                             idhascert = true;
                         }
                     }
-                } else if (identityAssertion instanceof MappingAssertion) {
-                    idexists = true;
                 } else {
                     throw new RuntimeException("Type not supported " + identityAssertion.getClass().getName());
                 }

@@ -258,21 +258,21 @@ public class SamlGenerator {
             KeyInfoInclusionType keyInfoType = thumb ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
             if (!SELECTION_NONE.equals(authenticationMethod)) {
                 subjectStatement =
-                    SubjectStatement.createAuthenticationStatement(credentials, confirmationMethod, keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null);
+                    SubjectStatement.createAuthenticationStatement(credentials, confirmationMethod, keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
             } else if (attributeNameTextField.getText().length() > 0) {
                 String attribute = attributeNameTextField.getText();
                 String attributeNs = attributeNamespaceTextField.getText();
                 if (attributeNs.length() == 0) attributeNs = null;
                 String attributeValue = attributeValueTextField.getText();
                 subjectStatement =
-                    SubjectStatement.createAttributeStatement(credentials, confirmationMethod, attribute, attributeNs, attributeValue, keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null);
+                    SubjectStatement.createAttributeStatement(credentials, confirmationMethod, attribute, attributeNs, attributeValue, keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
             } else if (resourceTextField.getText().length() > 0) {
                 String resource = resourceTextField.getText();
                 String action = actionTextField.getText();
                 String actionNamespace = actionNamespaceTextField.getText();
                 if (actionNamespace.length() == 0) actionNamespace = null;
                 subjectStatement =
-                    SubjectStatement.createAuthorizationStatement(credentials, confirmationMethod, keyInfoType, resource, action, actionNamespace, NameIdentifierInclusionType.FROM_CREDS, null, null);
+                    SubjectStatement.createAuthorizationStatement(credentials, confirmationMethod, keyInfoType, resource, action, actionNamespace, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
             }
             else if (inputMessageTextArea.getText().length() > 0 && signMessageCheckBox.isSelected()) {
                 signonly = true;

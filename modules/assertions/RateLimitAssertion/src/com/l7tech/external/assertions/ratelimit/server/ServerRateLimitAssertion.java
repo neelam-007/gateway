@@ -440,7 +440,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     }
 
     private String getConterName(PolicyEnforcementContext context) {
-        return ExpandVariables.process(counterNameRaw, context.getVariableMap(variablesUsed, auditor));
+        return ExpandVariables.process(counterNameRaw, context.getVariableMap(variablesUsed, auditor), auditor);
     }
 
     // Caller should ensure that only one thread at a time ever calls this.

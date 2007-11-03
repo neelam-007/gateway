@@ -154,7 +154,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
         CounterIDManager counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
         String resolvedCounterName = assertion.getCounterName();
         if (varsUsed.length > 0) {
-            resolvedCounterName = ExpandVariables.process(resolvedCounterName, context.getVariableMap(varsUsed, auditor));
+            resolvedCounterName = ExpandVariables.process(resolvedCounterName, context.getVariableMap(varsUsed, auditor), auditor);
         }
         try {
             counterid = counterIDManager.getCounterId(resolvedCounterName, user);

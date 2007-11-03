@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.util.res;
 
+import com.l7tech.common.audit.Audit;
 import com.l7tech.common.urlcache.UrlResolver;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.policy.AssertionResourceInfo;
@@ -25,8 +25,10 @@ import java.util.regex.PatternSyntaxException;
  */
 public abstract class ResourceGetter<R> {
     protected static final Pattern MATCH_ALL = Pattern.compile(".");
+    protected final Audit audit;
 
-    protected ResourceGetter() {
+    protected ResourceGetter(Audit audit) {
+        this.audit = audit;
     }
 
     public abstract void close();
@@ -157,7 +159,8 @@ public abstract class ResourceGetter<R> {
                                            AssertionResourceInfo ri,
                                            ResourceObjectFactory<R> rof,
                                            UrlFinder urlFinder,
-                                           UrlResolver<R> urlResolver)
+                                           UrlResolver<R> urlResolver,
+                                           Audit audit)
             throws ServerPolicyException
     {
         if (ri == null) throw new ServerPolicyException(assertion, "Assertion contains no ResourceInfo provided");
@@ -166,11 +169,11 @@ public abstract class ResourceGetter<R> {
         // allowed inside the top-level policy package.
         try {
             if (ri instanceof MessageUrlResourceInfo) {
-                return new MessageUrlResourceGetter<R>((MessageUrlResourceInfo)ri, urlResolver, urlFinder);
+                return new MessageUrlResourceGetter<R>((MessageUrlResourceInfo)ri, urlResolver, urlFinder, audit);
             } else if (ri instanceof SingleUrlResourceInfo) {
-                return new SingleUrlResourceGetter<R>(assertion, (SingleUrlResourceInfo)ri, urlResolver);
+                return new SingleUrlResourceGetter<R>(assertion, (SingleUrlResourceInfo)ri, urlResolver, audit);
             } else if (ri instanceof StaticResourceInfo) {
-                return new StaticResourceGetter<R>(assertion, (StaticResourceInfo)ri, rof);
+                return new StaticResourceGetter<R>(assertion, (StaticResourceInfo)ri, rof, audit);
             } else
                 throw new ServerPolicyException(assertion, "Unsupported XSLT resource info: " + ri.getClass().getName());
         } catch (PatternSyntaxException e) {

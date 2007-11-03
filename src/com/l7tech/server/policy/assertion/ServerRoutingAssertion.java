@@ -221,7 +221,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             SubjectStatement statement = SubjectStatement.createAuthenticationStatement(
                                                             svInputCredentials,
                                                             SubjectStatement.SENDER_VOUCHES,
-                                                            keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null);
+                                                            keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
             ag.attachStatement(document, statement, samlOptions);
         }
     }    

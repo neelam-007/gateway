@@ -523,7 +523,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                     }
                 } else {
                     final String pattern = rule.getCustomPattern();
-                    final String value = ExpandVariables.process(pattern, vars);
+                    final String value = ExpandVariables.process(pattern, vars, auditor);
                     dst.put(name, value);
                     if (logger.isLoggable(Level.FINEST)) {
                         logger.finest("Propagating a JMS message property with custom pattern (name=" + name + ", pattern=" + pattern + ", value=" + value + ")");

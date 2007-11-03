@@ -112,7 +112,7 @@ public class SoapFaultManager implements ApplicationContextAware {
             case SoapFaultLevel.DROP_CONNECTION:
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
-                output = ExpandVariables.process(faultLevelInfo.getFaultTemplate(), pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor));
+                output = ExpandVariables.process(faultLevelInfo.getFaultTemplate(), pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor), auditor);
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 try {

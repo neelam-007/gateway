@@ -7,7 +7,6 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 /**
  * @author emil
- * @version Feb 1, 2005
  */
 public class AuthorizationStatement extends SubjectStatement {
     private String resource;
@@ -21,9 +20,10 @@ public class AuthorizationStatement extends SubjectStatement {
                                   KeyInfoInclusionType keyInfoType,
                                   NameIdentifierInclusionType nameIdType,
                                   String overrideNameValue,
-                                  String overrideNameFormat)
+                                  String overrideNameFormat,
+                                  String nameQualifier)
     {
-        super(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
+        super(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier);
         this.resource = resource;
         this.action = action;
         this.actionNamespace = actionNamespace;

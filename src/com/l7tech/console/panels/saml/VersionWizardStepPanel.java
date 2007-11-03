@@ -2,7 +2,6 @@ package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
-import com.l7tech.policy.assertion.SamlIssuerAssertion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,7 +20,6 @@ public class VersionWizardStepPanel extends WizardStepPanel {
     private JRadioButton radioButtonVersion2;
     private JRadioButton radioButtonAnyVersion;
     private JLabel versionLabel;
-    private JCheckBox signAssertionCheckBox;
     private boolean issueMode;
 
     /**
@@ -88,11 +86,6 @@ public class VersionWizardStepPanel extends WizardStepPanel {
                 radioButtonVersion2.setSelected(true);
                 break;
         }
-
-        if (issueMode && spa instanceof SamlIssuerAssertion) {
-            SamlIssuerAssertion sia = (SamlIssuerAssertion) spa;
-            signAssertionCheckBox.setSelected(sia.isSignAssertion());
-        }
     }
 
     /**
@@ -118,11 +111,6 @@ public class VersionWizardStepPanel extends WizardStepPanel {
         } else if(radioButtonVersion2.isSelected()) {
             spa.setVersion(Integer.valueOf(2));
         }
-
-        if (issueMode && spa instanceof SamlIssuerAssertion) {
-            SamlIssuerAssertion sia = (SamlIssuerAssertion) spa;
-            sia.setSignAssertion(signAssertionCheckBox.isSelected());
-        }
     }
 
     private void initialize() {
@@ -140,10 +128,8 @@ public class VersionWizardStepPanel extends WizardStepPanel {
             radioButtonVersion1.setToolTipText("Issue a Version 1.1 SAML Assertion");
             radioButtonVersion2.setText("Version 2.0");
             radioButtonVersion2.setToolTipText("Issue a Version 2.0 SAML Assertion");
-            signAssertionCheckBox.setVisible(true);
         } else {
             versionGroup.add(radioButtonAnyVersion);
-            signAssertionCheckBox.setVisible(false);
         }
 
         if (showTitleLabel) {

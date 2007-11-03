@@ -31,7 +31,7 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Map vars = context.getVariableMap(varsUsed, auditor);
-        String value = ExpandVariables.process(assertion.getExpression(), vars);
+        String value = ExpandVariables.process(assertion.getExpression(), vars, auditor);
         context.setVariable(assertion.getVariableToSet(), value);
         return AssertionStatus.NONE;
     }

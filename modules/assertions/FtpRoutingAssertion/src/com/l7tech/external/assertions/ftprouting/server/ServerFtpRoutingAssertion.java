@@ -253,7 +253,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     private String expandVariables(PolicyEnforcementContext context, String pattern) {
         final String[] variablesUsed = ExpandVariables.getReferencedNames(pattern);
         final Map<String, Object> vars = context.getVariableMap(variablesUsed, _auditor);
-        return ExpandVariables.process(pattern, vars);
+        return ExpandVariables.process(pattern, vars, _auditor);
     }
 
     /**

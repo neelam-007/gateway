@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy.assertion.alert;
 
 import com.l7tech.common.audit.AssertionMessages;
@@ -112,7 +109,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion implement
             message.addRecipient(javax.mail.Message.RecipientType.TO, address);
             message.setFrom(fromAddress);
             message.setSubject(ass.getSubject());
-            String body = ExpandVariables.process(ass.messageString(), context.getVariableMap(varsUsed, auditor));
+            String body = ExpandVariables.process(ass.messageString(), context.getVariableMap(varsUsed, auditor), auditor);
             message.setText(body);
             Transport.send(message);
         } catch (MessagingException e) {

@@ -509,7 +509,7 @@ public class WssDecoratorTest extends TestCase {
         final Context c = new Context();
         Element senderSamlToken = createSenderSamlToken(null,
                                                         TestDocuments.getEttkClientCertificate(),
-                                                        TestDocuments.getDotNetServerCertificate(),
+                null, TestDocuments.getDotNetServerCertificate(),
                                                         TestDocuments.getDotNetServerPrivateKey(),
                                                         version);
         return new TestDocument(c,
@@ -532,7 +532,7 @@ public class WssDecoratorTest extends TestCase {
         final Context c = new Context();
         Element senderSamlToken = createSenderSamlToken("fbunky",
                                                         null,
-                                                        TestDocuments.getDotNetServerCertificate(),
+                null, TestDocuments.getDotNetServerCertificate(),
                                                         TestDocuments.getDotNetServerPrivateKey(),
                                                         version);
         return new TestDocument(c,
@@ -550,7 +550,7 @@ public class WssDecoratorTest extends TestCase {
 
     private Element createSenderSamlToken(String subjectNameIdentifierValue,
                                           X509Certificate subjectCert,
-                                          X509Certificate issuerCert,
+                                          String nameQualifier, X509Certificate issuerCert,
                                           PrivateKey issuerPrivateKey,
                                           int version)
       throws Exception {
@@ -573,7 +573,7 @@ public class WssDecoratorTest extends TestCase {
             creds = LoginCredentials.makePasswordCredentials(subjectNameIdentifierValue, "secret".toCharArray(), HttpBasic.class);
             confirmationMethod = SubjectStatement.SENDER_VOUCHES;
         }
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, confirmationMethod, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, confirmationMethod, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
         return generator.createAssertion(subjectStatement, samlOptions).getDocumentElement();
     }

@@ -6,6 +6,7 @@
 package com.l7tech.server.util.res;
 
 import com.l7tech.common.urlcache.UrlResolver;
+import com.l7tech.common.audit.Audit;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -22,10 +23,11 @@ abstract class UrlResourceGetter<R> extends ResourceGetter<R> {
      * Initialize common code for URL based resource getters.
      *
      * @param urlResolver   strategy for turning a URL into a resource object.  Must not be null.
+     * @param audit
      */
-    protected UrlResourceGetter(UrlResolver<R> urlResolver)
+    protected UrlResourceGetter(UrlResolver<R> urlResolver, Audit audit)
     {
-        super();
+        super(audit);
         if (urlResolver == null) throw new NullPointerException("A URL resolver is required.");
         this.urlResolver = urlResolver;
     }

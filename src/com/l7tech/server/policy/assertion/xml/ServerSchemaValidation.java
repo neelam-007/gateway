@@ -112,11 +112,8 @@ public class ServerSchemaValidation
             }
         };
 
-        this.resourceGetter = ResourceGetter.createResourceGetter(assertion,
-                                                                  resourceInfo,
-                                                                  rof,
-                                                                  null,
-                                                                  urlResolver);
+        this.resourceGetter = ResourceGetter.createResourceGetter(
+                assertion, resourceInfo, rof, null, urlResolver, auditor); 
     }
 
     /**

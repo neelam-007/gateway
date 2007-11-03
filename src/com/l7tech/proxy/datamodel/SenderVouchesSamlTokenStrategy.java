@@ -80,7 +80,7 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
         LoginCredentials credentials = new LoginCredentials(subjectUsername, null, HttpBasic.class);
         SubjectStatement authenticationStatement = SubjectStatement.createAuthenticationStatement(credentials,
                                                                                                   SubjectStatement.SENDER_VOUCHES,
-                                                                                                  KeyInfoInclusionType.STR_THUMBPRINT, NameIdentifierInclusionType.FROM_CREDS, null, null);
+                                                                                                  KeyInfoInclusionType.STR_THUMBPRINT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
         SamlAssertionGenerator sag = new SamlAssertionGenerator(si);
         SecurityTokenResolver thumbResolver = new SimpleSecurityTokenResolver(new X509Certificate[] { clientCertificate, ssg.getServerCertificate() });
 

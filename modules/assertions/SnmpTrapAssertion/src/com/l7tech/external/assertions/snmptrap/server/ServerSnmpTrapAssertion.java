@@ -98,7 +98,7 @@ public class ServerSnmpTrapAssertion extends AbstractServerAssertion implements 
         pdu.add(new VariableBinding(SnmpConstants.sysUpTime, new TimeTicks(uptimeSeconds * 100))); // TimeTicks is s/100
         pdu.add(new VariableBinding(SnmpConstants.snmpTrapOID, trapOid));
 
-        String body = ExpandVariables.process(ass.getErrorMessage(), context.getVariableMap(varsUsed, auditor));
+        String body = ExpandVariables.process(ass.getErrorMessage(), context.getVariableMap(varsUsed, auditor), auditor);
         OctetString errorMessage;
         try {
             errorMessage = new OctetString(body.getBytes("UTF-8"));

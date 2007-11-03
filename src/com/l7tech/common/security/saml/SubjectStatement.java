@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 package com.l7tech.common.security.saml;
 
@@ -18,7 +16,6 @@ import java.util.HashMap;
  * assertions.
  *
  * @author emil
- * @version Jan 31, 2005
  * @see com.l7tech.common.security.saml.SamlAssertionGenerator
  */
 public abstract class SubjectStatement {
@@ -56,14 +53,18 @@ public abstract class SubjectStatement {
      * @param nameIdType
      * @param overrideNameValue a value to override the NameIdentifier value from the credentials
      * @param overrideNameFormat a value to override the NameIdentifier format from the credentials
+     * @param nameQualifier
      * @return the authentication statement for the subject statement, confirmation and method
      */
     public static SubjectStatement createAuthenticationStatement(LoginCredentials credentials,
                                                                  Confirmation confirmation,
                                                                  KeyInfoInclusionType keyInfoType,
                                                                  NameIdentifierInclusionType nameIdType,
-                                                                 String overrideNameValue, String overrideNameFormat) {
-        return new AuthenticationStatement(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
+                                                                 String overrideNameValue,
+                                                                 String overrideNameFormat,
+                                                                 String nameQualifier)
+    {
+        return new AuthenticationStatement(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier);
     }
 
     /**
@@ -75,6 +76,7 @@ public abstract class SubjectStatement {
      * @param nameIdType
      * @param overrideNameValue a value to override the NameIdentifier value from the credentials
      * @param overrideNameFormat a value to override the NameIdentifier format from the credentials
+     * @param nameQualifier
      * @return the authentication statement for the subject statement, confirmation and method
      */
     public static SubjectStatement createAttributeStatement(LoginCredentials credentials,
@@ -85,13 +87,14 @@ public abstract class SubjectStatement {
                                                             KeyInfoInclusionType keyInfoType,
                                                             NameIdentifierInclusionType nameIdType,
                                                             String overrideNameValue,
-                                                            String overrideNameFormat)
+                                                            String overrideNameFormat,
+                                                            String nameQualifier)
     {
         Attribute[] attributes = new Attribute[] {
             new Attribute(attributeName, attributeNamespaceOrFormat, attributeValue)
         };
 
-        return new AttributeStatement(credentials, confirmation, attributes, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
+        return new AttributeStatement(credentials, confirmation, attributes, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier);
     }
 
     /**
@@ -104,6 +107,7 @@ public abstract class SubjectStatement {
      * @param nameIdType
      * @param overrideNameValue a value to override the NameIdentifier value from the credentials
      * @param overrideNameFormat a value to override the NameIdentifier format from the credentials
+     * @param nameQualifier
      * @return the authentication statement for the subject statement, confirmation and method
      */
     public static SubjectStatement createAttributeStatement(LoginCredentials credentials,
@@ -112,9 +116,10 @@ public abstract class SubjectStatement {
                                                             KeyInfoInclusionType keyInfoType,
                                                             NameIdentifierInclusionType nameIdType,
                                                             String overrideNameValue,
-                                                            String overrideNameFormat)
+                                                            String overrideNameFormat,
+                                                            String nameQualifier)
     {
-        return new AttributeStatement(credentials, confirmation, attributes, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
+        return new AttributeStatement(credentials, confirmation, attributes, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier);
     }
 
 
@@ -127,14 +132,17 @@ public abstract class SubjectStatement {
      * @param nameIdType
      * @param overrideNameValue @return the sender vouches subject statement
      * @param overrideNameFormat
+     * @param nameQualifier
      */
     public static SubjectStatement createAuthorizationStatement(LoginCredentials credentials,
                                                                 Confirmation confirmation,
                                                                 KeyInfoInclusionType keyInfoType,
                                                                 String resource, String action, String actionNamespace,
-                                                                NameIdentifierInclusionType nameIdType, String overrideNameValue, String overrideNameFormat)
+                                                                NameIdentifierInclusionType nameIdType,
+                                                                String overrideNameValue, String overrideNameFormat,
+                                                                String nameQualifier)
     {
-        return new AuthorizationStatement(credentials, confirmation, resource, action, actionNamespace, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat);
+        return new AuthorizationStatement(credentials, confirmation, resource, action, actionNamespace, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier);
     }
 
     /**
@@ -152,11 +160,12 @@ public abstract class SubjectStatement {
                                KeyInfoInclusionType keyInfoType,
                                NameIdentifierInclusionType nameIdType,
                                String overrideNameValue, 
-                               String overrideNameFormat)
+                               String overrideNameFormat,
+                               String nameQualifier)
     {
-        if (credentials == null) {
-            throw new IllegalArgumentException();
-        }
+        if (credentials == null) throw new IllegalArgumentException();
+
+        this.nameQualifier = nameQualifier;
 
         CredentialFormat format = credentials.getFormat();
         if (HOLDER_OF_KEY.equals(confirmation)) {
