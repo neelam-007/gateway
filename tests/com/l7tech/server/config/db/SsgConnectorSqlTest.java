@@ -7,6 +7,7 @@ import junit.framework.Test;
 import java.util.logging.Logger;
 import java.util.Map;
 import java.util.EnumSet;
+import java.util.List;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -16,6 +17,7 @@ import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.PasswordPropertyCrypto;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
+import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.transport.SsgConnector.Endpoint;
 import org.hibernate.Session;
@@ -59,6 +61,15 @@ public class SsgConnectorSqlTest extends TestCase {
         c.putProperty("My funky property 4", "my funky prop value 4");
 
         new SsgConnectorSql(c).save(db);
+    }
+
+    public void testImportFtpProps() throws Exception {
+        Connection db = connectToDefaultPartitionDatabase();
+
+        List<SsgConnector> ftpConnectors = PartitionManager.getInstance().getPartition("default_").parseFtpEndpointsAsSsgConnectors();
+        for (SsgConnector ftpConnector : ftpConnectors) {
+            new SsgConnectorSql(ftpConnector).save(db);
+        }
     }
     
     private Connection connectToDefaultPartitionDatabase() throws Exception {

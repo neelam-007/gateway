@@ -2,6 +2,7 @@ package com.l7tech.common.transport;
 
 import com.l7tech.common.io.PortRange;
 import com.l7tech.common.io.PortOwner;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
@@ -426,7 +427,12 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
             try {
                 result = InetAddress.getByName(bindAddr);
             } catch (UnknownHostException e) {
-                throw new IllegalStateException(e); // Misconfigured bind address; should be IP literal, not hostname
+                logger.log(Level.WARNING, "Bad bindAddr hostname in connector oid " + getOid() + ": " + ExceptionUtils.getMessage(e));
+                try {
+                    return InetAddress.getByAddress(new byte[] { 127, 0, 0, 1 });
+                } catch (UnknownHostException e1) {
+                    throw new RuntimeException(e1); // can't happen
+                }
             }
         }
 

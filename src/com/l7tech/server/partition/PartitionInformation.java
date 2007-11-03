@@ -2,6 +2,7 @@ package com.l7tech.server.partition;
 
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.ArrayUtils;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
@@ -18,10 +19,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.Arrays;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -177,6 +175,66 @@ public class PartitionInformation{
         } finally {
             ResourceUtils.closeQuietly(fis);
         }
+    }
+
+    public List<SsgConnector> parseFtpEndpointsAsSsgConnectors() {
+        File ftpServerProps = new File(OSDetector.getOSSpecificFunctions(partitionId).getFtpServerConfig());
+        FileInputStream fis = null;
+        try {
+            Properties props = new Properties();
+            fis = new FileInputStream(ftpServerProps);
+            props.load(fis);
+
+            List<SsgConnector> ret = new ArrayList<SsgConnector>();
+
+            {
+                FtpEndpointHolder fb = getFtpEndPointByType(FtpEndpointType.BASIC_FTP);
+                updateFtpEndpoint(fb, props, "default");
+                SsgConnector basic = new SsgConnector();
+                basic.setScheme(SsgConnector.SCHEME_FTP);
+                basic.setPort(fb.getPort());
+                basic.setEnabled(fb.isEnabled());
+                basic.setName("Legacy FTP " + basic.getPort());
+                basic.setSecure(false);
+                basic.setEndpoints(SsgConnector.Endpoint.MESSAGE_INPUT.toString());
+                String addr = fb.getIpAddress();
+                if (addr != null && addr.length() < 1 || addr.equals("*")) addr = null;
+                basic.putProperty(SsgConnector.PROP_BIND_ADDRESS, addr);
+                basic.putProperty(SsgConnector.PROP_PORT_RANGE_START, fb.getPassivePortStart().toString());
+                basic.putProperty(SsgConnector.PROP_PORT_RANGE_COUNT, fb.getPassivePortCount().toString());
+                ret.add(basic);
+            }
+
+            {
+                FtpEndpointHolder fs = getFtpEndPointByType(FtpEndpointType.SSL_FTP_NOCLIENTCERT);
+                updateFtpEndpoint(fs, props, "secure");
+                SsgConnector sec = new SsgConnector();
+                sec.setScheme(SsgConnector.SCHEME_FTPS);
+                sec.setPort(fs.getPort());
+                sec.setSecure(true);
+                sec.setEnabled(fs.isEnabled());
+                sec.setClientAuth(SsgConnector.CLIENT_AUTH_NEVER);
+                sec.setEndpoints(SsgConnector.Endpoint.MESSAGE_INPUT.toString());
+                String addr = fs.getIpAddress();
+                if (addr != null && addr.length() < 1) addr = null;
+                sec.putProperty(SsgConnector.PROP_BIND_ADDRESS, addr);
+                sec.putProperty(SsgConnector.PROP_PORT_RANGE_START, fs.getPassivePortStart().toString());
+                sec.putProperty(SsgConnector.PROP_PORT_RANGE_COUNT, fs.getPassivePortCount().toString());
+                sec.setName("Legacy FTPS " + sec.getPort());
+                ret.add(sec);
+            }
+
+            return ret;
+
+        } catch (FileNotFoundException e) {
+            logger.warning("no FTP server properties file found for partition: " + partitionId);
+        } catch (IOException e) {
+            logger.warning("Error while reading the FTP server properties file for partition: " + partitionId);
+            logger.warning(e.getMessage());
+        } finally {
+            ResourceUtils.closeQuietly(fis);
+        }
+        return Collections.emptyList();
     }
 
     private void updateFtpEndpoint(FtpEndpointHolder ftpEndpointHolder, Properties props, String name) {

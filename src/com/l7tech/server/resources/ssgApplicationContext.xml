@@ -713,6 +713,7 @@
         <constructor-arg ref="stashManagerFactory"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
+        <constructor-arg ref="keystore"/>
         <constructor-arg ref="ssgConnectorManager"/>
     </bean>
 

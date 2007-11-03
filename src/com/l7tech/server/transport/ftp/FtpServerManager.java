@@ -32,6 +32,9 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.PrivateKey;
+import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
 
 /**
  * Creates and controls an embedded FTP server for each configured SsgConnector
@@ -46,6 +49,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
                             final StashManagerFactory stashManagerFactory,
                             final LicenseManager licenseManager,
                             final SsgKeyStoreManager ssgKeyStoreManager,
+                            final KeystoreUtils defaultKeystore,
                             final SsgConnectorManager ssgConnectorManager) {
         super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
 
@@ -55,6 +59,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
+        this.defaultKeystore = defaultKeystore;
         this.ssgConnectorManager = ssgConnectorManager;
     }
 
@@ -102,9 +107,20 @@ public class FtpServerManager extends TransportModule implements ApplicationList
     }
 
     private SsgKeyEntry findPrivateKey(SsgConnector connector) throws ListenerException {
+        if (!connector.getScheme().equals(SsgConnector.SCHEME_FTPS))
+            return null; // doesn't need one
+
         String alias = connector.getKeyAlias();
-        if (alias == null)
-            return null; // no private key configured
+        if (alias == null) {
+            // Use SSL key
+            try {
+                X509Certificate[] chain = defaultKeystore.getSSLCertChain();
+                PrivateKey pk = defaultKeystore.getSSLPrivateKey();
+                return new SsgKeyEntry(-1, "SSL", chain, pk);
+            } catch (KeyStoreException e) {
+                throw new ListenerException("Unable to find private key for connector id " + connector.getOid() + ": " + ExceptionUtils.getMessage(e), e);
+            }
+        }
         Long keystore = connector.getKeystoreOid();
         if (keystore == null) keystore = -1L;
 
@@ -249,6 +265,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
     private final SsgKeyStoreManager ssgKeyStoreManager;
+    private final KeystoreUtils defaultKeystore;
     private final SsgConnectorManager ssgConnectorManager;
     private final Map<Long, FtpServer> ftpServers = Collections.synchronizedMap(new HashMap<Long, FtpServer>());
     private Auditor auditor;
