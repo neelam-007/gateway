@@ -741,7 +741,7 @@
         <property name="ocspCache" ref="ocspCache"/>
     </bean>
 
-    <bean id="httpTransportModule" class="com.l7tech.server.transport.http.HttpTransportModule">
+    <bean id="httpTransportModule" class="com.l7tech.server.transport.http.HttpTransportModule" depends-on="systemAuditListener">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="masterPasswordManager"/>
         <constructor-arg ref="keystore"/>

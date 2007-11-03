@@ -1,6 +1,7 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.Component;
 import com.l7tech.common.security.MasterPasswordManager;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
@@ -13,6 +14,7 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.tomcat.*;
 import com.l7tech.server.transport.SsgConnectorManager;
@@ -123,7 +125,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         try {
             executor.start();
         } catch (org.apache.catalina.LifecycleException e) {
-            throw new LifecycleException("Unable to start executor for HTTP/HTTPS connections: " + ExceptionUtils.getMessage(e), e);
+            final String msg = "Unable to start executor for HTTP/HTTPS connections: " + ExceptionUtils.getMessage(e);
+            getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
+            throw new LifecycleException(msg, e);
         }
 
         engine = embedded.createEngine();
@@ -180,7 +184,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             } catch (NumberFormatException nfe) {
                 logger.warning("Unable to parse value of cluster property " + clusterProp + ": " + ExceptionUtils.getMessage(nfe));
             } catch (org.apache.catalina.LifecycleException e) {
-                logger.log(Level.SEVERE, "Unable to restart executor after changing property " + clusterProp + ": " + ExceptionUtils.getMessage(e), e);
+                final String msg = "Unable to restart executor after changing property " + clusterProp + ": " + ExceptionUtils.getMessage(e);
+                logger.log(Level.SEVERE, msg, e);
+                getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
             }
         }
     }
@@ -274,6 +280,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
             itworked = true;
         } catch (org.apache.catalina.LifecycleException e) {
+            String msg = "Unable to start HTTP listener subsystem: " + ExceptionUtils.getMessage(e);
+            getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
             throw new LifecycleException(e);
         } finally {
             if (!itworked)
@@ -598,7 +606,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             c.start();
             return c;
         } catch (org.apache.catalina.LifecycleException e) {
-            throw new ListenerException("Unable to start HTTP listener: " + ExceptionUtils.getMessage(e), e);
+            final String msg = "Unable to start HTTP listener: " + ExceptionUtils.getMessage(e);
+            getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
+            throw new ListenerException(msg, e);
         }
     }
 
@@ -639,7 +649,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             c.start();
             return c;
         } catch (org.apache.catalina.LifecycleException e) {
-            throw new ListenerException("Unable to start HTTPS listener: " + ExceptionUtils.getMessage(e), e);
+            final String msg = "Unable to start HTTPS listener: " + ExceptionUtils.getMessage(e);
+            getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
+            throw new ListenerException(msg, e);
         }
     }
 

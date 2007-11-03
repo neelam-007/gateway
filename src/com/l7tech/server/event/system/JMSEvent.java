@@ -10,7 +10,7 @@ import com.l7tech.common.Component;
  * @author $Author$
  * @version $Revision$
  */
-public class JMSEvent extends SystemEvent {
+public class JMSEvent extends TransportEvent {
 
     //- PUBLIC
 
@@ -19,11 +19,7 @@ public class JMSEvent extends SystemEvent {
             Level level,
             String ip,
             String message) {
-        super(source, Component.GW_JMSRECV, ip, level, message);
-    }
-
-    public String getAction() {
-        return JMSEvent.NAME;
+        super(source, Component.GW_JMSRECV, ip, level, message, NAME);
     }
 
     //- PRIVATE

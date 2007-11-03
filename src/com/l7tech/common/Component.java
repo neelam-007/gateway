@@ -31,6 +31,7 @@ public class Component {
     public static final Component     GW_AUDIT_SYSTEM     = new Component(  40000, "Audit System", GW_SERVER);
     public static final Component     GW_LICENSE_MANAGER  = new Component(  50000, "License Manager", GW_SERVER);
     public static final Component     GW_ADMINWS          = new Component(  60000, "Admin Web Service", GW_SERVER);
+    public static final Component     GW_HTTPRECV         = new Component(  65000, "HTTP Listeners", GW_SERVER);
     public static final Component     GW_JMSRECV          = new Component(  70000, "JMS Receiver", GW_SERVER);
     public static final Component     GW_ADMINAPPLET      = new Component(  80000, "Admin Applet", GW_SERVER, true);
     public static final Component     GW_FTPSERVER        = new Component(  90000, "FTP Server", GW_SERVER);
