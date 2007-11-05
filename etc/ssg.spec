@@ -1,6 +1,6 @@
 Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2007
 Name: ssg
-Version: 4.0
+Version: 4.3
 Release: 1
 Group: Applications/Internet
 License: Commercial
