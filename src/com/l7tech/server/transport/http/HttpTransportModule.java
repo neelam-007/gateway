@@ -1,15 +1,14 @@
 package com.l7tech.server.transport.http;
 
-import com.l7tech.common.LicenseManager;
 import com.l7tech.common.Component;
+import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.MasterPasswordManager;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.Pair;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
@@ -27,9 +26,9 @@ import org.apache.catalina.core.StandardThreadExecutor;
 import org.apache.catalina.core.StandardWrapper;
 import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Embedded;
-import org.apache.naming.resources.FileDirContext;
-import org.apache.coyote.http11.Http11Protocol;
 import org.apache.coyote.ProtocolHandler;
+import org.apache.coyote.http11.Http11Protocol;
+import org.apache.naming.resources.FileDirContext;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.directory.DirContext;
@@ -89,6 +88,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private Host host;
     private StandardContext context;
     private StandardThreadExecutor executor;
+    private static final String NO_HTTPS_CONNECTORS_DEFINED = "No HTTP or HTTPS connectors are defined in database.  At least one HTTP connector is required.";
 
     public HttpTransportModule(ServerConfig serverConfig,
                                MasterPasswordManager masterPasswordManager,
@@ -335,12 +335,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private void startInitialConnectors() throws ListenerException {
         try {
             Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
-            if (connectors.isEmpty()) {
-                logger.warning("No connectors defined in database.  Will attempt to import from server.xml");
-                connectors = createFallbackConnectors();
-            }
+            boolean foundHttp = false;
             for (SsgConnector connector : connectors) {
                 if (connector.isEnabled() && connectorIsOwnedByThisModule(connector)) {
+                    foundHttp = true;
                     try {
                         addConnector(connector);
                     } catch (Exception e) {
@@ -349,29 +347,15 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                     }
                 }
             }
+            
+            if (!foundHttp )  {
+                logger.severe(NO_HTTPS_CONNECTORS_DEFINED);
+                throw new ListenerException(NO_HTTPS_CONNECTORS_DEFINED);
+            }
 
         } catch (FindException e) {
             throw new ListenerException("Unable to find initial connectors: " + ExceptionUtils.getMessage(e), e);
         }
-    }
-
-    /**
-     * Add some connectors to the DB table, getting them from server.xml if possible, but just creating
-     * some defaults if not.
-     *
-     * @return zero or more connectors that have already been saved to the database.  Never null or empty.
-     */
-    private Collection<SsgConnector> createFallbackConnectors() {
-        String pathToServerXml = serverConfig.getProperty(ServerConfig.PARAM_SERVERXML);
-        Collection<SsgConnector> toAdd = DefaultHttpConnectors.makeFallbackConnectors(pathToServerXml);
-        for (SsgConnector connector : toAdd) {
-            try {
-                ssgConnectorManager.save(connector);
-            } catch (SaveException e) {
-                logger.log(Level.WARNING, "Unable to save fallback connector to DB: " + ExceptionUtils.getMessage(e), e);
-            }
-        }
-        return toAdd;
     }
 
     protected synchronized void addConnector(SsgConnector connector) throws ListenerException {

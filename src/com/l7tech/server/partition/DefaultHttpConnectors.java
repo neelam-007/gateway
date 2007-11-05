@@ -1,19 +1,17 @@
-package com.l7tech.server.transport.http;
+package com.l7tech.server.partition;
 
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.tomcat.ServerXmlParser;
-import com.l7tech.server.transport.TransportModule;
-import com.l7tech.server.ServerConfig;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class encapsulates the code for initializing the connectors table from the contents of server.xml.
@@ -99,7 +97,7 @@ public class DefaultHttpConnectors {
     }
 
     // Create an old-school connector, from properties read from server.xml
-    private static SsgConnector makeConnectorFromServerXml(Map<String, String> connector) throws TransportModule.ListenerException {
+    private static SsgConnector makeConnectorFromServerXml(Map<String, String> connector) {
         SsgConnector c = new SsgConnector();
         c.setEnabled(true);
         int port = Integer.parseInt(connector.get("port"));

@@ -14,9 +14,8 @@ import com.l7tech.server.partition.PartitionManager;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -157,5 +156,6 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep{
         connector.setEndpoints(SsgConnector.Endpoint.asCommaList(EnumSet.of(SsgConnector.Endpoint.ADMIN_APPLET, SsgConnector.Endpoint.ADMIN_REMOTE)));
         connector.setClientAuth(SsgConnector.CLIENT_AUTH_NEVER);
         connector.setEnabled(true);
+        connector.setSecure(true);
     }
 }

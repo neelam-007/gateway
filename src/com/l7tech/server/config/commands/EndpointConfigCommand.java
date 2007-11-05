@@ -9,7 +9,6 @@ import com.l7tech.server.config.beans.EndpointConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.db.SsgConnectorSql;
-import com.l7tech.server.partition.PartitionInformation;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -51,7 +50,9 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
                 conn = getConnection();
                 conn.setAutoCommit(false);
                 for (SsgConnector endpoint : whichOnes) {
-                    logger.info("Adding endpoint (" + endpoint.getName() + ")") ;
+                    String name = endpoint.getName();
+                    String port = String.valueOf(endpoint.getPort());
+                    logger.info("Adding endpoint (" + name + ", port " + port + ")") ;
                     new SsgConnectorSql(endpoint).save(conn);
                 }
                 conn.commit();

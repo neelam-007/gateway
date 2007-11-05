@@ -5,11 +5,6 @@ import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.transport.http.DefaultHttpConnectors;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationConverter;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 
@@ -35,10 +30,7 @@ public class PartitionInformation{
     public static final String DEFAULT_PARTITION_NAME = "default_";
     public static final String ENABLED_FILE = "enabled";
 
-//    public static final String SYSTEM_PROP_HTTPPORT = "com.l7tech.server.httpPort";
-//    public static final String SYSTEM_PROP_SSLPORT = "com.l7tech.server.httpsPort";
     public static final String SYSTEM_PROP_PARTITIONNAME = "com.l7tech.server.partitionName";
-//    public static final String SYSTEM_PROP_RMIPORT = "com.l7tech.server.clusterPort";
 
     String partitionId;
     String oldPartitionId;

@@ -1,17 +1,16 @@
 package com.l7tech.common.transport;
 
-import com.l7tech.common.io.PortRange;
 import com.l7tech.common.io.PortOwner;
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.common.io.PortRange;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /**
  * Describes a port on which the Gateway will listen for incoming requests.
