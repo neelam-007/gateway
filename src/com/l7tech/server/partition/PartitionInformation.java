@@ -158,7 +158,7 @@ public class PartitionInformation{
                 sec.setClientAuth(SsgConnector.CLIENT_AUTH_NEVER);
                 sec.setEndpoints(SsgConnector.Endpoint.MESSAGE_INPUT.toString());
                 String addr = secureHolder.getIpAddress();
-                if (addr != null && addr.length() < 1) addr = null;
+                if (addr != null && addr.length() < 1 || addr.equals("*")) addr = null;
                 sec.putProperty(SsgConnector.PROP_BIND_ADDRESS, addr);
                 sec.putProperty(SsgConnector.PROP_PORT_RANGE_START, secureHolder.getPassivePortStart().toString());
                 sec.putProperty(SsgConnector.PROP_PORT_RANGE_COUNT, secureHolder.getPassivePortCount().toString());
