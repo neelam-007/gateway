@@ -26,13 +26,12 @@ import java.util.regex.Pattern;
 public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep implements PartitionActionListener {
     private static final Logger logger = Logger.getLogger(ConfigWizardConsolePartitioningStep.class.getName());
 
-    private static final String TITLE = "Configure Partitions";
+    private static final String TITLE = "Select A Partition";
     private static final String STEP_INFO = "This step lets you create or set up a connection to the SSG database";
     private static final String HEADER_SELECT_PARTITION = "-- Select The Partition To Configure --" + getEolChar();
     private static final String HEADER_ADD_PARTITION = "-- Add A New Partition --" + getEolChar();
     private static final String HEADER_DELETE_PARTITION = "-- Select a Partition To Delete (the default_ partition cannot be deleted)--" + getEolChar();
 
-    private static final String HEADER_CONFIGURE_ENDPOINTS= "-- Select an Endpoint to configure for the \"{0}\" Partition --" + getEolChar();
     private static final String SELECT_EXISTING_PARTITION = ") Select an Existing Partition" + getEolChar();
     private static final String ADD_NEW_PARTITION = ") Add a new Partition: " + getEolChar();
     private  static final String DELETE_PARTITION = ") Delete a Partition: " + getEolChar();
@@ -115,8 +114,6 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                 }
             }
         }
-
-        doConfigureEndpointsPrompts(newPartitionInfo);
         return newPartitionInfo;
     }
 
@@ -184,7 +181,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
 
             String newPartitionName;
             do {
-                newPartitionName = getData(prompts.toArray(new String[0]), defaultValue, allowedEntries, "*** Invalid Partition Name. Please re-enter ***");
+                newPartitionName = getData(prompts.toArray(new String[prompts.size()]), defaultValue, allowedEntries, "*** Invalid Partition Name. Please re-enter ***");
                 if (partitionNames.contains(newPartitionName))
                     printText(new String[] {
                         "*** " + newPartitionName + " already exists. Please choose another name ***" + getEolChar(),
@@ -245,7 +242,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                 allowedEntries[i]= String.valueOf(i + 1);
             }
 
-            String whichPartition = getData(prompts.toArray(new String[0]), defaultValue, allowedEntries,null);
+            String whichPartition = getData(prompts.toArray(new String[prompts.size()]), defaultValue, allowedEntries,null);
             int whichIndex = Integer.parseInt(whichPartition) -1;
 
             String whichPartitionName = nameList.get(whichIndex);
@@ -308,9 +305,9 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
             }
 
             String input = getData(
-                    promptList.toArray(new String[0]), 
+                    promptList.toArray(new String[promptList.size()]),
                     defaultValue,
-                    allowedEntries.toArray(new String[0]),
+                    allowedEntries.toArray(new String[allowedEntries.size()]),
                     null);
 
             PartitionInformation pinfo = null;
@@ -328,162 +325,6 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                 }
             }
             return pinfo;
-        }
-    }
-
-    private void doConfigureEndpointsPrompts(PartitionInformation pinfo) throws IOException, WizardNavigationException {
-
-        List<PartitionInformation.EndpointHolder> holders =
-                new ArrayList<PartitionInformation.EndpointHolder>(pinfo.getEndpoints());
-
-        List<String> promptList = new ArrayList<String>();
-        boolean finishedEndpointConfig;
-        do {
-            promptList.clear();
-            promptList.add(MessageFormat.format(HEADER_CONFIGURE_ENDPOINTS, pinfo.getPartitionId()));
-            int index = 1;
-            for (PartitionInformation.EndpointHolder holder : holders) {
-                promptList.add(String.valueOf(index++) + ") " + holder.toString() + getEolChar() +
-                        (StringUtils.isEmpty(holder.getValidationMessaqe())?"":"   [ *** " + holder.getValidationMessaqe() + " *** ]" + getEolChar()) );
-            }
-            promptList.add(String.valueOf(index) + ") Finished Configuring Endpoints" + getEolChar());
-
-            String defaultValue = String.valueOf(index);
-
-            promptList.add("Please make a selection: [" + defaultValue + "]");
-
-            String[] allowedEntries = new String[index];
-            for (int i = 0; i < allowedEntries.length; i++) {
-                allowedEntries[i] = String.valueOf(i + 1);
-            }
-
-            String whichEndpointSelection = getData(promptList.toArray(new String[0]), defaultValue, allowedEntries,null);
-            int whichEndpointIndex = Integer.parseInt(whichEndpointSelection);
-
-            if (whichEndpointIndex == index) { //if the select was the last in the list then it's the "done" option
-                if (!PartitionActions.validateAllPartitionEndpoints(pinfo, false)) {
-                    printText(getEolChar() + "*** Some of the partition endpoints have errors. Please correct the indicated errors ***" + getEolChar() + getEolChar());
-                    finishedEndpointConfig = false;
-                } else {
-                    finishedEndpointConfig = true;
-                }
-            } else {
-                PartitionInformation.EndpointHolder holder = holders.get(whichEndpointIndex -1);
-                doCollectEndpointInfo(holder, pinfo);
-                PartitionActions.validateSinglePartitionEndpoints(pinfo);
-                finishedEndpointConfig = false;
-            }
-
-        } while (!finishedEndpointConfig);
-    }
-
-    private void doCollectEndpointInfo(PartitionInformation.EndpointHolder holder, PartitionInformation pinfo) throws IOException, WizardNavigationException {
-        String input;
-        List<String> prompts;
-        Pattern portPattern = Pattern.compile("\\d{1,5}+");
-        Pattern portCountPattern = Pattern.compile("\\d{1,3}+");
-        if (holder instanceof PartitionInformation.HttpEndpointHolder) {
-            PartitionInformation.HttpEndpointHolder httpHolder = (PartitionInformation.HttpEndpointHolder) holder;
-            String[] availableIpAddress = PartitionActions.getAvailableIpAddresses().toArray(new String[0]);
-            //make sure they show up in a predictable order
-            Arrays.sort(availableIpAddress);
-
-            List<String> ipAddressOptions = new ArrayList<String>();
-            int index = 1;
-            for (String availableIpAddres : availableIpAddress) {
-                ipAddressOptions.add(String.valueOf(index++) + ") " + availableIpAddres + getEolChar());
-            }
-
-            String[] allowedEntries = new String[availableIpAddress.length];
-            for (int i = 0; i < allowedEntries.length; i++) {
-                allowedEntries[i] = String.valueOf(i + 1);
-            }
-
-            prompts = new ArrayList<String>();
-            prompts.add("Please enter the IP Address for the \"" + httpHolder.endpointType + "\" endpoint" + getEolChar());
-            prompts.addAll(ipAddressOptions);
-            prompts.add("Please make a selection: [1]");
-            input = getData(prompts.toArray(new String[0]), "1", allowedEntries,null);
-            int ipIndex = Integer.parseInt(input) - 1;
-            httpHolder.setIpAddress(availableIpAddress[ipIndex]);
-
-            prompts = new ArrayList<String>();
-            prompts.add("Please enter the port for the \"" + httpHolder.endpointType + "\" endpoint: [" + httpHolder.getPort() + "]");
-            input = getData(prompts.toArray(new String[0]), httpHolder.getPort().toString(), portPattern, "The port you have entered is invalid. Please re-enter");
-
-            httpHolder.setPort(Integer.parseInt(input));
-            holder.setValidationMessaqe("");
-
-        } else if (holder instanceof PartitionInformation.FtpEndpointHolder) {
-            PartitionInformation.FtpEndpointHolder ftpHolder = (PartitionInformation.FtpEndpointHolder) holder;
-
-            prompts = new ArrayList<String>();
-            prompts.add("Enable the \"" + ftpHolder.getEndpointType() + "\" endpoint" + getEolChar());
-            prompts.add("1) Enable"  + getEolChar());
-            prompts.add("2) Disable"  + getEolChar());
-            prompts.add("Please make a selection: [" + (ftpHolder.isEnabled() ?  "1" : "2" ) +"]");
-            input = getData(prompts.toArray(new String[0]), "2", new String[] {"1","2"},null);
-            boolean wasEnabled = holder.isEnabled();
-
-            if (StringUtils.equals(input, "2")) {
-                ftpHolder.setEnabled(false);
-            }
-            else {
-                ftpHolder.setEnabled(true);
-                if (!wasEnabled) {
-                    PartitionActions.validateAllPartitionEndpoints(pinfo, true, false);
-                }
-
-                String[] availableIpAddress = PartitionActions.getAvailableIpAddresses().toArray(new String[0]);
-
-                List<String> ipAddressOptions = new ArrayList<String>();
-                int index = 1;
-                for (String availableIpAddres : availableIpAddress) {
-                    ipAddressOptions.add(String.valueOf(index++) + ") " + availableIpAddres + getEolChar());
-                }
-
-                String[] allowedEntries = new String[availableIpAddress.length];
-                for (int i = 0; i < allowedEntries.length; i++) {
-                    allowedEntries[i] = String.valueOf(i + 1);
-                }
-
-                prompts = new ArrayList<String>();
-                prompts.add("Please enter the IP Address for the \"" + ftpHolder.getEndpointType() + "\" endpoint" + getEolChar());
-                prompts.addAll(ipAddressOptions);
-                prompts.add("Please make a selection: [1]");
-                input = getData(prompts.toArray(new String[0]), "1", allowedEntries,null);
-                int ipIndex = Integer.parseInt(input) - 1;
-                ftpHolder.setIpAddress(availableIpAddress[ipIndex]);
-
-                prompts = new ArrayList<String>();
-                prompts.add("Please enter the port for the \"" + ftpHolder.getEndpointType() + "\" endpoint: [" + ftpHolder.getPort() + "]");
-                input = getData(prompts.toArray(new String[0]), ftpHolder.getPort().toString(), portPattern, "The port you have entered is invalid. Please re-enter");
-                ftpHolder.setPort(Integer.parseInt(input));
-
-                prompts = new ArrayList<String>();
-                prompts.add("Please enter the start passive port for the \"" + ftpHolder.getEndpointType() + "\" endpoint: [" + ftpHolder.getPassivePortStart() + "]");
-                input = getData(prompts.toArray(new String[0]), ftpHolder.getPassivePortStart().toString(), portPattern, "The port you have entered is invalid. Please re-enter");
-                ftpHolder.setPassivePortStart(Integer.parseInt(input));
-
-                prompts = new ArrayList<String>();
-                prompts.add("Please enter the passive port count for the \"" + ftpHolder.getEndpointType() + "\" endpoint: [" + ftpHolder.getPassivePortCount() + "]");
-                input = getData(prompts.toArray(new String[0]), ftpHolder.getPassivePortCount().toString(), portCountPattern, "The value you have entered is invalid. Please re-enter");
-                ftpHolder.setPassivePortCount(Integer.parseInt(input));
-            }
-            
-            holder.setValidationMessaqe("");
-
-        } else if (holder instanceof PartitionInformation.OtherEndpointHolder) {
-            PartitionInformation.OtherEndpointHolder otherHolder = (PartitionInformation.OtherEndpointHolder) holder;
-
-            input = getData(
-                    new String[] {
-                        "Please enter the port for the \"" + otherHolder.endpointType + "\" endpoint: [" + otherHolder.getPort() + "] ",
-                    },
-                    otherHolder.getPort().toString(),
-                    portPattern,
-                    null);
-            otherHolder.setPort(Integer.parseInt(input));
         }
     }
 
@@ -509,7 +350,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
         messages.add("**** " + message + " ****");
         messages.add("Press Enter to continue");
         try {
-            getData(messages.toArray(new String[0]),"", (String[]) null,null);
+            getData(messages.toArray(new String[messages.size()]),"", (String[]) null,null);
         } catch (IOException e) {
             logger.severe("Error while getting input. [" + e.getMessage() + "]");            
         } catch (WizardNavigationException e) {
@@ -523,7 +364,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
         messages.add(message);
         messages.add("Press Enter to continue");
         try {
-            getData(messages.toArray(new String[0]),"", (String[]) null,null);
+            getData(messages.toArray(new String[messages.size()]),"", (String[]) null,null);
         } catch (IOException e) {
             logger.severe("Error while getting input. [" + e.getMessage() + "]");
         } catch (WizardNavigationException e) {

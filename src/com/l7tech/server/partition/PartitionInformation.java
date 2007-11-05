@@ -1,27 +1,25 @@
 package com.l7tech.server.partition;
 
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.common.util.ArrayUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.PartitionActions;
+import com.l7tech.server.transport.http.DefaultHttpConnectors;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationConverter;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -31,17 +29,16 @@ import java.util.logging.Level;
 public class PartitionInformation{
 
     private static final Logger logger = Logger.getLogger(PartitionInformation.class.getName());
-    private static final String CONNECTOR_XPATH = "/Server/Service/Connector";
 
     public static final String PARTITIONS_BASE = "etc/conf/partitions/";
     public static final String TEMPLATE_PARTITION_NAME = "partitiontemplate_";
     public static final String DEFAULT_PARTITION_NAME = "default_";
     public static final String ENABLED_FILE = "enabled";
 
-    public static final String SYSTEM_PROP_HTTPPORT = "com.l7tech.server.httpPort";
-    public static final String SYSTEM_PROP_SSLPORT = "com.l7tech.server.httpsPort";
+//    public static final String SYSTEM_PROP_HTTPPORT = "com.l7tech.server.httpPort";
+//    public static final String SYSTEM_PROP_SSLPORT = "com.l7tech.server.httpsPort";
     public static final String SYSTEM_PROP_PARTITIONNAME = "com.l7tech.server.partitionName";
-    public static final String SYSTEM_PROP_RMIPORT = "com.l7tech.server.clusterPort";
+//    public static final String SYSTEM_PROP_RMIPORT = "com.l7tech.server.clusterPort";
 
     String partitionId;
     String oldPartitionId;
@@ -49,9 +46,10 @@ public class PartitionInformation{
     boolean isEnabled = false;
     private boolean shouldDisable = false;
     
-    List<HttpEndpointHolder> httpEndpointsList;
-    List<FtpEndpointHolder> ftpEndpointsList;
-    List<OtherEndpointHolder> otherEndpointsList;
+    private List<HttpEndpointHolder> httpEndpointsList;
+    private List<FtpEndpointHolder> ftpEndpointsList;
+    private List<OtherEndpointHolder> otherEndpointsList;
+
     OSSpecificFunctions osf;
     Document originalDom;
     public static final int MIN_PORT = 1024;
@@ -62,20 +60,11 @@ public class PartitionInformation{
 
     private static int DEFAULT_HTTP_PORT = 8080;
     private static int DEFAULT_SSL_PORT = 8443;
-    private static boolean DEFAULT_FTP_ENABLED = false;
-    private static int DEFAULT_FTP_PORT = 2121;
-    private static int DEFAULT_FTP_PORT_PASSIVESTART = 13100;
-    private static int DEFAULT_FTP_PORT_PASSIVECOUNT = 10;
-    private static int DEFAULT_FTP_SSL_PORT = 2990;
-    private static int DEFAULT_FTP_SSL_PORT_PASSIVESTART = 13900;
-    private static int DEFAULT_FTP_SSL_PORT_PASSIVECOUNT = 10;
     private static int DEFAULT_NOAUTH_PORT = 9443;
     private static int DEFAULT_RMI_PORT = 2124;
 
-
     public static final String ALLOWED_PARTITION_NAME_PATTERN = "[^\\p{Punct}\\s]{1,128}";
     public static final int MAX_PARTITIONS = 8;
-
     public enum OtherEndpointType {
         RMI_ENDPOINT("Inter-Node Communication Port"),
         ;
@@ -118,24 +107,7 @@ public class PartitionInformation{
         httpEndpointsList = new ArrayList<HttpEndpointHolder>();
         ftpEndpointsList = new ArrayList<FtpEndpointHolder>();
         otherEndpointsList = new ArrayList<OtherEndpointHolder>();
-        makeDefaultEndpoints(httpEndpointsList, ftpEndpointsList, otherEndpointsList);
-
-        //since this is a new partitionm, try to make sure the ports don't conflict
-        PartitionActions.validateAllPartitionEndpoints(this, true);
-    }
-
-    public PartitionInformation(String partitionId, Document doc, boolean isNew) throws XPathExpressionException {
-        this.partitionId = partitionId;
-        isNewPartition = isNew;
-        httpEndpointsList = new ArrayList<HttpEndpointHolder>();
-        ftpEndpointsList = new ArrayList<FtpEndpointHolder>();
-        otherEndpointsList = new ArrayList<OtherEndpointHolder>();
-        makeDefaultEndpoints(httpEndpointsList, ftpEndpointsList, otherEndpointsList);
-        //pass false to isNew since, if we have a doc then it's not a new partition.
-        //now navigate the doc to get the Connector/port information
-        parseDomForEndpoints(doc);
-        parseFtpEndpoints();
-        parseOtherEndpoints();
+        osf = OSDetector.getOSSpecificFunctions(partitionName);
     }
 
     public PartitionInformation copy() {
@@ -150,31 +122,8 @@ public class PartitionInformation{
         return theCopy;
     }
 
-    private void parseFtpEndpoints() {
-        File ftpServerProps = new File(OSDetector.getOSSpecificFunctions(partitionId).getFtpServerConfig());
-        FileInputStream fis = null;
-        try {
-            Properties props = new Properties();
-            fis = new FileInputStream(ftpServerProps);
-            props.load(fis);
-
-
-            FtpEndpointHolder ftpBasicEndpointHolder =
-                    (FtpEndpointHolder) getFtpEndPointByType(FtpEndpointType.BASIC_FTP);
-            updateFtpEndpoint(ftpBasicEndpointHolder, props, "default");
-
-            FtpEndpointHolder ftpSecureEndpointHolder =
-                    (FtpEndpointHolder) getFtpEndPointByType(FtpEndpointType.SSL_FTP_NOCLIENTCERT);
-            updateFtpEndpoint(ftpSecureEndpointHolder, props, "secure");
-
-        } catch (FileNotFoundException e) {
-            logger.warning("no FTP server properties file found for partition: " + partitionId);
-        } catch (IOException e) {
-            logger.warning("Error while reading the FTP server properties file for partition: " + partitionId);
-            logger.warning(e.getMessage());
-        } finally {
-            ResourceUtils.closeQuietly(fis);
-        }
+    public Collection<SsgConnector> getConnectorsFromServerXml() {
+        return DefaultHttpConnectors.makeFallbackConnectors(getOSSpecificFunctions().getTomcatServerConfig());
     }
 
     public List<SsgConnector> parseFtpEndpointsAsSsgConnectors() {
@@ -186,40 +135,41 @@ public class PartitionInformation{
             props.load(fis);
 
             List<SsgConnector> ret = new ArrayList<SsgConnector>();
-
             {
-                FtpEndpointHolder fb = getFtpEndPointByType(FtpEndpointType.BASIC_FTP);
-                updateFtpEndpoint(fb, props, "default");
+                //do the default ftp connector config
+                FtpEndpointHolder defaultHolder = new FtpEndpointHolder(FtpEndpointType.BASIC_FTP);
+                updateFtpEndpoint(defaultHolder, props, "default");
                 SsgConnector basic = new SsgConnector();
                 basic.setScheme(SsgConnector.SCHEME_FTP);
-                basic.setPort(fb.getPort());
-                basic.setEnabled(fb.isEnabled());
+                basic.setPort(defaultHolder.getPort());
+                basic.setEnabled(defaultHolder.isEnabled());
                 basic.setName("Legacy FTP " + basic.getPort());
                 basic.setSecure(false);
                 basic.setEndpoints(SsgConnector.Endpoint.MESSAGE_INPUT.toString());
-                String addr = fb.getIpAddress();
+                String addr = defaultHolder.getIpAddress();
                 if (addr != null && addr.length() < 1 || addr.equals("*")) addr = null;
                 basic.putProperty(SsgConnector.PROP_BIND_ADDRESS, addr);
-                basic.putProperty(SsgConnector.PROP_PORT_RANGE_START, fb.getPassivePortStart().toString());
-                basic.putProperty(SsgConnector.PROP_PORT_RANGE_COUNT, fb.getPassivePortCount().toString());
+                basic.putProperty(SsgConnector.PROP_PORT_RANGE_START, defaultHolder.getPassivePortStart().toString());
+                basic.putProperty(SsgConnector.PROP_PORT_RANGE_COUNT, defaultHolder.getPassivePortCount().toString());
                 ret.add(basic);
             }
 
             {
-                FtpEndpointHolder fs = getFtpEndPointByType(FtpEndpointType.SSL_FTP_NOCLIENTCERT);
-                updateFtpEndpoint(fs, props, "secure");
+                //do the secure ftp connector config
+                FtpEndpointHolder secureHolder = new FtpEndpointHolder(FtpEndpointType.SSL_FTP_NOCLIENTCERT);
+                updateFtpEndpoint(secureHolder, props, "secure");
                 SsgConnector sec = new SsgConnector();
                 sec.setScheme(SsgConnector.SCHEME_FTPS);
-                sec.setPort(fs.getPort());
+                sec.setPort(secureHolder.getPort());
                 sec.setSecure(true);
-                sec.setEnabled(fs.isEnabled());
+                sec.setEnabled(secureHolder.isEnabled());
                 sec.setClientAuth(SsgConnector.CLIENT_AUTH_NEVER);
                 sec.setEndpoints(SsgConnector.Endpoint.MESSAGE_INPUT.toString());
-                String addr = fs.getIpAddress();
+                String addr = secureHolder.getIpAddress();
                 if (addr != null && addr.length() < 1) addr = null;
                 sec.putProperty(SsgConnector.PROP_BIND_ADDRESS, addr);
-                sec.putProperty(SsgConnector.PROP_PORT_RANGE_START, fs.getPassivePortStart().toString());
-                sec.putProperty(SsgConnector.PROP_PORT_RANGE_COUNT, fs.getPassivePortCount().toString());
+                sec.putProperty(SsgConnector.PROP_PORT_RANGE_START, secureHolder.getPassivePortStart().toString());
+                sec.putProperty(SsgConnector.PROP_PORT_RANGE_COUNT, secureHolder.getPassivePortCount().toString());
                 sec.setName("Legacy FTPS " + sec.getPort());
                 ret.add(sec);
             }
@@ -262,109 +212,6 @@ public class PartitionInformation{
             ftpEndpointHolder.setPassivePortStart(passiveStartVal);
             ftpEndpointHolder.setPassivePortCount(Integer.valueOf((passiveEndVal.intValue() - passiveStartVal.intValue()) + 1));
         }
-    }
-
-    private void parseOtherEndpoints() {
-        File sysProps = new File(OSDetector.getOSSpecificFunctions(partitionId).getSsgSystemPropertiesFile());
-        FileInputStream fis = null;
-        String rmiPort = null;
-        try {
-            Properties props = new Properties();
-            fis = new FileInputStream(sysProps);
-            props.load(fis);
-            rmiPort = props.getProperty(PartitionInformation.SYSTEM_PROP_RMIPORT);
-            if (rmiPort != null)
-                getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).setPort(Integer.valueOf(rmiPort));
-        } catch (FileNotFoundException e) {
-            logger.warning("no system properties file found for partition: " + partitionId);
-        } catch (NumberFormatException nfe) {
-            logger.warning("Error while reading the system properties file for partition: " + partitionId);
-            logger.warning("Invalid rmi port value '"+rmiPort+"'.");
-        } catch (IOException e) {
-            logger.warning("Error while reading the system properties file for partition: " + partitionId);
-            logger.warning(e.getMessage());
-        } finally {
-            ResourceUtils.closeQuietly(fis);
-        }
-
-    }
-
-    private void makeDefaultEndpoints(List<HttpEndpointHolder> httpEndpointsList, List<FtpEndpointHolder> ftpEndpointsList, List<OtherEndpointHolder> otherEndpointsList) {
-        HttpEndpointHolder.populateDefaultEndpoints(httpEndpointsList);
-        FtpEndpointHolder.populateDefaultEndpoints(ftpEndpointsList);
-        OtherEndpointHolder.populateDefaultEndpoints(otherEndpointsList);
-        if (partitionId.equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
-            getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).setPort(Integer.valueOf(2124));
-        }
-    }
-
-    private void parseDomForEndpoints(Document doc) throws XPathExpressionException {
-        setOriginalDom(doc);
-        XPath xpath = XPathFactory.newInstance().newXPath();
-        NodeList connectors = (NodeList) xpath.evaluate(CONNECTOR_XPATH, doc, XPathConstants.NODESET);
-        for (int nodeIndex = 0; nodeIndex < connectors.getLength(); nodeIndex++) {
-            Element connectorNode = (Element) connectors.item(nodeIndex);
-
-            boolean isSecure = connectorNode.hasAttribute("secure") && connectorNode.getAttribute("secure").equals("true");
-            boolean wantClientCert = isSecure && connectorNode.hasAttribute("clientAuth") && !connectorNode.getAttribute("clientAuth").equals("false");
-
-            Integer portNumber = null;
-            if ( connectorNode.hasAttribute("port") ) {
-                String portValue = null;
-                try {
-                    portValue = connectorNode.getAttribute("port");
-                    portNumber = Integer.valueOf(portValue);
-                }
-                catch (NumberFormatException nfe) {
-                    logger.warning("Invalid port number '"+portValue+"'.");
-                }
-            }
-            String ipAddress = connectorNode.hasAttribute("address") ? connectorNode.getAttribute("address") : "*";
-
-            updateEndpoint(ipAddress, portNumber, isSecure, wantClientCert);
-        }
-    }
-
-    private void updateEndpoint(String ip, Integer portNumber, boolean isSecure, boolean isClientCertWanted) {
-
-        HttpEndpointHolder holder;
-        if (!isSecure) holder = getHttpEndPointByType(HttpEndpointType.BASIC_HTTP);
-        else {
-            if (isClientCertWanted) holder = getHttpEndPointByType(HttpEndpointType.SSL_HTTP);
-            else holder = getHttpEndPointByType(HttpEndpointType.SSL_HTTP_NOCLIENTCERT);
-        }
-
-        if (holder != null) {
-            holder.setIpAddress(ip);
-            holder.setPort(portNumber);
-        }
-    }
-
-    private OtherEndpointHolder getOtherEndPointByType(OtherEndpointType endpointType) {
-        for (OtherEndpointHolder endpointHolder : otherEndpointsList) {
-            if (endpointHolder.endpointType == endpointType) {
-                return endpointHolder;
-            }
-        }
-        return null;
-    }
-
-    private FtpEndpointHolder getFtpEndPointByType(FtpEndpointType endpointType) {
-        for (FtpEndpointHolder endpointHolder : ftpEndpointsList) {
-            if (endpointHolder.endpointType == endpointType) {
-                return endpointHolder;
-            }
-        }
-        return null;
-    }
-
-    private HttpEndpointHolder getHttpEndPointByType(HttpEndpointType endpointType) {
-        for (HttpEndpointHolder endpointHolder : httpEndpointsList) {
-            if (endpointHolder.endpointType == endpointType) {
-                return endpointHolder;
-            }
-        }
-        return null;
     }
 
     public OSSpecificFunctions getOSSpecificFunctions() {
@@ -428,7 +275,7 @@ public class PartitionInformation{
     }
 
     public List<FtpEndpointHolder> getFtpEndpoints(boolean activeOnly) {
-        List<FtpEndpointHolder> endpoints = new ArrayList();
+        List<FtpEndpointHolder> endpoints = new ArrayList<FtpEndpointHolder>();
 
         for (FtpEndpointHolder ftpEndpointHolder : ftpEndpointsList) {
             if (!activeOnly || ftpEndpointHolder.isEnabled()) {
@@ -940,22 +787,6 @@ public class PartitionInformation{
                 default:
                     return String.class;
             }
-        }
-
-        public static void populateDefaultEndpoints(List<FtpEndpointHolder> endpoints) {
-            FtpEndpointHolder holder = new FtpEndpointHolder(FtpEndpointType.BASIC_FTP);
-            holder.setEnabled(DEFAULT_FTP_ENABLED);
-            holder.setPort(DEFAULT_FTP_PORT);
-            holder.setPassivePortStart(DEFAULT_FTP_PORT_PASSIVESTART);
-            holder.setPassivePortCount(DEFAULT_FTP_PORT_PASSIVECOUNT);
-            endpoints.add(holder);
-
-            holder = new PartitionInformation.FtpEndpointHolder(PartitionInformation.FtpEndpointType.SSL_FTP_NOCLIENTCERT);
-            holder.setEnabled(DEFAULT_FTP_ENABLED);
-            holder.setPort(DEFAULT_FTP_SSL_PORT);
-            holder.setPassivePortStart(DEFAULT_FTP_SSL_PORT_PASSIVESTART);
-            holder.setPassivePortCount(DEFAULT_FTP_SSL_PORT_PASSIVECOUNT);
-            endpoints.add(holder);
         }
     }
 

@@ -26,6 +26,7 @@ import java.util.logging.Logger;
  * Date: Nov 24, 2006
  * Time: 12:16:38 PM
  */
+@SuppressWarnings({"ALL"})
 public class PartitionActions {
     private static final Logger logger = Logger.getLogger(PartitionActions.class.getName());
     private OSSpecificFunctions osFunctions;
@@ -36,36 +37,6 @@ public class PartitionActions {
     private static final String SERVICE_LOG_KEY = "PR_STDOUTPUT";
     private static final String SERVICE_ERRLOG_KEY = "PR_STDERROR";
     private static final String PARTITION_NAME_KEY = "PARTITIONNAMEPROPERTY";
-
-    private static String[][] secureConnectorEndpointAttributes = new String[][] {
-            {"port", "9443"},
-            {"maxThreads", "150"},
-            {"minSpareThreads", "25"},
-            {"maxSpareThreads", "75"},
-            {"enableLookups", "false"},
-            {"disableUploadTimeout", "true"},
-            {"acceptCount", "100"},
-            {"scheme", "https"},
-            {"secure", "true"},
-            {"clientAuth", "false"},
-            {"sslProtocol", "TLS"},
-            {"keystoreFile", "/ssg/etc/keys/ssl.ks"},
-            {"keystorePass", "blahblah"},
-            {"keystoreType", "PKCS12"},
-    };
-
-    private static String[][] basicConnectorEndpointAttributes = new String[][] {
-            {"port", "8080"},
-            {"maxThreads", "150"},
-            {"minSpareThreads", "25"},
-            {"maxSpareThreads", "75"},
-            {"enableLookups", "false"},
-            {"redirectPort", "8443"},
-            {"acceptCount", "100"},
-            {"connectionTimeout","20000"},
-            {"disableUploadTimeout", "true"},
-            {"socketFactory", "com.l7tech.server.tomcat.SsgServerSocketFactory"},
-    };
 
     public PartitionActions(OSSpecificFunctions osf) {
         osFunctions = osf;
@@ -205,22 +176,7 @@ public class PartitionActions {
             fis = new FileInputStream(systemPropertiesFile);
             PropertiesConfiguration props = new PropertiesConfiguration();
             props.load(fis);
-
-            List<PartitionInformation.HttpEndpointHolder> httpEndpoints = pInfo.getHttpEndpoints();
-            List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
-
-            PartitionInformation.HttpEndpointHolder httpEndpoint = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
-            props.setProperty(PartitionInformation.SYSTEM_PROP_HTTPPORT, httpEndpoint.getPort().toString());
-
-            PartitionInformation.HttpEndpointHolder sslEndpoint = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
-            props.setProperty(PartitionInformation.SYSTEM_PROP_SSLPORT, sslEndpoint.getPort().toString());
-
-            PartitionInformation.OtherEndpointHolder rmiEndpoint = PartitionActions.getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
-            if (rmiEndpoint.getPort() != null)
-                props.setProperty(PartitionInformation.SYSTEM_PROP_RMIPORT, rmiEndpoint.getPort().toString());
-
             props.setProperty(PartitionInformation.SYSTEM_PROP_PARTITIONNAME, pInfo.getPartitionId());
-
             fos = new FileOutputStream(systemPropertiesFile);
             props.save(fos, "iso-8859-1");
         } catch (IOException ioe) {
@@ -239,266 +195,6 @@ public class PartitionActions {
         }
     }
 
-    /**
-     * Fixes keystore paths to correspond to the correct partition. Also removes any passwords from the server.xml
-     * found in the given partition.
-     * @param partitionDir which partition dir should be changed
-     * @throws FileNotFoundException
-     */
-    public static void fixConnectorAttributes(File partitionDir, PartitionInformation piToUpdate) throws FileNotFoundException {
-        File serverConfig = new File(partitionDir, "server.xml");
-        File keystoreProperties = new File(partitionDir, "keystore.properties");
-        FileInputStream serverConfigFis = null;
-        FileInputStream keystoreConfigFis = null;
-
-        FileOutputStream serverConfigFos = null;
-        FileOutputStream keystoreConfigFos = null;
-        try {
-            File newKeystorePath = new File(partitionDir, "keys");
-
-            serverConfigFis = new FileInputStream(serverConfig);
-            Document serverConfigDom = XmlUtil.parse(serverConfigFis);
-            NodeList nodes = serverConfigDom.getElementsByTagName("Connector");
-            for (int i = 0; i < nodes.getLength(); i++) {
-                Element connectorNode = (Element) nodes.item(i);
-                if (connectorNode.hasAttribute("keystoreFile")) {
-                    String keystorePath = connectorNode.getAttribute("keystoreFile");
-                    int keystoreFileIndex = keystorePath.indexOf("ssl.ks");
-
-                    String newKsFile = newKeystorePath.getAbsolutePath() + File.separator + keystorePath.substring(keystoreFileIndex);
-                    connectorNode.setAttribute("keystoreFile", newKsFile);
-                }
-                connectorNode.removeAttribute("keystorePass");
-            }
-            serverConfigFos = new FileOutputStream(serverConfig);
-            XmlUtil.nodeToOutputStream(serverConfigDom, serverConfigFos);
-            if (piToUpdate != null)
-                piToUpdate.setOriginalDom(serverConfigDom);
-
-            keystoreConfigFis = new FileInputStream(keystoreProperties);
-            Properties props = new Properties();
-            props.load(keystoreConfigFis);
-            props.setProperty("keystoredir", newKeystorePath.getAbsolutePath());
-            keystoreConfigFos = new FileOutputStream(keystoreProperties);
-            props.store(keystoreConfigFos, "");
-
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Error updating keystore paths.", e);
-        } catch (SAXException e) {
-            logger.log(Level.WARNING, "Error updating keystore paths.", e);
-        } finally {
-            ResourceUtils.closeQuietly(serverConfigFis);
-            ResourceUtils.closeQuietly(serverConfigFos);
-            ResourceUtils.closeQuietly(keystoreConfigFis);
-            ResourceUtils.closeQuietly(keystoreConfigFos);
-        }
-    }
-
-    public static void updatePartitionEndpoints(PartitionInformation pInfo, boolean logErrors) throws IOException, SAXException {
-        updateHttpEndpoints(pInfo, logErrors);
-        updateFtpEndpoints(pInfo, logErrors);
-        updateOtherEndpoints(pInfo, logErrors);
-    }
-
-    private static void updateOtherEndpoints(PartitionInformation pInfo, boolean logErrors) throws IOException, SAXException {
-
-        FileOutputStream fos = null;
-        try {
-            Document serverConfigDom = pInfo.getOriginalDom();
-            if (serverConfigDom == null) {
-                serverConfigDom = getDomFromServerConfig(pInfo);
-            }
-
-            OSSpecificFunctions foo = pInfo.getOSSpecificFunctions();
-            fos = new FileOutputStream(foo.getTomcatServerConfig());
-            XmlUtil.nodeToOutputStream(serverConfigDom, fos);
-        } catch (IOException ioe) {
-            if (logErrors) {
-                logger.warning("Error while updating other endpoints. [" + ioe.getMessage() + "]");
-            }
-        } catch (SAXException se) {
-            if (logErrors) {
-                logger.warning("Error while updating other endpoints. [" + se.getMessage() + "]");                
-            }
-        } finally {
-            ResourceUtils.closeQuietly(fos);
-        }
-    }
-
-    private static void updateHttpEndpoints(PartitionInformation pInfo, boolean logErrors) throws IOException, SAXException {
-        FileOutputStream fos = null;
-        try {
-            List<PartitionInformation.HttpEndpointHolder> newHttpEndpoints = pInfo.getHttpEndpoints();
-            Document serverConfigDom = pInfo.getOriginalDom();
-            if (serverConfigDom == null) {
-                serverConfigDom = getDomFromServerConfig(pInfo);
-            }
-            doEndpointTypeAwareUpdates(pInfo, newHttpEndpoints, serverConfigDom);
-
-            OSSpecificFunctions foo = pInfo.getOSSpecificFunctions();
-            fos = new FileOutputStream(foo.getTomcatServerConfig());
-            XmlUtil.format(serverConfigDom, true);
-            XmlUtil.nodeToOutputStream(serverConfigDom, fos);
-        } catch (IOException ioe) {
-            if (logErrors) {
-                logger.warning("Error while updating http endpoints. [" + ioe.getMessage() + "]");
-            }
-        } catch (SAXException se) {
-            if (logErrors) {
-                logger.warning("Error while updating http endpoints. [" + se.getMessage() + "]");                
-            }
-        } finally {
-            ResourceUtils.closeQuietly(fos);
-        }
-    }
-
-    private static void doEndpointTypeAwareUpdates(PartitionInformation pInfo, List<PartitionInformation.HttpEndpointHolder> endpoints, Document serverConfig) {
-
-        NodeList connectors = serverConfig.getElementsByTagName("Connector");
-        pruneConnectors(serverConfig, connectors, endpoints);
-
-        Map<PartitionInformation.HttpEndpointType,Element> existingConnectors = PartitionActions.getHttpConnectorsByType(connectors);
-        String redirectPort = "";
-        String seenKeystorePass = null;
-        for (PartitionInformation.HttpEndpointHolder endpoint : endpoints) {
-            PartitionInformation.HttpEndpointType type = endpoint.endpointType;
-            if (type == PartitionInformation.HttpEndpointType.SSL_HTTP) {
-                redirectPort = endpoint.getPort().toString();
-                Element secureConnector = existingConnectors.get(PartitionInformation.HttpEndpointType.SSL_HTTP);
-                if (secureConnector != null) {
-                    if (secureConnector.hasAttribute("keystorePass")) {
-                            seenKeystorePass = secureConnector.getAttribute("keystorePass");
-                    }
-                }
-            }
-
-            Element connector;
-            if (!existingConnectors.containsKey(type)) {
-                connector = PartitionActions.addNewConnector(pInfo, serverConfig, endpoint);
-                existingConnectors.put(endpoint.endpointType, connector);
-            } else {
-                connector = existingConnectors.get(type);
-            }
-            connector.setAttribute("address", endpoint.getIpAddress());
-            connector.setAttribute("port", endpoint.getPort().toString());
-        }
-        existingConnectors.get(PartitionInformation.HttpEndpointType.BASIC_HTTP).setAttribute("redirectPort", redirectPort);
-        if (StringUtils.isNotEmpty(seenKeystorePass))
-            existingConnectors.get(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT).setAttribute("keystorePass", seenKeystorePass);
-    }
-
-
-    private static void pruneConnectors(Document dom, NodeList connectors, List<PartitionInformation.HttpEndpointHolder> newEndpoints) {
-        for (int index = 0; index < connectors.getLength(); index++) {
-            Element connectorNode = (Element) connectors.item(index);
-            if (!existsInNewEndpoints(connectorNode, newEndpoints))
-                dom.removeChild(connectorNode);
-        }
-    }
-
-    private static boolean existsInNewEndpoints(Element connector, List<PartitionInformation.HttpEndpointHolder> endpoints) {
-        boolean isSecure = StringUtils.equals(connector.getAttribute("secure"), "true");
-        boolean needsClientCert = StringUtils.equals(connector.getAttribute("clientAuth"),"want");
-
-        PartitionInformation.HttpEndpointHolder holder;
-        if (isSecure) {
-            if (needsClientCert) holder = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP,endpoints);
-            else holder = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, endpoints);
-        } else {
-            holder = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, endpoints);
-        }
-        return StringUtils.isNotEmpty(holder.getIpAddress()) && holder.getPort()!=null;
-    }
-
-    private static Document getDomFromServerConfig(PartitionInformation pInfo) throws IOException, SAXException {
-        Document doc = null;
-        FileInputStream fis = null;
-        String errorMessage = "Could not read the server.xml for partition \"" + pInfo + "\": ";
-        try {
-            OSSpecificFunctions osf = pInfo.getOSSpecificFunctions();
-            String serverConfigPath = osf.getTomcatServerConfig();
-            fis = new FileInputStream(serverConfigPath);
-            doc = XmlUtil.parse(fis);
-
-        } catch (FileNotFoundException e) {
-            logger.severe(errorMessage + e.getMessage());
-            throw e;
-        } catch (IOException e) {
-            logger.severe(errorMessage + e.getMessage());
-            throw e;
-        } catch (SAXException e) {
-            logger.severe(errorMessage + e.getMessage());
-            throw e;
-        } finally {
-            ResourceUtils.closeQuietly(fis);
-        }
-        return doc;
-    }
-
-    private static void updateFtpEndpoints(PartitionInformation pInfo, boolean logErrors) throws IOException {
-        List<PartitionInformation.FtpEndpointHolder> newFtpEndpoints = pInfo.getFtpEndpoints();
-
-        File ftpServerPropertiesFile = new File(pInfo.getOSSpecificFunctions().getFtpServerConfig());
-        if (!ftpServerPropertiesFile.exists()) ftpServerPropertiesFile.createNewFile();
-
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
-
-        try {
-            PropertiesConfiguration ftpServerProps = new PropertiesConfiguration();
-            ftpServerProps.setAutoSave(false);
-            ftpServerProps.setListDelimiter((char)0);
-
-            fis = new FileInputStream(ftpServerPropertiesFile);
-            ftpServerProps.load(fis);
-            fis.close();
-            fis = null;
-
-            for (PartitionInformation.FtpEndpointHolder endpoint : newFtpEndpoints) {
-                // property name for type
-                String typeName = endpoint.getEndpointType()== PartitionInformation.FtpEndpointType.BASIC_FTP ?
-                        "default" :
-                        "secure";
-
-                // enabled
-                ftpServerProps.setProperty("ssgftp." + typeName + ".enabled", Boolean.toString(endpoint.isEnabled()));
-
-                // bind address
-                if ( "*".equals(endpoint.getIpAddress()) )
-                    ftpServerProps.setProperty("ssgftp." + typeName + ".address", "0.0.0.0");
-                else
-                    ftpServerProps.setProperty("ssgftp." + typeName + ".address", endpoint.getIpAddress());
-
-                // control port
-                ftpServerProps.setProperty("ssgftp." + typeName + ".controlPort", endpoint.getPort().toString());
-
-                // passive ports
-                Integer[] passivePorts = endpoint.getPassivePorts();
-                ftpServerProps.setProperty("ssgftp." + typeName + ".passivePortStart", passivePorts[0].toString());
-                ftpServerProps.setProperty("ssgftp." + typeName + ".passivePortEnd", passivePorts[passivePorts.length-1].toString());
-            }
-
-            fos = new FileOutputStream(ftpServerPropertiesFile);
-            ftpServerProps.setHeader("FtpServer local configuration");
-            ftpServerProps.save(fos, "iso-8859-1");
-        } catch(IOException ioe) {
-            if (logErrors) {
-                logger.warning("Error while updating ftp endpoints. [" + ioe.getMessage() + "]");
-            }
-            throw ioe;
-        } catch(ConfigurationException ce) {
-            if (logErrors) {
-                logger.warning("Error while updating ftp endpoints. [" + ce.getMessage() + "]");
-            }
-            throw new CausedIOException(ce);
-        } finally {
-            ResourceUtils.closeQuietly(fis);
-            ResourceUtils.closeQuietly(fos);
-        }
-
-    }
-
-
     public static void prepareNewpartition(PartitionInformation newPartition) throws IOException, SAXException {
         if (newPartition == null) {
             return;
@@ -506,16 +202,11 @@ public class PartitionActions {
 
         //edit the system.properties file so the name is correct
         try {
-            updatePartitionEndpoints(newPartition, false);
-            fixConnectorAttributes(new File(newPartition.getOSSpecificFunctions().getPartitionBase() + newPartition.getPartitionId()), newPartition);
             updateSystemProperties(newPartition, false);
         } catch (FileNotFoundException e) {
             logger.warning("Error while preparing the \"" + newPartition.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
             throw e;
         } catch (IOException e) {
-            logger.warning("Error while preparing the \"" + newPartition.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
-            throw e;
-        } catch (SAXException e) {
             logger.warning("Error while preparing the \"" + newPartition.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
             throw e;
         }
@@ -966,48 +657,6 @@ public class PartitionActions {
         return matches;
     }
 
-    public static void doFirewallConfig(PartitionInformation pInfo) {
-        OSSpecificFunctions osFunctions = pInfo.getOSSpecificFunctions();
-        if ( !(osFunctions instanceof UnixSpecificFunctions) ) {
-            return;
-        } else {
-            UnixSpecificFunctions unixSpecificFunctions = (UnixSpecificFunctions) osFunctions;
-            List<PartitionInformation.HttpEndpointHolder> httpEndpoints = pInfo.getHttpEndpoints();
-            List<PartitionInformation.FtpEndpointHolder> ftpEndpoints = pInfo.getFtpEndpoints();
-            List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
-
-            PartitionInformation.HttpEndpointHolder basicEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
-            PartitionInformation.HttpEndpointHolder sslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
-            PartitionInformation.HttpEndpointHolder noAuthSslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, httpEndpoints);
-
-            PartitionInformation.FtpEndpointHolder basicFtpEndpoint = getFtpEndpointByType(PartitionInformation.FtpEndpointType.BASIC_FTP, ftpEndpoints);
-            PartitionInformation.FtpEndpointHolder sslFtpEndpoint = getFtpEndpointByType(PartitionInformation.FtpEndpointType.SSL_FTP_NOCLIENTCERT, ftpEndpoints);
-
-            PartitionInformation.OtherEndpointHolder rmiEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
-
-            String rules = unixSpecificFunctions.getFirewallRulesForPartition(basicEndpoint, sslEndpoint, noAuthSslEndpoint, basicFtpEndpoint, sslFtpEndpoint, rmiEndpoint);
-
-            FileOutputStream fos = null;
-            String fileName = pInfo.getOSSpecificFunctions().getPartitionBase() + pInfo.getPartitionId() + "/" + "firewall_rules";
-            try {
-                fos = new FileOutputStream(fileName);
-                fos.write(rules.getBytes());
-            } catch (FileNotFoundException e) {
-                logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
-                logger.severe("The partition will be disabled");
-                pInfo.setShouldDisable(true);
-                enablePartitionForStartup(pInfo);
-            } catch (IOException e) {
-                logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
-                logger.severe("The partition will be disabled");
-                pInfo.setShouldDisable(true);
-                enablePartitionForStartup(pInfo);
-            } finally {
-                ResourceUtils.closeQuietly(fos);
-            }
-            }
-    }
-
     public static PartitionInformation.HttpEndpointHolder getHttpEndpointByType(PartitionInformation.HttpEndpointType type,
                                                                     List<PartitionInformation.HttpEndpointHolder> endpoints) {
         for (PartitionInformation.HttpEndpointHolder endpoint : endpoints) {
@@ -1067,38 +716,5 @@ public class PartitionActions {
                 }
             }
         }
-    }
-
-    public static Element addNewConnector(PartitionInformation pInfo, Document serverConfig, PartitionInformation.HttpEndpointHolder newEndpoint) {
-        PartitionInformation.HttpEndpointType httpType = newEndpoint.endpointType;
-        Element newNode = serverConfig.createElement("Connector");
-        switch(httpType) {
-            case BASIC_HTTP:
-                for (String[] basicConnectorEndpointAttribute : basicConnectorEndpointAttributes) {
-                    newNode.setAttribute(basicConnectorEndpointAttribute[0], basicConnectorEndpointAttribute[1]);
-                }
-                break;
-            case SSL_HTTP:
-                for (String[] secureConnectorEndpointAttribute : secureConnectorEndpointAttributes) {
-                    newNode.setAttribute(secureConnectorEndpointAttribute[0], secureConnectorEndpointAttribute[1]);
-                }
-                newNode.setAttribute("secure", "true");
-                newNode.setAttribute("clientAuth", "want");
-                newNode.setAttribute("keystoreFile", pInfo.getOSSpecificFunctions().getKeystoreDir()+ "ssl.ks");
-                break;
-            case SSL_HTTP_NOCLIENTCERT:
-                for (String[] secureConnectorEndpointAttribute : secureConnectorEndpointAttributes) {
-                    newNode.setAttribute(secureConnectorEndpointAttribute[0], secureConnectorEndpointAttribute[1]);
-                }
-                newNode.setAttribute("secure", "true");
-                newNode.setAttribute("clientAuth", "false");
-                newNode.setAttribute("keystoreFile", pInfo.getOSSpecificFunctions().getKeystoreDir()+ "ssl.ks");
-                break;
-        }
-        Element serviceElement = XmlUtil.findFirstChildElementByName(serverConfig.getDocumentElement(), (String) null, "Service");
-        Element engineElement = XmlUtil.findFirstChildElementByName(serviceElement, (String) null, "Engine");
-
-        serviceElement.insertBefore(newNode, engineElement);
-        return newNode;
     }
 }

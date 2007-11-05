@@ -53,7 +53,7 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
 
         dbUsername = defaults.get(PROP_DB_USERNAME);
         dbPassword = defaults.get(PROP_DB_PASSWORD);
-         String existingDBUrl = (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_URL);
+        String existingDBUrl = (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_URL);
 
         if (StringUtils.isNotEmpty(existingDBUrl)) {
             Matcher matcher = SsgDatabaseConfigBean.dbUrlPattern.matcher(existingDBUrl);

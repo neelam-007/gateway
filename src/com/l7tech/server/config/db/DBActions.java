@@ -446,10 +446,6 @@ public class DBActions {
         return DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
     }
 
-    public Connection getConnection(String dburl) throws SQLException {
-        return DriverManager.getConnection(dburl);
-    }
-
     public void dropDatabase(String dbName, String hostname, String username, String password, boolean isInfo) {
         Connection conn = null;
         Statement stmt = null;

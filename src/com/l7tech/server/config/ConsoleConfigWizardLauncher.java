@@ -67,7 +67,6 @@ public class ConsoleConfigWizardLauncher {
         //make sure that the server.xml gets appropriately upgraded to include the new ConnectionId Management stuff
         additionalCommands.add(new LoggingConfigCommand(null));
         additionalCommands.add(new RmiConfigCommand(null));
-        additionalCommands.add(new AppServerConfigCommand());
         return additionalCommands;
     }
 
@@ -78,6 +77,7 @@ public class ConsoleConfigWizardLauncher {
         stepsList.add(new ConfigWizardConsolePartitioningStep(consoleWizard));
         stepsList.add(new ConfigWizardConsoleClusteringStep(consoleWizard));
         stepsList.add(new ConfigWizardConsoleDatabaseStep(consoleWizard));
+        stepsList.add(new ConfigWizardConsoleEndpointsStep(consoleWizard));
         stepsList.add(new ConfigWizardConsoleKeystoreStep(consoleWizard));
         stepsList.add(new ConfigWizardConsoleSummaryStep(consoleWizard));
         stepsList.add(new ConfigWizardConsoleResultsStep(consoleWizard));

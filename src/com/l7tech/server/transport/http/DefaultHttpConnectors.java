@@ -18,28 +18,27 @@ import java.io.FileNotFoundException;
 /**
  * This class encapsulates the code for initializing the connectors table from the contents of server.xml.
  */
-class DefaultHttpConnectors {
+public class DefaultHttpConnectors {
     protected static final Logger logger = Logger.getLogger(DefaultHttpConnectors.class.getName());
     static final String defaultEndpoints = "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS";
 
-    private static File findServerXml(ServerConfig config) throws FileNotFoundException {
-        String path = config.getProperty(ServerConfig.PARAM_SERVERXML);
-        if (path == null)
+    private static File findServerXml(String pathToServerXml) throws FileNotFoundException {
+        if (pathToServerXml == null)
             throw new FileNotFoundException("No server.xml path configured.");
-        return new File(path);
+        return new File(pathToServerXml);
     }
 
     /**
      * Create connectors from server.xml if possible, or by creating some hardcoded defaults.
      *
-     * @param serverConfig  serverConfig instance, for locating server.xml
+     * @param pathToServerXml the fully qualified path used for locating server.xml
      * @return a Set of connectors.  Never null or empty.
      */
-    static Collection<SsgConnector> makeFallbackConnectors(ServerConfig serverConfig) {
+    public static Collection<SsgConnector> makeFallbackConnectors(String pathToServerXml) {
         List<Map<String, String>> connectors;
         try {
             ServerXmlParser serverXml = new ServerXmlParser();
-            serverXml.load(findServerXml(serverConfig));
+            serverXml.load(findServerXml(pathToServerXml));
             connectors = serverXml.getConnectors();
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Unable to load connectors from server.xml (will use default connectors): " + ExceptionUtils.getMessage(e), e);

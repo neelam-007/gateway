@@ -1,14 +1,12 @@
 package com.l7tech.server.partition;
 
 import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.*;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import javax.xml.xpath.XPathExpressionException;
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -94,45 +92,15 @@ public class PartitionManager {
     }
 
     public void addPartition(String partitionId) {
-        //inside partitionDir is a server.xml that we need to parse
         OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions(partitionId);
-        String serverXmlPath = osf.getTomcatServerConfig();
-        InputStream is = null;
-        try {
-            Document dom = null;
-            try {
-                is = new FileInputStream(serverXmlPath);
-                dom = XmlUtil.parse(is);
-            } catch (FileNotFoundException e) {
-                logger.warning("Could not find a server.xml for partition \"" + partitionId + "\". This partition " +
-                        "will not be able to start until it is configured with the Configuration Wizard.");
-            }
+        PartitionInformation pi;
 
-            PartitionInformation pi;
-
-            if (dom == null) {
-                pi = new PartitionInformation(partitionId);
-                pi.setNewPartition(false);
-                pi.setEnabled(false);
-                pi.shouldDisable(); //make sure that unless something changes, this stays disabled.
-                new File(osf.getPartitionBase() + partitionId, PartitionInformation.ENABLED_FILE).delete();
-            } else {
-                pi = new PartitionInformation(partitionId, dom, false);
-                pi.setEnabled(new File(osf.getPartitionBase() + partitionId, PartitionInformation.ENABLED_FILE).exists());
-            }
-            partitions.put(pi.getPartitionId(), pi);
-        } catch (XPathExpressionException e) {
-            logger.warning("There was an error while reading the configuration of partition \"" + partitionId + "\". This partition will not be enumerated");
-            logger.warning(e.getMessage());
-        } catch (SAXException e) {
-            logger.warning("There was an error while reading the configuration of partition \"" + partitionId + "\". This partition will not be enumerated");
-            logger.warning(e.getMessage());
-        } catch (IOException e) {
-            logger.warning("There was an error while reading the configuration of partition \"" + partitionId + "\". This partition will not be enumerated");
-            logger.warning(e.getMessage());
-        } finally {
-            ResourceUtils.closeQuietly(is);
-        }
+        pi = new PartitionInformation(partitionId);
+        pi.setNewPartition(false);
+        pi.setEnabled(false);
+        pi.shouldDisable(); //make sure that unless something changes, this stays disabled.
+        new File(osf.getPartitionBase() + partitionId, PartitionInformation.ENABLED_FILE).delete();
+        partitions.put(pi.getPartitionId(), pi);
     }
 
     public boolean isPartitioned() {
@@ -232,7 +200,7 @@ public class PartitionManager {
                     for (File originalFile : originalFiles) {
                         fileNames.add(originalFile.getName());
                     }
-                    pa.setUnixFilePermissions(fileNames.toArray(new String[0]), "775", templatePartitionDir, osf);
+                    pa.setUnixFilePermissions(fileNames.toArray(new String[fileNames.size()]), "775", templatePartitionDir, osf);
 
                 } catch (IOException e) {
                     System.out.println("Error while creating the template partition: " + e.getMessage());
@@ -257,7 +225,7 @@ public class PartitionManager {
                         for (File templateFile : templateFiles) {
                             fileNames.add(templateFile.getName());
                         }
-                        pa.setUnixFilePermissions(fileNames.toArray(new String[0]), "775", defaultPartitionDir, osf);
+                        pa.setUnixFilePermissions(fileNames.toArray(new String[fileNames.size()]), "775", defaultPartitionDir, osf);
                     } else {
                         // copy old config, backup any existing files with the given extension.
                         copyConfigurations(originalFiles, defaultPartitionDir, osf.getUpgradedNewFileExtension());
@@ -265,7 +233,7 @@ public class PartitionManager {
                         for (File originalFile : originalFiles) {
                             fileNames.add(originalFile.getName());
                         }
-                        pa.setUnixFilePermissions(fileNames.toArray(new String[0]), "775", defaultPartitionDir, osf);
+                        pa.setUnixFilePermissions(fileNames.toArray(new String[fileNames.size()]), "775", defaultPartitionDir, osf);
                         renameUpgradeFiles(defaultPartitionDir, osf.getUpgradedOldFileExtension());
                         if (osf.isUnix()) {
                             File f = new File(osf.getPartitionBase() + "default_/" + "enabled");
@@ -278,8 +246,6 @@ public class PartitionManager {
                     s = defaultPartitionDir.getAbsolutePath() + "/var/modules";
                     pa.setUnixFilePermissions(new String[]{s}, "775", defaultPartitionDir, osf);
 
-//                    PartitionActions.fixConnectorAttributes(defaultPartitionDir, null);
-                    PartitionActions.doFirewallConfig(new PartitionInformation(PartitionInformation.DEFAULT_PARTITION_NAME));
                 } catch (IOException e) {
                     System.out.println("Error while creating the default partition: " + e.getMessage());
                     System.exit(1);
@@ -317,7 +283,6 @@ public class PartitionManager {
         });
 
         for (File destinationPartition: listOfPartitions) {
-            PartitionActions.fixConnectorAttributes(destinationPartition, null);
             PasswordPropertyCrypto passwordEncryptor =
                     OSDetector.getOSSpecificFunctions(destinationPartition.getName()).getPasswordPropertyCrypto(); 
             updateConfigInPartition(templateFiles, destinationPartition, passwordEncryptor);
@@ -336,16 +301,9 @@ public class PartitionManager {
             } else {
                 if (templateFile.getName().endsWith("properties")) {
                     PropertyHelper.mergePropertiesInPlace(partitionFile, templateFile, true, passwordEncryptor);
-                } else if (templateFile.getName().equals("server.xml")){
-                    //do special server xml merge.
-                    mergeServerXmlFileInPlace(partitionFile, templateFile, passwordEncryptor);
                 }
             }
         }
-    }
-
-    private static void mergeServerXmlFileInPlace(File originalXmlFile, File newXmlFile, PasswordPropertyCrypto passwordEncryptor) throws IOException, SAXException {
-        //do nothing for now until we decide what to do with server.xml updates, if anything
     }
 
     private static void copyNewTemplateFilesToPartitions(final File templatePartitionDir, final File partitionsBaseDir) throws IOException {

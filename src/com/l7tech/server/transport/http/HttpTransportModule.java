@@ -362,7 +362,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * @return zero or more connectors that have already been saved to the database.  Never null or empty.
      */
     private Collection<SsgConnector> createFallbackConnectors() {
-        Collection<SsgConnector> toAdd = DefaultHttpConnectors.makeFallbackConnectors(serverConfig);
+        String pathToServerXml = serverConfig.getProperty(ServerConfig.PARAM_SERVERXML);
+        Collection<SsgConnector> toAdd = DefaultHttpConnectors.makeFallbackConnectors(pathToServerXml);
         for (SsgConnector connector : toAdd) {
             try {
                 ssgConnectorManager.save(connector);

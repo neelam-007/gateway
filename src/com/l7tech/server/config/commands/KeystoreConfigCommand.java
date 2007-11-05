@@ -244,7 +244,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
             updateJavaSecurity(javaSecFile, newJavaSecFile, KeystoreConfigBean.DEFAULT_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
             updateSystemPropertiesFile(ksBean, systemPropertiesFile);
         } catch (Exception e) {
             String mess = "problem generating keys or keystore - skipping keystore configuration: ";
@@ -295,7 +294,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
             updateJavaSecurity(javaSecFile, newJavaSecFile, LUNA_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
             updateSystemPropertiesFile(ksBean, systemPropertiesFile);
         } catch (Exception e) {
             String mess = "problem generating keys or keystore - skipping keystore configuration: ";
@@ -373,7 +371,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
             //General Keystore Setup
             updateKeystoreProperties(keystorePropertiesFile, fullPassword);
-            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), fullPassword);
             updateSystemPropertiesFile(ksBean, systemPropertiesFile);
 
         } catch (ScaException e) {
@@ -414,7 +411,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
             //General Keystore Setup
             updateKeystoreProperties(keystorePropertiesFile, fullKsPassword);
-            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), fullKsPassword);
             updateSystemPropertiesFile(ksBean, systemPropertiesFile);
         } catch (ScaException e) {
             logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
@@ -1059,47 +1055,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
 
-
-    private void updateServerConfig(File tomcatServerConfigFile, String sslKeyStorePath, char[] ksPassword) {
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
-        try {
-            fis = new FileInputStream(tomcatServerConfigFile);
-            Document doc = XmlUtil.parse(fis);
-
-            doConnectorElementInServerConfig(doc, sslKeyStorePath, ksPassword);
-            fis.close();
-            fis = null;
-
-            fos = new FileOutputStream(tomcatServerConfigFile);
-            XmlUtil.nodeToOutputStream(doc, fos);
-            logger.info("Updating the server.xml");
-            fos.close();
-            fos = null;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } finally {
-            ResourceUtils.closeQuietly(fis);
-            ResourceUtils.closeQuietly(fos);
-        }
-    }
-
-    private void doConnectorElementInServerConfig(Document doc, String sslKeyStorePath, char[] ksPassword) {
-        NodeList list = doc.getDocumentElement().getElementsByTagName("Connector");
-        for (int i = 0; i < list.getLength(); i++) {
-            Element el = (Element)list.item(i);
-            if (el.hasAttribute("secure") && el.getAttribute("secure").equalsIgnoreCase("true")) {
-                el.setAttribute(XML_KSFILE, sslKeyStorePath);
-                el.removeAttribute(XML_KSPASS); //this will default to the one in keystore properties instead (as of 4.2)
-                el.setAttribute(XML_KSTYPE, getKsType());
-                el.setAttribute(XML_KSALIAS, KeyStoreConstants.PROP_KS_ALIAS_DEFAULTVALUE);
-            }
-        }
-    }
 
     private void updateKeystoreProperties(File keystorePropertiesFile, char[] ksPassword) throws IOException, ConfigurationException {
         FileOutputStream fos = null;

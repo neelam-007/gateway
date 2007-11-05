@@ -25,10 +25,8 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         boolean success = true;
         PartitionInformation pInfo = partitionBean.getPartitionInfo();
         try {
-            PartitionActions.updatePartitionEndpoints(pInfo, true);
             PartitionActions.updateSystemProperties(pInfo, true);
             updateStartupScripts(pInfo);
-            updateFirewallRules(pInfo);
             enablePartitionForStartup(pInfo);
         } catch (Exception e) {
             success = false;
@@ -49,10 +47,4 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     private void updateStartupScriptWindows(PartitionInformation pInfo) throws IOException, InterruptedException {
         PartitionActions.installWindowsService(pInfo);
     }
-
-    private void updateFirewallRules(PartitionInformation pInfo) {
-        if (pInfo.getOSSpecificFunctions().isUnix())
-            PartitionActions.doFirewallConfig(pInfo);
-    }
-
 }
