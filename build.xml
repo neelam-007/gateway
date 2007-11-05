@@ -1605,6 +1605,7 @@
                 <exclude name="com/l7tech/proxy/ClientProxy*.class"/>
                 <exclude name="com/l7tech/proxy/Main*.class"/>
                 <exclude name="com/l7tech/proxy/RequestHandler*.class"/>
+                <exclude name="com/l7tech/server/config/ui/**/*"/>
                 <exclude name="com/l7tech/server/flasher/**"/>
 
                 <!-- UDDI implementations (these should be packaged as modules) -->
@@ -2839,7 +2840,7 @@
         <property name="fail" value="true"/>
     </target>
 
-    <macrodef name="checkdeps">
+    <macrodef name="dcheckdeps">
         <attribute name="libfilesetref"/>
         <attribute name="jarfile"/>
         <attribute name="resultproperty"/>
