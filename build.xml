@@ -3612,6 +3612,7 @@
             <fileset dir="${src.root}/modules/assertions/EchoRoutingAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/FtpRoutingAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/FtpCredentialAssertion/build" includes="*.aar"/>
+            <fileset dir="${src.root}/modules/assertions/IdentityAttributesAssertion/build" includes="*.aar"/>
         </copy>
 
         <!-- Copy LDAP templates -->

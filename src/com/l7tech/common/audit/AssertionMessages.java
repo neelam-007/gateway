@@ -523,6 +523,7 @@ public class AssertionMessages extends Messages {
     public static final M SAML_ISSUER_NOT_SOAP      = m(8406, Level.WARNING, "Message is not SOAP");
     public static final M SAML_ISSUER_BAD_XML       = m(8407, Level.WARNING, "Message appeared to be SOAP but is not valid");
     public static final M SAML_ISSUER_CANT_DECORATE = m(8408, Level.WARNING, "WS-Security decoration failed");
+    public static final M SAML_ISSUER_MISSING_NIVAL = m(8409, Level.WARNING, "Specified NameIdentifier chosen, but no value specified; using default");
 
     public static final M IDENTITY_ATTRIBUTE_NO_USER     = m(8450, Level.INFO, "No user from the expected identity provider has yet been authenticated");
     public static final M IDENTITY_ATTRIBUTE_MULTI_USERS = m(8451, Level.INFO, "Multiple users from the expected identity provider have been authenticated; choosing the first");

@@ -93,6 +93,7 @@ public final class ExpandVariables {
         return syntax.filter(vals, audit);
     }
 
+    // TODO find out how to move this into VariableNameSyntax subclasses
     private static VariableNameSyntax parseNameSyntax(String rawName) {
         int ppos = rawName.indexOf("|");
         if (ppos == 0) throw new IllegalArgumentException("Variable names must not start with '|'");

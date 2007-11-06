@@ -155,7 +155,13 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
                 break;
             case SPECIFIED:
-                nameValue = ExpandVariables.process(assertion.getNameIdentifierValue(), vars, auditor);
+                String val = assertion.getNameIdentifierValue();
+                if (val == null) {
+                    auditor.logAndAudit(AssertionMessages.SAML_ISSUER_MISSING_NIVAL);
+                    nameValue = null;
+                } else {
+                    nameValue = ExpandVariables.process(val, vars, auditor);
+                }
                 nameFormat = assertion.getNameIdentifierFormat();
                 break;
             case NONE:
@@ -311,7 +317,9 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     nameFormatOrNamespace = ExpandVariables.process(attribute.getNamespace(), vars, auditor);
                     break;
                 case 2:
-                    nameFormatOrNamespace = ExpandVariables.process(attribute.getNameFormat(), vars, auditor);
+                    String nf = attribute.getNameFormat();
+                    if (nf == null) nf = SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED;
+                    nameFormatOrNamespace = ExpandVariables.process(nf, vars, auditor);
                     break;
                 default:
                     throw new RuntimeException(); // Can't happen
