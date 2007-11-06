@@ -13,7 +13,6 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.identity.User;
 
 /**
@@ -93,12 +92,7 @@ public class ChangePasswordAction extends SecureAction {
                         changePassword(owner, user, securityProvider, "Invalid password '"+iae.getMessage()+"'.");    
                     }
                     catch(IllegalStateException iae) {
-                        ExceptionDialog dialog = ExceptionDialog.createExceptionDialog(
-                                owner, "Error changing password.", iae.getMessage(), null, Level.WARNING);
-
-                        dialog.pack();
-                        Utilities.centerOnScreen(dialog);
-                        DialogDisplayer.display(dialog);
+                        DialogDisplayer.showMessageDialog(owner, "Error changing password.", iae.getMessage(), null);
                     }
                     catch(Exception e) {
                         ErrorManager.getDefault().notify(Level.WARNING, e, "Error while changing password.");

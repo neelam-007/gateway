@@ -14,7 +14,6 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.FileChooserUtil;
-import com.l7tech.common.gui.ExceptionDialog;
 
 /**
  * Action to load saved audit or log records.
@@ -79,15 +78,8 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
             }
             catch(IOException ioe) {
                 log.log(Level.WARNING, "Error reading file.", ioe);
-                ExceptionDialog exceptionDialog = ExceptionDialog.createExceptionDialog(
-                        TopComponents.getInstance().getTopParent(),
-                        "SecureSpan Manager - Error",
-                        "Error reading file: \n  " + file.getName(), 
-                        null,
-                        Level.WARNING);
-                exceptionDialog.pack();
-                Utilities.centerOnScreen(exceptionDialog);
-                DialogDisplayer.display(exceptionDialog);
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
+                        "Error reading file: \n  " + file.getName(), null);
             }
         }
         return accepted;
@@ -137,18 +129,10 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
                     openFile(file);
                 }
                 else {
-                    ExceptionDialog d = ExceptionDialog.createExceptionDialog(
-                            TopComponents.getInstance().getTopParent(),
-                            "SecureSpan Manager - Error",
-                            "File not accessible:\n'"+file.getAbsolutePath()+"'.",
-                            null,
-                            Level.INFO);
-                    d.pack();
-                    Utilities.centerOnScreen(d);
-                    d.setVisible(true);
+                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
+                            "File not accessible: '" + file.getAbsolutePath() + "'.", null);
                 }
             }
         }
-
     }
 }

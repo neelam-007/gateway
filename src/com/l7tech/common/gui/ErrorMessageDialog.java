@@ -1,22 +1,20 @@
-package com.l7tech.console.panels;
+package com.l7tech.common.gui;
 
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.console.util.TopComponents;
 
-import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.*;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
-import java.awt.*;
+import java.util.Date;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.*;
 import java.io.*;
 
 /**
@@ -32,14 +30,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
             "os.name",
             "os.arch",
     };
-    private static ResourceBundle resources;
-    private static Runnable shutdownHandler;
-
-    static {
-        DialogDisplayer.suppressSheetDisplay(ErrorMessageDialog.class);
-        resources = ResourceBundle.getBundle("com/l7tech/console/resources/ErrorMessageDialog");
-        shutdownHandler = new Runnable() {public void run(){System.exit(-1);}};
-    }
+    private final Throwable throwable;
 
     private JPanel mainPanel;
     private JButton okButton;
@@ -48,22 +39,17 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
     private JLabel iconLabel;
     private WrappingLabel messageLabel;
 
-    private final Throwable throwable;
-
-    /** Create a neverDisplay exception dialog that never displays anything. */
-    public ErrorMessageDialog(final Frame parent) {
-        super(parent, false);
-        this.throwable = null;
-    }
-
-    /** Create a neverDisplay exception dialog that never displays anything. */
-    public ErrorMessageDialog(final Dialog parent) {
-        super(parent, false);
-        this.throwable = null;
+    private static Runnable shutdownHandler;
+    public static ResourceBundle resources;
+    
+    static {
+        DialogDisplayer.suppressSheetDisplay(ErrorMessageDialog.class);
+        resources = ResourceBundle.getBundle("com/l7tech/common/resources/ErrorMessageDialog");
+        shutdownHandler = new Runnable() {public void run(){System.exit(-1);}};
     }
 
     /**
-     * Constructor ErrorMessageDialog
+     * Constructor ErrorMessageDialog for error messages
      */
     public ErrorMessageDialog(final Frame parent, final String errorMessage, final Throwable throwable) {
         super(parent, true);
@@ -72,7 +58,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
     }
 
     /**
-     * Constructor ErrorMessageDialog
+     * Constructor ErrorMessageDialog for error messages
      */
     public ErrorMessageDialog(final Dialog parent, final String errorMessage, final Throwable throwable) {
         super(parent, true);
@@ -93,11 +79,6 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
      * @param errorMessage .
      */
     private void initialize(String errorMessage) {
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        Utilities.setEscKeyStrokeDisposes(this);
-        Utilities.setAlwaysOnTop(this, true);
-        Utilities.centerOnScreen(this);
-
         setContentPane(mainPanel);
         setTitle(resources.getString("error.dialog.title"));
         iconLabel.setIcon(UIManager.getLookAndFeelDefaults().getIcon("OptionPane.warningIcon"));
@@ -121,23 +102,34 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
 
         setResizable(true);
         setSize(DIALOG_LENGTH, DIALOG_WIDTH);
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
+        Utilities.setEscKeyStrokeDisposes(this);
+        Utilities.setAlwaysOnTop(this, true);
+        Utilities.centerOnScreen(this);
     }
 
     public void actionPerformed(final ActionEvent e) {
         final Object source = e.getSource();
         if (source == okButton) {
-            setVisible(false);
+            //setVisible(false);
+            dispose();
         } else if (source == closeManagerButton) {
             shutdownHandler.run();
-            setVisible(false);
+            //setVisible(false);
+            dispose();
         } else if (source == reportButton) {
             saveReport();
         }
     }
 
-    private void saveReport() {
+    /**
+     * Build a file chooser for saving files with a suggestion name with txt/TXT extension.
+     * @return a file chooser
+     */
+    private JFileChooser getFileChooser() {
         // Create a JFileChooser and setup it
-        JFileChooser fileChooser = new JFileChooser(); // use the user's default directory
+        final JFileChooser fileChooser = new JFileChooser(); // use the user's default directory
         fileChooser.setDialogTitle(resources.getString("save.dialog.title"));
         fileChooser.setMultiSelectionEnabled(false);  // Allow single selection only
         fileChooser.setFileFilter(new FileFilter() {
@@ -152,11 +144,36 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
                 return "Text Files (*.txt)";
             }
         });
+
+        // Suggest a name for the being saved file
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+        final String suggestedName = "SecureSpanManager_Error_Report_" + sdf.format(new Date()) + ".txt";
+        final File sugFile = new File(suggestedName);
+        fileChooser.setSelectedFile(sugFile);
+        fileChooser.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if(JFileChooser.FILE_FILTER_CHANGED_PROPERTY.equals(e.getActionCommand())) {
+                    fileChooser.setSelectedFile(sugFile);
+                }
+            }
+        });
+
+        return fileChooser;
+    }
+
+    /**
+     * Helper method to save an error report via a Saving-file dialog
+     */
+    private void saveReport() {
+        // Get a file chooser
+        final JFileChooser fileChooser = getFileChooser();
+
         // Pop up the save file dialog
         int ret = fileChooser.showSaveDialog(TopComponents.getInstance().getTopParent());
         if (ret != JFileChooser.APPROVE_OPTION) {
             return;
         }
+
         // Check if the file extension is txt.
         String fileName = fileChooser.getSelectedFile().getPath();
         if (!fileName.endsWith(".txt") && !fileName.endsWith(".TXT")) { // add extension if not present
@@ -164,13 +181,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
         }
         // Check if the file does exist.
         File file = new File(fileName);
-        if (file == null) {
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                    "Cannot create the file " + fileName,
-                    "Warning",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        } else if (file.exists()) {
+        if (file.exists()) {
             int overwritten = JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                                                       "Overwrite " + fileName + "?",
                                                       "Warning",
@@ -190,13 +201,11 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
                     fileName + " not found or no pemission to write it.",
                     "Warning",
                     JOptionPane.WARNING_MESSAGE);
-            return;
         } catch (IOException e) {
             JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
                     "Cannot read/write the file " + fileName,
                     "Warning",
                     JOptionPane.WARNING_MESSAGE);
-            return;
         } finally {
             if (fileWriter != null) try {
                 fileWriter.close();
@@ -215,35 +224,36 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
      */
     private String getReportContent() {
         StringBuilder sb = new StringBuilder();
-
-        Calendar calendar = Calendar.getInstance();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd 'at' HH:mm:ss z");
-        sb.append(resources.getString("date.time")).append(dateFormat.format(calendar.getTime()));
-        sb.append(resources.getString("build.info")).append(BuildInfo.getLongBuildString());
-        sb.append(resources.getString("system.properties"));
-        for (String property : propertyKeys) {
-            sb.append("\t").append(property).append(": ").append(System.getProperty(property)).append("\n");
-        }
-        sb.append(resources.getString("memory.usage"));
-        sb.append(Runtime.getRuntime().freeMemory()).append(resources.getString("free.memory"));
-        sb.append(Runtime.getRuntime().totalMemory()).append(resources.getString("total.memory"));
-        sb.append(resources.getString("stack.trace"));
-        sb.append(stackTrace(throwable));
+
+        sb.append(MessageFormat.format(resources.getString("date.time"), dateFormat.format(new Date())));
+        sb.append(MessageFormat.format(resources.getString("build.info"), BuildInfo.getLongBuildString()));
+        sb.append(MessageFormat.format(resources.getString("system.properties"),
+                System.getProperty(propertyKeys[0]),
+                System.getProperty(propertyKeys[1]),
+                System.getProperty(propertyKeys[2]),
+                System.getProperty(propertyKeys[3])));
+        sb.append(MessageFormat.format(resources.getString("memory.usage"),
+                Runtime.getRuntime().freeMemory(),
+                Runtime.getRuntime().totalMemory()));
+        sb.append(MessageFormat.format(resources.getString("stack.trace"), stackTrace(throwable)));
         sb.append(resources.getString("help.centre"));
         return sb.toString();
     }
 
+    /**
+     * Helper method to get the full content of the stack trace. 
+     * @return
+     */
     private String stackTrace(Throwable throwable) {
         if (throwable == null) {
             return resources.getString("no.stack.trace");
         }
 
-        Throwable cause = ExceptionUtils.unnestToRoot(throwable);
-
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
 
-        cause.printStackTrace(printWriter);
+        throwable.printStackTrace(printWriter);
         printWriter.flush();
         return stringWriter.toString();
     }

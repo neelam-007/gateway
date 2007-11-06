@@ -2,13 +2,8 @@ package com.l7tech.console.logging;
 
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
-import com.l7tech.common.gui.ExceptionDialog;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
-
-import java.util.logging.Level;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Handles errors that appear to be caused by modular assertions being unloaded.
@@ -38,14 +33,7 @@ public class ModularAssertionErrorHandler implements ErrorHandler {
                 message = "Unable to load component.  It may be from a module which was recently unloaded on the Gateway.";
             }
 
-            ExceptionDialog d = ExceptionDialog.createExceptionDialog(TopComponents.getInstance().getTopParent(),
-                                                                      "SecureSpan Manager - Gateway error",
-                                                                      message,
-                                                                      t,
-                                                                      Level.WARNING);
-            d.pack();
-            Utilities.centerOnScreen(d);
-            DialogDisplayer.display(d);
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null, message, t);
             return true;
         }
 

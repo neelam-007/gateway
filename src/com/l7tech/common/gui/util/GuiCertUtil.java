@@ -32,7 +32,6 @@ import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.gui.ExceptionDialog;
 
 /**
  * GUI certificate related utils.
@@ -124,7 +123,7 @@ public class GuiCertUtil {
                             in = new FileInputStream(file);
                             fileBytes = HexUtils.slurpStream(in, 1024*64);
                         } catch (IOException ioe) {
-                            displayError(parent, "Error reading file", "Could not read certificate.");
+                            DialogDisplayer.showMessageDialog(parent, "Error reading file", "Could not read certificate.", null);
                             logger.log(Level.WARNING, "Error reading certificate data", ioe);
                             continue;
                         } finally {
@@ -245,21 +244,20 @@ public class GuiCertUtil {
                                 continue;
                             }
                             else {
-                                displayError(parent, "Error reading file", "Could not read certificate.");
+                                DialogDisplayer.showMessageDialog(parent, "Error reading file", "Could not read certificate.", null);
                                 logger.log(Level.WARNING, "Error reading certificate data", ioe);
                                 continue;
                             }
                         }
                         catch(CertificateException ce) {
-                            displayError(parent, "Error decoding file", "Could not decode certificate.");
+                            DialogDisplayer.showMessageDialog(parent, "Error decoding file", "Could not decode certificate.", null);
                             logger.log(Level.WARNING, "Error reading certificate data", ce);
                             continue;
                         }
                     }
                     else {
                         logger.log(Level.WARNING, "Cannot read selected certificate file");
-                        displayError(parent, SAVE_DIALOG_ERROR_TITLE,
-                                "Cannot read selected file.\n "+file.getAbsolutePath());
+                        DialogDisplayer.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Cannot read selected file.\n " + file.getAbsolutePath(), null);
                     }
                 }
             }
@@ -352,11 +350,11 @@ public class GuiCertUtil {
                     }
                     catch(IOException e) {
                         logger.log(Level.WARNING, "Error getting certificate data", e);
-                        displayError(parent, SAVE_DIALOG_ERROR_TITLE, "Certificate is invalid.");
+                        DialogDisplayer.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Certificate is invalid.", null);
                     }
                     catch(CertificateEncodingException cee) {
                         logger.log(Level.WARNING, "Error getting certificate data", cee);
-                        displayError(parent, SAVE_DIALOG_ERROR_TITLE, "Certificate is invalid.");
+                        DialogDisplayer.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Certificate is invalid.", null);
                     }
 
                     if (data != null) {
@@ -368,8 +366,7 @@ public class GuiCertUtil {
                         }
                         catch(IOException ioe) {
                             logger.log(Level.WARNING, "Error writing certificate file", ioe);
-                            displayError(parent, SAVE_DIALOG_ERROR_TITLE,
-                                    "Error writing certificate file.\n" + ExceptionUtils.getMessage(ioe));
+                            DialogDisplayer.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Error writing certificate file.", null);
                         }
                         finally {
                             ResourceUtils.closeQuietly(out);
@@ -378,8 +375,8 @@ public class GuiCertUtil {
                 }
                 else {
                     logger.log(Level.WARNING, "Cannot write to selected certificate file");
-                    displayError(parent, SAVE_DIALOG_ERROR_TITLE,
-                            "Cannot write to selected file.\n "+file.getAbsolutePath());
+                    DialogDisplayer.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE,
+                            "Cannot write to selected file.\n " + file.getAbsolutePath(), null);
                 }
             }
         }
@@ -412,19 +409,5 @@ public class GuiCertUtil {
                 return description;
             }
         };
-    }
-
-    private static void displayError(Window parent, String title, String message) {
-        ExceptionDialog ed;
-        if (parent instanceof Dialog) {
-            ed =ExceptionDialog.createExceptionDialog((Dialog) parent, title, null, message, null, Level.WARNING);
-        }
-        else {
-            ed = ExceptionDialog.createExceptionDialog((Frame) parent, title, null, message, null, Level.WARNING);
-        }
-        ed.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        ed.pack();
-        Utilities.centerOnScreen(ed);
-        DialogDisplayer.display(ed);
     }
 }

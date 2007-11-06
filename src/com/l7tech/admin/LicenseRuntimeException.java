@@ -9,19 +9,8 @@ import com.l7tech.common.LicenseException;
  */
 public class LicenseRuntimeException extends RuntimeAdminException {
 
-    public LicenseRuntimeException() {
-    }
-
-    public LicenseRuntimeException(String string) {
-        super(string);
-    }
-
     // New exception to conceal original stack trace from LicenseManager
     public LicenseRuntimeException(LicenseException le) {
         super(le.getMessage(), new LicenseException(le.getMessage()));
-    }
-
-    public LicenseRuntimeException(String string, Throwable throwable) {
-        super(string, throwable);
     }
 }

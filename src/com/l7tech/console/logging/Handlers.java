@@ -25,10 +25,8 @@ class Handlers {
             new VersionMismatchErrorHandler(),
             new PersistenceErrorHandler(),
             new RmiErrorHandler(),
-            new AdminSessionExpiredErrorHandler(),
             new PermissionDeniedErrorHandler(),
             new ModularAssertionErrorHandler(),
-            new DatabaseConnectionErrorHandler(),
             new DefaultErrorHandler()
         };
     }

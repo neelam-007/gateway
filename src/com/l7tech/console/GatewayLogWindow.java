@@ -3,7 +3,7 @@ package com.l7tech.console;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.FileChooserUtil;
-import com.l7tech.common.gui.ExceptionDialog;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.security.LogonListener;
@@ -17,7 +17,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ResourceBundle;
 import java.util.Date;
-import java.util.logging.Level;
 import java.text.SimpleDateFormat;
 import java.io.File;
 import java.io.IOException;
@@ -221,27 +220,13 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
                     }
                     catch(IOException ioe) {
                         file.delete(); // attempt to clean up
-                        ExceptionDialog d = ExceptionDialog.createExceptionDialog(
-                                GatewayLogWindow.this,
-                                "SecureSpan Manager - Error",
-                                "Error writing to file:\n'"+file.getAbsolutePath()+"'.",
-                                ioe,
-                                Level.WARNING);
-                        d.pack();
-                        Utilities.centerOnScreen(d);
-                        d.setVisible(true);
+                        DialogDisplayer.showMessageDialog(GatewayLogWindow.this, null,
+                                "Error writing to file:\n'" + file.getAbsolutePath() + "'.", null);
                     }
                 }
                 else {
-                    ExceptionDialog d = ExceptionDialog.createExceptionDialog(
-                            GatewayLogWindow.this,
-                            "SecureSpan Manager - Error",
-                            "Cannot write to file:\n'"+file.getAbsolutePath()+"'.",
-                            null,
-                            Level.INFO);
-                    d.pack();
-                    Utilities.centerOnScreen(d);
-                    d.setVisible(true);
+                    DialogDisplayer.showMessageDialog(GatewayLogWindow.this, null,
+                                "Cannot write to the file:\n'" + file.getAbsolutePath() + "'.", null);
                 }
             }
         }

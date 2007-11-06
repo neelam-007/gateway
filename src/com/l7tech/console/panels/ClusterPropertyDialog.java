@@ -11,7 +11,6 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -242,13 +241,8 @@ public class ClusterPropertyDialog extends JDialog {
                     try {
                         reg.getClusterStatusAdmin().saveProperty(dlg.getProperty());
                     } catch (DuplicateObjectException e) {
-                        ExceptionDialog dialog = ExceptionDialog.createExceptionDialog(
-                                ClusterPropertyDialog.this, "Cluster-Wide Property Error", null,
-                                "Cannot save duplicate property '"+dlg.getProperty().getName()+"'.",
-                                null, Level.WARNING);
-                        dialog.pack();
-                        Utilities.centerOnScreen(dialog);
-                        DialogDisplayer.display(dialog);
+                        DialogDisplayer.showMessageDialog(ClusterPropertyDialog.this, "Cluster-Wide Property Error",
+                                "Cannot save duplicate property '" + dlg.getProperty().getName() + "'.", null);
                     } catch (SaveException e) {
                         logger.log(Level.SEVERE, "exception setting property", e);
                     } catch (UpdateException e) {
@@ -327,8 +321,7 @@ public class ClusterPropertyDialog extends JDialog {
         // get new selection
         int selectedRow = propsTable.getSelectedRow();
         // decide whether or not the remove button should be enabled
-        boolean removeAndEditEnabled = true;
-        removeAndEditEnabled = selectedRow >= 0;
+        boolean removeAndEditEnabled = selectedRow >= 0;
 
         addButton.setEnabled(flags.canCreateSome());
         removeButton.setEnabled(flags.canDeleteSome() && removeAndEditEnabled);

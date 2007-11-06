@@ -3,12 +3,10 @@
  */
 package com.l7tech.console.logging;
 
-import com.l7tech.common.gui.ExceptionDialog;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.PermissionDeniedException;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
@@ -42,10 +40,7 @@ public class PermissionDeniedErrorHandler implements ErrorHandler {
             }
 
             e.getLogger().log(Level.INFO, message, t);
-            ExceptionDialog d = ExceptionDialog.createExceptionDialog(TopComponents.getInstance().getTopParent(), "Permission Denied", message, null, Level.INFO);
-            d.pack();
-            Utilities.centerOnScreen(d);
-            DialogDisplayer.display(d);
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Permission Denied", message, null);
         } else {
             e.handle();
         }

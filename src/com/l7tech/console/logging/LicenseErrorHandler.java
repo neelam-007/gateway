@@ -1,8 +1,8 @@
 package com.l7tech.console.logging;
 
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.ErrorMessageDialog;
 import com.l7tech.admin.LicenseRuntimeException;
 
 import java.util.logging.Level;
@@ -24,16 +24,8 @@ public class LicenseErrorHandler implements ErrorHandler {
         Throwable throwable = event.getThrowable();
 
         if (ExceptionUtils.causedBy(throwable, LicenseRuntimeException.class)) {
-            // disconnect manager
-            event.getLogger().log(Level.WARNING, "Disconnected from gateway, notifiying workspace.");
-            TopComponents.getInstance().setConnectionLost(true);
-            TopComponents.getInstance().disconnectFromGateway();
-
             // display error dialog
-            if (topParent != null) {
-                topParent.repaint();
-            }
-            new ErrorMessageDialog(topParent, errorMsg, ExceptionUtils.unnestToRoot(throwable)).setVisible(true);
+            DialogDisplayer.showMessageDialog(topParent, null, errorMsg, throwable);
         } else {
             // pass to next handle in the handle chain
             event.handle();

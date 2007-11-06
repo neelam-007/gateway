@@ -4,11 +4,10 @@
 
 package com.l7tech.external.assertions.ftprouting.console;
 
-import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.NumberField;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.transport.ftp.FtpTestException;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
@@ -36,7 +35,6 @@ import java.awt.event.ItemListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.EventListener;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -461,11 +459,7 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
                             JOptionPane.ERROR_MESSAGE);
 
                 } else {
-                    ExceptionDialog dialog = ExceptionDialog.createExceptionDialog(
-                            null, "FTP(S) Connection Test Error", "Unable to test connection to FTP(S) server.", cause, Level.WARNING);
-                    dialog.pack();
-                    Utilities.centerOnScreen(dialog);
-                    DialogDisplayer.display(dialog);
+                    throw ExceptionUtils.wrap(cause);
                 }
             }
         }

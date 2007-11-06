@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -10,10 +9,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.common.gui.FilterDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -348,7 +344,6 @@ public class NewGroupDialog extends JDialog {
         SwingUtilities.invokeLater(
                 new Runnable() {
                     public void run() {
-                        boolean disposeNow = true;
                         try {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.GROUP);
@@ -362,26 +357,13 @@ public class NewGroupDialog extends JDialog {
                             NewGroupDialog.this.fireEventGroupAdded(header);
                             insertSuccess = true;
                         } catch (DuplicateObjectException doe) {
-                            ExceptionDialog d = ExceptionDialog.createExceptionDialog(
-                                    NewGroupDialog.this,
-                                    "SecureSpan Manager - Warning",
-                                    null, ExceptionUtils.getMessage(doe),
-                                    null, Level.WARNING);
-                            d.pack();
-                            Utilities.centerOnScreen(d);
-                            disposeNow = false;
-                            DialogDisplayer.display(d, new Runnable() {
-                                public void run() {
-                                    NewGroupDialog.this.dispose();
-                                }
-                            });
-                        } catch (Exception e) {
+                            DialogDisplayer.showMessageDialog(NewGroupDialog.this, null, ExceptionUtils.getMessage(doe), null);
+                        } catch (ObjectModelException e) {
                             ErrorManager.getDefault().
                               notify(Level.WARNING, e, "Error encountered while adding a group {0}\n"+
                                      "The Group {0} has not been created.", new Object[] {group.getName()});
                         }
-                        if (disposeNow)
-                            NewGroupDialog.this.dispose();
+                        NewGroupDialog.this.dispose();
                     }
                 });
 

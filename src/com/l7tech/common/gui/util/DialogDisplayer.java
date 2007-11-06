@@ -1,6 +1,7 @@
 package com.l7tech.common.gui.util;
 
 import com.l7tech.common.util.SyspropUtil;
+import com.l7tech.common.gui.ErrorMessageDialog;
 
 import javax.swing.*;
 import javax.swing.event.InternalFrameAdapter;
@@ -359,6 +360,45 @@ public class DialogDisplayer {
                                  callback.run();
                              }
                          });
+    }
+
+    /**
+     * First decide if a message is displayed by a message dialog or an error message dialog.  Then display it.
+     *
+     * @param component: component in the parent window (must not be null)
+     * @param title: a title message (may be null)
+     * @param message: a message to be displayed in the dialog (must not be null)
+     * @param throwable: an exception (may be null)
+     */
+    public static void showMessageDialog(final Component component,
+                                         final String title,
+                                         final String message,
+                                         final Throwable throwable) {
+        Window parent;
+        if (component instanceof Window) {
+            parent = (Window) component;
+        } else {
+            parent = SwingUtilities.getWindowAncestor(component);
+        }
+        
+        if (throwable == null) { // Use a JOptionPane to display a message:
+            String dialogTitle = ErrorMessageDialog.resources.getString("ssm.message.title");
+            if (title != null) {
+                dialogTitle = title;
+            }
+            showMessageDialog(parent, message, dialogTitle, JOptionPane.WARNING_MESSAGE, null);
+        } else {                 // Otherwise, use an error dialog to display an error message:
+            // Create an error dialog
+            ErrorMessageDialog emd;
+            if (parent instanceof Frame) {
+                emd = new ErrorMessageDialog((Frame)parent, message, throwable);
+            } else {
+                emd = new ErrorMessageDialog((Dialog)parent, message, throwable);
+            }
+            
+            // Check if there is an extra job to be done after showing the error dialog
+            display(emd);
+        }
     }
 
     /**

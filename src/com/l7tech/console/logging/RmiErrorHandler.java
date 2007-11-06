@@ -1,7 +1,5 @@
 package com.l7tech.console.logging;
 
-import com.l7tech.common.gui.ExceptionDialog;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.util.TopComponents;
@@ -12,7 +10,7 @@ import java.net.SocketException;
 import java.rmi.*;
 import java.security.AccessControlException;
 import java.util.logging.Level;
-import java.awt.*;
+import java.awt.Frame;
 
 /**
  * This is now more of a "remoting" error handler, not just RMI.
@@ -20,9 +18,7 @@ import java.awt.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class RmiErrorHandler implements ErrorHandler {
-     private static final String ERROR_MESSAGE =
-      "<html><b>The SecureSpan Manager encountered an " +
-      "gateway error or communication error and was unable to complete the operation.</b><br></html>";
+     private static final String ERROR_MESSAGE = "A SecureSpan Gateway error or a communication error occurred.";
 
     /**
      * handle the error event
@@ -58,12 +54,9 @@ public class RmiErrorHandler implements ErrorHandler {
             Throwable t = e.getThrowable();
             String message = ERROR_MESSAGE;
             e.getLogger().log(Level.SEVERE, message, t);
-            Level level = Level.SEVERE;
             if (rex instanceof NoSuchObjectException ||
-                throwable instanceof AccessControlException)
-            {
-                message = "SecureSpan Gateway restarted, please log in again.";
-                level = Level.WARNING;
+                throwable instanceof AccessControlException) {
+                message = "The SecureSpan Gateway restarted, please login again.";
                 t = null;
             }
             else if ((rex instanceof ConnectException) ||
@@ -71,14 +64,11 @@ public class RmiErrorHandler implements ErrorHandler {
                     (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet()) ||
                     (throwable instanceof TimeoutRuntimeException)) {
                 message = "SecureSpan Gateway unavailable (Network issue or server stopped).";
-                level = Level.WARNING;
                 t = null;
             }
             if (topParent != null) topParent.repaint();
-            ExceptionDialog d = ExceptionDialog.createExceptionDialog(topParent, "SecureSpan Manager - Gateway error", message, t, level);
-            d.pack();
-            Utilities.centerOnScreen(d);
-            DialogDisplayer.display(d);
+            // if t = null, show message dialog, otherwise, show error dialog.
+            DialogDisplayer.showMessageDialog(topParent, null, message, t);
         } else {
             e.handle();
         }

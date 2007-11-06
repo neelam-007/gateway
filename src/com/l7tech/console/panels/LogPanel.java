@@ -8,7 +8,6 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.BuildInfo;
 import static com.l7tech.common.Component.fromId;
 import com.l7tech.common.audit.*;
-import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.NumberField;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.JTableColumnResizeMouseListener;
@@ -1892,11 +1891,7 @@ public class LogPanel extends JPanel {
         logger.info(dialogMessage);
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                ExceptionDialog d = ExceptionDialog.createExceptionDialog(
-                        null, "SecureSpan Manager - Error", dialogMessage, null, Level.WARNING);
-                d.pack();
-                Utilities.centerOnScreen(d);
-                DialogDisplayer.display(d);
+                DialogDisplayer.showMessageDialog((Dialog) null, dialogMessage, null);
             }
         });
     }

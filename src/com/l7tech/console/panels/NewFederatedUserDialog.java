@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.MaxLengthDocument;
 import com.l7tech.common.gui.FilterDocument;
 import com.l7tech.common.util.ExceptionUtils;
@@ -19,6 +18,7 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.ObjectModelException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -259,7 +259,6 @@ public class NewFederatedUserDialog extends JDialog {
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                boolean disposeNow = true;
                 try {
                     EntityHeader header = new EntityHeader();
                     header.setType(EntityType.USER);
@@ -275,27 +274,13 @@ public class NewFederatedUserDialog extends JDialog {
                     fireEventUserAdded(header);
                     insertSuccess = true;
                 } catch (DuplicateObjectException doe) {
-                    ExceptionDialog d = ExceptionDialog.createExceptionDialog(
-                            NewFederatedUserDialog.this,
-                            "SecureSpan Manager - Warning",
-                            null,
-                            ExceptionUtils.getMessage(doe),
-                            null, Level.WARNING);
-                    d.pack();
-                    Utilities.centerOnScreen(d);
-                    disposeNow = false;
-                    DialogDisplayer.display(d, new Runnable() {
-                        public void run() {
-                            NewFederatedUserDialog.this.dispose();
-                        }
-                    });
-                } catch (Exception e) {
+                    DialogDisplayer.showMessageDialog(NewFederatedUserDialog.this, null, ExceptionUtils.getMessage(doe), null);
+                } catch (ObjectModelException e) {
                     ErrorManager.getDefault().
                             notify(Level.WARNING, e, "Error encountered while adding a user\n" +
                             "The user has not been created.");
                 }
-                if (disposeNow)
-                    NewFederatedUserDialog.this.dispose();
+                NewFederatedUserDialog.this.dispose();
             }
         });
 

@@ -6,6 +6,7 @@
 package com.l7tech.console;
 
 import com.l7tech.common.gui.ExceptionDialog;
+import com.l7tech.common.gui.ErrorMessageDialog;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.common.util.ExceptionUtils;
@@ -338,6 +339,7 @@ public class AppletMain extends JApplet implements SheetHolder {
             }
         };
         ExceptionDialog.setShutdownHandler(shutdownTask);
+        ErrorMessageDialog.setShutdownHandler(shutdownTask);
         CascadingErrorHandler.setShutdownHandler(shutdownTask);
 
         // Set AWT error handler

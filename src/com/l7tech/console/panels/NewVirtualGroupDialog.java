@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -13,10 +12,7 @@ import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.identity.fed.NoTrustedCertsSaveException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -167,20 +163,13 @@ public class NewVirtualGroupDialog extends JDialog {
                             errorMessage = ExceptionUtils.getMessage(doe);
                         } catch (NoTrustedCertsSaveException ntcse) {
                             errorMessage = ExceptionUtils.getMessage(ntcse);
-                        } catch (Exception e) {
+                        } catch (ObjectModelException e) {
                             ErrorManager.getDefault().
                               notify(Level.WARNING, e, "Error encountered while adding a group\n"+
                                      "The Group has not been created.");
                         } finally {
                             if (errorMessage != null) {
-                                ExceptionDialog d = ExceptionDialog.createExceptionDialog(
-                                        NewVirtualGroupDialog.this,
-                                        "SecureSpan Manager - Warning",
-                                        null, errorMessage,
-                                        null, Level.WARNING);
-                                d.pack();
-                                Utilities.centerOnScreen(d);
-                                DialogDisplayer.display(d);
+                                DialogDisplayer.showMessageDialog(NewVirtualGroupDialog.this, null, errorMessage, null);
                             }
                         }
                         NewVirtualGroupDialog.this.dispose();

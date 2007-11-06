@@ -9,7 +9,6 @@ package com.l7tech.console;
 import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.*;
 import com.l7tech.console.action.DeleteAuditEventsAction;
 import com.l7tech.console.action.DownloadAuditEventsAction;
@@ -32,7 +31,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Level;
 
 /**
  * To display audit records.
@@ -555,27 +553,13 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
                     }
                     catch(IOException ioe) {
                         file.delete(); // attempt to clean up
-                        ExceptionDialog d = ExceptionDialog.createExceptionDialog(
-                                GatewayAuditWindow.this,
-                                "SecureSpan Manager - Error",
-                                "Error writing to file:\n'"+file.getAbsolutePath()+"'.",
-                                ioe,
-                                Level.WARNING);
-                        d.pack();
-                        Utilities.centerOnScreen(d);
-                        d.setVisible(true);
+                        DialogDisplayer.showMessageDialog(GatewayAuditWindow.this, null,
+                                "Error writing to file:\n'" + file.getAbsolutePath() + "'.", null);
                     }
                 }
                 else {
-                    ExceptionDialog d = ExceptionDialog.createExceptionDialog(
-                            GatewayAuditWindow.this,
-                            "SecureSpan Manager - Error",
-                            "Cannot write to file:\n'"+file.getAbsolutePath()+"'.",
-                            null,
-                            Level.INFO);
-                    d.pack();
-                    Utilities.centerOnScreen(d);
-                    d.setVisible(true);
+                    DialogDisplayer.showMessageDialog(GatewayAuditWindow.this, null,
+                            "Cannot write to file:\n'" + file.getAbsolutePath() + "'.", null);
                 }
             }
         }
