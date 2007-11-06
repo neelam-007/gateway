@@ -191,7 +191,7 @@ public class FirewallRulesParser {
             try {
                 ppis.add(FirewallRulesParser.getInfoForPartition(pi));
             } catch (IOException e) {
-                logger.log(Level.WARNING, "Unable to read firewall information for partition " + partitionName + ": " + ExceptionUtils.getMessage(e), e);
+                logger.log(Level.WARNING, "Unable to read firewall information for partition " + partitionName + ": " + ExceptionUtils.getMessage(e));
             }
         }
         return new PortInfo(ppis);
