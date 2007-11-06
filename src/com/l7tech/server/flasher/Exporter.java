@@ -179,9 +179,6 @@ public class Exporter {
                 if (!tomcatprops.exists()) {
                     logger.warning("tomcat properties are not where expected. this could be caused by an imcomplete partition migration");
                     tomcatprops = new File("/ssg/tomcat/conf/server.xml");
-                    if (!tomcatprops.exists()) {
-                        throw new IOException("tomcat properties cannot be found anywhere");
-                    }
                 }
                 File sysProps = new File(osFunctions.getSsgSystemPropertiesFile());
                 String ksdir = osFunctions.getKeystoreDir();
@@ -205,7 +202,10 @@ public class Exporter {
                 }
                 FileUtils.copyFile(ssglogprops, new File(tmpDirectory + File.separator + ssglogprops.getName()));
                 FileUtils.copyFile(ksprops, new File(tmpDirectory + File.separator + ksprops.getName()));
-                FileUtils.copyFile(tomcatprops, new File(tmpDirectory + File.separator + tomcatprops.getName()));
+                if (tomcatprops.exists()) {
+                    // No more server.xml since 4.3.
+                    FileUtils.copyFile(tomcatprops, new File(tmpDirectory + File.separator + tomcatprops.getName()));
+                }
                 FileUtils.copyFile(caCer, new File(tmpDirectory + File.separator + caCer.getName()));
                 FileUtils.copyFile(sslCer, new File(tmpDirectory + File.separator + sslCer.getName()));
                 FileUtils.copyFile(caKS, new File(tmpDirectory + File.separator + caKS.getName()));
