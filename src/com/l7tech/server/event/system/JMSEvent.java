@@ -6,9 +6,6 @@ import com.l7tech.common.Component;
 
 /**
  * Event class for use by JMS receivers.
- *
- * @author $Author$
- * @version $Revision$
  */
 public class JMSEvent extends TransportEvent {
 
@@ -19,7 +16,7 @@ public class JMSEvent extends TransportEvent {
             Level level,
             String ip,
             String message) {
-        super(source, Component.GW_JMSRECV, ip, level, message, NAME);
+        super(source, Component.GW_JMSRECV, ip, level, NAME, message);
     }
 
     //- PRIVATE
