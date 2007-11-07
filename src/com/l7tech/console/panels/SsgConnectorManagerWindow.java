@@ -331,22 +331,6 @@ public class SsgConnectorManagerWindow extends JDialog {
         public Object getPort() {
             return connector.getPort();
         }
-
-        public Object getMA() {
-            return connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_REMOTE) ? "Y" : "";
-        }
-
-        public Object getAW() {
-            return connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET) ? "Y" : "";
-        }
-
-        public Object getPS() {
-            return connector.offersEndpoint(SsgConnector.Endpoint.MESSAGE_INPUT) ? "Y" : "";
-        }
-
-        public Object getBS() {
-            return connector.offersEndpoint(SsgConnector.Endpoint.OTHER_SERVLETS) ? "Y" : "";
-        }
     }
 
     private static class ConnectorTable extends JTable {
@@ -363,8 +347,6 @@ public class SsgConnectorManagerWindow extends JDialog {
                 col.setMinWidth(model.getColumnMinWidth(i));
                 col.setPreferredWidth(model.getColumnPrefWidth(i));
                 col.setMaxWidth(model.getColumnMaxWidth(i));
-                TableCellRenderer hr = model.getHeaderRenderer(i, getTableHeader().getDefaultRenderer());
-                if (hr != null) col.setHeaderRenderer(hr);
                 TableCellRenderer cr = model.getCellRenderer(i, getDefaultRenderer(String.class));
                 if (cr != null) col.setCellRenderer(cr);
             }
@@ -431,10 +413,6 @@ public class SsgConnectorManagerWindow extends JDialog {
 
             abstract Object getValueForRow(ConnectorTableRow row);
 
-            public TableCellRenderer getHeaderRenderer(final TableCellRenderer current) {
-                return null;
-            }
-
             public TableCellRenderer getCellRenderer(final TableCellRenderer current) {
                 return new TableCellRenderer() {
                     private Color defFg;
@@ -462,25 +440,6 @@ public class SsgConnectorManagerWindow extends JDialog {
                         }
 
                         return ret;
-                    }
-                };
-            }
-        }
-
-        private static final int NARROW_COL_WIDTH = 20;
-        private abstract class NarrowCol extends Col {
-            protected NarrowCol(String name) {
-                super(name, NARROW_COL_WIDTH, NARROW_COL_WIDTH, NARROW_COL_WIDTH);
-            }
-
-            public TableCellRenderer getHeaderRenderer(final TableCellRenderer current) {
-                return new TableCellRenderer() {
-                    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                        JLabel c = (JLabel)current.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        c.setText(NarrowCol.this.name);
-                        c.setBorder(null);
-                        c.setHorizontalAlignment(SwingConstants.LEFT);
-                        return c;
                     }
                 };
             }
@@ -516,30 +475,6 @@ public class SsgConnectorManagerWindow extends JDialog {
                         return row.getPort();
                     }
                 },
-
-                new NarrowCol("PS") {
-                    Object getValueForRow(ConnectorTableRow row) {
-                        return row.getPS();
-                    }
-                },
-
-                new NarrowCol("BS") {
-                    Object getValueForRow(ConnectorTableRow row) {
-                        return row.getBS();
-                    }
-                },
-
-                new NarrowCol("MA") {
-                    Object getValueForRow(ConnectorTableRow row) {
-                        return row.getMA();
-                    }
-                },
-
-                new NarrowCol("PS") {
-                    Object getValueForRow(ConnectorTableRow row) {
-                        return row.getAW();
-                    }
-                },
         };
 
         private final ArrayList<ConnectorTableRow> rows = new ArrayList<ConnectorTableRow>();
@@ -561,10 +496,6 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         public String getColumnName(int column) {
             return columns[column].name;
-        }
-
-        public TableCellRenderer getHeaderRenderer(int column, final TableCellRenderer current) {
-            return columns[column].getHeaderRenderer(current);
         }
 
         public TableCellRenderer getCellRenderer(int column, final TableCellRenderer current) {
