@@ -645,7 +645,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             } else {
                 // Disallow admin endpoint when private key other than SSL is selected (Bug #4270)
                 String alias = privateKeyComboBox.getSelectedKeyAlias();
-                if (!"SSL".equals(alias)) {
+                // TODO fix this hack when we have a more reliable way to detect the default SSL cert,
+                //      OR when it no longer matters what cert you pick once the SSM and Applet can work with any cert
+                if (!("SSL".equals(alias) || alias == null)) {
                     setEnableAndSelect(false, false, "Disabled because it requires the 'SSL' private key alias", cbEnableSsmApplet, cbEnableSsmRemote);
                 } else {
                     if (CA_REQUIRED.equals(clientAuthComboBox.getSelectedItem())) {
