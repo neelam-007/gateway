@@ -3,12 +3,11 @@ package com.l7tech.server.config.ui.console;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.server.config.*;
-import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.commands.ConfigurationCommand;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
-import org.apache.commons.lang.StringUtils;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -31,7 +30,7 @@ public class ConfigurationWizard {
     private Set<ConfigurationCommand> commands;
     private Set<ConfigurationCommand> additionalCommands;
     private boolean hadFailures;
-    String currentVersion = null;
+    static String currentVersion = null;
 
     private static final String COMMONS_LOGGING_PROP = "org.apache.commons.logging.Log";
     private static final String COMMONS_LOGGING_JDK14_LOGGER = "org.apache.commons.logging.impl.Jdk14Logger";
@@ -42,6 +41,12 @@ public class ConfigurationWizard {
 
     private ManualStepsManager manualStepsManager;
     private SharedWizardInfo sharedWizardInfo;
+
+    static {
+        currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
+        String subMinor = BuildInfo.getProductVersionSubMinor();
+        if (subMinor != null && !subMinor.equals("")) currentVersion += "." + subMinor;
+    }
 
     public ConfigurationWizard(InputStream in, PrintStream out) {
         init(in, out);
@@ -139,12 +144,7 @@ public class ConfigurationWizard {
         }
     }
 
-    public String getCurrentVersion() {
-        if (currentVersion == null) {
-            currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
-            String s = BuildInfo.getProductVersionSubMinor();
-            if (StringUtils.isNotEmpty(s)) currentVersion += "." + s;
-        }
+    public static String getCurrentVersion() {
         return currentVersion;
     }
 

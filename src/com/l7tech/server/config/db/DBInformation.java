@@ -7,6 +7,7 @@ public class DBInformation {
     private String password;
     private String privUsername;
     private String privPassword;
+    private boolean isNew;
 
     public DBInformation(String hostname, String dbName, String username, String password, String privUsername, String privPassword) {
         this.hostname = hostname;
@@ -63,5 +64,13 @@ public class DBInformation {
 
     public void setPrivPassword(String privPassword) {
         this.privPassword = privPassword;
+    }
+
+    public boolean isNew() {
+        return isNew;
+    }
+
+    public void setNew(boolean aNew) {
+        isNew = aNew;
     }
 }

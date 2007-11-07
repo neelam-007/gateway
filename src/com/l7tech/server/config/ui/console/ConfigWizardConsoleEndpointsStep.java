@@ -4,6 +4,8 @@ import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.config.EndpointActions;
 import com.l7tech.server.config.PartitionActions;
+import com.l7tech.server.config.SharedWizardInfo;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.beans.EndpointConfigBean;
 import com.l7tech.server.config.commands.EndpointConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
@@ -14,6 +16,7 @@ import com.l7tech.server.partition.PartitionManager;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Logger;
@@ -24,13 +27,69 @@ import java.util.regex.Pattern;
  * Date: Nov 1, 2007
  * Time: 12:08:57 PM
  */
-public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep{
+public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
     private static final Logger logger = Logger.getLogger(ConfigWizardConsoleEndpointsStep.class.getName());
 
     private static final String HEADER_CONFIGURE_ENDPOINTS= "-- Configure Endpoints for the \"{0}\" Partition --" + getEolChar();
     public static final String TITLE = "Configure Endpoints";
     private List<SsgConnector> endpointsToAdd;
     private EndpointConfigBean endpointBean;
+
+    private static enum EndpointEnabledState {
+        ENABLED("enabled"),
+
+        DISABLED("disabled"),
+
+        WILL_BE_ENABLED("will be enabled"),
+        ;
+
+        private String description;
+        EndpointEnabledState (String description) {this.description = description;}
+        public String toString() {return description;}
+    }
+
+    private class ConnectorAdapter {
+
+        private SsgConnector myConnector;
+        private PartitionInformation pinfo;
+        private DBInformation dbinfo;
+
+        public ConnectorAdapter(SsgConnector theConnector, PartitionInformation pinfo, DBInformation dbinfo) {
+            myConnector = theConnector;
+            this.pinfo = pinfo;
+            this.dbinfo = dbinfo;
+        }
+
+        public String toString() {
+            return myConnector.getName() + "(" + myConnector.getPort() + ") " +  "[" + getEnabledState() + "]";
+        }
+
+        public EndpointEnabledState getEnabledState() {
+            if (myConnector.isEnabled()) {
+                return EndpointEnabledState.ENABLED;
+            } else {
+                if (dbinfo.isNew() && pinfo.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
+                    return EndpointEnabledState.WILL_BE_ENABLED;
+                } else
+                    return EndpointEnabledState.DISABLED;
+            }
+        }
+
+        public SsgConnector getConnector() {
+            return myConnector;
+        }
+
+        public boolean asBoolean() {
+            switch (getEnabledState()) {
+                case ENABLED:
+                case WILL_BE_ENABLED:
+                    return true;
+                case DISABLED:
+                default:
+                    return false;
+            }
+        }
+    }
 
     public ConfigWizardConsoleEndpointsStep(ConfigurationWizard parent_) {
         super(parent_);
@@ -47,13 +106,41 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep{
 
     //each step must implement these.
     public boolean validateStep() {
-        return true;
+        return ensureAtLeastOneEndpoint();
+    }
+
+    private boolean ensureAtLeastOneEndpoint() {
+        PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
+        DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
+
+        //existing endpoints are tricky since they may be enabled at config application time if this is a new db and
+        // the default_ partition.
+        Collection<SsgConnector> adminEndpoints = EndpointActions.getExistingAdminEndpoints(pinfo);
+        if (adminEndpoints != null && !adminEndpoints.isEmpty()) {
+            for (SsgConnector adminEndpoint : adminEndpoints) {
+                if (new ConnectorAdapter(adminEndpoint, pinfo,dbinfo).asBoolean())
+                    return true;
+            }
+        }
+
+        if (endpointsToAdd != null && !endpointsToAdd.isEmpty()) {
+            for (SsgConnector ssgConnector : endpointsToAdd) {
+                if (ssgConnector.isEnabled())
+                    return true;
+            }
+        }
+
+        printText(getEolChar() +
+                  "*** At least one adminsitrative endpoint must be present and enabled in order to use the SecureSpan Gateway ***" + getEolChar() +
+                  "Please create at least one adminsitrative endpoint." + getEolChar() +
+                  getEolChar());
+        return false;
     }
 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
         PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
         try {
-            doConfigureEndpointsPrompts(pinfo);
+            doConfigureEndpointsPrompts(pinfo, validated);
             ( (EndpointConfigBean)configBean).setEndpointsToAdd(endpointsToAdd);
         } catch (IOException e) {
             logger.severe(ExceptionUtils.getMessage(e));
@@ -65,9 +152,10 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep{
         return TITLE;
     }
 
-    private void doConfigureEndpointsPrompts(PartitionInformation pinfo) throws IOException, WizardNavigationException {
+    private void doConfigureEndpointsPrompts(PartitionInformation pinfo, boolean shouldShowMessage) throws IOException, WizardNavigationException {
 
         List<String> promptList = new ArrayList<String>();
+        DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
         boolean finishedEndpointConfig;
         endpointBean.setLegacyEndpoints(EndpointActions.getLegacyEndpoints(pinfo));
 
@@ -75,15 +163,16 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep{
             promptList.clear();
             boolean hasExisting = false;
             List<SsgConnector> adminEndpoints = EndpointActions.getExistingAdminEndpoints(pinfo);
+
             if (adminEndpoints != null && !adminEndpoints.isEmpty()) {
                 hasExisting = true;
                 printText("You have the following administrative (secure) endpoints already configured." + getEolChar());
                 for (SsgConnector adminEndpoint : adminEndpoints) {
-                    printText("\t" + adminEndpoint.getName() + "(" + adminEndpoint.getPort() +")" + getEolChar());
+                  printText("\t" + new ConnectorAdapter(adminEndpoint, pinfo, dbinfo) + getEolChar());
                 }
                 printText(getEolChar());
             } else {
-                printText("At least one administration (secure) endpoint needs to be configured" + getEolChar() + "in order to administer the SecureSpan Gateway." + getEolChar() + getEolChar());    
+                if (shouldShowMessage) printText("At least one administration (secure) endpoint needs to be configured" + getEolChar() + "in order to administer the SecureSpan Gateway." + getEolChar() + getEolChar());    
             }
 
             printText(MessageFormat.format(HEADER_CONFIGURE_ENDPOINTS, pinfo.getPartitionId()));
@@ -127,7 +216,7 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep{
         do {
         input = getData(
                 new String[]{"Please enter the port for the new administrative endpoint: [" + defaultPort + "]"},
-                String.valueOf(connector.getPort()),
+                defaultPort,
                 portPattern,
                 "The port you have entered is invalid. Please re-enter");
 

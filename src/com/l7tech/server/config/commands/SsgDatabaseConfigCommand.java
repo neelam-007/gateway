@@ -7,7 +7,7 @@ import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.PasswordPropertyCrypto;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
-import com.l7tech.server.config.ui.gui.ConfigurationWizard;
+import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;

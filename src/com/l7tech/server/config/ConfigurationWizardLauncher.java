@@ -10,7 +10,6 @@ import com.l7tech.server.partition.PartitionManager;
 public class ConfigurationWizardLauncher {
     private static final String EOL_CHAR = System.getProperty("line.separator");
     public static final String PARTITION_UPGRADE = "-partitionMigrate";
-    public static final String GRAPHICAL_MODE = "-graphical";
     public static final String CONSOLE_MODE = "-console";
     public static final String EXPORT_SHARED_KEY = "-exportsharedkey";
     public static final String CHANGE_MASTER_PASSPHRASE = "-changeMasterPassphrase";
@@ -19,9 +18,6 @@ public class ConfigurationWizardLauncher {
                         "If no options are specified, console mode is assumed" + EOL_CHAR +
                         "\t-console" + EOL_CHAR +
                         "\t\trun the configuration wizard in console only mode" + EOL_CHAR +
-
-                        "\t-graphical" + EOL_CHAR +
-                        "\t\trun the configuration wizard in graphical mode" + EOL_CHAR +
 
                         "\t-partitionMigrate" + EOL_CHAR +
                         "\t\tmigrate ssg configuration in all partitions to the latest format" + EOL_CHAR +
@@ -52,8 +48,6 @@ public class ConfigurationWizardLauncher {
             SharedKeyGetter.main(newArgs);
         } else if (CHANGE_MASTER_PASSPHRASE.equalsIgnoreCase(launchType)) {
             MasterPassphraseChanger.main(newArgs);
-        } else if (GRAPHICAL_MODE.equalsIgnoreCase(launchType)) {
-            GuiConfigWizardLauncher.launch(newArgs);
         } else if (null == launchType || "".equals(launchType) || CONSOLE_MODE.equalsIgnoreCase(launchType)) {
             ConsoleConfigWizardLauncher.launch(newArgs);
         } else {

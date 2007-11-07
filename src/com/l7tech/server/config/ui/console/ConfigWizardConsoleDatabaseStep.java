@@ -144,6 +144,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         //don't pass in a default password so a user can enter a blank one if so desired
         doDBPasswordPrompts("");
         DBInformation dbInfo = new DBInformation(databaseBean.getDbHostname(), databaseBean.getDbName(), databaseBean.getDbUsername(), databaseBean.getDbPassword(), null, null);
+        dbInfo.setNew(createNewDb);
         getParentWizard().setDbInfo(dbInfo);
     }
 

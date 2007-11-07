@@ -1,6 +1,9 @@
 package com.l7tech.server.config;
 
-import com.l7tech.common.util.*;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
@@ -9,7 +12,6 @@ import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -195,6 +197,33 @@ public class PartitionActions {
         }
     }
 
+    /**
+     * Fixes keystore paths to correspond to the correct partition. Also removes any passwords from the server.xml
+     * found in the given partition.
+     * @param partitionDir which partition dir should be changed
+     * @throws FileNotFoundException
+     */
+    public static void fixConnectorAttributes(File partitionDir, PartitionInformation piToUpdate) throws FileNotFoundException {
+        File keystoreProperties = new File(partitionDir, "keystore.properties");
+        FileInputStream keystoreConfigFis = null;
+        FileOutputStream keystoreConfigFos = null;
+        try {
+            File newKeystorePath = new File(partitionDir, "keys");
+
+            keystoreConfigFis = new FileInputStream(keystoreProperties);
+            Properties props = new Properties();
+            props.load(keystoreConfigFis);
+            props.setProperty("keystoredir", newKeystorePath.getAbsolutePath());
+            keystoreConfigFos = new FileOutputStream(keystoreProperties);
+            props.store(keystoreConfigFos, "");
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Error updating keystore paths.", e);
+        } finally {
+            ResourceUtils.closeQuietly(keystoreConfigFis);
+            ResourceUtils.closeQuietly(keystoreConfigFos);
+        }
+    }
+
     public static void prepareNewpartition(PartitionInformation newPartition) throws IOException, SAXException {
         if (newPartition == null) {
             return;
@@ -202,6 +231,7 @@ public class PartitionActions {
 
         //edit the system.properties file so the name is correct
         try {
+            fixConnectorAttributes(new File(newPartition.getOSSpecificFunctions().getPartitionBase() + newPartition.getPartitionId()), newPartition);
             updateSystemProperties(newPartition, false);
         } catch (FileNotFoundException e) {
             logger.warning("Error while preparing the \"" + newPartition.getPartitionId() + "\" partition. [" + e.getMessage() + "]");

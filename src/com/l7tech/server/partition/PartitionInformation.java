@@ -115,11 +115,16 @@ public class PartitionInformation{
     }
 
     public Collection<SsgConnector> getConnectorsFromServerXml() {
-        return DefaultHttpConnectors.makeFallbackConnectors(getOSSpecificFunctions().getTomcatServerConfig());
+        if (new File(getOSSpecificFunctions().getTomcatServerConfig()).exists())
+            return DefaultHttpConnectors.makeFallbackConnectors(getOSSpecificFunctions().getTomcatServerConfig());
+        else
+            return Collections.emptyList();
     }
 
     public List<SsgConnector> parseFtpEndpointsAsSsgConnectors() {
         File ftpServerProps = new File(OSDetector.getOSSpecificFunctions(partitionId).getFtpServerConfig());
+        if (!ftpServerProps.exists()) return Collections.emptyList();
+
         FileInputStream fis = null;
         try {
             Properties props = new Properties();

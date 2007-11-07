@@ -9,9 +9,12 @@ import com.l7tech.server.config.beans.EndpointConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.db.SsgConnectorSql;
+import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Collection;
 import java.util.logging.Logger;
 
@@ -32,6 +35,7 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
         boolean success = true;
         Connection connection = null;
         try {
+            enableDbEndpointsIfNecessary();
             addEndpoints(endpointBean.getEndpointsToAdd(), "Error while adding new endpoints.");
             addEndpoints(endpointBean.getLegacyEndpoints(), "Error while adding legacy endpoints.");
         } catch (Exception e) {
@@ -42,21 +46,67 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
         return success;
     }
 
+    private void enableDbEndpointsIfNecessary() throws ClassNotFoundException, SQLException {
+        if (shouldEnableEndpoints()) {
+            logger.info("This is a new database and is the default_ partition. The default endpoints will be enabled.");
+            enableDbEndpoints();
+        } else {
+            logger.warning("The default endpoints will not be enabled. Enable them using the SecureSpan Manager if there are no conflicts.");
+        }
+    }
+
+    private boolean shouldEnableEndpoints() {
+        PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
+        DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
+        return (dbinfo != null &&
+                dbinfo.isNew() &&
+                pinfo.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME));
+    }
+
+    private void enableDbEndpoints() throws SQLException, ClassNotFoundException {
+        Connection conn = null;
+        Statement stmt = null;
+        logger.info("Enabling the default endpoints (8080, 8443 and 9443)");
+        try {
+            DBActions dba = new DBActions(getOsFunctions());
+            conn = dba.getConnection(SharedWizardInfo.getInstance().getDbinfo());
+            stmt = conn.createStatement();
+            conn.setAutoCommit(false);
+            stmt.execute("UPDATE connector SET enabled = 1 WHERE port = 8080");
+            stmt.execute("UPDATE connector SET enabled = 1 WHERE port = 8443");
+            stmt.execute("UPDATE connector SET enabled = 1 WHERE port = 9443");
+            conn.commit();
+            logger.info("Succesfully enabled the default endpoints");
+        } catch (ClassNotFoundException e) {
+            logger.severe("Error while enabling the default endpoints. " + ExceptionUtils.getMessage(e));
+            throw e;
+        } catch (SQLException e) {
+            logger.severe("Error while enabling the default endpoints. " + ExceptionUtils.getMessage(e));
+            throw e;
+        } finally {
+            ResourceUtils.closeQuietly(stmt);
+            ResourceUtils.closeQuietly(conn);
+        }
+
+    }
+
     private void addEndpoints(Collection<SsgConnector> whichOnes, String errorMessage) throws SQLException, ClassNotFoundException {
         if(whichOnes != null) {
             boolean shouldRollback = false;
             Connection conn = null;
             try {
-                conn = getConnection();
-                conn.setAutoCommit(false);
-                for (SsgConnector endpoint : whichOnes) {
-                    String name = endpoint.getName();
-                    String port = String.valueOf(endpoint.getPort());
-                    logger.info("Adding endpoint (" + name + ", port " + port + ")") ;
-                    new SsgConnectorSql(endpoint).save(conn);
+                if (!whichOnes.isEmpty()) {
+                    conn = getConnection();
+                    conn.setAutoCommit(false);
+                    for (SsgConnector endpoint : whichOnes) {
+                        String name = endpoint.getName();
+                        String port = String.valueOf(endpoint.getPort());
+                        logger.info("Adding endpoint (" + name + ", port " + port + ")") ;
+                        new SsgConnectorSql(endpoint).save(conn);
+                    }
+                    conn.commit();
+                    logger.info("Added all endpoints successfully");
                 }
-                conn.commit();
-                logger.info("Added all endpoints successfully");
             } catch (SQLException sqlex) {
                 logger.severe(errorMessage + ExceptionUtils.getMessage(sqlex));
                 if (conn != null ) shouldRollback = true;

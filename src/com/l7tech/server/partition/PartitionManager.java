@@ -99,7 +99,6 @@ public class PartitionManager {
         pi.setNewPartition(false);
         pi.setEnabled(false);
         pi.shouldDisable(); //make sure that unless something changes, this stays disabled.
-        new File(osf.getPartitionBase() + partitionId, PartitionInformation.ENABLED_FILE).delete();
         partitions.put(pi.getPartitionId(), pi);
     }
 
