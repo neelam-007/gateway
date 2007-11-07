@@ -310,6 +310,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             return;
         try {
             embedded.stop();
+            running.set(false);
         } catch (org.apache.catalina.LifecycleException e) {
             throw new LifecycleException(e);
         }
