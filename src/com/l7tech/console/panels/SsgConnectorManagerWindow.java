@@ -312,7 +312,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
 
         public Object getEnabled() {
-            return connector.isEnabled() ? "Yes" : "";
+            return connector.isEnabled() ? "Yes" : "No";
         }
 
         public Object getName() {
