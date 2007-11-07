@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.*;
+import com.l7tech.server.event.system.BackupEvent;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
 import com.l7tech.spring.remoting.RemoteUtils;
@@ -210,6 +211,20 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             }
 
             return new AdminAuditRecord(level(event), nodeId, oid, entityClassname, name, action, msg.toString(), info.identityProviderOid, info.login, info.id, info.ip);
+        } else if (genericEvent instanceof BackupEvent) {
+            final BackupEvent event = (BackupEvent)genericEvent;
+            final User user = event.getUser();
+            return new AdminAuditRecord(event.getLevel(),
+                                        nodeId,
+                                        0,
+                                        "<none>",
+                                        "Backup Service",
+                                        AdminAuditRecord.ACTION_OTHER,
+                                        event.getNote(),
+                                        user == null ? -1 : user.getProviderId(),
+                                        user == null ? "<none>" : user.getLogin(),
+                                        user == null ? "<none>" : user.getId(),
+                                        event.getClientAddr());
         } else if (genericEvent instanceof AdminEvent) {
             AdminEvent event = (AdminEvent)genericEvent;
             AdminInfo info = getAdminInfo();

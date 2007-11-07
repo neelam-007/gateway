@@ -382,6 +382,36 @@ public class SecureSpanConstants {
     }
 
     /**
+     * HTTP request header for indicating the originating client when a request
+     * is routed between cluster nodes. It should contain the value returned by
+     * {@link javax.servlet.http.HttpServletRequest#getRemoteHost()} when
+     * applied to the original request.
+     *
+     * <h3>Usages:</h3><ul>
+     * <li>Used when {@link com.l7tech.server.BackupServlet} routes a request
+     * to the target node.
+     * </ul>
+     *
+     * @since SecureSpan 4.3
+     */
+    public static final String HEADER_ORIGINAL_HOST = "L7-Original-Host";
+
+    /**
+     * HTTP request header for indicating the originating client when a request
+     * is routed between cluster nodes. It should contain the value returned by
+     * {@link javax.servlet.http.HttpServletRequest#getRemoteAddr()} when
+     * applied to the original request.
+     *
+     * <h3>Usages:</h3><ul>
+     * <li>Used when {@link com.l7tech.server.BackupServlet} routes a request
+     * to the target node.
+     * </ul>
+     *
+     * @since SecureSpan 4.3
+     */
+    public static final String HEADER_ORIGINAL_ADDR = "L7-Original-Addr";
+
+    /**
      * This is the value included as the Hash in a L7-Cert-Check-NNN: header when the real hash cannot be
      * computed because the user's password is unavailable to the Gateway, perhaps because only a one-way
      * hash of the password is stored in the database.

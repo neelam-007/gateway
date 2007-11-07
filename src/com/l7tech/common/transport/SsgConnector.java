@@ -77,8 +77,11 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         /** The Gateway status (Ping) servlet. */
         PING,
 
+        /** The Gateway backup service. */
+        BACKUP,
+
         /** All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc. */
-        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, PING);
+        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, PING, BACKUP);
 
         private Endpoint[] enabledKids;
         private Set<Endpoint> enabledSet;

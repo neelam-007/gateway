@@ -190,6 +190,11 @@
         <servlet-class>com.l7tech.server.admin.ManagerAppletServlet</servlet-class>
     </servlet>
 
+    <servlet>
+        <servlet-name>backup</servlet-name>
+        <servlet-class>com.l7tech.server.BackupServlet</servlet-class>
+    </servlet>
+
     <servlet-mapping>
         <servlet-name>admin</servlet-name>
         <url-pattern>/ssg/manager/*</url-pattern>
@@ -272,6 +277,11 @@
     <servlet-mapping>
         <servlet-name>managerAppletServlet</servlet-name>
         <url-pattern>/ssg/webadmin</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>backup</servlet-name>
+        <url-pattern>/ssg/backup</url-pattern>
     </servlet-mapping>
 
     <welcome-file-list>
