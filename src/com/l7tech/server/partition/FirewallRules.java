@@ -2,10 +2,9 @@ package com.l7tech.server.partition;
 
 import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.io.PortRange;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.Pair;
+import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.common.util.*;
+import com.l7tech.common.transport.SsgConnector;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -19,8 +18,8 @@ import java.util.regex.Pattern;
 /**
  * Gathers information from firewall_rules files to build a map of ports in use cluster-wide.
  */
-public class FirewallRulesParser {
-    protected static final Logger logger = Logger.getLogger(FirewallRulesParser.class.getName());
+public class FirewallRules {
+    protected static final Logger logger = Logger.getLogger(FirewallRules.class.getName());
 
     /**
      * Read the specified firewall rules and parse them into a list of port ranges.
@@ -71,6 +70,63 @@ public class FirewallRulesParser {
             return new PartitionPortInfo(pi.getPartitionId(), parseFirewallRules(fis));
         } finally {
             ResourceUtils.closeQuietly(fis);
+        }
+    }
+
+    /**
+     * Write the firewall rules to the specified path using the specified source data.
+     *
+     * @param pathToWrite  the path to the firewall_rules file to create or overwrite. Required.
+     * @param clusterRmiPort  the cluster RMI port to include in the written-out firewall rules.
+     * @param connectors  all SsgConnector instances to include in the written-out firewall rules.  May be empty but mustn't be null.
+     * @throws java.io.IOException if there is a problem writing out the firewall rules file.
+     */
+    public static void writeFirewallDropfile(String pathToWrite, final int clusterRmiPort, final Collection<SsgConnector> connectors) throws IOException {
+        FileUtils.saveFileSafely(pathToWrite,  new FileUtils.Saver() {
+            public void doSave(FileOutputStream fos) throws IOException {
+                writeFirewallRules(fos, clusterRmiPort, connectors);
+            }
+        });
+    }
+
+    public static void writeFirewallRules(OutputStream fos, int clusterRmiPort, Collection<SsgConnector> connectors) throws IOException
+    {
+        PrintStream ps = new PrintStream(fos);
+        try {
+            final ArrayList<SsgConnector> list = new ArrayList<SsgConnector>(connectors);
+
+            // Add a pseudo-connector for the inter-node communication port
+            SsgConnector rc = new SsgConnector();
+            rc.setPort(clusterRmiPort);
+            list.add(rc);
+
+            for (SsgConnector connector : list) {
+                String device = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+
+                List<PortRange> ranges = connector.getTcpPortsUsed();
+                for (PortRange range : ranges) {
+                    int portStart = range.getPortStart();
+                    int portEnd = range.getPortEnd();
+
+                    ps.print("[0:0] -I INPUT $Rule_Insert_Point ");
+                    if (InetAddressUtil.isValidIpAddress(device)) {
+                        ps.print(" -d ");
+                        ps.print(device);
+                    }
+                    ps.print(" -p tcp -m tcp --dport ");
+                    if (portStart == portEnd)
+                        ps.print(portStart);
+                    else
+                        ps.printf("%d:%d", portStart, portEnd);
+                    ps.print(" -j ACCEPT");
+                    ps.println();
+                }
+            }
+            ps.flush();
+
+            if (ps.checkError()) throw new IOException("Error while writing firewall rules");
+        } finally {
+            ps.flush();
         }
     }
 
@@ -189,7 +245,7 @@ public class FirewallRulesParser {
         for (String partitionName : partitionNames) {
             PartitionInformation pi = partitionManager.getPartition(partitionName);
             try {
-                ppis.add(FirewallRulesParser.getInfoForPartition(pi));
+                ppis.add(getInfoForPartition(pi));
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Unable to read firewall information for partition " + partitionName + ": " + ExceptionUtils.getMessage(e));
             }

@@ -13,7 +13,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.partition.FirewallRulesParser;
+import com.l7tech.server.partition.FirewallRules;
 import com.l7tech.server.tomcat.ConnectionIdValve;
 
 import javax.net.ssl.KeyManager;
@@ -35,7 +35,7 @@ public class TransportAdminImpl implements TransportAdmin {
     private final SsgConnectorManager connectorManager;
     private final KeystoreUtils defaultKeystore;
 
-    private FirewallRulesParser.PortInfo portInfo;
+    private FirewallRules.PortInfo portInfo;
     private long portInfoUpdated = 0;
     private Long portInfoCacheTime;
 
@@ -128,7 +128,7 @@ public class TransportAdminImpl implements TransportAdmin {
     public Collection<Triple<Long, PortRange, String>> findAllPortConflicts() throws FindException {
         String ourPartitionName = serverConfig.getPropertyCached(ServerConfig.PARAM_PARTITION_NAME);
         int clusterPort = serverConfig.getIntPropertyCached(ServerConfig.PARAM_CLUSTER_PORT, 2124, 5000L);
-        FirewallRulesParser.PortInfo portInfo = getPortInfo();
+        FirewallRules.PortInfo portInfo = getPortInfo();
         Collection<SsgConnector> connectors = findAllEnabledSsgConnectors();
         Collection<Triple<Long, PortRange, String>> ret = new ArrayList<Triple<Long, PortRange, String>>();
         for (SsgConnector connector : connectors) {
@@ -222,10 +222,10 @@ public class TransportAdminImpl implements TransportAdmin {
         return portInfoCacheTime;
     }
 
-    private synchronized FirewallRulesParser.PortInfo getPortInfo() {
+    private synchronized FirewallRules.PortInfo getPortInfo() {
         if (portInfo != null && System.currentTimeMillis() - portInfoUpdated <= getPortInfoCacheTime())
             return portInfo;
         portInfoUpdated = System.currentTimeMillis();
-        return portInfo = FirewallRulesParser.getAllInfo();
+        return portInfo = FirewallRules.getAllInfo();
     }
 }

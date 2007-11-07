@@ -7,7 +7,7 @@ import com.l7tech.server.config.PartitionActions;
 import com.l7tech.server.config.beans.EndpointConfigBean;
 import com.l7tech.server.config.commands.EndpointConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
-import com.l7tech.server.partition.FirewallRulesParser;
+import com.l7tech.server.partition.FirewallRules;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 
@@ -105,7 +105,7 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep{
             } else {
                 SsgConnector endpoint = new SsgConnector();
                 doCollectEndpointInfo(endpoint);
-                FirewallRulesParser.PortInfo portInfo = FirewallRulesParser.getAllInfo();
+                FirewallRules.PortInfo portInfo = FirewallRules.getAllInfo();
                 if (portInfo.isPortUsed(endpoint.getPort(), false, null)) {
                     printText(endpoint.getPort() + " is already in use. Please select another port." + getEolChar() + getEolChar());
                     finishedEndpointConfig =false;

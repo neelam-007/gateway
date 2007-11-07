@@ -5,7 +5,6 @@ import junit.framework.TestSuite;
 import junit.framework.Test;
 
 import java.util.logging.Logger;
-import java.util.Set;
 import java.util.List;
 import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
@@ -31,17 +30,17 @@ public class FirewallRulesParserTest extends TestCase {
     }
 
     public void EXAMPLE_testGetFromAllPartitions() throws Exception {
-        FirewallRulesParser.PortInfo portInfo = FirewallRulesParser.getAllInfo();        
+        FirewallRules.PortInfo portInfo = FirewallRules.getAllInfo();
         log.info("Got all info: " + portInfo);
     }
 
     public void testParseRules() throws Exception {
-        List<PortRange> ranges = FirewallRulesParser.parseFirewallRules(new ByteArrayInputStream(SAMPLE_FILE.getBytes()));
+        List<PortRange> ranges = FirewallRules.parseFirewallRules(new ByteArrayInputStream(SAMPLE_FILE.getBytes()));
         assertNotNull(ranges);
         assertFalse(ranges.isEmpty());
         assertEquals(ranges.toString(), "[[PortRange TCP 8080-8080], [PortRange TCP 8443-8443], [PortRange TCP 9443-9443], [PortRange TCP /192.168.217.1 9889-9889], [PortRange TCP /192.168.217.1 5666-5720], [PortRange TCP 2122-2122]]");
 
-        FirewallRulesParser.PartitionPortInfo ppi = new FirewallRulesParser.PartitionPortInfo("testpartition", ranges);
+        FirewallRules.PartitionPortInfo ppi = new FirewallRules.PartitionPortInfo("testpartition", ranges);
         assertFalse(ppi.isPortUsed(8080, true, null));
         assertFalse(ppi.isPortUsed(9889, false, InetAddress.getByName("2.3.4.5")));
         assertFalse(ppi.isPortUsed(9889, false, InetAddress.getLocalHost()));

@@ -1,12 +1,11 @@
 package com.l7tech.server.transport;
 
-import com.l7tech.common.io.InetAddressUtil;
-import com.l7tech.common.io.PortRange;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.transport.SsgConnector.Endpoint;
 import com.l7tech.common.util.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.partition.FirewallRules;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
@@ -148,17 +147,16 @@ public class SsgConnectorManagerImpl
     }
 
     private void writeFirewallDropfile() {
-        File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/ssg/etc/conf", true);
-        String firewallRules = new File(conf, FIREWALL_RULES_FILENAME).getPath();
-
         try {
-            FileUtils.saveFileSafely(firewallRules,  new FileUtils.Saver() {
-                public void doSave(FileOutputStream fos) throws IOException {
-                    writeFirewallRules(fos);
-                }
-            });
+            File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/ssg/etc/conf", true);
+            String firewallRules = new File(conf, FIREWALL_RULES_FILENAME).getPath();
+
+            int rmiPort = serverConfig.getIntProperty(ServerConfig.PARAM_CLUSTER_PORT, 2124);
+
+            FirewallRules.writeFirewallDropfile(firewallRules, rmiPort, knownConnectors.values());
 
             runFirewallUpdater(firewallRules);
+
         } catch (IOException e) {
             logger.log(Level.WARNING, "Unable to update port list dropfile " + FIREWALL_RULES_FILENAME + ": " + ExceptionUtils.getMessage(e), e);
         }
@@ -192,44 +190,6 @@ public class SsgConnectorManagerImpl
             return null;
         File file = new File(program);
         return file.exists() && file.canExecute() ? file : null;
-    }
-
-    private void writeFirewallRules(OutputStream fos) {
-        PrintStream ps = new PrintStream(fos);
-        try {
-            final ArrayList<SsgConnector> list = new ArrayList<SsgConnector>(knownConnectors.values());
-
-            // Add a pseudo-connector for the inter-node communication port
-            int rmiPort = serverConfig.getIntProperty(ServerConfig.PARAM_CLUSTER_PORT, 2124);            
-            SsgConnector rc = new SsgConnector();
-            rc.setPort(rmiPort);
-            list.add(rc);
-
-            for (SsgConnector connector : list) {
-                String device = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-
-                List<PortRange> ranges = connector.getTcpPortsUsed();
-                for (PortRange range : ranges) {
-                    int portStart = range.getPortStart();
-                    int portEnd = range.getPortEnd();
-
-                    ps.print("[0:0] -I INPUT $Rule_Insert_Point ");
-                    if (InetAddressUtil.isValidIpAddress(device)) {
-                        ps.print(" -d ");
-                        ps.print(device);
-                    }
-                    ps.print(" -p tcp -m tcp --dport ");
-                    if (portStart == portEnd)
-                        ps.print(portStart);
-                    else
-                        ps.printf("%d:%d", portStart, portEnd);
-                    ps.print(" -j ACCEPT");
-                    ps.println();
-                }
-            }
-        } finally {
-            ps.flush();
-        }
     }
 
     public void onApplicationEvent(ApplicationEvent event) {
