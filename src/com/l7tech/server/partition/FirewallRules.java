@@ -89,7 +89,7 @@ public class FirewallRules {
         });
     }
 
-    public static void writeFirewallRules(OutputStream fos, int clusterRmiPort, Collection<SsgConnector> connectors) throws IOException
+    static void writeFirewallRules(OutputStream fos, int clusterRmiPort, Collection<SsgConnector> connectors) throws IOException
     {
         PrintStream ps = new PrintStream(fos);
         try {
