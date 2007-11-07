@@ -1,5 +1,6 @@
 package com.l7tech.policy.validator;
 
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.AssertionPath;
@@ -7,8 +8,8 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
@@ -693,16 +694,16 @@ class PathValidator {
     private boolean hasPreconditionAssertion(Assertion a) {
         // check preconditions for both SslAssertion and  ResponseWssIntegrity assertions - see processPrecondition()
         return a instanceof XpathBasedAssertion ||
-               a instanceof XslTransformation ||
-               a instanceof RequestSwAAssertion ||
-               a instanceof RequestWssReplayProtection ||
-               a instanceof UsesVariables ||
-               a instanceof WsTrustCredentialExchange ||
-               a instanceof WsFederationPassiveTokenExchange ||
-               a instanceof WsFederationPassiveTokenRequest ||
-               a instanceof ResponseWssConfig ||
-              (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired()) ||
-               a instanceof WssBasic || a instanceof ResponseWssSecurityToken;
+                       a instanceof XslTransformation ||
+                       a instanceof RequestSwAAssertion ||
+                       a instanceof RequestWssReplayProtection ||
+                       a instanceof UsesVariables ||
+                       a instanceof WsTrustCredentialExchange ||
+                       a instanceof WsFederationPassiveTokenExchange ||
+                       a instanceof WsFederationPassiveTokenRequest ||
+                       a instanceof ResponseWssConfig ||
+                      (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired()) ||
+                       a instanceof WssBasic;
     }
 
     private boolean seenCredentials(Assertion context) {

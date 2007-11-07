@@ -7,8 +7,9 @@ import com.l7tech.common.security.saml.KeyInfoInclusionType;
 import com.l7tech.common.security.saml.NameIdentifierInclusionType;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
+import com.l7tech.policy.validator.SamlIssuerAssertionValidator;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -190,6 +191,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
                 new Java5EnumTypeMapping(NameIdentifierInclusionType.class, "nameIdentifierType"),
                 new Java5EnumTypeMapping(KeyInfoInclusionType.class, "subjectConfirmationKeyInfoType")
                 )));
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, SamlIssuerAssertionValidator.class.getName());
         return meta;
     }
 

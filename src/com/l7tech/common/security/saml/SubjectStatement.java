@@ -199,7 +199,7 @@ public abstract class SubjectStatement {
             }
         }
 
-        setConfirmationMethod(confirmation.uri);
+        setConfirmationMethod(confirmation == null ? null : confirmation.uri);
     }
 
     public String getName() {

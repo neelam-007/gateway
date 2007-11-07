@@ -202,26 +202,23 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             }
 
             final Message msg;
-            final boolean soap;
             if (dts.contains(REQUEST)) {
                 msg = context.getRequest();
             } else if (dts.contains(RESPONSE)) {
                 msg = context.getResponse();
             } else throw new IllegalStateException("Some decoration was selected, but on neither request nor response");
 
-            XmlKnob xk = (XmlKnob) context.getRequest().getKnob(XmlKnob.class);
             try {
-                soap = msg.isSoap();
+                if (!msg.isSoap()) {
+                    auditor.logAndAudit(AssertionMessages.SAML_ISSUER_NOT_SOAP);
+                    return AssertionStatus.NOT_APPLICABLE;
+                }
             } catch (SAXException e) {
                 auditor.logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, e);
                 return AssertionStatus.BAD_REQUEST;
             }
 
-            if (!soap) {
-                auditor.logAndAudit(AssertionMessages.SAML_ISSUER_NOT_SOAP);
-                return AssertionStatus.NOT_APPLICABLE;
-            }
-
+            XmlKnob xk = (XmlKnob) msg.getKnob(XmlKnob.class);
             if (xk == null) {
                 auditor.logAndAudit(AssertionMessages.SAML_ISSUER_NOT_XML);
                 return AssertionStatus.FAILED;

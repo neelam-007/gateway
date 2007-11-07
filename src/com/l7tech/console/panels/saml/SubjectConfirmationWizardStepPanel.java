@@ -52,6 +52,11 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     private boolean showTitleLabel;
 
     private final boolean issueMode;
+    private final ActionListener enableDisableListener = new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            enableDisable();
+        }
+    };
 
     /**
      * Creates new form SubjectConfirmationWizardStepPanel
@@ -153,18 +158,20 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     }
 
     private void enableDisable() {
-        boolean enabled = issueMode && subjectCertIncludeCheckbox.isSelected();
-        boolean visible = issueMode;
+        boolean subjectCertEnabled = issueMode && subjectCertIncludeCheckbox.isSelected() && confirmationHolderOfKeyButton.isSelected();
+        boolean subjectCertVisible = issueMode;
 
-        subjectCertLiteralRadioButton.setEnabled(enabled);
-        subjectCertSkiRadioButton.setEnabled(enabled);
-        subjectCertThumbprintRadioButton.setEnabled(enabled);
+        subjectCertIncludeCheckbox.setEnabled(confirmationHolderOfKeyButton.isSelected());
 
-        subjectCertPanel.setVisible(visible);
-        subjectCertIncludeCheckbox.setVisible(visible);
-        subjectCertLiteralRadioButton.setVisible(visible);
-        subjectCertSkiRadioButton.setVisible(visible);
-        subjectCertThumbprintRadioButton.setVisible(visible);
+        subjectCertLiteralRadioButton.setEnabled(subjectCertEnabled);
+        subjectCertSkiRadioButton.setEnabled(subjectCertEnabled);
+        subjectCertThumbprintRadioButton.setEnabled(subjectCertEnabled);
+
+        subjectCertPanel.setVisible(subjectCertVisible);
+        subjectCertIncludeCheckbox.setVisible(subjectCertVisible);
+        subjectCertLiteralRadioButton.setVisible(subjectCertVisible);
+        subjectCertSkiRadioButton.setVisible(subjectCertVisible);
+        subjectCertThumbprintRadioButton.setVisible(subjectCertVisible);
     }
 
     /**
@@ -189,6 +196,8 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                 assertion.setSubjectConfirmationMethodUri(SubjectStatement.SENDER_VOUCHES.getUri());
             } else if (confirmationBearerButton.isSelected()) {
                 assertion.setSubjectConfirmationMethodUri(SubjectStatement.BEARER.getUri());
+            } else if (confirmationNoneButton.isSelected()) {
+                assertion.setSubjectConfirmationMethodUri(null);
             }
 
             if (subjectCertIncludeCheckbox.isSelected()) {
@@ -239,11 +248,11 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             checkBoxSVMessageSignature = new JCheckBox("not shown");
             extraTextLabel.setText("Issue an assertion with the following Subject Confirmation Method");
 
-            subjectCertIncludeCheckbox.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    enableDisable();
-                }
-            });
+            subjectCertIncludeCheckbox.addActionListener(enableDisableListener);
+            confirmationHolderOfKeyButton.addActionListener(enableDisableListener);
+            confirmationSenderVouchesButton.addActionListener(enableDisableListener);
+            confirmationBearerButton.addActionListener(enableDisableListener);
+            confirmationNoneButton.addActionListener(enableDisableListener);
         } else {
             confirmationHolderOfKeyButton = new JCheckBox("Holder of Key");
             confirmationSenderVouchesButton = new JCheckBox("Sender Vouches");
