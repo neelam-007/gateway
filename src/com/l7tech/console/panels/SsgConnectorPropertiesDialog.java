@@ -127,6 +127,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
 
+        privateKeyComboBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableEndpoints();
+            }
+        });
+
         protocolComboBox.setModel(new DefaultComboBoxModel(new Object[] {
                 SCHEME_HTTP,
                 SCHEME_HTTPS,
@@ -137,6 +143,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         protocolComboBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 enableOrDisableTabs();
+                enableOrDisableEndpoints();
             }
         });
 
@@ -145,6 +152,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 CA_OPTIONAL,
                 CA_REQUIRED
         }));
+
+        clientAuthComboBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableEndpoints();
+            }
+        });
 
         // Make sure user-initiated changes to checkbox state get recorded so we can restore them
         final ActionListener stateSaver = new ActionListener() {
@@ -586,6 +599,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
     private void enableOrDisableComponents() {
         enableOrDisableTabs();
+        enableOrDisableEndpoints();
         enableOrDisableCipherSuiteButtons();
         enableOrDisablePropertyButtons();
     }
@@ -613,27 +627,51 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         clientAuthComboBox.setEnabled(isSsl);
         privateKeyComboBox.setEnabled(isSsl);
         managePrivateKeysButton.setEnabled(isSsl);
+    }
 
-        if (isFtp) {
-            setEnableAndSelect(false, true, cbEnableMessageInput);
-            setEnableAndSelect(false, false, cbEnableBuiltinServices, cbEnableSsmApplet, cbEnableSsmRemote);
+    private void enableOrDisableEndpoints() {
+        String proto = getSelectedProtocol();
+        boolean ssl = isSslProto(proto);
+        boolean ftp = isFtpProto(proto);
+
+        if (ftp) {
+            setEnableAndSelect(false, true, "Enabled because it is required for FTP", cbEnableMessageInput);
+            setEnableAndSelect(false, false, "Disabled because it requires HTTP or HTTPS", cbEnableBuiltinServices);
+            setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote);
         } else {
-            enableAndRestore(cbEnableMessageInput, cbEnableBuiltinServices, cbEnableSsmApplet, cbEnableSsmRemote);
+            enableAndRestore(cbEnableMessageInput, cbEnableBuiltinServices);
+            if (!ssl) {
+                setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote);
+            } else {
+                // Disallow admin endpoint when private key other than SSL is selected (Bug #4270)
+                String alias = privateKeyComboBox.getSelectedKeyAlias();
+                if (!"SSL".equals(alias)) {
+                    setEnableAndSelect(false, false, "Disabled because it requires the 'SSL' private key alias", cbEnableSsmApplet, cbEnableSsmRemote);
+                } else {
+                    if (CA_REQUIRED.equals(clientAuthComboBox.getSelectedItem())) {
+                        setEnableAndSelect(false, false, "Disabled because client certificate authentication is set to 'Required'", cbEnableSsmApplet, cbEnableSsmRemote);
+                    } else {
+                        enableAndRestore(cbEnableSsmApplet, cbEnableSsmRemote);
+                    }
+                }
+            }
         }
     }
 
     private void enableAndRestore(JCheckBox... boxes) {
         for (JCheckBox box : boxes) {
             box.setEnabled(true);
+            box.setToolTipText(null);
             final Boolean b = (Boolean)box.getClientProperty(CPROP_WASENABLED);
             if (b != null) box.setSelected(b);
         }
     }
 
-    private void setEnableAndSelect(boolean enabled, boolean selected, JCheckBox... boxes) {
+    private void setEnableAndSelect(boolean enabled, boolean selected, String toolTipText, JCheckBox... boxes) {
         for (JCheckBox box : boxes) {
             box.setSelected(selected);
             box.setEnabled(enabled);
+            box.setToolTipText(toolTipText);
         }
     }
 
