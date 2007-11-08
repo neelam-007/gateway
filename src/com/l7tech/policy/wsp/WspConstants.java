@@ -13,7 +13,7 @@ import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.xpath.XpathExpression;
-import com.l7tech.identity.mapping.*;
+import com.l7tech.identity.mapping.AttributeHeader;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
@@ -35,7 +35,6 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
-import com.l7tech.policy.variable.DataType;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -308,16 +307,6 @@ public class WspConstants {
         new BeanTypeMapping(JmsMessagePropertyRule.class, "jmsMessagePropertyRule"),
         new ArrayTypeMapping(new JmsMessagePropertyRule[0], "jmsMessagePropertyRuleArray"),
         new BeanTypeMapping(JmsMessagePropertyRuleSet.class, "jmsMessagePropertyRuleSet"),
-
-        new ArrayTypeMapping(new IdentityMapping[0], "identityMappingArray"),
-        new AbstractClassTypeMapping(IdentityMapping.class, "identityMapping"),
-        new BeanTypeMapping(LdapAttributeMapping.class, "ldapAttributeMapping"),
-        new BeanTypeMapping(InternalAttributeMapping.class, "internalAttributeMapping"),
-        new BeanTypeMapping(FederatedAttributeMapping.class, "federatedAttributeMapping"),
-        new BeanTypeMapping(AttributeConfig.class, "attributeConfig"),
-        new WspEnumTypeMapping(DataType.class, "dataType"),
-        new Java5EnumTypeMapping(UsersOrGroups.class, "usersOrGroups"),
-        new Java5EnumSetTypeMapping(EnumSet.class, SamlIssuerAssertion.DecorationType.class, "decorationTypes"),
 
         // Make sure we get equal instances of built-in attributes (analogous to readResolve())
         new BeanTypeMapping(AttributeHeader.class, "header") {

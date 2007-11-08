@@ -16,6 +16,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.Java5EnumSetTypeMapping;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -188,9 +189,10 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.saml.SamlIssuerAssertionPropertiesEditor");
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
-                new Java5EnumTypeMapping(NameIdentifierInclusionType.class, "nameIdentifierType"),
-                new Java5EnumTypeMapping(KeyInfoInclusionType.class, "subjectConfirmationKeyInfoType")
-                )));
+            new Java5EnumTypeMapping(NameIdentifierInclusionType.class, "nameIdentifierType"),
+            new Java5EnumTypeMapping(KeyInfoInclusionType.class, "subjectConfirmationKeyInfoType"),
+            new Java5EnumSetTypeMapping(EnumSet.class, DecorationType.class, "decorationTypes")
+        )));
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, SamlIssuerAssertionValidator.class.getName());
         return meta;
     }
