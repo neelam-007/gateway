@@ -130,4 +130,19 @@ public class PrivateKeysComboBox extends JComboBox {
         if (item == null) return null;
         return item.keyAlias;
     }
+
+    /**
+     * Check if the given alias corresponds to the default SSL key.
+     *
+     * @param alias the alias to check.  required
+     * @return true if the specified alias appears to be the default SSL private key.
+     */
+    public boolean isDefaultSslKey(String alias) {
+        // TODO find a way to make this not hardcoded;
+        //      or better yet, remove this method completely once there is no longer any meaningful difference
+        //      between the "default SSL key" and any other private key in the system
+        return "SSL".equals(alias);
+    }
+
+
 }

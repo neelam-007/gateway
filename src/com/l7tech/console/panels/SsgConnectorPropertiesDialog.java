@@ -647,7 +647,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 String alias = privateKeyComboBox.getSelectedKeyAlias();
                 // TODO fix this hack when we have a more reliable way to detect the default SSL cert,
                 //      OR when it no longer matters what cert you pick once the SSM and Applet can work with any cert
-                if (!("SSL".equals(alias) || alias == null)) {
+                if (!(privateKeyComboBox.isDefaultSslKey(alias) || alias == null)) {
                     setEnableAndSelect(false, false, "Disabled because it requires the 'SSL' private key alias", cbEnableSsmApplet, cbEnableSsmRemote);
                 } else {
                     if (CA_REQUIRED.equals(clientAuthComboBox.getSelectedItem())) {
@@ -830,12 +830,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         // SSL-specific properties
         boolean isSsl = isSslProto(proto);
         connector.setSecure(isSsl);
+        connector.setKeystoreOid(null);
+        connector.setKeyAlias(null);
         if (isSsl) {
-            connector.setKeystoreOid(privateKeyComboBox.getSelectedKeystoreId());
-            connector.setKeyAlias(privateKeyComboBox.getSelectedKeyAlias());
-        } else {
-            connector.setKeystoreOid(null);
-            connector.setKeyAlias(null);
+            final String alias = privateKeyComboBox.getSelectedKeyAlias();
+            if (!privateKeyComboBox.isDefaultSslKey(alias)) {
+                connector.setKeystoreOid(privateKeyComboBox.getSelectedKeystoreId());
+                connector.setKeyAlias(alias);
+            }
         }
         connector.setClientAuth(((ClientAuthType)clientAuthComboBox.getSelectedItem()).code);
         connector.putProperty(SsgConnector.PROP_CIPHERLIST, cipherSuiteListModel.asCipherListString());
