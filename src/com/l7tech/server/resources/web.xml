@@ -280,6 +280,11 @@
     </servlet-mapping>
 
     <servlet-mapping>
+        <servlet-name>managerAppletServlet</servlet-name>
+        <url-pattern>/ssg/webadmin/</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
         <servlet-name>backup</servlet-name>
         <url-pattern>/ssg/backup</url-pattern>
     </servlet-mapping>
