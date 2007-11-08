@@ -2,12 +2,12 @@ package com.l7tech.server.flasher;
 
 import com.l7tech.common.util.FileUtils;
 
-import java.io.IOException;
-import java.io.File;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
-import java.util.logging.Logger;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
  * Encapsulates import and export of os level system config files.
@@ -27,15 +27,18 @@ public class OSConfigManager {
     private static final String SYSTMP_PATH = "../migration/configfiles";
     private static final String SUBDIR = File.separator + "os";
     private final String tmpDirPath;
+    private File flasherHome;
 
     /**
      * stored os level config files into temp directory. which files to store is controlled by the hidden
      * config file grandmaster_flash
      * @param destination the name of the temp directory where the image source is being stored before compression
+     * @param flasherHome home directory of the Flasher; use <code>null</code> if the JVM was already launched from there
      * @throws IOException if something does not work
      */
-    public static void saveOSConfigFiles(String destination) throws IOException {
+    public static void saveOSConfigFiles(String destination, File flasherHome) throws IOException {
         OSConfigManager me = new OSConfigManager(destination);
+        me.flasherHome = flasherHome;
         me.doSave();
     }
 
@@ -55,7 +58,8 @@ public class OSConfigManager {
     }
 
     private void doSave() throws IOException {
-        FileReader fr = new FileReader(SETTINGS_PATH);
+        File settingsPath = new File(flasherHome, SETTINGS_PATH);
+        FileReader fr = new FileReader(settingsPath);
         BufferedReader grandmasterreader = new BufferedReader(fr);
         String tmp;
         try {

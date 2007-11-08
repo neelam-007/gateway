@@ -342,9 +342,9 @@
     <patternset id="licensegenerator.libs">
         <include name="**/kunststoff.jar"/>
         <include name="**/xercesImpl.jar"/>
-        <include name="**/commons-lang-1.0.1.jar"/>
+        <include name="**/commons-lang-2.3.jar"/>
         <include name="**/commons-codec-1.2.jar"/>
-        <include name="**/commons-collections-2.1.1.jar"/>
+        <include name="**/commons-collections-3.2.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
         <include name="**/commons-discovery.jar"/>
         <include name="**/qname.jar"/>
@@ -448,7 +448,7 @@
         <include name="**/serializer-xalan-2.7.0.jar"/>
         <include name="**/nekohtml.jar"/>
         <include name="**/commons-discovery.jar"/>
-        <include name="**/commons-collections-2.1.1.jar"/>
+        <include name="**/commons-collections-3.2.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
         <include name="**/concurrent-1.3.4.jar"/>
         <include name="**/policy-1.0.jar"/>
@@ -468,8 +468,8 @@
         <include name="**/kunststoff.jar"/>
         <include name="**/concurrent-1.3.4.jar"/>
         <include name="**/xercesImpl.jar"/>
-        <include name="**/commons-lang-1.0.1.jar"/>
-        <include name="**/commons-collections-2.1.1.jar"/>
+        <include name="**/commons-lang-2.3.jar"/>
+        <include name="**/commons-collections-3.2.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
         <include name="**/commons-discovery.jar"/>
         <include name="**/qname.jar"/>
@@ -504,7 +504,7 @@
         <include name="**/0500-wsdl4j_1.6.2.jar"/>
         <include name="**/guddi-1.0.0.jar"/>
         <!-- JAX-WS RI required for Java 5 -->
-        <include name="**/jaxws*.jar"/> 
+        <include name="**/jaxws*.jar"/>
         <include name="**/resolver.jar"/>
         <include name="**/jsr173_1.0_api.jar"/>
         <include name="**/jsr181-api.jar"/>
@@ -528,13 +528,13 @@
         <include name="**/smtp-1.3.2.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
         <include name="**/policy-1.0.jar"/>
-        <include name="**/commons-collections-2.1.1.jar"/>
+        <include name="**/commons-collections-3.2.jar"/>
         <include name="**/commons-daemon.jar"/>
         <include name="**/commons-dbcp-1.2.1.jar"/>
         <include name="**/commons-discovery.jar"/>
         <include name="**/commons-httpclient-3.0.1.jar"/>
         <include name="**/commons-codec-1.2.jar"/>
-        <include name="**/commons-lang-1.0.1.jar"/>
+        <include name="**/commons-lang-2.3.jar"/>
         <include name="**/commons-modeler-2.0.1.jar"/>
         <include name="**/commons-pool-1.2.jar"/>
 
@@ -642,6 +642,9 @@
         <include name="**/tomcat-i18n-fr.jar"/>
         <include name="**/tomcat-i18n-ja.jar"/>
         <include name="**/tomcat-juli.jar"/>
+
+        <!-- Jars needed to run the Flasher in SSG process -->
+        <include name="**/commons-configuration-1.3.jar"/>
     </patternset>
 
     <!--
@@ -1052,7 +1055,7 @@
                     <include name="jcommon-1.0.5.jar"/>
                     <include name="jfreechart-1.0.2.jar"/>
                     <include name="xercesImpl.jar"/>
-                    <include name="gateway/config/commons-lang-2.3.jar"/>
+                    <include name="commons-lang-2.3.jar"/>
                     <include name="test/japex-1.1.jar"/>
                 </fileset>
                 <pathelement location="${build.classes}"/>
@@ -1078,7 +1081,7 @@
                     <include name="mailapi-1.4.jar"/>
                     <include name="smtp-1.3.2.jar"/>
                     <include name="xercesImpl.jar"/>
-                    <include name="gateway/config/commons-lang-2.3.jar"/>
+                    <include name="commons-lang-2.3.jar"/>
                     <include name="test/japex-1.1.jar"/>
                 </fileset>
                 <pathelement location="${build.classes}"/>
@@ -1338,7 +1341,7 @@
                     <replaceregex pattern="(?&lt;=^[ ]{0,32}java.util.logging.ConsoleHandler.level[ ]{0,32}=)[ 0-9\._\-,a-zA-Z]{0,1024}$" replace=" CONFIG"/>
                 </tokenfilter>
             </filterchain>
-        </copy>        
+        </copy>
     </target>
 
     <!--
@@ -1444,7 +1447,7 @@
         <mkdir dir="${deploy.dir}/logs"/>
         <mkdir dir="${deploy.dir}/modules/assertions"/>
         <mkdir dir="${deploy.dir}/modules/lib"/>
-        
+
         <echo level="info">Copying gateway files</echo>
         <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" todir="${deploy.dir}/etc/conf/partitions/default_" overwrite="true">
             <filterchain>
@@ -1540,10 +1543,10 @@
         <pack-mac jarfile="${build.dir}/managerlibs/aopalliance.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/BrowserLauncher2-10rc4.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/commons-codec-1.2.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/commons-collections-2.1.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/commons-collections-3.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/commons-discovery.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/commons-httpclient-3.0.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/commons-lang-1.0.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/commons-lang-2.3.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/commons-logging-1.0.4.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/concurrent-1.3.4.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/dom4j-1.6.1.jar"/>
@@ -1608,7 +1611,6 @@
                 <exclude name="com/l7tech/server/config/ui/**/*"/>
                 <exclude name="com/l7tech/server/config/systemconfig/**/*"/>
                 <exclude name="com/l7tech/server/config/packageupdater/**/*"/>
-                <exclude name="com/l7tech/server/flasher/**"/>
 
                 <!-- UDDI implementations (these should be packaged as modules) -->
                 <exclude name="com/l7tech/server/service/uddi/impl/**"/>

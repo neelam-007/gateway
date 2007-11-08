@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
 
 import java.io.*;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -53,6 +54,49 @@ public class Exporter {
     private boolean includeAudit = false;
     private String tmpDirectory;
 
+    /** Home directory of the Flasher; <code>null</code> if the JVM was launched from there already. */
+    private File flasherHome;
+
+    /** Stream for verbose output; <code>null</code> for no verbose output. */
+    private PrintStream stdout;
+
+    /** Stream for error output; <code>null</code> for no error output. */
+    private PrintStream stderr;
+
+    /**
+     * @param flasherHome   home directory of the Flasher; use <code>null</code>
+     *                      if the JVM was launched from there already
+     * @param stdout        stream for verbose output; <code>null</code> for no verbose output
+     * @param stderr        stream for error output; <code>null</code> for no error output
+     */
+    public Exporter(final File flasherHome, final PrintStream stdout, final PrintStream stderr) {
+        this.flasherHome = flasherHome;
+        this.stdout = stdout;
+        this.stderr = stderr;
+    }
+
+    /**
+     * @param partitionName     can be null only if system has one partition
+     * @param includeAudit      whether to include audit
+     * @param mappingPath       can be null
+     * @param outputPath        must not be null
+     */
+    public void doIt(final String partitionName,
+                     final boolean includeAudit,
+                     final String mappingPath,
+                     final String outputPath)
+            throws FlashUtilityLauncher.InvalidArgumentException, IOException {
+        if (outputPath == null) throw new FlashUtilityLauncher.InvalidArgumentException("outputPath cannot be null");
+
+        final Map<String, String> args = new HashMap<String, String>();
+        if (partitionName != null) args.put(PARTITION.name, partitionName);
+        args.put(AUDIT.name, Boolean.toString(includeAudit));
+        if (mappingPath != null) args.put(MAPPING_PATH.name, mappingPath);
+        args.put(IMAGE_PATH.name, outputPath);
+
+        doIt(args);
+    }
+
     // do the export
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
         // check that we can write output at located asked for
@@ -87,7 +131,7 @@ public class Exporter {
                     partitionName = partitions.iterator().next();
                     String feedback = "No partition requested, assuming partition " + partitionName;
                     logger.info(feedback);
-                    System.out.println(feedback);
+                    if (stdout != null) stdout.println(feedback);
                 } else {
                     logger.info("no partition name specified");
                     throw new FlashUtilityLauncher.InvalidArgumentException("this system is partitioned. The \"" + PARTITION.name + "\" parameter is required");
@@ -131,7 +175,7 @@ public class Exporter {
 
             // dump the database
             try {
-                DBDumpUtil.dump(osFunctions, databaseURL, databaseUser, databasePasswd, includeAudit, tmpDirectory);
+                DBDumpUtil.dump(osFunctions, databaseURL, databaseUser, databasePasswd, includeAudit, tmpDirectory, stdout);
             } catch (SQLException e) {
                 logger.log(Level.INFO, "exception dumping database", e);
                 throw new IOException("cannot dump the database " + e.getMessage());
@@ -212,14 +256,14 @@ public class Exporter {
                 FileUtils.copyFile(sslKS, new File(tmpDirectory + File.separator + sslKS.getName()));
 
                 // copy system config files
-                OSConfigManager.saveOSConfigFiles(tmpDirectory);
+                OSConfigManager.saveOSConfigFiles(tmpDirectory, flasherHome);
             }
             // zip the temp directory into the requested image file (outputpathval)
             logger.info("compressing image into " + outputpathval);
             zipDir(outputpathval, tmpDirectory);
         } finally {
             logger.info("cleaning up temp files at " + tmpDirectory);
-            System.out.println("Cleaning temporary files at " + tmpDirectory);
+            if (stdout != null) stdout.println("Cleaning temporary files at " + tmpDirectory);
             FileUtils.deleteDir(new File(tmpDirectory));
         }
     }
@@ -229,10 +273,10 @@ public class Exporter {
             FileOutputStream fos = new FileOutputStream(path);
             fos.close();
         } catch (FileNotFoundException e) {
-            System.err.println("cannot write to " + path + ". " + e.getMessage());
+            if (stderr != null) stderr.println("cannot write to " + path + ". " + e.getMessage());
             return false;
         } catch (IOException e) {
-            System.err.println("cannot write to " + path + ". " + e.getMessage());
+            if (stderr != null) stderr.println("cannot write to " + path + ". " + e.getMessage());
             return false;
         }
         (new File(path)).delete();
@@ -253,7 +297,7 @@ public class Exporter {
             throw new IOException(dir + " is not a directory");
         }
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
-        System.out.println("Compressing SecureSpan Gateway image into " + zipFileName);
+        if (stdout != null) stdout.println("Compressing SecureSpan Gateway image into " + zipFileName);
         addDir(dirObj, out);
         out.close();
     }
@@ -268,7 +312,7 @@ public class Exporter {
                 continue;
             }
             FileInputStream in = new FileInputStream(file.getAbsolutePath());
-            System.out.println("\t- " + file.getAbsolutePath());
+            if (stdout != null) stdout.println("\t- " + file.getAbsolutePath());
             String zipEntryName = file.getAbsolutePath();
             if (zipEntryName.startsWith(tmpDirectory)) {
                 zipEntryName = zipEntryName.substring(tmpDirectory.length() + 1);

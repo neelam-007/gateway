@@ -21,6 +21,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.system.BackupEvent;
+import com.l7tech.server.flasher.Exporter;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
@@ -235,9 +236,8 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             final String ssgHome = System.getProperty("com.l7tech.server.home");
             final File flasherHome = new File(ssgHome, "migration");
             final String partitionName = System.getProperty(PartitionInformation.SYSTEM_PROP_PARTITIONNAME);
-// TODO run the Flasher export:
-//            final Exporter exporter = new Exporter(flasherHome, null, null);
-//            exporter.doIt(partitionName, false, null, tmpFile.getCanonicalPath());
+            final Exporter exporter = new Exporter(flasherHome, null, null);
+            exporter.doIt(partitionName, false, null, tmpFile.getCanonicalPath());
         } catch (Exception e) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_CANT_CREATE_IMAGE, e, nodeName);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

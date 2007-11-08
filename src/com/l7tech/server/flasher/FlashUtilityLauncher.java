@@ -2,14 +2,14 @@ package com.l7tech.server.flasher;
 
 import com.l7tech.server.config.OSDetector;
 
-import java.util.HashMap;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.IOException;
-import java.io.File;
-import java.io.InputStream;
 
 /**
  * Entrypoint for the ssg flashing utility.
@@ -43,7 +43,7 @@ public class FlashUtilityLauncher {
                 importer.doIt(passedArgs);
                 System.out.println("\nImport completed with no errors.");
             } else if (args[0].toLowerCase().equals("export")) {
-                Exporter exporter = new Exporter();
+                Exporter exporter = new Exporter(null, System.out, System.err);
                 exporter.doIt(passedArgs);
                 System.out.println("\nExport of SecureSpan Gateway image completed with no errors.");
             } else if (args[0].toLowerCase().equals("cfgdeamon")) {

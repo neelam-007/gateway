@@ -1,11 +1,12 @@
 package com.l7tech.server.flasher;
 
-import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.db.DBActions;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.File;
+import java.io.PrintStream;
 import java.sql.*;
 import java.util.logging.Logger;
 
@@ -36,11 +37,12 @@ public class DBDumpUtil {
      * @param includeAudit whether or not audit tables should be included
      * @param outputDirectory the directory path where the dump files should go to
      * @param osFunctions for the partition at hand
+     * @param stdout    stream for verbose output; <code>null</code> for no verbose output
      * @throws java.sql.SQLException problem getting data out of db
      * @throws java.io.IOException problem with dump files
      */
     public static void dump(OSSpecificFunctions osFunctions, String databaseURL, String databaseUser, String databasePasswd,
-                            boolean includeAudit, String outputDirectory) throws SQLException, IOException {
+                            boolean includeAudit, String outputDirectory, PrintStream stdout) throws SQLException, IOException {
         Connection c = getDBActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
             logger.warning("cannot get connection");
@@ -55,7 +57,7 @@ public class DBDumpUtil {
         ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
         FileOutputStream cloneoutput = new FileOutputStream(outputDirectory + File.separator + DBDUMPFILENAME_CLONE);
         FileOutputStream stageoutput = new FileOutputStream(outputDirectory + File.separator + DBDUMPFILENAME_STAGING);
-        System.out.print("Dumping database to " + outputDirectory + " ..");
+        if (stdout != null) stdout.print("Dumping database to " + outputDirectory + " ..");
         cloneoutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
         stageoutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
         while (tableNames.next()) {
@@ -146,7 +148,7 @@ public class DBDumpUtil {
         stageoutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
         cloneoutput.close();
         stageoutput.close();
-        System.out.println(". Done");
+        if (stdout != null) stdout.println(". Done");
     }
 
     private static String escapeForSQLInsert(String in) {
