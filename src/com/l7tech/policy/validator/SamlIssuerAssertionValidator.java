@@ -7,6 +7,7 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SamlIssuerAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
@@ -17,13 +18,15 @@ import com.l7tech.service.PublishedService;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.EnumSet;
 
 /**
  * @author alex
  */
 public class SamlIssuerAssertionValidator implements AssertionValidator {
     private final SamlIssuerAssertion assertion;
-    private final boolean validate;
+    private final boolean holderOfKey;
+    private final boolean decorateResponse;
     private final Set<String> HOK_URIS = Collections.unmodifiableSet(new HashSet<String>() {{
         add(SamlConstants.CONFIRMATION_HOLDER_OF_KEY);
         add(SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY);
@@ -32,16 +35,21 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
     public SamlIssuerAssertionValidator(SamlIssuerAssertion sia) {
         this.assertion = sia;
         // Only Holder of Key has validation rules
-        validate = HOK_URIS.contains(assertion.getSubjectConfirmationMethodUri());
+        final EnumSet<SamlIssuerAssertion.DecorationType> dts = assertion.getDecorationTypes();
+        decorateResponse = dts != null && dts.contains(SamlIssuerAssertion.DecorationType.RESPONSE);
+        holderOfKey = HOK_URIS.contains(assertion.getSubjectConfirmationMethodUri());
     }
 
     public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
-        if (!validate) return;
+        if (!(holderOfKey || decorateResponse)) return;
 
         int firstCertCred = -1;
+        int firstRoute = -1;
         for (int i = 0; i < path.getPath().length; i++) {
             Assertion ass = path.getPath()[i];
-            if (ass.isCredentialSource()) {
+            if (ass instanceof RoutingAssertion) {
+                firstRoute = i;
+            } else if (ass.isCredentialSource()) {
                 if (ass instanceof RequestWssX509Cert || ass instanceof SslAssertion || ass instanceof SecureConversation) {
                     firstCertCred = i;
                 } else if (ass instanceof RequestWssSaml) {
@@ -52,9 +60,16 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
                         firstCertCred = i;
                     }
                 }
-            } else if (ass == assertion && firstCertCred == -1 || firstCertCred > i) {
-                result.addError(new PolicyValidatorResult.Error(assertion, path, "SAML Issuer Assertion with Holder-of-Key must be preceded by a certificate-based credential source", null));
-                return;
+            } else if (ass == assertion) {
+                if (holderOfKey && firstCertCred == -1 || firstCertCred > i) {
+                    result.addError(new PolicyValidatorResult.Error(assertion, path, "Holder-of-Key selected, must be preceded by a certificate-based credential source", null));
+                    return;
+                }
+
+                if (decorateResponse && (firstRoute == -1 || firstRoute > i)) {
+                    result.addError(new PolicyValidatorResult.Error(assertion, path, "Configured to decorate response, must be preceded by a routing assertion", null));
+                    return;
+                }
             }
         }
     }
