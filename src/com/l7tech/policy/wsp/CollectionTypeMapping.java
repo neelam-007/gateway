@@ -16,7 +16,7 @@ import java.util.List;
  * TypeMapping that knows how to serialize collections.  This superclass will always use the prototype class
  * when deserializing.
  */
-class CollectionTypeMapping extends ComplexTypeMapping {
+public class CollectionTypeMapping extends ComplexTypeMapping {
     private final Constructor implConstructor;
     private final Class valueType;
     private final Class implClass;

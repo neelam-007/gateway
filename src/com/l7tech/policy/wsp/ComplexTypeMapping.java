@@ -13,10 +13,10 @@ import java.lang.reflect.Constructor;
 /**
  * Superclass for type mappings whose values can't be represented just as simple strings.
  */
-class ComplexTypeMapping extends BasicTypeMapping {
+public class ComplexTypeMapping extends BasicTypeMapping {
     protected final Constructor constructor; // default, no-arguments constructor for this type
 
-    ComplexTypeMapping(Class clazz, String externalName) {
+    public ComplexTypeMapping(Class clazz, String externalName) {
         super(clazz, externalName);
         Constructor ctor;
         try {
@@ -28,7 +28,7 @@ class ComplexTypeMapping extends BasicTypeMapping {
         constructor = ctor;
     }
 
-    ComplexTypeMapping(Class clazz, String externalName, Constructor constructor) {
+    public ComplexTypeMapping(Class clazz, String externalName, Constructor constructor) {
         super(clazz, externalName);
         this.constructor = constructor;
     }

@@ -13,7 +13,7 @@ import java.lang.reflect.Constructor;
 /**
  * TypeMapping to use for basic concrete types whose values are represented most naturally by simple strings.
  */
-class BasicTypeMapping implements TypeMapping {
+public class BasicTypeMapping implements TypeMapping {
     protected final String externalName;
     protected final Class clazz;
     protected final boolean isNullable;
@@ -21,7 +21,7 @@ class BasicTypeMapping implements TypeMapping {
     protected final String nsPrefix;
     protected final String nsUri;
 
-    BasicTypeMapping(Class clazz, String externalName) {
+    public BasicTypeMapping(Class clazz, String externalName) {
         this.clazz = clazz;
         this.externalName = externalName;
         this.isNullable = TypeMappingUtils.isNullableType(clazz);
