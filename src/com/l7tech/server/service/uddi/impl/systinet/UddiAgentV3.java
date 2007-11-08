@@ -38,6 +38,7 @@ import org.systinet.uddi.client.v3.struct.CategoryBag;
 import org.systinet.uddi.client.v3.struct.KeyedReference;
 
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.server.service.uddi.UddiAgentException;
 import com.l7tech.server.service.uddi.UddiAgent;
 
@@ -79,11 +80,19 @@ public class UddiAgentV3 implements UddiAgent {
      * Get the WSDL info given the service name pattern.
      *
      * @param namePattern   the exact name or part of the name
+     * @param info Type info for the UDDI Registry (optional if auth not present)
+     * @param username The user account name (optional)
+     * @param password The user account password (optional)
      * @param caseSensitive  true if case sensitive, false otherwise.
      * @return WsdlInfo[] an array of WSDL info.
      * @throws UddiAgentException   if there was a problem accessing the requested information.
      */
-    public WsdlInfo[] getWsdlByServiceName(String inquiryUrl, String namePattern, boolean caseSensitive) throws UddiAgentException {
+    public WsdlInfo[] getWsdlByServiceName(final String inquiryUrl,
+                                           final UDDIRegistryInfo info,
+                                           final String username,
+                                           final char[] password,
+                                           final String namePattern,
+                                           final boolean caseSensitive) throws UddiAgentException {
         checkInit();
         // % denotes wildcard of string (any number of characters), underscore denotes wildcard of a single character
 

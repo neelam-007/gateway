@@ -3,6 +3,7 @@ package com.l7tech.server.service.uddi;
 import java.util.Properties;
 
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.uddi.UDDIRegistryInfo;
 
 /**
  * For UDDI agent implementations.
@@ -15,17 +16,17 @@ public interface UddiAgent {
     /**
      * Property key for UDDI Urls (use .1 .2 suffix)
      */
-    public static final String PROP_INQUIRY_URLS = "uddi.url.inquiry";
+    static final String PROP_INQUIRY_URLS = "uddi.url.inquiry";
 
     /**
      * Property key for the maximum rows to retrieve from the registry.
      */
-    public static final String PROP_RESULT_ROWS_MAX = "uddi.result.max_rows";
+    static final String PROP_RESULT_ROWS_MAX = "uddi.result.max_rows";
 
     /**
      * Property key for the number of rows to retrieve from the registry with each call.
      */
-    public static final String PROP_RESULT_BATCH_SIZE = "uddi.result.batch_size";
+    static final String PROP_RESULT_BATCH_SIZE = "uddi.result.batch_size";
 
     /**
      * Initialize the agent with the given properties.
@@ -36,16 +37,23 @@ public interface UddiAgent {
      * @see #PROP_RESULT_ROWS_MAX
      * @see #PROP_RESULT_BATCH_SIZE
      */
-    public void init(Properties props);
+    void init(Properties props);
 
     /**
      * Query the given registry with the given parameters.
      *
      * @param url            The inquiry URL to use
+     * @param info           Type info for the UDDI Registry (optional if auth not present)
+     * @param username       The user account name (optional)
+     * @param password       The user account password (optional)
      * @param namePattern    The wsdl pattern
      * @param caseSensitive  Case sensitivity flag
      * @return The array of WsdlInfo objects (not null)
      * @throws UddiAgentException if an error occurs.
      */
-    public WsdlInfo[] getWsdlByServiceName(String url, String namePattern, boolean caseSensitive) throws UddiAgentException;
+    WsdlInfo[] getWsdlByServiceName(String url,
+                                    UDDIRegistryInfo info,
+                                    String username, char[] password,
+                                    String namePattern,
+                                    boolean caseSensitive) throws UddiAgentException;
 }

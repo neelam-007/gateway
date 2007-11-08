@@ -12,6 +12,7 @@ import com.l7tech.common.uddi.UDDIClientFactory;
 import com.l7tech.common.uddi.UDDIClient;
 import com.l7tech.common.uddi.UDDIException;
 import com.l7tech.common.uddi.UDDINamedEntity;
+import com.l7tech.common.uddi.UDDIRegistryInfo;
 
 /**
  * Agent implemented using the UDDIClient interface/factory.
@@ -47,16 +48,27 @@ public class UDDIClientAgent implements UddiAgent {
     /**
      * Get the WSDL info given the service name pattern.
      *
-     * @param namePattern   the exact name or part of the name
+     * @param namePattern The exact name or part of the name
+     * @param info Type info for the UDDI Registry (optional if auth not present)
+     * @param username The user account name (optional)
+     * @param password The user account password (optional)
      * @param caseSensitive  true if case sensitive, false otherwise.
      * @return WsdlInfo[] an array of WSDL info.
      * @throws com.l7tech.server.service.uddi.UddiAgentException   if there was a problem accessing the requested information.
      */
-    public WsdlInfo[] getWsdlByServiceName(String inquiryUrl, String namePattern, boolean caseSensitive) throws UddiAgentException {
+    public WsdlInfo[] getWsdlByServiceName(final String inquiryUrl,
+                                           final UDDIRegistryInfo info,
+                                           final String username,
+                                           final char[] password,
+                                           final String namePattern,
+                                           final boolean caseSensitive) throws UddiAgentException {
         checkInit();
         // % denotes wildcard of string (any number of characters), underscore denotes wildcard of a single character
 
-        UDDIClient uddi = UDDIClientFactory.getInstance().newUDDIClient(inquiryUrl, null, null, null, null, null);
+        String pwStr = password == null ? null : new String(password);
+        UDDIClient uddi = info == null ?
+                UDDIClientFactory.getInstance().newUDDIClient(inquiryUrl, null, null, username, pwStr, null) :
+                UDDIClientFactory.getInstance().newUDDIClient(inquiryUrl, info, username, pwStr, null);
         List<WsdlInfo> wsdlInfos = new ArrayList();
         try {
             for (int i=0; wsdlInfos.size() < resultRowsMax; i++) {
@@ -75,9 +87,10 @@ public class UDDIClientAgent implements UddiAgent {
             throw new UddiAgentException(iue.getMessage(), iue);
         }
 
-        boolean maxedOutSearch = wsdlInfos.size()==resultRowsMax && uddi.listMoreAvailable();
+        boolean maxedOutSearch = wsdlInfos.size()>=resultRowsMax && uddi.listMoreAvailable();
 
         if (maxedOutSearch) {
+            wsdlInfos.subList(resultRowsMax, wsdlInfos.size()).clear();
             wsdlInfos.add( WsdlInfo.MAXED_OUT_SEARCH_RESULT );
         }
 

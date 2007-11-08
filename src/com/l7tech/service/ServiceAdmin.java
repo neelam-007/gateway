@@ -103,13 +103,16 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
      *
      * @param uddiURL  The URL of the UDDI Registry
+     * @param info     Type info for the UDDI Registry (optional if auth not present)
+     * @param username The user account name (optional)
+     * @param password The user account password (optional)
      * @param namePattern The string of the service name (wildcard % is supported)
      * @param caseSensitive  True if case sensitive, false otherwise.
      * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
      * @throws FindException   if there was a problem accessing the requested information.
      */
     @Transactional(readOnly=true)
-    WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws FindException ;
+    WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, UDDIRegistryInfo info, String username, char[] password, String namePattern, boolean caseSensitive) throws FindException ;
 
     @Transactional(readOnly=true)
     @Administrative(licensed=false)

@@ -25,7 +25,7 @@ public class UddiAgentTest {
         if (seriveAdmin == null) throw new RuntimeException("Service Admin reference not found");
 
         try {
-            WsdlInfo[] urls = seriveAdmin.findWsdlUrlsFromUDDIRegistry("http://whale.l7tech.com:8085", searchString, false);
+            WsdlInfo[] urls = seriveAdmin.findWsdlUrlsFromUDDIRegistry("http://whale.l7tech.com:8085", null, null, null, searchString, false);
             if (urls != null) {
                 logger.info("Number of URLs on the list is: " + urls.length);
                 for (int i = 0; i < urls.length; i++) {

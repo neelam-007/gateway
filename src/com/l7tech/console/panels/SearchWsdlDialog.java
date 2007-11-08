@@ -4,11 +4,15 @@ import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.uddi.UDDIRegistryInfo;
+import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.console.event.WsdlListener;
 import com.l7tech.console.table.WsdlTable;
 import com.l7tech.console.table.WsdlTableSorter;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.ServiceAdmin;
 
@@ -38,14 +42,24 @@ public class SearchWsdlDialog extends JDialog {
     private JButton selectButton;
     private JButton cancelButton;
     private WsdlTable wsdlTable = null;
-    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.SearchWsdlDialog", Locale.getDefault());
-    private final static String EQUALS = "Equals";
-    private final static String CONTAINS = "Contains";
     private EventListenerList listenerList = new EventListenerList();
     private JCheckBox caseSensitiveCheckBox;
     private JLabel retrievedRows;
+    private JComboBox uddiTypeComboBox;
     private JComboBox uddiURLcomboBox;
+    private JTextField uddiAccountNameTextField;
+    private JPasswordField uddiAccountPasswordField;
+
+    private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+    private UDDIRegistryInfo[] registryTypeInfo;
+
     private static final Logger logger = Logger.getLogger(SearchWsdlDialog.class.getName());
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.SearchWsdlDialog", Locale.getDefault());
+    private static final String EQUALS = "Equals";
+    private static final String CONTAINS = "Contains";
+    private static final String UDDI_TYPE = "UDDI.TYPE";
+    private static final String UDDI_URL = "UDDI.URL";
+    private static final String UDDI_ACCOUNT_NAME = "UDDI.ACCOUNT.NAME";
 
     public SearchWsdlDialog(JDialog parent) throws FindException {
         super(parent, resources.getString("window.title"), true);
@@ -62,7 +76,8 @@ public class SearchWsdlDialog extends JDialog {
 
         try {
             ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
-            enabled = serviceAdmin.findUDDIRegistryURLs().length > 0;
+            enabled = serviceAdmin.findUDDIRegistryURLs().length > 0 &&
+                    !serviceAdmin.getUDDIRegistryInfo().isEmpty();
         }
         catch(Exception e) {
             logger.log(Level.WARNING, "Could not check if UDDI is enabled. '"+e.getMessage()+"'.");
@@ -74,23 +89,45 @@ public class SearchWsdlDialog extends JDialog {
     private void initialize() throws FindException {
         Utilities.setAlwaysOnTop(this, true);
 
+        // load prefs
+        String uddiType = preferences.getString(UDDI_TYPE, "");
+        String uddiUrl = preferences.getString(UDDI_URL, "");
+        String uddiAccount = preferences.getString(UDDI_ACCOUNT_NAME, "");
+
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
         serviceNameFilterOptionComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { CONTAINS, EQUALS }));
 
-        ServiceAdmin seriveAdmin = Registry.getDefault().getServiceManager();
-        if (seriveAdmin == null) throw new RuntimeException("Service Admin reference not found");
-        String[] uddiRegistryURLs = null;
+        ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
+        if (serviceAdmin == null) throw new RuntimeException("Service Admin reference not found");
 
+        registryTypeInfo = serviceAdmin.getUDDIRegistryInfo().toArray(new UDDIRegistryInfo[0]);
+        String[] typeNames = toNames(registryTypeInfo);
+        uddiTypeComboBox.setModel(new DefaultComboBoxModel(typeNames));
+        if ( ArrayUtils.contains( typeNames, uddiType ) ) {
+            uddiTypeComboBox.setSelectedItem(uddiType);
+        } else if (typeNames.length>0) {
+            uddiTypeComboBox.setSelectedItem(typeNames[0]);
+        }
+
+        String[] uddiRegistryURLs = null;
         try {
-            uddiRegistryURLs = seriveAdmin.findUDDIRegistryURLs();
+            uddiRegistryURLs = serviceAdmin.findUDDIRegistryURLs();
         } catch(FindException fe) {
             logger.warning("Exception caught. Unable to get the URLs of UDDI Registries");
             throw fe;
         }
 
         uddiURLcomboBox.setModel(new javax.swing.DefaultComboBoxModel(uddiRegistryURLs));
+        for (String url : uddiRegistryURLs) {
+            if ( url.startsWith(uddiUrl) ) {
+                uddiURLcomboBox.setSelectedItem(url);
+                uddiAccountNameTextField.setText(uddiAccount);
+                break;
+            }
+        }
+
         if (wsdlTable == null) {
             wsdlTable = new WsdlTable();
         }
@@ -140,15 +177,21 @@ public class SearchWsdlDialog extends JDialog {
                 final CancelableOperationDialog dlg =
                         new CancelableOperationDialog(SearchWsdlDialog.this, "Searching WSDL", "Please wait, Searching WSDL...");
 
+                final String type = (String) uddiTypeComboBox.getSelectedItem();
+                final String url = (String) uddiURLcomboBox.getSelectedItem();
+                final String username = uddiAccountNameTextField.getText();
+                final char[] password = uddiAccountPasswordField.getPassword();
+
                 final SwingWorker worker = new SwingWorker() {
 
                     public Object construct() {
                         try {
 
-                            ServiceAdmin seriveAdmin = Registry.getDefault().getServiceManager();
-                            if (seriveAdmin == null) throw new RuntimeException("Service Admin reference not found");
+                            ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
+                            if (serviceAdmin == null) throw new RuntimeException("Service Admin reference not found");
 
-                            WsdlInfo[] urls = seriveAdmin.findWsdlUrlsFromUDDIRegistry((String) uddiURLcomboBox.getSelectedItem(), searchString, caseSensitiveCheckBox.isSelected());
+                            UDDIRegistryInfo info = getRegistryTypeInfo(registryTypeInfo, type);
+                            WsdlInfo[] urls = serviceAdmin.findWsdlUrlsFromUDDIRegistry(url, info, username, password, searchString, caseSensitiveCheckBox.isSelected());
                             return urls;
                         } catch (FindException e) {
                             logger.log(Level.WARNING, "error finding wsdl urls from uddi", e);
@@ -164,7 +207,6 @@ public class SearchWsdlDialog extends JDialog {
 
                 worker.start();
 
-
                 DialogDisplayer.display(dlg, new Runnable() {
                     public void run() {
                         worker.interrupt();
@@ -172,6 +214,11 @@ public class SearchWsdlDialog extends JDialog {
                         if (result == null)
                             return;    // canceled
                         if (result instanceof WsdlInfo[]) {
+                            // store prefs on successful search
+                            preferences.putProperty(UDDI_TYPE, type);
+                            preferences.putProperty(UDDI_URL, url);
+                            preferences.putProperty(UDDI_ACCOUNT_NAME, username);
+
                             boolean searchTruncated = false;
                             Vector urlList = new Vector();
                             for (int i = 0; i < ((WsdlInfo[])result).length; i++) {
@@ -227,6 +274,30 @@ public class SearchWsdlDialog extends JDialog {
                 }
             }
         });
+    }
+
+    private UDDIRegistryInfo getRegistryTypeInfo(UDDIRegistryInfo[] registryInfos, String name) {
+        UDDIRegistryInfo info = null;
+
+        for ( UDDIRegistryInfo currentInfo : registryInfos ) {
+            if ( name.equals(currentInfo.getName()) ) {
+                info = currentInfo;
+                break;
+            }
+        }
+
+        return info;
+    }
+
+    private String[] toNames(UDDIRegistryInfo[] registryInfos) {
+        String[] names = new String[registryInfos.length];
+
+        for (int i=0; i<registryInfos.length; i++) {
+            UDDIRegistryInfo info = registryInfos[i];
+            names[i] = info.getName();
+        }
+
+        return names;
     }
 
     /**

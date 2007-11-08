@@ -2046,6 +2046,68 @@
         <copy tofile="build/gclient/GClient.jar" file="build/obfuscation/GClient.jar" overwrite="true"/>
     </target>
 
+    <!--
+      Package UDDI Policy Tool (Always invoked by hand)
+    -->
+    <patternset id="udditool.libs">
+        <include name="**/forms_rt.jar"/>
+        <include name="**/guddi-*.jar"/>
+    </patternset>
+    <target name="package.udditool" depends="compile-test-forms, testpackage.init">
+        <mkdir dir="${build.dir}/udditool"/>
+        <mkdir dir="${build.dir}/udditool/lib"/>
+
+        <copy todir="${build.dir}/udditool/lib">
+            <fileset dir="${build.lib}">
+                <patternset refid="udditool.libs"/>
+            </fileset>
+        </copy>
+
+        <echo level="info">Generating manifest for UDDIPolicyTool.jar</echo>
+        <generate-manifest propertyPrefix="udditool" filename="UDDITool.mf">
+            <section>
+                <attribute name="Main-Class" value="com.l7tech.skunkworks.uddi.UDDIPolicyTool"/>
+            </section>
+        </generate-manifest>
+        <echo level="info">Creating UDDIPolicyTool.jar</echo>
+        <classfileset id="package.udditool.classfileset" dir="${build.classes}">
+            <root classname="com.l7tech.common.util.Functions" />
+            <root classname="com.l7tech.common.gui.widgets.TextListCellRenderer" />
+        </classfileset>
+       <classfileset id="package.udditool.classfileset2" dir="${build.test.classes}">
+            <root classname="com.l7tech.skunkworks.uddi.UDDIPolicyTool" />
+        </classfileset>
+        <jar jarfile="${build.dir}/udditool/UDDIPolicyTool.jar" manifest="${build.etc}/UDDITool.mf">
+            <fileset refid="package.udditool.classfileset"/>
+            <fileset refid="package.udditool.classfileset2"/>
+        </jar>
+
+        <echo level="info">Testpackaging UDDIPolicyTool.jar</echo>
+        <fileset id="udditool.testpackage.fileset" dir="${build.dir}/udditool/lib">
+            <patternset refid="udditool.libs"/>
+        </fileset>
+        <checkdeps jarfile="build/udditool/UDDIPolicyTool.jar"
+                   libfilesetref="udditool.testpackage.fileset"
+                   resultproperty="testpackage.udditool.result"/>
+        <!-- This just stops idea complaining -->
+        <property name="testpackage.udditool.result" value=""/>
+        <condition property="testpackage.udditool.fail">
+            <not>
+                <equals arg1="0" arg2="${testpackage.udditool.result}"/>
+            </not>
+        </condition>
+        <fail if="testpackage.udditool.fail">UDDIPolicyTool packaging test failed.</fail>
+
+        <echo level="info">Obfuscating UDDIPolicyTool.jar</echo>
+        <build-zkm propertyPrefix="udditool" libDir="build/udditool/lib"/>
+        <Zelix scriptFileName="build/etc/udditool.zkm"
+               logFileName="build/obfuscation/udditoolobfuscation.log"
+               trimLogFileName="build/obfuscation/udditoolobfuscation.log"
+               isParseOnly="false"
+               isVerbose="true"/>
+        <echo level="info">Done obfuscating UDDIPolicyTool.jar</echo>
+        <copy tofile="build/udditool/UDDIPolicyTool.jar" file="build/obfuscation/UDDIPolicyTool.jar" overwrite="true"/>
+    </target>
 
     <!--
       Package the LicenseGenerator (Aways invoked by hand)

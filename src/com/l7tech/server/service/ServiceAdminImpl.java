@@ -328,15 +328,23 @@ public final class ServiceAdminImpl implements ServiceAdmin {
      * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
      *
      * @param uddiURL  The URL of the UDDI Registry
+     * @param info     Type info for the UDDI Registry (optional if auth not present)
+     * @param username The user account name (optional)
+     * @param password The user account password (optional)
      * @param namePattern  The string of the service name (wildcard % is supported)
      * @param caseSensitive  True if case sensitive, false otherwise.
      * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
      * @throws FindException   if there was a problem accessing the requested information.
      */
-    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws FindException {
+    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(final String uddiURL,
+                                                   final UDDIRegistryInfo info,
+                                                   final String username,
+                                                   final char[] password,
+                                                   final String namePattern,
+                                                   final boolean caseSensitive) throws FindException {
         try {
             UddiAgent uddiAgent = uddiAgentFactory.getUddiAgent();
-            WsdlInfo[] wsdlInfo = uddiAgent.getWsdlByServiceName(uddiURL, namePattern, caseSensitive);
+            WsdlInfo[] wsdlInfo = uddiAgent.getWsdlByServiceName(uddiURL, info, username, password, namePattern, caseSensitive);
             Arrays.sort(wsdlInfo, new ResolvingComparator(new Resolver<WsdlInfo,String>(){
                 public String resolve(WsdlInfo key) {
                     return key.getName();

@@ -202,6 +202,7 @@ class GenericUDDIClient implements UDDIClient {
             if ( serviceList.getServiceInfos() != null ) {
                 for (ServiceInfo serviceInfo : serviceList.getServiceInfos().getServiceInfo() ) {
                     FindBinding findBinding = new FindBinding();
+                    findBinding.setAuthInfo(authToken);
                     findBinding.setServiceKey(serviceInfo.getServiceKey());
 
                     // We only need one, since all bindingTemplates will have the same WSDL
@@ -236,6 +237,7 @@ class GenericUDDIClient implements UDDIClient {
                     // Get the WSDL url
                     if ( !modelKeys.isEmpty() ) {
                         GetTModelDetail getTModels = new GetTModelDetail();
+                        getTModels.setAuthInfo(authToken);
                         getTModels.getTModelKey().addAll(modelKeys);
                         TModelDetail tmd = inquiryPort.getTModelDetail(getTModels);
 
