@@ -41,8 +41,7 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
     }
 
     public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
-        if (!(holderOfKey || decorateResponse)) return;
-
+        int firstCreds = -1;
         int firstCertCred = -1;
         int firstRoute = -1;
         for (int i = 0; i < path.getPath().length; i++) {
@@ -50,6 +49,7 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
             if (ass instanceof RoutingAssertion) {
                 firstRoute = i;
             } else if (ass.isCredentialSource()) {
+                firstCreds = i;
                 if (ass instanceof RequestWssX509Cert || ass instanceof SslAssertion || ass instanceof SecureConversation) {
                     firstCertCred = i;
                 } else if (ass instanceof RequestWssSaml) {
@@ -61,15 +61,23 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
                     }
                 }
             } else if (ass == assertion) {
+                boolean ok = true;
+                if (firstCreds == -1 || firstCreds > i) {
+                    result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by a credential source", null));
+                    ok = false;
+                }
+
                 if (holderOfKey && firstCertCred == -1 || firstCertCred > i) {
                     result.addError(new PolicyValidatorResult.Error(assertion, path, "Holder-of-Key selected, must be preceded by a certificate-based credential source", null));
-                    return;
+                    ok = false;
                 }
 
                 if (decorateResponse && (firstRoute == -1 || firstRoute > i)) {
                     result.addError(new PolicyValidatorResult.Error(assertion, path, "Configured to decorate response, must be preceded by a routing assertion", null));
-                    return;
+                    ok = false;
                 }
+
+                if (!ok) return;
             }
         }
     }

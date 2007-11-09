@@ -78,16 +78,10 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         this.varsUsed = assertion.getVariablesUsed();
         this.confirmationMethod = SubjectStatement.Confirmation.forUri(assertion.getSubjectConfirmationMethodUri());
 
-        SignerInfo signerInfo;
         if (serverCert == null) throw new IllegalStateException("Unable to locate server certificate");
         X509Certificate[] serverCertChain = new X509Certificate[]{serverCert};
-        if (assertion.isSignAssertion() || !assertion.getDecorationTypes().isEmpty()) {
-            signerInfo = new SignerInfo((PrivateKey) spring.getBean("sslKeystorePrivateKey"), serverCertChain);
-        } else {
-            signerInfo = new SignerInfo(null, serverCertChain);
-        }
-        this.signerInfo = signerInfo;
-        this.samlAssertionGenerator = new SamlAssertionGenerator(signerInfo);
+        this.signerInfo = new SignerInfo((PrivateKey) spring.getBean("sslKeystorePrivateKey"), serverCertChain);
+        this.samlAssertionGenerator = new SamlAssertionGenerator(this.signerInfo);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {

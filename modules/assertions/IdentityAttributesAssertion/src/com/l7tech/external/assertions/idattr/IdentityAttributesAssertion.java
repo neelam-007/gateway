@@ -85,18 +85,16 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/userAttrs16.png");
 
-        meta.put(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS,
-            new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
-                new ArrayTypeMapping(new IdentityMapping[0], "identityMappingArray"),
-                new AbstractClassTypeMapping(IdentityMapping.class, "identityMapping"),
-                new BeanTypeMapping(LdapAttributeMapping.class, "ldapAttributeMapping"),
-                new BeanTypeMapping(InternalAttributeMapping.class, "internalAttributeMapping"),
-                new BeanTypeMapping(FederatedAttributeMapping.class, "federatedAttributeMapping"),
-                new BeanTypeMapping(AttributeConfig.class, "attributeConfig"),
-                new WspEnumTypeMapping(DataType.class, "dataType"),
-                new Java5EnumTypeMapping(UsersOrGroups.class, "usersOrGroups")
-            ))
-        );
+        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+            new ArrayTypeMapping(new IdentityMapping[0], "identityMappingArray"),
+            new AbstractClassTypeMapping(IdentityMapping.class, "identityMapping"),
+            new BeanTypeMapping(LdapAttributeMapping.class, "ldapAttributeMapping"),
+            new BeanTypeMapping(InternalAttributeMapping.class, "internalAttributeMapping"),
+            new BeanTypeMapping(FederatedAttributeMapping.class, "federatedAttributeMapping"),
+            new BeanTypeMapping(AttributeConfig.class, "attributeConfig"),
+            new WspEnumTypeMapping(DataType.class, "dataType"),
+            new Java5EnumTypeMapping(UsersOrGroups.class, "usersOrGroups")
+        )));
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:IdentityAttributes" rather than "set:modularAssertions"

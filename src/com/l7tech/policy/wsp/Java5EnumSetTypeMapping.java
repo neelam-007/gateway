@@ -38,6 +38,7 @@ public class Java5EnumSetTypeMapping<ET extends Enum<ET>> extends BasicTypeMappi
     @Override
     protected Object stringToObject(String value) throws InvalidPolicyStreamException {
         String[] strings = parser.split(value);
+        if (strings.length == 0 || (strings.length == 1 && "".equals(strings[0]))) return null;
         Set<ET> set = new HashSet<ET>();
         for (String string : strings) {
             try {

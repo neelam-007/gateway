@@ -48,7 +48,9 @@ public class ServerIdentityAttributesAssertion extends AbstractServerAssertion<I
         }
 
         this.attributeExtractors = extractors;
-        this.variablePrefix = assertion.getVariablePrefix();
+        String p = assertion.getVariablePrefix();
+        if (p == null) p = IdentityAttributesAssertion.DEFAULT_VAR_PREFIX;
+        this.variablePrefix = p;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
