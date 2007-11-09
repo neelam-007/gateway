@@ -223,10 +223,14 @@
     <servlet-mapping>
         <servlet-name>ping</servlet-name>
         <url-pattern>/ssg/ping</url-pattern>
+    </servlet-mapping>
+
+    <!--
+        NOTE: Make sure ping servlet has a mapping for every url-pattern defined in com.l7tech.server.PingServlet.
+    -->
+    <servlet-mapping>
+        <servlet-name>ping</servlet-name>
         <url-pattern>/ssg/ping/systemInfo</url-pattern>
-        <!--
-            NOTE: Make sure url-pattern includes those defined in com.l7tech.server.PingServlet.
-        -->
     </servlet-mapping>
 
     <servlet-mapping>
