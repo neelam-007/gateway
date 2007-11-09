@@ -4,6 +4,7 @@ import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.filechooser.FileFilter;
@@ -169,7 +170,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
         final JFileChooser fileChooser = getFileChooser();
 
         // Pop up the save file dialog
-        int ret = fileChooser.showSaveDialog(TopComponents.getInstance().getTopParent());
+        int ret = fileChooser.showSaveDialog(this);
         if (ret != JFileChooser.APPROVE_OPTION) {
             return;
         }
@@ -238,7 +239,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
                 Runtime.getRuntime().totalMemory()));
         sb.append(MessageFormat.format(resources.getString("stack.trace"), stackTrace(throwable)));
         sb.append(resources.getString("help.centre"));
-        return sb.toString();
+        return sb.toString().replaceAll("\n", SyspropUtil.getString("line.separator", "\n"));
     }
 
     /**

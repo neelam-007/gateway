@@ -780,7 +780,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 }
             }
             catch(Throwable throwable) {
-                ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error");     
+                ErrorManager.getDefault().notify(Level.WARNING, throwable, ErrorManager.DEFAULT_ERROR_MESSAGE);     
             }
         }
 

@@ -239,7 +239,7 @@ public abstract class BaseAction extends AbstractAction {
             fireActionPerformed(ev);
         }
         catch(Throwable throwable) {
-            ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error");   
+            ErrorManager.getDefault().notify(Level.WARNING, throwable, ErrorManager.DEFAULT_ERROR_MESSAGE);   
         }
     }
 }

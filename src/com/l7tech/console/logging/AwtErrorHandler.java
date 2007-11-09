@@ -14,10 +14,8 @@ public class AwtErrorHandler {
     public void handle(final Throwable t) {
         SwingUtilities.invokeLater( new Runnable() {
             public void run() {
-                ErrorManager.getDefault().notify(Level.SEVERE, t, ERROR_MESSAGE);
+                ErrorManager.getDefault().notify(Level.SEVERE, t, ErrorManager.DEFAULT_ERROR_MESSAGE);
             }
         });
     }
-    private static final String ERROR_MESSAGE ="The SecureSpan Manager encountered an internal error or " +
-            "misconfiguration and was unable to complete the operation.";
 }

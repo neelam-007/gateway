@@ -5,6 +5,7 @@ import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
@@ -247,7 +248,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         } catch (InterruptedException e) {
             return null;
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e.getTargetException());
+            throw ExceptionUtils.wrap(e.getTargetException());
         }
     }
 
