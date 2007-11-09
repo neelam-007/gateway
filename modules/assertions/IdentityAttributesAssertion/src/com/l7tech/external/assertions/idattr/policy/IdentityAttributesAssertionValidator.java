@@ -11,6 +11,9 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.service.PublishedService;
 
+import java.util.Set;
+import java.util.HashSet;
+
 /**
  * Validates that any {@link IdentityAttributesAssertion} is preceded in its path by an {@link IdentityAssertion}.
  * @author alex
@@ -24,12 +27,16 @@ public class IdentityAttributesAssertionValidator implements AssertionValidator 
 
     public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
         int firstIdPos = -1;
+        Set<Long> authenticatedProviders = new HashSet<Long>();
         for (int i = 0; i < path.getPath().length; i++) {
             Assertion assertion = path.getPath()[i];
             if (assertion instanceof IdentityAssertion) {
                 if (firstIdPos == -1) firstIdPos = i;
-            } else if (assertion == this.assertion && (firstIdPos == -1 || firstIdPos > i)) {
-                result.addError(new PolicyValidatorResult.Error(assertion, path, "Identity Attributes must be preceded by an Identity Assertion (e.g. Specific User or Member of Group)", null));
+                authenticatedProviders.add(((IdentityAssertion)assertion).getIdentityProviderOid());
+            } else if (assertion == this.assertion) {
+                if (firstIdPos == -1 || firstIdPos > i || !authenticatedProviders.contains(this.assertion.getIdentityProviderOid())) {
+                    result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by an Identity Assertion (e.g. Specific User or Member of Group) matching the expected Identity Provider", null));
+                }
                 break;
             }
         }

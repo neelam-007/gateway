@@ -61,23 +61,19 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
                     }
                 }
             } else if (ass == assertion) {
-                boolean ok = true;
                 if (firstCreds == -1 || firstCreds > i) {
                     result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by a credential source", null));
-                    ok = false;
                 }
 
                 if (holderOfKey && firstCertCred == -1 || firstCertCred > i) {
                     result.addError(new PolicyValidatorResult.Error(assertion, path, "Holder-of-Key selected, must be preceded by a certificate-based credential source", null));
-                    ok = false;
                 }
 
                 if (decorateResponse && (firstRoute == -1 || firstRoute > i)) {
                     result.addError(new PolicyValidatorResult.Error(assertion, path, "Configured to decorate response, must be preceded by a routing assertion", null));
-                    ok = false;
                 }
 
-                if (!ok) return;
+                return;
             }
         }
     }
