@@ -28,6 +28,9 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
     private boolean showTitleLabel;
     private final boolean issueMode;
 
+    private static final String DESC_PREFIX = "<html>Specify the Resource [required] that the SAML statement ";
+    private static final String DESC_SUFFIX = " describe; the Resource Action [required] and the Action Namespace [optional].</html>";
+
     /**
      * Creates new form AuthorizationStatementWizardStepPanel
      */
@@ -154,14 +157,9 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
 
     public String getDescription() {
         if (issueMode) {
-            return
-            "<html>Specify the Resource [required] that the SAML statement will describe; the " +
-              "Resource Action [required] and the Action Namespace [optional].</html>";
+            return DESC_PREFIX + "will" + DESC_SUFFIX;
         } else {
-            return
-            "<html>Specify the Resource [required] that the SAML statement MUST describe; the " +
-              "Resource Action [required] and the Action Namespace [optional] " +
-              "and whether the message signature is required as the proof material</html>";
+            return DESC_PREFIX + "MUST" + DESC_SUFFIX;
         }
     }
 
