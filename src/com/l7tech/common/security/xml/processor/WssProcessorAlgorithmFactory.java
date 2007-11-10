@@ -7,6 +7,9 @@ import com.ibm.xml.dsig.SignatureMethod;
 import com.ibm.xml.dsig.transform.FixedExclusiveC11r;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.security.xml.STRTransform;
+import com.l7tech.common.security.xml.AttachmentCompleteTransform;
+import com.l7tech.common.security.xml.AttachmentContentTransform;
+
 import org.w3c.dom.Node;
 
 import java.util.Map;
@@ -54,6 +57,10 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
                    || Transform.XPATH.equals(s)
                    || Transform.XPATH2.equals(s)) {
             throw new NoSuchAlgorithmException(s);
+        } else if (SoapUtil.TRANSFORM_ATTACHMENT_CONTENT.equals(s)) {
+            return new AttachmentContentTransform();
+        } else if (SoapUtil.TRANSFORM_ATTACHMENT_COMPLETE.equals(s)) {
+            return new AttachmentCompleteTransform();
         }
         return super.getTransform(s);
     }

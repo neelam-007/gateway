@@ -212,6 +212,8 @@ public class SoapUtil {
     public static final String ALGORITHM_PSHA = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk/p_sha1";
     public static final String ALGORITHM_PSHA2 = "http://schemas.xmlsoap.org/ws/2005/02/sc/dk/p_sha1";
     public static final String TRANSFORM_STR = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#STR-Transform";
+    public static final String TRANSFORM_ATTACHMENT_COMPLETE = "http://docs.oasis-open.org/wss/2004/XX/oasis-2004XX-wss-swa-profile-1.0#Attachment-Complete-Transform";
+    public static final String TRANSFORM_ATTACHMENT_CONTENT = "http://docs.oasis-open.org/wss/2004/XX/oasis-2004XX-wss-swa-profile-1.0#Attachment-Content-Only-Transform";
 
     // Well-known actors (SOAP 1.1)
     public static final String ACTOR_VALUE_NEXT = "http://schemas.xmlsoap.org/soap/actor/next";

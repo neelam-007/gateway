@@ -5,6 +5,7 @@ import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.FlexKey;
 import com.l7tech.common.security.kerberos.KerberosConfigException;
@@ -17,6 +18,9 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.UnsupportedDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.mime.PartInfo;
+
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -1306,7 +1310,7 @@ public class WssProcessorImpl implements WssProcessor {
     private void processSignature(final Element sigElement,
                                   final SecurityContextFinder securityContextFinder,
                                   final ProcessingStatusHolder cntx)
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException {
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, IOException {
         if(logger.isLoggable(Level.FINEST)) logger.finest("Processing Signature");
 
         // 1st, process the KeyInfo
@@ -1402,6 +1406,13 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Validate signature
         SignatureContext sigContext = new SignatureContext();
+        MimeKnob mimeKnob = (MimeKnob) cntx.message.getKnob(MimeKnob.class);
+        PartIterator iterator = mimeKnob==null ? null : mimeKnob.getParts();
+        Map<String,PartInfo> partMap = new HashMap();
+        // TODO enable attachment resolver when it is secured
+        // - Need to prevent out of memory errors (streaming canonicalization?)
+        // - Need to limit signed attachments to services with URLs? (so we know the service allows attachments)
+        //sigContext.setEntityResolver(new AttachmentEntityResolver(iterator, partMap, XmlUtil.getXss4jEntityResolver()));
         sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         sigContext.setIDResolver(new IDResolver() {
             public Element resolveID(Document doc, String s) {
@@ -1468,49 +1479,59 @@ public class WssProcessorImpl implements WssProcessor {
         for (int i = 0; i < numberOfReferences; i++) {
             // Resolve each elements one by one.
             String elementCoveredURI = validity.getReferenceURI(i);
-            if (elementCoveredURI!=null && elementCoveredURI.charAt(0) == '#') {
-                elementCoveredURI = elementCoveredURI.substring(1);
+            PartInfo partCovered = partMap.get(elementCoveredURI);
+            Element elementCovered = null;
+
+            if ( partCovered == null ) {
+                if (elementCoveredURI!=null && elementCoveredURI.charAt(0) == '#') {
+                    elementCoveredURI = elementCoveredURI.substring(1);
+                }
+                elementCovered = (Element)cntx.elementsByWsuId.get(elementCoveredURI);
+                if (elementCovered == null)
+                    elementCovered = SoapUtil.getElementByWsuId(sigElement.getOwnerDocument(), elementCoveredURI);
+                if (elementCovered == null) {
+                    String msg = "Element covered by signature cannot be found in original document nor in " +
+                            "processed document. URI: " + elementCoveredURI;
+                    logger.warning(msg);
+                    throw new InvalidDocumentFormatException(msg);
+                }
             }
-            Element elementCovered = (Element)cntx.elementsByWsuId.get(elementCoveredURI);
-            if (elementCovered == null)
-                elementCovered = SoapUtil.getElementByWsuId(sigElement.getOwnerDocument(), elementCoveredURI);
-            if (elementCovered == null) {
-                String msg = "Element covered by signature cannot be found in original document nor in " +
-                        "processed document. URI: " + elementCoveredURI;
-                logger.warning(msg);
-                throw new InvalidDocumentFormatException(msg);
-            }
-            // check whether this is a token reference
-            Element targetElement = (Element)cntx.securityTokenReferenceElementToTargetElement.get(elementCovered);
-            if (targetElement != null) {
-                elementCovered = targetElement;
-            }
-            // make reference to this element
+
+            // find signing security token
+            final SigningSecurityToken signingSecurityToken;
             if (signingCertToken != null) {
-                final SignedElement signedElement = new SignedElementImpl(signingCertToken, elementCovered);
-                cntx.elementsThatWereSigned.add(signedElement);
-                signingCertToken.addSignedElement(signedElement);
-                signingCertToken.onPossessionProved();
+                signingSecurityToken = signingCertToken;
             } else if (dkt != null) {
                 // If signed by a derived key token, credit the signature to the derivation source instead of the DKT
                 XmlSecurityToken token = dkt.getSourceToken();
                 if (token instanceof SigningSecurityTokenImpl) {
-                    SigningSecurityTokenImpl t = (SigningSecurityTokenImpl)dkt.getSourceToken();
-                    final SignedElement signedElement = new SignedElementImpl(t, elementCovered);
-                    cntx.elementsThatWereSigned.add(signedElement);
-                    t.addSignedElement(signedElement);
-                    t.onPossessionProved();
+                    signingSecurityToken = (SigningSecurityTokenImpl)dkt.getSourceToken();
                 } else {
                     throw new InvalidDocumentFormatException("Unable to record signature using unsupport key derivation source: " + token.getType());
                 }
             } else if (signingToken instanceof SigningSecurityTokenImpl) {
-                SigningSecurityTokenImpl tok = (SigningSecurityTokenImpl)signingToken;
-                final SignedElement signedElement = new SignedElementImpl(tok, elementCovered);
-                cntx.elementsThatWereSigned.add(signedElement);
-                tok.addSignedElement(signedElement);
-                tok.onPossessionProved();
+                signingSecurityToken = (SigningSecurityTokenImpl)signingToken;
             } else
                 throw new RuntimeException("No signing security token found");
+
+            // record for later
+            if (elementCovered != null) {
+                // check whether this is a token reference
+                Element targetElement = (Element)cntx.securityTokenReferenceElementToTargetElement.get(elementCovered);
+                if (targetElement != null) {
+                    elementCovered = targetElement;
+                }
+                // make reference to this element
+                final SignedElement signedElement = new SignedElementImpl(signingSecurityToken, elementCovered);
+                cntx.elementsThatWereSigned.add(signedElement);
+                signingSecurityToken.addSignedElement(signedElement);
+            } else {
+                // make reference to this part
+                final SignedPart signedPart = new SignedPartImpl(signingSecurityToken, partCovered);;
+                cntx.partsThatWereSigned.add(signedPart);
+                signingSecurityToken.addSignedPart(signedPart);
+            }
+            signingSecurityToken.onPossessionProved();
         }
     }
 
@@ -1542,6 +1563,10 @@ public class WssProcessorImpl implements WssProcessor {
 
             public EncryptedElement[] getElementsThatWereEncrypted() {
                 return (EncryptedElement[])cntx.elementsThatWereEncrypted.toArray(PROTOTYPE_ELEMENT_ARRAY);
+            }
+
+            public SignedPart[] getPartsThatWereSigned() {
+                return cntx.partsThatWereSigned.toArray(PROTOTYPE_SIGNEDPART_ARRAY);
             }
 
             public XmlSecurityToken[] getXmlSecurityTokens() {
@@ -1656,6 +1681,7 @@ public class WssProcessorImpl implements WssProcessor {
         final Document processedDocument;
         final Collection elementsThatWereSigned = new ArrayList();
         final Collection elementsThatWereEncrypted = new ArrayList();
+        final Collection<SignedPart> partsThatWereSigned = new ArrayList();
         final Collection securityTokens = new ArrayList();
         final Collection derivedKeyTokens = new ArrayList();
         Map elementsByWsuId = null;
@@ -1794,6 +1820,7 @@ public class WssProcessorImpl implements WssProcessor {
 
     private static final ParsedElement[] PROTOTYPE_ELEMENT_ARRAY = new EncryptedElement[0];
     private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
+    private static final SignedPart[] PROTOTYPE_SIGNEDPART_ARRAY = new SignedPart[0];
     private static final XmlSecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new XmlSecurityToken[0];
 
     private static class DerivedKeyTokenImpl extends ParsedElementImpl implements DerivedKeyToken {
@@ -1968,4 +1995,21 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
+    private static class SignedPartImpl implements SignedPart {
+        private final SigningSecurityToken signingToken;
+        private final PartInfo partInfo;
+
+        public SignedPartImpl(SigningSecurityToken signingToken, PartInfo partInfo) {
+            this.signingToken = signingToken;
+            this.partInfo = partInfo;
+        }
+
+        public SigningSecurityToken getSigningSecurityToken() {
+            return signingToken;
+        }
+
+        public PartInfo getPartInfo() {
+            return partInfo;
+        }
+    }
 }

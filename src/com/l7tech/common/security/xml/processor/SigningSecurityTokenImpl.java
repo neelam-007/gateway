@@ -8,6 +8,8 @@ package com.l7tech.common.security.xml.processor;
 
 import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.token.SigningSecurityToken;
+import com.l7tech.common.security.token.SignedPart;
+
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -17,8 +19,8 @@ import java.util.List;
  * Holds some common implementation for SigningSecurityTokens.
  */
 abstract class SigningSecurityTokenImpl extends ParsedElementImpl implements SigningSecurityToken {
-    public static final SignedElement[] PROTO = new SignedElement[0];
-    private List signedElements = new ArrayList();
+    private List<SignedElement> signedElements = new ArrayList();
+    private List<SignedPart> signedParts = new ArrayList();
     protected boolean possessionProved = false;
 
     public SigningSecurityTokenImpl(Element element) {
@@ -32,12 +34,21 @@ abstract class SigningSecurityTokenImpl extends ParsedElementImpl implements Sig
     }
 
     public SignedElement[] getSignedElements() {
-        return (SignedElement[])signedElements.toArray(PROTO);
+        return signedElements.toArray(new SignedElement[signedElements.size()]);
     }
 
     public void addSignedElement(SignedElement signedElement) {
         if (signedElement == null) throw new NullPointerException();
         signedElements.add(signedElement);
+    }
+
+    public SignedPart[] getSignedParts() {
+        return signedParts.toArray(new SignedPart[signedParts.size()]);
+    }
+
+    public void addSignedPart(SignedPart signedPart) {
+        if (signedPart == null) throw new NullPointerException();
+        signedParts.add(signedPart);
     }
 
     public void onPossessionProved() {

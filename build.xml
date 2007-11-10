@@ -374,6 +374,8 @@
         <include name="**/forms_rt.jar"/>
         <include name="**/mysql-connector-java-5.0.4-bin.jar"/>
         <include name="**/xss4j*.jar"/>
+        <include name="**/mailapi-1.4.jar"/>
+        <include name="**/activation.jar"/>
         <include name="**/bcprov-jdk15-135.jar"/>
         <include name="**/kunststoff.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
@@ -408,6 +410,8 @@
         <include name="**/commons-logging-*.jar"/>
         <include name="**/xercesImpl.jar"/>
         <include name="**/xss4j*.jar"/>
+        <include name="**/mailapi-1.4.jar"/>
+        <include name="**/activation.jar"/>
         <include name="**/whirlycache-*.jar"/>
         <include name="**/bcprov-jdk15-135.jar"/>
         <include name="**/concurrent-*.jar"/>
@@ -897,6 +901,7 @@
             <test name="com.l7tech.proxy.datamodel.SsgTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.xml.WssDecoratorTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.security.xml.WssProcessorTest" haltonfailure="no" fork="yes"/>
+            <test name="com.l7tech.common.security.xml.AttachmentTransformTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.KeysTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.SoapMessageGeneratorTest" haltonfailure="no" fork="yes"/>
