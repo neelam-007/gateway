@@ -3,20 +3,23 @@ package com.l7tech.common;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.Closeable;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.SyspropUtil;
 
 import java.io.Serializable;
-import java.util.concurrent.Future;
-import java.util.concurrent.ExecutionException;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.security.SecureRandom;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A utility implementation of {@link AsyncAdminMethods}, useful either as a base class or as a delegate.
  * This implementation is threadsafe (fully synchronized).
  */
 public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
+    public static final String PROP_STALE_JOB_MILLIS = "com.l7tech.server.admin.async.defaultStaleJobMillis";
+    public static final int DEFAULT_STALE_JOB_MILLIS = SyspropUtil.getInteger(PROP_STALE_JOB_MILLIS, 30 * 1000);
     protected static final Logger logger = Logger.getLogger(AsyncAdminMethodsImpl.class.getName());
 
     private final long staleJobMillis;
@@ -38,6 +41,14 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
     private final Random random = new SecureRandom();
     private Map<JobId, JobEntry> jobs = new HashMap<JobId, JobEntry>();
     private TimerTask cleanupTask;
+
+    /**
+     * Create an AsyncAdminMethodsImpl that will discard unclaimed inactive jobs after
+     * {@link #DEFAULT_STALE_JOB_MILLIS} milliseconds.
+     */
+    public AsyncAdminMethodsImpl() {
+        this(DEFAULT_STALE_JOB_MILLIS);
+    }
 
     /**
      * Create an AsyncAdminMethodsImpl that will discard unclaimed inactive jobs after staleJobMillis milliseconds.
@@ -162,7 +173,8 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
      * This instance may not be used once close() has been called.
      */
     public synchronized void close() {
-        mustNotBeClosed();
+        if (jobs == null)
+            return;
         Background.cancel(cleanupTask);
         cleanupTask = null;
         jobs = null;

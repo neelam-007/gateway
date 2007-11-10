@@ -8,6 +8,7 @@ package com.l7tech.common.util;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -62,6 +63,19 @@ public class SyspropUtil {
         } catch (AccessControlException e) {
             logger.fine("Unable to access system property " + name + "; using default value of " + dflt);
             return new Long(dflt);
+        }
+    }
+
+    public static Double getDouble(String name, double dflt) {
+        try {
+            String s = System.getProperty(name);
+            return s != null && s.length() > 0 ? Double.parseDouble(s) : new Double(dflt);
+        } catch (NumberFormatException e) {
+            logger.log(Level.WARNING, "Invalid system property " + name + " (using default value of " + dflt + "): " + ExceptionUtils.getMessage(e));
+            return new Double(dflt);
+        } catch (AccessControlException e) {
+            logger.fine("Unable to access system property " + name + ": using default value of " + dflt);
+            return new Double(dflt);
         }
     }
 

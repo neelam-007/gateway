@@ -1,14 +1,14 @@
 package com.l7tech.server.service;
 
+import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.io.ByteLimitInputStream;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
-import com.l7tech.server.service.uddi.UddiAgentException;
-import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResolvingComparator;
-import com.l7tech.common.util.Resolver;
+import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.Resolver;
+import com.l7tech.common.util.ResolvingComparator;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.PolicyValidator;
@@ -16,8 +16,10 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.uddi.UddiAgent;
+import com.l7tech.server.service.uddi.UddiAgentException;
 import com.l7tech.server.service.uddi.UddiAgentFactory;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.uddi.RegistryPublicationManager;
@@ -26,7 +28,6 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceDocument;
-
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -40,14 +41,12 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
-import java.util.Arrays;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,6 +74,10 @@ public final class ServiceAdminImpl implements ServiceAdmin {
     private final WspReader wspReader;
     private final UDDITemplateManager uddiTemplateManager;
 
+    private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
+    private final BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
+    private final ExecutorService validatorExecutor;
+
     public ServiceAdminImpl(AssertionLicense licenseManager,
                             RegistryPublicationManager registryPublicationManager,
                             UddiAgentFactory uddiAgentFactory,
@@ -86,7 +89,8 @@ public final class ServiceAdminImpl implements ServiceAdmin {
                             X509TrustManager trustManager,
                             RoleManager roleManager,
                             WspReader wspReader,
-                            UDDITemplateManager uddiTemplateManager) {
+                            UDDITemplateManager uddiTemplateManager,
+                            ServerConfig serverConfig) {
         this.licenseManager = licenseManager;
         this.registryPublicationManager = registryPublicationManager;
         this.uddiAgentFactory = uddiAgentFactory;
@@ -99,6 +103,10 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         this.roleManager = roleManager;
         this.wspReader = wspReader;
         this.uddiTemplateManager = uddiTemplateManager;
+        ServerConfig serverConfig1 = serverConfig;
+
+        int maxConcurrency = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
+        validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue);
     }
 
     public String resolveWsdlTarget(String url) throws IOException {
@@ -179,21 +187,21 @@ public final class ServiceAdminImpl implements ServiceAdmin {
             return collectionToHeaderArray(res);
     }
 
-    public PolicyValidatorResult validatePolicy(String policyXml, long serviceid) {
+    public JobId<PolicyValidatorResult> validatePolicy(String policyXml, long serviceId) {
         try {
-            PublishedService service = serviceManager.findByPrimaryKey(serviceid);
-            Assertion assertion = wspReader.parsePermissively(policyXml);
-            return policyValidator.validate(assertion, service, licenseManager);
+            final PublishedService service = serviceManager.findByPrimaryKey(serviceId);
+            final Assertion assertion = wspReader.parsePermissively(policyXml);
+            return asyncSupport.registerJob(validatorExecutor.submit(new Callable<PolicyValidatorResult>() {
+                public PolicyValidatorResult call() throws Exception {
+                    return policyValidator.validate(assertion, service, licenseManager);
+                }
+            }), PolicyValidatorResult.class);
         } catch (FindException e) {
-            logger.log(Level.WARNING, "cannot get existing service: " + serviceid, e);
-            throw new RuntimeException("cannot get existing service: " + serviceid, e);
+            logger.log(Level.WARNING, "cannot get existing service: " + serviceId, e);
+            throw new RuntimeException("cannot get existing service: " + serviceId, e);
         } catch (IOException e) {
             logger.log(Level.WARNING, "cannot parse passed policy xml: " + policyXml, e);
             throw new RuntimeException("cannot parse passed policy xml", e);
-        } catch (InterruptedException e) {
-            // Can't happen on server side
-            logger.log(Level.WARNING, "validation thread interrupted", e);
-            throw new RuntimeException("validation thread interrupted", e);
         }
     }
 
@@ -482,5 +490,13 @@ public final class ServiceAdminImpl implements ServiceAdmin {
 
     public Collection<UDDIRegistryInfo> getUDDIRegistryInfo() {
         return uddiTemplateManager.getTemplatesAsUDDIRegistryInfo();
+    }
+
+    public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
+        return asyncSupport.getJobStatus(jobId);
+    }
+
+    public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
+        return asyncSupport.getJobResult(jobId);
     }
 }

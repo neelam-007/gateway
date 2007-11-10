@@ -190,6 +190,7 @@
                 <constructor-arg ref="serverConfig"/>
             </bean>
         </constructor-arg>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <!-- schema admin servant -->

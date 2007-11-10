@@ -121,6 +121,8 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_IO_HTTP_POOL_MAX_IDLE_TIME = "ioHttpPoolMaxIdleTime";
     public static final String PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS = "ioHttpPoolMinSpareThreads";
 
+    public static final String PARAM_POLICY_VALIDATION_MAX_CONCURRENCY = "serverPolicyValidation.maxConcurrency";
+
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;

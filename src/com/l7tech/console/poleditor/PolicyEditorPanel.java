@@ -1,11 +1,13 @@
 package com.l7tech.console.poleditor;
 
+import com.l7tech.common.AsyncAdminMethods;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.SyspropUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
@@ -26,6 +28,9 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceAdmin;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -43,9 +48,9 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.io.StringReader;
-import java.io.IOException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.Enumeration;
@@ -55,9 +60,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.xml.sax.SAXException;
-import org.w3c.dom.Document;
 
 /**
  * The class represents the policy editor
@@ -69,6 +71,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private static final String MESSAGE_AREA_DIVIDER_KEY = "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
     public static final String SERVICENAME_PROPERTY = "service.name";
     private static final long TIME_BEFORE_OFFERING_CANCEL_DIALOG = 500L;
+
+    private static final String PROP_PREFIX = "com.l7tech.console";
+    private static final long DELAY_INITIAL = SyspropUtil.getLong(PROP_PREFIX + ".policyValidator.serverSideDelay.initial", 71L);
+    private static final long DELAY_CAP = SyspropUtil.getLong(PROP_PREFIX + ".policyValidator.serverSideDelay.maximum", 15000L);
+    private static final double DELAY_MULTIPLIER = SyspropUtil.getDouble(PROP_PREFIX + ".policyValidator.serverSideDelay.multiplier", 1.6);
+
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
     private PolicyTree policyTree;
@@ -579,8 +587,24 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 public PolicyValidatorResult call() throws Exception {
                     PolicyValidatorResult result = PolicyValidator.getDefault().validate(assertion, service, licenseManager);
                     if (getPublishedService() != null) {
-                        PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
+                        ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
+                        AsyncAdminMethods.JobId<PolicyValidatorResult> result2Job = serviceAdmin.
                                 validatePolicy(policyXml, getPublishedService().getOid());
+                        PolicyValidatorResult result2 = null;
+                        double delay = DELAY_INITIAL;
+                        Thread.sleep((long)delay);
+                        while (result2 == null) {
+                            String status = serviceAdmin.getJobStatus(result2Job);
+                            if (status == null)
+                                throw new IllegalStateException("Server could not find our policy validation job ID");
+                            if (status.startsWith("i")) {
+                                result2 = serviceAdmin.getJobResult(result2Job).result;
+                                if (result2 == null)
+                                    throw new RuntimeException("Server returned a null job result");
+                            }
+                            delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
+                            Thread.sleep((long)delay);
+                        }
                         if (result2.getErrorCount() > 0) {
                             for (Object o : result2.getErrors()) {
                                 result.addError((PolicyValidatorResult.Error)o);
