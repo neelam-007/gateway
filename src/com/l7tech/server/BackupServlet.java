@@ -201,7 +201,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             out.println("</head>");
             out.println("<body>");
             out.println("<h1>SecureSpan Gateway Backup Service</h1>");
-            out.println("<p>Please select a gateway node to backup:</p>");
+            out.println("<p>Please select a Gateway node to back up:</p>");
             for (ClusterNodeInfo nodeInfo : nodeInfos) {
                 // Using <a> instead of <input type="submit"> because I want the
                 // URL to be displayed in the browser status bar when hover.
