@@ -390,6 +390,8 @@ public class SecureSpanConstants {
      * <h3>Usages:</h3><ul>
      * <li>Used when {@link com.l7tech.server.BackupServlet} routes a request
      * to the target node.
+     * <li>Used when {@link com.l7tech.server.PingServlet} routes a system info
+     * request to the target node.
      * </ul>
      *
      * @since SecureSpan 4.3
@@ -405,6 +407,8 @@ public class SecureSpanConstants {
      * <h3>Usages:</h3><ul>
      * <li>Used when {@link com.l7tech.server.BackupServlet} routes a request
      * to the target node.
+     * <li>Used when {@link com.l7tech.server.PingServlet} routes a system info
+     * request to the target node.
      * </ul>
      *
      * @since SecureSpan 4.3

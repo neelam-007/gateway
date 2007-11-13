@@ -8,10 +8,11 @@ import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.http.*;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ProcResult;
 import com.l7tech.common.util.ProcUtils;
 import com.l7tech.common.util.TextUtils;
@@ -25,8 +26,8 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
-import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.util.HttpClientFactory;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -136,6 +137,9 @@ public class PingServlet extends AuthenticatableHttpServlet {
             doSystemInfo(request, response, mode);
         } else {
             // servlet-mapping url-pattern in web.xml should have prevented the request from getting here.
+            if (_logger.isLoggable(Level.FINE)) {
+                _logger.fine("Responding with 404 for unknown request URI (should have been blocked by web.xml but wasn't): " + uri);
+            }
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
@@ -232,6 +236,9 @@ public class PingServlet extends AuthenticatableHttpServlet {
         // Determines which SSG node's system info is requested for.
         final String nodeName = request.getParameter("node");
         if (nodeName == null) {
+            if (_logger.isLoggable(Level.FINE)) {
+                _logger.fine("Missing node name parameter in system info request.");
+            }
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing node name.");
             return;
         }
@@ -239,7 +246,13 @@ public class PingServlet extends AuthenticatableHttpServlet {
         // If this SSG node is the target node, handle it; otherwise route it through.
         final String selfNodeName = _clusterInfoManager.getSelfNodeInf().getName();
         if (nodeName.equals(selfNodeName)) {
-            _logger.fine("System info request is for this node.");
+            if (_logger.isLoggable(Level.FINE)) {
+                if (request.getHeader(SecureSpanConstants.HEADER_ORIGINAL_HOST) == null) {
+                    _logger.fine("System info request is for this node (without routing).");
+                } else {
+                    _logger.fine("System info request is for this node (routed through " + request.getRemoteHost() + ").");
+                }
+            }
             reallyDoSystemInfo(response, nodeName);
         } else {
             _logger.fine("System info request is for another node.");
@@ -430,6 +443,8 @@ public class PingServlet extends AuthenticatableHttpServlet {
                 final LoginCredentials credentials = findCredentialsBasic(request);
                 params.setPasswordAuthentication(new PasswordAuthentication(credentials.getName(), credentials.getCredentials()));
                 params.setPreemptiveAuthentication(true);
+                params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HEADER_ORIGINAL_HOST, request.getRemoteHost()));
+                params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HEADER_ORIGINAL_ADDR, request.getRemoteAddr()));
                 final GenericHttpRequest routedRequest = _httpClientFactory.createHttpClient().createRequest(GenericHttpClient.GET, params);
 
                 final GenericHttpResponse routedResponse = routedRequest.getResponse();
@@ -448,6 +463,10 @@ public class PingServlet extends AuthenticatableHttpServlet {
                 } finally {
                     if (in != null) in.close();
                     if (out != null) out.close();
+                }
+
+                if (_logger.isLoggable(Level.FINE)) {
+                    _logger.fine("Routed system info response from " + nodeName + " at " + nodeAddress);
                 }
             } catch (IOException e) {
                 _logger.log(Level.WARNING, "Failed to routed system info request to " + nodeName + " at " + nodeAddress, e);
