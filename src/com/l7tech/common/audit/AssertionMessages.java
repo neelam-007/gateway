@@ -527,4 +527,6 @@ public class AssertionMessages extends Messages {
 
     public static final M IDENTITY_ATTRIBUTE_NO_USER     = m(8450, Level.INFO, "No user from the expected identity provider has yet been authenticated");
     public static final M IDENTITY_ATTRIBUTE_MULTI_USERS = m(8451, Level.INFO, "Multiple users from the expected identity provider have been authenticated; choosing the first");
+
+    public static final M INCLUDE_POLICY_EXCEPTION       = m(8500, Level.WARNING, "Included policy was updated, and is now invalid: {0}");
 }
