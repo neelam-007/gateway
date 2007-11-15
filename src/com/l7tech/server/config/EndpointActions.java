@@ -5,14 +5,16 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
+import com.l7tech.server.config.db.SsgConnectorSql;
+import com.l7tech.server.partition.FirewallRules;
 import com.l7tech.server.partition.PartitionInformation;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.io.File;
+import java.io.IOException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -23,20 +25,15 @@ import java.util.logging.Logger;
  */
 public class EndpointActions {
     private static final Logger logger = Logger.getLogger(EndpointActions.class.getName());
+    public static final String FIREWALL_RULES_DROPFILE = "firewall_rules";
 
     public static boolean isEndpointsInDb(PartitionInformation pInfo) {
-        boolean found = false;
         Connection conn = null;
-        Statement stmt = null;
-        ResultSet rs = null;
+
+        boolean found = false;
         try {
-            DBActions dba = new DBActions(pInfo.getOSSpecificFunctions());
-            conn = dba.getConnection(SharedWizardInfo.getInstance().getDbinfo());
-            stmt = conn.createStatement();
-            rs = stmt.executeQuery("select * from connector");
-            if(rs.next()) {
-                found = true;
-            }
+            conn = getConnection(pInfo);
+            found = !(SsgConnectorSql.loadAll(conn).isEmpty());
         } catch (ClassNotFoundException e) {
             logger.severe("Error while reading endpoints from the database. Cannot proceed." + ExceptionUtils.getMessage(e));
             throw new RuntimeException(e);
@@ -44,59 +41,27 @@ public class EndpointActions {
             logger.severe("Error while reading endpoints from the database. Cannot proceed." + ExceptionUtils.getMessage(e));
             throw new RuntimeException(e);
         } finally {
-            ResourceUtils.closeQuietly(rs);
-            ResourceUtils.closeQuietly(stmt);
             ResourceUtils.closeQuietly(conn);
         }
         return found;
     }
 
-    public static List<SsgConnector> getExistingAdminEndpoints(PartitionInformation pInfo) {
-        List<SsgConnector> found = new ArrayList<SsgConnector>();
-        DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
+    public static Collection<SsgConnector> getExistingAdminEndpoints(PartitionInformation pInfo) {
+        return filterForAdminOnly(getAllEndpoints(pInfo, false));
+    }
 
-        //if there are no endpoints in the db, then look in server.xml for more
-        if (!isEndpointsInDb(pInfo)) {
-            Collection<SsgConnector> legacyOnes = EndpointActions.getLegacyEndpoints(pInfo);
-            for (SsgConnector legacyOne : legacyOnes) {
-                if (legacyOne.getScheme().equals(SsgConnector.SCHEME_HTTPS) && legacyOne.getEndpoints().toUpperCase().contains("ADMIN")) {
-                    found.add(legacyOne);
-                }
-            }
-        } else {
-            Connection conn = null;
-            Statement stmt = null;
-            ResultSet rs = null;
-            try {
-                OSSpecificFunctions osf = pInfo.getOSSpecificFunctions();
-                DBActions dba = new DBActions(osf);
-                conn = dba.getConnection(dbinfo);
-                stmt = conn.createStatement();
-                rs = stmt.executeQuery("select * from connector where scheme = 'https' and endpoints like '%admin%'");
-
-                while(rs.next()) {
-                    SsgConnector connector = new SsgConnector();
-                    connector.setName(rs.getString("name"));
-                    connector.setPort(rs.getInt("port"));
-                    connector.setEndpoints(rs.getString("endpoints"));
-                    connector.setEnabled(rs.getInt("enabled") ==1);
-                    found.add(connector);
-                }
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            } finally {
-                ResourceUtils.closeQuietly(rs);
-                ResourceUtils.closeQuietly(stmt);
-                ResourceUtils.closeQuietly(conn);
+    private static Collection<SsgConnector> filterForAdminOnly(Collection<SsgConnector> allOfThem) {
+        Collection<SsgConnector> filtered = new ArrayList<SsgConnector>();
+        for (SsgConnector ssgConnector : allOfThem) {
+            if (ssgConnector.getScheme().equals(SsgConnector.SCHEME_HTTPS) && ssgConnector.getEndpoints().toUpperCase().contains("ADMIN")) {
+                filtered.add(ssgConnector);
             }
         }
-        return found;
+        return filtered;
     }
 
     public static Collection<SsgConnector> getLegacyEndpoints(PartitionInformation pinfo) {
-        if (isEndpointsInDb(pinfo)) return null;
+        if (isEndpointsInDb(pinfo)) return Collections.emptyList();
 
         Collection<SsgConnector> allEndpoints = new ArrayList<SsgConnector>();
 
@@ -107,5 +72,101 @@ public class EndpointActions {
         if (legacyFtp != null && !legacyFtp.isEmpty()) allEndpoints.addAll(legacyFtp);
                 
         return allEndpoints;
+    }
+
+    public static void doFirewallConfig(PartitionInformation pInfo, Collection<SsgConnector> connectors, int rmiPort) throws IOException {
+        OSSpecificFunctions osf = pInfo.getOSSpecificFunctions();
+        if ( !(osf instanceof UnixSpecificFunctions) ) {
+            return;
+        } else {
+            FirewallRules.writeFirewallDropfile(new File(osf.getConfigurationBase(), FIREWALL_RULES_DROPFILE).getPath(), rmiPort, connectors);
+        }
+    }
+
+    public static Collection<SsgConnector> getAllEndpoints(PartitionInformation pInfo, boolean enabledOnly) {
+
+        List<SsgConnector> found = new ArrayList<SsgConnector>();
+
+        Connection conn = null;
+        try {
+            conn = getConnection(pInfo);
+            Collection<SsgConnector> connInDb = SsgConnectorSql.loadAll(conn);
+
+            //if none were found in the DB, then we should try and get the legacy ones from server.xml et al
+            if (connInDb.isEmpty()) {
+                Collection<SsgConnector> legacyOnes = EndpointActions.getLegacyEndpoints(pInfo);
+                for (SsgConnector legacyOne : legacyOnes) {
+                    addIfEnabled(legacyOne, found, enabledOnly);
+                }
+            } else {
+                for (SsgConnector ssgConnector : connInDb) {
+                    addIfEnabled(ssgConnector, found, enabledOnly);
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error while retrieving endpoints. " + ExceptionUtils.getMessage(e));
+        } catch (ClassNotFoundException e) {
+            logger.severe("Error while retrieving endpoints. " + ExceptionUtils.getMessage(e));
+        } finally {
+            ResourceUtils.closeQuietly(conn);
+        }
+
+        return found;
+    }
+
+    private static void addIfEnabled(SsgConnector connector, Collection<SsgConnector> connectors, boolean enabledOnly) {
+        if (enabledOnly) {
+            if (connector.isEnabled()) connectors.add(connector);
+        } else {
+            connectors.add(connector);
+        }
+    }
+
+    public static void updateRmiPortClusterProperty(PartitionInformation pinfo, int rmiPort) throws SQLException, ClassNotFoundException {
+        Connection conn = null;
+        Statement stmt = null;
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+
+        try {
+            logger.info("Updating the internode communication port in the database.");
+            conn = getConnection(pinfo);
+            stmt = conn.createStatement();
+
+            rs = stmt.executeQuery("select version,propvalue from cluster_properties where propkey = 'cluster.internodePort'");
+            if (rs.next()) {
+                int version = rs.getInt("version");
+                int existingPort = rs.getInt("propvalue");
+                if (existingPort == rmiPort) {
+                    logger.info("No need to update the internode communication port in the database since it has not changed.");
+                } else {
+                    pStmt = conn.prepareStatement("update cluster_properties SET version=?,propvalue=? WHERE propkey='cluster.internodePort'");
+                    pStmt.setInt(1, version+1);
+                    pStmt.setString(2, String.valueOf(rmiPort));
+                }
+            } else {
+                pStmt = conn.prepareStatement("insert into cluster_properties (objectid, version, propkey, propvalue) VALUES (?,?,?,?)");
+                pStmt.setLong(1, -2124);
+                pStmt.setInt(2, 1);
+                pStmt.setString(3, "cluster.internodePort");
+                pStmt.setString(4, String.valueOf(rmiPort));
+            }
+            if (pStmt != null) {
+                pStmt.execute();
+                logger.info("Successfully updated the internode communication port in the database.");
+            }
+        } finally {
+            ResourceUtils.closeQuietly(rs);
+            ResourceUtils.closeQuietly(stmt);
+            ResourceUtils.closeQuietly(pStmt);
+            ResourceUtils.closeQuietly(conn);
+        }
+    }
+
+    private static Connection getConnection(PartitionInformation pinfo) throws ClassNotFoundException, SQLException {
+        OSSpecificFunctions osf = pinfo.getOSSpecificFunctions();
+        DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
+        DBActions dba = new DBActions(osf);
+        return dba.getConnection(dbinfo);
     }
 }

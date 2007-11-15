@@ -162,7 +162,7 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
         do {
             promptList.clear();
             boolean hasExisting = false;
-            List<SsgConnector> adminEndpoints = EndpointActions.getExistingAdminEndpoints(pinfo);
+            Collection<SsgConnector> adminEndpoints = EndpointActions.getExistingAdminEndpoints(pinfo);
 
             if (adminEndpoints != null && !adminEndpoints.isEmpty()) {
                 hasExisting = true;
