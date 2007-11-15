@@ -197,9 +197,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
                 }
 
                 if (authenticated) {
-                    respondFull(isSystemInfoPermitted(request, mode),
-                                response,
-                                "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials + ", authenticated=" + authenticated);
+                    respondFull(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials + ", authenticated=" + authenticated);
                 } else {
                     respondNone(request, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials + ", authenticated=" + authenticated);
                 }
@@ -208,9 +206,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
             if (!secure) {
                 respondMinimal(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
             } else {
-                respondFull(isSystemInfoPermitted(request, mode),
-                            response,
-                            "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
+                respondFull(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
             }
         }
     }
@@ -522,10 +518,8 @@ public class PingServlet extends AuthenticatableHttpServlet {
 
     /**
      * Responds with full info.
-     *
-     * @param includeSystemInfo     whether to include buttons for querying system info
      */
-    private void respondFull(final boolean includeSystemInfo, final HttpServletResponse response, final String details)
+    private void respondFull(final HttpServletResponse response, final String details)
             throws IOException {
         response.setContentType("text/html");
         final PrintWriter out = response.getWriter();
@@ -546,10 +540,9 @@ public class PingServlet extends AuthenticatableHttpServlet {
             out.println("<head><title>SecureSpan Gateway</title></head>");
             out.println("<body>");
             out.println("<h1>OK</h1>");
-            if (includeSystemInfo) out.println("<form action=\"" + SYSTEM_INFO_REQUEST_URI + "\" method=\"GET\">");
+            out.println("<form action=\"" + SYSTEM_INFO_REQUEST_URI + "\" method=\"GET\">");
             out.println("<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\" style=\"border:gray solid 2px; border-collapse:collapse; text-align:left;\">");
-            out.print("<tr><th>Node</th><th>Uptime</th><th>Status</th>");
-            if (includeSystemInfo) out.print("<th>System Info</th>");
+            out.print("<tr><th>Node</th><th>Uptime</th><th>Status</th><th>System Info<br/><small>(Adminstrator/Operator only)</small></th>");
             out.println("</tr>");
             for (ClusterNodeInfo nodeInfo : nodeInfos) {
                 final long timeStampAge = System.currentTimeMillis() - nodeInfo.getLastUpdateTimeStamp();
@@ -559,11 +552,11 @@ public class PingServlet extends AuthenticatableHttpServlet {
                     final String status = timeStampAge >= 30000 ? "Warning" : "OK";
                     out.print("<tr><td>" + nodeInfo.getName() + "</td><td>" + durationAsString(nodeInfo.getUptime()) + "</td><td>" + status + "</td>");
                 }
-                if (includeSystemInfo) out.print("<td><input type=\"submit\" name=\"node\" value=\"" + nodeInfo.getName() + "\"/></td>");
+                out.print("<td><input type=\"submit\" name=\"node\" value=\"" + nodeInfo.getName() + "\"/></td>");
                 out.println("</tr>");
             }
             out.println("</table>");
-            if (includeSystemInfo) out.print("</form>");
+            out.println("</form>");
             out.println("<hr/><i><font size=\"-2\">" + BuildInfo.getLongBuildString() + "</font></i>");
             out.println("</body>");
             out.println("</html>");
