@@ -559,4 +559,17 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         result = 31 * result + (properties != null ? properties.hashCode() : 0);
         return result;
     }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder("[SsgConnector ");
+        sb.append(port);
+        sb.append(' ').append(scheme).append(secure ? " secure" : " noSecure");
+        sb.append(' ').append(endpoints).append(" clientAuth=").append(clientAuth);
+        sb.append(" keystoreOid=").append(keystoreOid).append(" keyAlias=").append(keyAlias);
+        List<String> props = getPropertyNames();
+        for (String prop : props)
+            sb.append(" P:").append(prop).append('=').append(getProperty(prop));
+        sb.append(']');
+        return sb.toString();
+    }
 }

@@ -1,26 +1,23 @@
 package com.l7tech.server.config.db;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.framework.Test;
-
-import java.util.logging.Logger;
-import java.util.Map;
-import java.util.EnumSet;
-import java.util.List;
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import com.l7tech.server.audit.AuditExporterImpl;
-import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.common.transport.SsgConnector.Endpoint;
 import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PasswordPropertyCrypto;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.partition.PartitionManager;
-import com.l7tech.common.transport.SsgConnector;
-import com.l7tech.common.transport.SsgConnector.Endpoint;
-import org.hibernate.Session;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import java.sql.Connection;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Collection;
+import java.util.logging.Logger;
 
 /**
  *
@@ -40,6 +37,14 @@ public class SsgConnectorSqlTest extends TestCase {
 
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
+    }
+
+    public void testLoadConnectors() throws Exception {
+        Connection db = connectToDefaultPartitionDatabase();
+        Collection<SsgConnector> got = SsgConnectorSql.loadAll(db);
+        for (SsgConnector ssgConnector : got) {
+            logger.info("Connector: " + ssgConnector);
+        }
     }
 
     public void testSaveConnector() throws Exception {

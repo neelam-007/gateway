@@ -1,13 +1,14 @@
 package com.l7tech.server.config.db;
 
 import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
+import java.lang.reflect.Method;
+import java.sql.*;
+import java.sql.Date;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -17,9 +18,152 @@ public class SsgConnectorSql {
     protected static final Logger logger = Logger.getLogger(SsgConnectorSql.class.getName());
 
     private final SsgConnector connector;
+    private static final Method[] EMPTH_METHOD_ARRAY = new Method[0];
 
     public SsgConnectorSql(SsgConnector connector) {
         this.connector = connector;
+    }
+
+    /**
+     * Loads all connectors from the database.
+     *
+     * @param c the DB connection from which to load the connectors
+     * @return a collection of all SsgConnector instances.  May be empty but won't ever be null.
+     * @throws SQLException if there is a problem loading connectors from the database
+     */
+    public static Collection<SsgConnector> loadAll(Connection c) throws SQLException {
+        Collection<SsgConnector> connectors =
+                doLoadAll(c, "connector", SsgConnector.class,
+                        "objectid", "enabled", "name", "port", "scheme", "secure", "endpoints", "client_auth", "keystore_oid", "key_alias");
+
+        // Fill in properties
+        for (final SsgConnector connector : connectors) {
+            long oid = connector.getOid();
+            query(c, "select name,value from connector_property where connector_oid=" + oid, new ResultVisitor() {
+                public void visit(ResultSet rs) throws SQLException {
+                    String name = rs.getString(1);
+                    String value = rs.getString(2);
+                    connector.putProperty(name, value);
+                }
+            });
+        }
+
+        return connectors;
+    }
+
+    private static <T> Collection<T> doLoadAll(Connection c, String table, final Class<T> clazz, final String... columnNames) throws SQLException {
+        StringBuffer sql = HexUtils.join(new StringBuffer("select "), ",", columnNames).append(" from ").append(table);
+        final List<T> ret = new ArrayList<T>();
+        final Method[] methods = getSetterNames(clazz, columnNames);
+        query(c, sql.toString(), new ResultVisitor() {
+            public void visit(ResultSet rs) throws SQLException {
+                ret.add(instantiate(clazz, rs, methods));
+            }
+        });
+        return ret;
+    }
+
+    private static String toMethodName(String columnName) {
+        if (columnName.equals("objectid"))
+            return "Oid"; // TODO express this nonstandard mapping declaratively
+
+        StringBuilder ret = new StringBuilder();
+        char[] chars = columnName.toCharArray();
+        boolean ucNext = true;
+        for (char c : chars) {
+            if (c == '_') {
+                ucNext = true;
+            } else {
+                if (ucNext) {
+                    ret.append(Character.toUpperCase(c));
+                    ucNext = false;
+                } else {
+                    ret.append(c);
+                }
+            }
+        }
+
+        return ret.toString();
+    }
+
+    private static <T> Method[] getSetterNames(Class<T> clazz, String[] columnNames) {
+        List<Method> ret = new ArrayList<Method>();
+        Map<String, Method> setterMap = findSetters(clazz);
+        for (String col : columnNames) {
+            String methName = "set" + toMethodName(col);
+            Method method = setterMap.get(methName);
+            if (method == null)
+                throw new RuntimeException("Unable to find setter in class " + clazz + " named " + methName);
+            ret.add(method);
+        }
+        return ret.toArray(EMPTH_METHOD_ARRAY);
+    }
+
+    private static Map<String, Method> findSetters(Class clazz) {
+        Map<String, Method> ret = new LinkedHashMap<String, Method>();
+        Method[] methods = clazz.getMethods();
+        for (Method method : methods) {
+            if (method.getName().startsWith("set") && method.getParameterTypes().length == 1)
+                ret.put(method.getName(), method);
+        }
+        return ret;
+    }
+
+    private static <T> T instantiate(Class<T> clazz, ResultSet row, Method[] setters) throws SQLException {
+        T target = null;
+        try {
+            target = clazz.newInstance();
+        } catch (Exception e) {
+            throw new SQLException("Unable to instantiate object of class " + clazz + " from row in DB: " +
+                                   "unable to instantiate bean: " + ExceptionUtils.getMessage(e), e);
+        }
+        for (int i = 0; i < setters.length; i++) {
+            Method method = setters[i];
+            Object value = getColumnValue(row, i + 1, setterType(method));
+
+            try {
+                method.invoke(target, value);
+            } catch (Exception e) {
+                throw new SQLException("Unable to instantiate object of class " + clazz.getSimpleName() + " from row in DB (" +
+                                       "column name " + row.getMetaData().getColumnName(i) +
+                                       " gave type " + typeOf(value) + "; setter " + method.getName() + " wants type " + setterType(method) +
+                                       "): " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+        return target;
+    }
+
+    private static Object getColumnValue(ResultSet row, int i, Class type) throws SQLException {
+        if (Boolean.class.equals(type) || boolean.class.equals(type)) {
+            return row.getBoolean(i);
+        } else if (String.class.equals(type)) {
+            return row.getString(i);
+        } else if (Long.class.isAssignableFrom(type) || long.class.equals(type)) {
+            return row.getLong(i);
+        } else if (Integer.class.isAssignableFrom(type) || int.class.equals(type)) {
+            return row.getInt(i);
+        } else if (Short.class.isAssignableFrom(type) || short.class.equals(type)) {
+            return row.getShort(i);
+        } else if (Float.class.isAssignableFrom(type) || float.class.equals(type)) {
+            return row.getFloat(i);
+        } else if (Double.class.isAssignableFrom(type) || double.class.equals(type)) {
+            return row.getDouble(i);
+        } else if (Timestamp.class.isAssignableFrom(type)) {
+            return row.getTimestamp(i);
+        } else if (Time.class.isAssignableFrom(type)) {
+            return row.getTime(i);
+        } else if (Date.class.isAssignableFrom(type)) {
+            return row.getDate(i);
+        }
+        return row.getObject(i);
+    }
+
+    private static Class setterType(Method value) {
+        return value.getParameterTypes()[0];
+    }
+
+    private static String typeOf(Object value) {
+        return value == null ? "<null>" : value.getClass().toString();        
     }
 
     /**
@@ -98,7 +242,7 @@ public class SsgConnectorSql {
         }
     };
 
-    private void query(Connection c, String sql, ResultVisitor visitor) throws SQLException {
+    private static void query(Connection c, String sql, ResultVisitor visitor) throws SQLException {
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
@@ -145,6 +289,12 @@ public class SsgConnectorSql {
         } finally {
             ResourceUtils.closeQuietly(rs);
             ResourceUtils.closeQuietly(ps);
+        }
+    }
+
+    private static class MethodNameComparator implements Comparator<Method> {
+        public int compare(Method o1, Method o2) {
+            return o1.getName().compareTo(o2.getName());
         }
     }
 }
