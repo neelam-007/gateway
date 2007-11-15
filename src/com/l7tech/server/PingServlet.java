@@ -450,14 +450,20 @@ public class PingServlet extends AuthenticatableHttpServlet {
                 final GenericHttpResponse routedResponse = routedRequest.getResponse();
                 for (HttpHeader header : routedResponse.getHeaders().toArray()) {
                     response.addHeader(header.getName(), header.getFullValue());
+                    if (_logger.isLoggable(Level.FINEST)) {
+                        _logger.finest("Copied over HTTP header from routed system info response: " + header.getName() + "=" + header.getFullValue());
+                    }
                 }
+
+                int numBytes = 0;
                 InputStream in = null;
                 OutputStream out = null;
                 try {
-                    in = routedResponse.getInputStream();
-                    out = response.getOutputStream();
+                    in = new BufferedInputStream(routedResponse.getInputStream());
+                    out = new BufferedOutputStream(response.getOutputStream());
                     int buf;
                     while ((buf = in.read()) != -1) {
+                        ++ numBytes;
                         out.write(buf);
                     }
                 } finally {
@@ -466,7 +472,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
                 }
 
                 if (_logger.isLoggable(Level.FINE)) {
-                    _logger.fine("Routed system info response from " + nodeName + " at " + nodeAddress);
+                    _logger.fine("Routed system info response from " + nodeName + " at " + nodeAddress + ": " + numBytes + " bytes in body");
                 }
             } catch (IOException e) {
                 _logger.log(Level.WARNING, "Failed to routed system info request to " + nodeName + " at " + nodeAddress, e);
