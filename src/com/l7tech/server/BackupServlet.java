@@ -334,14 +334,18 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             final GenericHttpResponse routedResponse = routedRequest.getResponse();
             for (HttpHeader header : routedResponse.getHeaders().toArray()) {
                 response.addHeader(header.getName(), header.getFullValue());
+                if (_logger.isLoggable(Level.FINEST)) {
+                    _logger.finest("Copied over HTTP header from routed backup response: " + header.getName() + "=" + header.getFullValue());
+                }
             }
 
             // Copies over response body.
+            int numBytes = 0;
             InputStream in = null;
             OutputStream out = null;
             try {
-                in = routedResponse.getInputStream();
-                out = response.getOutputStream();
+                in = new BufferedInputStream(routedResponse.getInputStream());
+                out = new BufferedOutputStream(response.getOutputStream());
                 int buf;
                 while ((buf = in.read()) != -1) {
                     out.write(buf);
@@ -349,6 +353,10 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             } finally {
                 if (in != null) in.close();
                 if (out != null) out.close();
+            }
+
+            if (_logger.isLoggable(Level.FINE)) {
+                _logger.fine("Routed backup response from " + nodeName + " at " + nodeAddress + ": " + numBytes + " bytes in body");
             }
         } catch (IOException e) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup request routing failed", ServiceMessages.BACKUP_ROUTING_IO_ERROR, e);
