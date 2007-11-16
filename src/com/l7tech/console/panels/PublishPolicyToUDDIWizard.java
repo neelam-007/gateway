@@ -21,7 +21,7 @@ public class PublishPolicyToUDDIWizard extends Wizard {
     public static PublishPolicyToUDDIWizard getInstance(Frame parent, String policyURL, String policyConsumptionURL, String serviceName) {
         AssociateUDDIServiceToPolicyWizardStep astep = new AssociateUDDIServiceToPolicyWizardStep(null);
         UDDIPolicyDetailsWizardStep dstep = new UDDIPolicyDetailsWizardStep(astep);
-        UDDITargetWizardStep tstep = new UDDITargetWizardStep(dstep);
+        UDDITargetWizardStep tstep = new UDDITargetWizardStep(dstep, true);
         return new PublishPolicyToUDDIWizard(parent, tstep, policyURL, policyConsumptionURL, serviceName);
     }
 

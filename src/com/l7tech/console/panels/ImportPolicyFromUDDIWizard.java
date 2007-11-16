@@ -20,7 +20,7 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
     public static ImportPolicyFromUDDIWizard getInstance(Frame parent) {
         ImportPolicyFromUDDIFinalStep fstep = new ImportPolicyFromUDDIFinalStep(null);
         ImportPolicyFromUDDIWizardStep istep = new ImportPolicyFromUDDIWizardStep(fstep);
-        UDDITargetWizardStep tstep = new UDDITargetWizardStep(istep);
+        UDDITargetWizardStep tstep = new UDDITargetWizardStep(istep, false);
         tstep.setPanelDescription("Provide the UDDI registry URL and account information to retrieve the policy");
         return new ImportPolicyFromUDDIWizard(parent, tstep);
     }

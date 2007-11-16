@@ -45,14 +45,16 @@ public class UDDITargetWizardStep extends WizardStepPanel {
     private JLabel descLabel;
 
     private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+    private final boolean requireCredentials;
     private String panelDescription = "Provide the UDDI registry URL and account information to publish this policy";
     private String policyUrl = null;
     private String policyName = null;
     private String policyKey = null;
     private UDDIRegistryInfo[] registryTypeInfo;
 
-    public UDDITargetWizardStep(WizardStepPanel next) {
+    public UDDITargetWizardStep(WizardStepPanel next, boolean requireCredentials) {
         super(next);
+        this.requireCredentials = requireCredentials;
         initialize();
     }
 
@@ -112,15 +114,24 @@ public class UDDITargetWizardStep extends WizardStepPanel {
         uddiURLField.setText(url);
 
         String name = uddiAccountNameField.getText();
-        if (name == null || name.length() < 0) {
-            showError("UDDI account name cannot be empty");
-            return false;
+        String password = uddiAccountPasswdField.getText();
+        if ( requireCredentials ) {
+            if (name == null || name.length() < 1) {
+                showError("UDDI account name cannot be empty");
+                return false;
+            }
         }
 
-        String password = uddiAccountPasswdField.getText();
-        if (password == null || password.length() < 0) {
-            showError("UDDI account password cannot be empty");
-            return false;
+        if ( name != null && name.length() > 0 ) {
+            if (password == null || password.length() < 1) {
+                showError("UDDI account password cannot be empty");
+                return false;
+            }
+        } else {
+            if (password != null && password.length() > 0) {
+                showError("UDDI account password specified without account name");
+                return false;
+            }
         }
 
         String type = (String) uddiTypeComboBox.getSelectedItem();
