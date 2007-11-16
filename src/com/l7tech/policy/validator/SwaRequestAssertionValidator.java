@@ -54,8 +54,7 @@ public class SwaRequestAssertionValidator implements AssertionValidator {
         try {
             Wsdl wsdl = service.parsedWsdl();
             // check whether any binding info operation
-            for (Object o : assertion.getBindings().values()) {
-                BindingInfo bi = (BindingInfo)o;
+            for (BindingInfo bi : assertion.getBindings().values()) {
                 if (hasMimeParts(bi, wsdl)) {
                     return;
                 }

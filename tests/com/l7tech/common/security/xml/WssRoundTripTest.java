@@ -15,6 +15,7 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.skunkworks.wsibsp.WsiBSPValidator;
@@ -90,7 +91,6 @@ public class WssRoundTripTest extends TestCase {
         NamedTestDocument ntd = new NamedTestDocument("Signed and Encrypted UsernameToken",
                                                       wssDecoratorTest.getSignedAndEncryptedUsernameTokenTestDocument());
         ntd.td.securityTokenResolver = securityTokenResolver;
-        String undecoratedRequest = XmlUtil.nodeToString(ntd.td.c.message);
         EncryptedKey[] ekh = new EncryptedKey[1];
         runRoundTripTest(ntd, false, ekh);
         EncryptedKey encryptedKey = ekh[0];
@@ -108,7 +108,7 @@ public class WssRoundTripTest extends TestCase {
         reqs.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
 
         Document doc = ntd2.td.c.message;
-        new WssDecoratorImpl().decorateMessage(doc, reqs);
+        new WssDecoratorImpl().decorateMessage(new Message(doc), reqs);
 
         // Now try processing it
         Document doc1 = XmlUtil.stringToDocument(XmlUtil.nodeToString(doc));
@@ -252,9 +252,28 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getSoapWithUnsignedAttachmentTestDocument()));
     }
 
-    public void testSoapWithSignedAttachment() throws Exception {
-        runRoundTripTest(new NamedTestDocument("SoapWithSignedAttachment",
-                                               wssDecoratorTest.getSoapWithSignedAttachmentTestDocument()));
+    public void testSoapWithSignedAttachmentContent() throws Exception {
+        NamedTestDocument ntd = new NamedTestDocument("SoapWithSignedAttachmentContent",
+                                               wssDecoratorTest.getSoapWithSignedAttachmentTestDocument());
+
+        ntd.td.signAttachmentHeaders = false;
+        ntd.td.attachmentsToSign = new String[]{"-76392836.13454"};
+
+        String result = runRoundTripTest(ntd, false);
+
+        assertTrue("Use of correct transform", result.contains(SoapUtil.TRANSFORM_ATTACHMENT_CONTENT));
+    }
+
+    public void testSoapWithSignedAttachmentComplete() throws Exception {
+        NamedTestDocument ntd = new NamedTestDocument("SoapWithSignedAttachmentContentAndMIMEHeaders",
+                                               wssDecoratorTest.getSoapWithSignedAttachmentTestDocument());
+
+        ntd.td.signAttachmentHeaders = true;
+        ntd.td.attachmentsToSign = new String[]{"-76392836.13454"};
+
+        String result = runRoundTripTest(ntd, false);
+
+        assertTrue("Use of correct transform", result.contains(SoapUtil.TRANSFORM_ATTACHMENT_COMPLETE));
     }
 
     public void testSoapWithSignedEncryptedAttachment() throws Exception {
@@ -299,7 +318,8 @@ public class WssRoundTripTest extends TestCase {
         log.info("Running round-trip test on test document: " + ntd.name);
         final WssDecoratorTest.TestDocument td = ntd.td;
         WssDecoratorTest.Context c = td.c;
-        Document message = c.message;
+        Message message = c.messageMessage;
+        Document soapMessage = message.getXmlKnob().getDocumentReadOnly();
 
         WssDecorator martha = new WssDecoratorImpl();
         WssProcessor trogdor = new WssProcessorImpl();
@@ -314,36 +334,39 @@ public class WssRoundTripTest extends TestCase {
             elementsBeforeEncryption[i] = (Element) element.cloneNode(true);
         }
 
-        log.info("Message before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(message));
+        log.info("Message before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(soapMessage));
         DecorationRequirements reqs = makeDecorationRequirements(td);
 
-        martha.decorateMessage(message, reqs);
+        martha.decorateMessage(c.messageMessage, reqs);
 
-        log.info("Decorated message (*note: pretty-printed):\n\n" + XmlUtil.nodeToFormattedString(message));
-        schemaValidateSamlAssertions(message);
+        log.info("Decorated message (*note: pretty-printed):\n\n" + XmlUtil.nodeToFormattedString(c.messageMessage.getXmlKnob().getDocumentReadOnly()));
+        schemaValidateSamlAssertions(soapMessage);
 
         // Serialize to string to simulate network transport
-        byte[] decoratedMessage = XmlUtil.nodeToString(message).getBytes();
+        byte[] decoratedMessageDocument = XmlUtil.nodeToString(soapMessage).getBytes();
+        byte[] decoratedMessage = HexUtils.slurpStream(c.messageMessage.getMimeKnob().getEntireMessageBodyAsInputStream());
 
         // ... pretend HTTP goes here ...
-        final String networkRequestString = new String(decoratedMessage);
+        final String networkRequestString = new String(decoratedMessageDocument);
 
         // Ooh, an incoming message has just arrived!
-        Document incomingMessage = XmlUtil.stringToDocument(networkRequestString);
+        Message incomingMessage = new Message();
+        incomingMessage.initialize(c.messageMessage.getMimeKnob().getOuterContentType(), decoratedMessage);
+        Document incomingSoapDocument = incomingMessage.getXmlKnob().getDocumentReadOnly();
 
-        boolean isValid = !checkBSP1Compliance || validator.isValid(incomingMessage);
+        boolean isValid = !checkBSP1Compliance || validator.isValid(incomingSoapDocument);
 
         assertTrue("Serialization did not affect the integrity of the XML message",
-                   XmlUtil.nodeToString(message).equals(XmlUtil.nodeToString(incomingMessage)));
+                   XmlUtil.nodeToString(soapMessage).equals(XmlUtil.nodeToString(XmlUtil.stringToDocument(networkRequestString))));
 
         WrapSSTR strr = new WrapSSTR(td.recipientCert, td.recipientKey, td.securityTokenResolver);
         strr.addCerts(new X509Certificate[]{td.senderCert});
-        ProcessorResult r = trogdor.undecorateMessage(new Message(incomingMessage),
+        ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
                                                       td.senderCert,
                                                       makeSecurityContextFinder(td.secureConversationKey),
                                                       strr);
 
-        log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(incomingMessage));
+        log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(incomingSoapDocument));
 
         ParsedElement[] encrypted = r.getElementsThatWereEncrypted();
         assertNotNull(encrypted);
@@ -356,7 +379,9 @@ public class WssRoundTripTest extends TestCase {
         if (td.signUsernameToken) {
             Map ns = new HashMap();
             ns.put("wsse", SoapUtil.SECURITY_NAMESPACE);
-            ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, incomingMessage, "//wsse:UsernameToken", ns, false, r.getElementsThatWereSigned(), "signed");
+            ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(
+                    log, incomingSoapDocument,
+                    "//wsse:UsernameToken", ns, false, r.getElementsThatWereSigned(), "signed");
             assertEquals(foo.getResultCode(), ProcessorResultUtil.NO_ERROR);
         }
 
@@ -383,7 +408,6 @@ public class WssRoundTripTest extends TestCase {
         // Make sure all requested elements were encrypted
         for (int i = 0; i < elementsBeforeEncryption.length; ++i) {
             Element elementToEncrypt = elementsBeforeEncryption[i];
-            String canonicalized = canonicalizedElementsBeforeEncryption[i];
             log.info("Looking to ensure element was encrypted: " + XmlUtil.nodeToString(elementToEncrypt));
 
             boolean wasEncrypted = false;
@@ -506,6 +530,7 @@ public class WssRoundTripTest extends TestCase {
         reqs.setSuppressBst(td.suppressBst);
         reqs.setUseDerivedKeys(td.useDerivedKeys);
         reqs.setKeyEncryptionAlgorithm(td.keyEncryptionAlgoritm);
+        reqs.setSignPartHeaders(td.signAttachmentHeaders);
         if (td.secureConversationKey != null) {
             reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                 public String getId() { return SESSION_ID; }
@@ -526,6 +551,11 @@ public class WssRoundTripTest extends TestCase {
         if (td.elementsToSign != null) {
             for (int i = 0; i < td.elementsToSign.length; i++) {
                 reqs.getElementsToSign().add(td.elementsToSign[i]);
+            }
+        }
+        if (td.attachmentsToSign != null) {
+            for (int i = 0; i < td.attachmentsToSign.length; i++) {
+                reqs.getPartsToSign().add(td.attachmentsToSign[i]);
             }
         }
         return reqs;

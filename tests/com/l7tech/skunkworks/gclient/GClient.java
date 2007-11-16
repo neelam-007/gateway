@@ -447,7 +447,7 @@ public class GClient {
 
                 DecorationRequirements wssReq = context.getDefaultWssRequirements();
                 Document document = request.getXmlKnob().getDocumentWritable();
-                new WssDecoratorImpl().decorateMessage(document, wssReq);
+                new WssDecoratorImpl().decorateMessage(new Message(document), wssReq);
 
                 requestTextArea.setText(XmlUtil.nodeToString(document));
                 clearThrowable();

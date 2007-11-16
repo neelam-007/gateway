@@ -127,7 +127,7 @@ public class TokenServiceClient {
             }
             req.setTimestampCreatedDate(timestampCreatedDate);
             req.setIncludeTimestamp(false);
-            wssDecorator.decorateMessage(msg, req);
+            wssDecorator.decorateMessage(new Message(msg), req);
 
             return msg;
         } catch (IOException e) {

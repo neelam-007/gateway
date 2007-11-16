@@ -23,9 +23,11 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.SoapFaultUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.common.xml.InvalidDocumentSignatureException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -54,6 +56,7 @@ import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.Set;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -72,6 +75,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final AuditContext auditContext;
     private final ServerConfig serverConfig;
     private final TrafficLogger trafficLogger;
+    private final AtomicLong signedAttachmentMaxSize = new AtomicLong();
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -123,6 +127,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private void updateSettings(int period) {
         long maxBytes = serverConfig.getLongPropertyCached(ServerConfig.PARAM_IO_XML_PART_MAX_BYTES, 0, period - 1);
         MimeBody.setFirstPartXmlMaxBytes(maxBytes);
+
+        signedAttachmentMaxSize.set(serverConfig.getLongPropertyCached(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0, period - 1));
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
@@ -320,7 +326,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             if (wssOutput[0].isDerivedKeySeen())
                                 responseDecoReq.setUseDerivedKeys(true);
                         }
-                        wssDecorator.decorateMessage(doc, responseDecoReq);
+                        wssDecorator.decorateMessage(response, responseDecoReq);
                     }
                 } catch (Exception e) {
                     throw new PolicyAssertionException(null, "Failed to apply WSS decoration to response", e);
@@ -556,6 +562,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             if (isSoap && hasSecurity) {
                 WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
+                ((WssProcessorImpl)trogdor).setSignedAttachmentSizeLimit(signedAttachmentMaxSize.get());
                 try {
                     final Message request = context.getRequest();
                     final SecurityKnob reqSec = request.getSecurityKnob();
@@ -582,6 +589,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 } catch (ProcessorException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                     assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
+                    return false;
+                } catch (InvalidDocumentSignatureException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_SIGNATURE,
+                            new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+                    context.setAuditLevel(Level.WARNING);
+                    assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
                     return false;
                 } catch (InvalidDocumentFormatException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);

@@ -10,6 +10,7 @@ import com.l7tech.common.security.token.EncryptedElement;
 import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.token.SigningSecurityToken;
+import com.l7tech.common.security.token.SignedPart;
 import com.l7tech.common.security.xml.SecurityActor;
 import org.w3c.dom.Element;
 
@@ -26,6 +27,10 @@ public class ProcessorResultWrapper implements ProcessorResult {
 
     public SignedElement[] getElementsThatWereSigned() {
         return delegate.getElementsThatWereSigned();
+    }
+
+    public SignedPart[] getPartsThatWereSigned() {
+        return delegate.getPartsThatWereSigned();
     }
 
     public EncryptedElement[] getElementsThatWereEncrypted() {

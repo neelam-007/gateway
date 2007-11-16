@@ -63,12 +63,12 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
 
         // FIRST DECORATION
         DecorationRequirements req = otherDecorationRequirements(doc, alternaterecipient);
-        decorator.decorateMessage(doc, req);
+        decorator.decorateMessage(new Message(doc), req);
 
         // SECOND DECORATION
         req = defaultDecorationRequirements(doc);
         req.getElementsToEncrypt().add(body);
-        decorator.decorateMessage(doc, req);
+        decorator.decorateMessage(new Message(doc), req);
 
         logger.info("Document signed for two recipients and encrypted for second:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
@@ -102,11 +102,11 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
 
         // FIRST DECORATION
         DecorationRequirements req = otherDecorationRequirements(doc, alternaterecipient);
-        decorator.decorateMessage(doc, req);
+        decorator.decorateMessage(new Message(doc), req);
 
         // SECOND DECORATION
         req = defaultDecorationRequirements(doc);
-        decorator.decorateMessage(doc, req);
+        decorator.decorateMessage(new Message(doc), req);
         logger.info("Document signed for two recipients:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
         // FIRST PROCESSING
@@ -140,12 +140,12 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         // FIRST DECORATION
         DecorationRequirements req = otherDecorationRequirements(doc, alternaterecipient);
         req.getElementsToEncrypt().add(prodidEl);
-        decorator.decorateMessage(doc, req);
+        decorator.decorateMessage(new Message(doc), req);
 
         // SECOND DECORATION
         req = defaultDecorationRequirements(doc);
         req.getElementsToEncrypt().add(body);
-        decorator.decorateMessage(doc, req);
+        decorator.decorateMessage(new Message(doc), req);
 
         logger.info("Document signed for two recipients and encrypted for second:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
@@ -191,12 +191,12 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         // FIRST DECORATION
         DecorationRequirements req = otherDecorationRequirements(doc, alternaterecipient);
         req.getElementsToEncrypt().add(prodidEl);
-        decorator.decorateMessage(doc, req);
+        decorator.decorateMessage(new Message(doc), req);
 
         // SECOND DECORATION
         req = defaultDecorationRequirements(doc);
         req.getElementsToEncrypt().add(acctidEl);
-        decorator.decorateMessage(doc, req);
+        decorator.decorateMessage(new Message(doc), req);
 
         logger.info("Document signed for two recipients and encrypted for second:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 

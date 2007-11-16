@@ -11,6 +11,8 @@ import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.message.Message;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -172,7 +174,7 @@ public class SamlAssertionGenerator {
                 dr.setSenderMessageSigningCertificate(attestingEntity.getCertificateChain()[0]);
             }
             dr.setSecurityHeaderActor(options.getSecurityHeaderActor());
-            wssDecorator.decorateMessage(soapMessage, dr);
+            wssDecorator.decorateMessage(new Message(soapMessage), dr);
         } catch (Throwable e) {
             SignatureException ex = new SignatureException("error signing the saml ticket");
             ex.initCause(e);

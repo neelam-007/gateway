@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.ApplicationContexts;
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.http.*;
@@ -60,6 +61,11 @@ public class PolicyProcessingTest extends TestCase {
     private static ClusterPropertyManager clusterPropertyManager = null;
     private static TestingHttpClientFactory testingHttpClientFactory = null;
 
+    static {
+        System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
+        JceProvider.init();
+    }    
+
     /**
      * Test services, data is:
      *
@@ -87,6 +93,7 @@ public class PolicyProcessingTest extends TestCase {
         {"/httpwssheaderleave", "POLICY_httpwssheaderleave.xml"},
         {"/httpwssheaderremove", "POLICY_httpwssheaderremove.xml"},
         {"/httpwssheaderpromote", "POLICY_httpwssheaderpromote.xml"},
+        {"/attachment", "POLICY_signed_attachment.xml"},
     };
 
     /**
@@ -376,6 +383,24 @@ public class PolicyProcessingTest extends TestCase {
     }
 
     /**
+     * Test WSS Signed Attachment processing
+     */
+    public void testWssSignedAttachment() throws Exception {
+        String requestMessage1 = new String(loadResource("REQUEST_signed_attachment.txt"));
+
+        processMessage("/attachment", requestMessage1, 0);
+    }
+
+    /**
+     * Test WSS Signed Attachment processing failure
+     */
+    public void testWssSignedAttachmentFailure() throws Exception {
+        String requestMessage1 = new String(loadResource("REQUEST_unsigned_attachment.txt"));
+
+        processMessage("/attachment", requestMessage1, 600);
+    }
+
+    /**
      *
      */
     private Result processMessage(String uri, String message, int expectedStatus) throws IOException {
@@ -391,7 +416,14 @@ public class PolicyProcessingTest extends TestCase {
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
 
         hrequest.setMethod("POST");
-        hrequest.setContentType("text/xml; charset=utf8");
+        if ( message.indexOf("Content-ID: ") < 0 ) {
+            hrequest.setContentType("text/xml; charset=utf8");
+        } else {
+            String boundary = message.substring(2, message.indexOf('\n'));
+            String contentType = "multipart/related; type=\"text/xml\"; boundary=\"" + boundary + "\"";
+            System.out.println("Set content type to: "+ contentType);
+            hrequest.setContentType(contentType);
+        }
         hrequest.setRemoteAddr(requestIp);
         hrequest.setRequestURI(uri);
         hrequest.setContent(message.getBytes());

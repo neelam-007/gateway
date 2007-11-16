@@ -1,6 +1,5 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.AssertionPath;
@@ -16,7 +15,6 @@ import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -52,7 +50,6 @@ import java.util.*;
  */
 class PathValidator {
 
-    private static final Class<? extends Assertion> ASSERTION_HTTPCREDENTIALS = HttpCredentialSourceAssertion.class;
     private static final Class<? extends Assertion> ASSERTION_HTTPBASIC = HttpBasic.class;
     private static final Class<? extends Assertion> ASSERTION_SECURECONVERSATION = SecureConversation.class;
     private static final Class<? extends Assertion> ASSERTION_XPATHCREDENTIALS = XpathCredentialSource.class;
@@ -110,17 +107,8 @@ class PathValidator {
             }
         }
 
-        // has precondition
-        if (hasPreconditionAssertion(a)) {
-            processPrecondition(a);
-        }
-
-        if (onlyForNonSoap(a)) {
-            if (service != null && service.isSoap()) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion will not work with SOAP messages.", null));
-            }
-        }
+        // process any preconditions
+        processPrecondition(a);
 
         if (onlyForSoap(a)) {
             processSoapSpecific(a);
@@ -380,14 +368,10 @@ class PathValidator {
             }
 
 
-        } else if (a instanceof RequestSwAAssertion) {
-            if (seenRouting) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                  "The assertion must be positioned before the routing assertion.", null));
-            }
         } else if (a instanceof RequestWssIntegrity ||
                     a instanceof ResponseWssConfidentiality ||
-                   (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired())) {
+                   (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired()) ||
+                   (a instanceof RequestSwAAssertion && ((RequestSwAAssertion)a).requiresSignature())) {
             // REASONS FOR THIS RULE
             //
             // 1. For RequestWssIntegrity:
@@ -421,6 +405,14 @@ class PathValidator {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                       "This assertion should occur before the request is routed.", null));
                 }
+            } else if (a instanceof RequestSwAAssertion && seenRouting) {
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
+                  "The assertion must be positioned before the routing assertion.", null));
+            }
+        } else if (a instanceof RequestSwAAssertion) {
+            if (seenRouting) {
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
+                  "The assertion must be positioned before the routing assertion.", null));
             }
         } else if (a instanceof RequestWssConfidentiality) {
             // REASON FOR THIS RULE:
@@ -681,29 +673,10 @@ class PathValidator {
         return a != null && a.getClass().isAnnotationPresent(RequiresSOAP.class);
     }
 
-    private boolean onlyForNonSoap(Assertion a) {
-        return false;
-    }
-
     private boolean parsesXML(Assertion a) {
         return a != null &&
               (a.getClass().isAnnotationPresent(RequiresXML.class) ||
                a.getClass().isAnnotationPresent(RequiresSOAP.class));
-    }
-
-    private boolean hasPreconditionAssertion(Assertion a) {
-        // check preconditions for both SslAssertion and  ResponseWssIntegrity assertions - see processPrecondition()
-        return a instanceof XpathBasedAssertion ||
-                       a instanceof XslTransformation ||
-                       a instanceof RequestSwAAssertion ||
-                       a instanceof RequestWssReplayProtection ||
-                       a instanceof UsesVariables ||
-                       a instanceof WsTrustCredentialExchange ||
-                       a instanceof WsFederationPassiveTokenExchange ||
-                       a instanceof WsFederationPassiveTokenRequest ||
-                       a instanceof ResponseWssConfig ||
-                      (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired()) ||
-                       a instanceof WssBasic;
     }
 
     private boolean seenCredentials(Assertion context) {

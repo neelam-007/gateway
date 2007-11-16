@@ -10,9 +10,9 @@ import java.awt.event.MouseEvent;
 import java.util.Vector;
 
 /**
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
- * <p> @author fpang </p>
- * $Id$
+ * Table for MIME part settings.
+ *
+ * @author fpang
  */
 public class MimePartsTable extends JTable {
 
@@ -22,11 +22,13 @@ public class MimePartsTable extends JTable {
 
         setModel(getMimePartsTableModel());
         getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX).setMinWidth(50);
-        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX).setPreferredWidth(60);
-        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX).setMinWidth(180);
-        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX).setPreferredWidth(220);
+        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX).setPreferredWidth(80);
+        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX).setMinWidth(100);
+        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX).setPreferredWidth(120);
         getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX).setMinWidth(100);
         getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX).setPreferredWidth(120);
+        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX).setMinWidth(50);
+        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX).setPreferredWidth(70);
         getTableHeader().setReorderingAllowed(false);
         getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -67,7 +69,7 @@ public class MimePartsTable extends JTable {
             Object[][] rows = new Object[][]{};
 
             String[] cols = new String[]{
-                "Parameter Name", "MIME Part Content Type", "MIME Part Length Max. (KB)"
+                "Parameter Name", "MIME Part Content Type", "MIME Part Length Max. (KB)", "Require Signature"
             };
 
             tableSorter = new MimePartsTableSorter(new DefaultTableModel(rows, cols)); 

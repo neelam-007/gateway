@@ -17,6 +17,7 @@ import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.UnsupportedDocumentFormatException;
+import com.l7tech.common.xml.InvalidDocumentSignatureException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.mime.PartInfo;
@@ -58,7 +59,7 @@ public class WssProcessorImpl implements WssProcessor {
                                              SecurityContextFinder securityContextFinder,
                                              SecurityTokenResolver securityTokenResolver
     )
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException, UnexpectedKeyInfoException {
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException {
         // Reset all potential outputs
         Document soapMsg = message.getXmlKnob().getDocumentReadOnly();
         ProcessingStatusHolder cntx = new ProcessingStatusHolder(message, soapMsg);
@@ -251,6 +252,15 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         return produceResult(cntx);
+    }
+
+    /**
+     * Set a limit on the maximum signed attachment size.
+     *
+     * @param size
+     */
+    public void setSignedAttachmentSizeLimit(final long size) {
+        signedAttachmentSizeLimit = size;
     }
 
     private void processSignatureConfirmation(Element securityChildToProcess, ProcessingStatusHolder cntx) {
@@ -659,7 +669,7 @@ public class WssProcessorImpl implements WssProcessor {
     // If the encrypted key was addressed to us, it will have been added to the context ProcessedEncryptedKeys set.
     private Element processEncryptedKey(Element encryptedKeyElement,
                                         final ProcessingStatusHolder cntx)
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, UnexpectedKeyInfoException {
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException {
         if(logger.isLoggable(Level.FINEST)) logger.finest("Processing EncryptedKey");
 
         // If there's a KeyIdentifier, log whether it's talking about our key
@@ -1409,11 +1419,7 @@ public class WssProcessorImpl implements WssProcessor {
         MimeKnob mimeKnob = (MimeKnob) cntx.message.getKnob(MimeKnob.class);
         PartIterator iterator = mimeKnob==null ? null : mimeKnob.getParts();
         Map<String,PartInfo> partMap = new HashMap();
-        // TODO enable attachment resolver when it is secured
-        // - Need to prevent out of memory errors (streaming canonicalization?)
-        // - Need to limit signed attachments to services with URLs? (so we know the service allows attachments)
-        //sigContext.setEntityResolver(new AttachmentEntityResolver(iterator, partMap, XmlUtil.getXss4jEntityResolver()));
-        sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
+        sigContext.setEntityResolver(new AttachmentEntityResolver(iterator, XmlUtil.getXss4jEntityResolver(), partMap, signedAttachmentSizeLimit));
         sigContext.setIDResolver(new IDResolver() {
             public Element resolveID(Document doc, String s) {
                 Element found = (Element)cntx.elementsByWsuId.get(s);
@@ -1465,7 +1471,7 @@ public class WssProcessorImpl implements WssProcessor {
                 msg.append("\n\tElement ").append(validity.getReferenceURI(i)).append(": ").append(validity.getReferenceMessage(i));
             }
             logger.warning(msg.toString());
-            throw new InvalidDocumentFormatException(msg.toString());
+            throw new InvalidDocumentSignatureException(msg.toString());
         }
 
         // Save the SignatureValue
@@ -1675,6 +1681,12 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private static final Logger logger = Logger.getLogger(WssProcessorImpl.class.getName());
+    private static final ParsedElement[] PROTOTYPE_ELEMENT_ARRAY = new EncryptedElement[0];
+    private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
+    private static final SignedPart[] PROTOTYPE_SIGNEDPART_ARRAY = new SignedPart[0];
+    private static final XmlSecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new XmlSecurityToken[0];
+
+    private long signedAttachmentSizeLimit;
 
     private class ProcessingStatusHolder {
         final Message message;
@@ -1817,11 +1829,6 @@ public class WssProcessorImpl implements WssProcessor {
             signed = true;
         }
     }
-
-    private static final ParsedElement[] PROTOTYPE_ELEMENT_ARRAY = new EncryptedElement[0];
-    private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
-    private static final SignedPart[] PROTOTYPE_SIGNEDPART_ARRAY = new SignedPart[0];
-    private static final XmlSecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new XmlSecurityToken[0];
 
     private static class DerivedKeyTokenImpl extends ParsedElementImpl implements DerivedKeyToken {
         private final byte[] finalKey;

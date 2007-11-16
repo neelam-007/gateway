@@ -154,6 +154,18 @@ public class DecorationRequirements {
         return elementsToSign;
     }
 
+    public Set<String> getPartsToSign() {
+        return partsToSign;
+    }
+
+    public boolean isSignPartHeaders() {
+        return signPartHeaders;
+    }
+
+    public void setSignPartHeaders(boolean signPartHeaders) {
+        this.signPartHeaders = signPartHeaders;
+    }
+
     public UsernameToken getUsernameTokenCredentials() {
         return usernameTokenCredentials;
     }
@@ -544,6 +556,8 @@ public class DecorationRequirements {
     private String encryptionAlgorithm = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
     private String keyEncryptionAlgorithm = null;
     private Set<Element> elementsToSign = new LinkedHashSet<Element>();
+    private Set<String> partsToSign = new LinkedHashSet<String>();
+    private boolean signPartHeaders = false;
     private NamespaceFactory namespaceFactory = new NamespaceFactory();
     private Date timestampCreatedDate = null;
     private int timestampTimeoutMillis = 0;

@@ -744,15 +744,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xss4j_patch.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-i18n-fr.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -763,6 +754,15 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-serialization.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/xss4j.00.patch.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

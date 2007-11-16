@@ -20,6 +20,7 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
     public static final int MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX = 0;
     public static final int MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX = 1;
     public static final int MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX = 2;
+    public static final int MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX = 3;
 
     static Logger logger = Logger.getLogger(MimePartsTableSorter.class.getName());
     private boolean ascending = true;
@@ -65,40 +66,61 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
     }
 
     public boolean isCellEditable(int row, int col) {
-        return col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX ||
-                col == MimePartsTableSorter.MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX;
+        return col == MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX ||
+               col == MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX ||
+               col == MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX;
     }
 
-   /**
+    /**
      * Update the data of a row.
      * @param row  The row index.
      * @param col The col index.
      * @param aValue The new data to be stored.
      */
-   public void setValueAt(Object aValue, int row, int col) {
+    public void setValueAt(Object aValue, int row, int col) {
+        boolean modified = false;
 
-       // only max length column can be modified
-       if (col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX) {
+        MimePartInfo mimePart;
+        switch (col) {
+            case MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX:
+                // replace the old one
+                mimePart = getMimePartInfoForRow(row);
+                if (mimePart!=null && aValue instanceof Integer) {
+                    modified = true;
+                    mimePart.setMaxLength(((Integer) aValue).intValue());
+                }
+                break;
+            case MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX:
+                mimePart = getMimePartInfoForRow(row);
+                if (mimePart!=null && aValue instanceof Boolean) {
+                    modified = true;
+                    mimePart.setRequireSignature(((Boolean) aValue).booleanValue());
+                }
+                break;
+        }
 
-           Object o = getValueAt(row, MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX);
+        // sort the data
+        if (modified)
+            sortData(columnToSort, false);
+    }
 
-           if (o instanceof String) {
-               String mimePartName = (String) o;
+    private MimePartInfo getMimePartInfoForRow(final int row) {
+        MimePartInfo mimePartInfo = null;
+        Object o = getValueAt(row, MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX);
 
-               for (MimePartInfo mimePart : rawdata) {
-                   if (mimePart != null && mimePart.getName().equals(mimePartName)) {
-                       // replace the old one
-                       if (aValue instanceof Integer) {
-                           mimePart.setMaxLength(((Integer) aValue).intValue());
-                       }
-                       break;
-                   }
-               }
-               // sort the data
-               sortData(columnToSort, false);
-           }
-       }
-   }
+        if (o instanceof String) {
+            String mimePartName = (String) o;
+
+            for (MimePartInfo mimePart : rawdata) {
+                if (mimePart != null && mimePart.getName().equals(mimePartName)) {
+                    mimePartInfo = mimePart;
+                    break;
+                }
+            }
+        }
+
+        return mimePartInfo;
+    }
 
     /**
      * Return the column index of the sorted column.
@@ -110,8 +132,10 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
     }
 
     public Class getColumnClass(int columnIndex) {
-        if(columnIndex == MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX) {
+        if ( columnIndex == MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX ) {
             return Integer.class;
+        } else if ( columnIndex == MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX ) {
+            return Boolean.class;
         } else {
             return String.class;
         }
@@ -180,6 +204,9 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
                 case MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX:
                     return new Integer(multipartInfo.getMaxLength());
 
+                case MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX:
+                    return Boolean.valueOf(multipartInfo.isRequireSignature());
+
                 default:
                     throw new IllegalArgumentException("Accessing a invalid column:" + col);
             }
@@ -238,6 +265,12 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
 
                     break;
 
+                case MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX:
+                        elementA = Boolean.valueOf(a.isRequireSignature());
+                        elementB = Boolean.valueOf(b.isRequireSignature());
+
+                    break;
+
                 default:
                     logger.warning("Bad Table Column: " + column);
                     break;
@@ -260,24 +293,19 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
             } else if (elementB == null) {
                 return -1;
             } else {
-                if (ascending) {
-                    if (elementA instanceof Integer && elementB instanceof Integer) {
-                        return ((Integer) elementA).intValue() > ((Integer) elementB).intValue()?1:0;
-                    } else if(elementA instanceof String && elementB instanceof String) {
-                        return ((String)elementA).compareToIgnoreCase((String)elementB);
-                    } else {
-                        // add code here to support other types
-                        return 0;
-                    }
+                if (!ascending) { //then switch args
+                    Object tmp = elementA;
+                    elementA = elementB;
+                    elementB = tmp;
+                }
+
+                if(elementA instanceof String && elementB instanceof String) {
+                    return ((String)elementA).compareToIgnoreCase((String)elementB);
+                } else if (elementA instanceof Comparable && elementB instanceof Comparable) {
+                    return ((Comparable) elementA).compareTo((Comparable) elementB);
                 } else {
-                     if (elementA instanceof Integer && elementB instanceof Integer) {
-                        return ((Integer) elementB).intValue() > ((Integer) elementA).intValue()?1:0;
-                    } else if(elementA instanceof String && elementB instanceof String) {
-                        return ((String)elementB).compareToIgnoreCase((String)elementA);
-                    } else {
-                        // add code here to support other types
-                        return 0;
-                    }
+                    // add code here to support other types
+                    return 0;
                 }
             }
         }

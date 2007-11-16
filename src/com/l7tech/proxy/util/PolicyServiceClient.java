@@ -93,11 +93,15 @@ public class PolicyServiceClient {
                 req.getElementsToSign().add(mid);
             }
             req.setTimestampCreatedDate(timestampCreatedDate);
-            decorator.decorateMessage(msg, req);
+            decorator.decorateMessage(new Message(msg), req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
         } catch (DecoratorException e) {
             throw new RuntimeException(e); // shouldn't happen
+        } catch (SAXException se) {
+            throw new RuntimeException(se); // shouldn't happen
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe); // shouldn't happen
         }
         return msg;
     }
@@ -111,11 +115,15 @@ public class PolicyServiceClient {
         try {
             req.setIncludeKerberosTicket(true);
             req.setKerberosTicket(kerberosTicket);
-            decorator.decorateMessage(msg, req);
+            decorator.decorateMessage(new Message(msg), req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
         } catch (DecoratorException e) {
             throw new RuntimeException(e); // shouldn't happen
+        } catch (SAXException se) {
+            throw new RuntimeException(se); // shouldn't happen
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe); // shouldn't happen
         }
         return msg;
     }

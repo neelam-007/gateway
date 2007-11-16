@@ -866,6 +866,7 @@
               Add fast precheckin tests here **
             -->
             <test name="com.l7tech.identity.IdentityEqualityTest" haltonfailure="no" fork="yes"/>
+            <test name="com.l7tech.policy.assertion.RequestSwAAssertionTest" haltonfailure="no"/>
         </junit>
     </target>
 
@@ -922,7 +923,7 @@
             <test name="com.l7tech.server.identity.AuthenticationResultTest" haltonfailure="no" />
             <test name="com.l7tech.common.security.saml.Saml2ValidationTest" haltonfailure="no" />
             <test name="com.l7tech.common.xml.ElementCursorTest" haltonfailure="no"/>
-            <test name="com.l7tech.server.PolicyProcessingTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.PolicyProcessingTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.util.HexUtilsTest" haltonfailure="no"/>
             <test name="com.l7tech.common.util.ISO8601DateTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.assertion.OversizedTextAssertionTest" haltonfailure="no"/>

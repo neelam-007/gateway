@@ -7,10 +7,13 @@
 package com.l7tech.common.security.xml.decorator;
 
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import org.w3c.dom.Document;
+import com.l7tech.common.message.Message;
 
 import javax.crypto.SecretKey;
 import java.security.GeneralSecurityException;
+import java.io.IOException;
+
+import org.xml.sax.SAXException;
 
 /**
  * Creates a Security header and decorates a message according to instructions passed in.
@@ -24,8 +27,8 @@ public interface WssDecorator {
      * @param message the soap message to decorate
      * @param decorationRequirements details of what needs to be processed
      */
-    DecorationResult decorateMessage(Document message, DecorationRequirements decorationRequirements)
-            throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException;
+    DecorationResult decorateMessage(Message message, DecorationRequirements decorationRequirements)
+            throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException, SAXException, IOException;
 
     interface DecorationResult {
         /**

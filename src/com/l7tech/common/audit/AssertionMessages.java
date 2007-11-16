@@ -106,6 +106,7 @@ public class AssertionMessages extends Messages {
     public static final M SWA_EXTRA_ATTACHMENT            = m(4421, Level.INFO, "Passing extra attachment {0}.");
     public static final M SWA_EXTRA_LENGTH_EXCEEDED       = m(4422, Level.INFO, "Maximum length of extra attachments exceeds the limit {0} K bytes.");
     public static final M SWA_EXTRA_ATTACHMENT_DROPPED    = m(4423, Level.INFO, "Dropping extra attachment {0}.");
+    public static final M SWA_NOT_SIGNED                  = m(4424, Level.WARNING, "Missing required signature for part ''{0}'', for attachment with Content-ID URL ''{1}''");
 
     // ServerRemoteIpRange messages
     public static final M IP_NOT_TCP             = m(4500, Level.INFO,    "Request was not received via TCP; cannot validate remote IP address");

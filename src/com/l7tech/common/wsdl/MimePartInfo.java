@@ -141,6 +141,23 @@ public class MimePartInfo implements Cloneable, Serializable {
         return false;
     }
 
+    /**
+     *
+     */
+    public boolean isRequireSignature() {
+        return requireSignature;
+    }
+
+    /**
+     *
+     */
+    public void setRequireSignature(final boolean requireSignature) {
+        this.requireSignature = requireSignature;
+    }
+
+    /**
+     *
+     */
     public Object clone() {
         try {
             return super.clone();
@@ -154,6 +171,7 @@ public class MimePartInfo implements Cloneable, Serializable {
     private String name;
     private String[] contentTypes;
     private int maxLength;
+    private boolean requireSignature = false;
 
     private transient ContentTypeHeader[] contentTypeHeaders;
 

@@ -3,7 +3,6 @@ package com.l7tech.common.wsdl;
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Iterator;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -13,12 +12,12 @@ import java.util.Iterator;
 public class BindingInfo implements Cloneable, Serializable {
 
     protected String bindingName = "";
-    protected Map bindingOperations = new LinkedHashMap();   // Map of operation names (String) to BindingOperationInfos
+    protected Map<String,BindingOperationInfo> bindingOperations = new LinkedHashMap();   // Map of operation names (String) to BindingOperationInfos
 
     public BindingInfo() {
     }
 
-    public BindingInfo(String bindingName, Map bindingOperations) {
+    public BindingInfo(String bindingName, Map<String,BindingOperationInfo> bindingOperations) {
         this.bindingName = bindingName;
         this.bindingOperations.putAll(bindingOperations);
     }
@@ -36,12 +35,12 @@ public class BindingInfo implements Cloneable, Serializable {
     }
 
     /** @return the binding operations map.  Never null. */
-    public Map getBindingOperations() {
+    public Map<String,BindingOperationInfo> getBindingOperations() {
         return bindingOperations;
     }
 
     /** @param bindingOperations the new binding operations map.  May not be null. */
-    public void setBindingOperations(Map bindingOperations) {
+    public void setBindingOperations(Map<String,BindingOperationInfo> bindingOperations) {
         if (bindingOperations == null)
             throw new IllegalArgumentException("bindingOperations may not be null.");
         this.bindingOperations = bindingOperations;
@@ -69,11 +68,10 @@ public class BindingInfo implements Cloneable, Serializable {
     public Object clone() {
         try {
             BindingInfo clone = (BindingInfo) super.clone();
-            clone.bindingOperations = (Map)(((LinkedHashMap)bindingOperations).clone());
+            clone.bindingOperations = new LinkedHashMap(bindingOperations);
 
-            for(Iterator iterator = clone.bindingOperations.entrySet().iterator(); iterator.hasNext(); ) {
-                Map.Entry entry = (Map.Entry) iterator.next();
-                entry.setValue(((BindingOperationInfo)entry.getValue()).clone());
+            for( Map.Entry<String,BindingOperationInfo> entry : clone.bindingOperations.entrySet() ) {
+                entry.setValue((BindingOperationInfo)entry.getValue().clone());
             }
             return clone;
         }

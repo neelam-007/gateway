@@ -18,6 +18,7 @@ import com.l7tech.common.security.token.EncryptedElement;
 import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.token.SigningSecurityToken;
 import com.l7tech.common.security.token.XmlSecurityToken;
+import com.l7tech.common.security.token.SignedPart;
 import com.l7tech.server.policy.assertion.xmlsec.SamlAssertionValidate;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -339,6 +340,7 @@ public class Saml2ValidationTest extends TestCase {
         return new ProcessorResult() {
             public EncryptedElement[] getElementsThatWereEncrypted() { return new EncryptedElement[0];}
             public SignedElement[] getElementsThatWereSigned() { return new SignedElement[0]; }
+            public SignedPart[] getPartsThatWereSigned() { return new SignedPart[0]; }
             public String getLastSignatureConfirmation() { return null; }
             public String getLastKeyEncryptionAlgorithm() { return null; }
             public String getLastSignatureValue() { return null; }

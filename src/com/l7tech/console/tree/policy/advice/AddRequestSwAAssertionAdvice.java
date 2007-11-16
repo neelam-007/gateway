@@ -7,7 +7,6 @@ import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.console.tree.policy.PolicyChange;
-import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
@@ -85,12 +84,9 @@ public class AddRequestSwAAssertionAdvice implements Advice {
     private void initializeMimeMessages(PublishedService service, RequestSwAAssertion swaAssertion) throws WSDLException {
         Wsdl parsedWsdl = service.parsedWsdl();
         parsedWsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
-        Collection bindingList = parsedWsdl.getBindings();
 
         // for each binding in WSDL
-        for (Iterator iterator = bindingList.iterator(); iterator.hasNext();) {
-            Binding binding = (Binding)iterator.next();
-
+        for (Binding binding : parsedWsdl.getBindings()) {
             Collection boList = binding.getBindingOperations();
             HashMap<String, BindingOperationInfo> operations = new HashMap<String, BindingOperationInfo>();
 
@@ -173,15 +169,15 @@ public class AddRequestSwAAssertionAdvice implements Advice {
 
                 String operationQName = ((SOAPElement) operation).getElementName().getQualifiedName();
 
-                Map bindings = swaAssertion.getBindings();
+                Map<String,BindingInfo> bindings = swaAssertion.getBindings();
 
                 BindingInfo binding = null;
                 if (soapRequest.getBinding() != null)
-                    binding = (BindingInfo) bindings.get(soapRequest.getBinding());
+                    binding = bindings.get(soapRequest.getBinding());
 
                 BindingOperationInfo bo = null;
                 if (binding != null && soapRequest.getOperation() != null) {
-                    bo = (BindingOperationInfo) binding.getBindingOperations().get(soapRequest.getOperation());
+                    bo = binding.getBindingOperations().get(soapRequest.getOperation());
                 }
 
                 String xpathExpression = "/" + soapEnvNamePrefix +

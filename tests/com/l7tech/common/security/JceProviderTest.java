@@ -174,7 +174,7 @@ public class JceProviderTest {
             log.info("pretest: signing XML message");
             final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
             WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
-            new WssDecoratorImpl().decorateMessage(td.c.message, wssDecoratorTest.makeDecorationRequirements(td));
+            new WssDecoratorImpl().decorateMessage(new Message(td.c.message), wssDecoratorTest.makeDecorationRequirements(td));
 
             log.info("pretest: checking XML message signature");
             ProcessorResult processorResult = new WssProcessorImpl().undecorateMessage(
@@ -227,7 +227,7 @@ public class JceProviderTest {
         {
             WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
             DecorationRequirements decorationRequirements = wssDecoratorTest.makeDecorationRequirements(td);
-            new WssDecoratorImpl().decorateMessage(td.c.message, decorationRequirements);
+            new WssDecoratorImpl().decorateMessage(new Message(td.c.message), decorationRequirements);
             encryptedXml = XmlUtil.nodeToString(td.c.message);
         }
         log.info("Encrypted XML message: " + encryptedXml);
@@ -236,7 +236,7 @@ public class JceProviderTest {
             public void run() throws Throwable {
                 WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
                 DecorationRequirements decorationRequirements = wssDecoratorTest.makeDecorationRequirements(td);
-                new WssDecoratorImpl().decorateMessage(td.c.message, decorationRequirements);
+                new WssDecoratorImpl().decorateMessage(new Message(td.c.message), decorationRequirements);
             }
         });
 

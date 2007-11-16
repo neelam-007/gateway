@@ -411,7 +411,7 @@ public class MessageProcessor {
                             }
                             WssDecorator.DecorationResult dresult =
                                     wssDecorator.decorateMessage(
-                                            request.getXmlKnob().getDocumentWritable(), // upgrade to writable DOM
+                                            request,
                                             wssrequirement);
                             context.setEncryptedKeySecretKey(dresult.getEncryptedKeySecretKey());
                             context.setEncryptedKeySha1(dresult.getEncryptedKeySha1());

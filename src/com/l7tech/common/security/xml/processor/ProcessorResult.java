@@ -16,6 +16,7 @@ import org.w3c.dom.Element;
  */
 public interface ProcessorResult {
     SignedElement[] getElementsThatWereSigned();
+    SignedPart[] getPartsThatWereSigned();
     EncryptedElement[] getElementsThatWereEncrypted();
 
     /**

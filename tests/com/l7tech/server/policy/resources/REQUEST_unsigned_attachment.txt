@@ -1,0 +1,18 @@
+------=_Part_0_10519800.1195084468237
+Content-Type: text/xml; charset=utf-8
+
+<?xml version="1.0" ?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><echoOne xmlns="urn:EchoAttachmentsService"><source xmlns="" href="cid:attachment-1"/></echoOne></soapenv:Body></soapenv:Envelope>
+------=_Part_0_10519800.1195084468237
+Content-Description: attachment
+Content-Disposition: attachment; filename="empty.txt"
+Content-ID: <attachment-1>
+Content-Location: empty.txt
+Content-Type: text/plain
+Content-Transfer-Encoding: binary
+
+sdfasdf
+sdfasdf
+sdfasdf
+sdfasdf
+
+------=_Part_0_10519800.1195084468237--

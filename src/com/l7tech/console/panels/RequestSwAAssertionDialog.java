@@ -142,15 +142,15 @@ public class RequestSwAAssertionDialog extends JDialog {
 
     private void populateData() {
 
-        Map bindings = assertion.getBindings();
+        Map<String,BindingInfo> bindings = assertion.getBindings();
         // populate the binding operation table
         if(bindings == null) throw new RuntimeException("bindings map is NULL");
 
         boolean firstEntry = true;
-        Iterator bindingsItr = bindings.keySet().iterator();
+        Iterator<String> bindingsItr = bindings.keySet().iterator();
         while (bindingsItr.hasNext()) {
-            String bindingName = (String) bindingsItr.next();
-            BindingInfo binding = (BindingInfo) bindings.get(bindingName);
+            String bindingName = bindingsItr.next();
+            BindingInfo binding = bindings.get(bindingName);
 
             // add the entry the the binding list
             bindingsList.add(binding);

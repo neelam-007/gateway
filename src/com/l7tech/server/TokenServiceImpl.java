@@ -433,12 +433,16 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         req.getElementsToSign().add(body);
 
         try {
-            wssDecorator.decorateMessage(response, req);
+            wssDecorator.decorateMessage(new Message(response), req);
         } catch (InvalidDocumentFormatException e) {
             throw new TokenServiceException(e);
         } catch (GeneralSecurityException e) {
             throw new TokenServiceException(e);
         } catch (DecoratorException e) {
+            throw new TokenServiceException(e);
+        } catch (SAXException e) {
+            throw new TokenServiceException(e);
+        } catch (IOException e) {
             throw new TokenServiceException(e);
         }
         return response;

@@ -4,15 +4,19 @@ import java.io.IOException;
 import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.SequenceInputStream;
+import java.io.FilterInputStream;
 
 import com.ibm.xml.dsig.Transform;
 import com.ibm.xml.dsig.TransformContext;
 import com.ibm.xml.dsig.TransformException;
+import com.ibm.xml.dsig.StreamingTransformContext;
 import org.w3c.dom.Node;
 
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.BufferPool;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.MimeHeaders;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -64,18 +68,23 @@ public class AttachmentContentTransform extends Transform {
             throw new TransformException(errorMessage);
 
         final int type = transformContext.getType();
-        if (type != TransformContext.TYPE_BINARY && type != TransformContext.TYPE_URI)  {
-            throw new TransformException("Expected binary input for transform ("+type+").");
+        if ((type != TransformContext.TYPE_BINARY &&
+             type != TransformContext.TYPE_URI &&
+             type != StreamingTransformContext.TYPE_STREAM) ||
+            !(transformContext instanceof StreamingTransformContext)  )  {
+            throw new TransformException("Expected streaming input for transform ("+type+").");
         }
 
-        byte[] data = transformContext.getOctets();
-        ByteArrayInputStream partIn = new ByteArrayInputStream(data);
-        BufferPoolByteArrayOutputStream canond = new BufferPoolByteArrayOutputStream(4096);
+        StreamingTransformContext streamingTransformContext = (StreamingTransformContext) transformContext;
 
         //
+        InputStream partIn = null;
         try {
+            partIn = streamingTransformContext.getInputStream();
+            ByteArrayOutputStream canondHeaders = new ByteArrayOutputStream(1024);
+
             MimeHeaders headers = MimeUtil.parseHeaders(partIn);
-            processHeaders(headers, canond);
+            processHeaders(headers, canondHeaders);
 
             ContentTypeHeader cth;
             if ( headers.get(MimeUtil.CONTENT_TYPE) == null ) {
@@ -83,15 +92,20 @@ public class AttachmentContentTransform extends Transform {
             } else {
                 cth = headers.getContentType();
             }
-            processBody(cth, partIn, canond);
+            byte[] headerContent = canondHeaders.toByteArray();
 
-            byte[] content = canond.toByteArray();
+            //noinspection IOResourceOpenedButNotSafelyClosed
+            streamingTransformContext.setContent(
+                    new SequenceInputStream(
+                            new ByteArrayInputStream(headerContent),
+                            processBody(cth, partIn)),
+                    null);
 
-            transformContext.setContent(content, "application/octet-stream");
+            partIn = null;
         } catch (IOException e) {
             throw (TransformException) new TransformException().initCause(e);
         } finally {
-            canond.close();
+            ResourceUtils.closeQuietly(partIn);
         }
     }
 
@@ -124,34 +138,88 @@ public class AttachmentContentTransform extends Transform {
     /**
      * Process MIME body.
      *
-     * <p>This implementation does nothing.</p>
+     * <p>Can be implemented as a filtering stream.</p>
      *
-     * @param contentTypeHeader The body content type
-     * @param bodyIn The MIME body stream
-     * @param out The stream for canonical body output
-     * @throws IOException on error reading/writing the body
+     * @param contentTypeHeader The type of the content.
+     * @param bodyIn The body input stream
+     * @return The (possibly replaced) body input stream
      */
-    protected void processBody(final ContentTypeHeader contentTypeHeader,
-                               final InputStream bodyIn,
-                               final OutputStream out) throws IOException {
-        if (contentTypeHeader.isText()) {
-            // transform line endings
-            int character = -1;
-            while ((character = bodyIn.read()) >= 0) {
-                if (character == '\n') {
-                    out.write(CRLF);
-                } else {
-                    out.write(character);
-                }
-            }
-        } else {
-            // no transform required
-            HexUtils.copyStream(bodyIn, out);
-        }
+    protected InputStream processBody(final ContentTypeHeader contentTypeHeader,
+                                      final InputStream bodyIn) throws IOException {
+        return new BodyInputStream(contentTypeHeader, bodyIn);
     }
 
     //- PRIVATE
 
     private String errorMessage = null;
 
+    /**
+     * InputStream to process MIME body.
+     *
+     * <p>This will fiter any text content to canonical form '\n' -> '\r\n'</p>
+     */
+    private static class BodyInputStream extends FilterInputStream {
+        boolean isText = false;
+        byte lastByte;
+
+        private BodyInputStream(final ContentTypeHeader contentTypeHeader,
+                               final InputStream bodyIn) throws IOException {
+            super(bodyIn);
+
+            if (contentTypeHeader.isText()) {
+                // transform line endings
+                isText = true;
+            }
+        }
+
+        /**
+         * Disable unless we need this 
+         */
+        public int read() throws IOException {
+            throw new IOException("read() not supported.");
+        }
+
+        /**
+         * For text input streams rewrite any '\n' as '\r\n' 
+         */
+        public int read(byte b[], int off, int len) throws IOException {
+            if (isText) {
+                if (len < 2)
+                    throw new IOException("read of <2 bytes not supported.");
+
+                byte prevByte = lastByte;
+                final int count =  super.read(b, off, len / CRLF.length); // ensure space for CRLF expansion
+
+                if (count > 0 ) {
+                    byte[] source = BufferPool.getBuffer(b.length);
+                    System.arraycopy(b, off, source, 0, count);
+
+                    int writePos = 0;
+                    for (int n=0; n<count; n++) {
+                        byte read = source[off+n];
+
+                        if (prevByte!='\r' && read == '\n') {
+                            for(int i=0; i<CRLF.length; i++) {
+                                b[off+(writePos++)] = CRLF[i];
+                            }
+                            prevByte = '\n';
+                        } else {
+                            b[off+(writePos++)] = read;
+                            prevByte = read;
+                        }
+                    }
+
+                    BufferPool.returnBuffer(source);
+
+                    lastByte = b[off+(writePos-1)];
+
+                    return writePos;
+                } else {
+                    return count;
+                }
+            }
+
+            return super.read(b, off, len);
+        }
+    }
 }

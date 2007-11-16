@@ -11,6 +11,7 @@ import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import org.w3c.dom.Document;
@@ -433,7 +434,7 @@ public class SamlGenerator {
                         decoReq.getElementsToSign().addAll(XmlUtil.findChildElementsByName(maybeHeader, SoapUtil.WSA_NAMESPACE_ARRAY, "To"));
                     }
                 }
-                deco.decorateMessage(soapDoc, decoReq);
+                deco.decorateMessage(new Message(soapDoc), decoReq);
                 assertionStr = XmlUtil.nodeToString(soapDoc);
             }
             else {

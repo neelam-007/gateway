@@ -410,9 +410,13 @@ public class PolicyService extends ApplicationObjectSupport {
                 reqmts.getElementsToSign().add(policyVersion);
             if (relatesTo != null)
                 reqmts.getElementsToSign().add(relatesTo);
-            decorator.decorateMessage(responseDoc, reqmts);
+            decorator.decorateMessage(new Message(responseDoc), reqmts);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
+        } catch (SAXException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e); 
         }
     }
 

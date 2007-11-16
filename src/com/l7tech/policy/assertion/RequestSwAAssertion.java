@@ -3,8 +3,11 @@ package com.l7tech.policy.assertion;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Iterator;
+import java.util.Collection;
 
 import com.l7tech.common.wsdl.BindingInfo;
+import com.l7tech.common.wsdl.MimePartInfo;
+import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 /**
@@ -31,13 +34,13 @@ public class RequestSwAAssertion extends SwAAssertion {
     public static final int UNBOUND_ATTACHMENT_POLICY_PASS = 2;
 
     private int unboundAttachmentPolicy;
-    private Map bindings = new LinkedHashMap();     // map of binding name (String) to binding info (BindingInfo)
-    private Map namespaceMap = new LinkedHashMap(); // map of prefix (String) to uri (String)
+    private Map<String,BindingInfo> bindings = new LinkedHashMap();     // map of binding name (String) to binding info (BindingInfo)
+    private Map<String,String> namespaceMap = new LinkedHashMap(); // map of prefix (String) to uri (String)
 
     public RequestSwAAssertion() {
     }
 
-    public RequestSwAAssertion(Map bindings) {
+    public RequestSwAAssertion(final Map bindings) {
         this.bindings = bindings;
     }
 
@@ -61,7 +64,7 @@ public class RequestSwAAssertion extends SwAAssertion {
      * @see #UNBOUND_ATTACHMENT_POLICY_DROP
      * @see #UNBOUND_ATTACHMENT_POLICY_PASS
      */
-    public void setUnboundAttachmentPolicy(int unboundAttachmentPolicy) {
+    public void setUnboundAttachmentPolicy(final int unboundAttachmentPolicy) {
         this.unboundAttachmentPolicy = unboundAttachmentPolicy;
     }
 
@@ -71,14 +74,14 @@ public class RequestSwAAssertion extends SwAAssertion {
      * @return the Bindings map.  Never null.
      * @see com.l7tech.common.wsdl.BindingInfo
      */
-    public Map getBindings() {
+    public Map<String,BindingInfo> getBindings() {
         return bindings;
     }
 
     /**
      * @param bindings the new Binding info.  May not be null.
      */
-    public void setBindings(Map bindings) {
+    public void setBindings(final Map<String,BindingInfo> bindings) {
         if (bindings == null)
             throw new IllegalArgumentException("bindings map may not be null");
         this.bindings.putAll(bindings);
@@ -89,14 +92,39 @@ public class RequestSwAAssertion extends SwAAssertion {
      *
      * @return The map of prefix (String) to uri (String)
      */
-    public Map getNamespaceMap() {
+    public Map<String,String> getNamespaceMap() {
         return namespaceMap;
     }
 
-    public void setNamespaceMap(Map namespaceMap) {
+    public void setNamespaceMap(final Map<String,String> namespaceMap) {
         if (namespaceMap == null)
             throw new IllegalArgumentException("Namespace map may not be null");
         this.namespaceMap.putAll(namespaceMap);
+    }
+
+    /**
+     * Does any part of any operation for any binding require a signature.
+     *
+     * @return true if any operation requires a signature
+     */
+    public boolean requiresSignature() {
+        boolean requireSig = false;
+
+        outer:
+        for (BindingInfo binding : (Collection<BindingInfo>) bindings.values()) {
+            // for each operation of the binding found in assertion
+            for (BindingOperationInfo bo : (Collection<BindingOperationInfo>) binding.getBindingOperations().values()) {
+                // for each part in the operation
+                for (MimePartInfo part : (Collection<MimePartInfo>) bo.getMultipart().values()) {
+                    if ( part.isRequireSignature() ) {
+                        requireSig = true;
+                        break outer;
+                    }
+                }
+            }
+        }
+
+        return requireSig;
     }
 
     public Object clone() {

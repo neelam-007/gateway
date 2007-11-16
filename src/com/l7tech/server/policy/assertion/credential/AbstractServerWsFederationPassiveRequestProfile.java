@@ -5,6 +5,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.*;
 import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.wsfederation.FederationPassiveClient;
 import com.l7tech.common.security.wsfederation.ResponseStatusException;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
@@ -123,7 +124,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
             decoReq.setIncludeTimestamp(false);
         }
         decoReq.setSenderSamlToken(samlAssertion.asElement(), false);
-        deco.decorateMessage(requestDoc, decoReq);
+        deco.decorateMessage(new Message(requestDoc), decoReq);
         requestXml.setDocument(requestDoc);
         requestSec.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, securityTokenResolver));
     }

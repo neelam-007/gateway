@@ -3,11 +3,14 @@ package com.l7tech.common.security.xml;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.HashMap;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.ParseException;
+import javax.mail.internet.MimeUtility;
 
 import com.ibm.xml.dsig.TransformException;
 
@@ -142,7 +145,7 @@ public class AttachmentCompleteTransform extends AttachmentContentTransform {
             if ( structured ) {
                 value = canonicalizeValue(headerValue, isLowerCaseValue(headerName));
             } else {
-                value = headerValue.getBytes(CHARSET); //TODO processing of unstructured?
+                value = headerValue.getBytes(CHARSET);
             }
         } else {
             value = headerDefault!=null ? headerDefault.getBytes(CHARSET) : null;
@@ -189,8 +192,6 @@ public class AttachmentCompleteTransform extends AttachmentContentTransform {
      * - Canonicalization of a MIME header parameter MUST generate a UTF-8 encoded octet stream
      *     containing the following: a semi-colon (";"), the parameter name (lowercase), an equals sign ("="), and
      *     the double-quoted parameter value.
-     *
-     * TODO Quoting, hex decoding, RFC2184 decoding (or is done by tokenizer?)
      */
     private byte[] canonicalizeValue(final String value,
                                      final boolean lowercase) throws IOException, TransformException {
@@ -211,14 +212,14 @@ public class AttachmentCompleteTransform extends AttachmentContentTransform {
             // write parameters
             for (Map.Entry<String,String> parameter : params.entrySet()) {
                 String name = parameter.getKey().toLowerCase();
-                String data = parameter.getValue();
+                String data = escape(parameter.getValue());
 
                 baos.write(PARAMETER_PAIR_SEPARATOR);
                 baos.write(name.getBytes(CHARSET));
                 baos.write(PARAMETER_NAME_VALUE_SEPARATOR);
                 baos.write(PARAMETER_PREFIX);
                 if ( ArrayUtils.contains(HEADER_PARAMS_TO_LOWERCASE, name) ) {
-                    baos.write(data.toLowerCase().getBytes(CHARSET));                                
+                    baos.write(data.toLowerCase().getBytes(CHARSET));
                 } else {
                     baos.write(data.getBytes(CHARSET));
                 }
@@ -250,6 +251,7 @@ public class AttachmentCompleteTransform extends AttachmentContentTransform {
 
         // process parameters
         parseValueParameters(ht, token, headerValue, params);
+        decodeRFC2184(params);
 
         return valueBuilder.toString();
     }
@@ -351,4 +353,139 @@ public class AttachmentCompleteTransform extends AttachmentContentTransform {
             token = ht.next();
         }
     }
+
+    /**
+     * Unescape any characters that do not require escaping.
+     */
+    private String escape(final String value) {
+        StringBuilder builder = new StringBuilder(value.length());
+
+        for ( int i=0; i<value.length(); i++ ) {
+            char character = value.charAt(i);
+
+            if ( character == '\\' || character == '"' ) {
+                builder.append( '\\' );
+            }
+
+            builder.append( character );                
+        }
+
+        return builder.toString();
+    }
+
+    /**
+     * Decode any RFC 2184 parameter continuations or language/encodings
+     *
+     * The param map is ordered so params with continuations should be in order.
+     *
+     * Decode continuations (values are already unquoted here).
+     *
+     *   Content-Type: message/external-body; access-type=URL; URL*0="ftp://"; URL*1="cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"
+     *
+     * becomes
+     *
+     *   Content-Type: message/external-body; access-type=URL; URL"ftp://cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"
+     *
+     * so the number of parameters is reduced and names are changed.
+     *
+     * Parameter values with languages look like this:
+     *
+     *   title*=us-ascii'en-us'This%20is%20%2A%2A%2Afun%2A%2A%2A
+     *
+     * so contain charset, language and (hex) encoded value
+     *
+     * http://www.faqs.org/rfcs/rfc2184.html
+     */
+    private void decodeRFC2184(final Map<String,String> params) throws ParseException {
+        Map<String,String> decoded = new HashMap();
+
+        for (Map.Entry<String,String> entry : params.entrySet()) {
+            String name = entry.getKey();
+            String value = entry.getValue();
+
+            String charset = "UTF-8"; // really ascii
+
+            if ( name.endsWith("*") ) {
+                name = name.substring(0, name.length()-1); // ignore language setting for now.
+
+                if (name.contains("*") && !name.contains("*1"))
+                    continue; // this will have already been processed.
+
+                String[] parts = value.split("'");
+                if ( parts.length != 3)
+                    throw new ParseException("Illegal RFC 2184 parameter value '"+value+"'.");
+
+                charset = parts[0];
+                value = hexDecode(parts[2], charset);
+            }
+
+            int index;
+            if ( (index = name.indexOf("*")) > -1 ) {
+                // multiple parts
+                String baseName = name.substring(0, index);
+                try {
+                    int partNumber = Integer.parseInt(name.substring(index+1));
+                    if ( partNumber == 1 ) {
+                        while (true) {
+                            String partName = baseName + "*" + (++partNumber);
+
+                            String partValue = params.get(partName);
+                            if ( partValue != null ) {
+                                // add unencoded part
+                                value += partValue;
+                            } else {
+                                partValue = params.get(partName + "*");
+
+                                if ( partValue == null)
+                                    break; // no more parts
+
+                                // add encoded part
+                                value += hexDecode(partValue, charset);
+                            }
+                        }
+
+                        decoded.put(baseName, value);
+                    }
+                } catch (NumberFormatException nfe) {
+                    throw new ParseException("Illegal RFC 2184 parameter name '"+entry.getKey()+"'.");
+                }
+            } else {
+                // single part
+                decoded.put(name, value);
+            }
+        }
+
+        params.clear();
+        params.putAll(decoded);
+    }
+
+    /**
+     * Decode a string with some hex bytes
+     */
+    private String hexDecode(String hex, String charset) throws ParseException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
+
+        for (int i=0; i<hex.length(); i++) {
+            char character = hex.charAt(i);
+
+            if (character == '%') {
+                try {
+                    baos.write(Integer.decode(("0x" + hex.charAt(++i) + hex.charAt(++i)).toUpperCase()));
+                } catch (IndexOutOfBoundsException ioobe) {
+                    throw new ParseException("Invalid encoding in MIME parameter value '"+hex+"'.");
+                } catch (NumberFormatException nfe) {
+                    throw new ParseException("Invalid encoding in MIME parameter value '"+hex+"'.");
+                }
+            } else {
+                baos.write(character);
+            }
+        }
+
+        try {
+            return new String(baos.toByteArray(), MimeUtility.javaCharset(charset));
+        } catch (UnsupportedEncodingException uee) {
+            throw new ParseException("Unsupported encoding in MIME parameter '"+charset+"'.");
+        }
+    }
+
 }

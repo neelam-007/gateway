@@ -10,6 +10,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
@@ -144,7 +145,7 @@ public class SignedSaml2Test extends TestCase {
         req.getElementsToSign().add(body);
         req.setSenderMessageSigningCertificate(caCertChain[0]);
         req.setSenderMessageSigningPrivateKey(caPrivateKey);
-        new WssDecoratorImpl().decorateMessage(request, req);
+        new WssDecoratorImpl().decorateMessage(new Message(request), req);
 
         // hack message so original signature refers to the saml token instead of the BST
         Element security = SoapUtil.getSecurityElement(request, SecurityActor.L7ACTOR.getValue());
@@ -187,7 +188,7 @@ public class SignedSaml2Test extends TestCase {
         req.getElementsToSign().add(body);
         req.setSenderMessageSigningCertificate(clientCertChain[0]);
         req.setSenderMessageSigningPrivateKey(clientPrivateKey);
-        new WssDecoratorImpl().decorateMessage(request, req);
+        new WssDecoratorImpl().decorateMessage(new Message(request), req);
 
         // Hand-hack the decorated message, replacing the BST with the saml:assertion
         Element security = SoapUtil.getSecurityElement(request, SecurityActor.L7ACTOR.getValue());

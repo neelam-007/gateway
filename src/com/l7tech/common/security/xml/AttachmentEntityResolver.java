@@ -9,6 +9,11 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -18,6 +23,7 @@ import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.io.ByteLimitInputStream;
 
 /**
  * Entity resolver for SOAP attachments.
@@ -32,10 +38,12 @@ public class AttachmentEntityResolver implements EntityResolver {
      * Create an attachment resolver for the given parts.
      *
      * @param partIterator the iterator for MIME parts (may be null)
-     * @param partMap the map for recording resolved parts by their system identifier (must not be null)
+     * @param delegate The entity resolver to delegate to in the case that a part is not found (may be null)
+     * @throws IOException if there is a partIterator and positioning fails
      */
-    public AttachmentEntityResolver(final PartIterator partIterator, final Map<String,PartInfo> partMap) {
-        this(partIterator, partMap, null);
+    public AttachmentEntityResolver(final PartIterator partIterator,
+                                    final EntityResolver delegate) throws IOException {
+        this(partIterator, delegate, new HashMap<String,PartInfo>(), 0);
     }
 
     /**
@@ -45,15 +53,20 @@ public class AttachmentEntityResolver implements EntityResolver {
      * is NOT considered to be a MIME part (so is not put in the part map)</p>
      *
      * @param partIterator the iterator for MIME parts (may be null)
+     * @param delegate The entity resolver to delegate to in the case that a part is not found (may be null)
      * @param partMap the map for recording resolved parts by their system identifier (must not be null)
-     * @param delegate The entity resolver to delegate to in the case that a part is not found
+     * @param sizeLimit The maximum size for an attachment (0 for no limit)
      */
     public AttachmentEntityResolver(final PartIterator partIterator,
+                                    final EntityResolver delegate,
                                     final Map<String,PartInfo> partMap,
-                                    final EntityResolver delegate) {
+                                    final long sizeLimit) throws IOException {
         this.partIterator = partIterator;
         this.partMap = partMap;
         this.delegate = delegate;
+        this.sizeLimit = sizeLimit;
+
+        positionAfterFirstPart();
     }
 
     /**
@@ -99,11 +112,14 @@ public class AttachmentEntityResolver implements EntityResolver {
 
     //- PRIVATE
 
+    private static final Logger logger = Logger.getLogger(AttachmentEntityResolver.class.getName());
+
     private static final String CONTENTID_PREFIX = "cid:";
 
     private final PartIterator partIterator;
     private final Map<String,PartInfo> partMap;
     private final EntityResolver delegate;
+    private final long sizeLimit;
     private Collection<PartInfo> parts;
 
     /**
@@ -123,7 +139,6 @@ public class AttachmentEntityResolver implements EntityResolver {
      *
      */
     private String getPartId(final String id) {
-        // TODO converting %hh hex-escaped characters to their ASCII equivalents 
         return id.substring(CONTENTID_PREFIX.length());
     }
 
@@ -153,10 +168,24 @@ public class AttachmentEntityResolver implements EntityResolver {
 
         if ( parts == null && partIterator != null) {
             parts = toParts(partIterator);
+            ensureNoDuplicates(parts);
             this.parts = parts;
         }
 
         return parts;
+    }
+
+    /**
+     *
+     */
+    private void positionAfterFirstPart() throws IOException {
+        if (partIterator != null && partIterator.hasNext()) {
+            try {
+                partIterator.next();
+            } catch ( NoSuchPartException nspe ) {
+                throw new CausedIOException( nspe );
+            }
+        }
     }
 
     /**
@@ -179,6 +208,38 @@ public class AttachmentEntityResolver implements EntityResolver {
     }
 
     /**
+     * Ignore all attachments if content-ids look dubious 
+     */
+    private void ensureNoDuplicates(Collection<PartInfo> parts) {
+        Set<String> identifiers = new HashSet();
+
+        for ( PartInfo partInfo : parts ) {
+            String partIdentifier = partInfo.getContentId(true);
+
+            if (partIdentifier != null) {
+
+                if (partIdentifier.startsWith("<")) {
+                    logger.log(Level.WARNING,
+                            "Ignoring attachments for message with invalid content-id ''{0}''.",
+                            partIdentifier);
+                    parts.clear();
+                    break;
+                }
+
+                if (identifiers.contains(partIdentifier)) {
+                    logger.log(Level.WARNING,
+                            "Ignoring attachments for message with duplicated content-id ''{0}''.",
+                            partIdentifier);
+                    parts.clear();                              
+                    break;
+                }
+
+                identifiers.add(partIdentifier);
+            }
+        }
+    }
+
+    /**
      *
      */
     private InputSource toInputSource(final PartInfo partInfo) throws IOException {
@@ -187,9 +248,13 @@ public class AttachmentEntityResolver implements EntityResolver {
             InputStream headersIn = new ByteArrayInputStream(partInfo.getHeaders().toByteArray());
 
             //noinspection IOResourceOpenedButNotSafelyClosed
-            SequenceInputStream sis = new SequenceInputStream(headersIn, bodyIn);
+            InputStream is = new SequenceInputStream(headersIn, bodyIn);
 
-            return new InputSource(sis);
+            if ( sizeLimit > 0 ) {
+                is = new ByteLimitInputStream(is, 16, sizeLimit);
+            }
+
+            return new InputSource(is);
         }  catch ( NoSuchPartException nspe ) {
             throw new CausedIOException( nspe );
         }

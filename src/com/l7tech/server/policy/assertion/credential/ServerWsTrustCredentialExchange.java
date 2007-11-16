@@ -224,7 +224,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             addCacheInvalidator(context); // remove cached credentials if routing fails
 
             try {
-                deco.decorateMessage(requestDoc, decoReq);
+                deco.decorateMessage(new Message(requestDoc), decoReq);
                 requestXml.setDocument(requestDoc);
 
                 Message reqMessage = context.getRequest();

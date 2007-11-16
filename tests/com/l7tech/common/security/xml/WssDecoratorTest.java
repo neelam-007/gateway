@@ -7,6 +7,7 @@ package com.l7tech.common.security.xml;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.MimeBodyTest;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.KeyInfoInclusionType;
 import com.l7tech.common.security.saml.NameIdentifierInclusionType;
@@ -66,6 +67,7 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public static class Context {
+        public Message messageMessage;
         public Document message;
         public String soapNs;
         public Element body;
@@ -78,6 +80,7 @@ public class WssDecoratorTest extends TestCase {
 
         Context() throws IOException, SAXException {
             message = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+            messageMessage = new Message(message);
             soapNs = message.getDocumentElement().getNamespaceURI();
             body = (Element)message.getElementsByTagNameNS(soapNs, SoapUtil.BODY_EL_NAME).item(0);
             assertNotNull(body);
@@ -94,8 +97,13 @@ public class WssDecoratorTest extends TestCase {
             assertNotNull(accountid);
         }
 
-        Context(Document message) {
-            this.message = message;
+        Context(Document message) throws IOException, SAXException {
+            this(new Message(message));
+        }
+
+        Context(Message messageMessage) throws IOException, SAXException {
+            this.messageMessage = messageMessage;
+            this.message = messageMessage.getXmlKnob().getDocumentReadOnly();
             soapNs = message.getDocumentElement().getNamespaceURI();
             body = (Element)message.getElementsByTagNameNS(soapNs, SoapUtil.BODY_EL_NAME).item(0);
             if (body != null)
@@ -118,6 +126,8 @@ public class WssDecoratorTest extends TestCase {
         public byte[] secureConversationKey;   // may be used instead of a sender cert + sender key if using WS-SC
         public Element[] elementsToEncrypt = new Element[0];
         public Element[] elementsToSign = new Element[0];
+        public String[] attachmentsToSign = new String[0];
+        public boolean signAttachmentHeaders;
         public boolean signSamlToken = false; // if true, SAML token should be signed
         public boolean suppressBst = false;
         public String encryptionAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName(); //default
@@ -200,7 +210,7 @@ public class WssDecoratorTest extends TestCase {
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
         DecorationRequirements reqs = makeDecorationRequirements(d);
 
-        decorator.decorateMessage(d.c.message, reqs);
+        decorator.decorateMessage(new Message(d.c.message), reqs);
 
         log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
     }
@@ -267,7 +277,7 @@ public class WssDecoratorTest extends TestCase {
         DecorationRequirements reqs = new DecorationRequirements();
         reqs.setUsernameTokenCredentials(new UsernameTokenImpl("franco", "blahblah".toCharArray()));
 
-        decorator.decorateMessage(doc, reqs);
+        decorator.decorateMessage(new Message(doc), reqs);
         log.info("Decorated message:" + XmlUtil.nodeToFormattedString(doc));
     }
 
@@ -360,7 +370,7 @@ public class WssDecoratorTest extends TestCase {
             dreq.getElementsToSign().clear();
             //noinspection unchecked
             dreq.getElementsToSign().add(SoapUtil.getBodyElement(doc));
-            decorator.decorateMessage(doc,
+            decorator.decorateMessage(new Message(doc),
                                       dreq);
             final Matcher matcher = findCreated.matcher(XmlUtil.nodeToString(doc));
             if (matcher.find()) {
@@ -695,7 +705,9 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public TestDocument getSoapWithSignedAttachmentTestDocument() throws Exception {
-        final Context c = new Context(XmlUtil.stringToDocument(MimeBodyTest.SOAP));
+        final Message message = new Message();
+        message.initialize(ContentTypeHeader.parseValue(MimeBodyTest.MESS2_CONTENT_TYPE), MimeBodyTest.MESS2.getBytes());
+        final Context c = new Context(message);
         return new TestDocument(c,
                                 TestDocuments.getEttkClientCertificate(),
                                 TestDocuments.getEttkClientPrivateKey(),

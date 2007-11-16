@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+            <L7p:Properties/>
+        </wsse:SecurityToken>
+        <L7p:RequestSwAAssertion>
+            <L7p:Bindings mapValue="included">
+                <L7p:entry>
+                    <L7p:key stringValue="EchoAttachmentsServiceSoapBinding2"/>
+                    <L7p:value wsdlBindingInfo="included">
+                        <L7p:BindingName stringValue="EchoAttachmentsServiceSoapBinding2"/>
+                        <L7p:BindingOperations mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="echoDir"/>
+                                <L7p:value wsdlBindingOperationInfo="included">
+                                    <L7p:Multipart mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="source"/>
+                                    <L7p:value wsdlMimePartInfo="included">
+                                    <L7p:ContentTypes stringArrayValue="included">
+                                    <L7p:item stringValue="*/*"/>
+                                    </L7p:ContentTypes>
+                                    <L7p:MaxLength intValue="1000"/>
+                                    <L7p:Name stringValue="source"/>
+                                    <L7p:RequireSignature booleanValue="true"/>
+                                    </L7p:value>
+                                    </L7p:entry>
+                                    </L7p:Multipart>
+                                    <L7p:Name stringValue="echoDir"/>
+                                    <L7p:Xpath stringValue="/SOAP-ENV:Envelope/SOAP-ENV:Body/impl:echoDir"/>
+                                </L7p:value>
+                            </L7p:entry>
+                            <L7p:entry>
+                                <L7p:key stringValue="echoTwo"/>
+                                <L7p:value wsdlBindingOperationInfo="included">
+                                    <L7p:Multipart mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="source2"/>
+                                    <L7p:value wsdlMimePartInfo="included">
+                                    <L7p:ContentTypes stringArrayValue="included">
+                                    <L7p:item stringValue="*/*"/>
+                                    </L7p:ContentTypes>
+                                    <L7p:MaxLength intValue="1000"/>
+                                    <L7p:Name stringValue="source2"/>
+                                    <L7p:RequireSignature booleanValue="true"/>
+                                    </L7p:value>
+                                    </L7p:entry>
+                                    <L7p:entry>
+                                    <L7p:key stringValue="source1"/>
+                                    <L7p:value wsdlMimePartInfo="included">
+                                    <L7p:ContentTypes stringArrayValue="included">
+                                    <L7p:item stringValue="*/*"/>
+                                    </L7p:ContentTypes>
+                                    <L7p:MaxLength intValue="1000"/>
+                                    <L7p:Name stringValue="source1"/>
+                                    <L7p:RequireSignature booleanValue="true"/>
+                                    </L7p:value>
+                                    </L7p:entry>
+                                    </L7p:Multipart>
+                                    <L7p:Name stringValue="echoTwo"/>
+                                    <L7p:Xpath stringValue="/SOAP-ENV:Envelope/SOAP-ENV:Body/impl:echoTwo"/>
+                                </L7p:value>
+                            </L7p:entry>
+                        </L7p:BindingOperations>
+                    </L7p:value>
+                </L7p:entry>
+                <L7p:entry>
+                    <L7p:key stringValue="EchoAttachmentsServiceSoapBinding1"/>
+                    <L7p:value wsdlBindingInfo="included">
+                        <L7p:BindingName stringValue="EchoAttachmentsServiceSoapBinding1"/>
+                        <L7p:BindingOperations mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="echoOne"/>
+                                <L7p:value wsdlBindingOperationInfo="included">
+                                    <L7p:Multipart mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="source"/>
+                                    <L7p:value wsdlMimePartInfo="included">
+                                    <L7p:ContentTypes stringArrayValue="included">
+                                    <L7p:item stringValue="*/*"/>
+                                    </L7p:ContentTypes>
+                                    <L7p:MaxLength intValue="1000000"/>
+                                    <L7p:Name stringValue="source"/>
+                                    <L7p:RequireSignature booleanValue="true"/>
+                                    </L7p:value>
+                                    </L7p:entry>
+                                    </L7p:Multipart>
+                                    <L7p:Name stringValue="echoOne"/>
+                                    <L7p:Xpath stringValue="/SOAP-ENV:Envelope/SOAP-ENV:Body/impl:echoOne"/>
+                                </L7p:value>
+                            </L7p:entry>
+                        </L7p:BindingOperations>
+                    </L7p:value>
+                </L7p:entry>
+            </L7p:Bindings>
+            <L7p:NamespaceMap mapValue="included">
+                <L7p:entry>
+                    <L7p:key stringValue="SOAP-ENV"/>
+                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                </L7p:entry>
+                <L7p:entry>
+                    <L7p:key stringValue="soapenv"/>
+                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                </L7p:entry>
+                <L7p:entry>
+                    <L7p:key stringValue="impl"/>
+                    <L7p:value stringValue="urn:EchoAttachmentsService"/>
+                </L7p:entry>
+                <L7p:entry>
+                    <L7p:key stringValue="xsd"/>
+                    <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                </L7p:entry>
+                <L7p:entry>
+                    <L7p:key stringValue="xsi"/>
+                    <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                </L7p:entry>
+            </L7p:NamespaceMap>
+        </L7p:RequestSwAAssertion>
+        <L7p:HardcodedResponse>
+            <L7p:Base64ResponseBody stringValue="PHNvYXBlbnY6RW52ZWxvcGUgeG1sbnM6c29hcGVudj0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iPgogICAgPHNvYXBlbnY6Qm9keT4KICAgIDwvc29hcGVudjpCb2R5Pgo8L3NvYXBlbnY6RW52ZWxvcGU+"/>
+        </L7p:HardcodedResponse>
+    </wsp:All>
+</wsp:Policy>

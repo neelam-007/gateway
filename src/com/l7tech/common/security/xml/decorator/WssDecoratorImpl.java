@@ -5,7 +5,6 @@
 package com.l7tech.common.security.xml.decorator;
 
 import com.ibm.xml.dsig.*;
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosUtils;
@@ -15,13 +14,19 @@ import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.KeyInfoDetails;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.XencUtil;
-import com.l7tech.common.security.xml.STRTransform;
+import com.l7tech.common.security.xml.AttachmentEntityResolver;
+import com.l7tech.common.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.mime.PartIterator;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -32,6 +37,7 @@ import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * @author mike
@@ -54,10 +60,12 @@ public class WssDecoratorImpl implements WssDecorator {
     private static class Context {
         SecureRandom rand = new SecureRandom();
         long count = 0;
+        Message message;
         Map idToElementCache = new HashMap();
         NamespaceFactory nsf = new NamespaceFactory();
         byte[] lastEncryptedKeyBytes = null;
         SecretKey lastEncryptedKeySecretKey = null;
+        AttachmentEntityResolver attachmentResolver;
 
         String getBase64EncodingTypeUri() {
             return SoapUtil.SECURITY_NAMESPACE.equals(nsf.getWsseNs())
@@ -78,15 +86,21 @@ public class WssDecoratorImpl implements WssDecorator {
      *
      * @param message the soap message to decorate
      */
-    public DecorationResult decorateMessage(Document message, DecorationRequirements dreq)
-      throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException {
+    public DecorationResult decorateMessage(Message message, DecorationRequirements dreq)
+      throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException, SAXException, IOException {
         final Context c = new Context();
-
+        c.message = message;
         c.nsf = dreq.getNamespaceFactory();
-        Element securityHeader = createSecurityHeader(message, c,
+        c.attachmentResolver = buildAttachmentEntityResolver(c, dreq);
+
+        // get writeable document after getting MIME part iterator
+        final Document soapMsg = message.getXmlKnob().getDocumentWritable();
+
+        Element securityHeader = createSecurityHeader(soapMsg, c,
                 dreq.getSecurityHeaderActor(), dreq.isSecurityHeaderReusable());
         Set<Element> signList = dreq.getElementsToSign();
         Set<Element> cryptList = dreq.getElementsToEncrypt();
+        Set<String> signPartList = dreq.getPartsToSign();
 
         Element timestamp = null;
         int timeoutMillis = dreq.getTimestampTimeoutMillis();
@@ -103,7 +117,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         // If we aren't signing the entire message, find extra elements to sign
-        if (dreq.isSignTimestamp() || !signList.isEmpty()) {
+        if (dreq.isSignTimestamp() || !signList.isEmpty() || !signPartList.isEmpty()) {
             if (timestamp == null)
                 timestamp = SoapUtil.addTimestamp(securityHeader,
                     c.nsf.getWsuNs(),
@@ -145,10 +159,10 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         // If there are any WSA headers in the message, and we are signing anything else, then sign them too
-        Element messageId = SoapUtil.getL7aMessageIdElement(message);
+        Element messageId = SoapUtil.getL7aMessageIdElement(soapMsg);
         if (messageId != null && !signList.isEmpty())
             signList.add(messageId);
-        Element relatesTo = SoapUtil.getL7aRelatesToElement(message);
+        Element relatesTo = SoapUtil.getL7aRelatesToElement(soapMsg);
         if (relatesTo != null && !signList.isEmpty())
             signList.add(relatesTo);
 
@@ -354,6 +368,8 @@ public class WssDecoratorImpl implements WssDecorator {
             signature = addSignature(c,
                 senderSigningKey,
                 signList.toArray(new Element[0]),
+                signPartList.toArray(new String[0]),
+                dreq.isSignPartHeaders(),
                 securityHeader,
                 signatureKeyInfo,
                 dreq.isSuppressSamlStrTransform());
@@ -759,10 +775,12 @@ public class WssDecoratorImpl implements WssDecorator {
     private Element addSignature(final Context c,
                                  Key senderSigningKey,
                                  Element[] elementsToSign,
+                                 String[] partsToSign,
+                                 boolean signPartHeaders,
                                  Element securityHeader,
-                                KeyInfoDetails keyInfoDetails,
-                                       boolean suppressSamlStrDereference)
-            throws DecoratorException, InvalidDocumentFormatException
+                                 KeyInfoDetails keyInfoDetails,
+                                 boolean suppressSamlStrDereference)
+            throws DecoratorException, InvalidDocumentFormatException, IOException
     {
 
         if (elementsToSign == null || elementsToSign.length < 1) return null;
@@ -839,6 +857,17 @@ public class WssDecoratorImpl implements WssDecorator {
             ref.addTransform(Transform.C14N_EXCLUSIVE);
             template.addReference(ref);
         }
+        for (int i = 0; i < partsToSign.length; i++) {
+            final String partIdentifier = partsToSign[i];
+            final String id = "cid:" + partIdentifier;
+
+            final Reference ref = template.createReference(id);
+            if ( signPartHeaders )
+                ref.addTransform(SoapUtil.TRANSFORM_ATTACHMENT_COMPLETE);
+            else
+                ref.addTransform(SoapUtil.TRANSFORM_ATTACHMENT_CONTENT);
+            template.addReference(ref);
+        }
         Element emptySignatureElement = template.getSignatureElement();
 
         // Ensure that CanonicalizationMethod has required c14n subelemen
@@ -860,15 +889,8 @@ public class WssDecoratorImpl implements WssDecorator {
                 return e;
             }
         });
-        sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
-        sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
-            public Transform getTransform(String s) throws NoSuchAlgorithmException {
-                if (SoapUtil.TRANSFORM_STR.equals(s)) {
-                    return new STRTransform(strTransformsNodeToNode);
-                }
-                return super.getTransform(s);
-            }
-        });
+        sigContext.setEntityResolver(c.attachmentResolver);
+        sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strTransformsNodeToNode));
         try {
             sigContext.sign(emptySignatureElement, senderSigningKey);
         } catch (XSignatureException e) {
@@ -1103,6 +1125,19 @@ public class WssDecoratorImpl implements WssDecorator {
         SoapUtil.setWsuId(element, wsuNs, id);
 
         return id;
+    }
+
+    private AttachmentEntityResolver buildAttachmentEntityResolver(final Context context,
+                                                                   final DecorationRequirements decorationRequirements)
+            throws IOException {
+        // only get MIME knob if we'll need it
+        MimeKnob mimeKnob = decorationRequirements.getPartsToSign().isEmpty() ?
+            null :
+            (MimeKnob) context.message.getKnob(MimeKnob.class);
+
+        PartIterator iterator = mimeKnob==null ? null : mimeKnob.getParts();
+
+        return new AttachmentEntityResolver(iterator, XmlUtil.getXss4jEntityResolver());
     }
 
     private Element addX509BinarySecurityToken(Element securityHeader, X509Certificate certificate, Context c)
