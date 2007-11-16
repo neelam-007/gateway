@@ -138,6 +138,7 @@ public class Wsdl {
         InputSource source = new InputSource(reader);
         WSDLFactory fac = WSDLFactory.newInstance();
         WSDLReader wsdlReader = fac.newWSDLReader();
+        wsdlReader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, wsdlReader);
         return new Wsdl(wsdlReader.readWSDL(documentBaseURI, source));
     }
@@ -159,6 +160,7 @@ public class Wsdl {
       throws WSDLException {
         WSDLFactory fac = WSDLFactory.newInstance();
         WSDLReader reader = fac.newWSDLReader();
+        reader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, reader);
         return new Wsdl(reader.readWSDL(documentBaseURI, wsdlDocument));
     }
@@ -235,6 +237,7 @@ public class Wsdl {
     public static Wsdl newInstance(final WSDLFactory fac, final WSDLLocator locator)
             throws WSDLException {
         WSDLReader wsdlReader = fac.newWSDLReader();
+        wsdlReader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, wsdlReader);
 
         return new Wsdl(wsdlReader.readWSDL(locator));
@@ -257,6 +260,7 @@ public class Wsdl {
       throws WSDLException {
         WSDLFactory fac = WSDLFactory.newInstance();
         WSDLReader reader = fac.newWSDLReader();
+        reader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, reader);
         return new Wsdl(reader.readWSDL(documentBaseURI, inputSource));
     }
