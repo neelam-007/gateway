@@ -272,7 +272,7 @@ public class MimeBody {
             int nextPart = 0;
 
             public boolean hasNext() throws IOException {
-                return nextPart < partInfos.size() || isMorePartsPossible() && readUpToPartNoThrow(nextPart + 1);
+                return nextPart < partInfos.size() || isMorePartsPossible() && readUpToPartNoThrow(nextPart);
             }
 
             public PartInfo next() throws IOException, NoSuchPartException {

@@ -257,9 +257,6 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                     break;  // This does not warrant a BAD_REQUEST.
                 }
 
-                // Forces body to be read. Neccessary for PartIterator to work. (Bug 3470)
-                partInfo.getInputStream(false).close();
-
                 final MimeHeader contentDispositionHeader = partInfo.getHeader("Content-Disposition");
                 if (contentDispositionHeader == null) {
                     throw new IOException("Missing Content-Disposition header in a multipart/form-data part. (part position=" + partPosition + ")");
@@ -333,9 +330,6 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                     _logger.info("Nested multipart/mixed may have improperly terminated MIME body.");
                     break;  // This does not warrant a BAD_REQUEST.
                 }
-
-                // Forces subpart body to be read. Neccessary for PartIterator to work.
-                subpartInfo.getInputStream(true).close();
 
                 final MimeHeader contentDispositionHeader = subpartInfo.getHeader("Content-Disposition");
                 if (contentDispositionHeader == null) {

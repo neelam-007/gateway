@@ -299,6 +299,31 @@ public class MimeBodyTest extends TestCase {
         assertEquals(22, parts.size());
     }
 
+    /**
+     * Test case for bug 3470.
+     *
+     * There was an off by one error in the part iteration logic that could
+     * cause the last part to be missed when iterating.
+     */
+    public void testIterationWithoutConsumption() throws Exception {
+        SwaTestcaseFactory stfu = new SwaTestcaseFactory(4, 1024*50, 33);
+        byte[] testMsg = stfu.makeTestMessage();
+        InputStream mess = new ByteArrayInputStream(testMsg);
+
+        MimeBody mm = new MimeBody(new ByteArrayStashManager(),
+                                                   ContentTypeHeader.parseValue("multipart/mixed; boundary=\"" +
+                                                                                new String(stfu.getBoundary()) + "\""),
+                                                   mess);
+
+        List parts = new ArrayList();
+        for (PartIterator i = mm.iterator(); i.hasNext(); ) {
+            PartInfo partInfo = i.next();
+            parts.add(partInfo);
+        }
+
+        assertEquals(4, parts.size());
+    }
+
     public void testContentLengthThatLies() throws Exception {
         final ContentTypeHeader ct = ContentTypeHeader.parseValue("multipart/related; boundary=blah");
         final String mess = "--blah\r\nContent-Length: 10\r\n\r\n\r\n--blah\r\n\r\n--blah--";
