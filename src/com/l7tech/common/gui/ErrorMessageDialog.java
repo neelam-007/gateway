@@ -183,7 +183,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
         // Check if the file does exist.
         File file = new File(fileName);
         if (file.exists()) {
-            int overwritten = JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+            int overwritten = JOptionPane.showConfirmDialog(this,
                                                       "Overwrite " + fileName + "?",
                                                       "Warning",
                                                       JOptionPane.YES_NO_OPTION);
@@ -198,12 +198,12 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
             fileWriter.write(getReportContent());
             fileWriter.flush();
         } catch (FileNotFoundException e) {
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+            JOptionPane.showMessageDialog(this,
                     fileName + " not found or no pemission to write it.",
                     "Warning",
                     JOptionPane.WARNING_MESSAGE);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+            JOptionPane.showMessageDialog(this,
                     "Cannot read/write the file " + fileName,
                     "Warning",
                     JOptionPane.WARNING_MESSAGE);
@@ -211,7 +211,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
             if (fileWriter != null) try {
                 fileWriter.close();
             } catch (IOException ioe) {
-                JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                JOptionPane.showMessageDialog(this,
                     "Cannot read/write the file " + fileName,
                     "Warning",
                     JOptionPane.WARNING_MESSAGE);
