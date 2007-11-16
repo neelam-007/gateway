@@ -4,10 +4,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.Collection;
+import java.util.Set;
+import java.util.Collections;
 
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
+import com.l7tech.common.util.Functions;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 /**
@@ -17,6 +20,8 @@ import com.l7tech.policy.assertion.annotation.ProcessesRequest;
  */
 @ProcessesRequest
 public class RequestSwAAssertion extends SwAAssertion {
+
+    private static final String FEATURE_SIGNED_ATTACHMENTS = "feature:SignedAttachments";
 
     /**
      * Default behaviour, fail if a request contains unbound extra attachments.
@@ -111,9 +116,9 @@ public class RequestSwAAssertion extends SwAAssertion {
         boolean requireSig = false;
 
         outer:
-        for (BindingInfo binding : (Collection<BindingInfo>) bindings.values()) {
+        for (BindingInfo binding : bindings.values()) {
             // for each operation of the binding found in assertion
-            for (BindingOperationInfo bo : (Collection<BindingOperationInfo>) binding.getBindingOperations().values()) {
+            for (BindingOperationInfo bo : binding.getBindingOperations().values()) {
                 // for each part in the operation
                 for (MimePartInfo part : (Collection<MimePartInfo>) bo.getMultipart().values()) {
                     if ( part.isRequireSignature() ) {
@@ -137,5 +142,23 @@ public class RequestSwAAssertion extends SwAAssertion {
         }
 
         return clone;
+    }
+
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(AssertionMetadata.FEATURE_SET_FACTORY, new Functions.Unary<Set<String>,Assertion>(){
+            public Set<String> call(final Assertion assertion) {
+                Set features = Collections.emptySet();
+
+                if ( ((RequestSwAAssertion)assertion).requiresSignature() ) {
+                    features = Collections.singleton(FEATURE_SIGNED_ATTACHMENTS);
+                }
+
+                return features;
+            }
+        });
+
+        return meta;
     }
 }

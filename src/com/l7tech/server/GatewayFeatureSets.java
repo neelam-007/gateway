@@ -83,6 +83,8 @@ public class GatewayFeatureSets {
     public static final String UI_AUDIT_WINDOW = "ui:AuditWindow";
     public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
 
+    public static final String FEATURE_SIGNED_ATTACHMENTS = "feature:SignedAttachments";
+
     private static final String SET_MODULAR_ASSERTIONS = "set:modularAssertions";
 
     static {
@@ -251,7 +253,8 @@ public class GatewayFeatureSets {
             ass(ResponseWssConfidentiality.class),
             ass(RequestWssReplayProtection.class),
             ass(RequestWssTimestamp.class),
-            ass(ResponseWssSecurityToken.class));
+            ass(ResponseWssSecurityToken.class),
+            misc(FEATURE_SIGNED_ATTACHMENTS, "Signed SOAP attachments.", null));
 
         // Message Validation/Transform
         GatewayFeatureSet validationAccel =

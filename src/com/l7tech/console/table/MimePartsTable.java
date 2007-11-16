@@ -18,7 +18,7 @@ public class MimePartsTable extends JTable {
 
     private MimePartsTableSorter tableSorter = null;
 
-    public MimePartsTable() {
+    public MimePartsTable(boolean enableSigning) {
 
         setModel(getMimePartsTableModel());
         getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX).setMinWidth(50);
@@ -27,8 +27,12 @@ public class MimePartsTable extends JTable {
         getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX).setPreferredWidth(120);
         getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX).setMinWidth(100);
         getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX).setPreferredWidth(120);
-        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX).setMinWidth(50);
-        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX).setPreferredWidth(70);
+        if (enableSigning) {
+            getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX).setMinWidth(50);
+            getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX).setPreferredWidth(70);
+        } else {
+            getColumnModel().removeColumn(getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_REQUIRE_SIGNATURE_COLUMN_INDEX));            
+        }
         getTableHeader().setReorderingAllowed(false);
         getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 

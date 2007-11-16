@@ -451,6 +451,21 @@ public interface AssertionMetadata {
     String FEATURE_SET_NAME = "featureSetName";
 
     /**
+     * Functions.Unary<Set<String>,Assertion> instance.
+     *
+     * <p>Allow an assertion to supply additional features that may be
+     * optional. This is primarily used when an assertion has some
+     * subset of functionality that is not enabled in all configurations.</p>
+     *
+     * <p>This factory should return all feature set names required for the
+     * configuration. Note that this is in addition to the assertions
+     * feature set and that should NOT be returned from this method.</p>
+     *
+     * <p>The default value is null.</p>
+     */
+    String FEATURE_SET_FACTORY = "featureSetFactory";
+
+    /**
      * Map<String, String[2]>.  Possibly-new cluster properties used by this assertion's server implementation, or null.
      * Keys are names of cluster properties (and server config keys).  Values are tuples of [description, default].
      * This is the same format returned by ClusterStatusAdmin#getKnownProperties.

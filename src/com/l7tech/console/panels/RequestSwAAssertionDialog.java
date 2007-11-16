@@ -11,6 +11,7 @@ import com.l7tech.console.table.MimePartsTable;
 import com.l7tech.console.table.ExtraMimePartsTable;
 import com.l7tech.console.table.ExtraMimePartsTableModel;
 import com.l7tech.console.util.SortedSingleColumnTableModel;
+import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
@@ -34,6 +35,7 @@ import java.util.List;
  */
 public class RequestSwAAssertionDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequestSwAPropertiesDialog", Locale.getDefault());
+    private static final String LICENSE_FEATURE_SIGNING = "feature:SignedAttachments";
 
     private JButton cancelButton;
     private JButton okButton;
@@ -44,9 +46,10 @@ public class RequestSwAAssertionDialog extends JDialog {
     private JScrollPane extraAttachmentsScrollPane;
     private JComboBox unmatchedAttachmentComboBox;
 
-    private RequestSwAAssertion assertion;
-    private RequestSwAAssertion originalAssertion;
-    private EventListenerList listenerList = new EventListenerList();
+    private final RequestSwAAssertion assertion;
+    private final RequestSwAAssertion originalAssertion;
+    private final EventListenerList listenerList = new EventListenerList();
+    private final boolean enableSigning;
     private SortedSingleColumnTableModel bindingOperationsTableModel = null;
     private JTable bindingOperationsTable = null;
     private MimePartsTable mimePartsTable = null;
@@ -60,6 +63,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         super(parent, resources.getString("window.title"), true);
         this.originalAssertion = assertion;
         this.assertion = (RequestSwAAssertion) originalAssertion.clone();
+        this.enableSigning = ConsoleLicenseManager.getInstance().isFeatureEnabled(LICENSE_FEATURE_SIGNING);
 
         initialize();
         populateData();
@@ -113,6 +117,11 @@ public class RequestSwAAssertionDialog extends JDialog {
                     saveExtraData((BindingOperationInfo) bindingOperationsTable.getModel().getValueAt(selectedOperationForBinding, 0));
                 }
                 assertion.setUnboundAttachmentPolicy(unmatchedAttachmentComboBox.getSelectedIndex());
+
+                // update signing
+                if ( !enableSigning ) {
+                    disableSignedAttachments(assertion.getBindings());
+                }
 
                 // update original assertion data
                 originalAssertion.setUnboundAttachmentPolicy(assertion.getUnboundAttachmentPolicy());
@@ -245,6 +254,18 @@ public class RequestSwAAssertionDialog extends JDialog {
         ((ExtraMimePartsTableModel)getExtraMimePartsTable().getModel()).setData(mimeParts);
     }
 
+    private void disableSignedAttachments(final Map<String,BindingInfo> bindings) {
+        for (BindingInfo binding : bindings.values()) {
+            // for each operation of the binding found in assertion
+            for (BindingOperationInfo bo : binding.getBindingOperations().values()) {
+                // for each part in the operation
+                for (MimePartInfo part : (Collection<MimePartInfo>) bo.getMultipart().values()) {
+                    part.setRequireSignature(false);
+                }
+            }
+        }
+    }
+
     /**
      * add the PolicyListener
      *
@@ -284,7 +305,7 @@ public class RequestSwAAssertionDialog extends JDialog {
 
     private MimePartsTable getMimePartsTable() {
         if(mimePartsTable == null) {
-            mimePartsTable = new MimePartsTable();
+            mimePartsTable = new MimePartsTable(enableSigning);
             final ButtonCellEditor editor = ButtonCellEditor.attach(mimePartsTable, 1);
             editor.getButton().addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {

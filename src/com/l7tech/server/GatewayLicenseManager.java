@@ -10,6 +10,7 @@ import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Background;
+import com.l7tech.common.util.Functions;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.objectmodel.*;
@@ -17,6 +18,8 @@ import com.l7tech.server.event.admin.ClusterPropertyEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
+
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -34,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.TimerTask;
+import java.util.Set;
 
 /**
  * Keeps track of license permissions.
@@ -382,6 +386,36 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
     }
 
     public boolean isAssertionEnabled(Assertion assertion) {
-        return isFeatureEnabled(assertion.getFeatureSetName());
+        // Get extra features factory for this assertion if any
+        Functions.Unary<Set<String>,Assertion> extraFeaturesFactory =
+            (Functions.Unary<Set<String>,Assertion>) assertion.meta().get(AssertionMetadata.FEATURE_SET_FACTORY);
+
+        String assertionFeatureSetName = assertion.getFeatureSetName();
+        boolean enabled = isFeatureEnabled( assertionFeatureSetName );
+
+        if ( enabled && extraFeaturesFactory != null ) {
+            // If there is an extra features checker it will return the
+            // required features for the given assertion
+            Set<String> features = extraFeaturesFactory.call(assertion);
+
+            if ( features != null ) {
+                for ( String feature : features ) {
+                    if ( !license.isFeatureEnabled( feature ) ) {
+                        enabled = false;
+
+                        if ( logger.isLoggable(Level.INFO) ) {
+                            logger.log(Level.INFO,
+                                    "Assertion ''{0}'', is disabled due to unlicensed feature ''{1}''.",
+                                    new String[]{assertionFeatureSetName, feature});
+                        }
+
+                        break;
+                    }
+                }
+
+            }
+        }
+
+        return enabled;
     }
 }

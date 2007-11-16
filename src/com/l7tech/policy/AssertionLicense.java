@@ -15,6 +15,10 @@ public interface AssertionLicense extends LicenseManager {
     /**
      * Check if the specified assertion is enabled by this AssertionLicense.
      *
+     * <p>The configuration for the assertion may be taken into account when
+     * determining if enabled. Be aware that different instances of the same
+     * assertion class may return different values.</p>
+     *
      * @param assertion the assertion to check.  Must not be null.
      * @return true only if the specified assertion is enabled by this assertion license.
      */
