@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #set the current working directory to where this script lives
+umask 0002
 cd `dirname $0`
 pushd .. > /dev/null
 SSG_ROOT=`pwd`

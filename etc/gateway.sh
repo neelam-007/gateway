@@ -1,4 +1,5 @@
 #!/bin/bash
+umask 0002
 
 if [ "$1" = "jpda" ] ; then
   if [ -z "$JPDA_TRANSPORT" ]; then
