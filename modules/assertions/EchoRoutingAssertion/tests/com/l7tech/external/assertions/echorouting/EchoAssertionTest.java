@@ -1,35 +1,36 @@
 package com.l7tech.external.assertions.echorouting;
 
 import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
+import com.l7tech.common.ApplicationContexts;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.console.util.SoapMessageGenerator;
+import com.l7tech.external.assertions.echorouting.server.ServerEchoRoutingAssertion;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.server.transport.http.HttpTransportModuleTester;
+import com.l7tech.server.audit.AuditContextStub;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
-import com.l7tech.server.audit.AuditContextStub;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.transport.http.HttpTransportModuleTester;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServicesHelper;
-import com.l7tech.external.assertions.echorouting.server.ServerEchoRoutingAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPMessage;
@@ -47,6 +48,7 @@ public class EchoAssertionTest extends TestCase {
     private static MockServletApi servletApi;
     private SoapMessageProcessingServlet messageProcessingServlet;
     private static ServicesHelper servicesHelper;
+    private static AssertionRegistry assReg;
 
     /**
      * test <code>EchoAssertionTest</code> constructor
@@ -60,14 +62,17 @@ public class EchoAssertionTest extends TestCase {
      * ServerPolicyFactoryTest <code>TestCase</code>
      */
     public static Test suite() throws Exception {
-        TestSuite suite = new TestSuite(EchoAssertionTest.class);
-        servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
-        servicesHelper = new ServicesHelper((ServiceAdmin)servletApi.getApplicationContext().getBean("serviceAdmin"));
-        initializeServicesAndPolicies();
-        return suite;
+        return new TestSuite(EchoAssertionTest.class);
     }
 
     public void setUp() throws Exception {
+        if (servletApi == null) {
+            servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
+            assReg = (AssertionRegistry) servletApi.getApplicationContext().getBean("assertionRegistry");
+            servicesHelper = new ServicesHelper((ServiceAdmin)servletApi.getApplicationContext().getBean("serviceAdmin"));
+            assReg.registerAssertion(EchoRoutingAssertion.class);
+        }
+        initializeServicesAndPolicies();
         HttpTransportModuleTester.setGlobalConnector(new SsgConnector() {
             public boolean offersEndpoint(Endpoint endpoint) {
                 return true;
