@@ -147,9 +147,20 @@ public class AppletMain extends JApplet implements SheetHolder {
 
     public void start() {
         setFocusable(true);
-        if (!getApplication().getMainWindow().isConnected()) {
+        if (! LogonDialog.isSameApplet()) {
             getApplication().getMainWindow().disconnectFromGateway();
             getApplication().getMainWindow().activateLogonDialog();
+        }
+    }
+
+    public void redirectToServlet() {
+        try {
+            // In the url adding a time is for solving the problem in IE (since IE caches applet page). 
+            URL url = new URL(getDocumentBase().toString() + "?" + System.currentTimeMillis());
+            getAppletContext().showDocument(url, "_self");
+        } catch (MalformedURLException e) {
+            DialogDisplayer.showMessageDialog(findAppletContainerFrame(), null,
+                    "The SecureSpan Manager internal error: invalid servlet URL.  Please contact your administrator.", e);
         }
     }
 
@@ -166,8 +177,16 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
     public void destroy() {
-        // Can't actually destroy anything, because it can't be destroyed completely (some singleton beans),
-        // and next call to init() would thus fail.
+        instances.remove(this);
+
+        // if instance is not empty, this means there are multiple ssg/tabs opened.
+        if (instances.isEmpty()) {
+            getApplication().getMainWindow().getDisconnectAction().actionPerformed(null);
+            getApplication().getMainWindow().unregisterComponents();
+            errorHandlerInstalled = false;
+            appletRootPane = null;
+            currentRootPaneOwner = null;
+        }
     }
 
     private static void notifyContentPaneStolen() {
@@ -211,6 +230,8 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
     private void gatherAppletParameters() {
+        if (LogonDialog.isSameApplet()) return;
+
         String port = getParameter("port");
 
         if (port == null || port.length() < 1) {
@@ -309,8 +330,9 @@ public class AppletMain extends JApplet implements SheetHolder {
                 setLayeredPane(getLayeredPane());
                 setContentPane(getContentPane());
                 setJMenuBar(null);
-                if (currentRootPaneOwner == AppletMain.this)
-                    currentRootPaneOwner = null;
+                if (currentRootPaneOwner == AppletMain.this) {
+                    AppletMain.this.destroy();
+                }
 
                 getContentPane().removeAll();
                 JLabel errorLabel = new JLabel("Layer 7 Technologies - SecureSpan Manager (Error; Reload to restart)");

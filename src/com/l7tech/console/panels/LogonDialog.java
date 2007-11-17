@@ -45,6 +45,7 @@ public class LogonDialog extends JDialog {
     /** Preconfigured credentials for applet. */
     private static String preconfiguredGatewayHostname;
     private static String preconfiguredSessionId;
+    private static String previousSessionId;
 
     /* the PasswordAuthentication instance with user supplied credentials */
     private PasswordAuthentication authenticationCredentials = null;
@@ -562,6 +563,7 @@ public class LogonDialog extends JDialog {
      * @param sessionId  the preconfigured session ID, or null to display the login dialog normally.
      */
     public static void setPreconfiguredSessionId(String sessionId) {
+        previousSessionId = preconfiguredSessionId;
         preconfiguredSessionId = sessionId;
     }
 
@@ -809,4 +811,12 @@ public class LogonDialog extends JDialog {
         void onAuthFailure();
     }
 
+    public static boolean isSameApplet() {
+        return (preconfiguredSessionId != null) &&
+                (preconfiguredSessionId.equals(previousSessionId));
+    }
+
+    public static boolean hasSessionId() {
+        return preconfiguredSessionId != null;
+    }
 }

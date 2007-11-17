@@ -3,11 +3,9 @@
  */
 package com.l7tech.server.admin;
 
-import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.common.audit.ServiceMessages;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.identity.User;
 import com.l7tech.server.KeystoreUtils;
 import org.springframework.web.context.WebApplicationContext;
@@ -15,7 +13,6 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -50,13 +47,11 @@ public class ManagerAppletServlet extends HttpServlet {
 
     private WebApplicationContext applicationContext;
     private KeystoreUtils keystoreUtils;
-    private AdminSessionManager adminSessionManager;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
         keystoreUtils = (KeystoreUtils) getBean("keystore", null);
-        adminSessionManager = (AdminSessionManager) getBean("adminSessionManager", AdminSessionManager.class);
     }
 
     private WebApplicationContext getContext() throws ServletException {
@@ -80,20 +75,12 @@ public class ManagerAppletServlet extends HttpServlet {
         Object userObj = hreq.getAttribute(ManagerAppletFilter.PROP_USER);
         if (!(userObj instanceof User))
             throw new ServletException("ManagerAppletServlet: request was not authenticated"); // shouldn't be possible
+
         final User user = (User)userObj;
-
-        // Establish a new admin session for the authenticated user
-        final Auditor auditor = new Auditor(this, getContext(), logger);
-        auditor.logAndAudit(ServiceMessages.APPLET_SESSION_CREATED, new String[] { getName(user) });
         getContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
-        String sessionId = adminSessionManager.createSession(user);
-
-        Cookie sessionCookie = new Cookie(ManagerAppletFilter.SESSION_ID_COOKIE_NAME, sessionId);
-        sessionCookie.setSecure(true);
 
         hresp.setContentType("text/html");
         hresp.setStatus(200);
-        hresp.addCookie(sessionCookie);
         OutputStream os = hresp.getOutputStream();
         PrintStream ps = new PrintStream(os);
         try {
@@ -116,17 +103,13 @@ public class ManagerAppletServlet extends HttpServlet {
             //emitParam(ps, "progresscolor", "black");
             emitParam(ps, "cache_option", "Plugin");
             emitParam(ps, "hostname", hreq.getServerName());
-            emitParam(ps, "sessionId", sessionId);
+            emitParam(ps, "sessionId", (String)hreq.getAttribute(ManagerAppletFilter.SESSION_ID_COOKIE_NAME));
             emitServerCertParam(ps);
             ps.print(APPLET_CLOSE);
             ps.print(PAGE_CLOSE);
         } finally {
             ps.close();
         }
-    }
-
-    private static String getName(User user) {
-        return user.getName() == null ? user.getLogin() : user.getName();
     }
 
     private void emitServerCertParam(PrintStream ps) throws IOException {

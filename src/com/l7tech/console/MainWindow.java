@@ -169,6 +169,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     public static final String TITLE = "SSG Management Console";
     public static final String NAME = "main.window"; // registered
     private EventListenerList listenerList = new WeakEventListenerList();
+    private LogonListener closeWindowListener;
     // cached credential manager
     private String connectionContext = "";
     private String connectionID = "";
@@ -767,8 +768,14 @@ public class MainWindow extends JFrame implements SheetHolder {
                * @param event the event that occured
                */
               public void actionPerformed(ActionEvent event) {
+
                   SwingUtilities.invokeLater(new Runnable() { public void run() {
-                      LogonDialog.logon(TopComponents.getInstance().getTopParent(), logonListenr);
+                      if (isApplet() && ! LogonDialog.hasSessionId()) {
+                          AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
+                          applet.redirectToServlet();
+                      } else {
+                          LogonDialog.logon(TopComponents.getInstance().getTopParent(), logonListenr);
+                      }
                   }});
               }
           };
@@ -781,7 +788,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      *
      * @return the disconnect <CODE>Action</CODE> implementation
      */
-    private Action getDisconnectAction() {
+    public Action getDisconnectAction() {
         if (disconnectAction != null) return disconnectAction;
         String atext = resapplication.getString("DisconnectMenuItem.name");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/disconnect.gif"));
@@ -804,13 +811,6 @@ public class MainWindow extends JFrame implements SheetHolder {
                       SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
                       if (securityProvider != null) securityProvider.logoff();
                       LogonDialog.setPreconfiguredSessionId(null);
-
-                      if (isApplet()) {
-                          DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                                            "To securely log out, close all browser windows now.\n",
-                                                            "Secure Log Out",
-                                                            JOptionPane.WARNING_MESSAGE, null);
-                      }
                   } catch (ActionVetoException e) {
                       // action vetoed
                   }
@@ -2153,6 +2153,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         initializeHTMLRenderingKit();
         installInactivityTimerEventListener();
         installCascadingErrorHandler();
+        installClosingWindowHandler();
     }
 
     /**
@@ -2348,6 +2349,21 @@ public class MainWindow extends JFrame implements SheetHolder {
         addLogonListener(handler);
 
         errorManager.pushHandler(handler);
+    }
+
+    /**
+     * Install a handler to close all opened windows when ssg is disconnected.
+     */
+    private void installClosingWindowHandler () {
+        closeWindowListener = new LogonListener(){
+            public void onLogon(LogonEvent e) {}
+
+            public void onLogoff(LogonEvent e) {
+                closeAllWindows();
+            }
+        };
+
+       addLogonListener(closeWindowListener); 
     }
 
     /**
@@ -2744,5 +2760,34 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
 
         DialogDisplayer.showSheet(this, sheet);
+    }
+
+    public void unregisterComponents() {
+        TopComponents.getInstance().unregisterComponent(AssertionsTree.NAME);
+        TopComponents.getInstance().unregisterComponent(IdentityProvidersTree.NAME);
+        TopComponents.getInstance().unregisterComponent(ServicesTree.NAME);
+        TopComponents.getInstance().unregisterComponent(ProgressBar.NAME);
+        TopComponents.getInstance().unregisterComponent("mainWindow");
+    }
+
+    private void closeAllWindows() {
+        // Find and destroy dialogs
+        Window[] owned = TopComponents.getInstance().getTopParent().getOwnedWindows();
+        if (owned != null) {
+            for (Window window : owned) {
+                window.dispose();
+            }
+        }
+
+        // Find and dispose windows (gets windows our applet owns)
+        Frame topFrame = TopComponents.getInstance().getTopParent();
+        Frame[] frames = Frame.getFrames();
+        if (frames != null) {
+            for (Frame frame : frames) {
+                if (frame != topFrame) {
+                    frame.dispose();
+                }
+            }
+        }
     }
 }

@@ -195,6 +195,11 @@
         <servlet-class>com.l7tech.server.BackupServlet</servlet-class>
     </servlet>
 
+    <servlet>
+        <servlet-name>ssgLoginFormServlet</servlet-name>
+        <servlet-class>com.l7tech.server.admin.SSGLoginFormServlet</servlet-class>
+    </servlet>
+
     <servlet-mapping>
         <servlet-name>admin</servlet-name>
         <url-pattern>/ssg/manager/*</url-pattern>

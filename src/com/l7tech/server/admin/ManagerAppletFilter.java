@@ -28,7 +28,6 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.event.system.AdminAppletEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -37,7 +36,6 @@ import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.spring.remoting.RemoteUtils;
@@ -64,6 +62,7 @@ import java.util.logging.Logger;
  */
 public class ManagerAppletFilter implements Filter {
     private static final Logger logger = Logger.getLogger(ManagerAppletFilter.class.getName());
+    public static final String RELOGIN = "Relogin due to incorrect username or password";
     public static final String PROP_CREDS = "ManagerApplet.authenticatedCredentials";
     public static final String PROP_USER = "ManagerApplet.authenticatedUser";
     public static final String SESSION_ID_COOKIE_NAME = "sessionId";
@@ -81,7 +80,6 @@ public class ManagerAppletFilter implements Filter {
     private SoapFaultManager soapFaultManager;
 
     private ServerAssertion dogfoodPolicy;
-    private ServerHttpBasic dogfoodHttpBasic;
     private Document fakeDoc;
     private String codebasePrefix;
 
@@ -111,12 +109,10 @@ public class ManagerAppletFilter implements Filter {
 
         CompositeAssertion dogfood = new AllAssertion();
         dogfood.addChild(new SslAssertion(false));
-        dogfood.addChild(new HttpBasic());
         fakeDoc = XmlUtil.createEmptyDocument("placeholder", "l7", "http://www.l7tech.com/ns/placeholder");
 
         try {
             dogfoodPolicy = serverPolicyFactory.compilePolicy(dogfood, false);
-            dogfoodHttpBasic = (ServerHttpBasic)serverPolicyFactory.compilePolicy(new HttpBasic(), false);
         } catch (ServerPolicyException e) {
             throw new ServletException("Configuration error; could not compile dogfood policy", e);
         } catch (LicenseException e) {
@@ -165,9 +161,7 @@ public class ManagerAppletFilter implements Filter {
             }
 
             if (authResult != AuthResult.OK) {
-                // Already audited a detail message
-                hresp.setStatus(status = 403);
-                hresp.sendError(403, "Not authorized");
+                filterConfig.getServletContext().getNamedDispatcher("ssgLoginFormServlet").include(hreq, hresp);
                 return;
             }
 
@@ -248,7 +242,7 @@ public class ManagerAppletFilter implements Filter {
     }
 
     // If this method returns, an audit detail message has been added.
-    private AuthResult authenticate(HttpServletRequest hreq, HttpServletResponse hresp, PolicyEnforcementContext context, Auditor auditor) throws IOException {
+    private AuthResult authenticate(HttpServletRequest hreq, HttpServletResponse hresp, PolicyEnforcementContext context, Auditor auditor) throws ServletException, IOException {
         // Check if already auth'd
         if (hreq.getAttribute(ManagerAppletFilter.PROP_USER) != null) {
             // we've already seen this request (dispatched)
@@ -268,9 +262,11 @@ public class ManagerAppletFilter implements Filter {
                                 sessionId.toCharArray(),
                                 CredentialFormat.OPAQUETOKEN,
                                 CookieCredentialSourceAssertion.class);
+                        context.addCredentials(creds);
                         hreq.setAttribute(PROP_CREDS, creds);
                         hreq.setAttribute(PROP_USER, user);
-                        auditor.logAndAudit(ServiceMessages.APPLET_AUTH_COOKIE_SUCCESS, new String[] { getName(user) });
+                        hreq.setAttribute(ManagerAppletFilter.SESSION_ID_COOKIE_NAME, sessionId);
+                        auditor.logAndAudit(ServiceMessages.APPLET_AUTH_COOKIE_SUCCESS, getName(user));
                         return AuthResult.OK;
                     }
                 }
@@ -279,41 +275,54 @@ public class ManagerAppletFilter implements Filter {
 
         try {
             final AssertionStatus result = dogfoodPolicy.checkRequest(context);
-            if (result == AssertionStatus.NONE && context.getLastCredentials() != null) {
-                final LoginCredentials credentials = context.getLastCredentials();
-            
-                AdminLoginResult loginResult =
-                        adminLogin.login(credentials.getLogin(), new String(credentials.getCredentials()));
+            if (result == AssertionStatus.NONE) {
+                String username = hreq.getParameter("username");
+                String password = hreq.getParameter("password");
+                if (username == null || password == null) {
+                    filterConfig.getServletContext().getNamedDispatcher("ssgLoginFormServlet").include(hreq, hresp);
+                    return AuthResult.CHALLENGED;
+                }
 
+                // Check authentication
+                AdminLoginResult loginResult = adminLogin.login(username, password);
                 final User user = loginResult.getUser();
-                hreq.setAttribute(PROP_CREDS, context.getLastCredentials());
-                hreq.setAttribute(PROP_USER, user);
-                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_SUCCESS, new String[] { getName(user) });
-                return AuthResult.OK;
+                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_SUCCESS, getName(user));
+
+                // Establish a new admin session for the authenticated user
+                String sessionId = adminSessionManager.createSession(user);
+                auditor.logAndAudit(ServiceMessages.APPLET_SESSION_CREATED, getName(user));
+
+                Cookie sessionCookie = new Cookie(ManagerAppletFilter.SESSION_ID_COOKIE_NAME, sessionId);
+                sessionCookie.setSecure(true);
+                hresp.addCookie(sessionCookie);
+
+                hresp.sendRedirect(hreq.getRequestURI());
+                return AuthResult.CHALLENGED;
             }
         } catch (LoginException e) {
-            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)});
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, ExceptionUtils.getMessage(e));
             // Fall through and either challenge or send error message
             logger.log(Level.FINE, "Error authenticating administrator, " + ExceptionUtils.getMessage(e), e);
+
+            // For the case - incorrect username and password
+            hreq.setAttribute(RELOGIN, "YES");
+            return AuthResult.FAIL;
         } catch (PolicyAssertionException e) {
-            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)});
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, ExceptionUtils.getMessage(e));
             // Fall through and either challenge or send error message
             logger.log(Level.FINE, "Error authenticating administrator, " + ExceptionUtils.getMessage(e), e);
         }
-
         // Ensure that we send back a challenge withour 401
         HttpServletResponseKnob hsrespKnob =
                 (HttpServletResponseKnob)context.getResponse().getKnob(HttpServletResponseKnob.class);
-        if (!hsrespKnob.hasChallenge())
-            dogfoodHttpBasic.challenge(context);
 
         hsrespKnob.beginChallenge();
-        sendChallenge(hresp);
+        sendChallenge(hreq, hresp);
         auditor.logAndAudit(ServiceMessages.APPLET_AUTH_CHALLENGE);
         return AuthResult.CHALLENGED;
     }
 
-    private void sendChallenge(HttpServletResponse hresp) throws IOException
+    private void sendChallenge(HttpServletRequest hreq, HttpServletResponse hresp) throws ServletException, IOException
     {
         ServletOutputStream sos = null;
         try {
@@ -321,6 +330,7 @@ public class ManagerAppletFilter implements Filter {
             hresp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             sos = hresp.getOutputStream();
             sos.print("Authentication Required");
+            filterConfig.getServletContext().getNamedDispatcher("ssgLoginFormServlet").include(hreq, hresp);
         } finally {
             if (sos != null) sos.close();
         }
@@ -346,7 +356,7 @@ public class ManagerAppletFilter implements Filter {
      *
      * @param hreq The HttpServletRequest
      * @param hresp The HttpServletResponse
-     * @param auditor The auditor to which a detail message will be added if a class is downloaded 
+     * @param auditor The auditor to which a detail message will be added if a class is downloaded
      * @return true if the request has been handled (so no further action should be taken)
      * @throws java.io.IOException if there is a problem loading or transmitting the class
      */
@@ -362,7 +372,7 @@ public class ManagerAppletFilter implements Filter {
                 byte[] data = customAssertionsRegistrar.getAssertionClass(className);
                 if (data != null) {
                     handled = true;
-                    auditor.logAndAudit(ServiceMessages.APPLET_AUTH_CLASS_DOWNLOAD, new String[] {className});
+                    auditor.logAndAudit(ServiceMessages.APPLET_AUTH_CLASS_DOWNLOAD, className);
                     sendClass(hresp, data);
                 }
             }
@@ -482,7 +492,7 @@ public class ManagerAppletFilter implements Filter {
             byte[] data = module.getResourceBytes(filePath);
             if (data != null) {
                 handled = true;
-                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_MODULE_CLASS_DL, new String[] {filePath, module.getName()});
+                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_MODULE_CLASS_DL, filePath, module.getName());
                 sendClass(hresp, data);
             }
         }
