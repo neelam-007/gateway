@@ -280,7 +280,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 status = AssertionStatus.UNDEFINED;
                 status = doDeferredAssertions(context);
             }
-            
+
             context.setPolicyResult(status);
 
             // Run response through WssDecorator if indicated
@@ -535,7 +535,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             // If any service does not use WSS then don't prefer DOM
             for (PublishedService service : serviceSet) {
-                if (!service.isWssInPolicy()) {
+                if (!service.getPolicy().isWssInPolicy()) {
                     preferDom = false;
                     break;
                 }

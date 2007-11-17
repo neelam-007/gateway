@@ -283,21 +283,21 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             // make sure this service is indeed anonymously accessible
             if (systemAllowsAnonymousDownloads(req)) {
             } else if (results == null || results.length < 1) {
-                if (!policyAllowAnonymous(svc)) {
+                if (!policyAllowAnonymous(svc.getPolicy())) {
                     logger.info("user denied access to service description");
                     res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "you need to provide valid credentials to see this service's description");
                     return;
                 }
             } else { // otherwise make sure the requestor is authorized for this policy
                 boolean ok = false;
-                if (!policyAllowAnonymous(svc)) {
+                if (!policyAllowAnonymous(svc.getPolicy())) {
                     User requestor = null;
                     for (AuthenticationResult result : results) {
                         requestor = result.getUser();
                         if (userCanSeeThisService(requestor, svc)) ok = true;
                     }
                     if (!ok) {
-                        logger.info("user denied access to service description " + requestor + " " + svc.getPolicyXml());
+                        logger.info("user denied access to service description " + requestor + " " + svc.getPolicy().getXml());
                         res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "these credentials do not grant you access to this service description.");
                         return;
                     }
@@ -321,7 +321,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 return;
             }
             // Is there anything to show?
-            Collection services = listres.allowed();
+            Collection<PublishedService> services = listres.allowed();
             if (services.size() < 1) {
                 if ((results == null || results.length < 1) && listres.anyServices() && req.isSecure()) {
                     sendAuthChallenge(res);
@@ -378,7 +378,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         for (int i = 0; i < portlist.getLength(); i++) {
             Element portel = (Element)portlist.item(i);
             // get child http://schemas.xmlsoap.org/wsdl/soap/ 'address'
-            List addresses = XmlUtil.findChildElementsByName(portel, "http://schemas.xmlsoap.org/wsdl/soap/", "address");
+            //noinspection unchecked
+            List<Element> addresses = XmlUtil.findChildElementsByName(portel, "http://schemas.xmlsoap.org/wsdl/soap/", "address");
             // change the location attribute with new URL
             for (Object address1 : addresses) {
                 Element address = (Element) address1;
@@ -398,7 +399,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         try{
             if (System.getProperty(PROPERTY_WSSP_ATTACH)==null ||
                 Boolean.getBoolean(PROPERTY_WSSP_ATTACH)) {
-                Assertion rootassertion = wspReader.parsePermissively(svc.getPolicyXml());
+                Assertion rootassertion = wspReader.parsePermissively(svc.getPolicy().getXml());
                 if (Assertion.contains(rootassertion, WsspAssertion.class)) {
                     // remove any existing policy
                     XmlUtil.stripNamespace(wsdl.getDocumentElement(), SoapUtil.WSP_NAMESPACE2);
@@ -458,7 +459,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             }
 
             try {
-                Assertion rootAssertion = wspReader.parsePermissively(svc.getPolicyXml());
+                Assertion rootAssertion = wspReader.parsePermissively(svc.getPolicy().getXml());
                 Assertion effectivePolicy = clientPolicyFilterManager.applyAllFilters(user, rootAssertion);
                 SslAssertion sslAssertion = (SslAssertion) getFirstChild(effectivePolicy, SslAssertion.class);
                 if (!secureRequest && sslAssertion != null && sslAssertion.getOption()==SslAssertion.REQUIRED) {
@@ -504,7 +505,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection services) throws IOException {
+    private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection<PublishedService> services) throws IOException {
         String uri = req.getRequestURI();
         uri = uri.replaceAll("wsil", "wsdl");
         String output = createWSILDoc(req, services, req.getServerName(), req.getServerPort(), uri);
@@ -515,14 +516,14 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     interface ListResults {
-        Collection allowed();
+        Collection<PublishedService> allowed();
         boolean anyServices();
     }
 
     private ListResults listAllServices() throws FindException {
-        final Collection allServices = serviceManager.findAll();
+        final Collection<PublishedService> allServices = serviceManager.findAll();
         return new ListResults() {
-            public Collection allowed() {
+            public Collection<PublishedService> allowed() {
                 return allServices;
             }
             public boolean anyServices() {
@@ -539,15 +540,14 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             throws IOException, FindException
     {
         // get all services
-        final Collection allServices = serviceManager.findAll();
+        final Collection<PublishedService> allServices = serviceManager.findAll();
 
         // prepare output collection
-        final Collection output = new ArrayList();
+        final Collection<PublishedService> output = new ArrayList<PublishedService>();
 
         // decide which ones make the cut
-        for (Object allService : allServices) {
-            PublishedService svc = (PublishedService) allService;
-            if (policyAllowAnonymous(svc)) {
+        for (PublishedService svc : allServices) {
+            if (policyAllowAnonymous(svc.getPolicy())) {
                 output.add(svc);
             } else if (results != null) {
                 for (AuthenticationResult result : results) {
@@ -559,7 +559,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
 
         return new ListResults() {
-            public Collection allowed() {
+            public Collection<PublishedService> allowed() {
                 return output;
             }
             public boolean anyServices() {
@@ -571,7 +571,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private boolean userCanSeeThisService(User requestor, PublishedService svc) throws IOException {
         // start at the top
         Assertion rootassertion;
-        rootassertion = wspReader.parsePermissively(svc.getPolicyXml());
+        rootassertion = wspReader.parsePermissively(svc.getPolicy().getXml());
         return checkForIdPotential(rootassertion, requestor);
     }
 
@@ -594,6 +594,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         } else if (assertion instanceof CompositeAssertion) {
             CompositeAssertion root = (CompositeAssertion)assertion;
             Iterator i = root.getChildren().iterator();
+            //noinspection WhileLoopReplaceableByForEach
             while (i.hasNext()) {
                 Assertion kid = (Assertion)i.next();
                 if (checkForIdPotential(kid, requestor)) return true;
@@ -607,18 +608,16 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         String urival = service.getRoutingUri();
         if (urival == null) urival = "";
         String nsval = "";
-        Set nsparams = nsResolver.getDistinctParameters(service);
+        Set<String> nsparams = nsResolver.getDistinctParameters(service);
         // pick the first one not null or empty
-        for (Object nsparam : nsparams) {
-            String s = (String) nsparam;
+        for (String s : nsparams) {
             if (s != null) nsval = s;
             if (s != null && s.length() > 0) break;
         }
         String sactionval = "";
-        Set sactionparams = sactionResolver.getDistinctParameters(service);
+        Set<String> sactionparams = sactionResolver.getDistinctParameters(service);
         // pick the first one not null or empty
-        for (Object sactionparam : sactionparams) {
-            String s = (String) sactionparam;
+        for (String s : sactionparams) {
             if (s != null) sactionval = s;
             if (s != null && s.length() > 0) break;
         }
@@ -635,7 +634,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return false;
     }
 
-    private String createWSILDoc(HttpServletRequest req, Collection services, String host, int port, String uri) {
+    private String createWSILDoc(HttpServletRequest req, Collection<PublishedService> services, String host, int port, String uri) {
         /*  Format of document:
             <?xml version="1.0"?>
             <inspection xmlns="http://schemas.xmlsoap.org/ws/2001/10/inspection/">
@@ -651,8 +650,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
           "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL() + "\"?>\n" +
           "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\">\n");
         // for each service
-        for (Object service : services) {
-            PublishedService svc = (PublishedService) service;
+        for (PublishedService svc : services) {
             if (svc.isSoap()) {
                 try {
                     String query;
@@ -699,8 +697,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         else  if (in instanceof CompositeAssertion) {
             CompositeAssertion comp = (CompositeAssertion) in;
             List kids = comp.getChildren();
-            for (Object kid : kids) {
-                Assertion current = (Assertion) kid;
+            //noinspection ForLoopReplaceableByForEach
+            for (Iterator iterator = kids.iterator(); iterator.hasNext();) {
+                Assertion current = (Assertion) iterator.next();
                 assertion = getFirstChild(current, assertionClass);
                 if (assertion != null) {
                     break;

@@ -1,15 +1,12 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.AuditAssertionDialog;
-import com.l7tech.console.tree.policy.AuditAssertionTreeNode;
+import com.l7tech.console.tree.policy.AuditAssertionPolicyNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -22,12 +19,15 @@ import java.util.logging.Level;
  * Display properties dialog for AuditAssertion.
  */
 public class AuditAssertionPropertiesAction extends SecureAction {
-    private AuditAssertionTreeNode subject;
+    private final AuditAssertionPolicyNode subject;
+    private final boolean readOnly;
 
-    public AuditAssertionPropertiesAction(AuditAssertionTreeNode subject) {
+    public AuditAssertionPropertiesAction(AuditAssertionPolicyNode subject, boolean readOnly) {
         super(null, AuditAssertion.class);
+        this.readOnly = readOnly;
         this.subject = subject;
     }
+
     public String getName() {
         return "Audit Assertion Properties";
     }
@@ -44,7 +44,7 @@ public class AuditAssertionPropertiesAction extends SecureAction {
         Level thresold;
         thresold = Registry.getDefault().getAuditAdmin().serverMessageAuditThreshold();
 
-        final AuditAssertionDialog aad = new AuditAssertionDialog(TopComponents.getInstance().getTopParent(), subject.getAssertion(), thresold.getName());
+        final AuditAssertionDialog aad = new AuditAssertionDialog(TopComponents.getInstance().getTopParent(), subject.asAssertion(), thresold.getName(), readOnly);
         aad.pack();
         Utilities.centerOnScreen(aad);
         Utilities.setEscKeyStrokeDisposes(aad);

@@ -24,6 +24,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.AuthenticatableHttpServlet;
@@ -211,7 +212,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     final PublishedService targetService = resolveService(Long.parseLong(serviceId));
                     if (targetService == null) throw new IllegalStateException("Service not found ("+serviceId+")"); // caught by us in doGet and doPost
 
-                    final Assertion policy = targetService.rootAssertion();
+                    final Assertion policy = targetService.getPolicy().getAssertion();
                     return new PolicyService.ServiceInfo() {
                         public Assertion getPolicy() {
                             return policy;
@@ -319,6 +320,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             return;
         } catch(UnsupportedOperationException uoe) {
             returnError(res, "internal error" + uoe.getMessage());
+            return;
+        } catch (PolicyAssertionException e) {
+            returnError(res, "internal error" + e.getMessage());
             return;
         }
 

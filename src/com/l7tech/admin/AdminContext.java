@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.admin;
 
@@ -14,14 +12,11 @@ import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 
-/**
- * @author emil
- * @version Dec 2, 2004
- */
 public interface AdminContext {
     /**
      * Retrieve the server admin protocol version string.
@@ -104,4 +99,10 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     TransportAdmin getTransportAdmin() throws SecurityException;
+
+    /**
+     * @return the Policy admin interface implementation.
+     * @throws SecurityException on security error accessing the interface
+     */
+    PolicyAdmin getPolicyAdmin() throws SecurityException;
 }

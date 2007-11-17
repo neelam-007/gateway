@@ -1,10 +1,12 @@
 package com.l7tech.policy;
 
+import com.l7tech.common.policy.PolicyType;
+import com.l7tech.common.policy.Policy;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.validator.DefaultPolicyValidator;
-import com.l7tech.service.PublishedService;
-
-import java.util.Iterator;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ReadOnlyEntityManager;
 
 /**
  * A class for validating policies.
@@ -23,38 +25,36 @@ import java.util.Iterator;
  * @version 1.0
  */
 public abstract class PolicyValidator {
-    /**
-     * Protected constructor, the <code>PolicyValidator</code> instances
-     * are obtained using factory methods.
-     */
-    protected PolicyValidator() {
-    }
+    protected final ReadOnlyEntityManager<Policy, EntityHeader> policyFinder;
+    private final PolicyPathBuilderFactory pathBuilderFactory;
 
     /**
-     * Obtain the default policy validator
-     *
-     * @return the policy validator instance
+     * Protected constructor, the <code>PolicyValidator</code> instances
+     * are obtained using Spring
      */
-    public static PolicyValidator getDefault() {
-        return new DefaultPolicyValidator();
+    protected PolicyValidator(ReadOnlyEntityManager<Policy, EntityHeader> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
+        this.policyFinder = policyFinder;
+        this.pathBuilderFactory = pathBuilderFactory;
     }
 
     /**
      * Validates the specified assertion tree.
      */
-    public PolicyValidatorResult validate(Assertion assertion, PublishedService service, AssertionLicense assertionLicense) throws InterruptedException {
-        if (assertion == null) {
-            throw new IllegalArgumentException();
-        }
+    public PolicyValidatorResult validate(Assertion assertion, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) throws InterruptedException {
         assertion.treeChanged();
-        PolicyPathResult path = PolicyPathBuilder.getDefault().generate(assertion);
 
         // where to collect the result
         PolicyValidatorResult result = new PolicyValidatorResult();
+        PolicyPathResult path;
+        try {
+            path = pathBuilderFactory.makePathBuilder().generate(assertion);
+        } catch (PolicyAssertionException e) {
+            result.addError(new PolicyValidatorResult.Error(e.getAssertion(), null, e.getMessage(), e));
+            return result;
+        }
 
-        for (Iterator iterator = path.paths().iterator(); iterator.hasNext();) {
-            AssertionPath assertionPath = (AssertionPath)iterator.next();
-            validatePath(assertionPath, result, service, assertionLicense);
+        for (AssertionPath assertionPath : path.paths()) {
+            validatePath(assertionPath, policyType, wsdl, soap, assertionLicense, result);
         }
         return result;
     }
@@ -63,8 +63,11 @@ public abstract class PolicyValidator {
      * Validate the the asserion path and collect the result into the validator result
      *
      * @param ap the assertion path to validate
+     * @param policyType
+     * @param wsdl
+     * @param soap @throws InterruptedException if the thread is interrupted while validating
      * @param r  the result collect parameter
      * @throws InterruptedException if the thread is interrupted while validating
      */
-    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) throws InterruptedException;
+    abstract public void validatePath(AssertionPath ap, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense, PolicyValidatorResult r) throws InterruptedException;
 }

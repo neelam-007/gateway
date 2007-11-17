@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
@@ -17,12 +20,6 @@ import java.util.logging.Level;
 
 /**
  * Action for viewing or editing the properties of a TimeRange assertion.
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 19, 2004<br/>
- * $Id$
  */
 public class TimeRangePropertiesAction extends SecureAction {
     public TimeRangePropertiesAction(TimeRangeTreeNode subject) {
@@ -44,7 +41,7 @@ public class TimeRangePropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        TimeRangePropertiesDialog dlg = new TimeRangePropertiesDialog(f, false, subject.getTimeRange());
+        TimeRangePropertiesDialog dlg = new TimeRangePropertiesDialog(f, false, subject.asAssertion());
         dlg.addPolicyListener(listener);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

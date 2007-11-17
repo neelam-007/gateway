@@ -164,7 +164,7 @@ public class PolicyProcessingTest extends TestCase {
             ps.setOid(oid++);
             ps.setName(serviceInfo[0].substring(1));
             ps.setRoutingUri(serviceInfo[0]);
-            ps.setPolicyXml(new String(loadResource(serviceInfo[1])));
+            ps.getPolicy().setXml(new String(loadResource(serviceInfo[1])));
             ps.setSoap(true);
 
             if (serviceInfo.length > 2) {

@@ -82,4 +82,9 @@
         <property name="target" ref="transportAdmin_UNSECURED"/>
         <property name="proxyInterfaces" value="com.l7tech.common.transport.TransportAdmin"/>
     </bean>
+
+    <bean id="policyAdmin" parent="rbacIntercepted">
+        <property name="target" ref="policyAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.common.policy.PolicyAdmin"/>
+    </bean>
 </beans>

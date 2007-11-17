@@ -1,5 +1,7 @@
 package com.l7tech.identity;
 
+import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.xml.TestDocuments;
@@ -211,7 +213,7 @@ public class StubDataStore {
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(assertion, bo);
 
-            service.setPolicyXml(bo.toString());
+            service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), true));
             encoder.writeObject(service);
             populate(service);
         }

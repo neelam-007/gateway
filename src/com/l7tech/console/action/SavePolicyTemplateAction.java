@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
@@ -22,9 +25,6 @@ import java.util.logging.Logger;
 /**
  * The <code>SavePolicyTemplateAction</code> action saves the policy as
  * as template assertion tree element.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
  */
 public class SavePolicyTemplateAction extends SecureAction {
     static final Logger log = Logger.getLogger(SavePolicyTemplateAction.class.getName());
@@ -81,7 +81,7 @@ public class SavePolicyTemplateAction extends SecureAction {
         try {
             templateDir = new File(
               homePath +
-              File.separator + PoliciesFolderNode.TEMPLATES_DIR);
+              File.separator + PolicyTemplatesFolderNode.TEMPLATES_DIR);
             if (!templateDir.exists()) {
                 if (!templateDir.mkdir())
                     throw new IOException("Cannot create " + templateDir.getPath());
@@ -150,7 +150,7 @@ public class SavePolicyTemplateAction extends SecureAction {
         if (tree != null) {
             AbstractTreeNode node =
               (AbstractTreeNode)TreeNodeActions.
-              nodeByName(PoliciesFolderNode.NAME,
+              nodeByName(PolicyTemplatesFolderNode.NAME,
                 (DefaultMutableTreeNode)tree.getModel().getRoot());
             if (node != null) {
                 TreeNode[] nodes = node.getPath();

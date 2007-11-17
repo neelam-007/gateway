@@ -19,6 +19,8 @@ import org.springframework.context.ApplicationContextAware;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.concurrent.Callable;
 
 /**
  * This is for getting a tree of ServerAssertion objects from the corresponding Assertion objects (data).
@@ -27,11 +29,32 @@ import java.util.Iterator;
 public class ServerPolicyFactory implements ApplicationContextAware {
     private final AssertionLicense licenseManager;
     private ApplicationContext applicationContext;
-    static ThreadLocal<Boolean> licenseEnforcement = new ThreadLocal<Boolean>() {
-        protected Boolean initialValue() {
-            return null;
+    private static ThreadLocal<LinkedList<Boolean>> licenseEnforcement = new ThreadLocal<LinkedList<Boolean>>() {
+        protected LinkedList<Boolean> initialValue() {
+            return new LinkedList<Boolean>();
         }
     };
+
+    /**
+     * Execute the provided Callable with license enforcement set (or unset), then restore it after it's done
+     * @throws Exception alas.
+     */
+    static <T> T doWithEnforcement(boolean enforcement, Callable<T> callable) throws Exception {
+        try {
+            licenseEnforcement.get().push(enforcement);
+            return callable.call();
+        } finally {
+            licenseEnforcement.get().pop();
+        }
+    }
+
+    /**
+     * @return the current license enforcement flag
+     * @throws NullPointerException if the flag has not yet been set
+     */
+    boolean isLicenseEnforcement() throws NullPointerException {
+        return licenseEnforcement.get().peek();
+    }
 
     public ServerPolicyFactory(AssertionLicense licenseManager) {
         this.licenseManager = licenseManager;
@@ -47,22 +70,29 @@ public class ServerPolicyFactory implements ApplicationContextAware {
      * @throws ServerPolicyException if this policy subtree could not be compiled
      * @throws LicenseException if this policy subtree made use of an unlicensed assertion
      */
-    public ServerAssertion compilePolicy(Assertion genericAssertion, boolean licenseEnforcement) throws ServerPolicyException, LicenseException {
-        try {
-            if (licenseEnforcement) {
-                // Scan for UnknownAssertion, and treat as license failure
-                Iterator it = genericAssertion.preorderIterator();
-                while (it.hasNext()) {
-                    final Object assertion = it.next();
-                    if (assertion instanceof UnknownAssertion)
-                        throw new LicenseException(((UnknownAssertion)assertion).getDetailMessage());
-                }
+    public ServerAssertion compilePolicy(final Assertion genericAssertion, boolean licenseEnforcement) throws ServerPolicyException, LicenseException {
+        if (licenseEnforcement) {
+            // Scan for UnknownAssertion, and treat as license failure
+            Iterator it = genericAssertion.preorderIterator();
+            while (it.hasNext()) {
+                final Object assertion = it.next();
+                if (assertion instanceof UnknownAssertion)
+                    throw new LicenseException(((UnknownAssertion)assertion).getDetailMessage());
             }
+        }
 
-            ServerPolicyFactory.licenseEnforcement.set(licenseEnforcement);
-            return doMakeServerAssertion(genericAssertion);
-        } finally {
-            ServerPolicyFactory.licenseEnforcement.set(null);
+        Callable<ServerAssertion> c = new Callable<ServerAssertion>() {
+            public ServerAssertion call() throws Exception {
+                return doMakeServerAssertion(genericAssertion);
+            }
+        };
+
+        try {
+            return doWithEnforcement(licenseEnforcement, c);
+        } catch (ServerPolicyException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ServerPolicyException(genericAssertion, e);
         }
     }
 
@@ -85,10 +115,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
      */
     private ServerAssertion doMakeServerAssertion(Assertion genericAssertion) throws ServerPolicyException, LicenseException {
         try {
-            Boolean le = licenseEnforcement.get();
-            if (le == null)
-                throw new IllegalStateException("No license enforcement state set; use compilePolicy() instead of compileSubtree()");
-            if (le && !licenseManager.isAssertionEnabled(genericAssertion))
+            if (isLicenseEnforcement() && !licenseManager.isAssertionEnabled(genericAssertion))
                 throw new LicenseException("The specified assertion is not supported on this Gateway: " + genericAssertion.getClass());
 
             // Prevent Tarari assertions from being loaded on non-Tarari SSGs

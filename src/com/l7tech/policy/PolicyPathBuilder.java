@@ -1,6 +1,10 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.common.policy.Policy;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ReadOnlyEntityManager;
 
 import java.util.logging.Logger;
 
@@ -26,15 +30,6 @@ public abstract class PolicyPathBuilder {
     }
 
     /**
-     * Obtain the default policy validator
-     *
-     * @return the policy validator instance
-     */
-    public static PolicyPathBuilder getDefault() {
-        return new DefaultPolicyPathBuilder();
-    }
-
-    /**
      * Generate the policy path result (policy assertion paths for
      * the <code>Assertion</code> tree.
      *
@@ -42,5 +37,5 @@ public abstract class PolicyPathBuilder {
      * path for.
      * @return the result of the build
      */
-    abstract public PolicyPathResult generate(Assertion assertion) throws InterruptedException;
+    abstract public PolicyPathResult generate(Assertion assertion) throws InterruptedException, PolicyAssertionException;
 }

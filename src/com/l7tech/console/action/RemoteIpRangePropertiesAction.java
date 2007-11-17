@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.DialogDisplayer;
@@ -15,12 +18,6 @@ import java.util.logging.Logger;
 
 /**
  * Action for viewing or editing the properties of a RemoteIpRange assertion.
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 23, 2004<br/>
- * $Id$<br/>
  */
 public class RemoteIpRangePropertiesAction extends SecureAction {
 
@@ -43,7 +40,7 @@ public class RemoteIpRangePropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(f, false, subject.getAssertion());
+        final RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(f, false, subject.asAssertion());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

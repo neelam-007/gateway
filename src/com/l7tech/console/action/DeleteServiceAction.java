@@ -2,13 +2,14 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.util.Functions;
-import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.panels.HomePagePanel;
+import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.ServicesTree;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -18,9 +19,6 @@ import java.util.logging.Logger;
 
 /**
  * The <code>DeleteServiceAction</code> action deletes the service
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
  */
 public class DeleteServiceAction extends ServiceNodeAction {
     static final Logger log = Logger.getLogger(DeleteServiceAction.class.getName());
@@ -75,7 +73,7 @@ public class DeleteServiceAction extends ServiceNodeAction {
                 Runnable runnable = new Runnable() {
                     public void run() {
                         final TopComponents creg = TopComponents.getInstance();
-                        JTree tree = (JTree)creg.getComponent(ServicesTree.NAME);
+                        JTree tree = (JTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         model.removeNodeFromParent(node);
 
@@ -86,10 +84,13 @@ public class DeleteServiceAction extends ServiceNodeAction {
                                 return;
                             }
                             PolicyEditorPanel pe = (PolicyEditorPanel)jc;
-                            PublishedService svc = pe.getServiceNode().getPublishedService();
-                            // if currently edited service was deleted
-                            if (serviceNode.getPublishedService().getOid() == svc.getOid()) {
+                            PolicyEntityNode pn = pe.getPolicyNode();
+                            if (pn instanceof ServiceNode) {
+                                PublishedService svc = ((ServiceNode) pn).getPublishedService();
+                                // if currently edited service was deleted
+                                if (serviceNode.getPublishedService().getOid() == svc.getOid()) {
                                 cws.setComponent(new HomePagePanel());
+                                }
                             }
                         } catch (Exception e) {
                             throw new RuntimeException(e);

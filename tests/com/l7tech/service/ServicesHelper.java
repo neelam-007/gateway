@@ -1,9 +1,12 @@
 package com.l7tech.service;
 
+import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.wsp.WspWriter;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -13,6 +16,7 @@ import java.util.Collection;
 /**
  * The test class that helps preparing and publishing services in the
  * test mode
+ *
  * @author emil
  * @version 21-Mar-2005
  */
@@ -25,8 +29,9 @@ public class ServicesHelper {
 
     /**
      * Deletes all the test services
-     * @throws FindException on find error
-     * @throws DeleteException  on delete error
+     *
+     * @throws FindException   on find error
+     * @throws DeleteException on delete error
      */
     public void deleteAllServices() throws FindException, DeleteException {
         EntityHeader[] headers = serviceAdmin.findAllPublishedServices();
@@ -38,7 +43,8 @@ public class ServicesHelper {
 
     /**
      * Publish the test service returning the <code>ServiceDescriptor</code>
-     * @param name the service name
+     *
+     * @param name         the service name
      * @param wsdlResource the wsdl resource to use
      * @param policy
      * @return the service descritpor corresponding to the published service
@@ -46,16 +52,14 @@ public class ServicesHelper {
     public ServiceDescriptor publish(String name, String wsdlResource, final Assertion policy)
             throws IOException, SAXException, SaveException, VersionException, UpdateException, PolicyAssertionException {
 
-        ServiceDescriptor descriptor =
-          new ServiceDescriptor(name, TestDocuments.getTestDocumentAsXml(wsdlResource), policy);
-             PublishedService ps = new PublishedService() {
-                public synchronized Assertion rootAssertion() throws IOException {
-                    return policy;
-                }
-            };
-            ps.setName(name);
-            ps.setWsdlXml(descriptor.wsdlXml);
-            serviceAdmin.savePublishedService(ps);
+        ServiceDescriptor descriptor = new ServiceDescriptor(
+                name, TestDocuments.getTestDocumentAsXml(wsdlResource), policy
+        );
+        PublishedService ps = new PublishedService();
+        ps.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, WspWriter.getPolicyXml(policy), true));
+        ps.setName(name);
+        ps.setWsdlXml(descriptor.wsdlXml);
+        serviceAdmin.savePublishedService(ps);
         return descriptor;
     }
 
@@ -65,21 +69,25 @@ public class ServicesHelper {
         for (int i = 0; i < headers.length; i++) {
             EntityHeader header = headers[i];
             PublishedService service = serviceAdmin.findServiceByID(header.getStrId());
-            descriptors.add(new ServiceDescriptor(service.getName(), service.getWsdlXml(), service.rootAssertion()));
+            descriptors.add(
+                    new ServiceDescriptor(
+                            service.getName(), service.getWsdlXml(), service.getPolicy().getAssertion()
+                    )
+            );
         }
-        return (ServiceDescriptor[])descriptors.toArray(new ServiceDescriptor[] {});
+        return (ServiceDescriptor[]) descriptors.toArray(new ServiceDescriptor[]{});
     }
 
     public static class ServiceDescriptor {
-         final String name;
-         final String wsdlXml;
-         final Assertion policy;
+        final String name;
+        final String wsdlXml;
+        final Assertion policy;
 
-         public ServiceDescriptor(String name, String wsdlXml, Assertion policy) {
-             this.name = name;
-             this.policy = policy;
-             this.wsdlXml = wsdlXml;
-         }
+        public ServiceDescriptor(String name, String wsdlXml, Assertion policy) {
+            this.name = name;
+            this.policy = policy;
+            this.wsdlXml = wsdlXml;
+        }
 
         public String getName() {
             return name;

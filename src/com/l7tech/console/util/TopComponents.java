@@ -6,10 +6,13 @@ import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.PermissionRefreshListener;
+import com.l7tech.console.tree.PoliciesFolderNode;
+import com.l7tech.console.tree.ServicesFolderNode;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.policy.AssertionFinder;
 import com.l7tech.policy.AssertionRegistry;
+import org.springframework.context.ApplicationContext;
 
 import javax.swing.*;
 import java.awt.*;
@@ -69,6 +72,14 @@ public class TopComponents {
         MainWindow mw = getMainWindow();
         if (mw != null)
             mw.disconnectFromGateway();
+    }
+
+    public PoliciesFolderNode getPoliciesFolderNode() {
+        return getMainWindow().getPoliciesFolderNode();
+    }
+
+    public ServicesFolderNode getServicesFolderNode() {
+        return getMainWindow().getServicesFolderNode();
     }
 
     public void updateNodeNameInStatusMessage(String oldGatewayName, String newName) {

@@ -4,9 +4,6 @@ import com.l7tech.console.action.RequestSizeLimitDialogAction;
 import com.l7tech.policy.assertion.RequestSizeLimit;
 
 import javax.swing.*;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Created by IntelliJ IDEA.
@@ -36,16 +33,5 @@ public class RequestSizeLimitTreeNode extends LeafAssertionTreeNode{
 
     public Action getPreferredAction() {
         return new RequestSizeLimitDialogAction(this);
-    }
-
-    public boolean canDelete() {
-        return true;
-    }
-
-    public Action[] getActions() {
-        List list = new ArrayList();
-        list.add(getPreferredAction());
-        list.addAll(Arrays.asList(super.getActions()));
-        return (Action[]) list.toArray(new Action[list.size()]);
     }
 }

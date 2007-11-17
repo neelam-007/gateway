@@ -97,6 +97,7 @@
                 <idref bean="keystoreFileManager"/>
                 <idref bean="revocationCheckPolicyManager"/>
                 <idref bean="ssgConnectorManager"/>
+                <idref bean="policyManager"/>
             </list>
         </property>
     </bean>

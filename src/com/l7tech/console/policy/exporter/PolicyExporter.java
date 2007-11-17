@@ -1,38 +1,37 @@
+/**
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.policy.exporter;
 
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.JmsRoutingAssertion;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.policy.wsp.WspWriter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.FileOutputStream;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Collection;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Exports a Policy to an XML file that contains details of all external
  * references necessary to be able to re-import on another SSM.
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Jul 16, 2004<br/>
  */
 public class PolicyExporter {
     private final Logger logger = Logger.getLogger(PolicyExporter.class.getName());
@@ -41,17 +40,17 @@ public class PolicyExporter {
         // do policy to xml
         Document policydoc = XmlUtil.stringToDocument(WspWriter.getPolicyXml(rootAssertion));
         // go through each assertion and list external dependencies
-        Collection refs = new ArrayList();
+        Collection<ExternalReference> refs = new ArrayList<ExternalReference>();
         traverseAssertionTreeForReferences(rootAssertion, refs);
         // add external dependencies to document
         Element referencesEl = wrapExportReferencesToPolicyDocument(policydoc);
-        serializeReferences(referencesEl, (ExternalReference[])refs.toArray(new ExternalReference[0]));
+        serializeReferences(referencesEl, refs.toArray(new ExternalReference[0]));
         return policydoc;
     }
 
     private void serializeReferences(Element referencesEl, ExternalReference[] references) {
-        for (int i = 0; i < references.length; i++) {
-            references[i].serializeToRefElement(referencesEl);
+        for (ExternalReference reference : references) {
+            reference.serializeToRefElement(referencesEl);
         }
     }
 
@@ -72,12 +71,12 @@ public class PolicyExporter {
     /**
      * Recursively go through an assertion tree populating the references as necessary.
      */
-    private void traverseAssertionTreeForReferences(Assertion rootAssertion, Collection refs) {
+    private void traverseAssertionTreeForReferences(Assertion rootAssertion, Collection<ExternalReference> refs) {
         if (rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion ca = (CompositeAssertion)rootAssertion;
-            List children = ca.getChildren();
-            for (Iterator i = children.iterator(); i.hasNext();) {
-                Assertion child = (Assertion)i.next();
+            //noinspection unchecked
+            List<Assertion> children = ca.getChildren();
+            for (Assertion child : children) {
                 traverseAssertionTreeForReferences(child, refs);
             }
         } else {
@@ -89,7 +88,7 @@ public class PolicyExporter {
      * Adds ExternalReference instances to refs collestion in relation to the assertion
      * if applicable
      */
-    private void appendRelatedReferences(Assertion assertion, Collection refs) {
+    private void appendRelatedReferences(Assertion assertion, Collection<ExternalReference> refs) {
         ExternalReference ref = null;
         // create the appropriate reference if applicable
         if (assertion instanceof SpecificUser || assertion instanceof MemberOfGroup) {
@@ -106,11 +105,9 @@ public class PolicyExporter {
             if (sva.getResourceInfo() instanceof StaticResourceInfo) {
                 StaticResourceInfo sri = (StaticResourceInfo)sva.getResourceInfo();
                 try {
-                    ArrayList listOfImports = ExternalSchemaReference.listImports(XmlUtil.stringToDocument(sri.getDocument()));
-                    for (Iterator iterator = listOfImports.iterator(); iterator.hasNext();) {
-                        ExternalSchemaReference.ListedImport unresolvedImport = (ExternalSchemaReference.ListedImport)iterator.next();
-                        ExternalSchemaReference esref = new ExternalSchemaReference(unresolvedImport.name,
-                                                                                    unresolvedImport.tns);
+                    ArrayList<ExternalSchemaReference.ListedImport> listOfImports = ExternalSchemaReference.listImports(XmlUtil.stringToDocument(sri.getDocument()));
+                    for (ExternalSchemaReference.ListedImport unresolvedImport : listOfImports) {
+                        ExternalSchemaReference esref = new ExternalSchemaReference(unresolvedImport.name, unresolvedImport.tns);
                         if (!refs.contains(esref)) {
                             refs.add(esref);
                         }
@@ -121,7 +118,10 @@ public class PolicyExporter {
                     // about external references
                 }
             }
+        } else if (assertion instanceof Include) {
+            ref = new IncludedPolicyReference((Include) assertion);
         }
+
         // if an assertion was created and it's not already recorded, add it
         if (ref != null && !refs.contains(ref)) {
             refs.add(ref);
@@ -132,6 +132,9 @@ public class PolicyExporter {
         Element exportRoot = originalPolicy.createElementNS(ExporterConstants.EXPORTED_POL_NS,
                                                             ExporterConstants.EXPORTED_DOCROOT_ELNAME);
         exportRoot.setAttribute("xmlns:" + ExporterConstants.EXPORTED_POL_PREFIX, ExporterConstants.EXPORTED_POL_NS);
+        exportRoot.setAttribute("xmlns:L7p", WspConstants.L7_POLICY_NS);
+        exportRoot.setAttribute("xmlns:wsp", WspConstants.WSP_POLICY_NS);
+
         exportRoot.setPrefix(ExporterConstants.EXPORTED_POL_PREFIX);
         exportRoot.setAttribute(ExporterConstants.VERSION_ATTRNAME, ExporterConstants.CURRENT_VERSION);
         Element referencesEl = originalPolicy.createElementNS(ExporterConstants.EXPORTED_POL_NS,
@@ -144,6 +147,7 @@ public class PolicyExporter {
         return referencesEl;
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public static boolean isExportedPolicy(Document doc) {
         Element rootel = doc.getDocumentElement();
         if (rootel == null || rootel.getNamespaceURI() == null) return false;

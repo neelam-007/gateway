@@ -1,19 +1,17 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.action;
 
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.service.PublishedService;
 
-/**
- * @author alex
- */
 public abstract class ServiceNodeAction extends NodeAction {
     protected final ServiceNode serviceNode;
 
@@ -64,7 +62,12 @@ public abstract class ServiceNodeAction extends NodeAction {
         if (sn == null) {
             PolicyTree tree = (PolicyTree) TopComponents.getInstance().getPolicyTree();
             PolicyEditorPanel pep = tree.getPolicyEditorPanel();
-            if (pep != null) sn = pep.getServiceNode();
+            if (pep != null) {
+                PolicyEntityNode pn = pep.getPolicyNode();
+                if (pn instanceof ServiceNode) {
+                    sn = (ServiceNode) pn;
+                }
+            }
         }
         return sn;
     }

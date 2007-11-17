@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.admin.rmi;
 
@@ -9,6 +7,7 @@ import com.l7tech.admin.AdminContext;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
@@ -41,6 +40,7 @@ public class AdminContextImpl
     private final KerberosAdmin kerberosAdmin;
     private final RbacAdmin rbacAdmin;
     private final TransportAdmin transportAdmin;
+    private final PolicyAdmin policyAdmin;
 
     public AdminContextImpl(IdentityAdmin identityAdmin,
                             AuditAdmin auditAdmin,
@@ -53,7 +53,9 @@ public class AdminContextImpl
                             SchemaAdmin schemaAdmin,
                             KerberosAdmin kerberosAdmin,
                             RbacAdmin rbacAdmin,
-                            TransportAdmin transportAdmin) {
+							TransportAdmin transportAdmin,
+							PolicyAdmin policyAdmin)
+    {
         this.identityAdmin = identityAdmin;
         this.auditAdmin = auditAdmin;
         this.serviceAdmin = serviceAdmin;
@@ -66,6 +68,7 @@ public class AdminContextImpl
         this.kerberosAdmin = kerberosAdmin;
         this.rbacAdmin = rbacAdmin;
         this.transportAdmin = transportAdmin;
+        this.policyAdmin = policyAdmin;
     }
 
     public String getVersion() {
@@ -124,48 +127,25 @@ public class AdminContextImpl
         return transportAdmin;
     }
 
-    public void afterPropertiesSet() throws Exception {
-        checkServices();
+    public PolicyAdmin getPolicyAdmin() throws SecurityException {
+        return policyAdmin;
     }
 
-    private void checkServices() {
-        if (identityAdmin == null) {
-            throw new IllegalArgumentException("Identity Admin is required");
-        }
-        if (auditAdmin == null) {
-            throw new IllegalArgumentException("Audit Admin is required");
-        }
+    public void afterPropertiesSet() throws Exception {
+        check(identityAdmin, "Identity Admin is required");
+        check(auditAdmin, "Audit Admin is required");
+        check(customAssertionsRegistrar, "Custom Assertions Registrar is required");
+        check(serviceAdmin, "Service Admin is required");
+        check(jmsAdmin, "Jms Admin is required");
+        check(ftpAdmin, "FTP Admin is required");
+        check(trustedCertAdmin, "Trusted Cert Admin is required");
+        check(kerberosAdmin, "Kerberos Admin is required");
+        check(rbacAdmin, "RBAC Admin is required");
+        check(transportAdmin, "Transport Admin is required");
+        check(policyAdmin, "Policy Admin is required");
+    }
 
-        if (customAssertionsRegistrar == null) {
-            throw new IllegalArgumentException("Custom Assertions Registrar is required");
-        }
-
-        if (serviceAdmin == null) {
-            throw new IllegalArgumentException("Service Admin is required");
-        }
-
-        if (jmsAdmin == null) {
-            throw new IllegalArgumentException("Jms Admin is required");
-        }
-
-        if (ftpAdmin == null) {
-            throw new IllegalArgumentException("FTP Admin is required");
-        }
-
-        if (trustedCertAdmin == null) {
-            throw new IllegalArgumentException("Trusted Cert Admin is required");
-        }
-
-        if (kerberosAdmin == null) {
-            throw new IllegalArgumentException("Kerberos Admin is required");
-        }
-
-        if (rbacAdmin == null) {
-            throw new IllegalArgumentException("RBAC Admin is required");
-        }
-
-        if (transportAdmin == null) {
-            throw new IllegalArgumentException("Transport Admin is required");
-        }
+    private void check(final Object what, final String why) {
+        if (what == null) throw new IllegalArgumentException(why);
     }
 }

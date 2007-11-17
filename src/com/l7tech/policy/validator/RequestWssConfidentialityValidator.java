@@ -4,7 +4,7 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
-import com.l7tech.service.PublishedService;
+import com.l7tech.common.xml.Wsdl;
 import org.jaxen.dom.DOMXPath;
 
 import java.util.logging.Logger;
@@ -47,7 +47,7 @@ public class RequestWssConfidentialityValidator implements AssertionValidator {
         }
     }
 
-    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         if (errString != null) {
             result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
             return;

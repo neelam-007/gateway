@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  *
  * $Id$
  */
@@ -14,17 +14,14 @@ import com.l7tech.objectmodel.Entity;
  * <p>
  * The {@link #source} is the updated object, and the included {@link com.l7tech.server.event.EntityChangeSet} gives access
  * to the old and new values on a per-property basis.
- *  
- * @author alex
- * @version $Revision$
  */
-public class Updated extends PersistenceEvent {
-    public Updated(Entity entity, EntityChangeSet changes, String note ) {
+public class Updated<ET extends Entity> extends PersistenceEvent<ET> {
+    public Updated(ET entity, EntityChangeSet changes, String note ) {
         super(entity, note );
         this.changeSet = changes;
     }
                                                 
-    public Updated(Entity original, EntityChangeSet changes) {
+    public Updated(ET original, EntityChangeSet changes) {
         this(original, changes, null);
     }
 

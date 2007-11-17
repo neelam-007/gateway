@@ -15,25 +15,25 @@ import java.awt.event.MouseEvent;
 import java.util.logging.Logger;
 
 /**
- * Class ServiceTree is the speciaqliced <code>JTree</code> that
- * handles service
+ * Class ServiceTree is the specialized <code>JTree</code> that
+ * handles services and policies
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class ServicesTree extends JTree implements Refreshable {
-    static Logger log = Logger.getLogger(ServicesTree.class.getName());
+public class ServicesAndPoliciesTree extends JTree implements Refreshable {
+    static Logger log = Logger.getLogger(ServicesAndPoliciesTree.class.getName());
 
     /**
      * component name
      */
-    public final static String NAME = "services.tree";
+    public final static String NAME = "servicesAndPolicies.tree";
 
     /**
      * Create the new policy tree with the policy model.
      *
      * @param newModel
      */
-    public ServicesTree(DefaultTreeModel newModel) {
+    public ServicesAndPoliciesTree(DefaultTreeModel newModel) {
         super(newModel);
         initialize();
         getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
@@ -42,7 +42,7 @@ public class ServicesTree extends JTree implements Refreshable {
     /**
      * Create empty policy tree
      */
-    public ServicesTree() {
+    public ServicesAndPoliciesTree() {
         this(null);
     }
 
@@ -109,11 +109,14 @@ public class ServicesTree extends JTree implements Refreshable {
             int keyCode = e.getKeyCode();
             if (keyCode == KeyEvent.VK_DELETE) {
                 if (!node.canDelete()) return;
-                if (node instanceof ServiceNode)
+                if (node instanceof ServiceNode) {
                     new DeleteServiceAction((ServiceNode)node).actionPerformed(null);
+                } else if (node instanceof PolicyEntityNode) {
+                    new DeletePolicyAction((PolicyEntityNode)node).actionPerformed(null);
+                }
             } else if (keyCode == KeyEvent.VK_ENTER) {
-                if (node instanceof ServiceNode)
-                    new EditServicePolicyAction((ServiceNode)node).actionPerformed(null);
+                if (node instanceof PolicyEntityNode)
+                    new EditPolicyAction((PolicyEntityNode)node).actionPerformed(null);
             }
         }
     }
@@ -130,8 +133,8 @@ public class ServicesTree extends JTree implements Refreshable {
             AbstractTreeNode node =
               (AbstractTreeNode)path.getLastPathComponent();
             if (node == null) return;
-            if (node instanceof ServiceNode)
-                new EditServicePolicyAction((ServiceNode)node).actionPerformed(null);
+            if (node instanceof PolicyEntityNode)
+                new EditPolicyAction((PolicyEntityNode)node).actionPerformed(null);
         }
 
         public void mousePressed(MouseEvent e) {
@@ -170,7 +173,7 @@ public class ServicesTree extends JTree implements Refreshable {
                     }
                     AbstractTreeNode node = (AbstractTreeNode)tree.getLastSelectedPathComponent();
 
-                    JPopupMenu menu = node.getPopupMenu(ServicesTree.this);
+                    JPopupMenu menu = node.getPopupMenu(ServicesAndPoliciesTree.this);
                     if (menu != null) {
                         Utilities.removeToolTipsFromMenuItems(menu);
                         menu.setFocusable(false);

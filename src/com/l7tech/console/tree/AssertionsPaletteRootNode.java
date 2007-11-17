@@ -31,7 +31,7 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
         // We don't allow modular assertions to invite themselves into this folder, so we don't call
         // insertMatchingModularAssertions here.
 
-        List nodeList = new LinkedList();
+        List<AbstractPaletteFolderNode> nodeList = new LinkedList<AbstractPaletteFolderNode>();
         nodeList.add(new AccessControlFolderNode());
         nodeList.add(new TransportLayerSecurityFolderNode());
         nodeList.add(new XmlSecurityFolderNode());
@@ -41,6 +41,7 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
         nodeList.add(new AuditFolderNode());
         nodeList.add(new PolicyLogicFolderNode());
         nodeList.add(new ThreatProtectionFolderNode());
+        nodeList.add(new PolicyFragmentsPaletteFolderNode());
 
         for (Iterator i = nodeList.iterator(); i.hasNext();) {
             AbstractPaletteFolderNode node = (AbstractPaletteFolderNode)i.next();
@@ -49,9 +50,9 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
 
         // include the policy templates even if empty
         if (!TopComponents.getInstance().isApplet())
-            nodeList.add(new PoliciesFolderNode());
+            nodeList.add(new PolicyTemplatesFolderNode());
 
-        AbstractTreeNode[] nodes = (AbstractTreeNode[])nodeList.toArray(new AbstractTreeNode[]{});
+        AbstractTreeNode[] nodes = nodeList.toArray(new AbstractTreeNode[]{});
 
         children = null;
         for (int i = 0; i < nodes.length; i++) {

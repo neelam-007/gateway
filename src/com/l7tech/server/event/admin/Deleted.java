@@ -12,12 +12,12 @@ import com.l7tech.objectmodel.Entity;
  * @author alex
  * @version $Revision$
  */
-public class Deleted extends PersistenceEvent {
-    public Deleted(Entity entity, String note ) {
+public class Deleted<ET extends Entity> extends PersistenceEvent<ET> {
+    public Deleted(ET entity, String note ) {
         super(entity, note );
     }
 
-    public Deleted(Entity entity) {
+    public Deleted(ET entity) {
         super(entity);
     }
 }

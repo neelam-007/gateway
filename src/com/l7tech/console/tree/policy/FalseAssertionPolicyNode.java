@@ -1,11 +1,9 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.FalseAssertion;
-
-import javax.swing.*;
 
 /**
  * Class FalseAssertionPolicyNode is a policy node that corresponds the
@@ -23,35 +21,6 @@ public class FalseAssertionPolicyNode extends LeafAssertionTreeNode {
     public String getName() {
         return "Stop processing";
     }
-
-    /**
-     * Test if the node can be deleted.
-     *
-     * @return always true
-     */
-    public boolean canDelete() {
-        return true;
-    }
-
-    /**
-     * Gets the default action for this node.
-     *
-     * @return <code>null</code> indicating there should be none default action
-     */
-    public Action getPreferredAction() {
-        return null;
-    }
-
-    /**
-     * Get the set of actions associated with this node.
-     * This may be used e.g. in constructing a context menu.
-     *
-     * @return actions appropriate to the node
-     */
-    public Action[] getActions() {
-        return super.getActions();
-    }
-
 
     /**
      * subclasses override this method specifying the resource name

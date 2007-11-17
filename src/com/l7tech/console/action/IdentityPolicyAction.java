@@ -4,20 +4,20 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.tree.policy.IdentityAssertionTreeNode;
 import com.l7tech.console.tree.policy.IdentityPolicyView;
+import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Cookie;
 import com.l7tech.objectmodel.FindException;
 
 import java.awt.*;
 import java.io.IOException;
 import java.util.logging.Logger;
-
+import java.util.Iterator;
 
 /**
  * The <code>IdentityPolicyAction</code> action views the identity
  * policy for user or group.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
  */
 public class IdentityPolicyAction extends SecureAction {
     static final Logger log = Logger.getLogger(IdentityPolicyAction.class.getName());
@@ -72,4 +72,16 @@ public class IdentityPolicyAction extends SecureAction {
         }
     }
 
+    @Override
+    public boolean isAuthorized() {
+        return getServiceNodeCookie() != null && super.isAuthorized();
+    }
+
+    private ServiceNode getServiceNodeCookie() {
+        for (Iterator i = ((AbstractTreeNode)assertion.getRoot()).cookies(); i.hasNext();) {
+            Object value = ((Cookie)i.next()).getValue();
+            if (value instanceof ServiceNode) return (ServiceNode)value;
+        }
+        return null;
+    }
 }

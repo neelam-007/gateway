@@ -8,7 +8,7 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.service.PublishedService;
+import com.l7tech.common.xml.Wsdl;
 
 /**
  * <code>AssertionValidator</code> implementations validate the assertion.
@@ -27,8 +27,9 @@ public interface AssertionValidator {
      * validator result.
      *
      * @param path    the assertion path where the assertion is located
-     * @param service the published service where this assertion
+     * @param wsdl    the WSDL for the service whose policy is being validated, or null if unknown
+     * @param soap    true if the policy being validated is tagged as being SOAP-only
      * @param result  the result where the validation warnings or errors are collected
      */
-    void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result);
+    void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result);
 }

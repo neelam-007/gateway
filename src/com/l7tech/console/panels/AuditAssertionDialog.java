@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.AuditAssertion;
@@ -10,8 +13,6 @@ import java.util.logging.Level;
 
 /**
  * Dialog for editing the properties of an {@link AuditAssertion}.
- * 
- * @author alex &lt;acruise@layer7-tech.com&gt;
  */
 public class AuditAssertionDialog extends JDialog {
     private JPanel mainPanel;
@@ -29,7 +30,7 @@ public class AuditAssertionDialog extends JDialog {
     private static final String THRESH_SUFFIX = ")";
     private Level currentServerThreshold;
 
-    public AuditAssertionDialog(Frame owner, AuditAssertion ass, String serverThreshold) throws HeadlessException {
+    public AuditAssertionDialog(Frame owner, AuditAssertion ass, String serverThreshold, boolean readOnly) throws HeadlessException {
         super(owner, "Audit Assertion Properties", true);
         this.assertion = ass;
         currentServerThreshold = Level.parse(serverThreshold);
@@ -46,6 +47,9 @@ public class AuditAssertionDialog extends JDialog {
 
         //get the current server level
         updateThresholdLabel();
+
+        okButton.setVisible(!readOnly);
+        if (readOnly) cancelButton.setText("Close");
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

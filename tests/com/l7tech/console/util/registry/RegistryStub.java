@@ -9,6 +9,7 @@ import com.l7tech.common.util.Pair;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditAdminStub;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.EntityType;
@@ -26,6 +27,9 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarStub;
 import com.l7tech.policy.validator.DefaultPolicyValidator;
+import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.PolicyPathBuilderFactory;
+import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.service.*;
 
 import javax.security.auth.login.LoginException;
@@ -44,13 +48,16 @@ import java.util.Collections;
  */
 public class RegistryStub extends Registry {
     private Role role;
+    private final PolicyManagerStub policyManager = new PolicyManagerStub();
+    private final PolicyPathBuilderFactory policyPathBuilderFactory = new PolicyPathBuilderFactory(policyManager);
+    private final DefaultPolicyValidator policyValidator = new DefaultPolicyValidator(policyManager, policyPathBuilderFactory);
 
     /**
      * default constructor
      */
     public RegistryStub() {
-        serviceAdmin.setPolicyValidator(new DefaultPolicyValidator());
-        serviceAdmin.setServiceManager(new ServiceManagerStub());
+        serviceAdmin.setPolicyValidator(policyValidator);
+        serviceAdmin.setServiceManager(new ServiceManagerStub(policyManager));
     }
 
     public boolean isAdminContextPresent() {
@@ -110,6 +117,10 @@ public class RegistryStub extends Registry {
     }
 
     public KerberosAdmin getKerberosAdmin() {
+        return null;
+    }
+
+    public PolicyAdmin getPolicyAdmin() {
         return null;
     }
 
@@ -227,6 +238,14 @@ public class RegistryStub extends Registry {
             public void logoff() {                
             }
         };
+    }
+
+    public PolicyValidator getPolicyValidator() {
+        return policyValidator;
+    }
+
+    public PolicyPathBuilderFactory getPolicyPathBuilderFactory() {
+        return policyPathBuilderFactory;
     }
 
     public SchemaAdmin getSchemaAdmin() {

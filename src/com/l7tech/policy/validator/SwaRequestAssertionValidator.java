@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.policy.validator;
@@ -11,22 +9,16 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
-import com.l7tech.service.PublishedService;
 
 import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
-import javax.wsdl.WSDLException;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
 /**
  * Validates the SWA assertion in the context of the policy and the
  * service.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
- * @version 1.0
  */
 public class SwaRequestAssertionValidator implements AssertionValidator {
     private static final Logger logger = Logger.getLogger(SwaRequestAssertionValidator.class.getName());
@@ -40,31 +32,22 @@ public class SwaRequestAssertionValidator implements AssertionValidator {
         assertion = ra;
     }
 
-    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
-        if (path == null || service == null || result == null) {
-            throw new IllegalArgumentException();
-        }
-        if (!service.isSoap()) {
-            return;
-        }
+    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+        if (path == null || wsdl == null || result == null) throw new IllegalArgumentException();
+        if (!soap) return;
+
         if (wsdlError != null) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path, wsdlError, null));
             return;
         }
-        try {
-            Wsdl wsdl = service.parsedWsdl();
-            // check whether any binding info operation
-            for (BindingInfo bi : assertion.getBindings().values()) {
-                if (hasMimeParts(bi, wsdl)) {
-                    return;
-                }
-            }
-            wsdlError = "This service does not declare any MIME input parameters (\"multipart/related\")\n" +
-                                     "This assertion only works with soap services with attachments.";
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, wsdlError, null));
-        } catch (WSDLException e) {
-            throw new RuntimeException(e);
+
+        // check whether any binding info operation
+        for (BindingInfo bi : assertion.getBindings().values()) {
+            if (hasMimeParts(bi, wsdl)) return;
         }
+        wsdlError = "This service does not declare any MIME input parameters (\"multipart/related\")\n" +
+                                 "This assertion only works with soap services with attachments.";
+        result.addWarning(new PolicyValidatorResult.Warning(assertion, path, wsdlError, null));
     }
 
 
@@ -75,10 +58,10 @@ public class SwaRequestAssertionValidator implements AssertionValidator {
             logger.warning("Could not resolve binding '" + bindingName + "'");
         }
         else {
-            List bop = binding.getBindingOperations();
-            for (Iterator iterator = bop.iterator(); iterator.hasNext();) {
-                BindingOperation bo = (BindingOperation)iterator.next();
-                MIMEMultipartRelated mmr = wsdl.getMimeMultipartRelatedInput(bo);
+            //noinspection unchecked
+            List<BindingOperation> bops = binding.getBindingOperations();
+            for (BindingOperation bop : bops) {
+                MIMEMultipartRelated mmr = wsdl.getMimeMultipartRelatedInput(bop);
                 if (mmr != null) {   // todo: not sure if need to check if it is empty too (mmr.getMIMEParts().isEmpty())? - em
                     return true;
                 }

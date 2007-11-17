@@ -13,7 +13,7 @@ import java.awt.*;
 import java.util.logging.Level;
 
 /**
- * Action for viewing or editing the properties of a SnmpTrapAssertion.
+ * Action for viewing or editing the properties of a EmailAlertAssertion.
  */
 public class EmailAlertAssertionPropertiesAction extends SecureAction {
     public EmailAlertAssertionPropertiesAction(EmailAlertAssertionTreeNode subject) {
@@ -35,7 +35,7 @@ public class EmailAlertAssertionPropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final EmailAlertPropertiesDialog dlg = new EmailAlertPropertiesDialog(f, subject.getSnmpTrapAssertion());
+        final EmailAlertPropertiesDialog dlg = new EmailAlertPropertiesDialog(f, subject.asAssertion());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

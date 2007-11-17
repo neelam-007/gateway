@@ -13,13 +13,8 @@ import java.beans.PropertyChangeListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 /**
- * The <code>SavePolicyAction</code> action saves the service and it's
- * assertion tree.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
+ * The <code>NewPolicyAction</code> action creates and saves a new {@link com.l7tech.common.policy.Policy}.
  */
 public class NewPolicyAction extends SecureAction {
     private static final Logger logger = Logger.getLogger(NewPolicyAction.class.getName());
@@ -71,7 +66,7 @@ public class NewPolicyAction extends SecureAction {
             root = new AllAssertion();
             root.addChild(new CommentAssertion("Todo, add your policy here."));
             PolicyEditorPanel.PolicyEditorSubject subject = new PolicyEditorPanel.PolicyEditorSubject() {
-                public ServiceNode getServiceNode() {return null;}
+                public ServiceNode getPolicyNode() {return null;}
                 public Assertion getRootAssertion() {
                     return root;
                 }

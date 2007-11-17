@@ -1,12 +1,13 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
 
-
-import com.l7tech.console.action.XpathBasedAssertionPropertiesAction;
-import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.console.action.EditKeyAliasForAssertion;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
+import com.l7tech.console.action.XpathBasedAssertionPropertiesAction;
 import com.l7tech.policy.assertion.PrivateKeyable;
+import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 
 import javax.swing.*;
@@ -14,15 +15,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * Tree node for XpathBasedAssertion.
- *
- * @author flascell
+ * Abstract superclass for XpathBasedAssertion policy nodes
  */
-public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode {
+public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode<XpathBasedAssertion> {
 
-    public XpathBasedAssertionTreeNode(Assertion assertion) {
+    public XpathBasedAssertionTreeNode(XpathBasedAssertion assertion) {
         super(assertion);
-        this.assertion = (XpathBasedAssertion)assertion;
     }
 
     /** Get the basic name of this node, ie "XML Request Security". */
@@ -39,9 +37,7 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode 
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        java.util.List list = new ArrayList();
-        Action a = XpathBasedAssertionPropertiesAction.actionForNode(this);
-        list.add(a);
+        java.util.List<Action> list = new ArrayList<Action>();
         if (assertion instanceof PrivateKeyable) {
             list.add(new EditKeyAliasForAssertion(this));
         }
@@ -49,7 +45,7 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode 
             list.add(new EditXmlSecurityRecipientContextAction(this));
         }
         list.addAll(Arrays.asList(super.getActions()));
-        return (Action[]) list.toArray(new Action[]{});
+        return list.toArray(new Action[]{});
     }
 
     /**
@@ -62,15 +58,6 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode 
       }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
-     *
-     * @return true if the node can be deleted, false otherwise
-     */
-    public boolean canDelete() {
-        return true;
-    }
-
-    /**
      * subclasses override this method specifying the resource name
      *
      * @param open for nodes that can be opened, can have children
@@ -78,6 +65,4 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode 
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/xmlencryption.gif";
     }
-
-    private XpathBasedAssertion assertion;
 }

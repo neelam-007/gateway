@@ -1,17 +1,23 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.JmsUtilities;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.Identity;
+import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.service.PublishedService;
-import com.l7tech.identity.Identity;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -33,9 +39,6 @@ import java.util.List;
  * The policy allows editing only the elements that are specific to the
  * identity. For exmaple if assertions are shared with other identites
  * then they cannot be edited.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
  */
 public class IdentityPolicyPanel extends JPanel {
 
@@ -56,12 +59,12 @@ public class IdentityPolicyPanel extends JPanel {
     private JComboBox jmsQueueComboBox;
     private JButton configureBridgeRoutingButton;
 
-    private Identity identity;
+    private final Identity identity;
     private IdentityPath principalAssertionPaths;
     private Set<IdentityPath> otherPaths;
-    private Assertion rootAssertion;
-    private PublishedService service;
-    private AssertionTreeNode identityAssertionNode;
+    private final Assertion rootAssertion;
+    private final PublishedService service;
+    private final AssertionTreeNode identityAssertionNode;
 
     private SslAssertion sslAssertion = null;
     private Assertion existingCredAssertion = null;
@@ -72,9 +75,10 @@ public class IdentityPolicyPanel extends JPanel {
     private boolean routeModifiable = true;
     private boolean initializing = false;
 
-    private PolicyTreeModel policyTreeModel;
-    private AssertionTreeNode rootAssertionTreeNode;
-    private Map credentialsLocationMap = CredentialsLocation.newCredentialsLocationMap(true);
+    private final PolicyTreeModel policyTreeModel;
+    private final AssertionTreeNode rootAssertionTreeNode;
+    private final Map<String, Assertion> credentialsLocationMap = CredentialsLocation.newCredentialsLocationMap(true);
+    private final PolicyPathBuilderFactory pathBuilderFactory;
 
     /**
      * Create the identity policy panel for a given identity and service
@@ -96,8 +100,9 @@ public class IdentityPolicyPanel extends JPanel {
         this.policyTreeModel = (PolicyTreeModel) model;
         this.identityAssertionNode = identityAssertionNode;
         this.identity = IdentityPath.extractIdentity(identityAssertionNode.asAssertion());
-        rootAssertionTreeNode = (AssertionTreeNode) identityAssertionNode.getRoot();
+        this.rootAssertionTreeNode = (AssertionTreeNode) identityAssertionNode.getRoot();
         this.rootAssertion = rootAssertionTreeNode.asAssertion();
+        this.pathBuilderFactory = Registry.getDefault().getPolicyPathBuilderFactory();
 
         try {
             initializing = true;
@@ -132,10 +137,16 @@ public class IdentityPolicyPanel extends JPanel {
 
         configureBridgeRoutingButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Wsdl wsdl;
+                try {
+                    wsdl = service.parsedWsdl();
+                } catch (WSDLException e1) {
+                    throw new RuntimeException("Couldn't parse WSDL", e1);
+                }
                 BridgeRoutingAssertionPropertiesDialog d =
                         new BridgeRoutingAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(),
                                                                    guiBraConfig,
-                                                                   service);
+                                service.getPolicy(), wsdl);
                 d.setModal(true);
                 d.pack();
                 Utilities.centerOnScreen(d);
@@ -172,10 +183,12 @@ public class IdentityPolicyPanel extends JPanel {
             }
         });
         try {
-            principalAssertionPaths = IdentityPath.forIdentity(identity, rootAssertion);
-            otherPaths = IdentityPath.getPaths(rootAssertion);
+            principalAssertionPaths = IdentityPath.forIdentity(identity, rootAssertion, pathBuilderFactory);
+            otherPaths = IdentityPath.getPaths(rootAssertion, pathBuilderFactory);
         } catch (InterruptedException e) {
             throw new RuntimeException(e); // can't happen here
+        } catch (PolicyAssertionException e) {
+            throw new RuntimeException(e); // TODO find some better way to handle this
         }
         Collection<IdentityPath> remove = new ArrayList<IdentityPath>();
         for (IdentityPath ip : otherPaths) {
@@ -230,29 +243,26 @@ public class IdentityPolicyPanel extends JPanel {
     private void updateAuthMethod() {
         boolean canmod = true;
 
-        Set othersCredAssertions = new HashSet();
-        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
-            IdentityPath ip = (IdentityPath) iterator.next();
+        Set<Assertion> othersCredAssertions = new HashSet<Assertion>();
+        for (IdentityPath ip : otherPaths) {
             othersCredAssertions.addAll(ip.getAssertions(IdentityPath.CREDENTIAL_SOURCE));
         }
 
-        Set principalCredAssertions = principalAssertionPaths.getAssertions(IdentityPath.CREDENTIAL_SOURCE);
-        for (Iterator it = principalCredAssertions.iterator(); it.hasNext();) {
-            existingCredAssertion = (Assertion)it.next();
+        Set<Assertion> principalCredAssertions = principalAssertionPaths.getAssertions(IdentityPath.CREDENTIAL_SOURCE);
+        for (Assertion principalCredAssertion : principalCredAssertions) {
+            existingCredAssertion = principalCredAssertion;
 
             selectAuthMethodComboItem(existingCredAssertion);
             if (othersCredAssertions.contains(existingCredAssertion))
                 canmod = false;
-
         }
 
         authMethodComboBox.setEnabled(canmod);
     }
 
     private void selectAuthMethodComboItem(Assertion cas) {
-        Set entrySet = credentialsLocationMap.entrySet();
-        for (Iterator iterator = entrySet.iterator(); iterator.hasNext();) {
-            Map.Entry entry = (Map.Entry) iterator.next();
+        Set<Map.Entry<String, Assertion>> entrySet = credentialsLocationMap.entrySet();
+        for (Map.Entry<String, Assertion> entry : entrySet) {
             if (cas.getClass().equals(entry.getValue().getClass())) {
                 authMethodComboBox.setSelectedItem(entry.getKey());
                 break;
@@ -263,17 +273,16 @@ public class IdentityPolicyPanel extends JPanel {
     private void updateRouting() {
         routeModifiable = true;
 
-        Set othersRouteAssertions = new HashSet();
-        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
-            IdentityPath ip = (IdentityPath) iterator.next();
+        Set<Assertion> othersRouteAssertions = new HashSet<Assertion>();
+        for (IdentityPath ip : otherPaths) {
             othersRouteAssertions.addAll(ip.getAssignableAssertions(RoutingAssertion.class));
         }
 
-        Set principalRouteAssertions = principalAssertionPaths.getAssignableAssertions(RoutingAssertion.class);
-        for (Iterator it = principalRouteAssertions.iterator(); it.hasNext();) {
-            existingRoutingAssertion = (RoutingAssertion) it.next();
+        Set<RoutingAssertion> principalRouteAssertions = principalAssertionPaths.getAssignableAssertions(RoutingAssertion.class);
+        for (RoutingAssertion principalRouteAssertion : principalRouteAssertions) {
+            existingRoutingAssertion = principalRouteAssertion;
             if (existingRoutingAssertion instanceof BridgeRoutingAssertion) {
-                guiBraConfig.copyFrom((BridgeRoutingAssertion)existingRoutingAssertion);
+                guiBraConfig.copyFrom((BridgeRoutingAssertion) existingRoutingAssertion);
             } else if (existingRoutingAssertion instanceof HttpRoutingAssertion) {
                 HttpRoutingAssertion hra = (HttpRoutingAssertion) existingRoutingAssertion;
                 routeToUrlField.setText(hra.getProtectedServiceUrl());
@@ -357,9 +366,9 @@ public class IdentityPolicyPanel extends JPanel {
 
     private ActionListener updateIdentityPolicy = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
-            List replaceAssertions = new ArrayList();
-            List removeAssertions = new ArrayList();
-            List addAssertions = new ArrayList();
+            List<Assertion[]> replaceAssertions = new ArrayList<Assertion[]>();
+            List<Assertion> removeAssertions = new ArrayList<Assertion>();
+            List<Assertion> addAssertions = new ArrayList<Assertion>();
 
             // Bugzilla #725 - the handler updates the policy with the assertions in reverse order.
             // Here we must add the assertions to the list in the following order
@@ -394,12 +403,11 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
 
-            for (Iterator iterator = replaceAssertions.iterator(); iterator.hasNext();) {
-                Assertion[] assertions = (Assertion[]) iterator.next();
+            for (Assertion[] assertions : replaceAssertions) {
                 replaceAssertion(assertions[0], assertions[1]);
             }
-            final Assertion[] aa = (Assertion[]) addAssertions.toArray(new Assertion[]{});
-            final Assertion[] ar = (Assertion[]) removeAssertions.toArray(new Assertion[]{});
+            final Assertion[] aa = addAssertions.toArray(new Assertion[]{});
+            final Assertion[] ar = removeAssertions.toArray(new Assertion[]{});
             addAssertionTreeNodes(aa);
             removeAssertionTreeNodes(ar);
             scheduleValidate();
@@ -408,8 +416,8 @@ public class IdentityPolicyPanel extends JPanel {
         }
 
         private void removeAssertionTreeNodes(Assertion[] assertions) {
-            List nodes = Arrays.asList(assertions);
-            List deadNodes = new ArrayList();
+            List<Assertion> nodes = Arrays.asList(assertions);
+            List<AssertionTreeNode> deadNodes = new ArrayList<AssertionTreeNode>();
 
             Enumeration e = rootAssertionTreeNode.preorderEnumeration();
             while (e.hasMoreElements()) {
@@ -419,8 +427,7 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
 
-            for (Iterator iterator = deadNodes.iterator(); iterator.hasNext();) {
-                AssertionTreeNode dead = (AssertionTreeNode) iterator.next();
+            for (AssertionTreeNode dead : deadNodes) {
                 policyTreeModel.removeNodeFromParent(dead);
             }
         }
@@ -431,8 +438,8 @@ public class IdentityPolicyPanel extends JPanel {
             int index = policyTreeModel.getIndexOfChild(parent, identityAssertionNode);
 
             if (parent.asAssertion() instanceof AllAssertion) { // just add
-                for (int i = 0; i < aa.length; i++) {
-                    policyTreeModel.rawInsertNodeInto(AssertionTreeNodeFactory.asTreeNode(aa[i]), parent, index);
+                for (Assertion a : aa) {
+                    policyTreeModel.rawInsertNodeInto(AssertionTreeNodeFactory.asTreeNode(a), parent, index);
                 }
             } else {
                 final AssertionTreeNode newParent = AssertionTreeNodeFactory.asTreeNode(new AllAssertion());
@@ -481,9 +488,9 @@ public class IdentityPolicyPanel extends JPanel {
     private Assertion collectCredentialsAssertion() {
         if (!authMethodComboBox.isEnabled()) return null;
 
-        Object key = authMethodComboBox.getSelectedItem();
+        String key = (String) authMethodComboBox.getSelectedItem();
         // TODO verify support for XML signing/encryption
-        return (Assertion) credentialsLocationMap.get(key);
+        return credentialsLocationMap.get(key);
     }
 
     private RoutingAssertion collectRoutingAssertion() {

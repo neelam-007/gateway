@@ -22,6 +22,10 @@
         <param name="enumClass">com.l7tech.common.transport.jms.JmsAcknowledgementType</param>
     </typedef>
 
+    <typedef class="com.l7tech.objectmodel.GenericEnumUserType" name="policy_type">
+        <param name="enumClass">com.l7tech.common.policy.PolicyType</param>
+    </typedef>
+
     <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider" lazy="false" discriminator-value="1">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
@@ -108,7 +112,6 @@
         <version name="version" column="version" type="integer"/>
 
         <property name="name" column="name" type="string"/>
-        <property name="policyXml" column="policy_xml" type="text"/>
         <property name="wsdlUrl" column="wsdl_url" type="string"/>
         <property name="wsdlXml" column="wsdl_xml" type="text"/>
         <property name="disabled" column="disabled" type="boolean"/>
@@ -116,6 +119,19 @@
         <property name="routingUri" column="routing_uri" type="string"/>
         <property name="httpMethodNames" column="http_methods" type="text"/>
         <property name="laxResolution" column="lax_resolution" type="boolean"/>
+        <many-to-one class="com.l7tech.common.policy.Policy"
+                     name="policy" lazy="false" column="policy_oid" cascade="persist,merge,save-update"/>    
+    </class>
+
+    <class name="com.l7tech.common.policy.Policy" table="policy" lazy="false">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <version name="version" type="int"/>
+        <property name="name" column="name" type="string"/>
+        <property name="type" column="policy_type" type="policy_type"/>
+        <property name="xml" column="xml" type="text"/>
+        <property name="soap" column="soap" type="boolean"/>
     </class>
 
     <class name="com.l7tech.server.identity.cert.CertEntryRow" table="client_cert" lazy="false">

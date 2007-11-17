@@ -2,6 +2,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.common.policy.PolicyType;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.uddi.WsdlInfo;
@@ -9,12 +10,13 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.Resolver;
 import com.l7tech.common.util.ResolvingComparator;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -40,8 +42,10 @@ import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.StringReader;
 import java.net.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -103,7 +107,6 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         this.roleManager = roleManager;
         this.wspReader = wspReader;
         this.uddiTemplateManager = uddiTemplateManager;
-        ServerConfig serverConfig1 = serverConfig;
 
         int maxConcurrency = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
         validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue);
@@ -187,22 +190,28 @@ public final class ServiceAdminImpl implements ServiceAdmin {
             return collectionToHeaderArray(res);
     }
 
-    public JobId<PolicyValidatorResult> validatePolicy(String policyXml, long serviceId) {
+    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, final PolicyType policyType, final boolean soap, final String wsdlXml) {
+        final Assertion assertion;
+        final Wsdl wsdl;
         try {
-            final PublishedService service = serviceManager.findByPrimaryKey(serviceId);
-            final Assertion assertion = wspReader.parsePermissively(policyXml);
-            return asyncSupport.registerJob(validatorExecutor.submit(new Callable<PolicyValidatorResult>() {
-                public PolicyValidatorResult call() throws Exception {
-                    return policyValidator.validate(assertion, service, licenseManager);
-                }
-            }), PolicyValidatorResult.class);
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "cannot get existing service: " + serviceId, e);
-            throw new RuntimeException("cannot get existing service: " + serviceId, e);
+            assertion = wspReader.parsePermissively(policyXml);
+            wsdl = wsdlXml == null ? null : Wsdl.newInstance(null, new StringReader(wsdlXml));
         } catch (IOException e) {
-            logger.log(Level.WARNING, "cannot parse passed policy xml: " + policyXml, e);
-            throw new RuntimeException("cannot parse passed policy xml", e);
+            throw new RuntimeException("Cannot parse passed Policy XML: " + ExceptionUtils.getMessage(e), e);
+        } catch (WSDLException e) {
+            throw new RuntimeException("Cannot parse passed WSDL XML: " + ExceptionUtils.getMessage(e), e);
         }
+
+        return asyncSupport.registerJob(validatorExecutor.submit(new Callable<PolicyValidatorResult>() {
+            public PolicyValidatorResult call() throws Exception {
+                try {
+                    return policyValidator.validate(assertion, policyType, wsdl, soap, licenseManager);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Policy validation failure: " + ExceptionUtils.getMessage(e), e);
+                    throw new RuntimeException(e);
+                }
+            }
+        }), PolicyValidatorResult.class);
     }
 
     /**
@@ -353,6 +362,7 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         try {
             UddiAgent uddiAgent = uddiAgentFactory.getUddiAgent();
             WsdlInfo[] wsdlInfo = uddiAgent.getWsdlByServiceName(uddiURL, info, username, password, namePattern, caseSensitive);
+            //noinspection unchecked
             Arrays.sort(wsdlInfo, new ResolvingComparator(new Resolver<WsdlInfo,String>(){
                 public String resolve(WsdlInfo key) {
                     return key.getName();

@@ -5,21 +5,27 @@
  */
 package com.l7tech.policy;
 
+import com.l7tech.common.LicenseException;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.util.SoapMessageGenerator;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.LicenseException;
-import com.l7tech.common.transport.SsgConnector;
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.server.*;
-import com.l7tech.server.transport.http.HttpTransportModuleTester;
+import com.l7tech.server.MessageProcessorListener;
+import com.l7tech.server.MockServletApi;
+import com.l7tech.server.SoapMessageProcessingServlet;
+import com.l7tech.server.TestMessageProcessor;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.transport.http.HttpTransportModuleTester;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServicesHelper;
 import junit.framework.Test;
@@ -27,18 +33,17 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import javax.wsdl.Definition;
 import javax.xml.soap.SOAPMessage;
 import java.io.ByteArrayOutputStream;
-import java.io.StringReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Arrays;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Test the RegEx assertion
@@ -50,6 +55,7 @@ public class RegexAssertionTest extends TestCase {
     private static ServicesHelper servicesHelper;
     private int tokenCount = 0;
     private static TestMessageProcessor messageProcessor;
+    private static AssertionRegistry assertionRegistry;
 
     /**
      * test <code>EchoAssertionTest</code> constructor
@@ -63,8 +69,7 @@ public class RegexAssertionTest extends TestCase {
      * ServerPolicyFactoryTest <code>TestCase</code>
      */
     public static Test suite() throws Exception {
-        TestSuite suite = new TestSuite(RegexAssertionTest.class);
-        return suite;
+        return new TestSuite(RegexAssertionTest.class);
     }
 
     private static ServicesHelper getServicesHelper() {
@@ -73,6 +78,7 @@ public class RegexAssertionTest extends TestCase {
             servicesHelper = new ServicesHelper((ServiceAdmin)servletApi.getApplicationContext().getBean("serviceAdmin"));
             messageProcessor = (TestMessageProcessor)servletApi.getApplicationContext().getBean("messageProcessor");
             serverPolicyFactory = (ServerPolicyFactory)servletApi.getApplicationContext().getBean("policyFactory");
+            assertionRegistry = (AssertionRegistry) servletApi.getApplicationContext().getBean("assertionRegistry");
         }
         return servicesHelper;
     }
@@ -80,6 +86,7 @@ public class RegexAssertionTest extends TestCase {
     public void setUp() throws Exception {
         tokenCount = 0;
         getServicesHelper().deleteAllServices();
+        assertionRegistry.registerAssertion(TestEchoAssertion.class);
         HttpTransportModuleTester.setGlobalConnector(new SsgConnector() {
             public boolean offersEndpoint(Endpoint endpoint) {
                 return true;
@@ -112,8 +119,7 @@ public class RegexAssertionTest extends TestCase {
         int verifiedTokens = 0;
         Pattern verifier = Pattern.compile("ZZZ");
         SoapMessageGenerator.Message[] requests = sm.generateRequests(wsdl);
-        for (int i = 0; i < requests.length; i++) {
-            SoapMessageGenerator.Message request = requests[i];
+        for (SoapMessageGenerator.Message request : requests) {
             SOAPMessage msg = request.getSOAPMessage();
 
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
@@ -151,8 +157,7 @@ public class RegexAssertionTest extends TestCase {
         int verifiedTokens = 0;
         Pattern verifier = Pattern.compile("QQQZZZ");
         SoapMessageGenerator.Message[] requests = sm.generateRequests(wsdl);
-        for (int i = 0; i < requests.length; i++) {
-            SoapMessageGenerator.Message request = requests[i];
+        for (SoapMessageGenerator.Message request : requests) {
             SOAPMessage msg = request.getSOAPMessage();
 
             servletApi.reset();
@@ -191,8 +196,7 @@ public class RegexAssertionTest extends TestCase {
         int verifiedTokens = 0;
         Pattern verifier = Pattern.compile("OOO");
         SoapMessageGenerator.Message[] requests = sm.generateRequests(wsdl);
-        for (int i = 0; i < requests.length; i++) {
-            SoapMessageGenerator.Message request = requests[i];
+        for (SoapMessageGenerator.Message request : requests) {
             SOAPMessage msg = request.getSOAPMessage();
 
             servletApi.reset();
@@ -252,7 +256,7 @@ public class RegexAssertionTest extends TestCase {
         PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         ServerAssertion sass =  serverPolicyFactory.compilePolicy(regex, false);
         AssertionStatus result = sass.checkRequest(context);
-        Document doc = request.getXmlKnob().getDocumentReadOnly();
+        request.getXmlKnob().getDocumentReadOnly();
         assertEquals(AssertionStatus.NONE, result);
     }
 
@@ -282,8 +286,7 @@ public class RegexAssertionTest extends TestCase {
         int verifiedTokens = 0;
         Pattern verifier = Pattern.compile("ZZZ");
         SoapMessageGenerator.Message[] requests = sm.generateRequests(wsdl);
-        for (int i = 0; i < requests.length; i++) {
-            SoapMessageGenerator.Message request = requests[i];
+        for (SoapMessageGenerator.Message request : requests) {
             SOAPMessage msg = request.getSOAPMessage();
 
             ByteArrayOutputStream bo = new ByteArrayOutputStream();

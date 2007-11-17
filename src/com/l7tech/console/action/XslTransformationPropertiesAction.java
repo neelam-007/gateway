@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
@@ -15,12 +18,6 @@ import java.util.logging.Logger;
 
 /**
  * Action for viewing or editing the properties of a Xsl Transformation Assertion node.
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 6, 2004<br/>
- * $Id$<br/>
  */
 public class XslTransformationPropertiesAction extends SecureAction {
 
@@ -43,7 +40,7 @@ public class XslTransformationPropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(f, true, node.getAssertion());
+        final XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(f, true, node.asAssertion());
         dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

@@ -1,40 +1,20 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.objectmodel;
 
-import java.util.Collection;
 import java.util.Map;
 
 /**
- * ET is the Entity type; HT is the EntityHeader type.
+ * Interface for DAOs that provide CRUD services for {@link PersistentEntity} instances.
+ * @param <ET> is the Entity type
+ * @param <HT> is the EntityHeader type
  * @author alex
  */
-public interface EntityManager<ET extends PersistentEntity, HT extends EntityHeader> {
-    ET findByPrimaryKey(long oid) throws FindException;
-
+public interface EntityManager<ET extends PersistentEntity, HT extends EntityHeader>
+        extends ReadOnlyEntityManager<ET,HT>
+{
     long save(ET entity) throws SaveException;
-
-    /**
-     * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.
-     * @return A <code>Collection</code> of EntityHeader objects.
-     */
-    public Collection<HT> findAllHeaders() throws FindException;
-
-    /**
-     * Returns an unmodifiable collection of <code>EntityHeader</code> objects for instances of this entity class from a list sorted by <code>oid</code>, selecting only a specific subset of the list.
-     * @return A <code>Collection</code> of EntityHeader objects.
-     */
-    public Collection<HT> findAllHeaders( int offset, int windowSize ) throws FindException;
-
-    /**
-     * Returns an unmodifiable collection of <code>Entity</code> objects for all instances of the entity class corresponding to this Manager.
-     * @return A <code>Collection</code> of Entity objects.
-     */
-    public Collection<ET> findAll() throws FindException;
-
-    /**
-     * Returns an unmodifiable collection of <code>Entity</code> objects for instances of this entity class from a list sorted by <code>oid</code>, selecting only a specific subset of the list.
-     * @return A <code>Collection</code> of EntityHeader objects.
-     */
-    public Collection<ET> findAll( int offset, int windowSize ) throws FindException;
 
     Integer getVersion( long oid ) throws FindException;
 

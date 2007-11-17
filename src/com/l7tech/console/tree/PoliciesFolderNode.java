@@ -1,130 +1,113 @@
+/**
+ * Copyright (C) 2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree;
 
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.policy.exporter.PolicyExporter;
-import com.l7tech.console.util.TopComponents;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
+import com.l7tech.common.policy.PolicyAdmin;
+import com.l7tech.console.action.CreatePolicyAction;
 
+import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
-import java.io.*;
-import java.util.Comparator;
-import java.util.logging.Level;
-
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
- * The class represents a node element in the TreeModel.
- * It represents the folder with policies.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.1
+ * This class represents the lower-left CRUD folder for policy fragments.
  */
-public class PoliciesFolderNode extends AbstractPaletteFolderNode {
-    public static final String NAME = "Policy Templates";
-    public static final String TEMPLATES_DIR = "policy.templates";
+public class PoliciesFolderNode extends AbstractTreeNode {
+    static Logger log = Logger.getLogger(PoliciesFolderNode.class.getName());
 
-    /** The entity name comparator  */
-      protected static final Comparator FILENAME_COMPARATOR = new Comparator() {
-          public int compare(Object o1, Object o2) {
-              if (o1 instanceof PolicyTemplateNode && o2 instanceof PolicyTemplateNode) {
-                  String name1 = ((PolicyTemplateNode)o1).getFile().getName();
-                  String name2 = ((PolicyTemplateNode)o2).getFile().getName();
-                  return name1.compareToIgnoreCase(name2);
-              }
-              throw new ClassCastException("Expected "+PolicyTemplateNode.class +
-                                           " received "+o1.getClass() + " and "+o2.getClass());
-          }
-      };
+    public static final String NAME = "policiesFolderNode";
+
+    private PolicyAdmin policyAdmin;
+    private String title;
+
+    private final Action[] allActions = new Action[]{
+        new CreatePolicyAction(),
+        new RefreshTreeNodeAction(this)
+    };
 
     /**
-     * construct the <CODE>PoliciesFolderNode</CODE> instance for
-     * a given home path
+     * construct the <CODE>ServicesFolderNode</CODE> instance for
+     * a given service manager with the name.
      */
-    public PoliciesFolderNode() {
-        super(NAME, "policies", TopComponents.getInstance().getPreferences().getHomePath() + File.separator + TEMPLATES_DIR, FILENAME_COMPARATOR);
+    public PoliciesFolderNode(PolicyAdmin pa, String name) {
+        super(null, EntityHeaderNode.IGNORE_CASE_NAME_COMPARATOR);
+        policyAdmin = pa;
+        title = name;
     }
-
 
     /**
-     * subclasses override this method
+     * Returns true if the receiver is a leaf.
+     *
+     * @return true if leaf, false otherwise
      */
-    protected void loadChildren() {
-        // This folder does not allow modular assertions to invite themselves into it, so we don't call
-        // insertMatchingModularAssertions here.
-        try {
-            File[] files = listPolicies();
-            children = null;
-            for (int i = 0; i < files.length; i++) {
-                File file = files[i];
-                PolicyTemplateNode ptn = new PolicyTemplateNode(file);
-                insert((MutableTreeNode) ptn, getInsertPosition(ptn));
-            }
-        } catch (IOException e) {
-            ErrorManager.getDefault().notify(Level.WARNING, e, "There was an error loading policy templates.");
-
-        }
+    public boolean isLeaf() {
+        return false;
     }
 
-    protected boolean isEnabledByLicense() {
-        // Policy templates always shown, regardless of license
+    /**
+     * Returns true if the receiver allows children.
+     */
+    public boolean getAllowsChildren() {
         return true;
     }
 
-    protected void filterChildren() {
-        // Suppress filtering for policy templates
-    }
-
-    private String getTemplatesPath() {
-        return (String)getUserObject();
-    }
-
-    private  File[] listPolicies() throws IOException {
-        File f = new File(getTemplatesPath());
-        if (!f.exists()) {
-            if (!f.mkdir()) throw new IOException("Cannot create "+f.getPath());
+    /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        // Filter unlicensed actions
+        List<Action> actions = new ArrayList<Action>();
+        for (Action action : allActions) {
+            if (action.isEnabled())
+                actions.add(action);
         }
-        return
-        f.listFiles( new FilenameFilter() {
-            /**
-             * Tests if a specified file should be included in a file list.
-             *
-             * @param   dir    the directory in which the file was found.
-             * @param   name   the name of the file.
-             * @return  <code>true</code> if and only if the name should be
-             * included in the file list; <code>false</code> otherwise.
-             */
-            public boolean accept(File dir, String name) {
-                File f = new File(dir.getPath()+File.separator+name);
-                if (f.isFile()) {
-                    // check if it's an xml file
-                    try {
-                        FileInputStream fis = new FileInputStream(f);
-                        Document doc = XmlUtil.parse(fis);
-                        if (doc == null) {
-                            logger.fine("File " + name + " is in templates folder but is not an exported policy");
-                            return false;
-                        }
-                        // check if it's an exported policy
-                        if (!PolicyExporter.isExportedPolicy(doc)) {
-                            logger.fine("document name is xml but is not an exported document");
-                            return false;
-                        }
-                        return true;
-                    } catch (FileNotFoundException e) {
-                        logger.log(Level.FINE, "Document " + name + " is in templates folder but is " +
-                                               "not an exported policy", e);
-                    } catch (IOException e) {
-                        logger.log(Level.FINE, "Document " + name + " is in templates folder but is " +
-                                               "not an exported policy", e);
-                    } catch (SAXException e) {
-                        logger.log(Level.FINE, "Document " + name + " is in templates folder but is " +
-                                               "not an exported policy", e);
-                    }
-                    return false;
-                }
-                return false;
-            }
-        });
+        return actions.toArray(new Action[0]);
+    }
+
+    /**
+     * load the service folder children
+     */
+    protected void loadChildren() {
+        EntitiesEnumeration en = new EntitiesEnumeration(new PolicyEntitiesCollection(policyAdmin));
+        Enumeration e = TreeNodeFactory.getTreeNodeEnumeration(en);
+        children = null;
+        for (; e.hasMoreElements();) {
+            MutableTreeNode mn = (MutableTreeNode)e.nextElement();
+            insert(mn, getInsertPosition(mn));
+        }
+    }
+
+    /**
+     * @return true as this node children can be refreshed
+     */
+    public boolean canRefresh() {
+        return true;
+    }
+
+    /**
+     * Returns the node name.
+     * Gui nodes have name to facilitate handling in
+     * components such as JTree.
+     *
+     * @return the name as a String
+     */
+    public String getName() {
+        return title;
+    }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/ServerRegistry.gif";
     }
 }

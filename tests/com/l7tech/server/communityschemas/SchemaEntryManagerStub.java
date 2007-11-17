@@ -22,8 +22,4 @@ public class SchemaEntryManagerStub extends EntityManagerStub<SchemaEntry> imple
     public Collection<SchemaEntry> findByName(String schemaName) throws FindException {
         return Collections.emptySet();
     }
-
-    public void update(SchemaEntry entry) throws UpdateException {
-        throw new UnsupportedOperationException();
-    }
 }

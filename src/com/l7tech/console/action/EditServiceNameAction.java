@@ -6,7 +6,7 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.panels.EditServiceNameDialog;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.security.rbac.OperationType;
@@ -20,9 +20,6 @@ import java.util.logging.Logger;
 /**
  * The <code>EditServiceNameAction</code> invokes the service name
  * edit dialog.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
  */
 public class EditServiceNameAction extends ServiceNodeAction {
     static final Logger log = Logger.getLogger(EditServiceNameAction.class.getName());
@@ -95,15 +92,15 @@ public class EditServiceNameAction extends ServiceNodeAction {
                   /** */
                   public void run() {
                       ServiceNode n = ((ServiceNode)node);
-                      n.clearServiceHolder();
+                      n.clearCachedEntities();
                       JTree tree =
-                        (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
+                        (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                       if (tree != null) {
                           DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                           model.nodeChanged(node);
                           try {
                               PublishedService svc = ((ServiceNode)node).getPublishedService();
-                              node.firePropertyChange(this, PolicyEditorPanel.SERVICENAME_PROPERTY,
+                              node.firePropertyChange(this, PolicyEditorPanel.POLICYNAME_PROPERTY,
                                                       lastServiceName, svc.getName());
                           } catch (Exception e) {
                               e.printStackTrace();

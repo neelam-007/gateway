@@ -1,5 +1,7 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
-
 
 import com.l7tech.console.action.HttpRoutingAssertionPropertiesAction;
 import com.l7tech.console.action.EditKeyAliasForAssertion;
@@ -13,11 +15,6 @@ import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-/**
- * Class SpecificUserAssertionTreeNode.
- * 
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- */
 public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
 
     public HttpRoutingAssertionTreeNode(RoutingAssertion assertion) {
@@ -45,7 +42,7 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
     /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
-     * 
+     *
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
@@ -56,8 +53,6 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
         }
 
         java.util.List<Action> list = new ArrayList<Action>();
-        Action a = new HttpRoutingAssertionPropertiesAction(this);
-        list.add(a);
         list.add(privateKeyAction);
         if (getUserObject() instanceof SecurityHeaderAddressable) {
             list.add(new EditXmlSecurityRecipientContextAction(this));
@@ -81,15 +76,6 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
      */
     public Action getPreferredAction() {
         return new HttpRoutingAssertionPropertiesAction(this);
-    }
-
-    /**
-     * Test if the node can be deleted. Default is <code>true</code>
-     * 
-     * @return true if the node can be deleted, false otherwise
-     */
-    public boolean canDelete() {
-        return true;
     }
 
     /**

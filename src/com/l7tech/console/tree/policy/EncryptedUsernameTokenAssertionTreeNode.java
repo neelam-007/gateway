@@ -1,5 +1,7 @@
+/*
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
-
 
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
@@ -12,10 +14,9 @@ import java.util.Arrays;
  * Class EncryptedUsernameTokenAssertionTreeNode is a tree node that correspinds
  * to the <code>EncryptedUsernameTokenAssertion</code>.
  */
-public class EncryptedUsernameTokenAssertionTreeNode extends LeafAssertionTreeNode {
+public class EncryptedUsernameTokenAssertionTreeNode extends LeafAssertionTreeNode<EncryptedUsernameTokenAssertion> {
     public EncryptedUsernameTokenAssertionTreeNode(EncryptedUsernameTokenAssertion assertion) {
         super(assertion);
-        this.assertion = assertion;
     }
 
     /**
@@ -38,15 +39,6 @@ public class EncryptedUsernameTokenAssertionTreeNode extends LeafAssertionTreeNo
     }
 
     /**
-     * Test if the node can be deleted. Default is <code>true</code>
-     *
-     * @return true if the node can be deleted, false otherwise
-     */
-    public boolean canDelete() {
-        return true;
-    }
-
-    /**
      * subclasses override this method specifying the resource name
      *
      * @param open for nodes that can be opened, can have children
@@ -54,6 +46,4 @@ public class EncryptedUsernameTokenAssertionTreeNode extends LeafAssertionTreeNo
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/authentication.gif";
     }
-
-    private EncryptedUsernameTokenAssertion assertion;
 }

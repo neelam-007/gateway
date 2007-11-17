@@ -1,33 +1,29 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.action;
 
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.policy.exporter.PolicyImporter;
-import com.l7tech.console.tree.PoliciesFolderNode;
+import com.l7tech.console.tree.PolicyTemplatesFolderNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.service.PublishedService;
-import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.io.File;
 import java.io.IOException;
+import java.security.AccessControlException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.*;
-
 
 /**
  * The SSM action type that imports a policy from a file.
- *
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Jul 21, 2004<br/>
  */
-public abstract class ImportPolicyFromFileAction extends ServiceNodeAction {
+public abstract class ImportPolicyFromFileAction extends PolicyNodeAction {
     private static final Logger log = Logger.getLogger(ImportPolicyFromFileAction.class.getName());
     private final String homePath;
 
@@ -64,23 +60,23 @@ public abstract class ImportPolicyFromFileAction extends ServiceNodeAction {
      * Actually perform the action.
      * This is the method which should be called programmatically.
      */
-    protected boolean importPolicy(PublishedService service) {
+    protected boolean importPolicy(Policy policy) {
         try {
-            return doFileImport(service);
+            return doFileImport(policy);
         } catch (AccessControlException e) {
             TopComponents.getInstance().showNoPrivilegesErrorMessage();
         }
         return false;
     }
 
-    private boolean doFileImport(PublishedService service) {
+    private boolean doFileImport(Policy policy) {
         // get file from user
         JFileChooser chooser;
         File templateDir = null;
         if (homePath != null) {
             try {
                 templateDir = new File(homePath +
-                                       File.separator + PoliciesFolderNode.TEMPLATES_DIR);
+                                       File.separator + PolicyTemplatesFolderNode.TEMPLATES_DIR);
                 if (!templateDir.exists()) {
                     if (!templateDir.mkdir()) {
                         throw new IOException("Cannot create " + templateDir.getPath());
@@ -103,11 +99,7 @@ public abstract class ImportPolicyFromFileAction extends ServiceNodeAction {
         chooser.setMultiSelectionEnabled(false);
         chooser.setFileFilter(new FileFilter() {
             public boolean accept(File f) {
-                if (f.getAbsolutePath().endsWith(".xml") || f.getAbsolutePath().endsWith(".XML")) {
-                    return true;
-                }
-                if (f.isDirectory()) return true;
-                return false;
+                return f.getAbsolutePath().endsWith(".xml") || f.getAbsolutePath().endsWith(".XML") || f.isDirectory();
             }
             public String getDescription() {
                 return "XML Files";
@@ -122,7 +114,7 @@ public abstract class ImportPolicyFromFileAction extends ServiceNodeAction {
             // directly, it must be set through the XML
             if (newRoot != null) {
                 String newPolicyXml = WspWriter.getPolicyXml(newRoot);
-                service.setPolicyXml(newPolicyXml);
+                policy.setXml(newPolicyXml);
                 return true;
             }
         } catch (IOException e) {

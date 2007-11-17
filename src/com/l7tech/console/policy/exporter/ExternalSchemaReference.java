@@ -134,14 +134,13 @@ public class ExternalSchemaReference extends ExternalReference {
     /**
      * @return An array list of ListedImport objects
      */
-    static ArrayList listImports(Document schemaDoc) {
+    static ArrayList<ListedImport> listImports(Document schemaDoc) {
         Element schemael = schemaDoc.getDocumentElement();
-        List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
+        List<Element> listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
         ArrayList output = new ArrayList();
         if (listofimports.isEmpty()) return output;
 
-        for (Iterator iterator = listofimports.iterator(); iterator.hasNext();) {
-            Element importEl = (Element) iterator.next();
+        for (Element importEl : listofimports) {
             String importns = importEl.getAttribute("namespace");
             String importloc = importEl.getAttribute("schemaLocation");
             output.add(new ListedImport(importloc, importns));

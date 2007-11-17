@@ -7,6 +7,9 @@ import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.policy.PolicyType;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
@@ -14,16 +17,14 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.VirtualGroup;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
@@ -35,7 +36,6 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
-import com.l7tech.service.PublishedService;
 import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -96,16 +96,20 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
     private EntityFinder entityFinder;
     private SsgKeyStoreManager ssgKeyStoreManager;
 
-    public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
+    public ServerPolicyValidator(ReadOnlyEntityManager<Policy, EntityHeader> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
+        super(policyFinder, pathBuilderFactory);
+    }
+
+    public void validatePath(AssertionPath ap, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense, PolicyValidatorResult r) {
         Assertion[] ass = ap.getPath();
         PathContext pathContext = new PathContext();
         for (Assertion as : ass) {
-            validateAssertion(as, pathContext, r, ap, assertionLicense);
+            validateAssertion(as, pathContext, r, ap);
         }
     }
 
     @SuppressWarnings(value = "fallthrough")
-    private void validateAssertion(Assertion a, PathContext pathContext, PolicyValidatorResult r, AssertionPath ap, AssertionLicense assertionLicense) {
+    private void validateAssertion(Assertion a, PathContext pathContext, PolicyValidatorResult r, AssertionPath ap) {
         if (a instanceof IdentityAssertion) {
             final IdentityAssertion identityAssertion = (IdentityAssertion)a;
             int idStatus = getIdentityStatus(identityAssertion);
@@ -216,7 +220,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         } else if (a instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsass = (JmsRoutingAssertion)a;
             if (jmsass.getEndpointOid() != null) {
-                long endpointid = jmsass.getEndpointOid().longValue();
+                long endpointid = jmsass.getEndpointOid();
                 boolean jmsEndpointDefinedOk = false;
                 try {
                     JmsEndpoint routedRequestEndpoint = jmsEndpointManager.findByPrimaryKey(endpointid);
@@ -446,7 +450,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
 // get provider
                 IdentityProvider prov = identityProviderFactory.getProvider(identityAssertion.getIdentityProviderOid());
                 if (prov == null) {
-                    idAssertionStatusCache.put(identityAssertion, new Integer(PROVIDER_NOT_EXIST));
+                    idAssertionStatusCache.put(identityAssertion, PROVIDER_NOT_EXIST);
                     return PROVIDER_NOT_EXIST;
                 }
 // check if user or group exists
@@ -480,11 +484,13 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                             idhascert = true;
                         }
                     }
+                } else if (identityAssertion instanceof AuthenticationAssertion) {
+                    idexists = true; // We don't care who you are
                 } else {
                     throw new RuntimeException("Type not supported " + identityAssertion.getClass().getName());
                 }
                 if (!idexists) {
-                    output = new Integer(ID_NOT_EXIST);
+                    output = ID_NOT_EXIST;
                 } else {
 // check for special fip values
                     int val = ID_EXIST;
@@ -505,16 +511,16 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     } else if (IdentityProviderType.is(prov, IdentityProviderType.LDAP)) {
                         val = ID_LDAP;
                     }
-                    output = new Integer(val);
+                    output = val;
                 }
                 idAssertionStatusCache.put(identityAssertion, output);
             } catch (FindException e) {
                 logger.log(Level.WARNING, "problem retrieving identity", e);
-                output = new Integer(ID_NOT_EXIST);
+                output = ID_NOT_EXIST;
                 idAssertionStatusCache.put(identityAssertion, output);
             }
         }
-        return output.intValue();
+        return output;
     }
 
 

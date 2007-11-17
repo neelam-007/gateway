@@ -8,6 +8,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
+import javax.swing.tree.TreeNode;
 import java.util.Comparator;
 
 /**
@@ -38,15 +39,15 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
     /**
      * The entity name comparator
      */
-    public static final Comparator IGNORE_CASE_NAME_COMPARATOR = new Comparator() {
-        public int compare(Object o1, Object o2) {
+    public static final Comparator<? super TreeNode> IGNORE_CASE_NAME_COMPARATOR = new Comparator<TreeNode>() {
+        public int compare(TreeNode o1, TreeNode o2) {
             if (o1 instanceof EntityHeaderNode && o2 instanceof EntityHeaderNode) {
                 String name1 = ((EntityHeaderNode)o1).getEntityHeader().getName();
                 String name2 = ((EntityHeaderNode)o2).getEntityHeader().getName();
                 return name1.compareToIgnoreCase(name2);
             }
             throw new ClassCastException("Expected " + EntityHeaderNode.class +
-              " received " + o1.getClass() + " and " + o2.getClass());
+              " received " + (o1 == null ? null : o1.getClass().getSimpleName()) + " and " + (o2 == null ? null : o2.getClass().getSimpleName()));
         }
     };
 
@@ -138,7 +139,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      */
     public String toString() {
         StringBuffer sb = new StringBuffer();
-        sb.append(getClass().getName() + "\n").
+        sb.append(getClass().getName()).append("\n").
           append(super.toString());
         return sb.toString();
     }

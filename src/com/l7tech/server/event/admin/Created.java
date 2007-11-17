@@ -12,12 +12,12 @@ import com.l7tech.objectmodel.Entity;
  * @author alex
  * @version $Revision$
  */
-public class Created extends PersistenceEvent {
-    public Created(Entity entity, String note ) {
+public class Created<ET extends Entity> extends PersistenceEvent<ET> {
+    public Created(ET entity, String note ) {
         super(entity, note );
     }
 
-    public Created(Entity entity) {
+    public Created(ET entity) {
         super(entity);
     }
 }

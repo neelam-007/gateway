@@ -5,7 +5,9 @@ import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreeNode;
 import java.awt.*;
+import java.util.WeakHashMap;
 
 /**
  * Default <CODE>TreeCellRenderer</CODE> implementaiton that handles
@@ -14,8 +16,13 @@ import java.awt.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
+    private final WeakHashMap<AssertionTreeNode, Boolean> includedCache = new WeakHashMap<AssertionTreeNode, Boolean>();
+
     private final Font boldFont;
     private final Font plainFont;
+    private final Font italicFont;
+    private final Color defaultForeground;
+
     private boolean validated = true;
     /**
      * default constructor
@@ -24,6 +31,8 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         JLabel l = new JLabel();
         boldFont = l.getFont().deriveFont(Font.BOLD);
         plainFont = l.getFont().deriveFont(Font.PLAIN);
+        italicFont = l.getFont().deriveFont(Font.ITALIC);
+        defaultForeground = l.getForeground();
     }
 
     /**
@@ -47,10 +56,32 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         Image image =expanded ? node.getOpenedIcon() : node.getIcon();
         setIcon(image == null ? null : new ImageIcon(image));
 
-        if (isRoutingAssertionNode(node))
-            setFont(boldFont);
+        if (isIncluded(node)) {
+            setForeground(Color.GRAY);
+            setFont(italicFont);
+        } else {
+            setForeground(defaultForeground);
+            setFont(isRoutingAssertionNode(node) ? boldFont : plainFont);
+        }
 
         return this;
+    }
+
+    private boolean isIncluded(AssertionTreeNode node) {
+        Boolean included = includedCache.get(node);
+        if (included == null) {
+            included = false;
+            if (!(node instanceof IncludeAssertionPolicyNode)) {
+                for (TreeNode treeNode : node.getPath()) {
+                    if (treeNode instanceof IncludeAssertionPolicyNode) {
+                        included = true;
+                        break;
+                    }
+                }
+            }
+            includedCache.put(node, included);
+        }
+        return included;
     }
 
     private boolean isRoutingAssertionNode(AssertionTreeNode node) {

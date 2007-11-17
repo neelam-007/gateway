@@ -1,11 +1,16 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.identity.*;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathResult;
+import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -17,9 +22,6 @@ import java.util.*;
 /**
  * Class <code>IdentityPath</code> represents a collection of
  * assertion paths for an identity within given policy.
- * <p/>
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class IdentityPath {
     protected static final Comparator<IdentityPath> DEFAULT_COMPARATOR = new Comparator<IdentityPath>() {
@@ -75,10 +77,11 @@ public class IdentityPath {
      * their paths.
      *
      * @param root the assertion root
+     * @param pathBuilderFactory
      * @return the set of identity paths that exist in thi policy tree
      */
-    public static Set<IdentityPath> getPaths(Assertion root) throws InterruptedException {
-        return getPaths(root, DEFAULT_COMPARATOR);
+    public static Set<IdentityPath> getPaths(Assertion root, PolicyPathBuilderFactory pathBuilderFactory) throws InterruptedException, PolicyAssertionException {
+        return getPaths(root, DEFAULT_COMPARATOR, pathBuilderFactory);
     }
 
     /**
@@ -90,19 +93,20 @@ public class IdentityPath {
      * @param root the assertion root
      * @param c    the the comparator that will be used to sort the identities
      *             set.
+     * @param pathBuilderFactory
      * @return the set of identity paths that exist in thi policy tree
      */
-    public static Set<IdentityPath> getPaths(Assertion root, Comparator<IdentityPath> c) throws InterruptedException {
+    public static Set<IdentityPath> getPaths(Assertion root, Comparator<IdentityPath> c, PolicyPathBuilderFactory pathBuilderFactory) throws InterruptedException, PolicyAssertionException {
         Set<Identity> identities = getIdentities(root);
         Set<IdentityPath> paths = new TreeSet<IdentityPath>(c);
         for (Identity identity : identities) {
-            paths.add(forIdentity(identity, root));
+            paths.add(forIdentity(identity, root, pathBuilderFactory));
         }
-        IdentityPath anonPath = anonymousPaths(root);
+        IdentityPath anonPath = anonymousPaths(root, pathBuilderFactory);
         if (!anonPath.getPaths().isEmpty()) {
             paths.add(anonPath);
         }
-        IdentityPath customAccesControlPath = customAccessControlPaths(root);
+        IdentityPath customAccesControlPath = customAccessControlPaths(root, pathBuilderFactory);
         if (!customAccesControlPath.getPaths().isEmpty()) {
             paths.add(customAccesControlPath);
         }
@@ -117,16 +121,17 @@ public class IdentityPath {
      *
      * @param identity    the principal
      * @param root the assertion root
+     * @param pathBuilderFactory
      * @return the identity path with the collection of assertion paths
      *         for the given principal
      * @see IdentityPath
      */
-    public static IdentityPath forIdentity(Identity identity, Assertion root) throws InterruptedException {
+    public static IdentityPath forIdentity(Identity identity, Assertion root, PolicyPathBuilderFactory pathBuilderFactory) throws InterruptedException, PolicyAssertionException {
         if (!(identity instanceof User || identity instanceof Group)) {
             throw new IllegalArgumentException("unknown type");
         }
         IdentityPath ipath = new IdentityPath(identity);
-        PolicyPathBuilder pb = PolicyPathBuilder.getDefault();
+        PolicyPathBuilder pb = pathBuilderFactory.makePathBuilder();
         PolicyPathResult ppr = pb.generate(root);
         outer:
         for (AssertionPath assertionPath : ppr.paths()) {
@@ -154,14 +159,13 @@ public class IdentityPath {
      * group membership check, and custom access control check.
      *
      * @param root the assertion root
+     * @param pathBuilderFactory
      * @return the collection of aanonymous assertion paths
      */
-    private static IdentityPath anonymousPaths(Assertion root) throws InterruptedException {
-        UserBean anon = new UserBean();
-        anon.setLogin(ANONYMOUS);
-        anon.setName(anon.getLogin());
+    private static IdentityPath anonymousPaths(Assertion root, PolicyPathBuilderFactory pathBuilderFactory) throws InterruptedException, PolicyAssertionException {
+        User anon = new AnonymousUserReference(null, IdentityProviderConfig.DEFAULT_OID, ANONYMOUS);
         IdentityPath ipath = new IdentityPath(anon);
-        PolicyPathBuilder pb = PolicyPathBuilder.getDefault();
+        PolicyPathBuilder pb = pathBuilderFactory.makePathBuilder();
         PolicyPathResult ppr = pb.generate(root);
         outer:
         for (AssertionPath assertionPath : ppr.paths()) {
@@ -188,15 +192,14 @@ public class IdentityPath {
      * the custom assertion
      *
      * @param root the assertion root
+     * @param policyPathBuilderFactory
      * @return the collection of aanonymous assertion paths
      */
-    private static IdentityPath customAccessControlPaths(Assertion root) throws InterruptedException {
-        UserBean anon = new UserBean();
-        StringBuffer sb = new StringBuffer(CUSTOM_ACCESS_CONTROL);
-
-        IdentityPath ipath = new IdentityPath(anon);
-        PolicyPathBuilder pb = PolicyPathBuilder.getDefault();
+    private static IdentityPath customAccessControlPaths(Assertion root, PolicyPathBuilderFactory policyPathBuilderFactory) throws InterruptedException, PolicyAssertionException {
+        final StringBuffer sb = new StringBuffer(CUSTOM_ACCESS_CONTROL);
+        PolicyPathBuilder pb = policyPathBuilderFactory.makePathBuilder();
         PolicyPathResult ppr = pb.generate(root);
+        final Set<AssertionPath> paths = new HashSet<AssertionPath>();
         for (AssertionPath assertionPath : ppr.paths()) {
             Assertion[] path = assertionPath.getPath();
             boolean found = false;
@@ -217,13 +220,17 @@ public class IdentityPath {
                 }
             }
             if (found) {
-                ipath.identityPaths.add(assertionPath);
+                paths.add(assertionPath);
             }
             if (Thread.interrupted()) throw new InterruptedException();
         }
-        anon.setLogin(sb.toString());
-        anon.setName(anon.getLogin());
 
+        IdentityPath ipath = new IdentityPath(new Principal() {
+            public String getName() {
+                return sb.toString();
+            }
+        });
+        ipath.identityPaths = paths;
         return ipath;
 
     }
@@ -291,8 +298,8 @@ public class IdentityPath {
      * @param cl the assertion type
      * @return the <code>Set</code> of the assertion instances.
      */
-    public Set getAssignableAssertions(Class cl) {
-        Set<Assertion> resultSet = new HashSet<Assertion>();
+    public <AT extends Assertion> Set<AT> getAssignableAssertions(Class<AT> cl) {
+        Set<AT> resultSet = new HashSet<AT>();
         if (cl == null || !Assertion.class.isAssignableFrom(cl)) {
             return resultSet;
         }
@@ -301,7 +308,7 @@ public class IdentityPath {
             Assertion[] assertions = identityPath.getPath();
             for (Assertion assertion : assertions) {
                 if (cl.isAssignableFrom(assertion.getClass())) {
-                    resultSet.add(assertion);
+                    resultSet.add((AT) assertion);
                 }
             }
         }
@@ -316,7 +323,7 @@ public class IdentityPath {
      * @return the <code>Set</code> of the filtered assertion instances.
      * @see AssertionFilter
      */
-    public Set getAssertions(AssertionFilter af) {
+    public Set<Assertion> getAssertions(AssertionFilter af) {
         Set<Assertion> resultSet = new HashSet<Assertion>();
         if (af == null) {
             return resultSet;
@@ -368,19 +375,12 @@ public class IdentityPath {
     public static Identity extractIdentity(Object assertion) {
         if (assertion instanceof SpecificUser) {
             SpecificUser su = ((SpecificUser)assertion);
-            UserBean u = new UserBean();
-            u.setUniqueIdentifier(su.getUserUid());
-            u.setProviderId(su.getIdentityProviderOid());
-            u.setLogin(su.getUserLogin());
-            u.setName(su.getUserName());
-            return u;
+            String name = su.getUserName();
+            if (name == null) name = su.getUserLogin();
+            return new AnonymousUserReference(su.getUserUid(), su.getIdentityProviderOid(), name);
         } else if (assertion instanceof MemberOfGroup) {
             MemberOfGroup mog = ((MemberOfGroup)assertion);
-            GroupBean g = new GroupBean();
-            g.setUniqueIdentifier(mog.getGroupId());
-            g.setProviderId(mog.getIdentityProviderOid());
-            g.setName(mog.getGroupName());
-            return g;
+            return new AnonymousGroupReference(mog.getGroupId(), mog.getIdentityProviderOid(), mog.getGroupName());
         }
         throw new IllegalArgumentException("Unknown assertion type " + assertion);
     }

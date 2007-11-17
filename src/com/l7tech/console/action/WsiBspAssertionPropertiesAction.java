@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
@@ -16,9 +19,6 @@ import java.util.logging.Logger;
 
 /**
  * Edit properties action for WSI-BSP assertion.
- *
- * @author $Author$
- * @version $Revision$
  */
 public class WsiBspAssertionPropertiesAction extends SecureAction {
 
@@ -45,7 +45,7 @@ public class WsiBspAssertionPropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final WsiBspPropertiesDialog dlg = new WsiBspPropertiesDialog(node.getAssertion(), f, true);
+        final WsiBspPropertiesDialog dlg = new WsiBspPropertiesDialog(node.asAssertion(), f, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

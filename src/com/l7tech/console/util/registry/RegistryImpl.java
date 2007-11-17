@@ -11,12 +11,15 @@ import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.service.ServiceAdmin;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -53,6 +56,9 @@ public final class RegistryImpl extends Registry
     private KerberosAdmin kerberosAdmin;
     private RbacAdmin rbacAdmin;
     private TransportAdmin transportAdmin;
+    private PolicyAdmin policyAdmin;
+    private PolicyValidator policyValidator;
+    private PolicyPathBuilderFactory policyPathBuilderFactory;
 
     public boolean isAdminContextPresent() {
         return adminContext != null;
@@ -199,8 +205,28 @@ public final class RegistryImpl extends Registry
         return transportAdmin;
     }
 
+    public PolicyAdmin getPolicyAdmin() {
+        checkAdminContext();
+        if (policyAdmin != null) {
+            return policyAdmin;
+        }
+        policyAdmin = adminContext.getPolicyAdmin();
+        return policyAdmin;
+    }
     public SecurityProvider getSecurityProvider() {
         return (SecurityProvider)applicationContext.getBean("securityProvider");
+    }
+
+    public PolicyValidator getPolicyValidator() {
+        checkAdminContext();
+        if (policyValidator != null) return policyValidator;
+        return policyValidator = (PolicyValidator) applicationContext.getBean("defaultPolicyValidator");
+    }
+
+    public PolicyPathBuilderFactory getPolicyPathBuilderFactory() {
+        checkAdminContext();
+        if (policyPathBuilderFactory != null) return policyPathBuilderFactory;
+        return policyPathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory");
     }
 
     /**
@@ -260,6 +286,8 @@ public final class RegistryImpl extends Registry
         auditAdmin = null;
         clusterStatusAdmin = null;
         kerberosAdmin = null;
+		transportAdmin = null;
+        policyAdmin = null;
     }
 
 

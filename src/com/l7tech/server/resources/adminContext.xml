@@ -178,7 +178,7 @@
         <constructor-arg ref="registryPublicationManager"/>
         <constructor-arg ref="uddiAgentFactory"/>
         <constructor-arg ref="serviceManager"/>
-        <constructor-arg ref="policyValidator"/>
+        <constructor-arg ref="serverPolicyValidator"/>
         <constructor-arg ref="sampleMessageManager"/>
         <constructor-arg ref="serviceDocumentManager"/>
         <constructor-arg ref="counterIDManager"/>
@@ -251,5 +251,11 @@
     <bean id="rbacAdmin_UNSECURED" class="com.l7tech.server.security.rbac.RbacAdminImpl">
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="entityFinder"/>
+    </bean>
+
+    <!-- Policy admin impl -->
+    <bean id="policyAdmin_UNSECURED" class="com.l7tech.server.policy.PolicyAdminImpl">
+        <constructor-arg ref="policyManager"/>
+        <constructor-arg ref="policyCache"/>
     </bean>
 </beans>

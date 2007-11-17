@@ -1,7 +1,12 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.action;
 
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
@@ -10,15 +15,11 @@ import com.l7tech.service.PublishedService;
 
 import java.io.ByteArrayOutputStream;
 
-
 /**
- * The <code>SavePolicyAction</code> action saves the service and it's
+ * The <code>SavePolicyAction</code> action saves the policy and it's
  * assertion tree.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
  */
-public class SavePolicyAction extends ServiceNodeAction {
+public class SavePolicyAction extends PolicyNodeAction {
     protected AssertionTreeNode node;
 
     public SavePolicyAction() {
@@ -36,7 +37,7 @@ public class SavePolicyAction extends ServiceNodeAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Save the service policy";
+        return "Save the policy";
     }
 
     /**
@@ -75,14 +76,20 @@ public class SavePolicyAction extends ServiceNodeAction {
             throw new IllegalStateException("no node specified");
         }
         try {
-            ServiceNode serviceNode = getServiceNode();
-            if (serviceNode == null) {
-                throw new IllegalArgumentException("No edited service specified");
+            PolicyEntityNode policyNode = getPolicyNode();
+            if (policyNode == null) {
+                throw new IllegalArgumentException("No edited policy or service specified");
             }
-            PublishedService svc = serviceNode.getPublishedService();
-            svc.setPolicyXml(xml);
-            Registry.getDefault().getServiceManager().savePublishedService(svc);
-            serviceNode.clearServiceHolder();
+            if (policyNode instanceof ServiceNode) {
+                final PublishedService svc = ((ServiceNode) policyNode).getPublishedService();
+                svc.getPolicy().setXml(xml);
+                Registry.getDefault().getServiceManager().savePublishedService(svc);
+            } else {
+                Policy policy = policyNode.getPolicy();
+                policy.setXml(xml);
+                Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+            }
+            policyNode.clearCachedEntities();
         } catch (Exception e) {
             throw new RuntimeException("Error saving service and policy",e);
         }

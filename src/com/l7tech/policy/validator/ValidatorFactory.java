@@ -1,11 +1,11 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.common.util.ConstructorInvocation;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.*;
-import com.l7tech.service.PublishedService;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -137,6 +137,6 @@ class ValidatorFactory {
         public NullValidator(Assertion a) {
         }
 
-        public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {}
+        public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {}
     }
 }

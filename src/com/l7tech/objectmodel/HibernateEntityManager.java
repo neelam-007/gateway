@@ -81,6 +81,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
 
         try {
+            //noinspection unchecked
             return (List<ET>)getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
@@ -209,6 +210,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     @Secured(operation=OperationType.READ)
     public ET findEntity(final long oid) throws FindException {
         try {
+            //noinspection unchecked
             return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_BY_OID);
@@ -268,36 +270,55 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             String name = null;
             if (entity instanceof NamedEntity) name = ((NamedEntity) entity).getName();
             if (name == null) name = "";
-            final long id = entity.getOid();
-            headers.add(newHeader(id, name));
+            headers.add(newHeader(entity.getId(), name));
         }
         return Collections.unmodifiableList(headers);
     }
 
+    @Transactional(readOnly=true)
+    public Collection<HT> findAllHeaders(final int offset, final int windowSize) {
+        //noinspection unchecked
+        List<ET> entities = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                Criteria crit = session.createCriteria(getImpClass());
+                crit.setFirstResult(offset);
+                crit.setFetchSize(windowSize);
+                return crit.list();
+            }
+        });
+
+        List<HT> headers = new ArrayList<HT>(entities.size());
+        for (ET entity : entities) {
+            headers.add(newHeader(entity.getId(), entity instanceof NamedEntity ? ((NamedEntity)entity).getName() : null));
+        }
+        return headers;
+    }
+
     /**
      * Override this method to customize how EntityHeaders get created
-     * (if {@link HT} is a subclass of {@link EntityHeader} it's mandatory) 
+     * (if {@link HT} is a subclass of {@link EntityHeader} it's mandatory)
+     *
+     * @param id the Entity ID
+     * @param name the Entity name, or null if unknown
+     * @return a new EntityHeader based on the provided Entity ID and name 
      */
-    protected HT newHeader(long id, String name) {
-        return (HT) new EntityHeader(Long.toString(id), getEntityType(), name, EMPTY_STRING);
+    protected HT newHeader(String id, String name) {
+        //noinspection unchecked
+        return (HT) new EntityHeader(id, getEntityType(), name, EMPTY_STRING);
     }
 
     /**
      * Override this method to add additional criteria to findAll(), findAllHeaders(), findByName() etc.
-     *
-     * @param allHeadersCriteria
+     * @param allHeadersCriteria the Hibernate Criteria object that should be customized if some filtering is required 
      */
     protected void addFindAllCriteria(Criteria allHeadersCriteria) {
-    }
-
-    public Collection<HT> findAllHeaders(int offset, int windowSize) throws FindException {
-        throw new UnsupportedOperationException("Not yet implemented!");
     }
 
     @Transactional(readOnly=true)
     @Secured(operation=OperationType.READ)
     public Collection<ET> findAll() throws FindException {
         try {
+            //noinspection unchecked
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria allHeadersCriteria = session.createCriteria(getImpClass());
@@ -310,10 +331,21 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
-    @Transactional(readOnly=true)
-    @Secured(operation=OperationType.READ)
-    public Collection<ET> findAll(int offset, int windowSize) throws FindException {
-        throw new UnsupportedOperationException("Not yet implemented!");
+    public Collection<ET> findAll(final int offset, final int windowSize) throws FindException {
+        try {
+            //noinspection unchecked
+            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria allCriteria = session.createCriteria(getImpClass());
+                    addFindAllCriteria(allCriteria);
+                    allCriteria.setFirstResult(offset);
+                    allCriteria.setMaxResults(windowSize);
+                    return allCriteria.list();
+                }
+            });
+        } catch (HibernateException e) {
+            throw new FindException(e.toString(), e);
+        }
     }
 
     @Transactional(propagation=SUPPORTS)
@@ -333,6 +365,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    //noinspection unchecked
                     ET entity = (ET)session.get(et.getClass(), et.getOid());
                     if (entity == null) {
                         session.delete(et);
@@ -415,6 +448,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
 
         try {
+            //noinspection unchecked
             return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
@@ -454,6 +488,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             cacheInfo = ref == null ? null : ref.get();
             if (cacheInfo == null) {
                 // Might be new, or might be first run
+                //noinspection unchecked
                 entity = (ET)new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
                     public Object doInTransaction(TransactionStatus transactionStatus) {
                         try {
@@ -490,7 +525,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 // BALEETED
                 cacheRemove(cacheInfo.entity);
                 return null;
-            } else if (currentVersion.intValue() != cacheInfo.version) {
+            } else if (currentVersion != cacheInfo.version) {
                 // Updated
                 ET thing = findEntity(cacheInfo.entity.getOid());
                 return thing == null ? null : checkAndCache(thing);
@@ -522,18 +557,21 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     /**
      * Override this method to be notified when an Entity has been removed from the cache.
+     * @param ent the Entity that has been removed
      */
     protected void removedFromCache(Entity ent) { }
 
     /**
      * Override this method to check an Entity before it's added to the cache.
      *
+     * @param ent the Entity to check for suitability
      * @throws CacheVeto to prevent the Entity from being added.
      */
     protected void checkCachable(Entity ent) throws CacheVeto { }
 
     /**
      * Override this method to be notified when an Entity has been added to the cache.
+     * @param ent the Entity that has been added to the cache
      */
     protected void addedToCache(PersistentEntity ent) { }
 
@@ -601,9 +639,10 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      */
     protected ET findByPrimaryKey(final Class impClass, final long oid) throws FindException {
         try {
+            //noinspection unchecked
             return (ET) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    return session.load(impClass, Long.valueOf(oid));
+                    return session.load(impClass, oid);
                 }
             });
         } catch (Exception e) {
@@ -618,9 +657,10 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     /**
      * Delete the persistent object of given class for
      *
-     * @param entityClass
-     * @param oid
-     * @throws DeleteException
+     * @param entityClass the Class of Entity to delete
+     * @param oid the OID of the Entity to be deleted
+     * @throws DeleteException if the Entity cannot be deleted
+     * @return true if the entity was deleted; false otherwise
      */
     protected boolean delete(Class entityClass, final long oid) throws DeleteException {
         try {

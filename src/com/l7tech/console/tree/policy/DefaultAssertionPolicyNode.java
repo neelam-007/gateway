@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
@@ -50,14 +53,8 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         return s != null ? s : "com/l7tech/console/resources/policy16.gif";
     }
 
-    public boolean canDelete() {
-        return true;
-    }
-
     public Action[] getActions() {
         java.util.List<Action> list = new ArrayList<Action>();
-        final Action pref = getPreferredAction();
-        if (pref != null) list.add(pref);
         list.addAll(Arrays.asList(super.getActions()));
         if (asAssertion() instanceof PrivateKeyable)
             list.add(new EditKeyAliasForAssertion(this));

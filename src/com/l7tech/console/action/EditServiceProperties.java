@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.DialogDisplayer;
@@ -9,7 +12,8 @@ import com.l7tech.common.util.Functions;
 import com.l7tech.console.panels.ServicePropertiesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
@@ -26,12 +30,6 @@ import java.util.Collection;
 
 /**
  * Action to edit the published service properties
- * <p/>
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Jan 24, 2007<br/>
  */
 public class EditServiceProperties extends ServiceNodeAction {
     public EditServiceProperties(ServiceNode node) {
@@ -69,9 +67,9 @@ public class EditServiceProperties extends ServiceNodeAction {
         Functions.UnaryVoid<Boolean> callback = new Functions.UnaryVoid<Boolean>() {
             public void call(Boolean changed) {
                 if (changed) {
-                    serviceNode.clearServiceHolder();
+                    serviceNode.clearCachedEntities();
                     serviceNode.reloadChildren();
-                    JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesTree.NAME);
+                    JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         model.nodeChanged(node);
@@ -86,12 +84,15 @@ public class EditServiceProperties extends ServiceNodeAction {
                     }
                     PolicyEditorPanel pe = (PolicyEditorPanel)jc;
                     try {
-                        PublishedService editedSvc = pe.getServiceNode().getPublishedService();
-                        // if currently edited service was deleted
-                        if (serviceNode.getPublishedService().getOid() == editedSvc.getOid()) {
-                            // update name on top of editor
-                            pe.changeSubjectName(serviceNode.getName());
-                            pe.updateHeadings();
+                        final PolicyEntityNode pn = pe.getPolicyNode();
+                        if (pn instanceof ServiceNode) {
+                            PublishedService editedSvc = ((ServiceNode) pn).getPublishedService();
+                            // if currently edited service was deleted
+                            if (serviceNode.getPublishedService().getOid() == editedSvc.getOid()) {
+                                // update name on top of editor
+                                pe.changeSubjectName(serviceNode.getName());
+                                pe.updateHeadings();
+                            }
                         }
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "problem modifying policy editor title");

@@ -1,48 +1,45 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
-import com.l7tech.common.xml.Wsdl;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.console.action.Actions;
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceDocument;
-import com.l7tech.console.event.WizardListener;
-import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityEvent;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.action.Actions;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import javax.wsdl.WSDLException;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import java.util.EventListener;
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The <code>JDialog</code> wizard that drives the publish service
- * use case.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
+ * The wizard that drives the use case of publishing SOAP services.
  */
 public class PublishServiceWizard extends Wizard {
     private boolean completedBundle;
@@ -78,7 +75,6 @@ public class PublishServiceWizard extends Wizard {
         }
 
         public String getServiceURI() {
-
             if(routingAssertion != null && routingAssertion instanceof HttpRoutingAssertion) {
                 return ((HttpRoutingAssertion)routingAssertion).getProtectedServiceUrl(); 
             } else {
@@ -86,6 +82,7 @@ public class PublishServiceWizard extends Wizard {
                     Wsdl wsdl = service.parsedWsdl();
                     if (wsdl != null) return wsdl.getServiceURI();
                 } catch (WSDLException e) {
+                    logger.log(Level.WARNING, "Unable to parse WSDL", e);
                 }
             }
             return null;
@@ -149,25 +146,24 @@ public class PublishServiceWizard extends Wizard {
     }
 
     private void completeTask() {
+        final PublishedService service = saBundle.getService();
         try {
             if (!completedBundle) {
                 // routing assertion?
                 if (saBundle.getRoutingAssertion() != null) {
+                    final List<Assertion> kids = saBundle.getAssertion().getChildren();
                     if (saBundle.isSharedPolicy()) {
-                        java.util.List ass = new ArrayList();
-                        ass.addAll(saBundle.getAssertion().getChildren());
+                        java.util.List<Assertion> ass = new ArrayList<Assertion>();
+                        ass.addAll(kids);
                         ass.add(saBundle.getRoutingAssertion());
                         saBundle.getAssertion().setChildren(ass);
                     } else {
-
-                        for (java.util.Iterator it =
-                          saBundle.getAssertion().getChildren().iterator(); it.hasNext();) {
-                            Assertion a = (Assertion)it.next();
+                        for (Assertion a : kids) {
                             if (a instanceof AllAssertion) {
-                                AllAssertion aa = (AllAssertion)a;
-                                java.util.List ass = new ArrayList();
+                                AllAssertion aa = (AllAssertion) a;
+                                java.util.List<Assertion> ass = new ArrayList<Assertion>();
                                 ass.addAll(aa.getChildren());
-                                ass.add(saBundle.getRoutingAssertion().clone());
+                                ass.add((Assertion) saBundle.getRoutingAssertion().clone());
                                 aa.setChildren(ass);
                             }
                         }
@@ -179,7 +175,7 @@ public class PublishServiceWizard extends Wizard {
             if (saBundle.getAssertion() != null) {
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
                 WspWriter.writePolicy(saBundle.getAssertion(), bo);
-                saBundle.getService().setPolicyXml(bo.toString());
+                service.getPolicy().setXml(bo.toString());
             } else {
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
                 WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
@@ -221,7 +217,6 @@ public class PublishServiceWizard extends Wizard {
                   "Error",
                   JOptionPane.ERROR_MESSAGE);
             }
-            return;
         }
     }
 
@@ -284,9 +279,9 @@ public class PublishServiceWizard extends Wizard {
      */
     private void notify(EntityHeader header) {
         EntityEvent event = new EntityEvent(this, header);
-        EventListener[] listeners = localListenerList.getListeners(EntityListener.class);
-        for (int i = 0; i < listeners.length; i++) {
-            ((EntityListener)listeners[i]).entityAdded(event);
+        EntityListener[] listeners = localListenerList.getListeners(EntityListener.class);
+        for (EntityListener listener : listeners) {
+            listener.entityAdded(event);
         }
     }
 }

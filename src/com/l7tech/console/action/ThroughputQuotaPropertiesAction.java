@@ -1,8 +1,5 @@
-/**
- * LAYER 7 TECHNOLOGIES, INC<br/>
- *
- * User: flascell<br/>
- * Date: Apr 1, 2005<br/>
+/*
+ * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.action;
 
@@ -20,8 +17,6 @@ import java.util.logging.Logger;
 
 /**
  * Action to edit the properties of an ThroughputQuota assertion
- *
- * @author flascelles@layer7-tech.com
  */
 public class ThroughputQuotaPropertiesAction extends SecureAction {
 
@@ -44,7 +39,7 @@ public class ThroughputQuotaPropertiesAction extends SecureAction {
 
     protected void performAction() {
         final ThroughputQuotaForm dlg = new ThroughputQuotaForm(TopComponents.getInstance().getTopParent(),
-                                                          subject.getAssertion(), null);
+                                                          subject.asAssertion(), null);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

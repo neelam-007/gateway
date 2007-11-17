@@ -1,12 +1,9 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RemoteIpRange;
 import com.l7tech.console.action.RemoteIpRangePropertiesAction;
+import com.l7tech.policy.assertion.RemoteIpRange;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Policy tree node for RemoteIpRange assertion.
@@ -18,24 +15,19 @@ import java.util.Arrays;
  * $Id$<br/>
  *
  */
-public class RemoteIpRangeTreeNode extends LeafAssertionTreeNode {
-    public RemoteIpRangeTreeNode(Assertion assertion) {
+public class RemoteIpRangeTreeNode extends LeafAssertionTreeNode<RemoteIpRange> {
+    public RemoteIpRangeTreeNode(RemoteIpRange assertion) {
         super(assertion);
-        if (assertion instanceof RemoteIpRange) {
-            nodeAssertion = (RemoteIpRange)assertion;
-        } else
-            throw new IllegalArgumentException("assertion passed must be of type " +
-              RemoteIpRange.class.getName());
     }
     public String getName() {
-        String nodeName = "IP Address";
-        if (nodeAssertion != null) {
-            if (nodeAssertion.isAllowRange()) {
-                nodeName += " Allowed";
-            } else nodeName += " Forbidden";
-            nodeName += " [" + nodeAssertion.getStartIp() + "/" + nodeAssertion.getNetworkMask() + "]";
-        }
-        return nodeName;
+        StringBuilder sb = new StringBuilder("IP Address ");
+        sb.append(assertion.isAllowRange() ? "Allowed" : "Forbidden");
+        sb.append(" [");
+        sb.append(assertion.getStartIp());
+        sb.append("/");
+        sb.append(assertion.getNetworkMask());
+        sb.append("]");
+        return sb.toString();
     }
 
     protected String iconResource(boolean open) {
@@ -45,19 +37,4 @@ public class RemoteIpRangeTreeNode extends LeafAssertionTreeNode {
     public Action getPreferredAction() {
         return new RemoteIpRangePropertiesAction(this);
     }
-
-    public Action[] getActions() {
-        java.util.List list = new ArrayList();
-        list.add(getPreferredAction());
-        list.addAll(Arrays.asList(super.getActions()));
-        return (Action[])list.toArray(new Action[]{});
-    }
-
-    public boolean canDelete() {
-        return true;
-    }
-
-    public RemoteIpRange getAssertion() {return nodeAssertion;}
-
-    private RemoteIpRange nodeAssertion;
 }

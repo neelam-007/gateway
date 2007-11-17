@@ -1,19 +1,15 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.server.service;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.service.PublishedService;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Service API. Get instance of this through the Locator class.
- * <p/>
- * <br/><br/>
- * Layer 7 Technologies, inc.<br/>
- * User: flascelles<br/>
- * Date: Jun 6, 2003
  */
 public interface ServiceManager extends EntityManager<PublishedService, EntityHeader> {
     /**
@@ -24,9 +20,6 @@ public interface ServiceManager extends EntityManager<PublishedService, EntityHe
      * @return the payload returned at that url (hopefully)
      */
     String resolveWsdlTarget(String url);
-
-    @Transactional(propagation= Propagation.SUPPORTS)
-    void initiateServiceCache();
 
     /**
      * Creates a new role for the specified PublishedService.

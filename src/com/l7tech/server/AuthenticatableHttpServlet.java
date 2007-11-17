@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.common.transport.SsgConnector.Endpoint;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.*;
@@ -150,9 +151,8 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * @noinspection UnnecessaryLabelOnContinueStatement
      */
     private AuthenticationResult[] authenticateRequestAgainstAllIdProviders(HttpServletRequest req) throws FindException, IssuedCertNotPresentedException {
-        Collection authResults = new ArrayList();
-        Collection providers;
-        providers = providerConfigManager.findAllIdentityProviders();
+        Collection<AuthenticationResult> authResults = new ArrayList<AuthenticationResult>();
+        Collection<IdentityProvider> providers = providerConfigManager.findAllIdentityProviders();
         LoginCredentials creds = findCredentialsBasic(req);
         if (creds == null) {
             return new AuthenticationResult[0];
@@ -166,8 +166,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         boolean userAuthenticatedButDidNotPresentHisCert = false;
 
         nextIdentityProvider:
-        for (Iterator i = providers.iterator(); i.hasNext();) {
-            IdentityProvider provider = (IdentityProvider)i.next();
+        for (IdentityProvider provider : providers) {
             try {
                 AuthenticationResult authResult = provider.authenticate(creds);
                 if (authResult == null) continue nextIdentityProvider;
@@ -195,12 +194,12 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                         // there is a valid cert. make sure it was presented
                         if (requestCert == null) {
                             logger.info("User " + creds.getLogin() + " has valid basic credentials but is " +
-                                        "refused authentication because he did not prove possession of his client cert.");
+                                    "refused authentication because he did not prove possession of his client cert.");
                             userAuthenticatedButDidNotPresentHisCert = true;
                         }
                         X509Certificate dbCertX509;
                         if (dbCert instanceof X509Certificate) {
-                            dbCertX509 = (X509Certificate)dbCert;
+                            dbCertX509 = (X509Certificate) dbCert;
                         } else {
                             logger.warning("Client cert in database is not X.509");
                             continue nextIdentityProvider;
@@ -208,27 +207,28 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                         if (CertUtils.certsAreEqual(requestCert, dbCertX509)) {
                             logger.finest("Valid client cert presented as part of request.");
                             authResult = new AuthenticationResult(authResult.getUser(),
-                                                                  dbCertX509,
-                                                                  clientCertManager.isCertPossiblyStale(dbCertX509));
+                                    dbCertX509,
+                                    clientCertManager.isCertPossiblyStale(dbCertX509));
                             authResults.add(authResult);
                         } else {
                             logger.warning("the authenticated user has a valid cert but he presented a different" +
-                              "cert to the servlet");
+                                    "cert to the servlet");
                         }
                     }
                 }
             } catch (Exception e) {
                 logger.fine("Authentication failed for user " + creds.getLogin() +
-                  " on identity provider: " + provider.getConfig().getName());
+                        " on identity provider: " + provider.getConfig().getName());
             }
         }
+        
         if (authResults.isEmpty() && userAuthenticatedButDidNotPresentHisCert) {
             String msg = "Basic credentials are valid but the client did not present " +
               "his client cert as part of the ssl handshake";
             logger.warning(msg);
             throw new IssuedCertNotPresentedException(msg);
         }
-        return (AuthenticationResult[])authResults.toArray(new AuthenticationResult[0]);
+        return authResults.toArray(new AuthenticationResult[0]);
     }
 
     /**
@@ -291,7 +291,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
 
         if (service != null) {
-            Iterator it = service.rootAssertion().preorderIterator();
+            Iterator it = service.getPolicy().getAssertion().preorderIterator();
             while (it.hasNext()) {
                 Assertion ass = (Assertion)it.next();
                 if (ass instanceof CustomAssertionHolder) {
@@ -343,10 +343,10 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * Decides whether a policy should be downloadable without providing credentials. This will return true if the
      * service described by this policy could be consumed anonymouly.
      */
-    protected boolean policyAllowAnonymous(PublishedService policy) throws IOException {
+    protected boolean policyAllowAnonymous(Policy policy) throws IOException {
         // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
         // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
-        Assertion rootassertion = wspReader.parsePermissively(policy.getPolicyXml());
+        Assertion rootassertion = wspReader.parsePermissively(policy.getXml());
 
         Iterator it = rootassertion.preorderIterator();
         boolean allIdentitiesAreFederated = true;
@@ -401,6 +401,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         if (arg instanceof CompositeAssertion) {
             CompositeAssertion root = (CompositeAssertion)arg;
             Iterator i = root.getChildren().iterator();
+            //noinspection WhileLoopReplaceableByForEach
             while (i.hasNext()) {
                 Assertion child = (Assertion)i.next();
                 Assertion res = findCredentialAssertion(child);

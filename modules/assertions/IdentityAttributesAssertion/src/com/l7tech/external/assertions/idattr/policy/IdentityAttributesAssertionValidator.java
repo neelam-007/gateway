@@ -3,16 +3,16 @@
  */
 package com.l7tech.external.assertions.idattr.policy;
 
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.external.assertions.idattr.IdentityAttributesAssertion;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.validator.AssertionValidator;
-import com.l7tech.service.PublishedService;
 
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Validates that any {@link IdentityAttributesAssertion} is preceded in its path by an {@link IdentityAssertion}.
@@ -25,7 +25,7 @@ public class IdentityAttributesAssertionValidator implements AssertionValidator 
         this.assertion = assertion;
     }
 
-    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         int firstIdPos = -1;
         Set<Long> authenticatedProviders = new HashSet<Long>();
         for (int i = 0; i < path.getPath().length; i++) {

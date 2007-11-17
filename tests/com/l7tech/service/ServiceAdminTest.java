@@ -44,7 +44,7 @@ public class ServiceAdminTest extends TestCase {
      */
     public static Test suite() {
         final TestSuite suite = new TestSuite(ServiceAdminTest.class);
-        TestSetup wrapper = new TestSetup(suite) {
+        return new TestSetup(suite) {
             /**
              * test setup that deletes the stub data store; will trigger
              * store recreate
@@ -57,10 +57,8 @@ public class ServiceAdminTest extends TestCase {
             }
 
             protected void tearDown() throws Exception {
-                ;
             }
         };
-        return wrapper;
     }
 
     public void testCreateService() throws Exception {
@@ -72,7 +70,7 @@ public class ServiceAdminTest extends TestCase {
         StringWriter sw = new StringWriter();
         wsdl.toWriter(sw);
 
-        originalService.setPolicyXml("<test" + differentStringEverytime + "/>");
+        originalService.getPolicy().setXml("<test" + differentStringEverytime + "/>");
         originalService.setWsdlUrl("http://test" + differentStringEverytime + "?wsdl");
         originalService.setWsdlXml(sw.toString());
         System.out.println("saving service");
@@ -90,11 +88,10 @@ public class ServiceAdminTest extends TestCase {
                 wsdl.getDefinition().getTargetNamespace() + "test" + append;
         wsdl.getDefinition().setTargetNamespace(targetNS);
 
-        for (Iterator bindings = wsdl.getBindings().iterator(); bindings.hasNext();) {
-            Binding b = (Binding) bindings.next();
-            for (Iterator operations = b.getBindingOperations().iterator(); operations.hasNext();) {
-                BindingOperation bindingOperation = (BindingOperation) operations.next();
-
+        for (Binding b : wsdl.getBindings()) {
+            //noinspection unchecked
+            final List<BindingOperation> bops = b.getBindingOperations();
+            for (BindingOperation bindingOperation : bops) {
                 BindingInput input = bindingOperation.getBindingInput();
                 Iterator eels = input.getExtensibilityElements().iterator();
                 ExtensibilityElement ee;
@@ -103,8 +100,8 @@ public class ServiceAdminTest extends TestCase {
                     if (ee instanceof SOAPBody) {
                         SOAPBody body = (SOAPBody) ee;
                         body.setNamespaceURI(body.getNamespaceURI() + "test" + append);
-                    } else  if ( ee instanceof SOAPOperation ) {
-                        SOAPOperation sop = (SOAPOperation)ee;
+                    } else if (ee instanceof SOAPOperation) {
+                        SOAPOperation sop = (SOAPOperation) ee;
                         sop.setSoapActionURI(sop.getSoapActionURI() + "test" + append);
                     }
                 }
@@ -112,10 +109,9 @@ public class ServiceAdminTest extends TestCase {
         }
 
         Port wsdlPort = wsdl.getSoapPort();
-        List elements = wsdlPort.getExtensibilityElements();
-        ExtensibilityElement ee;
-        for (int i = 0; i < elements.size(); i++) {
-            ee = (ExtensibilityElement) elements.get(i);
+        //noinspection unchecked
+        List<ExtensibilityElement> elements = wsdlPort.getExtensibilityElements();
+        for (ExtensibilityElement ee : elements) {
             if (ee instanceof SOAPAddress) {
                 SOAPAddress sadd = (SOAPAddress) ee;
                 sadd.setLocationURI(sadd.getLocationURI() + "test" + append);

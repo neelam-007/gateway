@@ -1750,6 +1750,7 @@
                 <exclude name="com/l7tech/policy/exporter/**/*"/>
                 <exclude name="com/l7tech/policy/validator/RequestXpathAssertionValidator.class"/>
                 <exclude name="com/l7tech/policy/validator/ValidatorFactory.class"/>
+                <exclude name="com/l7tech/policy/validator/DefaultPolicyValidator.class"/>
 
                 <include name="com/l7tech/proxy/**/*"/>
                 <exclude name="com/l7tech/common/transport/**/*"/>
@@ -1763,6 +1764,7 @@
                 <include name="com/l7tech/objectmodel/PersistentEntity.class"/>
                 <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
                 <exclude name="com/l7tech/common/Authorizer.class"/>
+                <exclude name="com/l7tech/common/policy/**/*"/>
             </fileset>
             <fileset dir="${src.root}/etc">
                 <include name="login.config"/>
@@ -1853,6 +1855,7 @@
                 <include name="com/l7tech/objectmodel/EntityHeader*.class"/>
                 <include name="com/l7tech/objectmodel/IdentityHeader.class"/>
                 <include name="com/l7tech/objectmodel/EntityType.class"/>
+                <include name="com/l7tech/objectmodel/ReadOnlyEntityManager.class"/>
                 <include name="com/l7tech/objectmodel/EntityManager.class"/>
                 <include name="com/l7tech/objectmodel/ObjectPermission.class"/>
                 <include name="com/l7tech/objectmodel/AnonymousEntityReference.class"/>
@@ -1900,7 +1903,7 @@
 
     <target name="package.manager" depends="package.manager.jar, obfuscate.manager, package.manager.jar.pack200">
 
-        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
+        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer2" storepass="password">
             <fileset dir="${build.dir}" includes="Manager.jar"/>
         </signjar>
 
@@ -2714,7 +2717,7 @@
             </fileset>
         </jar>
 
-        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
+        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer2" storepass="password">
             <fileset dir="${build.dir}" includes="layer7-api.jar"/>
         </signjar>
 

@@ -2,29 +2,32 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.logging.Level;
+import java.util.Arrays;
 
 /**
- * The <code>ServicePolicyPropertiesAction</code> invokes the service
- * policy editor.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
+ * The <code>EditPolicyAction</code> invokes the policy editor on either a Service or a Policy.
  */
-public class EditServicePolicyAction extends NodeAction {
+public class EditPolicyAction extends NodeAction {
     private final boolean validate;
+    private final boolean service;
 
     /**
      * default constructor. invoke the policy validate if
@@ -33,9 +36,10 @@ public class EditServicePolicyAction extends NodeAction {
      * @param node the service node
      * @param b    true validate the policy, false
      */
-    public EditServicePolicyAction(ServiceNode node, boolean b) {
+    public EditPolicyAction(PolicyEntityNode node, boolean b) {
         super(node);
         validate = b;
+        service = node instanceof ServiceNode;
     }
 
     /**
@@ -43,7 +47,7 @@ public class EditServicePolicyAction extends NodeAction {
      *
      * @param node the service node
      */
-    public EditServicePolicyAction(ServiceNode node) {
+    public EditPolicyAction(PolicyEntityNode node) {
         this(node, true);
     }
 
@@ -58,7 +62,7 @@ public class EditServicePolicyAction extends NodeAction {
      * @return the action description
      */
     public String getDescription() {
-        return "Edit Web service policy assertions";
+        return service ? "Edit Web service policy assertions" : " Edit policy assertions";
     }
 
     /**
@@ -76,7 +80,7 @@ public class EditServicePolicyAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        final ServiceNode serviceNode = (ServiceNode)node;
+        final PolicyEntityNode policyNode = (PolicyEntityNode)node;
         try {
             TopComponents windowManager = TopComponents.getInstance();
             WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
@@ -85,16 +89,21 @@ public class EditServicePolicyAction extends NodeAction {
             // it makes sure the user will see the updated policy if the policy is saved
             wpanel.clearWorkspace();
 
-            serviceNode.clearServiceHolder();
+            policyNode.clearCachedEntities();
             TopComponents topComponents = TopComponents.getInstance();
             topComponents.unregisterComponent(PolicyTree.NAME);
             PolicyTree policyTree = (PolicyTree)topComponents.getPolicyTree();
 
             PolicyEditorPanel.PolicyEditorSubject subject = new PolicyEditorPanel.PolicyEditorSubject() {
-                public ServiceNode getServiceNode() {return serviceNode;}
+                public PolicyEntityNode getPolicyNode() {return policyNode;}
                 public Assertion getRootAssertion() {
                     try {
-                        return serviceNode.getPublishedService().rootAssertion();
+                        final Policy policy = policyNode.getPolicy();
+                        if (policy == null) {
+                            return new AllAssertion(Arrays.asList(new CommentAssertion("Can't find policy")));
+                        } else {
+                            return policy.getAssertion();
+                        }
                     } catch (IOException e) {
                         log.log(Level.SEVERE, "cannot get service", e);
                         throw new RuntimeException(e);
@@ -104,17 +113,25 @@ public class EditServicePolicyAction extends NodeAction {
                     }
                 }
                 public String getName() {
-                    return serviceNode.getName();
+                    return policyNode.getName();
                 }
                 public void addPropertyChangeListener(PropertyChangeListener servicePropertyChangeListener) {
-                    serviceNode.addPropertyChangeListener(servicePropertyChangeListener);
+                    policyNode.addPropertyChangeListener(servicePropertyChangeListener);
                 }
                 public void removePropertyChangeListener(PropertyChangeListener servicePropertyChangeListener) {
-                    serviceNode.removePropertyChangeListener(servicePropertyChangeListener);
+                    policyNode.removePropertyChangeListener(servicePropertyChangeListener);
                 }
                 public boolean hasWriteAccess() {
                     try {
-                        return Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, serviceNode.getPublishedService()));
+                        PolicyEntityNode pn = getPolicyNode();
+                        EntityType type;
+                        Entity entity = pn.getEntity();
+                        if (pn instanceof ServiceNode) {
+                            type = EntityType.SERVICE;
+                        } else {
+                            type = EntityType.POLICY;
+                        }
+                        return Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(type, entity));
                     } catch (Exception e) {
                         log.log(Level.WARNING, "Error performing permisison check", e);
                         throw new RuntimeException(e);

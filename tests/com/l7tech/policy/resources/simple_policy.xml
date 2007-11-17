@@ -158,6 +158,7 @@
                 <L7p:Authentication/>
                 <L7p:WsiSamlAssertion/>
                 <L7p:SamlIssuer/>
+                <L7p:Include/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.admin;
 
 import com.l7tech.cluster.ClusterStatusAdmin;
@@ -9,6 +12,7 @@ import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -20,9 +24,6 @@ import java.io.Serializable;
 
 /**
  * Replacement for old 'remote' admin context.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public class AdminContextBean implements AdminContext, Serializable {
 
@@ -40,6 +41,7 @@ public class AdminContextBean implements AdminContext, Serializable {
     private final KerberosAdmin kerberosAdmin;
     private final RbacAdmin rbacAdmin;
     private final TransportAdmin transportAdmin;
+    private final PolicyAdmin policyAdmin;
     private final String version;
     private final String softwareVersion;
 
@@ -55,6 +57,7 @@ public class AdminContextBean implements AdminContext, Serializable {
                             KerberosAdmin kerberosAdmin,
                             RbacAdmin rbacAdmin,
                             TransportAdmin transportAdmin,
+							PolicyAdmin policyAdmin,
                             String version,
                             String softwareVersion) {
         this.identityAdmin = identityAdmin;
@@ -69,6 +72,7 @@ public class AdminContextBean implements AdminContext, Serializable {
         this.kerberosAdmin = kerberosAdmin;
         this.rbacAdmin = rbacAdmin;
         this.transportAdmin = transportAdmin;
+        this.policyAdmin = policyAdmin;
         this.version = version;
         this.softwareVersion = softwareVersion;
     }
@@ -132,5 +136,9 @@ public class AdminContextBean implements AdminContext, Serializable {
 
     public TransportAdmin getTransportAdmin() throws SecurityException {
         return transportAdmin;
+    }
+
+    public PolicyAdmin getPolicyAdmin() throws SecurityException {
+        return policyAdmin;
     }
 }

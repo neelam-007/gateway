@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.console.tree.policy;
@@ -9,9 +8,6 @@ import com.l7tech.console.action.CookieCredentialSourceAssertionPropertiesAction
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Policy tree node for cookie credential source.
@@ -20,13 +16,6 @@ public class CookieCredentialSourceAssertionTreeNode extends LeafAssertionTreeNo
 
     public CookieCredentialSourceAssertionTreeNode(CookieCredentialSourceAssertion assertion) {
         super(assertion);
-    }
-
-    public Action[] getActions() {
-        List<Action> actions = new ArrayList<Action>();
-        actions.add(new CookieCredentialSourceAssertionPropertiesAction(this));
-        actions.addAll(Arrays.asList(super.getActions()));
-        return actions.toArray(new Action[0]);
     }
 
     public Action getPreferredAction() {
@@ -42,15 +31,6 @@ public class CookieCredentialSourceAssertionTreeNode extends LeafAssertionTreeNo
      */
     public String getName() {
         return "Require HTTP Cookie (name=" + getAssertion().getCookieName() + ")";
-    }
-
-    /**
-     * Test if the node can be deleted. Default is <code>true</code>
-     *
-     * @return true if the node can be deleted, false otherwise
-     */
-    public boolean canDelete() {
-        return true;
     }
 
     /**

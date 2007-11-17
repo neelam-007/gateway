@@ -23,10 +23,10 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.policy.validator.DefaultPolicyValidator.DeferredValidate;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.service.PublishedService;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
@@ -66,9 +66,8 @@ class PathValidator {
      * result accumulator
      */
     private PolicyValidatorResult result;
-    private List deferredValidators = new ArrayList();
+    private List<DeferredValidate> deferredValidators = new ArrayList<DeferredValidate>();
     private AssertionPath assertionPath;
-    private PublishedService service;
     private Collection<BindingOperation> wsdlBindingOperations;
     private Set<Class<? extends Assertion>> seenAssertionClasses = new HashSet<Class<? extends Assertion>>();
     private Map<String, Boolean> seenCredentials = new HashMap<String, Boolean>();
@@ -84,11 +83,14 @@ class PathValidator {
     boolean seenResponse = false;
     boolean seenParsing = false;
     boolean seenRouting = false;
+    private final Wsdl wsdl;
+    private final boolean soap;
 
-    PathValidator(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
+    PathValidator(AssertionPath ap, PolicyValidatorResult r, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) {
         result = r;
         assertionPath = ap;
-        this.service = service;
+        this.wsdl = wsdl;
+        this.soap = soap;
         this.assertionLicense = assertionLicense;
         if (assertionLicense == null) throw new NullPointerException();
     }
@@ -97,7 +99,8 @@ class PathValidator {
         if (Thread.interrupted())
             throw new InterruptedException();
 
-        ValidatorFactory.getValidator(a).validate(assertionPath, service, result);
+        final AssertionValidator av = ValidatorFactory.getValidator(a);
+        av.validate(assertionPath, wsdl, soap, result);
 
         // Check licensing
         if (assertionLicense != null) {
@@ -191,7 +194,7 @@ class PathValidator {
 
     private void processXslTransformation(XslTransformation xslt) {
         if (xslt.getResourceInfo().getType() == AssertionResourceType.MESSAGE_URL) {
-            if (service != null && service.isSoap()) {
+            if (soap) {
                 result.addWarning(new PolicyValidatorResult.Warning(xslt, assertionPath,
                   "This assertion is configured to require an &lt;?xml-stylesheet?&gt; processing instruction, but SOAP messages do not allow them.", null));
             }
@@ -233,7 +236,7 @@ class PathValidator {
         }
     }
 
-    List getDeferredValidators() {
+    List<DeferredValidate> getDeferredValidators() {
         return deferredValidators;
     }
 
@@ -538,7 +541,7 @@ class PathValidator {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
               "The assertion might not work as configured." +
               " There is no protected service JMS queue defined.", null));
-        } 
+        }
 
         if (a.isAttachSamlSenderVouches() && !seenAccessControl) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
@@ -572,11 +575,10 @@ class PathValidator {
     }
 
     private void checkForRelativeURINamespaces(Assertion a) throws WSDLException {
-        if (service != null && service.isSoap()) {
-            Wsdl parsedWsdl = service.parsedWsdl();
+        if (soap && wsdl != null) {
             if (wsdlBindingOperations == null) {
                 //noinspection unchecked
-                wsdlBindingOperations = parsedWsdl.getBindingOperations();
+                wsdlBindingOperations = wsdl.getBindingOperations();
             }
             class RelativeURINamespaceProblemFeedback {
                 String ns;
@@ -591,13 +593,13 @@ class PathValidator {
             }
             Collection<RelativeURINamespaceProblemFeedback> feedback = new ArrayList<RelativeURINamespaceProblemFeedback>();
             for (BindingOperation operation : wsdlBindingOperations) {
-                String ns = parsedWsdl.getBindingInputNS(operation);
+                String ns = wsdl.getBindingInputNS(operation);
                 if (ns != null && ns.indexOf(':') < 0) {
                     feedback.add(new RelativeURINamespaceProblemFeedback(ns,
                                                                          operation.getName(),
                                                                          (operation.getBindingInput().getName() != null ? operation.getBindingInput().getName() : operation.getName() + "In")));
                 }
-                ns = parsedWsdl.getBindingOutputNS(operation);
+                ns = wsdl.getBindingOutputNS(operation);
                 if (ns != null && ns.indexOf(':') < 0) {
                     feedback.add(new RelativeURINamespaceProblemFeedback(ns,
                                                                          operation.getName(),
@@ -623,11 +625,9 @@ class PathValidator {
     }
 
     private void processSoapSpecific(Assertion a) {
-        if (service != null) {
-            if (!service.isSoap()) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion only works with SOAP services.", null));
-            }
+        if (!soap) {
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+              "This assertion only works with SOAP services.", null));
         }
     }
 

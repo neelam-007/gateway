@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.audit;
 
@@ -32,7 +30,6 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class AdminAuditListener extends ApplicationObjectSupport implements ApplicationListener {
     private final String nodeId;
@@ -62,14 +59,15 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         if (event instanceof Updated) {
             Updated updated = (Updated)event;
             if (updated.getEntity() instanceof PublishedService) {
+                PublishedService service = (PublishedService) updated.getEntity();
                 EntityChangeSet changes = updated.getChangeSet();
                 Object o = changes.getOldValue(SERVICE_DISABLED);
                 Object n = changes.getNewValue(SERVICE_DISABLED);
 
                 if (Boolean.FALSE.equals(o) && Boolean.TRUE.equals(n)) {
-                    event = new ServiceEvent.Disabled(updated.getEntity(), changes);
+                    event = new ServiceEvent.Disabled(service, changes);
                 } else if (Boolean.TRUE.equals(o) && Boolean.FALSE.equals(n)) {
-                    event = new ServiceEvent.Enabled(updated.getEntity(), changes);
+                    event = new ServiceEvent.Enabled(service, changes);
                 }
             }
         }

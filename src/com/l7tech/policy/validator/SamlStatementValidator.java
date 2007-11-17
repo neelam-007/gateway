@@ -1,17 +1,15 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.policy.validator;
 
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.service.PublishedService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,7 +40,7 @@ public class SamlStatementValidator implements AssertionValidator {
         hasBearer = confirmations.contains(SamlConstants.CONFIRMATION_BEARER);
     }
 
-    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         SslAssertion[]  sslAssertions = getSslAssertions(path);
 
         if (requestWssSaml.isNoSubjectConfirmation()) {

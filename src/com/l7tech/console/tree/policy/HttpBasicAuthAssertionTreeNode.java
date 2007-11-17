@@ -1,13 +1,13 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
-
 
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 
 /**
  * Class HttpBasicAuthAssertionTreeNode is a tree node that correspinds
  * to the <code>HttpBasic</code> asseriton.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class HttpBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
 
@@ -20,15 +20,6 @@ public class HttpBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
      */
     public String getName() {
         return "Require HTTP Basic Authentication";
-    }
-
-    /**
-     * Test if the node can be deleted. Default is <code>true</code>
-     *
-     * @return true if the node can be deleted, false otherwise
-     */
-    public boolean canDelete() {
-        return true;
     }
 
     /**

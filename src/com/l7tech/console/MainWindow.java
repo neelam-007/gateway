@@ -173,7 +173,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     // cached credential manager
     private String connectionContext = "";
     private String connectionID = "";
-    private ServicesTree servicesTree;
+    private ServicesAndPoliciesTree servicesAndPoliciesTree;
     private IdentityProvidersTree identityProvidersTree;
     private JMenuItem validateMenuItem;
     private JMenuItem importMenuItem;
@@ -183,7 +183,9 @@ public class MainWindow extends JFrame implements SheetHolder {
     private String ssgURL;
     private SsmApplication ssmApplication;
     private IdentitiesRootNode identitiesRootNode;
-    private ServicesFolderNode servicesRootNode;
+    private final DefaultMutableTreeNode SERVICE_POLICY_ROOT = new DefaultMutableTreeNode("NOT SHOWN Services and Policies");
+    private ServicesFolderNode servicesFolderNode;
+    private PoliciesFolderNode policiesFolderNode;
     private JTextPane descriptionText;
     private JSplitPane verticalSplitPane;
     private double preferredVerticalSplitLocation = 0.57;
@@ -965,9 +967,10 @@ public class MainWindow extends JFrame implements SheetHolder {
                       alreadyRefreshed.add(identityProvidersTree);
                   }
                   // no matter what, if service tree exists, always refresh it
-                  if (servicesTree != null) {
-                      servicesTree.refresh(servicesRootNode);
-                      alreadyRefreshed.add(servicesTree);
+                  if (servicesAndPoliciesTree != null) {
+                      servicesAndPoliciesTree.refresh(servicesFolderNode);
+                      servicesAndPoliciesTree.refresh(policiesFolderNode);
+                      alreadyRefreshed.add(servicesAndPoliciesTree);
                   }
                   // no matter what, always refresh the policy editor panel if it is showing
                   final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
@@ -1310,19 +1313,20 @@ public class MainWindow extends JFrame implements SheetHolder {
      *
      * @return JTree
      */
-    private JTree getServicesTree() {
-        JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
+    private JTree getServicesAndPoliciesTree() {
+        JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
         if (tree != null)
             return tree;
 
-        servicesTree = new ServicesTree();
-        servicesTree.setShowsRootHandles(true);
-        TopComponents.getInstance().registerComponent(ServicesTree.NAME, servicesTree);
-        servicesTree.addTreeSelectionListener(new TreeSelectionListener() {
+        servicesAndPoliciesTree = new ServicesAndPoliciesTree();
+        servicesAndPoliciesTree.setShowsRootHandles(false);
+        servicesAndPoliciesTree.setRootVisible(false);
+        TopComponents.getInstance().registerComponent(ServicesAndPoliciesTree.NAME, servicesAndPoliciesTree);
+		servicesAndPoliciesTree.addTreeSelectionListener(new TreeSelectionListener() {
             public void valueChanged(TreeSelectionEvent treeSelectionEvent) {
-                boolean enable = servicesTree.getSelectionCount() > 0;
+                boolean enable = servicesAndPoliciesTree.getSelectionCount() > 0;
                 if (enable) {
-                    if (!(servicesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent() instanceof ServiceNode)) {
+                    if (!(servicesAndPoliciesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent() instanceof ServiceNode)) {
                         enable = false;
                     }
                 }
@@ -1332,8 +1336,8 @@ public class MainWindow extends JFrame implements SheetHolder {
                 getDeleteServiceMenuItem().setEnabled(enable);
                 if (enable) {
                     // go get the actions from the node
-                    ServiceNode node = (ServiceNode)(servicesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent());
-                    getEditPolicyMenuItem().setAction(new EditServicePolicyAction(node));
+                    ServiceNode node = (ServiceNode)(servicesAndPoliciesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent());
+                    getEditPolicyMenuItem().setAction(new EditPolicyAction(node));
                     getServicePropertiesMenuItem().setAction(new EditServiceProperties(node));
                     getPublishToUDDIMenuItem().setAction(new PublishPolicyToUDDIRegistry(node));
                     getDeleteServiceMenuItem().setAction(new DeleteServiceAction(node) {
@@ -1344,7 +1348,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 }
             }
         });
-        return servicesTree;
+        return servicesAndPoliciesTree;
     }
 
     /**
@@ -1369,21 +1373,24 @@ public class MainWindow extends JFrame implements SheetHolder {
         identitiesTree.setRootVisible(true);
         identitiesTree.setModel(treeModel);
 
-        String rootTitle = "Services @ ";
-        rootTitle +=
-          preferences.getString(SsmPreferences.SERVICE_URL);
-        DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
-        servicesRootNode = new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
-        servicesTreeModel.setRoot(servicesRootNode);
+        final String url = preferences.getString(SsmPreferences.SERVICE_URL);
+        servicesFolderNode = new ServicesFolderNode(Registry.getDefault().getServiceManager(), "Services @ " + url);
+        policiesFolderNode = new PoliciesFolderNode(Registry.getDefault().getPolicyAdmin(), "Policies @ " + url);
+        SERVICE_POLICY_ROOT.removeAllChildren();
+        SERVICE_POLICY_ROOT.insert(servicesFolderNode, 0);
+        SERVICE_POLICY_ROOT.insert(policiesFolderNode, 1);
 
-        getServicesTree().setRootVisible(true);
-        getServicesTree().setModel(servicesTreeModel);
+        DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
+        servicesTreeModel.setRoot(SERVICE_POLICY_ROOT);
+        getServicesAndPoliciesTree().setModel(servicesTreeModel);
+        getServicesAndPoliciesTree().setShowsRootHandles(true);
+        getServicesAndPoliciesTree().setRootVisible(false);
 
         TreeSelectionListener treeSelectionListener =
           new TreeSelectionListener() {
               private final JTree assertionPalette =
                 assertionPaletteTree;
-              private final JTree services = getServicesTree();
+              private final JTree services = getServicesAndPoliciesTree();
 
               public void valueChanged(TreeSelectionEvent e) {
                   Object o = e.getSource();
@@ -1413,7 +1420,7 @@ public class MainWindow extends JFrame implements SheetHolder {
               }
 
           };
-        getServicesTree().addTreeSelectionListener(treeSelectionListener);
+        getServicesAndPoliciesTree().addTreeSelectionListener(treeSelectionListener);
         assertionPaletteTree.addTreeSelectionListener(treeSelectionListener);
 
         getMainSplitPaneRight().removeAll();
@@ -1932,7 +1939,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             }
         });
 
-        JScrollPane serviceScroller = new JScrollPane(getServicesTree());
+        JScrollPane serviceScroller = new JScrollPane(getServicesAndPoliciesTree());
         configureScrollPane(serviceScroller);
         treePanel = new JTabbedPane();
         treePanel.addTab("Services", serviceScroller);
@@ -1973,7 +1980,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         addComponentToGridBagContainer(getMainSplitPaneRight(), getDropComponent());
         getMainSplitPaneRight().validate();
         getMainSplitPaneRight().repaint();
-        getServicesTree().setModel(null);
+        getServicesAndPoliciesTree().setModel(null);
         getIdentitiesTree().setModel(null);
         updateActions(null);
         fireDisconnected();
@@ -2363,7 +2370,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             }
         };
 
-       addLogonListener(closeWindowListener); 
+       addLogonListener(closeWindowListener);
     }
 
     /**
@@ -2765,9 +2772,17 @@ public class MainWindow extends JFrame implements SheetHolder {
     public void unregisterComponents() {
         TopComponents.getInstance().unregisterComponent(AssertionsTree.NAME);
         TopComponents.getInstance().unregisterComponent(IdentityProvidersTree.NAME);
-        TopComponents.getInstance().unregisterComponent(ServicesTree.NAME);
+        TopComponents.getInstance().unregisterComponent(ServicesAndPoliciesTree.NAME);
         TopComponents.getInstance().unregisterComponent(ProgressBar.NAME);
         TopComponents.getInstance().unregisterComponent("mainWindow");
+    }
+
+    public ServicesFolderNode getServicesFolderNode() {
+        return servicesFolderNode;
+    }
+
+    public PoliciesFolderNode getPoliciesFolderNode() {
+        return policiesFolderNode;
     }
 
     private void closeAllWindows() {

@@ -30,6 +30,7 @@ public class EntityType implements Serializable {
     public static final EntityType PRIVATE_KEY = new EntityType(15, "Private Key");
     public static final EntityType REVOCATION_CHECK_POLICY = new EntityType(16, "Revocation Check Policy");
     public static final EntityType CONNECTOR = new EntityType(17, "HTTP(S) Listen Port");
+    public static final EntityType POLICY = new EntityType(18, "Policy");
     public static final EntityType UNDEFINED = new EntityType(-1, "Undefined");
 
     private static final long serialVersionUID = -5485680679515491927L;
@@ -139,7 +140,9 @@ public class EntityType implements Serializable {
                 return "REVOCATION_CHECK_POLICY";
             case 17:
                 return "CONNECTOR";
-            default:
+            case 18:
+ 	 	        return "POLICY";            
+			default:
                 return "?";
         }
     }
@@ -187,6 +190,8 @@ public class EntityType implements Serializable {
                 return REVOCATION_CHECK_POLICY;
             case 17:
                 return CONNECTOR;
+            case 18:
+ 	 	        return POLICY;
             default:
                 return UNDEFINED;
         }

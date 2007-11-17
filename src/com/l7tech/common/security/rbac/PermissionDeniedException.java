@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.common.security.rbac;
 
@@ -25,6 +25,14 @@ public class PermissionDeniedException extends RuntimeException {
 
     public PermissionDeniedException(OperationType operation, EntityType type) {
         super(MessageFormat.format("Permission denied: {0} {1}", operation, type));
+        this.operation = operation;
+        this.type = type;
+        this.entity = null;
+        this.otherOperationName = null;
+    }
+
+    public PermissionDeniedException(OperationType operation, EntityType type, String extraMessage) {
+        super(MessageFormat.format("Permission denied: {0} {1} ({2})", operation, type, extraMessage));
         this.operation = operation;
         this.type = type;
         this.entity = null;

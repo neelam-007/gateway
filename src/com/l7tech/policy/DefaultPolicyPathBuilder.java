@@ -1,6 +1,12 @@
 package com.l7tech.policy;
 
+import com.l7tech.common.policy.IncludeAssertionDereferenceTranslator;
+import com.l7tech.common.policy.Policy;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ReadOnlyEntityManager;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionTranslator;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 
@@ -29,11 +35,14 @@ import java.util.logging.Level;
  * @version 1.0
  */
 public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
+    private final AssertionTranslator translator;
+
     /**
      * Protected constructor, the class cannot be instantiated
      * directly
      */
-    protected DefaultPolicyPathBuilder() {
+    protected DefaultPolicyPathBuilder(final ReadOnlyEntityManager<Policy, EntityHeader> policyFinder) {
+        this.translator = new IncludeAssertionDereferenceTranslator(policyFinder);
     }
 
     /**
@@ -44,7 +53,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      *                  path for.
      * @return the result of the build
      */
-    public PolicyPathResult generate(Assertion assertion) throws InterruptedException {
+    public PolicyPathResult generate(Assertion assertion) throws InterruptedException, PolicyAssertionException {
         Set paths = generatePaths(assertion);
         int pathOrder = 0;
         for (Iterator iterator = paths.iterator(); iterator.hasNext(); pathOrder++) {
@@ -63,9 +72,9 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      *
      * @param assertion the root assertion
      */
-    private Set generatePaths(Assertion assertion) throws InterruptedException {
+    private Set generatePaths(Assertion assertion) throws InterruptedException, PolicyAssertionException {
         Set assertionPaths = new LinkedHashSet();
-        Iterator preorder = assertion.preorderIterator();
+        Iterator preorder = assertion.preorderIterator(translator);
         final AssertionPath initPath = new AssertionPath(new Assertion[]{(Assertion)preorder.next()});
         assertionPaths.add(initPath);
         pathStack.push(initPath);
@@ -253,8 +262,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      */
     static boolean parentCreatesNewPaths(Assertion a) {
         CompositeAssertion parent = a.getParent();
-        if (parent == null) return true;
-        return parent instanceof OneOrMoreAssertion && !((OneOrMoreAssertion)parent).getChildren().isEmpty();
+        return parent == null || parent instanceof OneOrMoreAssertion && !parent.getChildren().isEmpty();
     }
 
 
@@ -269,8 +277,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     }
 
     public static String pathToString(AssertionPath ap) {
-        String sp = printPath("** Begin assertion path\n", "** End assertion path", ap);
-        return sp;
+        return printPath("** Begin assertion path\n", "** End assertion path", ap);
     }
 
     private static String printPath(String begin, String end, AssertionPath ap) {
@@ -278,10 +285,10 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         StringBuffer sb = new StringBuffer(begin);
         for (int i = 0; i < ass.length; i++) {
             if (ass[i] instanceof CompositeAssertion) {
-                sb.append("" + (i + 1) + " " + ass[i].getClass().toString() + '@' + System.identityHashCode(ass[i]))
+                sb.append("").append(i + 1).append(" ").append(ass[i].getClass().toString()).append('@').append(System.identityHashCode(ass[i]))
                   .append("\n");
             } else {
-                sb.append("" + (i + 1) + " " + ass[i]).append("\n");
+                sb.append("").append(i + 1).append(" ").append(ass[i]).append("\n");
             }
         }
         sb.append(end);

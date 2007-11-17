@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.service;
@@ -10,46 +10,43 @@ import static com.l7tech.common.security.rbac.EntityType.*;
 import static com.l7tech.common.security.rbac.OperationType.*;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Role;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.JaasUtils;
-import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.event.system.ServiceCacheEvent;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.service.MetricsBin;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
-import org.springframework.transaction.TransactionStatus;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.transaction.annotation.Propagation;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.*;
 
 import java.text.MessageFormat;
-import java.util.Collection;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
- * Manages PublishedService instances.
+ * Manages {@link PublishedService} instances.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public class ServiceManagerImp
         extends HibernateEntityManager<PublishedService, EntityHeader>
-        implements ServiceManager
+        implements ServiceManager, ApplicationContextAware
 {
     private static final Logger logger = Logger.getLogger(ServiceManagerImp.class.getName());
 
     private ResolutionManager resolutionManager;
-    private ServiceCache serviceCache;
     private RoleManager roleManager;
+    private ApplicationContext spring;
 
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ServiceAdmin.ROLE_NAME_TYPE_SUFFIX));
@@ -79,30 +76,7 @@ public class ServiceManagerImp
         }
 
         // 3. update cache on callback
-        final long passedServiceId = service.getOid();
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-            public void afterCompletion(int status) {
-                if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    // get service. version property must be up-to-date
-                    PublishedService svcnow;
-                    try {
-                        svcnow = findByPrimaryKey(passedServiceId);
-                    } catch (FindException e) {
-                        svcnow = null;
-                        logger.log(Level.WARNING, "could not get service back", e);
-                    }
-                    if (svcnow != null) {
-                        try {
-                            serviceCache.cache(svcnow);
-                            TarariLoader.compile();
-                        } catch (Exception e) {
-                            logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
-                        }
-                    }
-                }
-            }
-        });
-
+        spring.publishEvent(new ServiceCacheEvent.Updated(service));
         return service.getOid();
     }
 
@@ -125,48 +99,14 @@ public class ServiceManagerImp
         }
 
         // update cache after commit
-        final long passedServiceId = service.getOid();
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-            public void afterCompletion(int status) {
-                if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    // get service. version property must be up-to-date
-                    PublishedService svcnow;
-                    try {
-                        svcnow = findByPrimaryKey(passedServiceId);
-                    } catch (FindException e) {
-                        svcnow = null;
-                        logger.log(Level.WARNING, "could not get service back", e);
-                    }
-                    if (svcnow != null) {
-                        try {
-                            serviceCache.cache(svcnow);
-                            TarariLoader.compile();
-                        } catch (Exception e) {
-                            logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
-                        }
-                    }
-                }
-            }
-        });
+        spring.publishEvent(new ServiceCacheEvent.Updated(service));
     }
 
     public void delete(PublishedService service) throws DeleteException {
         super.delete(service);
         resolutionManager.deleteResolutionParameters(service.getOid());
         logger.info("Deleted service " + service.getName() + " #" + service.getOid());
-
-        final PublishedService deletedService = service;
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-            public void afterCompletion(int status) {
-                if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    try {
-                        serviceCache.removeFromCache(deletedService);
-                    } catch (InterruptedException e) {
-                        logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
-                    }
-                }
-            }
-        });
+        spring.publishEvent(new ServiceCacheEvent.Deleted(service));
     }
 
     @Transactional(propagation=SUPPORTS)
@@ -190,11 +130,6 @@ public class ServiceManagerImp
     }
 
     @Transactional(propagation=SUPPORTS)
-    public void setServiceCache(ServiceCache serviceCache) {
-        this.serviceCache = serviceCache;
-    }
-
-    @Transactional(propagation=SUPPORTS)
     public void setRoleManager(RoleManager roleManager) {
         this.roleManager = roleManager;
     }
@@ -207,77 +142,6 @@ public class ServiceManagerImp
     @Transactional(propagation=SUPPORTS)
     public void setResolutionManager(ResolutionManager resolutionManager) {
         this.resolutionManager = resolutionManager;
-    }
-
-    protected void initDao() throws Exception {
-        if (serviceCache == null) {
-            throw new IllegalArgumentException("Service Cache is required");
-        }
-        if (transactionManager == null) {
-            throw new IllegalArgumentException("Transaction Manager is required");
-        }
-    }
-
-    /**
-     * this should be called within the boot process to initiate the service cache which in turn will
-     * create server side policies
-     */
-    @Transactional(propagation=SUPPORTS)
-    public void initiateServiceCache() {
-        new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
-            protected void doInTransactionWithoutResult(TransactionStatus status) {
-                try {
-                    initializeServiceCache();
-                } catch (ObjectModelException e) {
-                    throw new RuntimeException("Error intializing service cache", e);
-                }
-            }
-        });
-    }
-
-    private void initializeServiceCache() throws ObjectModelException {
-        // build the cache if necessary
-        try {
-            if (serviceCache.size() > 0) {
-                logger.finest("cache already built (?)");
-            } else {
-                logger.info("building service cache");
-                Collection<PublishedService> services = findAll();
-                for (PublishedService service : services) {
-                    try {
-                        serviceCache.cache(service);
-                    } catch (ServerPolicyException e) {
-                        Assertion ass = e.getAssertion();
-
-                        if (logger.isLoggable(Level.WARNING)) {
-                            String ordinal = ass == null ? "" : "#" + Integer.toString(ass.getOrdinal());
-                            String what = ass == null ? "<unknown>" : "(" + ass.getClass().getSimpleName() + ")";
-                            String msg = "Disabling PublishedService #{0} ({1}); policy could not be compiled (assertion {2} {3})";
-                            String servUri = service.getRoutingUri();
-                            String servName = service.getName();
-                            String logServName = servUri == null ? servName : (servName + ": " + servUri);
-                            logger.log(Level.WARNING, MessageFormat.format(msg, service.getOid(), logServName, ordinal, what));
-                        }
-                        // We don't actually disable the service here -- only the admin should be doing that.
-                        // Instead, we will let the service cache continue to monitor the situation
-                    } catch (Exception e) {
-                        LogRecord r = new LogRecord(Level.WARNING, "Disabling PublishedService #{0} ({1}); policy could not be compiled");
-                        String servUri = service.getRoutingUri();
-                        String servName = service.getName();
-                        String logServName = servUri == null ? servName : (servName + ": " + servUri);
-                        r.setParameters(new Object[] { service.getOid(), logServName});
-                        r.setThrown(e);
-                        logger.log(r);
-                    }
-                }
-                TarariLoader.compile();
-            }
-            // make sure the integrity check is running
-            logger.info("initiate service cache version check process");
-            serviceCache.initiateIntegrityCheckProcess();
-        } catch (Exception e) {
-            throw new ObjectModelException("Exception building cache", e);
-        }
     }
 
     protected UniqueType getUniqueType() {
@@ -363,5 +227,10 @@ public class ServiceManagerImp
             }
         }
         roleManager.save(newRole);
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.spring = applicationContext;
     }
 }

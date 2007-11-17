@@ -1,21 +1,20 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.BridgeRoutingAssertion;
-import com.l7tech.service.PublishedService;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.WspWriter;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -53,7 +52,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
     private final EventListenerList listenerList = new EventListenerList();
 
-    public BridgeRoutingAssertionPropertiesDialog(final Frame owner, BridgeRoutingAssertion a, final PublishedService service) {
+    public BridgeRoutingAssertionPropertiesDialog(final Frame owner, BridgeRoutingAssertion a, final Policy policy, final Wsdl wsdl) {
         super(owner, true);
         setTitle("Bridge Routing Assertion Properties");
         this.assertion = a;
@@ -72,7 +71,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
                     throw new RuntimeException(e1); // can't happen, but just in case, pass up to error handler
                 }
 
-                final HttpRoutingAssertionDialog httpDialog = new HttpRoutingAssertionDialog(owner, editingCopy, service);
+                final HttpRoutingAssertionDialog httpDialog = new HttpRoutingAssertionDialog(owner, editingCopy, policy, wsdl);
                 httpDialog.setModal(true);
                 httpDialog.pack();
 

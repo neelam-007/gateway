@@ -3,7 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedCreate;
-import static com.l7tech.common.security.rbac.EntityType.*;
+import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
 import com.l7tech.common.util.XmlUtil;
@@ -14,7 +14,7 @@ import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -53,9 +53,6 @@ import java.util.logging.Logger;
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
  * service wizard.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
  */
 public class CreateServiceWsdlAction extends SecureAction {
     static final Logger log = Logger.getLogger(CreateServiceWsdlAction.class.getName());
@@ -103,7 +100,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                       new WSDLCompositionPanel(new WsdlDefinitionPanel(new WsdlMessagesPanel(new WsdlPortTypePanel(new WsdlPortTypeBindingPanel(new WsdlServicePanel(null))))));
                     WsdlCreateOverviewPanel overviewPanel = new WsdlCreateOverviewPanel(defPanel);
                     Frame parent = TopComponents.getInstance().getTopParent();
-                    Wizard wizard = null;
+                    Wizard wizard;
                     if (originalWsdl != null)
                         wizard = new WsdlCreateWizard(parent, overviewPanel, originalWsdl, importedWsdls);
                     else
@@ -178,7 +175,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                 final List children = Arrays.asList(ra);
                 WspWriter.writePolicy(new AllAssertion(children), bo);
 
-                service.setPolicyXml(bo.toString());
+                service.getPolicy().setXml(bo.toString());
 
                 Set<WsdlComposer.WsdlHolder> sourceWsdls = composer.getSourceWsdls(false);
                 for (WsdlComposer.WsdlHolder sourceWsdl : sourceWsdls) {
@@ -208,7 +205,7 @@ public class CreateServiceWsdlAction extends SecureAction {
             while (tryToPublish) {
                 tryToPublish = false;
                 try {
-                    long oid = 0;
+                    long oid;
                     if (sourceDocs == null)
                         oid = Registry.getDefault().getServiceManager().savePublishedService(service);
                     else
@@ -259,9 +256,9 @@ public class CreateServiceWsdlAction extends SecureAction {
         public void serviceAdded(final EntityHeader eh) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
+                    JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
-                        AbstractTreeNode root = (AbstractTreeNode)tree.getModel().getRoot();
+                        AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
                         TreeNode[] nodes = root.getPath();
                         TreePath nPath = new TreePath(nodes);
                         if (tree.hasBeenExpanded(nPath)) {

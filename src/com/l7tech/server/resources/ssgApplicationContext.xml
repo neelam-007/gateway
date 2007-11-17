@@ -159,9 +159,11 @@
     <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
         <constructor-arg ref="licenseManager"/>
     </bean>
-    <!-- server side service manager -->
+    <!-- server side service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
-        <constructor-arg ref="policyFactory"/>
+        <constructor-arg ref="policyCache"/>
+        <constructor-arg ref="transactionManager"/>
+        <constructor-arg ref="serviceManager"/>
         <constructor-arg>
             <list>
                 <bean class="com.l7tech.server.service.SafeWsdlPublishedServiceDecorator">
@@ -174,7 +176,6 @@
                 <constructor-arg value="Service cache refresh"/>
             </bean>
         </constructor-arg>
-        <property name="serviceManager" ref="serviceManager"/>
     </bean>
 
     <!-- general server side HTTP client trust manager -->
@@ -183,7 +184,7 @@
         <constructor-arg ref="certValidationProcessor"/>
         <constructor-arg>
             <bean class="com.l7tech.server.security.cert.CertValidationProcessor$Facility" factory-method="valueOf">
-                <constructor-arg><value>OTHER</value></constructor-arg>
+                <constructor-arg value="OTHER"/>
             </bean>
         </constructor-arg>
     </bean>
@@ -194,7 +195,7 @@
         <constructor-arg ref="certValidationProcessor"/>
         <constructor-arg>
             <bean class="com.l7tech.server.security.cert.CertValidationProcessor$Facility" factory-method="valueOf">
-                <constructor-arg><value>ROUTING</value></constructor-arg>
+                <constructor-arg value="ROUTING"/>
             </bean>
         </constructor-arg>
     </bean>
@@ -253,7 +254,6 @@
 
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
-        <property name="serviceCache" ref="serviceCache"/>
         <property name="resolutionManager" ref="resolutionManager"/>
         <property name="roleManager" ref="roleManager"/>
     </bean>
@@ -307,7 +307,9 @@
     </bean>
 
     <!-- server side policy validator -->
-    <bean id="policyValidator" class="com.l7tech.server.policy.validator.ServerPolicyValidator">
+    <bean id="serverPolicyValidator" class="com.l7tech.server.policy.validator.ServerPolicyValidator">
+        <constructor-arg ref="policyManager"/>
+        <constructor-arg ref="policyPathBuilderFactory"/>
         <property name="jmsEndpointManager" ref="jmsEndpointManager"/>
         <property name="identityProviderFactory" ref='identityProviderFactory'/>
         <property name="schemaEntryManager" ref='schemaEntryManager'/>
@@ -442,6 +444,7 @@
         <constructor-arg ref="policyFactory"/>
         <constructor-arg ref="policyFilterManager"/>
         <constructor-arg ref="securityTokenResolver"/>
+        <constructor-arg ref="policyPathBuilderFactory"/>
     </bean>
     <!-- server side token service -->
     <bean id="tokenService" class="com.l7tech.server.TokenServiceImpl">
@@ -749,6 +752,19 @@
         <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgConnectorManager"/>
+    </bean>
+
+    <bean id="policyCache" class="com.l7tech.server.policy.PolicyCacheImpl">
+        <constructor-arg ref="policyFactory"/>
+        <property name="policyManager" ref="policyManager"/>
+    </bean>
+
+    <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerImpl" parent="hibernateBean">
+        <property name="policyCache" ref="policyCache"/>
+    </bean>
+
+    <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
+        <constructor-arg ref="policyManager"/>
     </bean>
 
 </beans>

@@ -2,10 +2,13 @@ package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityManagerStub;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 import org.springframework.beans.factory.InitializingBean;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,17 +29,8 @@ public class TestIdentityProviderConfigManager
         return idprovider;
     }
 
-    public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {
-        return idprovider.getConfig();
-    }
-
-    public void update(IdentityProviderConfig identityProviderConfig) throws UpdateException {
-    }
-
-    public Collection findAllIdentityProviders() throws FindException {
-        Collection output = new ArrayList();
-        output.add(idprovider);
-        return output;
+    public Collection<IdentityProvider> findAllIdentityProviders() throws FindException {
+        return Arrays.asList(idprovider);
     }
 
     public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
@@ -44,6 +38,7 @@ public class TestIdentityProviderConfigManager
     }
 
     public IdentityProvider getIdentityProvider(long oid) throws FindException {
+        if (oid != idprovider.getConfig().getOid()) throw new IllegalArgumentException();
         return idprovider;
     }
 
@@ -52,24 +47,6 @@ public class TestIdentityProviderConfigManager
 
     public void addManageProviderRole(IdentityProviderConfig config) throws SaveException {
         // No-op for stub mode
-    }
-
-    public Collection findAll() throws FindException {
-        Collection output = new ArrayList();
-        output.add(idprovider.getConfig());
-        return output;
-    }
-
-    public Integer getVersion(long oid) throws FindException {
-        return new Integer(1);
-    }
-
-    public Map findVersionMap() throws FindException {
-        if (versionMap.isEmpty()) {
-            versionMap.put(new Long(TestIdentityProvider.PROVIDER_ID),
-              new Integer(TestIdentityProvider.PROVIDER_VERSION));
-        }
-        return versionMap;
     }
 
     public Class getImpClass() {
@@ -96,6 +73,8 @@ public class TestIdentityProviderConfigManager
         if (identityProviderFactory == null) {
             throw new IllegalArgumentException("Identity Provider Factory is required");
         }
-        idprovider =  identityProviderFactory.createProviderInstance(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
+        final IdentityProviderConfig config = TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG;
+        idprovider =  identityProviderFactory.createProviderInstance(config);
+        this.entities.put(config.getOid(), config);
     }
 }

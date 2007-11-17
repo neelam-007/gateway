@@ -355,7 +355,7 @@ public class GatewayFeatureSets {
         // Policy logic
         GatewayFeatureSet policyAccel =
         fsr("set:Policy:Accel", "SecureSpan Accelerator complex policy logic",
-            "Branches, comments, comparisons, variables, and echoing",
+            "Branches, comments, comparisons, variables, includes and echoing",
             fs(core),
             fs(branching),
             ass(CommentAssertion.class),
@@ -363,6 +363,7 @@ public class GatewayFeatureSets {
             ass(TrueAssertion.class),
             ass(FalseAssertion.class),
             ass(SetVariableAssertion.class),
+            ass(Include.class),
             mass("assertion:EchoRouting"),
             mass("assertion:HardcodedResponse"));
 

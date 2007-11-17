@@ -110,7 +110,7 @@ CREATE TABLE published_service (
   objectid bigint(20) NOT NULL,
   version int(11) NOT NULL,
   name varchar(255) NOT NULL,
-  policy_xml mediumtext,
+  policy_oid bigint(20) NOT NULL,
   wsdl_url varchar(255),
   wsdl_xml mediumtext,
   disabled TINYINT(1) NOT NULL DEFAULT 0,
@@ -118,7 +118,24 @@ CREATE TABLE published_service (
   routing_uri varchar(128),
   http_methods mediumtext,
   lax_resolution TINYINT(1) NOT NULL DEFAULT 0, 
-  PRIMARY KEY  (objectid)
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (policy_oid) REFERENCES policy (objectid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Table structure for table 'policy'
+--
+
+DROP TABLE IF EXISTS policy;
+CREATE TABLE policy (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  name varchar(255),
+  xml mediumtext NOT NULL,
+  policy_type VARCHAR(32) NOT NULL,
+  soap TINYINT(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (objectid),
+  INDEX (policy_type)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

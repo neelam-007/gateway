@@ -1,8 +1,6 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.util;
 
 import com.l7tech.cluster.ClusterProperty;
@@ -13,6 +11,8 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.server.event.system.Starting;
+import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.upgrade.FatalUpgradeException;
 import com.l7tech.server.upgrade.NonfatalUpgradeException;
 import com.l7tech.server.upgrade.UpgradeTask;
@@ -38,13 +38,26 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
     private static final Logger logger = Logger.getLogger(GatewaySanityChecker.class.getName());
     private static final String CPROP_PREFIX_UPGRADE = "upgrade.task.";
 
-    /** Currently, the whitelist of allowed upgrade task values is very simple -- there's only two! */
-    private static final String VALUE_35_36_ADD_ROLES = "com.l7tech.server.upgrade.Upgrade35To36AddRoles";
-    private static final String VALUE_365_37_ADD_SAMPLE_MESSAGE_PERMISSIONS = "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions";
+    /**
+     * Key is the class of {@link SystemEvent} on which the task should be performed;
+     * Value is a {@link Set} of classnames of the {@link UpgradeTask}s that are allowed
+     * to be run on that event.
+     */
+    private static final Map<Class<? extends SystemEvent>, Set<String>> whitelist = new HashMap<Class<? extends SystemEvent>, Set<String>>();
+    static {
+        whitelist.put(Starting.class, new HashSet<String>(Arrays.asList(
+            "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions",
+            "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies"
+        )));
+        whitelist.put(Started.class, new HashSet<String>(Arrays.asList(
+            "com.l7tech.server.upgrade.Upgrade35To36AddRoles"
+        )));
+    }
 
     private final ClusterPropertyManager clusterPropertyManager;
     private final PlatformTransactionManager transactionManager; // required for TransactionTemplate
     private Auditor auditor;
+    private List<ClusterProperty> taskProps;
     private UpgradeTask[] earlyTasks;
 
     public GatewaySanityChecker(PlatformTransactionManager transactionManager,
@@ -64,10 +77,6 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                 runTask(task, null);
             }
         }
-    }
-
-
-    private void doSanityCheck() throws FatalUpgradeException {
         // Check for upgrade tasks flagged in the cluster properties table
         final Collection<ClusterProperty> props;
         try {
@@ -106,7 +115,9 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
             for (Long ordinal : taskOrder)
                 taskProps.add(tasks.get(ordinal));
             assert !taskProps.isEmpty();
-            doUpgradeTasks(taskProps);
+            this.taskProps = taskProps;
+        } else {
+            this.taskProps = Collections.emptyList();
         }
     }
 
@@ -127,23 +138,21 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
      * @return true if the specified upgrade task is on the whitelist of allowed upgrade tasks.
      */
     private boolean isUpgradeTaskRecognized(String value) {
-        return value.equals(VALUE_35_36_ADD_ROLES) || value.equals(VALUE_365_37_ADD_SAMPLE_MESSAGE_PERMISSIONS);
+        for (Set<String> strings : whitelist.values()) {
+            for (String string : strings) {
+                if (string.equals(value)) return true;
+    }
+        }
+        return false;
     }
 
     /**
-     * Execute the specified upgrade tasks, each in its own transaction.
+     * Execute the specified upgrade task, in its own transaction.
      * Caller is responsible for ensuring that the upgrade task
      * classnames have already been whitelisted, and sorting the list.
      *
-     * @param taskProps  cluster properties containing upgrade tasks to run, in the order to run them.
-     * @throws FatalUpgradeException  if the task failed, no further tasks should be attempted, and the Gateway startup should abort
+     * @param prop cluster property containing the upgrade task to run.
      */
-    private void doUpgradeTasks(List<ClusterProperty> taskProps) throws FatalUpgradeException {
-        for (ClusterProperty prop : taskProps) {
-            doUpgradeTask(prop);
-        }
-    }
-
     private void doUpgradeTask(final ClusterProperty propp) throws FatalUpgradeException {
         final String taskName = propp.getName();
         final String className = propp.getValue();
@@ -244,11 +253,20 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
     }
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (applicationEvent instanceof Started) {
-            try {
-                doSanityCheck();
-            } catch (FatalUpgradeException e) {
-                throw new IllegalStateException("Gateway sanity check failed: " + ExceptionUtils.getMessage(e), e);
+        if (applicationEvent instanceof SystemEvent) {
+            SystemEvent event = (SystemEvent) applicationEvent;
+
+            Set<String> possibleTasks = whitelist.get(event.getClass());
+            if (possibleTasks == null || possibleTasks.isEmpty()) return;
+
+            for (ClusterProperty prop : taskProps) {
+                if (possibleTasks.contains(prop.getValue())) {
+                    try {
+                        doUpgradeTask(prop);
+                    } catch (FatalUpgradeException e) {
+                        throw new IllegalStateException("Gateway sanity check failed: " + ExceptionUtils.getMessage(e), e);
+                    }
+                }
             }
         }
     }

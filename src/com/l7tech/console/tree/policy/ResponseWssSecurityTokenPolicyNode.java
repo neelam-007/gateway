@@ -21,21 +21,16 @@ public class ResponseWssSecurityTokenPolicyNode extends LeafAssertionTreeNode {
         return "Add Signed " + assertion.getTokenType().getName() + " to Response";
     }
 
-    public boolean canDelete() {
-        return true;
-    }
-
     public Action getPreferredAction() {
         return new ResponseWssSecurityTokenPropertiesAction(this);
     }
 
     public Action[] getActions() {
         Action[] superActions = super.getActions();
-        Action[] newActions = new Action[superActions.length+2];
-        newActions[0] = new ResponseWssSecurityTokenPropertiesAction(this);
-        newActions[1] = new EditXmlSecurityRecipientContextAction(this);
+        Action[] newActions = new Action[superActions.length+1];
+        newActions[0] = new EditXmlSecurityRecipientContextAction(this);
 
-        System.arraycopy(superActions, 0, newActions, 2, superActions.length);
+        System.arraycopy(superActions, 0, newActions, 1, superActions.length);
         return newActions;
     }
 

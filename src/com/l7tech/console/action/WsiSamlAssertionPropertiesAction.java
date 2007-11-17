@@ -1,9 +1,11 @@
+/*
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.WsiSamlPropertiesDialog;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.WsiSamlAssertionPolicyNode;
 import com.l7tech.console.util.TopComponents;
@@ -16,9 +18,6 @@ import java.util.logging.Logger;
 
 /**
  * Edit properties action for WSI-SAML Token Profile assertion.
- *
- * @author $Author$
- * @version $Revision$
  */
 public class WsiSamlAssertionPropertiesAction extends SecureAction {
 
@@ -45,7 +44,7 @@ public class WsiSamlAssertionPropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final WsiSamlPropertiesDialog dlg = new WsiSamlPropertiesDialog(node.getAssertion(), f, true);
+        final WsiSamlPropertiesDialog dlg = new WsiSamlPropertiesDialog(node.asAssertion(), f, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -54,7 +53,7 @@ public class WsiSamlAssertionPropertiesAction extends SecureAction {
                     JTree tree = TopComponents.getInstance().getPolicyTree();
                     if (tree != null) {
                         PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                        model.assertionTreeNodeChanged(node);
                     } else {
                         log.log(Level.WARNING, "Unable to reach the palette tree.");
                     }

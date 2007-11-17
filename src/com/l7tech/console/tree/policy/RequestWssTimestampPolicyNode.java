@@ -20,20 +20,8 @@ public class RequestWssTimestampPolicyNode extends LeafAssertionTreeNode {
         return "Require Timestamp in Request";
     }
 
-    public boolean canDelete() {
-        return true;
-    }
-
     public Action getPreferredAction() {
         return new RequestWssTimestampPropertiesAction(this);
-    }
-
-    public Action[] getActions() {
-        Action[] superActions = super.getActions();
-        Action[] newActions = new Action[superActions.length+1];
-        System.arraycopy(superActions, 0, newActions, 0, superActions.length);
-        newActions[superActions.length] = new RequestWssTimestampPropertiesAction(this);
-        return newActions;
     }
 
     protected String iconResource(boolean open) {

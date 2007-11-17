@@ -24,6 +24,8 @@ import java.util.logging.Logger;
 public class ServicesFolderNode extends AbstractTreeNode {
     static Logger log = Logger.getLogger(ServicesFolderNode.class.getName());
 
+    public static final String NAME = "servicesFolderNode";
+    
     private ServiceAdmin serviceManager;
     private String title;
 

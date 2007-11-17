@@ -46,10 +46,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * @author emil
- * @version Dec 2, 2004
- */
 public class AdminLoginImpl
         extends ApplicationObjectSupport
         implements AdminLogin, InitializingBean, ApplicationListener
@@ -151,7 +147,7 @@ public class AdminLoginImpl
 
     private AdminContext makeAdminContext() {
         return new AdminContextBean(
-                    null,null,null,null,null,null,null,null,null,null,null,null,
+                    null,null,null,null,null,null,null,null,null,null,null,null,null,
                     SecureSpanConstants.ADMIN_PROTOCOL_VERSION,
                     BuildInfo.getProductVersion());
     }

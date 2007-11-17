@@ -28,6 +28,7 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.util.PolicyServiceClient;
@@ -61,21 +62,15 @@ public class PolicyServiceTest extends TestCase {
 
     public static Test suite() {
          final TestSuite suite = new TestSuite(PolicyServiceTest.class);
-         TestSetup wrapper = new TestSetup(suite) {
+        return new TestSetup(suite) {
+            protected void setUp() throws Exception {
+                applicationContext = createApplicationContext();
+            }
 
-             protected void setUp() throws Exception {
-                 applicationContext = createApplicationContext();
-             }
-
-             protected void tearDown() throws Exception {
-                 ;
-             }
-
-             private ApplicationContext createApplicationContext() {
-                 return ApplicationContexts.getTestApplicationContext();
-             }
-         };
-         return wrapper;
+            private ApplicationContext createApplicationContext() {
+                return ApplicationContexts.getTestApplicationContext();
+            }
+        };
     }
 
     protected void setUp() throws Exception {
@@ -92,7 +87,7 @@ public class PolicyServiceTest extends TestCase {
     }
 
     private PolicyEnforcementContext getPolicyRequestContext(LoginCredentials loginCredentials) throws GeneralSecurityException, IOException {
-        Document requestDoc = null;
+        Document requestDoc;
         Message request = new Message();
         Message response = new Message();
 
@@ -122,11 +117,13 @@ public class PolicyServiceTest extends TestCase {
     }
 
     private Document getPolicyResponse(final Assertion policyToTest, PolicyEnforcementContext context, boolean pre32PolicyCompat) throws Exception {
-        PolicyService ps = new PolicyService(TestDocuments.getDotNetServerPrivateKey(),
-                                             TestDocuments.getDotNetServerCertificate(),
-                                             (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
-          (FilterManager)applicationContext.getBean("policyFilterManager"),
-          (SecurityTokenResolver)applicationContext.getBean("securityTokenResolver"));
+        PolicyService ps = new PolicyService(
+                TestDocuments.getDotNetServerPrivateKey(),
+                TestDocuments.getDotNetServerCertificate(),
+                (ServerPolicyFactory) applicationContext.getBean("policyFactory"),
+                (FilterManager) applicationContext.getBean("policyFilterManager"),
+                (SecurityTokenResolver) applicationContext.getBean("securityTokenResolver"),
+                (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory"));
         ps.setApplicationContext(applicationContext);
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
             public PolicyService.ServiceInfo getPolicy(String serviceId) {

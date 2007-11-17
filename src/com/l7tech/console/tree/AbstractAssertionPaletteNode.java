@@ -39,6 +39,10 @@ public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
         return descriptionText;
     }
 
+    protected boolean isHiddenIfNoChildren() {
+        return true;
+    }
+
     protected boolean isEnabledByLicense() {
         int numKids = getChildCount();
 

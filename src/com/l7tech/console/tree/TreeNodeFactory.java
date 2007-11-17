@@ -40,6 +40,8 @@ public class TreeNodeFactory {
             return new UserNode(entity);
         } else if (EntityType.SERVICE.equals(entity.getType())) {
             return new ServiceNode(entity);
+        } else if (EntityType.POLICY.equals(entity.getType())) {
+            return new PolicyEntityNode(entity);
         }
 
         throw new IllegalArgumentException("Unknown entity type " + entity.getType());

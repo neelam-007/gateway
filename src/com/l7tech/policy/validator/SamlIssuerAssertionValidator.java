@@ -4,6 +4,7 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
@@ -13,12 +14,11 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.service.PublishedService;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.EnumSet;
 
 /**
  * @author alex
@@ -40,7 +40,7 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
         holderOfKey = HOK_URIS.contains(assertion.getSubjectConfirmationMethodUri());
     }
 
-    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         int firstCreds = -1;
         int firstCertCred = -1;
         int firstRoute = -1;

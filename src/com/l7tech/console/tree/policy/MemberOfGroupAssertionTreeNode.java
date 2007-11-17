@@ -5,8 +5,6 @@ import com.l7tech.console.action.IdentityPolicyAction;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Class AssertionTreeNode.
@@ -44,34 +42,12 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
     }
 
     /**
-     * Get the set of actions associated with this node.
-     * This may be used e.g. in constructing a context menu.
-     * 
-     * @return actions appropriate to the node
-     */
-    public Action[] getActions() {
-        java.util.List list = new ArrayList();
-        list.addAll(Arrays.asList(super.getActions()));
-        return (Action[])list.toArray(new Action[]{});
-    }
-
-    /**
      * Gets the default action for this node.
      * 
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
         return new IdentityPolicyAction(this);
-    }
-
-
-    /**
-     * Test if the node can be deleted. Default is <code>true</code>
-     * 
-     * @return true if the node can be deleted, false otherwise
-     */
-    public boolean canDelete() {
-        return true;
     }
 
     /**

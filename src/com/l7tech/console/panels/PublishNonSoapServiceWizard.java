@@ -1,11 +1,16 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
+import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ConsoleLicenseManager;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -20,18 +25,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import java.util.EventListener;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Wizard that guides the administrator through the publication of a non-soap service.
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Sep 14, 2004<br/>
- * $Id$<br/>
  */
 public class PublishNonSoapServiceWizard extends Wizard {
     public static PublishNonSoapServiceWizard getInstance(Frame parent) {
@@ -71,7 +69,7 @@ public class PublishNonSoapServiceWizard extends Wizard {
                 policy.addChild(new HttpRoutingAssertion(panel1.getDownstreamURL()));
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(policy, bo);
-            service.setPolicyXml(bo.toString());
+            service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), false));
             service.setSoap(false);
             service.setHttpMethods(ANYVERBSET);// xml application are not like soap. by default, not just post is allowed
             service.setName(panel1.getPublishedServiceName());
@@ -106,9 +104,9 @@ public class PublishNonSoapServiceWizard extends Wizard {
 
     private void notify(EntityHeader header) {
         EntityEvent event = new EntityEvent(this, header);
-        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
-        for (int i = 0; i < listeners.length; i++) {
-            ((EntityListener)listeners[i]).entityAdded(event);
+        EntityListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (EntityListener listener : listeners) {
+            listener.entityAdded(event);
         }
     }
 

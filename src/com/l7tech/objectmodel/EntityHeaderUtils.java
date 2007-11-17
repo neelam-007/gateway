@@ -3,10 +3,7 @@
  */
 package com.l7tech.objectmodel;
 
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.User;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.AnonymousIdentityReference;
+import com.l7tech.identity.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.common.transport.jms.JmsConnection;
@@ -15,6 +12,7 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.alert.AlertEvent;
 import com.l7tech.common.alert.Notification;
+import com.l7tech.common.policy.Policy;
 
 /**
  * @author alex
@@ -32,6 +30,7 @@ public final class EntityHeaderUtils {
         if (Notification.class.isAssignableFrom(entityClass)) return EntityType.ALERT_ACTION;
         if (SampleMessage.class.isAssignableFrom(entityClass)) return EntityType.SAMPLE_MESSAGE;
         if (Role.class.isAssignableFrom(entityClass)) return EntityType.RBAC_ROLE;
+        if (Policy.class.isAssignableFrom(entityClass)) return EntityType.POLICY;
         return EntityType.UNDEFINED;
     }
 
@@ -39,7 +38,7 @@ public final class EntityHeaderUtils {
      * Creates and returns an {@link com.l7tech.objectmodel.AnonymousEntityReference} that's as close a reflection of the given
      * {@link com.l7tech.objectmodel.EntityHeader} as possible.  <code>null</code> is returned only if the {@link com.l7tech.objectmodel.EntityHeader#getType()}
      * is {@link com.l7tech.objectmodel.EntityType#MAXED_OUT_SEARCH_RESULT}.  Otherwise, this method will create either an
-     * {@link com.l7tech.objectmodel.AnonymousEntityReference}, an {@link com.l7tech.identity.AnonymousIdentityReference}, or throw an exception.
+     * {@link com.l7tech.objectmodel.AnonymousEntityReference}, an {@link com.l7tech.identity.AnonymousGroupReference}, or throw an exception.
      * @param header the EntityHeader to translate
      * @return the anonymous entity reference, or null if the header was of type {@link com.l7tech.objectmodel.EntityType#MAXED_OUT_SEARCH_RESULT}
      */
@@ -53,8 +52,14 @@ public final class EntityHeaderUtils {
                 IdentityHeader identityHeader = (IdentityHeader) header;
                 providerOid = identityHeader.getProviderOid();
             }
-            Class clazz = type == EntityType.USER ? User.class : Group.class;
-            return new AnonymousIdentityReference(clazz, header.getStrId(), providerOid, header.getName());
+
+            if (type == EntityType.USER) {
+                return new AnonymousUserReference(header.getStrId(), providerOid, header.getName());
+            } else if (type == EntityType.GROUP) {
+                return new AnonymousGroupReference(header.getStrId(), providerOid, header.getName());
+            } else {
+                throw new IllegalStateException(); // Covered by outer if
+            }
         } else if (type == EntityType.SERVICE) {
             return new AnonymousEntityReference(PublishedService.class, header.getOid(), header.getName());
         } else if (type == EntityType.JMS_CONNECTION) {
@@ -71,6 +76,8 @@ public final class EntityHeaderUtils {
             return new AnonymousEntityReference(SampleMessage.class, header.getOid(), header.getName());
         } else if (type == EntityType.RBAC_ROLE) {
             return new AnonymousEntityReference(Role.class, header.getOid(), header.getName());
+        } else if (type == EntityType.POLICY) {
+            return new AnonymousEntityReference(Policy.class, header.getOid(), header.getName());
         } else if (type == EntityType.MAXED_OUT_SEARCH_RESULT) {
             return null;
         } else if (type == EntityType.UNDEFINED) {

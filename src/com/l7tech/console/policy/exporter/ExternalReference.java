@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.policy.exporter;
 
 import org.w3c.dom.Element;
@@ -12,12 +15,6 @@ import java.util.ArrayList;
 
 /**
  * An external reference used by an exported policy.
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Jul 16, 2004<br/>
- * $Id$<br/>
  */
 public abstract class ExternalReference {
     /**
@@ -59,7 +56,7 @@ public abstract class ExternalReference {
                                                      ExporterConstants.EXPORTED_POL_NS);
         }
         // Go through child elements and process them one by one
-        Collection references = new ArrayList();
+        Collection<ExternalReference> references = new ArrayList<ExternalReference>();
         NodeList children = refElements.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
@@ -75,10 +72,12 @@ public abstract class ExternalReference {
                     references.add(CustomAssertionReference.parseFromElement(refEl));
                 } else if (refType.equals(ExternalSchemaReference.class.getName())) {
                     references.add(ExternalSchemaReference.parseFromElement(refEl));
+                } else if (refType.equals(IncludedPolicyReference.class.getName())) {
+                    references.add(IncludedPolicyReference.parseFromElement(refEl));
                 }
             }
         }
-        return (ExternalReference[])references.toArray(new ExternalReference[0]);
+        return references.toArray(new ExternalReference[0]);
     }
 
     static String getParamFromEl(Element parent, String param) {

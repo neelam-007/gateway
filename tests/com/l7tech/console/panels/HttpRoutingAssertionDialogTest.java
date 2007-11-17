@@ -41,7 +41,7 @@ public class HttpRoutingAssertionDialogTest {
             throw new RuntimeException("Emtpy Stub DataStore");
         }
         PublishedService svc = (PublishedService)services.iterator().next();
-        HttpRoutingAssertionDialog d = new HttpRoutingAssertionDialog(owner, a, svc);
+        HttpRoutingAssertionDialog d = new HttpRoutingAssertionDialog(owner, a, svc.getPolicy(), svc.parsedWsdl());
         d.setModal(true);
         d.pack();
         d.setVisible(true);

@@ -70,6 +70,11 @@
         <property name="serviceInterface" value="com.l7tech.common.security.rbac.RbacAdmin"/>
     </bean>
 
+    <bean name="/PolicyAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+        <property name="service" ref="policyAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.policy.PolicyAdmin"/>
+    </bean>
+
     <bean name="/TransportAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
         <property name="service" ref="transportAdmin"/>
         <property name="serviceInterface" value="com.l7tech.common.transport.TransportAdmin"/>

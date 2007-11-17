@@ -11,7 +11,7 @@ import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertio
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.xmlsec.*;
-import com.l7tech.service.PublishedService;
+import com.l7tech.common.xml.Wsdl;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -38,7 +38,7 @@ public class WsspAssertionValidator implements AssertionValidator {
     /**
      *
      */
-    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         Map assertionsToTypes = new LinkedHashMap();
         Assertion[] assertions = path.getPath();
         for (int i = 0; i < assertions.length; i++) {

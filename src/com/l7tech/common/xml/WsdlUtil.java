@@ -1,17 +1,14 @@
 package com.l7tech.common.xml;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
-
-import com.l7tech.common.util.XmlUtil;
+import javax.wsdl.Binding;
+import javax.wsdl.Types;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.schema.Schema;
+import javax.wsdl.extensions.soap.SOAPBinding;
+import java.util.List;
 
 /**
  * WSDL utility methods.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public class WsdlUtil {
 
@@ -20,16 +17,11 @@ public class WsdlUtil {
      *
      * <p>WARNING! This does not check imports</p>
      *
-     * @param wsdl The wsdl xml text.
+     * @param wsdl The wsdl
      * @return true if this is an RPC with no schema (false if null)
-     * @throws SAXException If the given wsdl cannot be parsed
      */
-    public static boolean isRPCWithNoSchema(String wsdl) throws SAXException {
-        boolean rpcNoSchema = false;
-        if (wsdl != null) {
-            rpcNoSchema = isRPCWithNoSchema(XmlUtil.stringToDocument(wsdl));
-        }
-        return rpcNoSchema;
+    public static boolean isRPCWithNoSchema(Wsdl wsdl) {
+        return wsdl != null && hasRPCBinding(wsdl) && !hasSchema(wsdl);
     }
 
     /**
@@ -37,60 +29,36 @@ public class WsdlUtil {
      *
      * <p>WARNING! This does not check imports</p>
      *
-     * @param wsdlDocument The wsdl DOM
+     * @param wsdl The wsdl
      * @return true if this is an RPC with no schema (false if null)
      */
-    public static boolean isRPCWithNoSchema(Document wsdlDocument) {
-        boolean rpcNoSchema = false;
-
-        if (wsdlDocument != null) {
-            if (hasRPCBinding(wsdlDocument) && !hasSchema(wsdlDocument)) {
-                rpcNoSchema = true;
+    public static boolean hasRPCBinding(Wsdl wsdl) {
+        for (Binding binding : wsdl.getBindings()) {
+            //noinspection unchecked
+            final List<ExtensibilityElement> eels = binding.getExtensibilityElements();
+            for (ExtensibilityElement eel : eels) {
+                if (eel instanceof SOAPBinding) {
+                    SOAPBinding soapBinding = (SOAPBinding) eel;
+                    if (Wsdl.STYLE_RPC.equals(soapBinding.getStyle())) return true;
+                }
             }
         }
-
-        return rpcNoSchema;
+        return false;
     }
 
     /**
-     * Check if the given WSDL document contains a binding with an RPC style.
-     *
-     * @param wsdlDocument The document to check
-     * @return true if any binding in the WSDL is RPC
+     * Returns true if this WSDL contains at least one Schema in its &lt;types&gt; element.
+     * @param wsdl the WSDL in which to look for schemas
+     * @return true if the provided WSDL contains at least on Schema
      */
-    public static boolean hasRPCBinding(Document wsdlDocument) {
-        boolean isRpc = false;
-        NodeList bindings = wsdlDocument.getDocumentElement().getElementsByTagNameNS(
-                Wsdl.WSDL_SOAP_NAMESPACE, "binding");
-
-        for (int n=0; n<bindings.getLength(); n++) {
-            Element bindingElement = (Element) bindings.item(n);
-            if (bindingElement.getAttribute("style").equals(Wsdl.STYLE_RPC)) {
-                isRpc = true;
-                break;
-            }
+    public static boolean hasSchema(Wsdl wsdl) {
+        Types types = wsdl.getDefinition().getTypes();
+        if (types == null) return false;
+        //noinspection unchecked
+        List<ExtensibilityElement> eels = types.getExtensibilityElements();
+        for (ExtensibilityElement eel : eels) {
+            if (eel instanceof Schema) return true;
         }
-
-        return isRpc;
-    }
-
-    /**
-     * Check if the given wsdl contains a schema.
-     *
-     * <p>WARNING! This does not check imports</p>
-     *
-     * @return true if the given DOM contains a schema (false if null)
-     */
-    public static boolean hasSchema(Document wsdlDocument) {
-        boolean hasSchema = false;
-
-        if (wsdlDocument != null) {
-            WsdlSchemaAnalizer wsdlSchemaAnalizer = new WsdlSchemaAnalizer(wsdlDocument);
-            if (wsdlSchemaAnalizer.getFullSchemas() != null) {
-                hasSchema = true;
-            }
-        }
-
-        return hasSchema;
+        return false;
     }
 }

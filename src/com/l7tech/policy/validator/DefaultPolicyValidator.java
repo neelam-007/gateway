@@ -1,24 +1,25 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.AssertionLicense;
+import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyType;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.WsdlUtil;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ReadOnlyEntityManager;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
-import com.l7tech.service.PublishedService;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.xml.WsdlUtil;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
-
-import org.xml.sax.SAXException;
 
 /**
  * The policy validator that analyzes the policy assertion tree
@@ -45,40 +46,45 @@ import org.xml.sax.SAXException;
 public class DefaultPolicyValidator extends PolicyValidator {
     static Logger log = Logger.getLogger(DefaultPolicyValidator.class.getName());
 
-    public PolicyValidatorResult validate(Assertion assertion, PublishedService service, AssertionLicense assertionLicense) throws InterruptedException {
-        PolicyValidatorResult r = super.validate(assertion, service, assertionLicense);
+    public DefaultPolicyValidator(ReadOnlyEntityManager<Policy, EntityHeader> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
+        super(policyFinder, pathBuilderFactory);
+    }
 
-        try {
-            if (service.isSoap() &&
-                Assertion.contains(assertion, XpathBasedAssertion.class) &&
-                WsdlUtil.isRPCWithNoSchema(service.getWsdlXml())) {
+    public PolicyValidatorResult validate(Assertion assertion, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) throws InterruptedException {
+        PolicyValidatorResult r = super.validate(assertion, policyType, wsdl, soap, assertionLicense);
 
-                Assertion lastAssertion = assertion;
-                if (assertion instanceof CompositeAssertion) {
-                    List children = ((CompositeAssertion) assertion).getChildren();
-                    if (children != null && !children.isEmpty()) {
-                        lastAssertion = (Assertion) children.get(children.size()-1);
-                    }
+        if (soap && Assertion.contains(assertion, XpathBasedAssertion.class) && WsdlUtil.isRPCWithNoSchema(wsdl)) {
+            Assertion lastAssertion = assertion;
+            if (assertion instanceof CompositeAssertion) {
+                List children = ((CompositeAssertion) assertion).getChildren();
+                if (children != null && !children.isEmpty()) {
+                    lastAssertion = (Assertion) children.get(children.size()-1);
                 }
-
-                r.addWarning(new PolicyValidatorResult.Warning(lastAssertion.getOrdinal(), 0, "Assertions that use XPaths may not work as expected with RPC services.", null));
             }
-        } catch(SAXException se) {
-            log.warning("Could not parse wsdl '" + ExceptionUtils.getMessage(se) + "', skipping WSDL checks.");
+
+            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion.getOwnerPolicyOid(), lastAssertion.getOrdinal(), 0, "Assertions that use XPaths may not work as expected with RPC services.", null));
         }
 
         return r;
     }
 
-    public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) throws InterruptedException {
-        Assertion[] ass = ap.getPath();
+    public void validatePath(final AssertionPath ap,
+                             final PolicyType policyType,
+                             final Wsdl wsdl,
+                             final boolean soap,
+                             final AssertionLicense assertionLicense,
+                             final PolicyValidatorResult r)
+            throws InterruptedException
+    {
+        Assertion[] path = ap.getPath();
 
         // paths that have the pattern "OR, Comment" should be ignored completly (bugzilla #2449)
-        for (int i = 0; i < ass.length; i++) {
-            if (ass[i] instanceof CommentAssertion) {
-                if (ass[i].getParent() instanceof OneOrMoreAssertion) {
+        for (Assertion assertion: path) {
+//            assertion = dereferenceInclude(assertion, r);
+            if (assertion instanceof CommentAssertion) {
+                if (assertion.getParent() instanceof OneOrMoreAssertion) {
                     // if the parent OR has something else than comments as children, the this path should be ignored
-                    OneOrMoreAssertion parent = (OneOrMoreAssertion)ass[i].getParent();
+                    OneOrMoreAssertion parent = (OneOrMoreAssertion) assertion.getParent();
                     boolean onlyCommentsInOR = true;
                     if (Thread.interrupted())
                         throw new InterruptedException();
@@ -96,34 +102,41 @@ public class DefaultPolicyValidator extends PolicyValidator {
             }
         }
 
-        PathValidator pv = new PathValidator(ap, r, service, assertionLicense);
-        for (int i = 0; i < ass.length; i++) {
-            if (ass[i] instanceof CommentAssertion) continue;
-            pv.validate(ass[i]);
+        PathValidator pv = new PathValidator(ap, r, wsdl, soap, assertionLicense);
+        for (Assertion assertion : path) {
+//            assertion = dereferenceInclude(assertion, r);
+            if (assertion instanceof CommentAssertion) continue;
+            pv.validate(assertion);
         }
 
         // deferred validations
-        Iterator dIt = pv.getDeferredValidators().iterator();
-        while (dIt.hasNext()) {
-            if (Thread.interrupted())
-                throw new InterruptedException();
-            DeferredValidate dv = (DeferredValidate)dIt.next();
-            dv.validate(pv, ass);
+        for (DeferredValidate dv : pv.getDeferredValidators()) {
+            if (Thread.interrupted()) throw new InterruptedException();
+            dv.validate(pv, path);
         }
+        
+        if (!policyType.isServicePolicy()) {
+            // All subsequent rules pertain only to Service policies (i.e. not fragments)
+            return;
+        }
+
         // last assertion should be last non-comment assertion
         Assertion lastAssertion = ap.lastAssertion();
-        for (int i = ass.length-1; i >= 0; i--) {
-            if (!(ass[i] instanceof CommentAssertion)) {
-                lastAssertion = ass[i];
+        for (int i = path.length-1; i >= 0; i--) {
+//            Assertion ass = dereferenceInclude(path[i], r);
+            Assertion ass = path[i];
+            if (!(ass instanceof CommentAssertion)) {
+                lastAssertion = ass;
                 break;
             }
         }
+
         if (!pv.seenResponse) { // no routing report that
             r.addWarning(new PolicyValidatorResult.
               Warning(lastAssertion, ap, "No route assertion.", null));
         }
         if (!pv.seenParsing) {
-            if (!service.isSoap()) {
+            if (!soap) {
                 r.addWarning(new PolicyValidatorResult.
                   Warning(lastAssertion, ap, "This path potentially allows non-xml content through.", null));
             }
@@ -139,6 +152,27 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
     }
 
+    private Assertion dereferenceInclude(final Assertion assertion, final PolicyValidatorResult r) {
+        if (!(assertion instanceof Include)) return assertion;
+
+        Include include = (Include) assertion;
+        try {
+            Policy policy = policyFinder.findByPrimaryKey(include.getPolicyOid());
+            if (policy == null) {
+                r.addError(new PolicyValidatorResult.Error(assertion.getOwnerPolicyOid(), assertion.getOrdinal(), -1, "Include Assertion refers to Policy #" + include.getOwnerPolicyOid() + " (" + include.getPolicyName() + "), which no longer exists", null));
+                return include;
+            } else {
+                try {
+                    return policy.getAssertion();
+                } catch (IOException e) {
+                    r.addError(new PolicyValidatorResult.Error(assertion.getOwnerPolicyOid(), assertion.getOrdinal(), -1, "Include Assertion refers to Policy #" + include.getOwnerPolicyOid() + " (" + include.getPolicyName() + "), which cannot be parsed", e));
+                    return include;
+                }
+            }
+        } catch (FindException e) {
+            throw new RuntimeException("Unable to load included policy #" + include.getPolicyOid() + " (" + include.getPolicyName() + ")");
+        }
+    }
 
 
     /**

@@ -1,5 +1,6 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.ServiceAdmin;
 
 import java.util.Collection;
@@ -22,9 +23,9 @@ public class ServiceEntitiesCollection implements EntitiesCollection {
      * @return Returns the collection of <code>EntityHeader</code> instances
      * @throws RuntimeException thrown on error retrieving the user collection
      */
-    public Collection getNextBatch() throws RuntimeException {
+    public Collection<EntityHeader> getNextBatch() throws RuntimeException {
         if (exhausted) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         try {
             exhausted = true;

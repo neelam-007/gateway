@@ -1,18 +1,20 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  *
  */
 
 package com.l7tech.policy;
 
+import com.l7tech.common.ApplicationContexts;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
@@ -20,6 +22,8 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ReadOnlyEntityManager;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -29,6 +33,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * Test the default policy assertion path builder/analyzer class
  * functionality.
@@ -37,6 +43,8 @@ import java.util.List;
  * @version 1.0
  */
 public class DefaultPolicyPathBuilderTest extends TestCase {
+    private ApplicationContext spring;
+    private ReadOnlyEntityManager<Policy, EntityHeader> policyFinder;
 
     public DefaultPolicyPathBuilderTest(String name) {
         super(name);
@@ -59,9 +67,19 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
           });
 
         Assertion oom = new OneOrMoreAssertion(kids);
-        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        DefaultPolicyPathBuilder builder = getPathBuilder();
 
         assertTrue(builder.generate(oom).getPathCount() == 3);
+    }
+
+    private DefaultPolicyPathBuilder getPathBuilder() {
+        return new DefaultPolicyPathBuilder((ReadOnlyEntityManager<Policy, EntityHeader>) spring.getBean("policyManager"));
+    }
+
+    @Override
+    protected void setUp() throws Exception {
+        this.spring = ApplicationContexts.getTestApplicationContext();
+        this.policyFinder = (ReadOnlyEntityManager<Policy, EntityHeader>) spring.getBean("policyManager");
     }
 
     public void testAllAssertionSingleDepthWithConjunctionOr() throws Exception {
@@ -79,7 +97,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         Assertion one = new OneOrMoreAssertion(kids);
         Assertion two = new OneOrMoreAssertion(kids2);
         Assertion oom = new AllAssertion(Arrays.asList(new Assertion[]{one, two}));
-        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        DefaultPolicyPathBuilder builder = getPathBuilder();
 
         final int pathCount = builder.generate(oom).getPathCount();
         assertTrue("The path count value received is " + pathCount, pathCount == 2);
@@ -95,7 +113,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
           });
 
         Assertion oom = new AllAssertion(kids);
-        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        DefaultPolicyPathBuilder builder = getPathBuilder();
 
         assertTrue(builder.generate(oom).getPathCount() == 1);
     }
@@ -109,7 +127,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
           });
 
         Assertion oom = new AllAssertion(kids);
-        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        DefaultPolicyPathBuilder builder = getPathBuilder();
 
         assertTrue(builder.generate(oom).getPathCount() == 1);
     }
@@ -141,7 +159,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         Assertion three = new OneOrMoreAssertion(kids3);
 
         Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[]{one, two, three}));
-        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        DefaultPolicyPathBuilder builder = getPathBuilder();
         int count = builder.generate(oom).getPathCount();
         assertTrue("The value received is " + count, count == 9);
     }
@@ -165,7 +183,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         Assertion two = new OneOrMoreAssertion(kids2);
         Assertion three = new AllAssertion(Arrays.asList(new Assertion[]{new TrueAssertion()}));
         Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[]{one, two, three}));
-        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        DefaultPolicyPathBuilder builder = getPathBuilder();
 
         int count = builder.generate(oom).getPathCount();
         assertTrue("The value received is " + count, count == 7);
@@ -173,7 +191,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
 
     public void testBug763MonsterPolicy() throws Exception {
         Assertion policy = WspReader.getDefault().parsePermissively(XmlUtil.parse(TestDocuments.getInputStream(TestDocuments.BUG_763_MONSTER_POLICY)).getDocumentElement());
-        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        DefaultPolicyPathBuilder builder = getPathBuilder();
 
         PolicyPathResult result = builder.generate(policy);
         int count = result.getPathCount();
@@ -196,7 +214,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
             new HttpRoutingAssertion("http://wheel")
         }));
 
-        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        DefaultPolicyPathBuilder builder = getPathBuilder();
         PolicyPathResult result = builder.generate(top);
         assertTrue(result.getPathCount() == 2);
     }
@@ -220,7 +238,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
             new HttpRoutingAssertion("http://wheel")
         }));
 
-        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        DefaultPolicyPathBuilder builder = getPathBuilder();
         PolicyPathResult result = builder.generate(top);
         assertTrue(result.getPathCount() == 2);
         Iterator it = result.paths().iterator();
@@ -249,7 +267,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
                 new HttpRoutingAssertion("http://wheel")
             }));
 
-            DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+            DefaultPolicyPathBuilder builder = getPathBuilder();
             PolicyPathResult result = builder.generate(top);
             assertTrue(result.getPathCount() == nCrendentials - i);
         }

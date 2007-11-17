@@ -1,20 +1,17 @@
+/*
+ * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import javax.swing.*;
-
 import com.l7tech.console.action.EditWsFederationPassiveTokenRequestAction;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+
+import javax.swing.*;
 
 /**
  * Tree node for WsFederationPassiveTokenRequest ....
- *
- * @author $Author$
- * @version $Revision$
  */
 public class WsFederationPassiveTokenRequestTreeNode extends LeafAssertionTreeNode {
 
@@ -30,17 +27,6 @@ public class WsFederationPassiveTokenRequestTreeNode extends LeafAssertionTreeNo
 
     public Action getPreferredAction() {
         return new EditWsFederationPassiveTokenRequestAction(this);
-    }
-
-    public Action[] getActions() {
-        List actions = new ArrayList();
-        actions.add(getPreferredAction());
-        actions.addAll(Arrays.asList(super.getActions()));
-        return (Action[])actions.toArray(new Action[0]);
-    }
-
-    public boolean canDelete() {
-        return true;
     }
 
     public String getName() {

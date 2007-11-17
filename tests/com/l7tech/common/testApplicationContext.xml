@@ -34,28 +34,29 @@
 
     <!--  test service admin -->
     <bean id="serviceAdmin" class="com.l7tech.service.ServiceAdminStub">
-        <property name="policyValidator" ref="policyValidator"/>
+        <property name="policyValidator" ref="defaultPolicyValidator"/>
         <property name="serviceManager" ref="serviceManager"/>
     </bean>
 
     <!-- server side service manager -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
-        <constructor-arg ref="policyFactory"/>
-        <constructor-arg>
-            <list/>
-        </constructor-arg>
-        <constructor-arg>
-            <null/>
-        </constructor-arg>
+        <constructor-arg ref="policyCache"/>
+        <constructor-arg><null/></constructor-arg>
+        <constructor-arg ref="serviceManager"/>
+        <constructor-arg><list/></constructor-arg>
+        <constructor-arg><null/></constructor-arg>
     </bean>
 
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.service.ServiceManagerStub">
+        <constructor-arg ref="policyManager"/>
         <property name="serviceCache" ref="serviceCache"/>
     </bean>
 
     <!-- test config uses the policy validator without persistence -->
-    <bean id="policyValidator" class="com.l7tech.policy.validator.DefaultPolicyValidator">
+    <bean id="defaultPolicyValidator" class="com.l7tech.policy.validator.DefaultPolicyValidator">
+        <constructor-arg ref="policyManager"/>
+        <constructor-arg ref="policyPathBuilderFactory"/>
     </bean>
 
     <!-- server side policy factory -->
@@ -262,4 +263,15 @@
     <bean id="crlCache" class="com.l7tech.server.TestCrlCache"/>
 
     <bean id="certValidationProcessor" class="com.l7tech.server.security.cert.TestCertValidationProcessor"/>
+
+    <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerStub"/>
+
+    <bean id="policyCache" class="com.l7tech.server.policy.PolicyCacheImpl">
+        <constructor-arg ref="policyFactory"/>
+        <property name="policyManager" ref="policyManager"/>
+    </bean>
+
+    <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
+        <constructor-arg ref="policyManager"/>
+    </bean>
 </beans>

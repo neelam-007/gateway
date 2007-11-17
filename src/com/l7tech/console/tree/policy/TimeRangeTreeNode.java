@@ -1,70 +1,46 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TimeRange;
+import com.l7tech.console.action.TimeRangePropertiesAction;
 import com.l7tech.policy.assertion.TimeOfDay;
 import com.l7tech.policy.assertion.TimeOfDayRange;
-import com.l7tech.console.action.TimeRangePropertiesAction;
+import com.l7tech.policy.assertion.TimeRange;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 
 /**
  * Policy tree node for TimeRange assertion.
- *
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 19, 2004<br/>
- * $Id$
- *
  */
-public class TimeRangeTreeNode extends LeafAssertionTreeNode {
-    public TimeRangeTreeNode(Assertion assertion) {
+public class TimeRangeTreeNode extends LeafAssertionTreeNode<TimeRange> {
+    public TimeRangeTreeNode(TimeRange assertion) {
         super(assertion);
-        if (assertion instanceof TimeRange) {
-            nodeAssertion = (TimeRange)assertion;
-        } else
-            throw new IllegalArgumentException("assertion passed must be of type " + TimeRange.class.getName());
     }
+
     public String getName() {
-        if (nodeAssertion != null && (nodeAssertion.isControlDay() || nodeAssertion.isControlTime())) {
-            String nodeName = "Available ";
-            if (nodeAssertion.isControlDay()) {
-                nodeName += week[nodeAssertion.getStartDayOfWeek()-1] +
-                            " through " + week[nodeAssertion.getEndDayOfWeek()-1] + " ";
-            }
+        if (!assertion.isControlDay() && !assertion.isControlTime()) return "No Availability Defined";
 
-            if (nodeAssertion.isControlTime() && nodeAssertion.getTimeRange() != null) {
-                TimeOfDayRange tr = nodeAssertion.getTimeRange();
-
-                nodeName += "from " + timeToString(utcToLocalTime(tr.getFrom())) + " to " +
-                                      timeToString(utcToLocalTime(tr.getTo()));
-            }
-
-            return nodeName;
+        String nodeName = "Available ";
+        if (assertion.isControlDay()) {
+            nodeName += week[assertion.getStartDayOfWeek()-1] +
+                        " through " + week[assertion.getEndDayOfWeek()-1] + " ";
         }
-        else return "No Availability Defined";
+
+        if (assertion.isControlTime() && assertion.getTimeRange() != null) {
+            TimeOfDayRange tr = assertion.getTimeRange();
+
+            nodeName += "from " + timeToString(utcToLocalTime(tr.getFrom())) + " to " +
+                                  timeToString(utcToLocalTime(tr.getTo()));
+        }
+
+        return nodeName;
     }
 
     protected String iconResource(boolean open) {
         // todo, a special icon for this assertion?
         return "com/l7tech/console/resources/time.gif";
-    }
-
-    /**
-     * Get the set of actions associated with this node.
-     * This may be used e.g. in constructing a context menu.
-     *
-     * @return actions appropriate to the node
-     */
-    public Action[] getActions() {
-        java.util.List list = new ArrayList();
-        list.add(getPreferredAction());
-        list.addAll(Arrays.asList(super.getActions()));
-        return (Action[])list.toArray(new Action[]{});
     }
 
     /**
@@ -74,10 +50,6 @@ public class TimeRangeTreeNode extends LeafAssertionTreeNode {
      */
     public Action getPreferredAction() {
         return new TimeRangePropertiesAction(this);
-    }
-
-    public boolean canDelete() {
-        return true;
     }
 
     private String timeToString(TimeOfDay tod) {
@@ -108,10 +80,6 @@ public class TimeRangeTreeNode extends LeafAssertionTreeNode {
         }
         return new TimeOfDay(utchr, utcmin, utc.getSecond());
     }
-
-    public TimeRange getTimeRange() {return nodeAssertion;}
-
-    private TimeRange nodeAssertion;
 
     private static final String[] week = {"Sunday",
                                           "Monday",

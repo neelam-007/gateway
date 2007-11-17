@@ -27,8 +27,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.wsp.WspWriter;
@@ -49,7 +49,10 @@ import org.xml.sax.SAXException;
 import x0Assertion.oasisNamesTcSAML1.*;
 
 import javax.xml.soap.SOAPMessage;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.PrivateKey;
@@ -330,7 +333,7 @@ public class SamlProcessingTest extends TestCase {
             PublishedService ps = new PublishedService();
             ps.setName(descriptor.name);
             ps.setWsdlXml(descriptor.wsdlXml);
-            ps.setPolicyXml(descriptor.policyXml);
+            ps.getPolicy().setXml(descriptor.policyXml);
             serviceAdmin.savePublishedService(ps);
         }
     }

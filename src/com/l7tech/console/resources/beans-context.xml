@@ -2,11 +2,9 @@
 <!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 
 <beans>
-    <bean id="securityProvider" class="com.l7tech.console.security.SecurityProviderImpl">
-    </bean>
+    <bean id="securityProvider" class="com.l7tech.console.security.SecurityProviderImpl"/>
 
-    <bean id="registry" class="com.l7tech.console.util.registry.RegistryImpl">
-    </bean>
+    <bean id="registry" class="com.l7tech.console.util.registry.RegistryImpl"/>
 
     <!--
       NOTE: The actual host we connect to is not called "securespangateway"
@@ -78,9 +76,14 @@
         <property name="serviceInterface" value="com.l7tech.common.transport.TransportAdmin"/>
     </bean>
 
+    <bean id="policyAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/PolicyAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.policy.PolicyAdmin"/>
+    </bean>
+
     <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-         <property name="targetClass"><value>com.l7tech.console.util.Registry</value></property>
-         <property name="targetMethod"><value>setDefault</value></property>
+         <property name="targetClass" value="com.l7tech.console.util.Registry"/>
+         <property name="targetMethod" value="setDefault"/>
          <property name="arguments">
             <list>
                 <ref local="registry"/>
@@ -88,10 +91,20 @@
         </property>
     </bean>
 
-    <bean id="assertionRegistry" class="com.l7tech.console.policy.ConsoleAssertionRegistry">
-    </bean>
+    <bean id="assertionRegistry" class="com.l7tech.console.policy.ConsoleAssertionRegistry"/>
 
     <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">
         <constructor-arg ref="assertionRegistry"/>
-    </bean>    
+    </bean>
+
+    <bean id="defaultPolicyValidator" class="com.l7tech.policy.validator.DefaultPolicyValidator">
+        <constructor-arg ref="managerPolicyCache"/>
+        <constructor-arg ref="policyPathBuilderFactory"/>
+    </bean>
+
+    <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
+        <constructor-arg ref="managerPolicyCache"/>
+    </bean>
+
+    <bean id="managerPolicyCache" class="com.l7tech.console.policy.ManagerPolicyCache"/>
 </beans>

@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
 import com.japisoft.xmlpad.PopupModel;
@@ -55,11 +58,6 @@ import java.util.logging.Logger;
 
 /**
  * A dialog to view / configure the properties of a schema validation assertion.
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 6, 2004<br/>
  */
 public class SchemaValidationPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SchemaValidationPropertiesDialog.class.getName());
@@ -126,10 +124,9 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service) {
         super(owner, true);
-        if (node == null || node.getAssertion() == null) {
-            throw new IllegalArgumentException("Schema Validation Node == null");
-        }
-        schemaValidationAssertion = node.getAssertion();
+        final SchemaValidation assertion = node.asAssertion();
+        if (assertion == null) throw new IllegalArgumentException("Schema Validation Node == null");
+        schemaValidationAssertion = assertion;
         this.service = service;
         initialize();
     }

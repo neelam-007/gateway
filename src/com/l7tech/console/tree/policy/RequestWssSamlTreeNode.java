@@ -52,7 +52,6 @@ public class RequestWssSamlTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        list.add(new EditRequestWssSamlAction(this));
         list.add(new EditXmlSecurityRecipientContextAction(this));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
@@ -65,15 +64,6 @@ public class RequestWssSamlTreeNode extends LeafAssertionTreeNode {
      */
     public Action getPreferredAction() {
         return new EditRequestWssSamlAction(this);
-    }
-
-    /**
-     * Test if the node can be deleted. Default is <code>true</code>
-     * 
-     * @return true if the node can be deleted, false otherwise
-     */
-    public boolean canDelete() {
-        return true;
     }
 
     /**

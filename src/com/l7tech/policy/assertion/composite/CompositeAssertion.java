@@ -191,4 +191,12 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     public String toString() {
         return toIndentedString(0);
     }
+
+    public void setOwnerPolicyOid(final Long policyOid) {
+        super.setOwnerPolicyOid(policyOid);
+        for (Iterator i = children.iterator(); i.hasNext();) {
+            Assertion ass = (Assertion) i.next();
+            ass.setOwnerPolicyOid(policyOid);
+        }
+    }
 }

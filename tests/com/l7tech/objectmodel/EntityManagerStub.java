@@ -1,116 +1,133 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.objectmodel;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Collections;
+import java.util.*;
 
 /**
  * Stub Entity Manager
- * @author emil
- * @version Feb 17, 2005
  */
 public abstract class EntityManagerStub<ET extends PersistentEntity> implements EntityManager<ET, EntityHeader> {
+    protected final Map<Long, ET> entities;
+    protected final Map<Long, EntityHeader> headers;
+    
+    private long nextOid;
+
+    public EntityManagerStub() {
+        this.entities = new HashMap<Long, ET>();
+        this.headers = new HashMap<Long, EntityHeader>();
+        this.nextOid = 1;
+    }
+
+    public EntityManagerStub(ET[] entities) {
+        long maxOid = 0;
+        Map<Long, ET> es = new HashMap<Long, ET>();
+        Map<Long, EntityHeader> hs = new HashMap<Long, EntityHeader>();
+        for (ET entity : entities) {
+            es.put(entity.getOid(), entity);
+            hs.put(entity.getOid(), header(entity));
+            maxOid = Math.max(maxOid, entity.getOid());
+        }
+        this.entities = es;
+        this.headers = hs;
+        this.nextOid = ++maxOid;
+    }
+
     public ET findByPrimaryKey(long oid) throws FindException {
-        throw new UnsupportedOperationException();
+        return entities.get(oid);
     }
 
-    public void delete(long oid) throws DeleteException, FindException {
-        throw new UnsupportedOperationException();
+    public synchronized void delete(long oid) throws DeleteException, FindException {
+        entities.remove(oid);
+        headers.remove(oid);
     }
 
-    /**
-     * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.
-     *
-     * @return A <code>Collection</code> of EntityHeader objects.
-     */
-    public Collection<EntityHeader> findAllHeaders() throws FindException {
-        throw new UnsupportedOperationException();
+    public synchronized void update(ET entity) throws UpdateException {
+        if (entity.getOid() == PersistentEntity.DEFAULT_OID || entity.getId() == null) throw new IllegalArgumentException();
+        entities.put(entity.getOid(), entity);
+        headers.put(entity.getOid(), header(entity));
     }
 
-    /**
-         * Returns an unmodifiable collection of <code>EntityHeader</code> objects for instances of this entity class from a list sorted by <code>oid</code>, selecting only a specific subset of the list.
-         *
-         * @return A <code>Collection</code> of EntityHeader objects.
-         */
-    public Collection<EntityHeader> findAllHeaders(int offset, int windowSize) throws FindException {
-        throw new UnsupportedOperationException();
+    private EntityHeader header(ET entity) {
+        return new EntityHeader(entity.getId(), getEntityType(), name(entity), null);
     }
 
+    public synchronized Collection<EntityHeader> findAllHeaders() throws FindException {
+        return Collections.unmodifiableCollection(headers.values());
+    }
+
+    public synchronized Collection<EntityHeader> findAllHeaders(int offset, int limit) throws FindException {
+        EntityHeader[] dest = new EntityHeader[limit];
+        EntityHeader[] all = headers.values().toArray(new EntityHeader[0]);
+        System.arraycopy(all, offset, dest, 0, limit);
+        return Arrays.asList(dest);
+    }
 
     public ET findByUniqueName(String name) throws FindException {
         throw new UnsupportedOperationException();
     }
 
-    /**
-         * Returns an unmodifiable collection of <code>Entity</code> objects for all instances of the entity class corresponding to this Manager.
-         *
-         * @return A <code>Collection</code> of Entity objects.
-         */
-    public Collection<ET> findAll() throws FindException {
-        return Collections.EMPTY_LIST;
-    }
-
-    /**
-     * Returns an unmodifiable collection of <code>Entity</code> objects for instances of this entity class from a list sorted by <code>oid</code>, selecting only a specific subset of the list.
-     *
-     * @return A <code>Collection</code> of EntityHeader objects.
-     */
-    public Collection<ET> findAll(int offset, int windowSize) throws FindException {
-        throw new UnsupportedOperationException();
+    public synchronized Collection<ET> findAll() throws FindException {
+        return Collections.unmodifiableCollection(entities.values());
     }
 
     public Integer getVersion(long oid) throws FindException {
-        throw new UnsupportedOperationException();
+        ET ent = entities.get(oid);
+        return ent == null ? null : ent.getVersion();
     }
 
-    public Map<Long, Integer> findVersionMap() throws FindException {
-        throw new UnsupportedOperationException();
+    public synchronized Map<Long, Integer> findVersionMap() throws FindException {
+        Map<Long, Integer> versions = new HashMap<Long, Integer>();
+        for (Map.Entry<Long, ET> entry : entities.entrySet()) {
+            versions.put(entry.getKey(), entry.getValue().getVersion());
+        }
+        return Collections.unmodifiableMap(versions);
     }
 
-    /**
-     * Returns the {@link PersistentEntity} with the specified OID. If the entity's version was last checked more than
-     * <code>maxAge</code> milliseconds ago, check for an updated version in the database.  If the entity has been
-     * updated, refresh it in the cache if the implementation doesn't complain.
-     *
-     * @param o      the OID of the Entity to return.
-     * @param maxAge the maximum age of a cached Entity to return, in milliseconds.
-     * @return the Entity with the specified OID, or <code>null</code> if it does not exist.
-     * @throws FindException
-     *          in the event of a database problem
-     * @throws com.l7tech.objectmodel.EntityManager.CacheVeto
-     *          thrown by an implementor
-     */
     public ET getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
-        throw new UnsupportedOperationException();
+        return entities.get(o);
     }
 
-    public long save(ET entity) throws SaveException {
-        throw new UnsupportedOperationException();
+    public synchronized long save(ET entity) throws SaveException {
+        long oid = nextOid++;
+
+        entities.put(oid, entity);
+        headers.put(oid, new EntityHeader(Long.toString(oid), getEntityType(), name(entity), null));
+
+        entity.setOid(oid);
+
+        return oid;
     }
 
-    public void delete(ET entity) throws DeleteException {
-        throw new UnsupportedOperationException();
+    private String name(ET entity) {
+        String name = null;
+        if (entity instanceof NamedEntity) {
+            NamedEntity namedEntity = (NamedEntity) entity;
+            name = namedEntity.getName();
+        }
+        return name;
+    }
+
+    public synchronized void delete(ET entity) throws DeleteException {
+        entities.remove(entity.getOid());
+        headers.remove(entity.getOid());
     }
 
     public ET findEntity(long l) throws FindException {
-        throw new UnsupportedOperationException();
+        return entities.get(l);
     }
 
-    public Class getImpClass() {
-        throw new UnsupportedOperationException();
+    public Class<? extends Entity> getImpClass() {
+        return PersistentEntity.class;
     }
 
-    public Class getInterfaceClass() {
-        throw new UnsupportedOperationException();
+    public Class<? extends Entity> getInterfaceClass() {
+        return Entity.class;
     }
 
     public EntityType getEntityType() {
-        throw new UnsupportedOperationException();
+        return EntityType.UNDEFINED;
     }
 
     public String getTableName() {

@@ -1,24 +1,19 @@
+/*
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.WsspAssertion;
 
 /**
  * Policy node for WSSP assertion.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
-public class WsspAssertionPolicyNode extends LeafAssertionTreeNode {
+public class WsspAssertionPolicyNode extends LeafAssertionTreeNode<WsspAssertion> {
 
     //- PUBLIC
 
     public WsspAssertionPolicyNode(WsspAssertion assertion) {
         super(assertion);
-        this.assertion = assertion;
-    }
-
-    public WsspAssertion getAssertion() {
-        return assertion;
     }
 
     /**
@@ -26,15 +21,6 @@ public class WsspAssertionPolicyNode extends LeafAssertionTreeNode {
      */
     public String getName() {
         return "WS-Security Policy Compliance";
-    }
-
-    /**
-     * Test if the node can be deleted.
-     *
-     * @return always true
-     */
-    public boolean canDelete() {
-        return true;
     }
 
     //- PROTECTED
@@ -47,8 +33,4 @@ public class WsspAssertionPolicyNode extends LeafAssertionTreeNode {
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/policy16.gif";
     }
-
-    //- PRIVATE
-
-    private WsspAssertion assertion;
 }

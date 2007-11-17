@@ -53,20 +53,20 @@ public class FilterManager {
      * @throws FilteringException
      */
     public Assertion applyAllFilters(User policyRequestor, Assertion rootAssertion) throws FilteringException {
-        for (int i = 0; i < filterTypes.length; i++) {
-            Filter filter = null;
+        for (Class filterType : filterTypes) {
+            Filter filter;
             try {
                 // see whether therte is a constructr accepting a filter manager
-                Constructor ctor = ConstructorInvocation.findMatchingConstructor(filterTypes[i], new Class[]{FilterManager.class});
+                Constructor ctor = ConstructorInvocation.findMatchingConstructor(filterType, new Class[]{FilterManager.class});
                 if (ctor != null) {
-                    filter = (Filter)ctor.newInstance(new Object[]{this});
+                    filter = (Filter) ctor.newInstance(this);
                 } else {
-                    filter = (Filter)filterTypes[i].newInstance();
+                    filter = (Filter) filterType.newInstance();
                 }
 
                 rootAssertion = filter.filter(policyRequestor, rootAssertion);
                 if (rootAssertion == null) {
-                    logger.warning("filter returned null root assertion " + filterTypes[i].getName());
+                    logger.warning("filter returned null root assertion " + filterType.getName());
                     return null;
                 }
             } catch (InstantiationException e) {
@@ -110,10 +110,10 @@ public class FilterManager {
 
 
         // start at the top
-        Assertion rootassertion = null;
+        Assertion rootassertion;
         // modify the assertion tree
         try {
-            rootassertion = WspReader.getDefault().parsePermissively(localCopyOfService.getPolicyXml());
+            rootassertion = WspReader.getDefault().parsePermissively(localCopyOfService.getPolicy().getXml());
         } catch (IOException e) {
             throw new FilteringException(e);
         }
@@ -122,7 +122,7 @@ public class FilterManager {
         }
 
         localCopyOfService.setOid(policyToFilter.getOid());
-        localCopyOfService.setPolicyXml(WspWriter.getPolicyXml(rootassertion));
+        localCopyOfService.getPolicy().setXml(WspWriter.getPolicyXml(rootassertion));
         return localCopyOfService;
     }
 

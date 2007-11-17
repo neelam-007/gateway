@@ -7,17 +7,14 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
-import com.l7tech.service.PublishedService;
 import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.xml.Wsdl;
 
 /**
  * Assertion validator for WS-I Basic Security Profile compliance.
  *
  * <p>This validator differs from others in that it places additional contraints
  * on other assertions rather than validating its own configuration.</p>
- *
- * @author $Author$
- * @version $Revision$
  */
 public class WsiBspAssertionValidator implements AssertionValidator {
 
@@ -32,7 +29,7 @@ public class WsiBspAssertionValidator implements AssertionValidator {
     /**
      *
      */
-    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         if(path!=null && result!=null) {
             int count = path.getPathCount();
             for(int p=0; p<count; p++) {

@@ -9,7 +9,7 @@ package com.l7tech.policy.validator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.service.PublishedService;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.util.XmlUtil;
 
 import org.jaxen.dom.DOMXPath;
@@ -59,7 +59,7 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
         }
     }
 
-    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         if (errString != null)
             result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
     }

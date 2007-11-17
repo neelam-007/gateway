@@ -1,7 +1,11 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.action.AddIdentityAssertionAction;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
@@ -9,13 +13,11 @@ import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
- * Composite policy nodes extend this node
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
+ * Composite Assertion policy nodes extend this node
  */
 public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> extends AssertionTreeNode<AT> {
     private static final Logger log =
@@ -29,9 +31,6 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
      */
     public CompositeAssertionTreeNode(AT assertion) {
         super(assertion);
-        if (assertion == null) {
-            throw new IllegalArgumentException();
-        }
         this.setAllowsChildren(true);
     }
 
@@ -51,16 +50,14 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
      * @param position the node position
      */
     public boolean receive(AbstractTreeNode node, int position) {
-        if (true == super.receive(node)) {
-            return true;
-        }
+        if (super.receive(node)) return true;
+
         JTree tree = (JTree)TopComponents.getInstance().getComponent(PolicyTree.NAME);
         if (tree != null) {
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             Assertion[] nass = node.asAssertions();
-            for (int i = 0; i < nass.length; i++) {
-                Assertion nas = nass[i];
-                AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nas);
+            for (Assertion assertion : nass) {
+                AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(assertion);
                 model.insertNodeInto(as, this, position);
             }
         } else {
@@ -84,21 +81,46 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
      * @return always true
      */
     public boolean accept(AbstractTreeNode node) {
-        return true;
+        return super.accept(node) && node.isLeaf();
     }
-
-    /**
-     * specify this node image resource
-     */
-    protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/folder.gif";
-    }
-
 
     /**
      * @return a string representation of the object.
      */
     public String toString() {
         return getUserObject().getClass().getName();
+    }
+
+    /**
+     * Test if the node can be deleted. Default is <code>true</code>
+     *
+     * @return true if the node can be deleted, false otherwise
+     */
+    public boolean canDelete() {
+        return getParent() != null;
+    }
+
+    /**
+     * specify this node image resource
+     */
+    protected String iconResource(boolean open) {
+        if (open)
+            return "com/l7tech/console/resources/folderOpen.gif";
+
+        return "com/l7tech/console/resources/folder.gif";
+    }
+
+    /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        java.util.List list = new ArrayList();
+        list.addAll(Arrays.asList(super.getActions()));
+        Action a = new AddIdentityAssertionAction(this);
+        list.add(a);
+        return (Action[])list.toArray(new Action[]{});
     }
 }

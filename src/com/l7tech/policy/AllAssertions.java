@@ -192,5 +192,6 @@ public class AllAssertions {
         new AuthenticationAssertion(),
         new WsiSamlAssertion(),
         new SamlIssuerAssertion(),
+        new Include(),
     };
 }

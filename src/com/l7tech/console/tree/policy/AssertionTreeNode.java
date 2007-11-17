@@ -1,13 +1,18 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
-
 
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyType;
 import com.l7tech.console.action.*;
 import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -15,6 +20,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -34,15 +40,15 @@ import java.util.logging.Logger;
 /**
  * Class <code>AssertionTreeNode</code> is the base superclass for the
  * asserttion tree policy nodes.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTreeNode {
     private static final Logger logger = Logger.getLogger(AssertionTreeNode.class.getName());
     private static final OneOrMoreAssertion ONEORMORE_PROTOTYPE = new OneOrMoreAssertion();
 
-    private List validatorMessages = new ArrayList();
-    private List viewValidatorMessages = null;
+    private List<PolicyValidatorResult.Message> validatorMessages = new ArrayList<PolicyValidatorResult.Message>();
+    private List<PolicyValidatorResult.Message> viewValidatorMessages = null;
+
+    protected final AT assertion;
 
     /**
      * package private constructor accepting the asseriton
@@ -52,6 +58,8 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      */
     AssertionTreeNode(AT assertion) {
         super(assertion);
+        if (assertion == null) throw new IllegalArgumentException("Assertion is required");
+        this.assertion = assertion;
         this.setAllowsChildren(false);
     }
 
@@ -59,7 +67,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      * @return the assertion this node represents
      */
     public final AT asAssertion() {
-        return (AT)getUserObject();
+        return assertion;
     }
 
     /**
@@ -72,8 +80,8 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      *
      * @param messages the messages
      */
-    public void setValidatorMessages(Collection messages) {
-        this.validatorMessages = new ArrayList();
+    public void setValidatorMessages(Collection<PolicyValidatorResult.Message> messages) {
+        this.validatorMessages = new ArrayList<PolicyValidatorResult.Message>();
         if (messages != null) {
             validatorMessages.addAll(messages);
         }
@@ -110,12 +118,11 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             viewValidatorMessages = this.validatorMessages;
         } else {
             //select only the path messages
-            List pathMessages = new ArrayList();
+            List<PolicyValidatorResult.Message> pathMessages = new ArrayList<PolicyValidatorResult.Message>();
             TreeNode[] path = getPath();
             if (path.length >= 2) {
                 IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[1];
-                for (Iterator it = validatorMessages.iterator(); it.hasNext();) {
-                    PolicyValidatorResult.Message message = (PolicyValidatorResult.Message)it.next();
+                for (PolicyValidatorResult.Message message : validatorMessages) {
                     if (in.contains(message.getAssertionPathOrder())) {
                         pathMessages.add(message);
                     }
@@ -194,7 +201,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             } else if (!hasWarnings && hasErrors) {
                 msg = "errors:";
             }
-            return MessageFormat.format(format, new Object[]{msg});
+            return MessageFormat.format(format, msg);
         }
     }
 
@@ -211,16 +218,20 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         if (this instanceof CompositeAssertionTreeNode) {
             ca = (CompositeAssertionTreeNode)this;
         } else {
-            ca = (CompositeAssertionTreeNode)getParent();
+            TreeNode parent = getParent();
+            if (parent instanceof CompositeAssertionTreeNode) {
+                ca = (CompositeAssertionTreeNode) parent;
+            } else {
+                if (isDescendantOfInclude()) return list.toArray(new Action[0]);
+                throw new IllegalStateException("Assertion parent is neither an Include nor a Composite");
+            }
         }
 
         int position = (this instanceof CompositeAssertionTreeNode) ? 0 : this.getParent().getIndex(this) + 1;
-        Action a = new AddAllAssertionAction(ca, position);
-        list.add(a);
+        list.add(new AddAllAssertionAction(ca, position));
 
         if (Registry.getDefault().getLicenseManager().isAssertionEnabled(ONEORMORE_PROTOTYPE)) {
-            a = new AddOneOrMoreAssertionAction(ca, position);
-            list.add(a);
+            list.add(new AddOneOrMoreAssertionAction(ca, position));
         }
 
         try {
@@ -230,11 +241,12 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                 da.setEnabled(canDelete());
                 list.add(da);
 
-/*      commented out as it is currently NOT supported
-        Action ea = new ExplainAssertionAction();
-        ea.setEnabled(canDelete());
-        list.add(ea);
-        */
+                /*
+                commented out as it is currently NOT supported
+                Action ea = new ExplainAssertionAction();
+                ea.setEnabled(canDelete());
+                list.add(ea);
+                */
 
                 Action mu = new AssertionMoveUpAction(this);
                 mu.setEnabled(canMoveUp());
@@ -257,6 +269,13 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         */
 
         return list.toArray(new Action[]{});
+    }
+
+    public boolean isDescendantOfInclude() {
+        for (TreeNode ancestor : getPath()) {
+            if (ancestor instanceof IncludeAssertionPolicyNode) return true;
+        }
+        return false;
     }
 
     /**
@@ -325,20 +344,20 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      * assign the policy template.
      * todo: find a better place for this
      *
-     * @param pn
+     * @param templateNode
      */
-    private void assignPolicyTemplate(PolicyTemplateNode pn) {
-        ServiceNode sn = getServiceNodeCookie();
-        if (sn == null)
-            throw new IllegalArgumentException("No edited service specified");
+    private void assignPolicyTemplate(PolicyTemplateNode templateNode) {
+        PolicyEntityNode policyNode = getPolicyNodeCookie();
+        if (policyNode == null)
+            throw new IllegalArgumentException("No edited policy specified");
         try {
-            Assertion newRoot = PolicyImporter.importPolicy(pn.getFile());
+            Assertion newRoot = PolicyImporter.importPolicy(templateNode.getFile());
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML
             if (newRoot != null) {
-                String oldPolicyXml = sn.getPublishedService().getPolicyXml();
-                sn.getPublishedService().setPolicyXml(WspWriter.getPolicyXml(newRoot));
-                sn.firePropertyChange(this, "policy", oldPolicyXml, sn.getPublishedService().getPolicyXml());
+                String oldPolicyXml = policyNode.getPolicy().getXml();
+                policyNode.getPolicy().setXml(WspWriter.getPolicyXml(newRoot));
+                policyNode.firePropertyChange(this, "policy", oldPolicyXml, policyNode.getPolicy().getXml());
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "Could not import the policy", e);
@@ -347,12 +366,18 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         }
     }
 
-
     /**
      * @return the published service cookie or null if not found
      */
     protected ServiceNode getServiceNodeCookie() {
         return getServiceNode(this);
+    }
+
+    /**
+     * @return the published service cookie or null if not found
+     */
+    protected PolicyEntityNode getPolicyNodeCookie() {
+        return getPolicyNode(this);
     }
 
     public PublishedService getService() throws FindException {
@@ -376,11 +401,51 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     }
 
     /**
+     * Get the service that this assertion tree node belongs to
+     *
+     * @param node the assertion tree node
+     * @return the published service or null if not found
+     */
+    public static PolicyEntityNode getPolicyNode(AssertionTreeNode node) {
+        for (Iterator i = ((AbstractTreeNode)node.getRoot()).cookies(); i.hasNext();) {
+            Object value = ((Cookie)i.next()).getValue();
+            if (value instanceof PolicyEntityNode) return (PolicyEntityNode)value;
+        }
+        return null;
+    }
+
+    /**
      * Does the assertion node accepts the abstract tree node
      *
      * @param node the node to accept
      * @return true if the node can be accepted, false otherwise
      */
-    public abstract boolean accept(AbstractTreeNode node);
+    public boolean accept(AbstractTreeNode node) {
+        return !checkForInclude(node);
+    }
+
+    protected boolean checkForInclude(AbstractTreeNode draggingNode) {
+        Include include = null;
+        if (draggingNode instanceof IncludeAssertionPaletteNode) {
+            IncludeAssertionPaletteNode iapn = (IncludeAssertionPaletteNode) draggingNode;
+            include = (Include) iapn.asAssertion();
+        } else if (draggingNode instanceof IncludeAssertionPolicyNode) {
+            IncludeAssertionPolicyNode iapn = (IncludeAssertionPolicyNode) draggingNode;
+            include = iapn.asAssertion();
+        }
+        if (include != null) {
+            try {
+                Policy thisPolicy = getPolicyNodeCookie().getPolicy();
+                if (thisPolicy.getType() == PolicyType.INCLUDE_FRAGMENT && thisPolicy.getOid() == include.getPolicyOid()) {
+                    logger.warning("Refusing to create circular reference to policy #" + thisPolicy.getOid() + ", not accepting drag of " + draggingNode.getClass().getSimpleName() + " into " + this.getClass().getSimpleName());
+                    return true;
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Couldn't get current policy");
+            }
+        }
+
+        return isDescendantOfInclude();
+    }
 }
 

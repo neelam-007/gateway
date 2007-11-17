@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.policy.assertion;
@@ -19,14 +17,13 @@ import java.util.*;
 /**
  * Represents a generic Assertion.  Immutable except for de-persistence.
  *
- * @author alex
- * @version $Revision$
- * @noinspection unchecked,ForLoopReplaceableByForEach
+ * @noinspection unchecked,ForLoopReplaceableByForEach,EqualsWhichDoesntCheckParameterClass
  */
 public abstract class Assertion implements Cloneable, Serializable {
     private static final Map metadataCache = Collections.synchronizedMap(new HashMap());
     protected transient CompositeAssertion parent;
     private transient int ordinal;
+    private transient Long ownerPolicyOid = null;
 
     // 2.1 CustomAssertion compatibility
     private static final long serialVersionUID = -2639281346815614287L;
@@ -181,6 +178,19 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     /**
+     * Creates and returns an iterator that traverses the assertion subtree
+     * rooted at this assertion in preorder.  The first node returned by the
+     * iterator's
+     * <code>next()</code> method is this assertion.<P>
+
+     * @return	an <code>Iterator</code> for traversing the assertion tree in
+     *          preorder
+     */
+    public Iterator preorderIterator(AssertionTranslator translator) throws PolicyAssertionException {
+        return new NewPreorderIterator(this, translator);
+    }
+
+    /**
      * Returns the path from the root, to get to this node. The last element
      * in the path is this node.
      *
@@ -211,6 +221,15 @@ public abstract class Assertion implements Cloneable, Serializable {
     public String toString() {
         String fullClass = getClass().getName();
         return fullClass.substring(fullClass.lastIndexOf('.') + 1);
+    }
+
+    public Long getOwnerPolicyOid() {
+        return ownerPolicyOid;
+    }
+
+    public void setOwnerPolicyOid(Long ownerPolicyOid) {
+        if (ownerPolicyOid == -1) ownerPolicyOid = null;
+        this.ownerPolicyOid = ownerPolicyOid;
     }
 
     /**
@@ -312,16 +331,15 @@ public abstract class Assertion implements Cloneable, Serializable {
         }
     }
 
-
     /**
      * Simplify any children of this assertion.  For a leaf assertion, this takes no action.
-     * For a composite assertion, this calls {@link #simplify(Assertion, boolean)} on each child reference
-     * and removes any assertions that turn out empty.
+     * For a composite assertion, this calls {@link #simplify(Assertion, boolean)} on each child reference and removes
+     * any assertions that turn out empty.
      * <p/>
      * Note that this method might result in an empty composite assertion.
      * <p/>
-     * To simplify this assertion itself, call the static method {@link #simplify(Assertion, boolean)} on
-     * this assertion.  This can't be an instance method since it might need to change ie. a composite assertion
+     * To simplify this assertion itself, call the static method {@link #simplify(Assertion, boolean)} on this
+     * assertion.  This can't be an instance method since it might need to change ie. a composite assertion
      * into a leaf assertion.
      */
     void simplify() {
@@ -512,6 +530,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
     
     private RuntimeException needsMeta(String classname, Exception cause) {
+        //noinspection ThrowableInstanceNeverThrown
         return new RuntimeException("Assertion class " + classname +
                                         " must either override meta() and avoid calling defaultMeta(), " +
                                         "or have a public nullary constructor",
@@ -587,7 +606,6 @@ public abstract class Assertion implements Cloneable, Serializable {
 
         return assertion.getFeatureSetName();
     }
-
 
     /**
      * Get the local part of the specified assertion class name with all packages and any trailing "Assertion"

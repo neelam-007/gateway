@@ -1,8 +1,10 @@
 package com.l7tech.service;
 
 import com.l7tech.common.AsyncAdminMethodsImpl;
+import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
@@ -14,13 +16,15 @@ import com.l7tech.server.service.ServiceManager;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
+import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.StringReader;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 /**
@@ -106,23 +110,27 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
 
     }
 
-    public JobId<PolicyValidatorResult> validatePolicy(String policyXml, long serviceId) {
-        try {
-            final PublishedService service = serviceManager.findByPrimaryKey(serviceId);
-            final Assertion assertion = WspReader.getDefault().parsePermissively(policyXml);
-            Future<PolicyValidatorResult> future = new FutureTask<PolicyValidatorResult>(new Callable<PolicyValidatorResult>() {
-                public PolicyValidatorResult call() throws Exception {
-                    return policyValidator.validate(assertion, service, Registry.getDefault().getLicenseManager());
+    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, 
+                                                       final PolicyType policyType,
+                                                       final boolean soap,
+                                                       final String wsdlXml)
+    {
+        Future<PolicyValidatorResult> future = new FutureTask<PolicyValidatorResult>(new Callable<PolicyValidatorResult>() {
+            public PolicyValidatorResult call() throws Exception {
+                try {
+                    final Assertion assertion = WspReader.getDefault().parsePermissively(policyXml);
+                    final Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
+                    return policyValidator.validate(assertion, policyType, wsdl, soap,
+                            Registry.getDefault().getLicenseManager());
+                } catch (WSDLException e) {
+                    throw new RuntimeException("cannot parse passed WSDL", e);
+                } catch (IOException e) {
+                    throw new RuntimeException("cannot parse passed policy xml", e);
                 }
-            });
-            return asyncSupport.registerJob(future, PolicyValidatorResult.class);
-        } catch (FindException e) {
-            throw new RuntimeException("cannot get existing service: " + serviceId, e);
-        } catch (IOException e) {
-            throw new RuntimeException("cannot parse passed policy xml", e);
-        }
+            }
+        });
+        return asyncSupport.registerJob(future, PolicyValidatorResult.class);
     }
-
 
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code>

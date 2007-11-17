@@ -1,22 +1,27 @@
 package com.l7tech.server.service;
 
 import com.l7tech.common.LicenseException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.Decorator;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.UnknownAssertion;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.ServiceCacheEvent;
 import com.l7tech.server.event.system.ServiceReloadEvent;
+import com.l7tech.server.event.system.Started;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.*;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -31,6 +36,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -38,6 +46,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 /**
@@ -70,6 +79,9 @@ public class ServiceCache
     private final Set<Long> servicesThatAreUnlicensed = new HashSet<Long>();
     private final Collection<Decorator<PublishedService>> decorators;
 
+    private final PlatformTransactionManager transactionManager;
+    private final ServiceManager serviceManager;
+
     // TODO replace with Jgroups notifications
     private final Timer checker; // Don't use Background since this is high priority
     // read-write lock for thread safety
@@ -90,37 +102,32 @@ public class ServiceCache
     //private final PeriodicExecutor checker = new PeriodicExecutor( this );
     private boolean running = false;
 
-    private ServerPolicyFactory policyFactory;
     private Auditor auditor;
     private boolean hasCatchAllService = false;
     private SoapOperationResolver soapOperationResolver;
-    private ServiceManager serviceManager;
+    private final PolicyCache policyCache;
 
 
     /**
      * Constructor for bean usage via subclassing.
      */
-    public ServiceCache(ServerPolicyFactory policyFactory,
+    public ServiceCache(PolicyCache policyCache,
+                        PlatformTransactionManager transactionManager,
+                        ServiceManager serviceManager,
                         Collection<Decorator<PublishedService>> decorators,
                         Timer timer)
     {
-        if (policyFactory == null) throw new IllegalArgumentException("Policy Factory is required");
+        if (policyCache == null) throw new IllegalArgumentException("Policy Cache is required");
         if (timer == null) timer = new Timer("Service cache refresh", true);
 
-        this.policyFactory = policyFactory;
-        if (decorators == null) 
+        this.policyCache = policyCache;
+        if (decorators == null)
             this.decorators = Collections.emptyList();
         else
             this.decorators = decorators;
         this.checker = timer;
-    }
-
-    public synchronized void setServiceManager(ServiceManager serviceManager) {
+        this.transactionManager = transactionManager;
         this.serviceManager = serviceManager;
-    }
-
-    private synchronized ServiceManager getServiceManager() {
-        return serviceManager;
     }
 
     @Override
@@ -130,7 +137,7 @@ public class ServiceCache
         activeResolvers = new ServiceResolver[] {
             new OriginalUrlServiceOidResolver(spring),
             new UriResolver(spring),
-            new SoapActionResolver(spring), 
+            new SoapActionResolver(spring),
             new UrnResolver(spring),
         };
 
@@ -173,7 +180,61 @@ public class ServiceCache
             } finally {
                 getApplicationContext().publishEvent(new ServiceReloadEvent(this));
             }
+        } else if (applicationEvent instanceof ServiceCacheEvent.Updated) {
+            doCacheUpdate((ServiceCacheEvent.Updated) applicationEvent);
+        } else if (applicationEvent instanceof ServiceCacheEvent.Deleted) {
+            doCacheDelete((ServiceCacheEvent.Deleted) applicationEvent);
+        } else if (applicationEvent instanceof Started) {
+            new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+                protected void doInTransactionWithoutResult(TransactionStatus status) {
+                    try {
+                        initializeServiceCache();
+                    } catch (ObjectModelException e) {
+                        throw new RuntimeException("Error intializing service cache", e);
+                    }
+                }
+            });
         }
+    }
+
+    private void doCacheDelete(final ServiceCacheEvent.Deleted deleted) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                    try {
+                        removeFromCache(deleted.getService());
+                    } catch (InterruptedException e) {
+                        logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
+                    }
+                }
+            }
+        });
+    }
+
+    private void doCacheUpdate(final ServiceCacheEvent.Updated updated) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                    // get service. version property must be up-to-date
+                    PublishedService svcnow;
+                    try {
+                        svcnow = serviceManager.findByPrimaryKey(updated.getService().getOid());
+                    } catch (FindException e) {
+                        svcnow = null;
+                        logger.log(Level.WARNING, "could not get service back", e);
+                    }
+
+                    if (svcnow != null) {
+                        try {
+                            cache(svcnow);
+                            TarariLoader.compile();
+                        } catch (Exception e) {
+                            logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
+                        }
+                    }
+                }
+            }
+        });
     }
 
     private void resetUnlicensed() {
@@ -217,6 +278,47 @@ public class ServiceCache
             rwlock.writeLock().unlock();
         }
     }
+
+    private void initializeServiceCache() throws ObjectModelException {
+        // build the cache if necessary
+        try {
+            if (size() > 0) {
+                logger.finest("cache already built (?)");
+            } else {
+                logger.info("building service cache");
+                Collection<PublishedService> services = serviceManager.findAll();
+                for (PublishedService service : services) {
+                    try {
+                        cache(service);
+                    } catch (ServerPolicyException e) {
+                        Assertion ass = e.getAssertion();
+
+                        String ordinal = ass == null ? "" : "#" + Integer.toString(ass.getOrdinal());
+                        String what = ass == null ? "<unknown>" : "(" + ass.getClass().getSimpleName() + ")";
+                        String msg = "Disabling PublishedService #{0} ({1}); policy could not be compiled (assertion {2} {3})";
+                        LogRecord r = new LogRecord(Level.WARNING, msg);
+                        r.setParameters(new Object[] { service.getOid(), service.getName(), ordinal, what});
+                        r.setThrown(e);
+                        logger.log(r);
+                        // We don't actually disable the service here -- only the admin should be doing that.
+                        // Instead, we will let the service cache continue to monitor the situation
+                    } catch (Exception e) {
+                        LogRecord r = new LogRecord(Level.WARNING, "Disabling PublishedService #{0} ({1}); policy could not be compiled");
+                        r.setParameters(new Object[] { service.getOid(), service.getName() });
+                        r.setThrown(e);
+                        logger.log(r);
+                    }
+                }
+                TarariLoader.compile();
+            }
+            // make sure the integrity check is running
+            logger.info("initiate service cache version check process");
+            initiateIntegrityCheckProcess();
+        } catch (Exception e) {
+            throw new ObjectModelException("Exception building cache", e);
+        }
+    }
+
 
     /**
      * a service manager can use this to determine whether the cache has been populated or not
@@ -263,7 +365,7 @@ public class ServiceCache
     }
 
     public static interface ResolutionListener {
-        boolean notifyPreParseServices(Message message, Set<PublishedService> serviceSet);        
+        boolean notifyPreParseServices(Message message, Set<PublishedService> serviceSet);
     }
 
     /**
@@ -333,7 +435,7 @@ public class ServiceCache
                 XmlKnob xk = (XmlKnob) req.getKnob(XmlKnob.class);
 
                 if (!service.isSoap() || service.isLaxResolution()) {
-                    if (xk != null) xk.setTarariWanted(service.isTarariWanted());
+                    if (xk != null) xk.setTarariWanted(service.getPolicy().isTarariWanted());
                     return service;
                 }
 
@@ -344,7 +446,7 @@ public class ServiceCache
                     return null;
                 } else {
                     // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
-                    if (xk != null) xk.setTarariWanted(service.isTarariWanted()); 
+                    if (xk != null) xk.setTarariWanted(service.getPolicy().isTarariWanted());
                     Result services = soapOperationResolver.resolve(req, serviceSet);
                     if (services.getMatches().isEmpty()) {
                         auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_OPERATION_MISMATCH, service.getName(), service.getId());
@@ -427,8 +529,11 @@ public class ServiceCache
             }
             // cache the server policy for this service
             try {
-                service.forcePolicyRecompile();
-                serverRootAssertion = policyFactory.compilePolicy(service.rootAssertion(), true);
+                final Policy policy = service.getPolicy();
+                if (policy == null) throw new ServerPolicyException(null, "Service #" + service.getOid() + " (" + service.getName() + ") has no policy");
+                policy.forceRecompile();
+                policyCache.update(policy);
+                serverRootAssertion = policyCache.getServerPolicy(policy);
                 servicesThatAreUnlicensed.remove(service.getOid());
             } catch (final LicenseException e) {
                 serverRootAssertion = new AbstractServerAssertion<UnknownAssertion>(new UnknownAssertion()) {
@@ -478,7 +583,7 @@ public class ServiceCache
         for (ServiceResolver resolver : notifyResolvers) {
             resolver.serviceDeleted(service);
         }
-        service.forcePolicyRecompile();
+        service.getPolicy().forceRecompile();
         logger.finest("removed service " + service.getName() + " from cache. oid=" + service.getOid());
     }
 
@@ -569,11 +674,6 @@ public class ServiceCache
     }
 
     private void checkIntegrity() {
-        ServiceManager serviceManager = getServiceManager();
-        if (serviceManager == null)
-            // Still initializing the application context
-            return;
-
         Lock ciReadLock = rwlock.readLock();
         ciReadLock.lock();
         try {
@@ -682,10 +782,6 @@ public class ServiceCache
                 break;
             }
         }
-    }
-
-    public void setPolicyFactory(ServerPolicyFactory policyFactory) {
-        this.policyFactory = policyFactory;
     }
 
     /**

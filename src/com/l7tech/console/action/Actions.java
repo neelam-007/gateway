@@ -1,5 +1,10 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.policy.PolicyAdmin;
+import com.l7tech.common.policy.PolicyDeletionForbiddenException;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
@@ -11,9 +16,6 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.Functions;
-import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -127,7 +129,7 @@ public class Actions {
                     log.log(Level.SEVERE, "Error deleting group", ome);
                     // Error deleting realm - display error msg
                     String msg;
-                    DeleteException de = (DeleteException) ExceptionUtils.getCauseIfCausedBy(ome, DeleteException.class);
+                    DeleteException de = ExceptionUtils.getCauseIfCausedBy(ome, DeleteException.class);
                     if (de != null) {
                         msg = de.getMessage();
                     } else
@@ -173,6 +175,49 @@ public class Actions {
                       JOptionPane.ERROR_MESSAGE, null);
                 } catch (Throwable throwable) {
                     ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error deleting provider");
+                }
+                result.call(false);
+            }
+        });
+    }
+
+    // Deletes the given policy
+    static void deletePolicy(final PolicyEntityNode node, final Functions.UnaryVoid<Boolean> result) {
+
+        // Make sure
+        DialogDisplayer.showConfirmDialog(getTopParent(),
+          "Are you sure you want to delete the " + node.getName() + " policy?",
+          "Delete Policy",
+          JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
+            public void reportResult(int opresult) {
+                if (opresult != JOptionPane.YES_OPTION) {
+                    result.call(false);
+                    return;
+                }
+
+                // Delete the  node and update the tree
+                try {
+                    final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
+                    policyAdmin.deletePolicy(node.getPolicy().getOid());
+                    result.call(true);
+                    return;
+                } catch (ObjectModelException ome) {
+                    PolicyDeletionForbiddenException pdfe = ExceptionUtils.getCauseIfCausedBy(ome, PolicyDeletionForbiddenException.class);
+                    String msg;
+                    if (pdfe != null) {
+                        msg = node.getName() + " cannot be deleted at this time; it is still in use by another policy";
+                    } else {
+                        msg = "Error encountered while deleting " +
+                                node.getName() +
+                                ". Please try again later.";
+                    }
+                    log.log(Level.WARNING, "Error deleting policy", ome);
+                    DialogDisplayer.showMessageDialog(getTopParent(),
+                            msg,
+                            "Delete Policy",
+                            JOptionPane.ERROR_MESSAGE, null);
+                } catch (Throwable throwable) {
+                    ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error deleting service");
                 }
                 result.call(false);
             }

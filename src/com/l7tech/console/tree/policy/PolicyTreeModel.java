@@ -9,9 +9,11 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.advice.Advice;
 import com.l7tech.console.tree.policy.advice.Advices;
 import com.l7tech.console.tree.policy.advice.PolicyValidatorAdvice;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.service.PublishedService;
 
@@ -33,7 +35,7 @@ import java.util.Set;
  * @version 1.0
  */
 public class PolicyTreeModel extends DefaultTreeModel {
-    private EventListenerList eventListenerList = new WeakEventListenerList();
+    private final EventListenerList eventListenerList = new WeakEventListenerList();
 
     /**
      * Creates a new instance of PolicyTreeModel with root set
@@ -83,8 +85,8 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * 
      * @param root the assertion root
      */
-    public static PolicyTreeModel identityModel(Assertion root) throws InterruptedException {
-        Set paths = IdentityPath.getPaths(root);
+    public static PolicyTreeModel identityModel(Assertion root) throws InterruptedException, PolicyAssertionException {
+        Set paths = IdentityPath.getPaths(root, Registry.getDefault().getPolicyPathBuilderFactory());
         return new PolicyTreeModel(new IdentityViewRootNode(paths, root));
     }
 

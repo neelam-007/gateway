@@ -138,8 +138,8 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
         }
     }
 
-    protected IdentityHeader newHeader(long id, String name) {
-        return new IdentityHeader(getProviderOid(), Long.toString(id), EntityType.GROUP, name, null);
+    protected IdentityHeader newHeader(String id, String name) {
+        return new IdentityHeader(getProviderOid(), id, EntityType.GROUP, name, null);
     }
 
     protected long getProviderOid() {

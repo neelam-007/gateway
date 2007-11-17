@@ -5,15 +5,13 @@
 
 package com.l7tech.service;
 
+import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.MimeMultipartAssertion;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.wsp.WspReader;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
@@ -40,39 +38,14 @@ public class PublishedService extends NamedEntityImp {
     public static final String METHODNAMES_SOAP = "POST";
     public static final String METHODNAMES_REST = "POST,GET,PUT,DELETE,HEAD";
 
+    private Policy policy;
+
     /** Used to split up the method name lists. */
     private static final Pattern SPLIT_COMMAS = Pattern.compile("\\s*,\\s*");
 
-    private volatile boolean tarariWanted;
-    private volatile boolean wssInPolicy;
-
     public PublishedService() {
         setVersion(1);
-    }
-
-    /**
-     * Parses the policy and returns the {@link Assertion} at its root.
-     *
-     * @return the {@link Assertion} at the root of the policy. May be null.
-     * @throws IOException if the policy cannot be deserialized
-     */
-    public synchronized Assertion rootAssertion() throws IOException {
-        String policyXml = getPolicyXml();
-        if (policyXml == null || policyXml.length() == 0) {
-            logger.warning("Service " + _oid + " has an invalid or empty policy_xml field.  Using null policy.");
-            return FalseAssertion.getInstance();
-        }
-
-        if (_rootAssertion == null) {
-            _rootAssertion = WspReader.getDefault().parsePermissively(policyXml);
-            updatePolicyHints(_rootAssertion);
-        }
-
-        return _rootAssertion;
-    }
-
-    public synchronized void forcePolicyRecompile() {
-        _rootAssertion = null;
+        policy = new Policy(PolicyType.PRIVATE_SERVICE, null, null, false);
     }
 
     /**
@@ -231,25 +204,6 @@ public class PublishedService extends NamedEntityImp {
         return _serviceUrl;
     }
 
-    /**
-     * Gets the XML serialized policy for this service.
-     *
-     * @return the XML serialized policy for this service.
-     */
-    public String getPolicyXml() {
-        return _policyXml;
-    }
-
-    /**
-     * Sets the XML serialized policy for this service.
-     *
-     * @param policyXml the XML serialized policy for this service.
-     */
-    public void setPolicyXml(String policyXml) {
-        _policyXml = policyXml;
-        // Invalidate stale Root Assertion
-        _rootAssertion = null;
-    }
 
     public String toString() {
         return _name;
@@ -263,12 +217,23 @@ public class PublishedService extends NamedEntityImp {
      */
     public void copyFrom(PublishedService objToCopy) throws IOException {
         setName(objToCopy.getName());
-        setPolicyXml(objToCopy.getPolicyXml());
+        setPolicy(objToCopy.getPolicy());
+        setSoap(objToCopy.isSoap());
+        setLaxResolution(objToCopy.isLaxResolution());
         setWsdlUrl(objToCopy.getWsdlUrl());
         setWsdlXml(objToCopy.getWsdlXml());
         setDisabled(objToCopy.isDisabled());
         setRoutingUri(objToCopy.getRoutingUri());
         setHttpMethods(objToCopy.getHttpMethods());
+    }
+
+    public Policy getPolicy() {
+        return policy;
+    }
+
+    public void setPolicy(Policy policy) {
+        if (policy == null) throw new IllegalArgumentException("Policy must be non-null");
+        this.policy = policy;
     }
 
     public boolean isDisabled() {
@@ -316,6 +281,7 @@ public class PublishedService extends NamedEntityImp {
      */
     public void setSoap(boolean isSoap) {
         this.soap = isSoap;
+        policy.setSoap(isSoap);
     }
 
     /**
@@ -423,20 +389,24 @@ public class PublishedService extends NamedEntityImp {
      * be constructed.</p>
      *
      * @return true if multipart data is allowed
-     * @see #rootAssertion
      * @see #parsedWsdl
      */
     public boolean isMultipart() throws ServiceException {
         if (multipart == null) {
             try {
                 Wsdl wsdl = parsedWsdl();
-                Assertion assertion = rootAssertion();
+                Assertion assertion = policy.getAssertion();
 
                 if (!isSoap()) {
                     multipart = Boolean.TRUE;
                 } else if (wsdl != null && wsdl.hasMultipartOperations()) {
                     multipart = Boolean.TRUE;
                 } else if (assertion != null && Assertion.contains(assertion, MimeMultipartAssertion.class)) {
+                    // TODO what about included policies?
+                    // TODO what about included policies?
+                    // TODO what about included policies?
+                    // TODO what about included policies?
+                    // TODO what about included policies?
                     multipart = Boolean.TRUE;
                 } else {
                     multipart = Boolean.FALSE;
@@ -459,37 +429,6 @@ public class PublishedService extends NamedEntityImp {
         this.laxResolution = laxResolution;
     }
 
-    /** Caller must hold lock */
-    private void updatePolicyHints(Assertion rootAssertion) {
-        // TODO split request/response into separate flags
-        tarariWanted = false;
-        Iterator i = rootAssertion.preorderIterator();
-        while (i.hasNext()) {
-            Assertion ass = (Assertion) i.next();
-            if (ass instanceof SchemaValidation || ass instanceof XslTransformation) {
-                tarariWanted = true;
-            } else if ( Assertion.isRequest(ass) && Assertion.isWSSecurity(ass)) {
-                wssInPolicy = true;
-            }
-        }
-    }
-
-    /**
-     * Indicates that at least one assertion in this service's policy strongly prefers to use Tarari rather than use a
-     * pre-parsed DOM tree.
-     */
-    public boolean isTarariWanted() {
-        return tarariWanted;
-    }
-
-    /**
-     * Indicates that there is a WSS assertion in this services policy, in which case DOM would likely be better than
-     * using Tarari. 
-     */
-    public boolean isWssInPolicy() {
-        return wssInPolicy;
-    }
-
     /**
      * 
      */
@@ -510,7 +449,6 @@ public class PublishedService extends NamedEntityImp {
     // PRIVATES
     // ************************************************
 
-    private String _policyXml;
     private String _wsdlUrl;
     private String _wsdlXml;
     private boolean _disabled;
@@ -523,7 +461,6 @@ public class PublishedService extends NamedEntityImp {
     private transient Wsdl _parsedWsdl;
     private transient Port _wsdlPort;
     private transient URL _serviceUrl;
-    private transient Assertion _rootAssertion;
     private transient Set<String> httpMethods; // invariants: never null, always in sync with httpMethodNames
     private transient Boolean multipart;
 

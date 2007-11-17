@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.common.security.rbac;
 
@@ -18,6 +18,7 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.xml.schema.SchemaEntry;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
@@ -33,7 +34,9 @@ import com.l7tech.service.SampleMessage;
 import java.util.Comparator;
 
 /**
- * @author alex
+ * Enum of all entity types known to the RBAC system.
+ *
+ * TODO this is also used in quite a few other places now, it should be moved upward in com.l7tech.common.
  */
 public enum EntityType {
     ANY("<any>", Entity.class, UNDEFINED, true),
@@ -51,6 +54,8 @@ public enum EntityType {
     ALERT_ACTION("Alert Notification", Notification.class, com.l7tech.objectmodel.EntityType.ALERT_ACTION, false),
     SAMPLE_MESSAGE("Sample Message", SampleMessage.class, com.l7tech.objectmodel.EntityType.SAMPLE_MESSAGE, true),
 
+    POLICY("Policy", Policy.class, com.l7tech.objectmodel.EntityType.POLICY, true),
+
     MAP_ATTRIBUTE("Attribute Configuration", AttributeConfig.class, UNDEFINED, false),
     MAP_IDENTITY("Identity Provider Attribute Mapping", IdentityMapping.class, UNDEFINED, false),
     MAP_TOKEN("Security Token Attribute Mapping", SecurityTokenMapping.class, UNDEFINED, false),
@@ -67,6 +72,7 @@ public enum EntityType {
     AUDIT_MESSAGE("Audit Record (Message)", MessageSummaryAuditRecord.class, UNDEFINED, true),
     AUDIT_ADMIN("Audit Record (Admin)", AdminAuditRecord.class, UNDEFINED, true),
     AUDIT_SYSTEM("Audit Record (System)", SystemAuditRecord.class, UNDEFINED, true),
+
     SSG_CONNECTOR("Listen Port", SsgConnector.class, com.l7tech.objectmodel.EntityType.CONNECTOR, true),
     ;
 

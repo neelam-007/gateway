@@ -1,31 +1,29 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
 
-
+import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.console.action.CustomAssertionPropertiesAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
-import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.awt.*;
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.beans.BeanInfo;
-import java.beans.Introspector;
-import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
-import java.awt.*;
 
 /**
  * Class <code>CustomAssertionTreeNode</code> contains the custom
  * assertion element.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
     private static final Logger logger = Logger.getLogger(CustomAssertionTreeNode.class.getName());
@@ -61,15 +59,6 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
     }
 
     /**
-     * Test if the node can be deleted. Default is <code>true</code>
-     *
-     * @return true if the node can be deleted, false otherwise
-     */
-    public boolean canDelete() {
-        return true;
-    }
-
-    /**
      * Gets the default action for this node.
      *
      * @return <code>null</code> indicating there should be none default action
@@ -91,23 +80,6 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
         return null;
     }
 
-
-    /**
-     * Get the set of actions associated with this node.
-     * This may be used e.g. in constructing a context menu.
-     *
-     * @return actions appropriate to the node
-     */
-    public Action[] getActions() {
-        java.util.List list = new ArrayList();
-        Action a = getPreferredAction();
-        if (a != null) {
-            list.add(a);
-        }
-        list.addAll(Arrays.asList(super.getActions()));
-        return (Action[])list.toArray(new Action[]{});
-    }
-
     /**
      * loads the icon specified by subclass iconResource()
      * implementation.
@@ -117,6 +89,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
     public Image getIcon() {
         return getCustomAssertionIcon();
     }
+
     /**
       * loads the icon specified by subclass iconResource()
       * implementation.

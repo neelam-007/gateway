@@ -48,8 +48,6 @@ public class JmsRoutingAssertionTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        Action a = new JmsRoutingAssertionPropertiesAction(this);
-        list.add(a);
         if (getUserObject() instanceof SecurityHeaderAddressable) {
             list.add(new EditXmlSecurityRecipientContextAction(this));
         }
@@ -64,15 +62,6 @@ public class JmsRoutingAssertionTreeNode extends LeafAssertionTreeNode {
      */
     public Action getPreferredAction() {
         return new JmsRoutingAssertionPropertiesAction(this);
-    }
-
-    /**
-     * Test if the node can be deleted. Default is <code>true</code>
-     * 
-     * @return true if the node can be deleted, false otherwise
-     */
-    public boolean canDelete() {
-        return true;
     }
 
     /**

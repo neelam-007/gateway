@@ -1,4 +1,5 @@
 package com.l7tech.console.tree;
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.Collection;
 
@@ -24,5 +25,5 @@ public interface EntitiesCollection {
      *                   The original cause/exception is encapsulated as inner
      *                   Throwable.
      */
-    Collection getNextBatch() throws RuntimeException;
+    Collection<EntityHeader> getNextBatch() throws RuntimeException;
 }

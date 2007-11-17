@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.console.tree.policy;
@@ -33,12 +31,27 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
      */
     public LeafAssertionTreeNode(AT assertion) {
         super(assertion);
-        if (assertion == null) {
-            throw new IllegalArgumentException();
-        }
     }
 
     protected void loadChildren() {
+    }
+
+    @Override
+    public Action[] getActions() {
+        final Action[] supers = super.getActions();
+
+        final Action preferred = getPreferredAction();
+        if (preferred == null) return supers;
+
+        final Action[] news = new Action[supers.length+1];
+        news[0] = preferred;
+        System.arraycopy(supers, 0, news, 1, supers.length);
+        return news;
+    }
+
+    @Override
+    public boolean canDelete() {
+        return true;
     }
 
     /**
@@ -47,9 +60,8 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
      * @param node the node to receive
      */
     public boolean receive(AbstractTreeNode node) {
-        if (true == super.receive(node)) {
-            return true;
-        }
+        if (super.receive(node)) return true;
+        
         JTree tree = (JTree)TopComponents.getInstance().getComponent(PolicyTree.NAME);
         if (tree != null) {
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
@@ -77,14 +89,12 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
     /**
      * True whether this node accepts a node
      *
-     * @param node the node to accept
+     * @param draggingNode the node to accept
      * @return true if policy template node
      */
-    public boolean accept(AbstractTreeNode node) {
-        if (!new SavePolicyAction().isAuthorized()) {
-            return false;
-        }
-
-        return node instanceof PolicyTemplateNode || getParent() != null;
+    public boolean accept(AbstractTreeNode draggingNode) {
+        return super.accept(draggingNode) &&
+                (draggingNode instanceof PolicyTemplateNode || getParent() != null) &&
+                new SavePolicyAction().isAuthorized();
     }
 }

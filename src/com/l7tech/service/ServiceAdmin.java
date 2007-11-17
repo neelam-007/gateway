@@ -2,6 +2,7 @@ package com.l7tech.service;
 
 import com.l7tech.admin.Administrative;
 import com.l7tech.common.AsyncAdminMethods;
+import com.l7tech.common.policy.PolicyType;
 import static com.l7tech.common.security.rbac.EntityType.SAMPLE_MESSAGE;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
@@ -92,14 +93,16 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
      * are invoked here.
      *
      * @param policyXml the policy xml document
-     * @param serviceId the service unique ID
+     * @param policyType the type of policy this is
+     * @param soap <code>true</code> if this policy is intended for SOAP services; <code>false</code> otherwise.
+     * @param wsdlXml the contents of the WSDL with which this policy is intended to be compatible 
      * @return the job identifier of the validation job.  Call {@link #getJobStatus(com.l7tech.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
      *         and {@link #getJobResult(JobId)} to pick up the result in the form of a PolicyValidatorResult that contains
      *         policy validation warnings and errors
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
-    JobId<PolicyValidatorResult> validatePolicy(String policyXml, long serviceId);
+    JobId<PolicyValidatorResult> validatePolicy(String policyXml, PolicyType policyType, boolean soap, String wsdlXml);
 
     /**
      * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.

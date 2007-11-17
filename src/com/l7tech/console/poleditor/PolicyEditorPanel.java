@@ -1,22 +1,25 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.poleditor;
 
 import com.l7tech.common.AsyncAdminMethods;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.panels.ImportPolicyFromUDDIWizard;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.FilteredTreeModel;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
@@ -26,6 +29,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
@@ -54,22 +58,16 @@ import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * The class represents the policy editor
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- */
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
     private static final String MESSAGE_AREA_DIVIDER_KEY = "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
-    public static final String SERVICENAME_PROPERTY = "service.name";
+    public static final String POLICYNAME_PROPERTY = "policy.name";
     private static final long TIME_BEFORE_OFFERING_CANCEL_DIALOG = 500L;
 
     private static final String PROP_PREFIX = "com.l7tech.console";
@@ -98,13 +96,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private String subjectName;
     private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
     private final boolean enableUddi;
+    private final PolicyValidator policyValidator;
 
     public interface PolicyEditorSubject {
         /**
          *
-         * @return the service node if the policy is attached to a published service, null otherwise
+         * @return the policy node if the policy is attached to an entity, null otherwise
          */
-        ServiceNode getServiceNode();
+        PolicyEntityNode getPolicyNode();
 
         /**
          * get the root assertion of the policy to edit
@@ -113,13 +112,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         Assertion getRootAssertion();
 
         /**
-         * @return the name of either the published service or the policy file. never null
+         * @return the name of either the published service or the policy. never null
          */
         String getName();
 
-        void addPropertyChangeListener(PropertyChangeListener servicePropertyChangeListener);
+        void addPropertyChangeListener(PropertyChangeListener policyPropertyChangeListener);
 
-        void removePropertyChangeListener(PropertyChangeListener servicePropertyChangeListener);
+        void removePropertyChangeListener(PropertyChangeListener policyPropertyChangeListener);
 
         boolean hasWriteAccess();
     }
@@ -130,9 +129,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
         this.enableUddi = enableUddi;
         this.subject = subject;
-        subjectName = subject.getName();
+        this.subjectName = subject.getName();
         this.policyTree = pt;
-        policyTree.setWriteAccess(subject.hasWriteAccess());
+        this.policyTree.setWriteAccess(subject.hasWriteAccess());
+        this.policyValidator = Registry.getDefault().getPolicyValidator();
         layoutComponents();
 
         renderPolicy(false);
@@ -170,16 +170,16 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     /**
-     * Get the service node that this panel is editing
+     * Get the Policy node that this panel is editing
      * <p/>
      * Note that it does not return the copy, therefore any
      * changes made through this method are not visible to
      * the policy editor.
-     * 
+     *
      * @return the noe that the panel is editing
      */
-    public ServiceNode getServiceNode() {
-        return subject.getServiceNode();
+    public PolicyEntityNode getPolicyNode() {
+        return subject.getPolicyNode();
     }
 
     protected boolean isPolicyValidationOn() {
@@ -193,9 +193,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     protected PublishedService getPublishedService() {
         PublishedService service = null;
-        if (subject.getServiceNode() != null) {
+        PolicyEntityNode pn = subject.getPolicyNode();
+        if (pn instanceof ServiceNode) {
             try {
-                service = subject.getServiceNode().getPublishedService();
+                service = ((ServiceNode)pn).getPublishedService();
             } catch (FindException e) {
                 log.log(Level.SEVERE, "cannot get service", e);
             }
@@ -204,7 +205,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     /**
-     * validate the service policy and display the result.
+     * validate the policy and display the result.
      */
     public void validatePolicy() {
         validatePolicy(true);
@@ -213,26 +214,46 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     protected static final Callable<PolicyValidatorResult> NO_VAL_CALLBACK = new Callable<PolicyValidatorResult>() {
         public PolicyValidatorResult call() throws Exception {
             PolicyValidatorResult output = new PolicyValidatorResult();
-            output.addWarning(new PolicyValidatorResult.Warning(0, 0, "Policy validation feedback has " +
+            output.addWarning(new PolicyValidatorResult.Warning(0L, 0, 0, "Policy validation feedback has " +
                                                                       "been disabled in the Preferences", null));
             return output;
         }
     };
 
     /**
-     * validate the service policy.
+     * validate the policy.
      * @param displayResult if true, will call displayResult before returning.  otherwise, just returns the results
      * @return result, or null if it was canceled
      */
     private PolicyValidatorResult validatePolicy(boolean displayResult) {
         final Assertion assertion = rootAssertion.asAssertion();
-        final PublishedService service = getPublishedService();
-        final ConsoleLicenseManager licenseManager = Registry.getDefault().getLicenseManager();
+        final boolean soap;
+        final Wsdl wsdl;
+        try {
+            final PublishedService service = getPublishedService();
+            if (service == null) {
+                wsdl = null;
+                soap = getPolicyNode().getPolicy().isSoap();
+            } else {
+                wsdl = service.parsedWsdl();
+                soap = service.isSoap();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to find policy", e);
+        }
+
+		final ConsoleLicenseManager licenseManager = Registry.getDefault().getLicenseManager();
         Callable<PolicyValidatorResult> callable;
         if (isPolicyValidationOn()) {
             callable = new Callable<PolicyValidatorResult>() {
                 public PolicyValidatorResult call() throws Exception {
-                    return PolicyValidator.getDefault().validate(assertion, service, licenseManager);
+                	final Policy policy = getPolicyNode().getPolicy();
+	                if (policy == null) {
+    	                PolicyValidatorResult r = new PolicyValidatorResult();
+                    	r.addError(new PolicyValidatorResult.Error(null, -1, -1, "Policy could not be loaded", null));
+                    	return r;
+                	}
+                    return policyValidator.validate(assertion, policy.getType(), wsdl, soap, licenseManager);
                 }
             };
         } else {
@@ -351,15 +372,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         subjectName = newName;
     }
 
-    /** updates the service name, tab name etc */
+    /** updates the policy name, tab name etc */
     public void updateHeadings() {
         setName(subjectName);
         getSplitPane().setName(subjectName);
     }
 
     /**
-     * Render the service policy into the editor
-     * 
+     * Render the policy into the editor
+     *
      * @param identityView
      */
     private void renderPolicy(boolean identityView)
@@ -376,6 +397,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 model = PolicyTreeModel.identityModel(subject.getRootAssertion());
             } catch (InterruptedException e) {
                 throw new RuntimeException(e); // can't happen here
+            } catch (PolicyAssertionException e) {
+                throw new RuntimeException(e); // TODO find some cleaner way to handle this (i.e. with an error message)
             }
             policyTreeModel = new FilteredTreeModel((TreeNode)model.getRoot());
             ((FilteredTreeModel)policyTreeModel).setFilter(new PolicyTreeModel.IdentityNodeFilter());
@@ -391,7 +414,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
 
         rootAssertion = (AssertionTreeNode)policyTreeModel.getRoot();
-        ((AbstractTreeNode)rootAssertion.getRoot()).addCookie(new AbstractTreeNode.NodeCookie(subject.getServiceNode()));
+        ((AbstractTreeNode)rootAssertion.getRoot()).addCookie(new AbstractTreeNode.NodeCookie(subject.getPolicyNode()));
         //rootAssertion.addCookie(new AbstractTreeNode.NodeCookie(subject.getServiceNode()));
 
         policyTree.setModel(policyTreeModel);
@@ -423,14 +446,16 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * set various listeners that this panel uses
      */
     private void setEditorListeners() {
-        subject.addPropertyChangeListener(servicePropertyChangeListener);
-        JTree tree = (JTree)topComponents.getComponent(ServicesTree.NAME);
-        if (tree == null) {
-            throw new IllegalStateException("Internal error - (could not get services tree component)");
-        }
-        tree.getModel().addTreeModelListener(servicesTreeModelListener);
+        subject.addPropertyChangeListener(policyPropertyChangeListener);
+        addListener(ServicesAndPoliciesTree.NAME);
+        addListener(PolicyTree.NAME);
     }
 
+    private void addListener(final String treeComponentName) {
+        JTree tree = (JTree)topComponents.getComponent(treeComponentName);
+        if (tree == null) throw new IllegalStateException("Internal error - (could not get tree component)");
+        tree.getModel().addTreeModelListener(treeModelListener);
+    }
 
     private JComponent getMessagePane() {
         if (messagesTab != null) return messagesTab;
@@ -488,12 +513,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     final class PolicyEditToolBar extends JToolBar {
         private JButton buttonSave;
-        private JButton buttonSaveTemplate;
-        private JButton buttonImport;
-        private JButton buttonUDDIImport;
         private JButton buttonValidate;
-        private JToggleButton identityViewButton;
-        private JToggleButton policyViewButton;
 
         public PolicyEditToolBar() {
             super();
@@ -504,7 +524,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         private void initComponents() {
             buttonSave = new JButton(getSaveAction());
 
-            this.add(buttonSave);
+            add(buttonSave);
             final BaseAction ba = (BaseAction)buttonSave.getAction();
             ba.setEnabled(false);
             ba.addActionListener(new ActionListener() {
@@ -518,21 +538,16 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             });
 
-            buttonValidate = new JButton(getServerValidateAction());
-            this.add(buttonValidate);
-
-            buttonSaveTemplate = new JButton(getExportAction());
-            this.add(buttonSaveTemplate);
-
-            buttonImport = new JButton(getImportAction());
-            this.add(buttonImport);
+            add(buttonValidate = new JButton(getServerValidateAction()));
+            add(new JButton(getExportAction()));
+            add(new JButton(getImportAction()));
 
             if (!TopComponents.getInstance().isApplet()) {
-                buttonUDDIImport = new JButton(getUDDIImportAction());
+                JButton buttonUDDIImport = new JButton(getUDDIImportAction());
                 this.add(buttonUDDIImport);
             }
 
-            policyViewButton = new JToggleButton(new PolicyViewAction());
+            JToggleButton policyViewButton = new JToggleButton(new PolicyViewAction());
             policyViewButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     renderPolicyView(false);
@@ -541,17 +556,24 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             this.add(policyViewButton);
             policyViewButton.setSelected(true);
 
-            identityViewButton = new JToggleButton(new PolicyIdentityViewAction());
-            identityViewButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    renderPolicyView(true);
-                }
-            });
-            this.add(identityViewButton);
+            JToggleButton identityViewButton = new JToggleButton(new PolicyIdentityViewAction());
+            PolicyEntityNode pn = getPolicyNode();
+            if (pn instanceof ServiceNode) {
+                identityViewButton.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        renderPolicyView(true);
+                    }
+                });
+            } else {
+                identityViewButton.setEnabled(false);
+            }
+
+            add(identityViewButton);
+
             ButtonGroup bg = new ButtonGroup();
             bg.add(identityViewButton);
             bg.add(policyViewButton);
-            this.add(Box.createHorizontalGlue());
+            add(Box.createHorizontalGlue());
         }
 
         private void renderPolicyView(boolean identityView) {
@@ -579,17 +601,35 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private String fullValidate() {
         final Assertion assertion = rootAssertion.asAssertion();
         final String policyXml = WspWriter.getPolicyXml(assertion);
-        final PublishedService service = getPublishedService();
+        final Wsdl wsdl;
+        final boolean soap;
+        final PolicyType type;
+        final PublishedService service;
+        try {
+            service = getPublishedService();
+            if (service == null) {
+                wsdl = null;
+                soap = getPolicyNode().getPolicy().isSoap();
+                type = getPolicyNode().getPolicy().getType();
+            } else {
+                wsdl = service.parsedWsdl();
+                soap = service.isSoap();
+                type = PolicyType.PRIVATE_SERVICE;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't parse policy or WSDL", e);
+        }
+
         final ConsoleLicenseManager licenseManager = Registry.getDefault().getLicenseManager();
         Callable<PolicyValidatorResult> callable;
         if (isPolicyValidationOn()) {
             callable = new Callable<PolicyValidatorResult>() {
                 public PolicyValidatorResult call() throws Exception {
-                    PolicyValidatorResult result = PolicyValidator.getDefault().validate(assertion, service, licenseManager);
+                    PolicyValidatorResult result = policyValidator.validate(assertion, type, wsdl, soap, licenseManager);
                     if (getPublishedService() != null) {
                         ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
                         AsyncAdminMethods.JobId<PolicyValidatorResult> result2Job = serviceAdmin.
-                                validatePolicy(policyXml, getPublishedService().getOid());
+                                validatePolicy(policyXml, type, soap, service.getWsdlXml());
                         PolicyValidatorResult result2 = null;
                         double delay = DELAY_INITIAL;
                         Thread.sleep((long)delay);
@@ -663,21 +703,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                ((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion);
            }
            overWriteMessageArea("");
-        for (Iterator iterator = r.getErrors().iterator();
-             iterator.hasNext();) {
-            PolicyValidatorResult.Error pe =
-              (PolicyValidatorResult.Error)iterator.next();
+        for (PolicyValidatorResult.Error pe : r.getErrors()) {
             appendToMessageArea(getValidateMessageIntro(pe)
-              +
-              "</a>" + " Error: " + pe.getMessage() + "");
+                    +
+                    "</a>" + " Error: " + pe.getMessage() + "");
         }
-        for (Iterator iterator = r.getWarnings().iterator();
-             iterator.hasNext();) {
-            PolicyValidatorResult.Warning pe =
-              (PolicyValidatorResult.Warning)iterator.next();
-            appendToMessageArea(getValidateMessageIntro(pe)
-              +
-              " Warning: " + pe.getMessage() + "");
+        for (PolicyValidatorResult.Warning pw : r.getWarnings()) {
+            appendToMessageArea(getValidateMessageIntro(pw)
+                    +
+                    " Warning: " + pw.getMessage() + "");
         }
         if (r.getErrors().isEmpty() && r.getWarnings().isEmpty()) {
             appendToMessageArea("<i>Policy validated ok.</i>");
@@ -717,12 +751,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     /**
      * get the validator result message intro
-     * 
-     * @param pe 
+     *
+     * @param pe
      * @return the string as a message
      */
     private String getValidateMessageIntro(PolicyValidatorResult.Message pe) {
-        String msg = null;
+        String msg;
         Assertion assertion = rootAssertion.asAssertion().getAssertionWithOrdinal(pe.getAssertionOrdinal());
         if (assertion != null) {
             msg = "Assertion: " +
@@ -780,8 +814,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     };
 
 
-// listener for policy tree changes
-    TreeModelListener servicesTreeModelListener = new TreeModelListener() {
+    // listener for policy tree changes
+    TreeModelListener treeModelListener = new TreeModelListener() {
         public void treeNodesChanged(TreeModelEvent e) {
         }
 
@@ -790,10 +824,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         public void treeNodesRemoved(TreeModelEvent e) {
             Object[] children = e.getChildren();
-            for (int i = 0; i < children.length; i++) {
-                Object child = children[i];
-                if (child == subject.getServiceNode()) {
-                    log.fine("Service node deleted, disabling save controls");
+            for (Object child : children) {
+                if (child == subject.getPolicyNode()) {
+                    log.fine("Service or Policy node deleted, disabling save controls");
                     policyEditorToolbar.buttonSave.setEnabled(false);
                     policyEditorToolbar.buttonSave.getAction().setEnabled(false);
                 }
@@ -805,18 +838,17 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     };
 
-
     private final PropertyChangeListener
-      servicePropertyChangeListener = new PropertyChangeListener() {
+            policyPropertyChangeListener = new PropertyChangeListener() {
           /**
            * This method gets called when a bound property is changed.
-           * 
+           *
            * @param evt A PropertyChangeEvent object describing the event source
            *            and the property that has changed.
            */
           public void propertyChange(PropertyChangeEvent evt) {
               log.info(evt.getPropertyName() + "changed");
-              if (SERVICENAME_PROPERTY.equals(evt.getPropertyName())) {
+              if (POLICYNAME_PROPERTY.equals(evt.getPropertyName())) {
                   updateHeadings();
                   renderPolicy(false);
               } else if ("policy".equals(evt.getPropertyName())) {
@@ -833,7 +865,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
       hlinkListener = new HyperlinkListener() {
           /**
            * Called when a hypertext link is updated.
-           * 
+           *
            * @param e the event responsible for the update
            */
           public void hyperlinkUpdate(HyperlinkEvent e) {
@@ -872,7 +904,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     public void componentRemoved(ContainerEvent e) {
         log.fine("Resetting the policy editor panel");
-        subject.removePropertyChangeListener(servicePropertyChangeListener);
+        subject.removePropertyChangeListener(policyPropertyChangeListener);
         policyTree.setPolicyEditor(null);
         policyTree.setModel(null);
         final PolicyToolBar pt = topComponents.getPolicyToolBar();
@@ -883,7 +915,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     /**
      * Invoked when a component has to be added to the container.
-     * 
+     *
      * @param e the container event
      * @throws com.l7tech.console.event.ContainerVetoException
      *          if the recipient wishes to stop
@@ -895,7 +927,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     /**
      * Invoked when a component has to be removed from to the container.
-     * 
+     *
      * @param e the container event
      * @throws ContainerVetoException if the recipient wishes to stop
      *                                (not perform) the action.
@@ -934,25 +966,25 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     /**
      * prune duplicate messsages
-     * 
+     *
      * @param result the validation result
      * @return the result containing unique messages
      */
     private PolicyValidatorResult pruneDuplicates(PolicyValidatorResult result) {
         PolicyValidatorResult pr = new PolicyValidatorResult();
 
-        Set errors = new LinkedHashSet();
+        Set<PolicyValidatorResult.Error> errors = new LinkedHashSet<PolicyValidatorResult.Error>();
         errors.addAll(result.getErrors());
-        for (Iterator iterator = errors.iterator(); iterator.hasNext();) {
-            pr.addError((PolicyValidatorResult.Error)iterator.next());
+        for (PolicyValidatorResult.Error error : errors) {
+            pr.addError(error);
         }
-        Set warnings = new LinkedHashSet();
+
+        Set<PolicyValidatorResult.Warning> warnings = new LinkedHashSet<PolicyValidatorResult.Warning>();
         warnings.addAll(result.getWarnings());
-
-        for (Iterator iterator = warnings.iterator(); iterator.hasNext();) {
-            pr.addWarning((PolicyValidatorResult.Warning)iterator.next());
-
+        for (PolicyValidatorResult.Warning warning : warnings) {
+            pr.addWarning(warning);
         }
+
         return pr;
     }
 
@@ -962,7 +994,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     public Action getSaveAction() {
         if (saveAction == null) {
-            if (subject.getServiceNode() == null) {
+            if (subject.getPolicyNode() == null) {
                 saveAction = new ExportPolicyToFileAction(getHomePath()) {
                     public String getName() {
                         return "Save Policy";
@@ -1061,7 +1093,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 Utilities.centerOnScreen(wiz);
                 wiz.setVisible(true);
                 if (wiz.importedPolicy() != null) {
-                    getPublishedService().setPolicyXml(wiz.importedPolicy());
+                    getPublishedService().getPolicy().setXml(wiz.importedPolicy());
                     rootAssertion = null;
                     renderPolicy(false);
                     policyEditorToolbar.buttonSave.setEnabled(true);
@@ -1074,7 +1106,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     public Action getImportAction() {
         if (importPolicyAction == null) {
-            if (subject.getServiceNode() != null) {
+            if (subject.getPolicyNode() != null) {
                 importPolicyAction = new ImportPolicyFromFileAction(getHomePath()) {
 
                     protected OperationType getOperation() {
@@ -1083,8 +1115,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
                     protected void performAction() {
                         try {
-                            PublishedService service = subject.getServiceNode().getPublishedService();
-                            if (importPolicy(service)) {
+                            Policy policy = subject.getPolicyNode().getPolicy();
+                            if (importPolicy(policy)) {
                                 rootAssertion = null;
                                 renderPolicy(false);
                                 policyEditorToolbar.buttonSave.setEnabled(true);
@@ -1092,7 +1124,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                                 validatePolicy();
                             }
                         } catch (FindException e) {
-                            log.log(Level.SEVERE, "cannot get back service", e);
+                            log.log(Level.SEVERE, "cannot get back policy", e);
                         }
                     }
                 };

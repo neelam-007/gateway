@@ -3,23 +3,23 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.IpListPanel;
 import com.l7tech.common.gui.widgets.UrlPanel;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
-import com.l7tech.console.table.HttpRuleTableHandler;
 import com.l7tech.console.table.HttpHeaderRuleTableHandler;
 import com.l7tech.console.table.HttpParamRuleTableHandler;
+import com.l7tech.console.table.HttpRuleTableHandler;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.BridgeRoutingAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.BridgeRoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
-import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -49,7 +49,6 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private HttpRuleTableHandler requestParamsRulesTableHandler;
 
     private final EventListenerList listenerList = new EventListenerList();
-    private final PublishedService service;
     private final HttpRoutingAssertion assertion;
     private final HttpRoutingHttpAuthPanel httpAuthPanel;
     private final HttpRoutingSamlAuthPanel samlAuthPanel;
@@ -107,18 +106,22 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.HttpRoutingAssertionDialog");
 
+    private final Policy policy;
+    private final Wsdl wsdl;
+
     /**
      * Creates new form ServicePanel
      */
-    public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion assertion, PublishedService service) {
+    public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion assertion, Policy policy, Wsdl wsdl) {
         super(owner, true);
         setTitle(resources.getString("dialog.title"));
         this.assertion = assertion;
-        this.service = service;
+        this.policy = policy;
+        this.wsdl = wsdl;
         this.httpAuthPanel = new HttpRoutingHttpAuthPanel(assertion);
         this.samlAuthPanel = new HttpRoutingSamlAuthPanel(assertion);
 
-        okButtonAction = new SecureAction(new AttemptedUpdate(EntityType.SERVICE, service)) {
+        okButtonAction = new SecureAction(new AttemptedUpdate(EntityType.POLICY, policy)) {
             public String getName() {
                 return resources.getString("okButton.text");
             }
@@ -219,7 +222,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         authSamlRadio.addChangeListener(radioChangeListener);
         authTaiRadio.addChangeListener(radioChangeListener);
 
-        if (service != null && !service.isSoap()) {
+        if (policy.isSoap()) {
             authSamlRadio.setEnabled(false);
             wssPromoteRadio.setEnabled(false);
             wssRemoveRadio.setEnabled(false);
@@ -246,21 +249,12 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         defaultUrlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (service != null) {
-                    try {
-                        Wsdl wsdl = service.parsedWsdl();
-                        String serviceURI;
-                        if (wsdl != null) {
-                            serviceURI = wsdl.getServiceURI();
-                            urlPanel.setText(serviceURI);
-                        } else {
-                            log.log(Level.INFO, "Can't retrieve WSDL from the published service");
-                        }
-                    } catch (javax.wsdl.WSDLException we) {
-                        log.log(Level.INFO, "HttpRoutingAssertionDialog", we);
-                    }
+                String serviceURI;
+                if (wsdl != null) {
+                    serviceURI = wsdl.getServiceURI();
+                    urlPanel.setText(serviceURI);
                 } else {
-                    log.log(Level.INFO, "Can't find the service");
+                    log.log(Level.INFO, "Can't retrieve WSDL from the published service");
                 }
             }
         });

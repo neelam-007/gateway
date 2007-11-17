@@ -96,7 +96,7 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
         if (homePath != null) {
             try {
                 templateDir = new File(homePath +
-                                       File.separator + PoliciesFolderNode.TEMPLATES_DIR);
+                                       File.separator + PolicyTemplatesFolderNode.TEMPLATES_DIR);
                 if (!templateDir.exists()) {
                     if (!templateDir.mkdir()) {
                         throw new IOException("Cannot create " + templateDir.getPath());
@@ -120,11 +120,7 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
         chooser.setMultiSelectionEnabled(false);
         chooser.setFileFilter(new FileFilter() {
             public boolean accept(File f) {
-                if (f.getAbsolutePath().endsWith(".xml") || f.getAbsolutePath().endsWith(".XML")) {
-                    return true;
-                }
-                if (f.isDirectory()) return true;
-                return false;
+                return f.getAbsolutePath().endsWith(".xml") || f.getAbsolutePath().endsWith(".XML") || f.isDirectory();
             }
             public String getDescription() {
                 return "XML Files";
@@ -171,7 +167,7 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
     private void insertIntoAssertionTree(File policyFile) {
         JTree tree = (JTree)TopComponents.getInstance().getComponent(AssertionsTree.NAME);
         if (tree != null) {
-            AbstractTreeNode node = (AbstractTreeNode)TreeNodeActions.nodeByName(PoliciesFolderNode.NAME,
+            AbstractTreeNode node = (AbstractTreeNode)TreeNodeActions.nodeByName(PolicyTemplatesFolderNode.NAME,
                                                                                  (DefaultMutableTreeNode)tree.getModel().getRoot());
             if (node != null) {
                 TreeNode[] nodes = node.getPath();

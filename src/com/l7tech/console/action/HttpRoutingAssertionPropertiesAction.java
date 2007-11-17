@@ -2,6 +2,8 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.policy.Policy;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
@@ -9,12 +11,14 @@ import com.l7tech.console.panels.HttpRoutingAssertionDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.HttpRoutingAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
+import javax.wsdl.WSDLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.awt.*;
@@ -22,9 +26,6 @@ import java.awt.*;
 /**
  * The <code>HttpRoutingAssertionPropertiesAction</code> edits the
  * protected service properties.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
  */
 public class HttpRoutingAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(HttpRoutingAssertionPropertiesAction.class.getName());
@@ -64,15 +65,24 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 Frame f = TopComponents.getInstance().getTopParent();
-                HttpRoutingAssertionDialog d =
-                        null;
+                HttpRoutingAssertionDialog d;
                 try {
-                    PublishedService svc = null;
-                    if (getServiceNodeCookie() != null) {
-                        svc = getServiceNodeCookie().getPublishedService();
+                    final Policy policy;
+                    final Wsdl wsdl;
+                    ServiceNode snc = getServiceNodeCookie();
+                    if (snc != null) {
+                        PublishedService svc = snc.getPublishedService();
+                        policy = svc.getPolicy();
+                        wsdl = svc.parsedWsdl();
+                    } else {
+                        policy = getPolicyNodeCookie().getPolicy();
+                        wsdl = null;
                     }
-                    d = new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), svc);
+                    d = new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), policy, wsdl);
                 } catch (FindException e) {
+                    log.log(Level.WARNING, e.getMessage(), e);
+                    throw new RuntimeException(e);
+                } catch (WSDLException e) {
                     log.log(Level.WARNING, e.getMessage(), e);
                     throw new RuntimeException(e);
                 }

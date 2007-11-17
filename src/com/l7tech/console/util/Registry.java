@@ -2,6 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
@@ -12,6 +13,8 @@ import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.policy.PolicyPathBuilderFactory;
+import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 
@@ -117,9 +120,21 @@ public abstract class Registry {
     public abstract TransportAdmin getTransportAdmin();
 
     /**
+     * @return the Policy admin interface implementation.
+     */
+    public abstract PolicyAdmin getPolicyAdmin();
+
+    /**
      * @return the security provider implementation.
      */
     abstract public SecurityProvider getSecurityProvider();
+
+    public abstract PolicyValidator getPolicyValidator();
+
+    /**
+     * @return the policy path builder factory
+     */
+    public abstract PolicyPathBuilderFactory getPolicyPathBuilderFactory();
 
     public ConsoleLicenseManager getLicenseManager() {
         return ConsoleLicenseManager.getInstance();
@@ -194,7 +209,19 @@ public abstract class Registry {
             return null;
         }
 
+        public PolicyAdmin getPolicyAdmin() {
+            return null;
+        }
+
         public SecurityProvider getSecurityProvider() {
+            return null;
+        }
+
+        public PolicyValidator getPolicyValidator() {
+            return null;
+        }
+
+        public PolicyPathBuilderFactory getPolicyPathBuilderFactory() {
             return null;
         }
     }

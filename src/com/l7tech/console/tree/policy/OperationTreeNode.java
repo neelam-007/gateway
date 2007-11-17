@@ -1,11 +1,9 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.Operation;
 import com.l7tech.console.action.OperationPropertiesAction;
+import com.l7tech.policy.assertion.Operation;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Policy tree node for the Operation assertion.
@@ -33,17 +31,6 @@ public class OperationTreeNode extends LeafAssertionTreeNode {
 
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/Information16.gif";
-    }
-
-    public boolean canDelete() {
-        return true;
-    }
-
-    public Action[] getActions() {
-        java.util.List list = new ArrayList();
-        list.add(getPreferredAction());
-        list.addAll(Arrays.asList(super.getActions()));
-        return (Action[])list.toArray(new Action[]{});
     }
 
     public Action getPreferredAction() {

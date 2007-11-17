@@ -25,20 +25,15 @@ public class ResponseWssTimestampPolicyNode extends LeafAssertionTreeNode {
         return "Add " + qualifier + "Timestamp to Response";
     }
 
-    public boolean canDelete() {
-        return true;
-    }
-
     public Action getPreferredAction() {
         return new ResponseWssTimestampPropertiesAction(this);
     }
 
     public Action[] getActions() {
         Action[] superActions = super.getActions();
-        Action[] newActions = new Action[superActions.length+2];
-        newActions[0] = new ResponseWssTimestampPropertiesAction(this);
-        newActions[1] = new EditXmlSecurityRecipientContextAction(this);
-        System.arraycopy(superActions, 0, newActions, 2, superActions.length);
+        Action[] newActions = new Action[superActions.length+1];
+        newActions[0] = new EditXmlSecurityRecipientContextAction(this);
+        System.arraycopy(superActions, 0, newActions, 1, superActions.length);
         return newActions;
     }
 

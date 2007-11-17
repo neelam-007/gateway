@@ -1,14 +1,9 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SqlAttackAssertion;
 import com.l7tech.console.action.SqlAttackDialogAction;
+import com.l7tech.policy.assertion.SqlAttackAssertion;
 
 import javax.swing.*;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Arrays;
 
 /**
  * Created by IntelliJ IDEA.
@@ -39,16 +34,4 @@ public class SqlAttackAssertionTreeNode extends LeafAssertionTreeNode{
     public Action getPreferredAction() {
         return new SqlAttackDialogAction(this);
     }
-
-    public boolean canDelete() {
-        return true;
-    }
-
-    public Action[] getActions() {
-        List list = new ArrayList();
-        list.add(getPreferredAction());
-        list.addAll(Arrays.asList(super.getActions()));
-        return (Action[]) list.toArray(new Action[list.size()]);
-    }
-
 }

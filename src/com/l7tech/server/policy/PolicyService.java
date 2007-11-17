@@ -21,7 +21,7 @@ import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.LicenseException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyPathBuilder;
+import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyPathResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -34,11 +34,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
+import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -83,6 +79,7 @@ public class PolicyService extends ApplicationObjectSupport {
     private final ServerPolicyFactory policyFactory;
     private final FilterManager filterManager;
     private final SecurityTokenResolver securityTokenResolver;
+    private final PolicyPathBuilderFactory policyPathBuilderFactory;
 
     /**
      * The supported credential sources used to determine whether the requester is
@@ -116,23 +113,20 @@ public class PolicyService extends ApplicationObjectSupport {
                          X509Certificate serverCert, 
                          ServerPolicyFactory policyFactory, 
                          FilterManager filterManager, 
-                         SecurityTokenResolver securityTokenResolver)
+                         SecurityTokenResolver securityTokenResolver,
+                         PolicyPathBuilderFactory policyPathBuilderFactory)
     {
-        if (privateServerKey == null || serverCert == null) {
-            throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
-        }
-        if (policyFactory == null) {
-            throw new IllegalArgumentException("Policy Factory is required");
-        }
-        if (filterManager == null) {
-            throw new IllegalArgumentException("Filter Manager is required");
-        }
+        if (privateServerKey == null || serverCert == null) throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
+        if (policyFactory == null) throw new IllegalArgumentException("Policy Factory is required");
+        if (filterManager == null) throw new IllegalArgumentException("Filter Manager is required");
+        if (policyPathBuilderFactory == null) throw new IllegalArgumentException("Policy Path Builder Factory is required");
 
         this.privateServerKey = privateServerKey;
         this.serverCert = serverCert;
         this.policyFactory = policyFactory;
         this.filterManager = filterManager;
         this.securityTokenResolver = securityTokenResolver;
+        this.policyPathBuilderFactory = policyPathBuilderFactory;
 
         // populate all possible credentials sources
         this.allCredentialAssertions = new ArrayList();
@@ -162,7 +156,7 @@ public class PolicyService extends ApplicationObjectSupport {
                                                    PolicyGetter policyGetter,
                                                    boolean pre32PolicyCompat,
                                                    boolean isFullDoc)
-            throws FilteringException, IOException, SAXException {
+            throws FilteringException, IOException, SAXException, PolicyAssertionException {
         // prepare writer, get policy
         WspWriter wspWriter = new WspWriter();
         wspWriter.setPre32Compat(pre32PolicyCompat);
@@ -212,8 +206,7 @@ public class PolicyService extends ApplicationObjectSupport {
                                                boolean signResponse,
                                                PolicyGetter policyGetter,
                                                boolean pre32PolicyCompat)
-        throws IOException, SAXException
-    {
+            throws IOException, SAXException, PolicyAssertionException {
         final XmlKnob reqXml = context.getRequest().getXmlKnob();
         final SecurityKnob reqSec = context.getRequest().getSecurityKnob();
         final Message response = context.getResponse();
@@ -492,8 +485,8 @@ public class PolicyService extends ApplicationObjectSupport {
         }
     }
 
-    private boolean atLeastOnePathIsAnonymous(Assertion rootAssertion) throws InterruptedException {
-        PolicyPathResult paths = PolicyPathBuilder.getDefault().generate(rootAssertion);
+    private boolean atLeastOnePathIsAnonymous(Assertion rootAssertion) throws InterruptedException, PolicyAssertionException {
+        PolicyPathResult paths = policyPathBuilderFactory.makePathBuilder().generate(rootAssertion);
         for (Iterator iterator = paths.paths().iterator(); iterator.hasNext();) {
             AssertionPath assertionPath = (AssertionPath)iterator.next();
             Assertion[] path = assertionPath.getPath();

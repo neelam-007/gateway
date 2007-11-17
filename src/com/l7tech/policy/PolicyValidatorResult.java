@@ -1,5 +1,6 @@
 package com.l7tech.policy;
 
+import com.l7tech.common.util.Pair;
 import com.l7tech.policy.assertion.Assertion;
 
 import java.util.*;
@@ -12,9 +13,11 @@ import java.io.Serializable;
  * @version 1.0
  */
 public class PolicyValidatorResult implements Serializable {
-    private List errors = new ArrayList();
-    private List warnings = new ArrayList();
-    private Map assertionMessages = new HashMap();
+    private List<Error> errors = new ArrayList<Error>();
+    private List<Warning> warnings = new ArrayList<Warning>();
+
+    
+    private Map<Pair<Long, Integer>,List<Message>> assertionMessages = new HashMap<Pair<Long, Integer>,List<Message>>();
 
     /**
      * Returns the number of the errors that were collected
@@ -42,7 +45,7 @@ public class PolicyValidatorResult implements Serializable {
      *
      * @return the <code>List</code> of errors
      */
-    public List getErrors() {
+    public List<Error> getErrors() {
         return Collections.unmodifiableList(errors);
     }
 
@@ -51,7 +54,7 @@ public class PolicyValidatorResult implements Serializable {
      *
      * @return the <code>List</code> of warninigs
      */
-    public List getWarnings() {
+    public List<Warning> getWarnings() {
         return Collections.unmodifiableList(warnings);
     }
 
@@ -61,7 +64,7 @@ public class PolicyValidatorResult implements Serializable {
      * @return the <code>List</code> of all the messages
      */
     public List getMessages() {
-        List all = new ArrayList();
+        List<Message> all = new ArrayList<Message>();
         all.addAll(getErrors());
         all.addAll(getWarnings());
         return all;
@@ -73,10 +76,10 @@ public class PolicyValidatorResult implements Serializable {
      */
     public void addError(Error err) {
         errors.add(err);
-        final Integer assertion = new Integer(err.getAssertionOrdinal());
-        List list = (List)assertionMessages.get(assertion);
+        final Pair<Long, Integer> assertion = new Pair<Long, Integer>(err.getPolicyOid(), err.getAssertionOrdinal());
+        List<Message> list = assertionMessages.get(assertion);
         if (list == null) {
-            list = new ArrayList();
+            list = new ArrayList<Message>();
             assertionMessages.put(assertion, list);
         }
         list.add(err);
@@ -89,10 +92,10 @@ public class PolicyValidatorResult implements Serializable {
      */
     public void addWarning(Warning w) {
         warnings.add(w);
-        final Integer assertion = new Integer(w.getAssertionOrdinal());
-        List list = (List)assertionMessages.get(assertion);
+        final Pair<Long, Integer> assertion = new Pair<Long, Integer>(w.getPolicyOid(), w.getAssertionOrdinal());
+        List<Message> list = assertionMessages.get(assertion);
         if (list == null) {
-            list = new ArrayList();
+            list = new ArrayList<Message>();
             assertionMessages.put(assertion, list);
         }
         list.add(w);
@@ -104,30 +107,34 @@ public class PolicyValidatorResult implements Serializable {
      *          to a particular assertion
      * @return the list of assertion messages
      */
-    public List messages(Assertion a) {
-        List messages = (List)assertionMessages.get(new Integer(a.getOrdinal()));
+    public List<Message> messages(Assertion a) {
+        List<Message> messages = assertionMessages.get(new Pair<Long, Integer>(a.getOwnerPolicyOid(), a.getOrdinal()));
         if (messages !=null) {
             return messages;
         }
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
     /**
      * The class represents the policy validation result
      */
     public static class Message implements Serializable {
-        private int assertionOrdinal;
-        private String message;
-        private Throwable throwable;
-        private int assertionPathOrder;
+        private final Long policyOid;
+        private final int assertionOrdinal;
+        private final String message;
+        private final Throwable throwable;
+        private final int assertionPathOrder;
 
-        Message(int errorAssertionOrdinal, int apOrder, String message, Throwable throwable) {
-            if (message == null) {
-                throw new IllegalArgumentException();
-            }
+        Message(Long policyOid, int errorAssertionOrdinal, int apOrder, String message, Throwable throwable) {
+            if (message == null) throw new IllegalArgumentException();
+            this.policyOid = policyOid;
             this.assertionOrdinal = errorAssertionOrdinal;
             this.message = message;
             this.throwable = throwable;
             this.assertionPathOrder = apOrder;
+        }
+
+        public Long getPolicyOid() {
+            return policyOid;
         }
 
         public int getAssertionOrdinal() {
@@ -146,42 +153,48 @@ public class PolicyValidatorResult implements Serializable {
             return assertionPathOrder;
         }
 
+        @SuppressWarnings({"RedundantIfStatement"})
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Message)) return false;
+            if (o == null || getClass() != o.getClass()) return false;
 
-            final Message message1 = (Message) o;
+            Message message1 = (Message) o;
 
             if (assertionOrdinal != message1.assertionOrdinal) return false;
             if (message != null ? !message.equals(message1.message) : message1.message != null) return false;
+            if (policyOid != null ? !policyOid.equals(message1.policyOid) : message1.policyOid != null) return false;
+
             return true;
         }
 
         public int hashCode() {
             int result;
-            result = assertionOrdinal;
-            result = 29 * result + (message != null ? message.hashCode() : 0);
+            result = (policyOid != null ? policyOid.hashCode() : 0);
+            result = 31 * result + assertionOrdinal;
+            result = 31 * result + (message != null ? message.hashCode() : 0);
+            result = 31 * result + (throwable != null ? throwable.hashCode() : 0);
+            result = 31 * result + assertionPathOrder;
             return result;
         }
     }
 
     public static class Error extends Message implements Serializable {
-        public Error(int errorAssertionOrdinal, int apOrder, String message, Throwable throwable) {
-            super(errorAssertionOrdinal, apOrder, message, throwable);
+        public Error(Long policyOid, int errorAssertionOrdinal, int apOrder, String message, Throwable throwable) {
+            super(policyOid, errorAssertionOrdinal, apOrder, message, throwable);
         }
 
         public Error(Assertion error, AssertionPath ap, String message, Throwable throwable) {
-            super(error.getOrdinal(), ap.getPathOrder(), message, throwable);
+            super(error.getOwnerPolicyOid(), error.getOrdinal(), ap.getPathOrder(), message, throwable);
         }
     }
 
     public static class Warning extends Message implements Serializable {
-        public Warning(int warningAssertionOrdinal, int apOrder, String message, Throwable throwable) {
-            super(warningAssertionOrdinal, apOrder, message, throwable);
+        public Warning(Long policyOid, int warningAssertionOrdinal, int apOrder, String message, Throwable throwable) {
+            super(policyOid, warningAssertionOrdinal, apOrder, message, throwable);
         }
 
         public Warning(Assertion warning, AssertionPath ap, String message, Throwable throwable) {
-            super(warning.getOrdinal(), ap.getPathOrder(), message, throwable);
+            super(warning.getOwnerPolicyOid(), warning.getOrdinal(), ap.getPathOrder(), message, throwable);
         }
     }
 }

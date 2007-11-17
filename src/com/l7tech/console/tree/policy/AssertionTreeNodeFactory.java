@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.common.util.ConstructorInvocation;
@@ -28,14 +31,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-
 /**
  * The class <code>AssertionTreeNodeFactory</code> is a factory
  * class that creates policy <code>TreeNode</code> instances based on
  * <code>Assertion</code> instances.
- * 
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.1
  */
 public class AssertionTreeNodeFactory {
     protected static final Logger logger = Logger.getLogger(AssertionTreeNodeFactory.class.getName());
@@ -80,7 +79,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(EmailAlertAssertion.class, EmailAlertAssertionTreeNode.class);
         assertionMap.put(RemoteIpRange.class, RemoteIpRangeTreeNode.class);
         assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
-        assertionMap.put(AuditAssertion.class, AuditAssertionTreeNode.class);
+        assertionMap.put(AuditAssertion.class, AuditAssertionPolicyNode.class);
         assertionMap.put(AuditDetailAssertion.class, AuditDetailAssertionTreeNode.class);
         assertionMap.put(RequestWssSaml.class, RequestWssSamlTreeNode.class);
         assertionMap.put(RequestWssSaml2.class, RequestWssSamlTreeNode.class);
@@ -109,6 +108,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(SetVariableAssertion.class, SetVariableAssertionPolicyNode.class);
         assertionMap.put(HtmlFormDataAssertion.class, HtmlFormDataAssertionPolicyNode.class);
         assertionMap.put(CodeInjectionProtectionAssertion.class, CodeInjectionProtectionAssertionPolicyNode.class);
+        assertionMap.put(Include.class, IncludeAssertionPolicyNode.class);
     }
 
     /**
@@ -198,15 +198,6 @@ public class AssertionTreeNodeFactory {
          */
         protected String iconResource(boolean open) {
             return "com/l7tech/console/resources/unknown.gif";
-        }
-
-        /**
-         * Override can delete
-         * 
-         * @return always true
-         */
-        public boolean canDelete() {
-            return true;
         }
 
         public String getName() {

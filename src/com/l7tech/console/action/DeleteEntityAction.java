@@ -11,10 +11,9 @@ import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.AnonymousIdentityReference;
-import com.l7tech.identity.Group;
+import com.l7tech.identity.AnonymousGroupReference;
+import com.l7tech.identity.AnonymousUserReference;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -29,9 +28,6 @@ import java.util.logging.Logger;
 /**
  * The <code>DeleteEntityAction</code> action deletes the entity
  * such as user, group etc.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
  */
 public class DeleteEntityAction extends SecureAction {
     static final Logger log = Logger.getLogger(DeleteEntityAction.class.getName());
@@ -76,10 +72,10 @@ public class DeleteEntityAction extends SecureAction {
         Entity deleteMe;
         if (type == EntityType.USER) {
             etype = USER;
-            deleteMe = new AnonymousIdentityReference(User.class, header.getStrId(), config.getOid(), header.getName());
+            deleteMe = new AnonymousUserReference(header.getStrId(), config.getOid(), header.getName());
         } else if (type == EntityType.GROUP) {
             etype = GROUP;
-            deleteMe = new AnonymousIdentityReference(Group.class, header.getStrId(), config.getOid(), header.getName());
+            deleteMe = new AnonymousGroupReference(header.getStrId(), config.getOid(), header.getName());
         } else if (type == EntityType.ID_PROVIDER_CONFIG) {
             etype = ID_PROVIDER_CONFIG;
             deleteMe = config;

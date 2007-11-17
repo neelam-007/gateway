@@ -1,57 +1,38 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.event;
 
 import com.l7tech.identity.*;
-import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedGroupMembership;
-import com.l7tech.identity.fed.FederatedUser;
-import com.l7tech.identity.internal.InternalGroup;
-import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class GroupMembershipEventInfo {
     public GroupMembershipEventInfo(final GroupMembership gm, String verb, ApplicationContext springContext) {
-        Class userClass, groupClass;
         long providerOid = gm.getThisGroupProviderOid();
-        if ((gm instanceof FederatedGroupMembership)) {
-            userClass = FederatedUser.class;
-            groupClass = FederatedGroup.class;
-        } else {
-            userClass = InternalUser.class;
-            groupClass = InternalGroup.class;
-        }
-
         try {
-            NamedEntity g = null;
-            NamedEntity u = null;
+            Group g = null;
+            User u = null;
             IdentityProviderFactory ipf = (IdentityProviderFactory)springContext.getBean("identityProviderFactory");
             IdentityProvider provider = ipf.getProvider(providerOid);
             if (provider != null) {
-                g = (PersistentGroup)provider.getGroupManager().findByPrimaryKey(gm.getThisGroupId());
-                u = (PersistentUser)provider.getUserManager().findByPrimaryKey(gm.getMemberUserId());
+                g = provider.getGroupManager().findByPrimaryKey(gm.getThisGroupId());
+                u = provider.getUserManager().findByPrimaryKey(gm.getMemberUserId());
             }
 
-            if (g == null) g = new AnonymousEntityReference(groupClass, gm.getThisGroupId());
-            if (u == null) u = new AnonymousEntityReference(userClass, gm.getMemberUserId());
+            if (g == null) g = new AnonymousGroupReference(gm.getThisGroupId(), gm.getThisGroupProviderOid(), null);
+            if (u == null) u = new AnonymousUserReference(gm.getMemberUserId(), gm.getThisGroupProviderOid(), null);
             this.group = g;
             String name = u.getName();
-            if (name == null && u instanceof User) {
-                name = ((User)u).getLogin();
-                if (name == null) name = ((User)u).getEmail();
+            if (name == null) {
+                name = u.getLogin();
+                if (name == null) name = u.getEmail();
             }
             this.note = "user #" + gm.getMemberUserId() + " (" + name + ") " + verb;
         } catch (FindException e) {
@@ -59,7 +40,7 @@ public class GroupMembershipEventInfo {
         }
     }
 
-    public Entity getGroup() {
+    public Group getGroup() {
         return group;
     }
 
@@ -67,6 +48,6 @@ public class GroupMembershipEventInfo {
         return note;
     }
 
-    private final Entity group;
+    private final Group group;
     private final String note;
 }

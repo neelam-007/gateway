@@ -6,36 +6,28 @@
  */
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.console.action.ThroughputQuotaPropertiesAction;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Policy tree node for ThroughputQuota assertion.
  *
  * @author flascelles@layer7-tech.com
  */
-public class ThroughputQuotaTreeNode extends LeafAssertionTreeNode {
-
-    public ThroughputQuotaTreeNode(Assertion assertion) {
+public class ThroughputQuotaTreeNode extends LeafAssertionTreeNode<ThroughputQuota> {
+    public ThroughputQuotaTreeNode(ThroughputQuota assertion) {
         super(assertion);
-        if (assertion instanceof ThroughputQuota) {
-            nodeAssertion = (ThroughputQuota)assertion;
-        } else
-            throw new IllegalArgumentException("assertion passed must be of type " +
-              ThroughputQuota.class.getName());
     }
+
     public String getName() {
-        String nodeName = null;
-        if (nodeAssertion.getCounterStrategy() == ThroughputQuota.DECREMENT) {
-            nodeName = "Decrement counter " + nodeAssertion.getCounterName();
+        String nodeName;
+        if (assertion.getCounterStrategy() == ThroughputQuota.DECREMENT) {
+            nodeName = "Decrement counter " + assertion.getCounterName();
         } else {
-            nodeName = "Max Throughput " + nodeAssertion.getCounterName() + ": " +
-                       nodeAssertion.getQuota() + " per " + timeUnitStr(nodeAssertion.getTimeUnit());
+            nodeName = "Max Throughput " + assertion.getCounterName() + ": " +
+                       assertion.getQuota() + " per " + timeUnitStr(assertion.getTimeUnit());
         }
         return nodeName;
     }
@@ -57,19 +49,4 @@ public class ThroughputQuotaTreeNode extends LeafAssertionTreeNode {
     public Action getPreferredAction() {
         return new ThroughputQuotaPropertiesAction(this);
     }
-
-    public Action[] getActions() {
-        java.util.List list = new ArrayList();
-        list.add(getPreferredAction());
-        list.addAll(Arrays.asList(super.getActions()));
-        return (Action[])list.toArray(new Action[]{});
-    }
-
-    public boolean canDelete() {
-        return true;
-    }
-
-    public ThroughputQuota getAssertion() {return nodeAssertion;}
-    private ThroughputQuota nodeAssertion;
-
 }

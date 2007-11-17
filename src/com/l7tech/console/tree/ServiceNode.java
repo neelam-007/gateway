@@ -1,14 +1,16 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.common.policy.Policy;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.DeleteServiceAction;
-import com.l7tech.console.action.EditServicePolicyAction;
 import com.l7tech.console.action.EditServiceProperties;
 import com.l7tech.console.action.PublishPolicyToUDDIRegistry;
+import com.l7tech.console.action.EditPolicyAction;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
@@ -30,7 +32,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ServiceNode extends EntityHeaderNode {
+public class ServiceNode extends PolicyEntityNode {
     static final Logger log = Logger.getLogger(ServiceNode.class.getName());
     private PublishedService svc;
 
@@ -55,6 +57,16 @@ public class ServiceNode extends EntityHeaderNode {
         return svc != null ? svc : (svc = refreshPublishedService());
     }
 
+    @Override
+    public Policy getPolicy() throws FindException {
+        return getPublishedService().getPolicy();
+    }
+
+    @Override
+    public Entity getEntity() throws FindException {
+        return getPublishedService();
+    }
+
     /**
      * Refresh info from server, including checking for deleted service.
      * If the service has been deleted, this will prune it from the services tree before returning.
@@ -68,7 +80,7 @@ public class ServiceNode extends EntityHeaderNode {
         // throw something if null, the service may have been deleted
         if (svc == null) {
             TopComponents creg = TopComponents.getInstance();
-            JTree tree = (JTree)creg.getComponent(ServicesTree.NAME);
+            JTree tree = (JTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
             if (tree !=null) {
                 DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                 Enumeration kids = this.getParent().children();
@@ -91,7 +103,8 @@ public class ServiceNode extends EntityHeaderNode {
     /**
      * Nullify service,  will cause service reload next time.
      */
-    public void clearServiceHolder() {
+    public void clearCachedEntities() {
+        super.clearCachedEntities();
         svc = null;
     }
 
@@ -102,26 +115,25 @@ public class ServiceNode extends EntityHeaderNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
+        final Collection<Action> actions = new ArrayList<Action>();
+
         PublishedService ps;
         try {
             ps = getPublishedService();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.log(Level.WARNING, "Error retrieving service", e);
             return new Action[0];
         }
+
         if (ps == null) {
             log.warning("Cannot retrieve service");
             return new Action[0];
         }
 
-        boolean s = svc.isSoap();
-        boolean a = TopComponents.getInstance().isApplet();
-        Collection<Action> actions = new ArrayList<Action>();
-
-        actions.add(new EditServicePolicyAction(this));
+        actions.add(new EditPolicyAction(this));
+        actions.add(new DeleteServiceAction(this));
         actions.add(new EditServiceProperties(this));
-        if (s && !a) actions.add(new PublishPolicyToUDDIRegistry(this));
+        if (svc.isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
         actions.add(new DeleteServiceAction(this));
 
         return actions.toArray(new Action[0]);
@@ -159,10 +171,10 @@ public class ServiceNode extends EntityHeaderNode {
                 WsdlTreeNode node = WsdlTreeNode.newInstance(wsdl, opts);
                 children = null;
                 node.getChildCount();
-                List nodes = Collections.list(node.children());
+                //noinspection unchecked
+                List<MutableTreeNode> nodes = Collections.list(node.children());
                 int index = 0;
-                for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
-                    MutableTreeNode n = (MutableTreeNode)iterator.next();
+                for (MutableTreeNode n : nodes) {
                     insert(n, index++);
                 }
             }
@@ -177,7 +189,7 @@ public class ServiceNode extends EntityHeaderNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        String nodeName = getServiceName();
+        String nodeName = getEntityName();
         try {
             PublishedService ps = getPublishedService();
             if (ps != null) {
@@ -191,7 +203,7 @@ public class ServiceNode extends EntityHeaderNode {
         return nodeName;
     }
 
-    private String getServiceName() {
+    protected String getEntityName() {
         return getEntityHeader().getName();
     }
 
@@ -205,13 +217,12 @@ public class ServiceNode extends EntityHeaderNode {
             return "com/l7tech/console/resources/services_disabled16.png";
         }
         else if (svc.isDisabled()) {
-            if(svc.isSoap()) {
-                return "com/l7tech/console/resources/services_disabled16.png";
-            } else {
+            if (svc == null || !svc.isSoap()) {
                 return "com/l7tech/console/resources/xmlObject_disabled16.png";
-            }                                                               
-        }
-        else {
+            } else {
+                return "com/l7tech/console/resources/services_disabled16.png";
+            }
+        } else {
             if(svc.isSoap()) {
                 return "com/l7tech/console/resources/services16.png";
             } else {

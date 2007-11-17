@@ -23,14 +23,6 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert> imple
         throw new RuntimeException("Not implemented");
     }
 
-    public void update(TrustedCert cert) throws UpdateException {
-        throw new RuntimeException("Not implemented");
-    }
-
-    public void delete(long oid) throws FindException, DeleteException {
-        throw new RuntimeException("Not implemented");
-    }
-
     public TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, CertificateException {
         throw new RuntimeException("Not implemented");
     }

@@ -1,3 +1,6 @@
+/**
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.security;
 
 import com.l7tech.admin.AdminContext;
@@ -9,10 +12,12 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.VersionException;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.CertUtils;
@@ -33,7 +38,6 @@ import com.l7tech.spring.remoting.rmi.NamingURL;
 import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
 import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
 import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
-import com.l7tech.common.transport.TransportAdmin;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -55,10 +59,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Default SSM <code>SecurityProvider</code> implementaiton that is a central security
+ * Default SSM <code>SecurityProvider</code> implementation that is a central security
  * component in SSM.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class SecurityProviderImpl extends SecurityProvider
   implements ApplicationContextAware, ApplicationListener {
@@ -91,7 +93,7 @@ public class SecurityProviderImpl extends SecurityProvider
             AdminLogin adminLogin = getAdminLoginRemoteReference(host);
 
             // dummy call, just to establish SSL connection (if none)
-            byte[] maybeSSGCert = adminLogin.getServerCertificate("admin");
+            adminLogin.getServerCertificate("admin");
             if (Thread.currentThread().isInterrupted()) throw new LoginException("Login interrupted.");
 
             // check cert if new
@@ -219,6 +221,7 @@ public class SecurityProviderImpl extends SecurityProvider
                         (KerberosAdmin) applicationContext.getBean("kerberosAdmin"),
                         (RbacAdmin) applicationContext.getBean("rbacAdmin"),
                         (TransportAdmin) applicationContext.getBean("transportAdmin"),
+                        (PolicyAdmin) applicationContext.getBean("policyAdmin"),
                         "", "");
 
         synchronized (this) {

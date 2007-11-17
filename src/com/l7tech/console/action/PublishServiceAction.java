@@ -1,7 +1,10 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.event.EntityEvent;
@@ -10,26 +13,22 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.panels.PublishServiceWizard;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.policy.assertion.Operation;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.awt.*;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
  * service wizard.                                             l
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
  */
 public class PublishServiceAction extends SecureAction {
     static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
@@ -80,9 +79,9 @@ public class PublishServiceAction extends SecureAction {
          */
         public void entityAdded(final EntityEvent ev) {
             EntityHeader eh = (EntityHeader)ev.getEntity();
-            JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
+            JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
             if (tree != null) {
-                AbstractTreeNode root = (AbstractTreeNode)tree.getModel().getRoot();
+                AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
                 TreeNode[] nodes = root.getPath();
                 TreePath nPath = new TreePath(nodes);
                 if (tree.hasBeenExpanded(nPath)) {
@@ -93,7 +92,7 @@ public class PublishServiceAction extends SecureAction {
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
-                            new EditServicePolicyAction((ServiceNode)sn).invoke();
+                            new EditPolicyAction((ServiceNode)sn).invoke();
                         }
                     });
                 }

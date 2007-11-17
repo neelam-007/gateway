@@ -1,5 +1,6 @@
 package com.l7tech.server.event;
 
+import com.l7tech.objectmodel.PersistentEntity;
 import org.springframework.context.ApplicationEvent;
 
 import com.l7tech.objectmodel.PersistentEntity;
@@ -30,7 +31,7 @@ public class EntityInvalidationEvent extends ApplicationEvent {
      */
     public EntityInvalidationEvent(final Object source,
                                    final Class<? extends Entity> entityClass,
-                                   final long[] entityIds, 
+                                   final long[] entityIds,
                                    final char[] entityOps)
     {
         super(source);

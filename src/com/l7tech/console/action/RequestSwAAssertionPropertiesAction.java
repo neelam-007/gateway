@@ -1,31 +1,30 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.RequestSwAAssertionPolicyTreeNode;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
-import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.panels.RequestSwAAssertionDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.policy.assertion.RequestSwAAssertion;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.tree.policy.RequestSwAAssertionPolicyTreeNode;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.RequestSwAAssertion;
 
 import javax.swing.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.awt.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-/**
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
- * <p> @author fpang </p>
- * $Id$
- */
 public class RequestSwAAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(RequestSwAAssertionPropertiesAction.class.getName());
 
@@ -70,20 +69,23 @@ public class RequestSwAAssertionPropertiesAction extends NodeAction {
                 if(currentPanel == null || !(currentPanel instanceof PolicyEditorPanel)) {
                     logger.warning("Internal error: current workspace is not a PolicyEditorPanel instance");
                 } else {
-                    ServiceNode servicenode = ((PolicyEditorPanel)currentPanel).getServiceNode();
-                    try {
-                        if (!(servicenode.getPublishedService().isSoap())) {
-                            JOptionPane.showMessageDialog(null, "This assertion is not supported by non-soap services.");
-                        } else {
-                            RequestSwAAssertionDialog d = new RequestSwAAssertionDialog(f, (RequestSwAAssertion)node.asAssertion());
-                            d.setModal(true);
-                            d.pack();
-                            Utilities.centerOnScreen(d);
-                            d.addPolicyListener(listener);
-                            DialogDisplayer.display(d);
+                    final PolicyEntityNode pn = ((PolicyEditorPanel) currentPanel).getPolicyNode();
+                    if (pn instanceof ServiceNode) {
+                        ServiceNode sn = (ServiceNode) pn;
+                        try {
+                            if (!(sn.getPublishedService().isSoap())) {
+                                JOptionPane.showMessageDialog(null, "This assertion is not supported by non-soap services.");
+                            } else {
+                                RequestSwAAssertionDialog d = new RequestSwAAssertionDialog(f, (RequestSwAAssertion)node.asAssertion());
+                                d.setModal(true);
+                                d.pack();
+                                Utilities.centerOnScreen(d);
+                                d.addPolicyListener(listener);
+                                DialogDisplayer.display(d);
+                            }
+                        } catch (FindException e) {
+                            log.log(Level.INFO, "Error getting Policy", e);
                         }
-                    } catch (FindException e) {
-                        log.log(Level.INFO, "Error getting Published Service", e);
                     }
                 }
             }
