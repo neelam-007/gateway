@@ -1,12 +1,11 @@
 package com.l7tech.console.logging;
 
+import com.l7tech.admin.GatewayRuntimeException;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.common.gui.ErrorMessageDialog;
-import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.admin.GatewayRuntimeException;
 
-import java.awt.Frame;
+import java.awt.*;
 import java.util.logging.Level;
 
 /**
@@ -33,7 +32,7 @@ public class GatewayFailureErrorHandler implements ErrorHandler {
             if (topParent != null) {
                 topParent.repaint();
             }
-            DialogDisplayer.showMessageDialog(topParent, null, ex.getMessage(), null);
+            DialogDisplayer.showMessageDialog(topParent, "Error", ex.getMessage(), null);
         } else {
             // pass to next handle in the handle chain
             event.handle();
