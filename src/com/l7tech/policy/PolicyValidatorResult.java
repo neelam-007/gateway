@@ -184,7 +184,7 @@ public class PolicyValidatorResult implements Serializable {
         }
 
         public Error(Assertion error, AssertionPath ap, String message, Throwable throwable) {
-            super(error.getOwnerPolicyOid(), error.getOrdinal(), ap.getPathOrder(), message, throwable);
+            super(error.getOwnerPolicyOid(), error.getOrdinal(), ap == null ? 0 : ap.getPathOrder(), message, throwable);
         }
     }
 
@@ -194,7 +194,7 @@ public class PolicyValidatorResult implements Serializable {
         }
 
         public Warning(Assertion warning, AssertionPath ap, String message, Throwable throwable) {
-            super(warning.getOwnerPolicyOid(), warning.getOrdinal(), ap.getPathOrder(), message, throwable);
+            super(warning.getOwnerPolicyOid(), warning.getOrdinal(), ap == null ? 0 : ap.getPathOrder(), message, throwable);
         }
     }
 }
