@@ -1,11 +1,15 @@
 package com.l7tech.common.security;
 
-import com.l7tech.common.util.SyspropUtil;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SyspropUtil;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.SecureRandom;
 import java.util.Random;
 
 /**
@@ -17,7 +21,8 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
     public static final String PROP_MASTER_PASSWORD_PATH = "com.l7tech.masterPasswordPath";
 
     private static final String OBFUSCATION_PREFIX = "$L7O$"; // do not change this, for backward compat.  can add new schemes, though
-    private static long OBFUSCATION_SEED = 171717L; // do not change this, for backward compat.  can add new schemes, though
+    private static final long OBFUSCATION_SEED = 171717L; // do not change this, for backward compat.  can add new schemes, though
+    private static final Random random = new SecureRandom();
 
     private final File masterPasswordFile;
 
@@ -48,7 +53,7 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
      * @return the obfuscated form of the password.
      */
     public static String obfuscate(String clear) {
-        long salt = new Random().nextLong();
+        long salt = random.nextLong();
         return obfuscate(clear, salt);
     }
 
@@ -62,6 +67,7 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
      */
     public static String obfuscate(String clear, long salt) {
         try {
+            //noinspection UnsecureRandomNumberGeneration
             Random rand = new Random(OBFUSCATION_SEED + salt);
             byte[] in = clear.getBytes("UTF-8");
             byte[] out = new byte[in.length];
@@ -71,7 +77,7 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
                 out[i] = b;
             }
             byte[] saltBytes = String.valueOf(salt).getBytes("UTF-8");
-            return OBFUSCATION_PREFIX + HexUtils.encodeBase64(saltBytes, true) + "$" + HexUtils.encodeBase64(out, true);
+            return OBFUSCATION_PREFIX + HexUtils.encodeBase64(saltBytes, true) + '$' + HexUtils.encodeBase64(out, true);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -94,6 +100,7 @@ public class DefaultMasterPasswordFinder implements MasterPasswordFinder {
         if (dollarPos < 1 || dollarPos >= obfuscated.length() - 1)
             throw new IOException("Invalid obfuscated password");
         obfuscated = obfuscated.substring(dollarPos + 1);
+        //noinspection UnsecureRandomNumberGeneration
         Random rand = new Random(OBFUSCATION_SEED + salt);
         byte[] in = HexUtils.decodeBase64(obfuscated);
         byte[] out = new byte[in.length];
