@@ -177,7 +177,7 @@ public class ClusterStatusWorker extends SwingWorker {
                 for (int i = 0; i < entityHeaders.length; i++) {
 
                     header = entityHeaders[i];
-                    if (header.getType().toString() == com.l7tech.objectmodel.EntityType.SERVICE.toString()) {
+                    if (header.getType().toString().equals(com.l7tech.objectmodel.EntityType.SERVICE.toString())) {
 
                         ServiceUsage su = new ServiceUsage();
                         su.setServiceid(header.getOid());
