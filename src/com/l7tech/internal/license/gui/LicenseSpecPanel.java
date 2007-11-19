@@ -640,7 +640,7 @@ public class LicenseSpecPanel extends JPanel {
             for (byte b : bytes) {
                 if (b == '\r' || b == '\n' || b == '\t')
                     continue;
-                if (b < 21 || b > 127) {
+                if (b < 21) {
                     assumeAscii = false;
                     break;
                 }
