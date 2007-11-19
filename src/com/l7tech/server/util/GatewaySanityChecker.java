@@ -41,18 +41,15 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
     /**
      * Key is the class of {@link SystemEvent} on which the task should be performed;
      * Value is a {@link Set} of classnames of the {@link UpgradeTask}s that are allowed
-     * to be run on that event.
+     * to be run on that event.  Tasks listed under the null key will be run immediately in
+     * {@link #afterPropertiesSet()}.
      */
-    private static final Map<Class<? extends SystemEvent>, Set<String>> whitelist = new HashMap<Class<? extends SystemEvent>, Set<String>>();
-    static {
-        whitelist.put(Starting.class, new HashSet<String>(Arrays.asList(
-            "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions",
-            "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies"
-        )));
-        whitelist.put(Started.class, new HashSet<String>(Arrays.asList(
-            "com.l7tech.server.upgrade.Upgrade35To36AddRoles"
-        )));
-    }
+    private static final Map<Class<? extends SystemEvent>, Set<String>> whitelist =
+        Collections.unmodifiableMap(new HashMap<Class<? extends SystemEvent>, Set<String>>() {{
+            put(null,           new HashSet<String>(Arrays.asList("com.l7tech.server.upgrade.Upgrade42To43MigratePolicies")));
+            put(Starting.class, new HashSet<String>(Arrays.asList("com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions")));
+            put(Started.class,  new HashSet<String>(Arrays.asList("com.l7tech.server.upgrade.Upgrade35To36AddRoles")));
+        }});
 
     private final ClusterPropertyManager clusterPropertyManager;
     private final PlatformTransactionManager transactionManager; // required for TransactionTemplate
@@ -88,23 +85,44 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
         Map<Long, ClusterProperty> tasks = new HashMap<Long, ClusterProperty>();
         List<Long> taskOrder = new ArrayList<Long>();
 
+        Map<Long, ClusterProperty> startupTasks = new HashMap<Long, ClusterProperty>();
+        List<Long> startupTaskOrder = new ArrayList<Long>();
+
         for (ClusterProperty prop : props) {
             String name = prop.getName();
             if (name.startsWith(CPROP_PREFIX_UPGRADE) && name.length() > CPROP_PREFIX_UPGRADE.length()) {
-                String value = prop.getValue();
+                String classname = prop.getValue();
 
-                if (!isUpgradeTaskRecognized(value)) {
-                    auditor.logAndAudit(BootMessages.UPGRADE_TASK_IGNORED, "unrecognized upgrade task value: " + name + "=" + value);
+                if (!isUpgradeTaskRecognized(classname)) {
+                    auditor.logAndAudit(BootMessages.UPGRADE_TASK_IGNORED, "unrecognized upgrade task class name: " + name + "=" + classname);
                     continue;
                 }
 
                 final long ordinal;
                 try {
                     ordinal = Long.parseLong(name.substring(CPROP_PREFIX_UPGRADE.length()));
-                    tasks.put(ordinal, prop);
-                    taskOrder.add(ordinal);
+
+                    if (whitelist.get(null).contains(classname)) {
+                        startupTasks.put(ordinal, prop);
+                        startupTaskOrder.add(ordinal);
+                    } else {
+                        tasks.put(ordinal, prop);
+                        taskOrder.add(ordinal);
+                    }
                 } catch (NumberFormatException nfe) {
                     auditor.logAndAudit(BootMessages.UPGRADE_TASK_IGNORED, new String[]{"invalid ordinal in upgrade.task cluster property: " + name + ": " + ExceptionUtils.getMessage(nfe)}, nfe);
+                }
+            }
+        }
+
+        if (!startupTaskOrder.isEmpty()) {
+            for (Long ordinal : startupTaskOrder) {
+                ClusterProperty prop = startupTasks.get(ordinal);
+                try {
+                    doUpgradeTask(prop);
+                } catch (FatalUpgradeException e) {
+                    auditor.logAndAudit(BootMessages.UPGRADE_TASK_FATAL, new String[] { "Startup task failed: " + ExceptionUtils.getMessage(e) }, e);
+                    throw e;
                 }
             }
         }
@@ -151,11 +169,11 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
      * Caller is responsible for ensuring that the upgrade task
      * classnames have already been whitelisted, and sorting the list.
      *
-     * @param prop cluster property containing the upgrade task to run.
+     * @param property cluster property containing the upgrade task to run.
      */
-    private void doUpgradeTask(final ClusterProperty propp) throws FatalUpgradeException {
-        final String taskName = propp.getName();
-        final String className = propp.getValue();
+    private void doUpgradeTask(final ClusterProperty property) throws FatalUpgradeException {
+        final String taskName = property.getName();
+        final String className = property.getValue();
         logger.info("Running upgrade task: " + taskName + "=" + className);
 
         // Instantiate the upgrade task
@@ -170,7 +188,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
             return;
         }
 
-        runTask(task, propp);
+        runTask(task, property);
     }
 
     /**

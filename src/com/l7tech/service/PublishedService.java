@@ -232,7 +232,6 @@ public class PublishedService extends NamedEntityImp {
     }
 
     public void setPolicy(Policy policy) {
-        if (policy == null) throw new IllegalArgumentException("Policy must be non-null");
         this.policy = policy;
     }
 
