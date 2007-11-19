@@ -70,8 +70,8 @@ public final class SamlAssertionV2 extends SamlAssertion {
      *
      * @param ass the XML element containing the assertion.  Must be a saml:Assertion element.
      * @param securityTokenResolver  the resolver for thumbprint KeyInfos, or null for no thumbprint support.
-     * @throws org.xml.sax.SAXException    if the format of this assertion is invalid or not supported
-     * @throws org.xml.sax.SAXException    if the KeyInfo used a thumbprint, but no thumbprint resolver was supplied.
+     * @throws org.xml.sax.SAXException    if the format of this assertion is invalid or not supported; or,
+     *                                     if the KeyInfo used a thumbprint, but no thumbprint resolver was supplied.
      */
     public SamlAssertionV2(Element ass,
                            SecurityTokenResolver securityTokenResolver) throws SAXException
@@ -88,6 +88,12 @@ public final class SamlAssertionV2 extends SamlAssertion {
             assertion = AssertionDocument.Factory.parse(ass).getAssertion();
 
             SubjectType subject = assertion.getSubject();
+            if (subject == null) {
+                String msg = "Could not find the subject in the assertion :\n" + XmlUtil.nodeToFormattedString(ass);
+                logger.warning(msg);
+                throw new SAXException(msg);
+            }
+
             NameIDType nameIdentifier = subject.getNameID();
             if (nameIdentifier != null) {
                 this.nameIdentifierFormat = nameIdentifier.getFormat();
@@ -107,12 +113,6 @@ public final class SamlAssertionV2 extends SamlAssertion {
                 AuthnStatementType authenticationStatement = authenticationStatements[lastElementIndex];
                 AuthnContextType authnContext = authenticationStatement.getAuthnContext();
                 authenticationMethod = authnContext.getAuthnContextClassRef();
-            }
-
-            if (subject == null) {
-                String msg = "Could not find the subject in the assertion :\n" + XmlUtil.nodeToFormattedString(ass);
-                logger.warning(msg);
-                throw new SAXException(msg);
             }
 
             issueInstant = assertion.getIssueInstant();
@@ -165,9 +165,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
                         if(logger.isLoggable(Level.FINE))
                             logger.fine("Got " + keyInfos.length + " KeyInfos.");
 
-                        for (int i = 0; i < keyInfos.length; i++) {
-                            KeyInfoType keyInfo = keyInfos[i];
-
+                        for (KeyInfoType keyInfo : keyInfos) {
                             if (subjectCertificate != null)
                                 break; //TODO determine which cert to use?
 
@@ -176,7 +174,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
                                 X509DataType x509data = x509datas[0];
                                 subjectCertificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
                             } else {
-                                if(logger.isLoggable(Level.FINE))
+                                if (logger.isLoggable(Level.FINE))
                                     logger.fine("Looking for STR.");
 
                                 Element keyInfoEl = (Element)keyInfo.getDomNode();
@@ -324,7 +322,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
             sigContext.setIDResolver(new IDResolver() {
                 public Element resolveID(Document doc, String s) {
                     if (!s.equals(getAssertionId()))
-                        throw new ResolveIdException("SAML signature contains signedinfo reference to unexpected element ID \"" + s + "\"");
+                        throw new ResolveIdException("SAML signature contains signedinfo reference to unexpected element ID \"" + s + '\"');
                     resolvedAssertionId[0] = true;
                     return assertionElement;
                 }
@@ -334,7 +332,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
             Validity validity = sigContext.verify(signature, signingKey);
 
             if (!validity.getCoreValidity()) {
-                StringBuffer msg = new StringBuffer("Unable to verify signature of SAML assertion: Validity not achieved. " + validity.getSignedInfoMessage());
+                StringBuilder msg = new StringBuilder("Unable to verify signature of SAML assertion: Validity not achieved. " + validity.getSignedInfoMessage());
                 for (int i = 0; i < validity.getNumberOfReferences(); i++) {
                     msg.append("\n\tElement ").append(validity.getReferenceURI(i)).append(": ").append(validity.getReferenceMessage(i));
                 }
