@@ -5,14 +5,12 @@ package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
-import com.l7tech.common.mime.MimeBody;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.message.*;
+import com.l7tech.common.mime.MimeBody;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
@@ -20,18 +18,21 @@ import com.l7tech.common.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.processor.*;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.Background;
-import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.SoapFaultUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.InvalidDocumentSignatureException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.SoapFaultLevel;
-import com.l7tech.common.xml.InvalidDocumentSignatureException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.server.hpsoam.WSMFService;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.HttpSessionPolicyContextCache;
 import com.l7tech.server.message.PolicyContextCache;
@@ -54,6 +55,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicLong;
@@ -75,6 +77,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final AuditContext auditContext;
     private final ServerConfig serverConfig;
     private final TrafficLogger trafficLogger;
+    private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
     private final AtomicLong signedAttachmentMaxSize = new AtomicLong();
 
     /**
@@ -451,6 +454,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 metrics.addRequest(authorizedRequest, completedRequest, frontTime, backTime);
             }
 
+            if (WSMFService.isEnabled()) {
+                for (TrafficMonitor tm : trafficMonitors) {
+                    tm.recordTransactionStatus(context, status, context.getEndTime() - context.getStartTime());
+                }
+            }
+
             try {
                 getApplicationContext().publishEvent(new MessageProcessed(context, status, this));
             } catch (Throwable t) {
@@ -458,6 +467,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
             // this may or may not log traffic based on server properties (by default, not)
             trafficLogger.log(context);
+        }
+    }
+
+    public void registerTrafficMonitorCallback(TrafficMonitor tm) {
+        if (!trafficMonitors.contains(tm)) {
+            trafficMonitors.add(tm);
         }
     }
 

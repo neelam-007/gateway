@@ -178,6 +178,11 @@
         </constructor-arg>
     </bean>
 
+    <bean id="wsmfService" class="com.l7tech.server.hpsoam.WSMFService">
+        <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="messageProcessor"/>
+    </bean>
+
     <!-- general server side HTTP client trust manager -->
     <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
         <constructor-arg ref="trustedCertManager"/>
