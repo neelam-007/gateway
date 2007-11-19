@@ -1,24 +1,13 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import java.util.Collection;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import x0Assertion.oasisNamesTcSAML2.SubjectType;
-import x0Assertion.oasisNamesTcSAML2.NameIDType;
-import x0Assertion.oasisNamesTcSAML2.SubjectConfirmationType;
-import x0Assertion.oasisNamesTcSAML2.ConditionsType;
-import x0Assertion.oasisNamesTcSAML2.AudienceRestrictionType;
-import x0Assertion.oasisNamesTcSAML2.SubjectConfirmationDataType;
-
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.ArrayUtils;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import x0Assertion.oasisNamesTcSAML2.*;
+
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Validation for SAML 2.x Subject and Conditions.
@@ -36,6 +25,7 @@ class Saml2SubjectAndConditionValidate {
     static void validateSubject(RequestWssSaml requestWssSaml, SubjectType subject, Calendar now, Collection validationResults) {
         if (subject == null) {
             validationResults.add(newError("Subject Required", null, null, null));
+            return; // no point trying to continue validating a null subject
         }
         final String nameQualifier = requestWssSaml.getNameQualifier();
         NameIDType nameIdentifierType = subject.getNameID();
