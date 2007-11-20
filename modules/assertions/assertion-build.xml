@@ -43,8 +43,8 @@
         <attribute name="srcdir"/>
         <attribute name="destdir"/>
         <attribute name="debug" default="on"/>
-        <attribute name="target" default="1.4"/>
-        <attribute name="source" default="1.4"/>
+        <attribute name="target" default="1.5"/>
+        <attribute name="source" default="1.5"/>
         <attribute name="optimize" default="on"/>
         <attribute name="classpathref" default="compile.classpath"/>
         <attribute name="include" default="**/*.form"/>
@@ -154,6 +154,7 @@
                destdir="${build.classes}"
                debug="on"
                target="1.5" 
+               source="1.5"
                classpathref="compile.classpath">
         </javac>
 
@@ -189,6 +190,8 @@
         </copy>
         <javac srcdir="tests"
                debug="on"
+               target="1.5" 
+               source="1.5"
                destdir="${build.classes}-test">
             <classpath>
                 <path refid="compile.test.classpath"/>
