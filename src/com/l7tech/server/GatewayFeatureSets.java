@@ -291,7 +291,8 @@ public class GatewayFeatureSets {
             "Adds HTTP form/MIME conversion assertions",
             fs(validationFw),
             ass(HttpFormPost.class),
-            ass(InverseHttpFormPost.class));
+            ass(InverseHttpFormPost.class),
+            mass("assertion:WsAddressing"));
 
         // Message routing
         GatewayFeatureSet routingIps =

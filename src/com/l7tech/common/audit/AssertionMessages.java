@@ -509,7 +509,7 @@ public class AssertionMessages extends Messages {
     public static final M WSDLOPERATION_NOMATCH               = m(8100, Level.INFO, "Could not match WSDL operation ({0} instead of {1})");
     public static final M WSDLOPERATION_CANNOTIDENTIFY        = m(8101, Level.INFO, "Cannot identify any WSDL operation from request");
 
-    public static final M HTTPNEGOTIATE_WARNING               = m(8200, Level.WARNING, "“Could not process Kerberos token (Negotiate); error is ''{0}''");
+    public static final M HTTPNEGOTIATE_WARNING               = m(8200, Level.WARNING, "Could not process Kerberos token (Negotiate); error is ''{0}''");
 
     public static final M FTP_CREDENTIAL_NOT_FTP              = m(8300, Level.INFO, "Request not FTP; unable to extract FTP credentials.");
     public static final M FTP_CREDENTIAL_NO_AUTH              = m(8301, Level.FINE, "Not authenticated.");
@@ -530,4 +530,8 @@ public class AssertionMessages extends Messages {
     public static final M IDENTITY_ATTRIBUTE_MULTI_USERS = m(8451, Level.INFO, "Multiple users from the expected identity provider have been authenticated; choosing the first");
 
     public static final M INCLUDE_POLICY_EXCEPTION       = m(8500, Level.WARNING, "Included policy was updated, and is now invalid: {0}");
+
+    public static final M WS_ADDRESSING_NO_HEADERS            = m(8550, Level.WARNING, "Required WS-Addressing headers not present");
+    public static final M WS_ADDRESSING_NO_SIGNED_HEADERS     = m(8551, Level.WARNING, "Required signed WS-Addressing headers not present");
+    public static final M WS_ADDRESSING_HEADERS_OK            = m(8552, Level.FINE, "WS-Addressing headers present");
 }

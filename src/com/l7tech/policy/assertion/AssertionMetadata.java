@@ -235,6 +235,19 @@ public interface AssertionMetadata {
     String POLICY_VALIDATOR_CLASSNAME = "policyValidatorClassname";
 
     /**
+     * Functions.Unary<Set<ValidatorFlag>,Assertion> instance.
+     *
+     * <p>Allow an assertion to supply additional information on it's policy
+     * preconditions or other validation aspects.</p>
+     *
+     * <p>This factory should return all validation flags that are applicable
+     * to the passed assertion instance.</p>
+     *
+     * <p>The default value is null.</p>
+     */
+    String POLICY_VALIDATOR_FLAGS_FACTORY = "policyValidatorFlagsFactory";
+
+    /**
      * String classname.  Name of ActionListener subclass to invoke when the Properties.. action is invoked.
      * <p/>
      * This is ingored if a valid PROPERTIES_ACTION_FACTORY is provided.

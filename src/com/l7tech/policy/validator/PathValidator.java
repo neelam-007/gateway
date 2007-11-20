@@ -1,6 +1,7 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.util.Functions;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -374,7 +375,8 @@ class PathValidator {
         } else if (a instanceof RequestWssIntegrity ||
                     a instanceof ResponseWssConfidentiality ||
                    (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired()) ||
-                   (a instanceof RequestSwAAssertion && ((RequestSwAAssertion)a).requiresSignature())) {
+                   (a instanceof RequestSwAAssertion && ((RequestSwAAssertion)a).requiresSignature()) ||
+                   (hasFlag(a, ValidatorFlag.REQUIRE_SIGNATURE))) {
             // REASONS FOR THIS RULE
             //
             // 1. For RequestWssIntegrity:
@@ -490,6 +492,23 @@ class PathValidator {
                 }
             }
         }
+    }
+
+    /**
+     * Check if the assertions validation metadata contains the given flag 
+     */
+    private boolean hasFlag(final Assertion a, final ValidatorFlag flag) {
+        boolean flagged = false;
+
+        Functions.Unary<Set<ValidatorFlag>,Assertion> flagAccessor =
+            (Functions.Unary<Set<ValidatorFlag>,Assertion>) a.meta().get(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY);
+
+        if ( flagAccessor != null ) {
+            Set<ValidatorFlag> flags = flagAccessor.call(a);
+            flagged = flags!=null && flags.contains(flag);            
+        }
+
+        return flagged;
     }
 
     private void processRouting(RoutingAssertion a) {
