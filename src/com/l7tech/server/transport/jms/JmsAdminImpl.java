@@ -8,13 +8,15 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,10 +25,14 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsAdminImpl implements JmsAdmin {
+public class JmsAdminImpl implements JmsAdmin, ApplicationContextAware {
+    private static final Logger logger = Logger.getLogger(JmsAdminImpl.class.getName());
+
     private final JmsConnectionManager jmsConnectionManager;
     private final JmsEndpointManager jmsEndpointManager;
     private final JmsPropertyMapper jmsPropertyMapper;
+
+    private ApplicationContext spring;
 
     public JmsAdminImpl(JmsConnectionManager jmsConnectionManager,
                         JmsEndpointManager jmsEndpointManager,
@@ -47,33 +53,28 @@ public class JmsAdminImpl implements JmsAdmin {
      * @throws FindException
      */
     public JmsConnection[] findAllConnections() throws FindException {
-        Collection found = jmsConnectionManager.findAll();
+        Collection<JmsConnection> found = jmsConnectionManager.findAll();
         if (found == null || found.size() < 1) return new JmsConnection[0];
 
-        List results = new ArrayList();
-        for (Iterator i = found.iterator(); i.hasNext();) {
-            JmsConnection conn = (JmsConnection)i.next();
+        List<JmsConnection> results = new ArrayList<JmsConnection>();
+        for (JmsConnection conn : found) {
             results.add(conn);
         }
 
-        return (JmsConnection[])results.toArray(new JmsConnection[0]);
+        return results.toArray(new JmsConnection[0]);
     }
 
     public JmsAdmin.JmsTuple[] findAllTuples() throws FindException {
-        JmsTuple tuple;
-        ArrayList result = new ArrayList();
-        Collection connections = jmsConnectionManager.findAll();
-        for (Iterator i = connections.iterator(); i.hasNext();) {
-            JmsConnection connection = (JmsConnection)i.next();
+        ArrayList<JmsTuple> result = new ArrayList<JmsTuple>();
+        Collection<JmsConnection> connections = jmsConnectionManager.findAll();
+        for (JmsConnection connection : connections) {
             JmsEndpoint[] endpoints = jmsEndpointManager.findEndpointsForConnection(connection.getOid());
-            for (int j = 0; j < endpoints.length; j++) {
-                JmsEndpoint endpoint = endpoints[j];
-                tuple = new JmsTuple(connection, endpoint);
-                result.add(tuple);
+            for (JmsEndpoint endpoint : endpoints) {
+                result.add(new JmsTuple(connection, endpoint));
             }
         }
 
-        return (JmsTuple[])result.toArray(new JmsTuple[0]);
+        return result.toArray(new JmsTuple[0]);
     }
 
     /**
@@ -130,15 +131,15 @@ public class JmsAdminImpl implements JmsAdmin {
      */
     public void testConnection(JmsConnection connection) throws JmsTestException {
         try {
-            JmsUtil.connect(connection).close();
+            JmsUtil.connect(connection, spring).close();
         } catch (JMSException e) {
-            _logger.log(Level.INFO, "Caught JMSException while testing connection", e);
+            logger.log(Level.INFO, "Caught JMSException while testing connection", e);
             throw new JmsTestException(e.toString());
         } catch (NamingException e) {
-            _logger.log(Level.INFO, "Caught NamingException while testing connection", e);
+            logger.log(Level.INFO, "Caught NamingException while testing connection", e);
             throw new JmsTestException(e.toString());
         } catch (JmsConfigException e) {
-            _logger.log(Level.INFO, "Caught JmsConfigException while testing connection", e);
+            logger.log(Level.INFO, "Caught JmsConfigException while testing connection", e);
             throw new JmsTestException(e.toString());
         }
     }
@@ -158,36 +159,34 @@ public class JmsAdminImpl implements JmsAdmin {
         MessageConsumer jmsQueueReceiver = null;
         QueueSender jmsQueueSender = null;
         TopicSubscriber jmsTopicSubscriber = null;
-        Connection jmsConnection = null;
+        Connection jmsConnection;
 
         try {
-            _logger.finer("Connecting to connection " + conn);
-            bag = JmsUtil.connect(conn,
-                    endpoint.getPasswordAuthentication(),
-                    jmsPropertyMapper,
-                    endpoint.getAcknowledgementType()==JmsAcknowledgementType.AUTOMATIC);
+            logger.finer("Connecting to connection " + conn);
+            bag = JmsUtil.connect(conn, endpoint.getPasswordAuthentication(),
+                    jmsPropertyMapper, endpoint.getAcknowledgementType()==JmsAcknowledgementType.AUTOMATIC, spring);
 
             Context jndiContext = bag.getJndiContext();
             jmsConnection = bag.getConnection();
             jmsConnection.start();
 
-            _logger.finer("Connected, getting Session...");
+            logger.finer("Connected, getting Session...");
             Session jmsSession = bag.getSession();
-            _logger.finer("Got Session...");
+            logger.finer("Got Session...");
             if (jmsSession instanceof QueueSession) {
                 QueueSession qs = ((QueueSession)jmsSession);
                 // inbound queue
                 Object o = jndiContext.lookup(endpoint.getDestinationName());
                 if (!(o instanceof Queue)) throw new JmsTestException(endpoint.getDestinationName() + " is not a Queue");
                 Queue q = (Queue)o;
-                _logger.fine("Creating queue receiver for " + q);
+                logger.fine("Creating queue receiver for " + q);
                 jmsQueueReceiver = qs.createReceiver(q);
                 // failure queue
                 if (endpoint.getFailureDestinationName() != null) {
                     Object fo = jndiContext.lookup(endpoint.getFailureDestinationName());
                     if (!(fo instanceof Queue)) throw new JmsTestException(endpoint.getFailureDestinationName() + " is not a Queue");
                     Queue fq = (Queue)fo;
-                    _logger.fine("Creating queue receiver for " + fq);
+                    logger.fine("Creating queue receiver for " + fq);
                     jmsQueueSender = qs.createSender(fq);
                 }
             } else if (jmsSession instanceof TopicSession) {
@@ -195,39 +194,27 @@ public class JmsAdminImpl implements JmsAdmin {
                 Object o = jndiContext.lookup(endpoint.getDestinationName());
                 if (!(o instanceof Topic)) throw new JmsTestException(endpoint.getDestinationName() + " is not a Topic");
                 Topic t = (Topic)o;
-                _logger.fine("Creating topic subscriber for " + t);
+                logger.fine("Creating topic subscriber for " + t);
                 jmsTopicSubscriber = ts.createSubscriber(t);
             } else {
                 // Not much we can do here
             }
         } catch (JMSException e) {
-            _logger.log(Level.INFO, "Caught JMSException while testing endpoint", e);
+            logger.log(Level.INFO, "Caught JMSException while testing endpoint", e);
             throw new JmsTestException(e.toString());
         } catch (NamingException e) {
-            _logger.log(Level.INFO, "Caught NamingException while testing endpoint", e);
+            logger.log(Level.INFO, "Caught NamingException while testing endpoint", e);
             throw new JmsTestException(e.toString());
         } catch (JmsConfigException e) {
-            _logger.log(Level.INFO, "Caught JmsConfigException while testing endpoint", e);
+            logger.log(Level.INFO, "Caught JmsConfigException while testing endpoint", e);
             throw new JmsTestException(e.toString());
         } catch (Throwable t) {
-            _logger.log(Level.INFO, "Caught Throwable while testing endpoint", t);
+            logger.log(Level.INFO, "Caught Throwable while testing endpoint", t);
             throw new JmsTestException(t.toString());
         } finally {
-            try {
-                if (jmsQueueSender != null) jmsQueueSender.close();
-            } catch (JMSException e) {
-            }
-
-            try {
-                if (jmsQueueReceiver != null) jmsQueueReceiver.close();
-            } catch (JMSException e) {
-            }
-
-            try {
-                if (jmsTopicSubscriber != null) jmsTopicSubscriber.close();
-            } catch (JMSException e) {
-            }
-
+            JmsUtil.closeQuietly(jmsQueueSender);
+            JmsUtil.closeQuietly(jmsQueueReceiver);
+            JmsUtil.closeQuietly(jmsTopicSubscriber);
             if (bag != null) bag.close();
         }
     }
@@ -272,5 +259,7 @@ public class JmsAdminImpl implements JmsAdmin {
         }
     }
 
-    private final Logger _logger = Logger.getLogger(getClass().getName());
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.spring = applicationContext;
+    }
 }

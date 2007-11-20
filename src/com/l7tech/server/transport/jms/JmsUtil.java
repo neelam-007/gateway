@@ -7,6 +7,7 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsConnection;
+import org.springframework.context.ApplicationContext;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -23,6 +24,8 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class JmsUtil {
+    private static final Logger logger = Logger.getLogger(JmsUtil.class.getName());
+    public static final String DEFAULT_ENCODING = "UTF-8";
 
     /**
      * Establishes a connection to a JMS provider, returning the necessary {@link ConnectionFactory},
@@ -33,18 +36,24 @@ public class JmsUtil {
      * The JmsBag should eventually be closed by the caller, since the {@link Connection} and {@link Session}
      * objects inside are often pretty heavyweight.
      *
-     * @param connection a {@link JmsConnection} that encapsulates the information required
+     * @param connection a {@link com.l7tech.common.transport.jms.JmsConnection} that encapsulates the information required
      * to connect to a JMS provider.
      * @param auth overrides the username and password from the connection if present.  May be null.
      * @param mapper property mapper for initial context properties. May be null.
      * @param autoAcknowledge True to use Session.AUTO_ACKNOWLEDGE for sessions
+     * @param spring
      * @return a {@link JmsBag} containing the resulting {@link ConnectionFactory}, {@link Connection} and {@link Session}.
      * @throws JMSException
      * @throws NamingException
      * @throws JmsConfigException if no connection factory URL could be found for this connection
      */
-    public static JmsBag connect( JmsConnection connection, PasswordAuthentication auth, JmsPropertyMapper mapper, boolean autoAcknowledge )
-            throws JmsConfigException, JMSException, NamingException {
+    public static JmsBag connect(JmsConnection connection,
+                                 PasswordAuthentication auth,
+                                 JmsPropertyMapper mapper,
+                                 boolean autoAcknowledge,
+                                 ApplicationContext spring)
+            throws JmsConfigException, JMSException, NamingException
+    {
         logger.fine( "Connecting to " + connection.toString() );
         String icf = connection.getInitialContextFactoryClassname();
         String url = connection.getJndiUrl();
@@ -66,7 +75,10 @@ public class JmsUtil {
             password = connection.getPassword();
         }
 
-        ConnectionFactory connFactory = null;
+        username = "\"\"".equals(username) ? "" : username;
+        password = "\"\"".equals(password) ? "" : password;
+        
+        ConnectionFactory connFactory;
         Connection conn = null;
         Session sess = null;
 
@@ -115,7 +127,7 @@ public class JmsUtil {
                     Object instance = customizerClass.newInstance();
                     if (instance instanceof ConnectionFactoryCustomizer) {
                         ConnectionFactoryCustomizer customizer = (ConnectionFactoryCustomizer) instance;
-                        customizer.configureConnectionFactory(connFactory, jndiContext);
+                        customizer.configureConnectionFactory(connFactory, jndiContext, spring);
                     }
                     else {
                         throw new JmsConfigException("Could not configure connection factory, customizer does not implement the correct interface.");
@@ -181,12 +193,27 @@ public class JmsUtil {
     }
 
     /**
-     * Equivalent to {@link JmsUtil#connect(JmsConnection, PasswordAuthentication, JmsPropertyMapper, boolean) JmsUtil#connect(JmsConnection, null, null, true)}
+     * Equivalent to {@link JmsUtil#connect(com.l7tech.common.transport.jms.JmsConnection,java.net.PasswordAuthentication, JmsPropertyMapper,boolean,org.springframework.context.ApplicationContext) JmsUtil#connect(JmsConnection, null, null, true, spring)}
      */
-    public static JmsBag connect( JmsConnection connection ) throws JMSException, NamingException, JmsConfigException {
-        return connect( connection, null, null, true );
+    public static JmsBag connect(JmsConnection connection, ApplicationContext spring) throws JMSException, NamingException, JmsConfigException {
+        return connect(connection, null, null, true, spring);
     }
 
-    private static final Logger logger = Logger.getLogger(JmsUtil.class.getName());
-    public static final String DEFAULT_ENCODING = "UTF-8";
+    static void closeQuietly(MessageConsumer consumer) {
+        if (consumer == null) return;
+        try {
+            consumer.close();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Couldn't close Message Consumer", e);
+        }
+    }
+
+    static void closeQuietly(MessageProducer mp) {
+        if (mp == null) return;
+        try {
+            mp.close();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Couldn't close Message Producer", e);
+        }
+    }
 }

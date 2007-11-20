@@ -608,11 +608,20 @@
         <include name="**/openjms-client-0.7.6.jar" if="include.jms.openjms"/>
         <include name="**/exolabcore-0.3.7.jar" if="include.jms.openjms"/>
 
-        <!-- Include MQSeries on dev builds -->
-        <include name="**/com.ibm.mqbind.jar" if="include.jms.mqseries"/>
-        <include name="**/com.ibm.mq.jar" if="include.jms.mqseries"/>
-        <include name="**/com.ibm.mqjms.jar" if="include.jms.mqseries"/>
-        <include name="**/connector.jar" if="include.jms.mqseries"/>
+        <!-- Include MQSeries 5 on dev builds -->
+        <include name="**/com.ibm.mqbind.jar" if="include.jms.mqseries5"/>
+        <include name="**/com.ibm.mq.jar" if="include.jms.mqseries5"/>
+        <include name="**/com.ibm.mqjms.jar" if="include.jms.mqseries5"/>
+        <include name="**/connector.jar" if="include.jms.mqseries5"/>
+
+        <!-- Include MQSeries 6 on dev builds -->
+        <include name="**/com.ibm.mq.jar" if="include.jms.mqseries6"/>
+        <include name="**/com.ibm.mq.jms.Nojndi.jar" if="include.jms.mqseries6"/>
+        <include name="**/com.ibm.mq.pcf-6.0.3.jar" if="include.jms.mqseries6"/>
+        <include name="**/com.ibm.mqjms.jar" if="include.jms.mqseries6"/>
+        <include name="**/connector.jar" if="include.jms.mqseries6"/>
+        <include name="**/dhbcore.jar" if="include.jms.mqseries6"/>
+        <include name="**/mqcontext.jar" if="include.jms.mqseries6"/>
 
         <!-- Include Tibco on dev builds -->
         <include name="**/tibcrypt.jar" if="include.jms.tibco"/>
@@ -3079,7 +3088,7 @@
         </sequential>
     </macrodef>
 
-    <target name="prepare.jms" depends="prepare.jms.mqseries, prepare.jms.tibco"/>
+    <target name="prepare.jms" depends="prepare.jms.mqseries5, prepare.jms.mqseries6, prepare.jms.tibco"/>
 
     <target name="prepare.db" depends="
         prepare.db.oracle8,
@@ -3106,8 +3115,12 @@
         </sequential>
     </macrodef>
 
-    <target name="prepare.jms.mqseries" if="include.jms.mqseries">
-        <prepare-named-libs name="MQSeries" dir="${src.root}/lib/gateway/jms/mqseries"/>
+    <target name="prepare.jms.mqseries5" if="include.jms.mqseries5">
+        <prepare-named-libs name="MQSeries 5.x" dir="${src.root}/lib/gateway/jms/mqseries"/>
+    </target>
+
+    <target name="prepare.jms.mqseries6" if="include.jms.mqseries6">
+        <prepare-named-libs name="MQSeries 6" dir="${src.root}/lib/gateway/jms/mqseries6"/>
     </target>
 
     <target name="prepare.jms.tibco" if="include.jms.tibco">
@@ -3972,8 +3985,8 @@
             <and>
                 <available classname="com.l7tech.common.BuildInfo" classpath="${build.classes}"/>
                 <uptodate property="" targetfile="${src.root}/src/com/l7tech/common/BuildInfo.java" >
-                    <srcfiles dir="${src.root}" includes="src/**/*, build.version, build.number" excludes="src/com/l7tech/common/BuildInfo.java"/>
-                </uptodate>
+            <srcfiles dir="${src.root}" includes="src/**/*, build.version, build.number" excludes="src/com/l7tech/common/BuildInfo.java"/>
+        </uptodate>
             </and>
         </condition>
     </target>

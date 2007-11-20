@@ -284,7 +284,8 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                             _connection,
                             _inboundRequestEndpoint.getPasswordAuthentication(),
                             _jmsPropertyMapper,
-                            _inboundRequestEndpoint.getAcknowledgementType()==JmsAcknowledgementType.AUTOMATIC );
+                            _inboundRequestEndpoint.getAcknowledgementType()==JmsAcknowledgementType.AUTOMATIC,
+                            applicationContext);
                 }
                 return _bag;
             }

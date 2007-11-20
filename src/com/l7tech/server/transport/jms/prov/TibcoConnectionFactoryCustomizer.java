@@ -4,6 +4,7 @@ import com.l7tech.common.transport.jms.TibcoEmsConstants;
 import com.l7tech.server.transport.jms.ConnectionFactoryCustomizer;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.tibco.tibjms.TibjmsConnectionFactory;
+import org.springframework.context.ApplicationContext;
 
 import javax.jms.ConnectionFactory;
 import javax.naming.Context;
@@ -31,9 +32,10 @@ public class TibcoConnectionFactoryCustomizer implements ConnectionFactoryCustom
      *
      * @param connectionFactory The factory to customize.
      * @param context The configuration context
+     * @param spring
      * @throws JmsConfigException if an error occurs
      */
-    public void configureConnectionFactory(ConnectionFactory connectionFactory, Context context) throws JmsConfigException {
+    public void configureConnectionFactory(ConnectionFactory connectionFactory, Context context, ApplicationContext spring) throws JmsConfigException {
         try {
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE, "Configuring connection factory.");

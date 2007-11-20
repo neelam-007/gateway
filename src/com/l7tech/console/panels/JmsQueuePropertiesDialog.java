@@ -374,6 +374,13 @@ public class JmsQueuePropertiesDialog extends JDialog {
             jndiExtraPropertiesOuterPanel.add(jndiExtraPropertiesPanel);
             queueExtraPropertiesPanel = new TibcoEmsQueueExtraPropertiesPanel(extraProperties);
             queueExtraPropertiesOuterPanel.add(queueExtraPropertiesPanel);
+        } else if ("com.ibm.mq.jms.context.WMQInitialContextFactory".equals(icfClassname) ||
+                "com.sun.jndi.ldap.LdapCtxFactory".equals(icfClassname)) {
+            // TODO this casts too broad a net; we need to have an actual "provider type" enum.
+            jndiExtraPropertiesPanel = null;
+            jndiExtraPropertiesOuterPanel.removeAll();
+            queueExtraPropertiesPanel = new MQSeriesQueueExtraPropertiesPanel(extraProperties);
+            queueExtraPropertiesOuterPanel.add(queueExtraPropertiesPanel);
         } else {
             jndiExtraPropertiesPanel = null;
             jndiExtraPropertiesOuterPanel.removeAll();

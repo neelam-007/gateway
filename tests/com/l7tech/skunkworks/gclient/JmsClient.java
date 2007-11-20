@@ -313,7 +313,7 @@ public class JmsClient {
             JmsEndpoint endpoint = getRoutedRequestEndpoint();
             if ( endpoint == null ) throw new JMSException( "JmsEndpoint could not be located! It may have been deleted" );
 
-            bag = JmsUtil.connect( conn, credentials, null, true );
+            bag = JmsUtil.connect( conn, credentials, null, true, null);
             bag.getConnection().start();
         }
         return bag;

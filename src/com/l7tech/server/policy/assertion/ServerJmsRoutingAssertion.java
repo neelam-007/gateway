@@ -49,11 +49,32 @@ import java.util.regex.Pattern;
 /**
  * Server side implementation of JMS routing assertion.
  */
-public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
+public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRoutingAssertion> {
+    private final ApplicationContext spring;
+    private final Auditor auditor;
+    private final StashManagerFactory stashManagerFactory;
+    private final JmsPropertyMapper jmsPropertyMapper;
+    @SuppressWarnings({"FieldCanBeLocal"}) // To prevent the only JmsInvalidator instance from being GC'd 
+    private final JmsInvalidator jmsInvalidator;
+    private final SignerInfo senderVouchesSignerInfo;
+
+    private final Object needsUpdateSync = new Object();
+    private boolean needsUpdate;
+    private final Object jmsInfoSync = new Object();
+    private JmsConnection routedRequestConnection;
+    private JmsEndpoint routedRequestEndpoint;
+
+    private JmsBag bag;
+    private Destination routedRequestDestination;
+    private Destination endpointResponseDestination;
+
+    private static final Logger logger = Logger.getLogger(ServerJmsRoutingAssertion.class.getName());
+    private static final int MAX_OOPSES = 5;
+    private static final long RETRY_DELAY = 1000;
 
     public ServerJmsRoutingAssertion(JmsRoutingAssertion data, ApplicationContext ctx) {
         super(data, ctx, logger);
-        this.data = data;
+        this.spring = ctx;
         auditor = new Auditor(this, ctx, logger);
         stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
         jmsPropertyMapper = (JmsPropertyMapper) applicationContext.getBean("jmsPropertyMapper", JmsPropertyMapper.class);
@@ -78,12 +99,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
         Destination jmsInboundDest = null;
-        MessageProducer jmsProducer = null;
+        MessageProducer jmsProducer;
         MessageConsumer jmsConsumer = null;
 
         try {
             Session jmsSession = null;
-            Message jmsOutboundRequest = null;
+            Message jmsOutboundRequest;
             int oopses = 0;
 
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
@@ -128,7 +149,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         closeBag();
 
                         jmsSession = null;
-                        jmsOutboundRequest = null;
 
                         try {
                             Thread.sleep(RETRY_DELAY);
@@ -336,7 +356,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 //        return tempResponseQueue;
     }
 
-    private Destination getResponseDestination( JmsEndpoint endpoint, Message request, Auditor auditor )
+    private Destination getResponseDestination(JmsEndpoint endpoint, Auditor auditor)
             throws JMSException, NamingException, JmsConfigException, FindException {
         JmsReplyType replyType = endpoint.getReplyType();
 
@@ -437,7 +457,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         } else {
             auditor.logAndAudit(AssertionMessages.JMS_ROUTING_SET_REPLYTO_CORRELCTIONID);
             // Set replyTo & correlationId
-            outboundRequestMsg.setJMSReplyTo( getResponseDestination( endpoint, outboundRequestMsg, auditor ) );
+            outboundRequestMsg.setJMSReplyTo( getResponseDestination( endpoint, auditor ) );
             outboundRequestMsg.setJMSCorrelationID( context.getRequestId().toString() );
         }
 
@@ -456,7 +476,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private JmsEndpoint getRoutedRequestEndpoint() throws FindException {
         if ( routedRequestEndpoint == null ) {
             JmsEndpointManager mgr = (JmsEndpointManager)applicationContext.getBean("jmsEndpointManager");
-            JmsEndpoint jmsEndpoint = mgr.findByPrimaryKey(data.getEndpointOid().longValue());
+            JmsEndpoint jmsEndpoint = mgr.findByPrimaryKey(assertion.getEndpointOid());
             synchronized(jmsInfoSync) {
                 routedRequestEndpoint = jmsEndpoint;
             }
@@ -489,7 +509,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             if ( endpoint == null ) throw new FindException( "JmsEndpoint could not be located! It may have been deleted" );
             PasswordAuthentication pwauth = endpoint.getPasswordAuthentication();
 
-            bag = JmsUtil.connect( conn, pwauth, jmsPropertyMapper, true );
+            bag = JmsUtil.connect( conn, pwauth, jmsPropertyMapper, true, spring);
             bag.getConnection().start();
         }
         return bag;
@@ -583,24 +603,4 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         }
     }
     
-    private final JmsRoutingAssertion data;
-    private final Auditor auditor;
-    private final StashManagerFactory stashManagerFactory;
-    private final JmsPropertyMapper jmsPropertyMapper;
-    private final JmsInvalidator jmsInvalidator;
-    private final SignerInfo senderVouchesSignerInfo;
-
-    private Object needsUpdateSync = new Object();
-    private boolean needsUpdate;
-    private Object jmsInfoSync = new Object();
-    private JmsConnection routedRequestConnection;
-    private JmsEndpoint routedRequestEndpoint;
-
-    private JmsBag bag;
-    private Destination routedRequestDestination;
-    private Destination endpointResponseDestination;
-
-    private static final Logger logger = Logger.getLogger(ServerJmsRoutingAssertion.class.getName());
-    private static final int MAX_OOPSES = 5;
-    private static final long RETRY_DELAY = 1000;
 }
