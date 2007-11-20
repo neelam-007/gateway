@@ -388,7 +388,7 @@ public class WSMFService implements ApplicationContextAware {
     }
 
     public static String managementWSDLURL(HttpServletRequest req) {
-        return "http://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/static/WseeMO.wsdl";
+        return req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/static/WseeMO.wsdl";
     }
 
     public String getManagementWSDLURL(HttpServletRequest req) {

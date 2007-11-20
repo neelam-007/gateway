@@ -149,7 +149,7 @@ public class ServiceManagedObject {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:f=\"http://schemas.hp.com/wsmf/2003/03/Foundation\">\n" +
                 "    <soapenv:Body>\n" +
-                "       <f:GetManagementWsdlUrlResponse>http://" + getHostFromReq(context.req) + getPortWithColonFromReq(context.req) + "/ssg/wsmf/service/" + service.getOid() + "?wsdl</f:GetManagementWsdlUrlResponse>\n" +
+                "       <f:GetManagementWsdlUrlResponse>" + context.req.getScheme() + "://" + getHostFromReq(context.req) + getPortWithColonFromReq(context.req) + "/ssg/wsmf/service/" + service.getOid() + "?wsdl</f:GetManagementWsdlUrlResponse>\n" +
                 "    </soapenv:Body>\n" +
                 "</soapenv:Envelope>";
     }
@@ -284,15 +284,15 @@ public class ServiceManagedObject {
     }
 
     public String generateMOWsdlUrl(HttpServletRequest req) {
-        return "http://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getOid() + "?wsdl=mo";
+        return req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getOid() + "?wsdl=mo";
     }
 
     public String generateContainedWsdlUrl(HttpServletRequest req) {
-        return "http://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getOid() + "?wsdl=contained";
+        return req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getOid() + "?wsdl=contained";
     }
 
     public static String generateContainedWsdlUrl(HttpServletRequest req, long svcid) {
-        return "http://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + svcid + "?wsdl=contained";
+        return req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + svcid + "?wsdl=contained";
     }
 
     private String getRelationships(WSMFService.RequestContext context) {
@@ -366,7 +366,7 @@ public class ServiceManagedObject {
         InputStream is = getInputStreamFromCP("ServiceMO.wsdl");
         String beforeEdits = new String(HexUtils.slurpStream(is));
         beforeEdits = beforeEdits.replace("^^^INSERT_METHOD_HOST_PORT_HERE^^^", getHostPort(req));
-        beforeEdits = beforeEdits.replace("^^^INSERT_TARGET_HERE^^^", "http://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getOid());
+        beforeEdits = beforeEdits.replace("^^^INSERT_TARGET_HERE^^^", req.getScheme() + "://" + getHostFromReq(req) + getPortWithColonFromReq(req) + "/ssg/wsmf/service/" + service.getOid());
         beforeEdits = beforeEdits.replace("^^^INSERT_NAME_HERE^^^", service.getName() + " Managed Object");
         return beforeEdits;
     }

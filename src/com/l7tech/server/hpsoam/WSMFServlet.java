@@ -47,6 +47,7 @@ public class WSMFServlet extends HttpServlet {
         StringBuffer buf = req.getRequestURL();
         String qs = req.getQueryString();
         if (qs != null) {
+            buf.append('?');
             buf.append(qs);
         }
         return buf.toString();
