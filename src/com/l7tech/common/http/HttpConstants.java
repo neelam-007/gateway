@@ -13,6 +13,7 @@ public final class HttpConstants {
     // headers
     public static final String HEADER_CONTENT_LENGTH = MimeUtil.CONTENT_LENGTH;
     public static final String HEADER_CONTENT_TYPE = MimeUtil.CONTENT_TYPE;
+    public static final String HEADER_CONNECTION = "Connection";
     public static final String HEADER_COOKIE = "Cookie";
     public static final String HEADER_SET_COOKIE = "Set-Cookie";
     public static final String HEADER_HOST = "Host";

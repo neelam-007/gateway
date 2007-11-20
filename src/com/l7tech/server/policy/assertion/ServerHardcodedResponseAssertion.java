@@ -133,6 +133,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
                     hresponse.setStatus(status);
                     if ( status != HttpConstants.STATUS_NO_CONTENT ) {
                         hresponse.setContentType(contentType.getFullValue());
+                        hresponse.addHeader(HttpConstants.HEADER_CONNECTION, "close");
                         OutputStream responseos = hresponse.getOutputStream();
                         HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
                         responseos.close();
