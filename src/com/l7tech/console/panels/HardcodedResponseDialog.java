@@ -26,6 +26,7 @@ public class HardcodedResponseDialog extends JDialog implements AssertionPropert
     private JTextField httpStatus;
     private JTextArea responseBody;
     private JTextField contentType;
+    private JCheckBox earlyResponseCheckBox;
 
     private HardcodedResponseAssertion assertion;
     private boolean modified;
@@ -62,6 +63,7 @@ public class HardcodedResponseDialog extends JDialog implements AssertionPropert
 
     private void updateView() {
         httpStatus.setText(String.valueOf(assertion.getResponseStatus()));
+        earlyResponseCheckBox.setSelected(assertion.isEarlyResponse());
         String body = assertion.responseBodyString();
         responseBody.setText(body == null ? "" : body);
         String ctype = assertion.getResponseContentType();
@@ -82,6 +84,7 @@ public class HardcodedResponseDialog extends JDialog implements AssertionPropert
             status = 1;
         }
         assertion.setResponseStatus(status);
+        assertion.setEarlyResponse(earlyResponseCheckBox.isSelected());
         final String ctype = contentType.getText();
         assertion.setResponseContentType(ctype);
         assertion.responseBodyString(getResponseBodyText(ctype, responseBody.getText()));

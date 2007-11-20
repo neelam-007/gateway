@@ -28,6 +28,7 @@ public final class HttpConstants {
 
     // status codes
     public static final int STATUS_OK = 200;
+    public static final int STATUS_NO_CONTENT = 204;
     public static final int STATUS_FOUND = 302;
     public static final int STATUS_SEE_OTHER = 303;
     public static final int STATUS_NOT_MODIFIED = 304;

@@ -178,6 +178,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 }
             }
 
+            // we're done if the response has already been sent
+            if ( hresponse.isCommitted() ) {
+                // could be due to custom assertion or templated early response, etc.
+                if (logger.isLoggable(Level.FINE))
+                    logger.log( Level.FINE, "Response already committed, not sending response." );
+
+                return;
+            }
+
             // Send response headers
             propagateCookies(context, reqKnob, respKnob);
             respKnob.beginResponse();

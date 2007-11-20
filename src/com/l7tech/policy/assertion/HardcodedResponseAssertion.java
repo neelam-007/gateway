@@ -25,6 +25,7 @@ import java.io.IOException;
  */
 public class HardcodedResponseAssertion extends RoutingAssertion implements UsesVariables {
     private int responseStatus = 200;
+    private boolean earlyResponse;
     private String responseContentType = "text/xml; charset=UTF-8";
     private String base64ResponseBody = "";
 
@@ -37,6 +38,14 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
 
     public void setResponseStatus(int responseStatus) {
         this.responseStatus = responseStatus;
+    }
+
+    public boolean isEarlyResponse() {
+        return earlyResponse;
+    }
+
+    public void setEarlyResponse(boolean earlyResponse) {
+        this.earlyResponse = earlyResponse;
     }
 
     public String getResponseContentType() {
