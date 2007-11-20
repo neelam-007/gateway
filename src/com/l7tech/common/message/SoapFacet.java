@@ -31,7 +31,8 @@ class SoapFacet extends MessageFacet {
     private SoapFaultDetail faultDetail = null;
     private SoapInfo soapInfo;
 
-    private transient static final Logger logger = Logger.getLogger(SoapFacet.class.getName());
+    private static final Logger logger = Logger.getLogger(SoapFacet.class.getName());
+    private static final QName[] EMPTY_QNAMES = new QName[0];
 
 
     /**
@@ -113,7 +114,7 @@ class SoapFacet extends MessageFacet {
                 throw new SAXException(e);
             }
         } else {
-            return new SoapInfo(false, soapAction, null, false);
+            return new SoapInfo(false, soapAction, EMPTY_QNAMES, false);
         }
     }
 

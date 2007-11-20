@@ -21,6 +21,7 @@ public class SoapInfo {
      * @param hasSecurityNode true if this message is soap and contains at least one wsse:Security soap header.
      */
     public SoapInfo(boolean soap, String soapAction, QName[] payloadNsUris, boolean hasSecurityNode) {
+        if (payloadNsUris == null) throw new NullPointerException("payloadNsUris is required");
         this.soap = soap;
         this.soapAction = soapAction;
         this.payloadNames = payloadNsUris;
