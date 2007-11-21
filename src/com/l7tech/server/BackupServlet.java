@@ -91,7 +91,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             throws ServletException, IOException {
         if (!request.isSecure()) {
             logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_NOT_SSL, null);
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "SSL required");
+            respondError(response, HttpServletResponse.SC_FORBIDDEN, "SSL required");
             return;
         }
 
@@ -107,24 +107,24 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             results = authenticateRequestBasic(request);
         } catch (BadCredentialsException e) {
             logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_BAD_CREDENTIALS, e);
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            respondError(response, HttpServletResponse.SC_FORBIDDEN, "Bad credentials");
             return;
         } catch (IssuedCertNotPresentedException e) {
             logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_NO_CLIENT_CERT, e);
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            respondError(response, HttpServletResponse.SC_FORBIDDEN, "No client certificate");
             return;
         } catch (LicenseException e) {
             logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_NOT_LICENSED, e);
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            respondError(response, HttpServletResponse.SC_FORBIDDEN, "Unlicensed");
             return;
         } catch (TransportModule.ListenerException e) {
             logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_BAD_CONNECTOR, e);
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            respondError(response, HttpServletResponse.SC_FORBIDDEN, "Connector not enabled");
             return;
         }
         if (results.length <= 0) {
             logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_NO_AUTHENTICATED_USER, null);
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            respondError(response, HttpServletResponse.SC_FORBIDDEN, "Unauthenticated");
             return;
         }
 
@@ -139,12 +139,12 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             }
             if (! isAdmin) {
                 logAndAudit(getOriginalClientAddr(request), user, "Backup request blocked", ServiceMessages.BACKUP_NO_PERMISSION, null, user.getName());
-                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                respondError(response, HttpServletResponse.SC_FORBIDDEN, "Not permitted");
                 return;
             }
         } catch (FindException e) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup request permission checked failed", ServiceMessages.BACKUP_PERMISSION_CHECK_FAILED, e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Permission check failed");
             return;
         }
 
@@ -173,7 +173,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             nodeInfos = _clusterInfoManager.retrieveClusterStatus();
         } catch (FindException e) {
             _logger.warning("Failed to obtain cluster node information: " + e.toString());
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal error");
             return;
         }
 
@@ -240,7 +240,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             exporter.doIt(partitionName, false, null, tmpFile.getCanonicalPath());
         } catch (Exception e) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_CANT_CREATE_IMAGE, e, nodeName);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
             if (tmpFile != null) tmpFile.delete();
             return;
         }
@@ -254,13 +254,13 @@ public class BackupServlet extends AuthenticatableHttpServlet {
                 in = new BufferedInputStream(new FileInputStream(tmpFile));
             } catch (Exception e) {
                 logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_CANT_READ_IMAGE, e, nodeName);
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
                 return;
             }
 
             if (size > Integer.MAX_VALUE) {
                 logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_TOO_BIG, null, nodeName, Long.toString(size));
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
                 return;
             }
 
@@ -307,13 +307,13 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             }
         } catch (FindException e) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup request routing failed", ServiceMessages.BACKUP_NO_CLUSTER_INFO, e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Cannot find node");
             return;
         }
 
         if (nodeAddress == null) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup request routing failed", ServiceMessages.BACKUP_NO_SUCH_NODE, null, nodeName);
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such node: " + nodeName);
+            respondError(response, HttpServletResponse.SC_BAD_REQUEST, "No such node");
             return;
         }
 
@@ -360,9 +360,21 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             }
         } catch (IOException e) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup request routing failed", ServiceMessages.BACKUP_ROUTING_IO_ERROR, e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Routing failed");
             return;
         }
+    }
+
+    /** Responds with HTTP error and page with status and message. */
+    private void respondError(final HttpServletResponse response, final int status, final String msg)
+            throws IOException {
+        response.setStatus(status);
+        response.setContentType("text/plain");
+        final PrintWriter out = response.getWriter();
+        out.print(status);
+        out.print(" ");
+        out.print(msg);
+        out.close();
     }
 
     /**
