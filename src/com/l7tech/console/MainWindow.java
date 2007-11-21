@@ -772,7 +772,7 @@ public class MainWindow extends JFrame implements SheetHolder {
               public void actionPerformed(ActionEvent event) {
 
                   SwingUtilities.invokeLater(new Runnable() { public void run() {
-                      if (isApplet() && ! LogonDialog.hasSessionId()) {
+                      if (isApplet() && !LogonDialog.isValidSessionID()) { // due to click "Disconnect" or reload browser tabs
                           AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
                           applet.redirectToServlet();
                       } else {

@@ -816,7 +816,28 @@ public class LogonDialog extends JDialog {
                 (preconfiguredSessionId.equals(previousSessionId));
     }
 
-    public static boolean hasSessionId() {
-        return preconfiguredSessionId != null;
+    /**
+     * Check if the current session id is still valid or not.
+     * @return true if the session id is valid.
+     */
+    public static boolean isValidSessionID() {
+        if (preconfiguredSessionId == null) {
+            return false;
+        }
+
+        final SecurityProvider securityProvider = getCredentialManager();
+
+        AuthenticationProvider authProv = securityProvider.getAuthenticationProvider();
+        if (preconfiguredGatewayHostname != null) {
+            try {
+                authProv.login(preconfiguredSessionId, preconfiguredGatewayHostname);
+            } catch (Exception e) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+        return true;
     }
 }
