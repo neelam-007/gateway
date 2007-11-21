@@ -17,7 +17,7 @@ import java.text.MessageFormat;
  */
 public class SSGLoginFormServlet extends HttpServlet {
     private static final String NORMAL_MESSAGE = "Connecting to the SecureSpan Gateway";
-    private static final String INCORRECT_USR_PWD_MESSAGE = "Incorrect username or password.  Try again.";
+    private static final String INCORRECT_USR_PWD_MESSAGE = "The user name or password is incorrect.  Try again.";
 
     protected void doGet(HttpServletRequest hreq, HttpServletResponse hresp) throws ServletException, IOException {
         hresp.setContentType("text/html");
