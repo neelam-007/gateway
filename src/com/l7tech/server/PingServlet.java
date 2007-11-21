@@ -140,7 +140,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
             if (_logger.isLoggable(Level.FINE)) {
                 _logger.fine("Responding with 404 for unknown request URI (should have been blocked by web.xml but wasn't): " + uri);
             }
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            respondError(response, HttpServletResponse.SC_NOT_FOUND, "Unknown request URI");
         }
     }
 
@@ -179,7 +179,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
                     authenticated = false;
                 } catch (LicenseException e) {
                     _logger.warning("Ping service is unlicensed; returning " + HttpServletResponse.SC_SERVICE_UNAVAILABLE + ".");
-                    response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                    respondError(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Unlicensed");
                     return;
                 } catch (FindException e) {
                     authenticated = false;
@@ -192,7 +192,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
                     return;
                 } catch (TransportModule.ListenerException e) {
                     _logger.warning("Ping service is not enabled for this port; returning " + HttpServletResponse.SC_SERVICE_UNAVAILABLE + ".");
-                    response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                    respondError(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Connector not enabled");
                     return;
                 }
 
@@ -235,7 +235,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
             if (_logger.isLoggable(Level.FINE)) {
                 _logger.fine("Missing node name parameter in system info request.");
             }
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing node name.");
+            respondError(response, HttpServletResponse.SC_BAD_REQUEST, "Missing node name");
             return;
         }
 
@@ -423,7 +423,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
             }
             if (nodeAddress == null) {
                 _logger.warning("Received system info request for unknown node: " + nodeName);
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No such node: " + nodeName);
+                respondError(response, HttpServletResponse.SC_BAD_REQUEST, "No such node");
                 return;
             }
 
@@ -472,12 +472,12 @@ public class PingServlet extends AuthenticatableHttpServlet {
                 }
             } catch (IOException e) {
                 _logger.log(Level.WARNING, "Failed to routed system info request to " + nodeName + " at " + nodeAddress, e);
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to route");
                 return;
             }
         } catch (FindException e) {
             _logger.log(Level.WARNING, "Failed to obtain cluster node information when routing system info request.", e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Cannot find node");
             return;
         }
     }
@@ -489,6 +489,18 @@ public class PingServlet extends AuthenticatableHttpServlet {
         if (_logger.isLoggable(Level.FINE)) {
             _logger.fine("Killed response to ping (" + details + ").");
         }
+    }
+
+    /** Responds with HTTP error and page with status and message. */
+    private void respondError(final HttpServletResponse response, final int status, final String msg)
+            throws IOException {
+        response.setStatus(status);
+        response.setContentType("text/plain");
+        final PrintWriter out = response.getWriter();
+        out.print(status);
+        out.print(" ");
+        out.print(msg);
+        out.close();
     }
 
     /** Responds with minimal info. */
