@@ -32,7 +32,7 @@ public class GenericHttpRequestParams {
     private HostnameVerifier hostnameVerifier = null;
     private ContentTypeHeader contentType = null;
     private Long contentLength = null;
-    private ArrayList extraHeaders = null;
+    private List<HttpHeader> extraHeaders = null;
     private boolean preemptiveAuthentication = true;
     private boolean followRedirects = false;
     private boolean useKeepAlives = true;
@@ -64,7 +64,7 @@ public class GenericHttpRequestParams {
      * Create a new request description that has the same properties as the
      * given GenericHttpRequestParams.
      *
-     * @param template
+     * @param template a template to copy from
      */
     public GenericHttpRequestParams(GenericHttpRequestParams template) {
         targetUrl = template.targetUrl;
@@ -73,7 +73,7 @@ public class GenericHttpRequestParams {
         sslSocketFactory = template.sslSocketFactory;
         contentType = template.contentType;
         contentLength = template.contentLength;
-        extraHeaders = template.extraHeaders == null ? null : new ArrayList(template.extraHeaders);
+        extraHeaders = template.extraHeaders == null ? null : new ArrayList<HttpHeader>(template.extraHeaders);
         preemptiveAuthentication = template.preemptiveAuthentication;
         followRedirects = template.followRedirects;
         useKeepAlives = template.useKeepAlives;
@@ -157,7 +157,7 @@ public class GenericHttpRequestParams {
      * Set whether to request preemptive authentication be performed with the request.
      *
      * @see #isPreemptiveAuthentication()
-     * @param preemptiveAuthentication
+     * @param preemptiveAuthentication true to enable preemptive authentication, or false to disable it
      */
     public void setPreemptiveAuthentication(boolean preemptiveAuthentication) {
         this.preemptiveAuthentication = preemptiveAuthentication;
@@ -249,8 +249,8 @@ public class GenericHttpRequestParams {
      *
      * @return the list of extra HttpHeader to include with the request.  May be empty but never null.
      */
-    public List getExtraHeaders() {
-        return extraHeaders == null ? Collections.EMPTY_LIST : extraHeaders;
+    public List<HttpHeader> getExtraHeaders() {
+        return extraHeaders == null ? Collections.<HttpHeader>emptyList() : extraHeaders;
     }
 
     /**
@@ -329,15 +329,16 @@ public class GenericHttpRequestParams {
      * @see #getExtraHeaders
      */
     public void setExtraHeaders(HttpHeader[] extraHeaders) {
-        this.extraHeaders = extraHeaders != null ? new ArrayList(Arrays.asList(extraHeaders)) : null;
+        this.extraHeaders = extraHeaders != null ? new ArrayList<HttpHeader>(Arrays.asList(extraHeaders)) : null;
     }
 
     /**
      * Add an extra HTTP header to send.  It will be added to the end of the extraHeaders.
      * Be warned that this may not be very fast.
+     * @param extraHeader an extra header to include in the request
      */
     public void addExtraHeader(HttpHeader extraHeader) {
-        if (extraHeaders == null) extraHeaders = new ArrayList();
+        if (extraHeaders == null) extraHeaders = new ArrayList<HttpHeader>();
         extraHeaders.add(extraHeader);
     }
 
@@ -355,9 +356,8 @@ public class GenericHttpRequestParams {
 
         // First remove any existing ones
         final String name = extraHeader.getName();
-        ArrayList keepers = new ArrayList();
-        for (Iterator i = extraHeaders.iterator(); i.hasNext();) {
-            HttpHeader header = (HttpHeader)i.next();
+        List<HttpHeader> keepers = new ArrayList<HttpHeader>();
+        for (HttpHeader header : extraHeaders) {
             if (!header.getName().equalsIgnoreCase(name))
                 keepers.add(header);
         }

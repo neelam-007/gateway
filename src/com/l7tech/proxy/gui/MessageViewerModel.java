@@ -1,11 +1,15 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
+import com.l7tech.common.http.GenericHttpHeaders;
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.HttpHeaders;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.HttpHeadersKnob;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
@@ -14,7 +18,6 @@ import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -35,7 +38,7 @@ import java.util.logging.Logger;
  */
 class MessageViewerModel extends AbstractListModel implements RequestInterceptor {
     private static final Logger log = Logger.getLogger(MessageViewerModel.class.getName());
-    private static final int maxMessages = 64;
+    private static final int MAX_MESSAGES = 64;
     private static final char RIGHTWARD_ARROW = '\u2192';
     private static final char LEFTWARD_ARROW = '\u2190';
     private static final String TO_SERVER = RIGHTWARD_ARROW + " To Server";
@@ -44,7 +47,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     private static final String POLICY_DOWNLOAD_ERROR = LEFTWARD_ARROW + " Policy download error";
     private static final String SERVER_ERROR = LEFTWARD_ARROW + " Server Error";
 
-    private List<SavedMessage> messages = new ArrayList<SavedMessage>(maxMessages);
+    private List<SavedMessage> messages = new ArrayList<SavedMessage>(MAX_MESSAGES);
     private boolean recordFromClient = false;
     private boolean recordToServer = false;
     private boolean recordFromServer = false;
@@ -80,13 +83,13 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         }
 
         protected String headersToString() {
-            return headers == null ? "" : (headers.toExternalForm() + "\n");
+            return headers == null ? "" : (headers.toExternalForm() + '\n');
         }
     }
 
     /** Represents a message in text form. */
     private static class SavedTextMessage extends SavedMessage {
-        protected String message;
+        private String message;
 
         SavedTextMessage(final String title, final String message) {
             this(title, message, null);
@@ -121,8 +124,10 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             policyTree.setCellRenderer(new PolicyTreeCellRenderer());
             policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy));
             int erow = 0;
-            while (erow < policyTree.getRowCount())
-                policyTree.expandRow(erow++);
+            while (erow < policyTree.getRowCount()) {
+                policyTree.expandRow(erow);
+                erow++;
+            }
             panel.add(policyTree,
                       new GridBagConstraints(0, 3, GridBagConstraints.REMAINDER, 1, 1.0, 1.0,
                                              GridBagConstraints.SOUTH,
@@ -254,7 +259,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
 
     /** Throw away all but the last maxMessages saved messages. */
     private void cutoff() {
-        while (messages.size() > maxMessages) {
+        while (messages.size() > MAX_MESSAGES) {
             messages.remove(0);
         }
     }
@@ -324,7 +329,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             final HttpHeadersKnob hhk = (HttpHeadersKnob)response.getKnobAlways(HttpHeadersKnob.class);
             final HttpHeaders headers = hhk.getHeaders();
             if (!response.isXml()) {
-                appendMessage(new SavedTextMessage("To Client", "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + ">", headers));
+                appendMessage(new SavedTextMessage("To Client", "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + '>', headers));
                 return;
             }
             final Document responseDoc = response.getXmlKnob().getDocumentReadOnly();
@@ -337,13 +342,13 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     }
 
     // Can be called from any thread
-    public void onBackEndRequest(PolicyApplicationContext context) {
+    public void onBackEndRequest(PolicyApplicationContext context, List<HttpHeader> headersSent) {
         if (!isRecordToServer()) return;
-        HttpHeadersKnob hhk = (HttpHeadersKnob)context.getRequest().getKnobAlways(HttpHeadersKnob.class);
         try {
+            GenericHttpHeaders headers = new GenericHttpHeaders(headersSent.toArray(new HttpHeader[headersSent.size()]));
             appendMessage(new SavedXmlMessage(TO_SERVER,
                                               context.getRequest().getXmlKnob().getDocumentReadOnly(),
-                                              hhk.getHeaders()));
+                                              headers));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get request as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
@@ -359,7 +364,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             final HttpHeadersKnob hhk = (HttpHeadersKnob)response.getKnobAlways(HttpHeadersKnob.class);
             final HttpHeaders headers = hhk.getHeaders();
             if (!response.isXml()) {
-                appendMessage(new SavedTextMessage(FROM_SERVER, "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + ">", headers));
+                appendMessage(new SavedTextMessage(FROM_SERVER, "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + '>', headers));
                 return;
             }
             Document responseDoc = response.getXmlKnob().getDocumentReadOnly();
@@ -379,8 +384,10 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     public void onMessageError(final Throwable t) {
         if (!isRecordErrors()) return;
         final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
+        PrintStream p = null;
         try {
-            PrintStream p = new PrintStream(b, true, "UTF-8");
+            //noinspection IOResourceOpenedButNotSafelyClosed
+            p = new PrintStream(b, true, "UTF-8");
             t.printStackTrace(p);
             p.flush();
             appendMessage(new SavedTextMessage("Client Error", b.toString("UTF-8")));
@@ -388,7 +395,8 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             log.log(Level.SEVERE, e.getMessage(), e);
             appendMessage(new SavedTextMessage("Client Error", t.getMessage()));
         } finally {
-            b.close();
+            ResourceUtils.closeQuietly(p);
+            ResourceUtils.closeQuietly(b);
         }
     }
 
@@ -399,8 +407,10 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     public void onReplyError(final Throwable t) {
         if (!isRecordErrors()) return;
         final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
+        PrintStream p = null;
         try {
-            PrintStream p = new PrintStream(b, true, "UTF-8");
+            //noinspection IOResourceOpenedButNotSafelyClosed
+            p = new PrintStream(b, true, "UTF-8");
             t.printStackTrace(p);
             p.flush();
             appendMessage(new SavedTextMessage(SERVER_ERROR, b.toString("UTF-8")));
@@ -408,7 +418,8 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             log.log(Level.SEVERE, e.getMessage(), e);
             appendMessage(new SavedTextMessage(SERVER_ERROR, t.getMessage()));
         } finally {
-            b.close();
+            ResourceUtils.closeQuietly(p);
+            ResourceUtils.closeQuietly(b);
         }
     }
 
@@ -428,8 +439,10 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     public void onPolicyError(Ssg ssg, PolicyAttachmentKey binding, Throwable error) {
         if (!isRecordErrors()) return;
         final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
+        PrintStream p = null;
         try {
-            PrintStream p = new PrintStream(b, true, "UTF-8");
+            //noinspection IOResourceOpenedButNotSafelyClosed
+            p = new PrintStream(b, true, "UTF-8");
             error.printStackTrace(p);
             p.flush();
             String mess = b.toString("UTF-8");
@@ -438,7 +451,8 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             log.log(Level.SEVERE, e.getMessage(), e);
             appendMessage(new SavedTextMessage(POLICY_DOWNLOAD_ERROR, error == null ? "null" : error.getMessage()));
         } finally {
-            b.close();
+            ResourceUtils.closeQuietly(p);
+            ResourceUtils.closeQuietly(b);
         }
     }
 

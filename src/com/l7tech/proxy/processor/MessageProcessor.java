@@ -561,7 +561,7 @@ public class MessageProcessor {
                      "https".equalsIgnoreCase(url.getProtocol()))
                 {
                     log.info("Changing http to https per policy for this request (using SSL port " +
-                      ssg.getSslPort() + ")");
+                      ssg.getSslPort() + ')');
                     url = new URL("https", url.getHost(), ssg.getSslPort(), url.getFile());
                 } else
                     throw new ConfigurationException("Couldn't find an SSL-enabled version of protocol " +
@@ -584,14 +584,14 @@ public class MessageProcessor {
      *
      * @param context       the Context containing the request to process.
      *                      If a policy was applied, the context's activePolicy must point at it.
-     * @throws ConfigurationException         if the SSG url is invalid
-     * @throws ConfigurationException         if the we downloaded a new policy for this request, but we are still being told
-     *                                        the policy is out-of-date
-     * @throws ConfigurationException         if the SSG sends us an invalid Policy URL
-     * @throws ConfigurationException         if the PendingRequest did not contain enough information to construct a
+     * @throws ConfigurationException         if the SSG url is invalid; or,
+     *                                        if the we downloaded a new policy for this request, but we are still being told; or,
+     *                                        the policy is out-of-date; or,
+     *                                        if the SSG sends us an invalid Policy URL; or,
+     *                                        if the PendingRequest did not contain enough information to construct a
      *                                        valid PolicyAttachmentKey
-     * @throws IOException                    if there was a network problem getting the message response from the SSG
-     * @throws IOException                    if there was a network problem downloading a policy from the SSG
+     * @throws IOException                    if there was a network problem getting the message response from the SSG; or,
+     *                                        if there was a network problem downloading a policy from the SSG
      * @throws PolicyRetryableException       if a new policy was downloaded
      * @throws ServerCertificateUntrustedException
      *                                        if a policy couldn't be downloaded because the SSG SSL certificate
@@ -609,7 +609,7 @@ public class MessageProcessor {
     private void obtainResponse(final PolicyApplicationContext context)
             throws ConfigurationException, IOException, PolicyRetryableException,
             OperationCanceledException, ClientCertificateException, BadCredentialsException,
-            KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException, GeneralSecurityException,
+            KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, GeneralSecurityException,
             InvalidDocumentFormatException, ProcessorException, BadSecurityContextException, PolicyLockedException
     {
         URL url = getUrl(context);
@@ -672,16 +672,16 @@ public class MessageProcessor {
                 HttpHeadersKnob httpHeadersKnob = (HttpHeadersKnob)request.getKnob(HttpHeadersKnob.class);
                 if (httpHeadersKnob != null) {
                     HttpHeader[] heads = httpHeadersKnob.getHeaders().toArray();
-                    for (int i = 0; i < heads.length; i++) {
-                        if (ssg.shouldCopyHeader(heads[i].getName()))
-                            params.addExtraHeader(heads[i]);
+                    for (HttpHeader head : heads) {
+                        if (ssg.shouldCopyHeader(head.getName()))
+                            params.addExtraHeader(head);
                     }
                 }
             }
 
             final RequestInterceptor interceptor = context.getRequestInterceptor();
             if (interceptor != null)
-                interceptor.onBackEndRequest(context);
+                interceptor.onBackEndRequest(context, params.getExtraHeaders());
             httpRequest = httpClient.createRequest(GenericHttpClient.POST, params);
 
             // If failover enabled, set an InputStreamFactory to prevent the failover client from buffering

@@ -1,9 +1,12 @@
 package com.l7tech.proxy;
 
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.message.PolicyApplicationContext;
+
+import java.util.List;
 
 /**
  * Interface implemented by someone who wants to trace progress of each client proxy request.
@@ -33,8 +36,10 @@ public interface RequestInterceptor {
      * May be fired multiple times for a single request if it is retransmitted (due to policy updates etc).
      *
      * @param context  the policy application context. required
+     * @param headersSent the headers to be sent to the back end.  This is included separately because it may
+     *                    differ from the hedaers sent with the original request (Bug #4322)
      */
-    void onBackEndRequest(PolicyApplicationContext context);
+    void onBackEndRequest(PolicyApplicationContext context, List<HttpHeader> headersSent);
 
     /**
      * Fired when a reply is received from the SSG.

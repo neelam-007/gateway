@@ -6,12 +6,12 @@
 
 package com.l7tech.proxy;
 
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -19,6 +19,7 @@ import com.l7tech.proxy.message.PolicyApplicationContext;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,19 +49,19 @@ public class MessageLogger implements RequestInterceptor {
     public void onFrontEndReply(PolicyApplicationContext context) {
         if (!log.isLoggable(Level.FINE)) return;
         String responseStr = toString(context.getResponse().getMimeKnob());
-        log.fine("Received server response: " + responseStr == null ? "<null>" : responseStr);
+        log.fine("Received server response: " + (responseStr == null ? "<null>" : responseStr));
     }
 
-    public void onBackEndRequest(PolicyApplicationContext context) {
+    public void onBackEndRequest(PolicyApplicationContext context, List<HttpHeader> headersSent) {
         if (!log.isLoggable(Level.FINE)) return;
         String str = toString(context.getRequest().getMimeKnob());
-        log.fine("Transmitting decorated request: " + str == null ? "<null>" : str);
+        log.fine("Transmitting decorated request: " + (str == null ? "<null>" : str));
     }
 
     public void onBackEndReply(PolicyApplicationContext context) {
         if (!log.isLoggable(Level.FINE)) return;
         String str = toString(context.getResponse().getMimeKnob());
-        log.fine("Received decorated response: " + str == null ? "<null>" : str);
+        log.fine("Received decorated response: " + (str == null ? "<null>" : str));
     }
 
     private static String toString(MimeKnob mk) {
@@ -75,9 +76,9 @@ public class MessageLogger implements RequestInterceptor {
                 responseStr = baos.toString();
             }
         } catch (IOException e) {
-            responseStr = "<IOException: " + ExceptionUtils.getMessage(e) + ">";
+            responseStr = "<IOException: " + ExceptionUtils.getMessage(e) + '>';
         } catch (NoSuchPartException e) {
-            responseStr = "<NoSuchPartException: " + ExceptionUtils.getMessage(e) + ">";
+            responseStr = "<NoSuchPartException: " + ExceptionUtils.getMessage(e) + '>';
         } finally {
             if (is != null) try { is.close(); } catch (IOException e) { /* too late to care */ }
             if (baos != null) baos.close();
