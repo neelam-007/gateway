@@ -1606,12 +1606,7 @@
                 <attribute name="Main-Class" value="com.l7tech.server.boot.GatewayMain"/>
             </section>
         </generate-manifest>
-        <jar jarfile="${build.dir}/Gateway.jar" manifest="${build.etc}/Gateway.mf" index="true">
-            <indexjars>
-                <fileset dir="${src.root}/lib" casesensitive="yes">
-                    <patternset refid="gateway.libs"/>
-                </fileset>
-            </indexjars>
+        <jar jarfile="${build.dir}/Gateway.jar" manifest="${build.etc}/Gateway.mf">
             <fileset dir="${build.classes}">
                 <!-- Tool, Manager, Client, Config Wizard and Test classes -->
                 <exclude name="com/l7tech/common/gui/**/*"/>
