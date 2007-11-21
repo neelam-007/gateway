@@ -45,9 +45,15 @@
   }
 
   .spacer {
-      width: 40px;
+      width:35px;
+  }
+
+  .label {
+      width:85px;
+      color: blue;
   }
 
   .logincontrols {
+      width:250px;
       text-align: right;
   }
