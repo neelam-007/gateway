@@ -1,10 +1,11 @@
 package com.l7tech.policy;
 
-import com.l7tech.policy.assertion.AssertionTest;
 import com.l7tech.policy.assertion.AssertionMetadataTest;
+import com.l7tech.policy.assertion.AssertionTest;
 import com.l7tech.policy.validator.DefaultPolicyValidatorTest;
 import com.l7tech.policy.wsp.WspConstantsTest;
 import com.l7tech.server.policy.CompositeAssertionTest;
+import com.l7tech.server.policy.assertion.ServerSslAssertionTest;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -44,6 +45,7 @@ public class AllPolicyTests extends TestCase {
         suite.addTest(new TestSuite(PolicyCloneTest.class));
         suite.addTest(new TestSuite(ExpandVariablesTest.class));
         suite.addTest(new TestSuite(AssertionMetadataTest.class));
+        suite.addTest(new TestSuite(ServerSslAssertionTest.class));
         return suite;
     }
 

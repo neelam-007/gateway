@@ -45,6 +45,7 @@ public class ServerSslAssertion extends AbstractServerAssertion implements Serve
         final FtpRequestKnob ftpRequestKnob = hsRequestKnob != null ? null : (FtpRequestKnob)context.getRequest().getKnob(FtpRequestKnob.class);
         if (httpServletRequest == null && ftpRequestKnob == null) {
             logger.info("Request not received over FTP or HTTP; don't know how to check for SSL");
+            context.setRequestPolicyViolated();
             return AssertionStatus.BAD_REQUEST;
         }
         boolean ssl = httpServletRequest!=null ? httpServletRequest.isSecure() : ftpRequestKnob.isSecure();
@@ -87,7 +88,7 @@ public class ServerSslAssertion extends AbstractServerAssertion implements Serve
             }
         }
 
-        if (status == AssertionStatus.FALSIFIED)
+        if (status != AssertionStatus.NONE)
             context.setRequestPolicyViolated();
 
         return status;
