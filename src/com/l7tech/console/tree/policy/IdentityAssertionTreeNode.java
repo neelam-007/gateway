@@ -23,8 +23,8 @@ import java.util.logging.Logger;
  * Date: Oct 7, 2003<br/>
  * Time: 2:49:00 PM<br/>
  */
-public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode<IdentityAssertion> {
-    public IdentityAssertionTreeNode(IdentityAssertion idass) {
+public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> extends LeafAssertionTreeNode<AT> {
+    public IdentityAssertionTreeNode(AT idass) {
         super(idass);
         assertion = idass;
     }
@@ -101,6 +101,7 @@ public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode<Id
         if (p instanceof OneOrMoreAssertionTreeNode) {
             List pathAssertions = new ArrayList();
             CompositeAssertion ca = (CompositeAssertion)p.asAssertion();
+            //noinspection ForLoopReplaceableByForEach
             for (Iterator iterator = ca.getChildren().iterator(); iterator.hasNext();) {
                 Assertion assertion = (Assertion)iterator.next();
                 if (in.pathContains(assertion)) {
@@ -126,7 +127,7 @@ public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode<Id
     }
 
     static final Logger log = Logger.getLogger(IdentityAssertionTreeNode.class.getName());
-    private IdentityAssertion assertion;
-    private String provName = null;
+    protected AT assertion;
+    protected String provName = null;
     public static final String NA = "provider not available";
 }

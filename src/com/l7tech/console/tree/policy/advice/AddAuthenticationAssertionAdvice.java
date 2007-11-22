@@ -3,14 +3,13 @@
  */
 package com.l7tech.console.tree.policy.advice;
 
-import com.l7tech.console.tree.policy.PolicyChange;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.util.Functions;
 import com.l7tech.console.security.rbac.FindEntityDialog;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.tree.policy.PolicyChange;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
-import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.objectmodel.EntityHeader;
 
 /**
  * @author alex
@@ -23,13 +22,9 @@ public class AddAuthenticationAssertionAdvice implements Advice {
         }
 
         final AuthenticationAssertion ass = (AuthenticationAssertion) assertions[0];
-        final FindEntityDialog fed = new FindEntityDialog(TopComponents.getInstance().getTopParent(), EntityType.ID_PROVIDER_CONFIG);
-        fed.pack();
-        DialogDisplayer.display(fed, new Runnable() {
-            public void run() {
-                EntityHeader eh = fed.getSelectedEntityHeader();
-                if (eh == null) return;
-                ass.setIdentityProviderOid(eh.getOid());
+        FindEntityDialog.find(EntityType.ID_PROVIDER_CONFIG, new Functions.UnaryVoid<EntityHeader>() {
+            public void call(EntityHeader entityHeader) {
+                ass.setIdentityProviderOid(entityHeader.getOid());
                 pc.proceed();
             }
         });
