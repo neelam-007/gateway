@@ -4151,13 +4151,25 @@
     -->
     <target name="obfuscate.manager" depends="obfuscate.manager.init" if="obfuscate">
         <echo>Obfuscating Manager.jar</echo>
-        <Zelix scriptFileName="build/etc/manager.zkm"
-               logFileName="build/obfuscation/managerobfuscation.log"
-               trimLogFileName="build/obfuscation/managerobfuscation.log"
+        <echo>Backing up META-INF/INDEX.LIST</echo>
+         <unjar src="${build.dir}/Manager.jar" dest="${build.dir}/etc">
+            <patternset>
+                <include name="META-INF/INDEX.LIST"/>
+            </patternset>
+        </unjar>
+        <echo>Obfuscating</echo>
+        <Zelix scriptFileName="${build.dir}/etc/manager.zkm"
+               logFileName="${build.dir}/obfuscation/managerobfuscation.log"
+               trimLogFileName="${build.dir}/obfuscation/managerobfuscation.log"
                isParseOnly="false"
                isVerbose="true"/>
+        <copy tofile="${build.dir}/Manager.jar" file="${build.dir}/obfuscation/Manager.jar" overwrite="true"/>
         <echo>Done obfuscating Manager.jar</echo>
-        <copy tofile="build/Manager.jar" file="build/obfuscation/Manager.jar" overwrite="true"/>
+
+        <echo>Restoring up META-INF/INDEX.LIST</echo>
+        <jar jarfile="${build.dir}/Manager.jar" update="true">
+           <zipfileset dir="${build.dir}/etc/META-INF" includes="INDEX.LIST" prefix="META-INF"/>
+       </jar>
     </target>
 
     <!--
