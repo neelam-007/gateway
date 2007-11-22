@@ -275,7 +275,7 @@ public class AuditSignatureChecker extends JFrame {
             _preferences.put(PREF_CERTPATH, args[1]);
 
         } else {
-            System.out.println("usage: (Help)         java " + AuditSignatureChecker.class.getName() + "-h");
+            System.out.println("usage: (Help)         java " + AuditSignatureChecker.class.getName() + " -h");
             System.out.println("       (GUI)          java " + AuditSignatureChecker.class.getName());
             System.out.println("       (Command line) java " + AuditSignatureChecker.class.getName() + " {ZIP file} {Cert file}");
             System.out.println("                      java " + AuditSignatureChecker.class.getName() + " audit.dat  {Cert file}");
