@@ -520,16 +520,15 @@ public class Gui {
      */
     public static void errorMessage( final String msg ) {
         Object[] message = new Object[]{msg};
-        if(msg!=null && msg.length() > 100 && msg.indexOf('\n')<0) { // then wrap for readability
-            JTextArea jta = new JTextArea(msg);
-            jta.setEditable(false);
-            jta.setBorder(null);
-            jta.setOpaque(false);
-            jta.setLineWrap(true);
-            jta.setWrapStyleWord(true);
-            jta.setSize(600, 1);
-            message[0] = jta;
-        }
+        // wrap for readability
+        JTextArea jta = new JTextArea(msg);
+        jta.setEditable(false);
+        jta.setBorder(null);
+        jta.setOpaque(false);
+        jta.setLineWrap(true);
+        jta.setWrapStyleWord(true);
+        jta.setSize(600, 1);
+        message[0] = jta;
         JOptionPane.showMessageDialog( null, message, "Unable to Proceed", JOptionPane.ERROR_MESSAGE );
     }
 
