@@ -131,7 +131,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             return;
         } catch (InvalidPasswordException e) {
             logger.log(Level.WARNING, "new password not valid", e);
-            sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+            sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
             return;
         }
 
