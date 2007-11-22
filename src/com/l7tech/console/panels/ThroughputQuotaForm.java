@@ -50,6 +50,7 @@ public class ThroughputQuotaForm extends JDialog {
     private JRadioButton alwaysIncrementRadio;
     private JRadioButton decrementRadio;
     private JRadioButton incrementOnSuccessRadio;
+    private JTextField varPrefixField;
 
     public ThroughputQuotaForm(Frame owner, ThroughputQuota subject, Assertion policyRoot) {
         super(owner, true);
@@ -71,6 +72,8 @@ public class ThroughputQuotaForm extends JDialog {
         }
         model.setSelectedItem(TIME_UNITS[subject.getTimeUnit()-1]);
         counterNameCombo.setEditable(true);
+
+        varPrefixField.setText(subject.getVariablePrefix());
 
         // get counter names from other sla assertions here
         ArrayList listofexistingcounternames = new ArrayList();
@@ -233,6 +236,7 @@ public class ThroughputQuotaForm extends JDialog {
         subject.setQuota(qval);
         subject.setGlobal(globalRadio.isSelected());
         subject.setTimeUnit(quotaUnitCombo.getSelectedIndex()+1);
+        subject.setVariablePrefix(varPrefixField.getText());
 
         int counterStrategy = ThroughputQuota.INCREMENT_ON_SUCCESS;
         if (alwaysIncrementRadio.isSelected()) {

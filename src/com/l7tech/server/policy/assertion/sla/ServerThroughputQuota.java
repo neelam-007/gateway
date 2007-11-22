@@ -36,6 +36,11 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
     private ApplicationContext  applicationContext;
     private final String[] TIME_UNITS = {"second", "hour", "day", "month"};
     private final String[] varsUsed;
+    private final String idVariable;
+    private final String valueVariable;
+    private final String periodVariable;
+    private final String userVariable;
+    private final String maxVariable;
 
     public ServerThroughputQuota(ThroughputQuota assertion, ApplicationContext ctx) {
         super(assertion);
@@ -43,9 +48,23 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
         this.applicationContext = ctx;
         auditor = new Auditor(this, applicationContext, logger);
         varsUsed = assertion.getVariablesUsed();
+        idVariable = assertion.idVariable();
+        valueVariable = assertion.valueVariable();
+        periodVariable = assertion.periodVariable();
+        userVariable = assertion.userVariable();
+        maxVariable = assertion.maxVariable();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        context.setVariable(idVariable, assertion.getCounterName());
+        context.setVariable(periodVariable, TIME_UNITS[assertion.getTimeUnit() - 1]);
+        User user = context.getLastAuthenticatedUser();
+        if (user != null) {
+            context.setVariable(userVariable, user.getName());
+        } else {
+            context.setVariable(userVariable, "");            
+        }
+        context.setVariable(maxVariable, String.valueOf(assertion.getQuota()));
         switch (assertion.getCounterStrategy()) {
             case ThroughputQuota.ALWAYS_INCREMENT:
                 return doIncrementAlways(context);
@@ -71,6 +90,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
                                                                      now,
                                                                      assertion.getTimeUnit(),
                                                                      assertion.getQuota());
+                this.setValue(context, val);
                 // no need to check the limit because the preceeding call would throw if limit was exceeded
                 logger.finest("Value " + val + " still within quota " + assertion.getQuota());
                 return AssertionStatus.NONE;
@@ -87,6 +107,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
             }
         } else {
             val = counter.getCounterValue(counterid, assertion.getTimeUnit());
+            this.setValue(context, val);
             if (val <= assertion.getQuota()) {
                 logger.fine("the quota was not exceeded. " + val + " smaller than " + assertion.getQuota());
                 return AssertionStatus.NONE;
@@ -114,6 +135,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
                         "counter was not previously recorded as incremented in this context.");
             // one could argue that this should result in error
         }
+        this.setValue(context, -1);
         return AssertionStatus.NONE;
     }
 
@@ -130,6 +152,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
         } else {
             val = counter.getCounterValue(counterid, assertion.getTimeUnit());
         }
+        this.setValue(context, val);
         if (val <= assertion.getQuota()) {
             logger.fine("the quota was not exceeded. " + val + " smaller than " + assertion.getQuota());
             return AssertionStatus.NONE;
@@ -180,5 +203,9 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
         } else {
             logger.fine("the counter was not already incremented in this context");
         }
+    }
+
+    private void setValue(PolicyEnforcementContext context, long value) {
+        context.setVariable(valueVariable, String.valueOf(value));
     }
 }

@@ -8,7 +8,10 @@ package com.l7tech.policy.assertion.sla;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.DataType;
 
 /**
  * An assertion that enforce the number of requests that can be made to a particular resource per time unit.
@@ -19,12 +22,24 @@ import com.l7tech.policy.variable.ExpandVariables;
  *
  * @author flascelles@layer7-tech.com
  */
-public class ThroughputQuota extends Assertion implements UsesVariables {
+public class ThroughputQuota extends Assertion implements UsesVariables, SetsVariables {
     public static final int TIME_UNIT_UNDEFINED = 0;
     public static final int PER_SECOND = 1;
     public static final int PER_HOUR = 2;
     public static final int PER_DAY = 3;
     public static final int PER_MONTH = 4;
+    public static final String DEFAULT_VAR_PREFIX = "counter";
+    public static final String VAR_SUFFIX_ID = "id";
+    public static final String VAR_SUFFIX_VALUE = "value";
+    public static final String VAR_SUFFIX_PERIOD = "period";
+    public static final String VAR_SUFFIX_USER = "user";
+    public static final String VAR_SUFFIX_MAX = "max";
+    private String idVariable; // actually id is the same as name, since the GUI shows counter id for counter name.
+    private String valueVariable;
+    private String periodVariable;
+    private String userVariable;
+    private String maxVariable;
+    private String variablePrefix = "";
     private long quota = 200;
     private boolean global = false;
     private int timeUnit = PER_MONTH;
@@ -35,6 +50,52 @@ public class ThroughputQuota extends Assertion implements UsesVariables {
     private int counterStrategy = INCREMENT_ON_SUCCESS;
 
     public ThroughputQuota() {}
+
+    public String getVariablePrefix() {
+        return variablePrefix;
+    }
+
+    public void setVariablePrefix(String variablePrefix) {
+        this.variablePrefix = variablePrefix;
+        doVarNames();
+    }
+
+    private void doVarNames() {
+        String prefix = variablePrefix;
+        if (prefix == null || prefix.length() == 0) {
+            prefix = DEFAULT_VAR_PREFIX;
+        }
+        idVariable = prefix + "." + VAR_SUFFIX_ID;
+        valueVariable = prefix + "." + VAR_SUFFIX_VALUE;
+        periodVariable = prefix + "." + VAR_SUFFIX_PERIOD;
+        userVariable = prefix + "." + VAR_SUFFIX_USER;
+        maxVariable = prefix + "." + VAR_SUFFIX_MAX;
+    }
+
+    public String idVariable() {
+        if (idVariable == null) doVarNames();
+        return idVariable;
+    }
+
+    public String valueVariable() {
+        if (valueVariable == null) doVarNames();
+        return valueVariable;
+    }
+
+    public String periodVariable() {
+        if (periodVariable == null) doVarNames();
+        return periodVariable;
+    }
+
+    public String userVariable() {
+        if (userVariable == null) doVarNames();
+        return userVariable;
+    }
+
+    public String maxVariable() {
+        if (maxVariable == null) doVarNames();
+        return maxVariable;
+    }
 
     /**
      * The quota property represents the maximum number of requests that are allowed at run time per timeUnit.
@@ -119,5 +180,16 @@ public class ThroughputQuota extends Assertion implements UsesVariables {
     public String[] getVariablesUsed() {
         if (counterName == null) return new String[0];
         return ExpandVariables.getReferencedNames(counterName);
+    }
+
+    public VariableMetadata[] getVariablesSet() {
+         return new VariableMetadata[] {
+            // Note default prefixes are used here for property lookup purposes
+            new VariableMetadata(idVariable(), false, false, DEFAULT_VAR_PREFIX + "." + VAR_SUFFIX_ID, false, DataType.STRING),
+            new VariableMetadata(valueVariable(), false, false, DEFAULT_VAR_PREFIX + "." + VAR_SUFFIX_VALUE, false, DataType.INTEGER),
+            new VariableMetadata(periodVariable(), false, false, DEFAULT_VAR_PREFIX + "." + VAR_SUFFIX_PERIOD, false, DataType.STRING),
+            new VariableMetadata(userVariable(), false, false, DEFAULT_VAR_PREFIX + "." + VAR_SUFFIX_USER, false, DataType.STRING),
+            new VariableMetadata(maxVariable(), false, false, DEFAULT_VAR_PREFIX + "." + VAR_SUFFIX_MAX, false, DataType.INTEGER),
+        };
     }
 }
