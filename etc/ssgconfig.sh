@@ -9,8 +9,8 @@ USER=${LOGNAME}
 SCADIAG="/opt/sun/sca6000/sbin/scadiag"
 popd > /dev/null
 
-JAVA_HOME=${SSG_ROOT}/jdk
-launchtype=${1}
+. ${SSG_ROOT}/bin/ssg-utilities
+. ${SSG_ROOT}/etc/profile.d/java.sh
 
 OPTIONS="-Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT}"
 
@@ -24,16 +24,20 @@ launch_wizard(){
 	check_options
 	#check if we're root
 	if [ "$USER" != "ssgconfig" ]; then
-        	su -m ssgconfig -c "${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*"
-    	else
-        	${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
-    	fi
+        su -m ssgconfig -c "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar -partitionMigrate &>/dev/null && ${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*"
+    else
+        su -m ssgconfig -c "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar -partitionMigrate &>/dev/null"
+        ${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
+    fi
 }
 
+ensure_JDK
+launchtype=${1}
+check_user
+
 if [ "${launchtype}z" == "-exportsharedkeyz" ] || [ "${launchtype}z" == "-changeMasterPassphrasez" ]; then
-    ${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
+    su -m ssgconfig -c "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar -partitionMigrate &>/dev/null"
+    ${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
 else
     launch_wizard "${launchtype}"
 fi
-
-

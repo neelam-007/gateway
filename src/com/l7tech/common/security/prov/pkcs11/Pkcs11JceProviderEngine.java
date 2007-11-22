@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 /**
  * A JceProviderEngine that uses the first available PKCS11 provider configured in the JVM, or else
  * adds a new one using the SunPKCS11 config file from the com.l7tech.server.pkcs11ConfigFile system
- * property (defaults to "/ssg/etc/conf/pkcs11.cfg").
+ * property (defaults to "/ssg/appliance/pkcs11.cfg").
  */
 public class Pkcs11JceProviderEngine implements JceProviderEngine {
     protected static final Logger logger = Logger.getLogger(Pkcs11JceProviderEngine.class.getName());
@@ -29,7 +29,7 @@ public class Pkcs11JceProviderEngine implements JceProviderEngine {
      * </pre>
      */
     public static final String PROPERTY_CONFIG_PATH = "com.l7tech.server.pkcs11ConfigFile";
-    private static final String DEFAULT_CONFIG_PATH = "/ssg/etc/conf/pkcs11.cfg";
+    private static final String DEFAULT_CONFIG_PATH = "/ssg/appliance/pkcs11.cfg";
     private static final String CONFIG_PATH = SyspropUtil.getString(PROPERTY_CONFIG_PATH, DEFAULT_CONFIG_PATH);
     private static final Provider PROVIDER;
 

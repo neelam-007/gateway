@@ -1,0 +1,2 @@
+SSG_JAVA_HOME=""
+export SSG_JAVA_HOME

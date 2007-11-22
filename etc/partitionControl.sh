@@ -4,10 +4,15 @@
 #Control script to start or stop an individual partition.
 ##################################################################################
 
-. /etc/profile.d/ssgruntimedefs.sh
+cd `dirname $0`
+pushd .. > /dev/null
+SSG_ROOT=`pwd`
+popd > /dev/null
 
-ORIGINAL_JAVA_OPTS=${JAVA_OPTS}
+. ${SSG_ROOT}/bin/ssg-utilities
+. ${SSG_ROOT}/etc/profile
 
+ORIGINAL_JAVA_OPTS="${SSG_JAVA_OPTS} ${PARTITION_OPTS}"
 USER=$(whoami)
 SSGUSER="gateway"
 
@@ -33,38 +38,43 @@ explain_not_enabled() {
 }
 
 build_paths() {
-    PARTITION_DIR="${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}"
+    PARTITION_DIR="${SSG_ROOT}/etc/conf/partitions/${PARTITION_NAME}"
     ENABLED_FILE="${PARTITION_DIR}/enabled"
+    FIREWALL_UPDATER="${SSG_ROOT}/appliance/bin/partition_firewall.pl"
     FIREWALL_FILE="${PARTITION_DIR}/firewall_rules"
     GATEWAY_PID="${PARTITION_DIR}/ssg.pid"
     GATEWAY_SHUTDOWN="${PARTITION_DIR}/SHUTDOWN.NOW"
 }
 
-do_control() {
-    . ${SSG_HOME}/bin/partition_defs.sh true "${PARTITION_COUNT}"
-    (perl ${SSG_HOME}/bin/partition_firewall.pl ${FIREWALL_FILE} ${COMMAND})
+do_firewall() {
+    if [ -e ${FIREWALL_UPDATER} ] ; then
+        (perl ${FIREWALL_UPDATER} ${FIREWALL_FILE} ${COMMAND})
+    fi
+}
 
+do_control() {
+    do_firewall
     if [ "${PARTITION_NAME}"  == "default_" ] ; then
         if [ -e  /usr/local/Tarari ]; then
             ORIGINAL_JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true $ORIGINAL_JAVA_OPTS"
         fi
     else
-        if  [ -e "${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname" ]; then
-            RMI_HOSTNAME="$(<${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname)"
+        if  [ -e "${SSG_ROOT}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname" ]; then
+            RMI_HOSTNAME="$(<${SSG_ROOT}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname)"
         else
             RMI_HOSTNAME="$(hostname -f)"
         fi
-        echo ${ORIGINAL_JAVA_OPTS} | grep java.rmi.server.hostname &>/dev/null
-        if [ $? -eq 0 ] ; then
-            ORIGINAL_JAVA_OPTS=$(echo ${ORIGINAL_JAVA_OPTS} | sed "s/-Djava.rmi.server.hostname=[^ ]*/-Djava.rmi.server.hostname=${RMI_HOSTNAME}/")
-        else
-            ORIGINAL_JAVA_OPTS="${ORIGINAL_JAVA_OPTS} -Djava.rmi.server.hostname=${RMI_HOSTNAME}" 
-        fi
+    fi
+    echo ${ORIGINAL_JAVA_OPTS} | grep java.rmi.server.hostname &>/dev/null
+    if [ $? -eq 0 ] ; then
+        ORIGINAL_JAVA_OPTS=$(echo ${ORIGINAL_JAVA_OPTS} | sed "s/-Djava.rmi.server.hostname=[^ ]*/-Djava.rmi.server.hostname=${RMI_HOSTNAME}/")
+    else
+        ORIGINAL_JAVA_OPTS="${ORIGINAL_JAVA_OPTS} -Djava.rmi.server.hostname=${RMI_HOSTNAME}"
     fi
 
-    JAVA_OPTS="${ORIGINAL_JAVA_OPTS} ${partition_opts} -Djava.security.properties==${PARTITION_DIR}/java.security -Dcom.l7tech.server.partitionName=${PARTITION_NAME}"
+    JAVA_OPTS="${ORIGINAL_JAVA_OPTS} -Djava.security.properties==${PARTITION_DIR}/java.security -Dcom.l7tech.server.partitionName=${PARTITION_NAME}"
     export JAVA_OPTS
-    export SSG_HOME
+    export SSG_ROOT
     export GATEWAY_PID
     export GATEWAY_SHUTDOWN
 
@@ -73,14 +83,16 @@ do_control() {
             return 1
         fi
 
-        (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND} 2>&1 | logger -t SSG-${PARTITION_NAME}") <&- &>/dev/null &
+        (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND} 2>&1") <&- &>/dev/null &
     else
-        (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}") &>/dev/null
+        (su $SSGUSER -c "${SSG_ROOT}/bin/gateway.sh ${COMMAND}") &>/dev/null
     fi
 }
 
 COMMAND=${1}
 PARTITION_NAME=${2}
+
+ensure_JDK
 
 if [ ${USER} != "root" ] ; then
     echo
@@ -108,14 +120,14 @@ if [ "${COMMAND}" == "usage" ] ; then
     exit 0;
 fi
 
-if [ ! -d "${SSG_HOME}" ] ; then
-    if [ -z "${SSG_HOME}" ] ; then
-        echo
-        echo "SSG_HOME is not set! Please set SSG_HOME to the installation root of the SecureSpan Gateway (ex. /ssg)"
+if [ ! -d "${SSG_ROOT}" ] ; then
+    if [ -z "${SSG_ROOT}" ] ; then
+        echo ""
+        echo "SSG_ROOT is not set! Please set SSG_ROOT to the installation root of the SecureSpan Gateway (ex. /ssg)"
         exit 1;
     else
         echo
-        echo "Invalid SSG_HOME! Please set SSG_HOME to the installation root of the SecureSpan Gateway (ex. /ssg)"
+        echo "Invalid SSG_ROOT! Please set SSG_ROOT to the installation root of the SecureSpan Gateway (ex. /ssg)"
         exit 1;
     fi
 fi

@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
  */
 public class FirewallRules {
     protected static final Logger logger = Logger.getLogger(FirewallRules.class.getName());
+    private static final String FIREWALL_RULES_FILENAME = "/appliance/firewall_rules";
 
     /**
      * Read the specified firewall rules and parse them into a list of port ranges.

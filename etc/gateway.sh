@@ -1,6 +1,13 @@
 #!/bin/bash
 umask 0002
 
+cd `dirname $0`
+pushd .. > /dev/null
+SSG_HOME=`pwd`
+popd > /dev/null
+
+. ${SSG_HOME}/etc/profile
+
 if [ "$1" = "jpda" ] ; then
   if [ -z "$JPDA_TRANSPORT" ]; then
     JPDA_TRANSPORT="dt_socket"
@@ -30,7 +37,7 @@ if [ "$1" = "start" ] ; then
        rm -f $GATEWAY_SHUTDOWN
    fi
 
-    ${JAVA_HOME}/bin/java -Djava.ext.dirs="${SSG_HOME}/jdk/jre/lib/ext:${SSG_HOME}/lib/ext" $JAVA_OPTS -jar Gateway.jar "$@" &
+    ${SSG_JAVA_HOME}/bin/java -Djava.endorsed.dirs="${SSG_JAVA_HOME}/jdk/jre/lib/ext:${SSG_HOME}/lib/ext" $JAVA_OPTS -jar Gateway.jar "$@" &
 
     if [ ! -z "$GATEWAY_PID" ]; then
         echo $! > $GATEWAY_PID

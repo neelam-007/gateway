@@ -1,0 +1,12 @@
+#!/bin/bash
+
+cd `dirname $0`
+pushd .. > /dev/null
+SSG_ROOT=`pwd`
+popd > /dev/null
+
+for i in ${SSG_ROOT}/etc/profile.d/*.sh ; do
+    if [ -r "$i" ]; then
+        . $i
+    fi
+done

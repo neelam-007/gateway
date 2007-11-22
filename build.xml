@@ -2441,6 +2441,13 @@
 
     <target name="package.installgateway.work.rpm.check" if="makerpm.enabled">
         <available property="package.installgateway.work.rpm.sourceavailable" file="${tarball}"/>
+        <available property="package.installgateway.work.rpm.appliance.sourceavailable" file="${appliance-tarball}"/>
+        <condition property="package.installgateway.work.rpm.x86_64.appliance.required">
+          <and>
+            <isset property="install.jdk64.tar.gz"/>
+            <isset property="package.installgateway.work.rpm.appliance.sourceavailable"/>
+          </and>
+        </condition>
     </target>
 
     <!--
@@ -2472,9 +2479,7 @@
         <property name="package.installgateway.work.rpmspec" value="etc/ssg.spec"/>
         <echo level="info">Using spec file : ${package.installgateway.work.rpmspec}</echo>
         <echo level="info">Using source TGZ: ${tarball}</echo>
-        <echo level="info">Using source JDK: ${install.jdk.tar.gz}</echo>
         <copy file="${tarball}" tofile="${build.rpm}/SOURCES/ssg.tar.gz"/>
-        <copy file="${install.jdk.tar.gz}" tofile="${build.rpm}/SOURCES/jdk.tar.gz"/>
         <copy file="${package.installgateway.work.rpmspec}" todir="${build.rpm}/SPECS">
             <filterchain>
                 <tokenfilter>
@@ -2485,26 +2490,55 @@
             </filterchain>
         </copy>
 
-        <rpm specFile="ssg.spec" topDir="${build.rpm}" command="-bb --target i386"/>
+        <rpm specFile="ssg.spec" topDir="${build.rpm}" command="-bb --target noarch"/>
 
-        <condition property="package.installgateway.work.rpm.x86_64.required">
-          <isset property="install.jdk64.tar.gz"/>
-        </condition>
+        <!--<condition property="package.installgateway.work.rpm.x86_64.required">-->
+          <!--<isset property="install.jdk64.tar.gz"/>-->
+        <!--</condition>-->
+    </target>
+
+    <target name="package.installgateway.work.rpm.appliance" depends="package.installgateway.work.rpm.check, package.readversion, package.checkrelease" if="package.installgateway.work.rpm.appliance.sourceavailable">
+        <!-- create directories -->
+        <mkdir dir="${build.rpm}/BUILD"/>
+        <mkdir dir="${build.rpm}/RPMS"/>
+        <mkdir dir="${build.rpm}/SOURCES"/>
+        <mkdir dir="${build.rpm}/SPECS"/>
+        <mkdir dir="${build.rpm}/SRPMS"/>
+
+        <!-- Set release as empty if not yet set -->
+        <property name="build.release" value=""/>
+        <property name="package.installgateway.work.appliance.rpmspec" value="etc/appliance/ssg-appliance.spec"/>
+        <echo level="info">Using spec file : ${package.installgateway.work.appliance.rpmspec}</echo>
+        <echo level="info">Using source TGZ: ${appliance-tarball}</echo>
+        <echo level="info">Using source JDK: ${install.jdk.tar.gz}</echo>
+        <copy file="${appliance-tarball}" tofile="${build.rpm}/SOURCES/ssg-appliance.tar.gz"/>
+        <copy file="${install.jdk.tar.gz}" tofile="${build.rpm}/SOURCES/jdk.tar.gz"/>
+        <copy file="${package.installgateway.work.appliance.rpmspec}" todir="${build.rpm}/SPECS">
+            <filterchain>
+                <tokenfilter>
+                    <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^Release: [0-9]{1,10})" replace="${build.release}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^[a-zA-Z &quot;]{0,80}Layer 7 SecureSpan\(tm\) Gateway v)[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
+                </tokenfilter>
+            </filterchain>
+        </copy>
+
+        <rpm specFile="ssg-appliance.spec" topDir="${build.rpm}" command="-bb --target i386"/>
     </target>
 
     <!--
       Create the SSG RPM (x86_64)
     -->
-    <target name="package.installgateway.work.rpm.x86_64" depends="package.installgateway.work.rpm.core" if="package.installgateway.work.rpm.x86_64.required">
+    <target name="package.installgateway.work.rpm.appliance.x86_64" depends="package.installgateway.work.rpm.check, package.readversion, package.checkrelease" if="package.installgateway.work.rpm.x86_64.appliance.required">
         <echo level="info">Using source JDK: ${install.jdk64.tar.gz}</echo>
         <copy file="${install.jdk64.tar.gz}" tofile="${build.rpm}/SOURCES/jdk.tar.gz" overwrite="true"/>
-        <rpm specFile="ssg.spec" topDir="${build.rpm}" command="-bb --target x86_64"/>
+        <rpm specFile="ssg-appliance.spec" topDir="${build.rpm}" command="-bb --target x86_64"/>
     </target>
 
     <!--
       Create the SSG RPM
     -->
-    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.x86_64" if="makerpm.enabled">
+    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.appliance, package.installgateway.work.rpm.appliance.x86_64" if="makerpm.enabled">
         <echo level="info">RPM build completed.</echo>
     </target>
 
@@ -2668,9 +2702,14 @@
         </copy>
 
         <copy todir="${build.dir}/sysconfigwizard">
-            <fileset dir="${src.root}/etc">
+            <fileset dir="${src.root}/etc/appliance">
                 <include name="ssg_sys_config.pl"/>
                 <include name="systemconfig.sh"/>
+            </fileset>
+        </copy>
+        
+         <copy todir="${build.dir}/sysconfigwizard">
+            <fileset dir="${src.root}/etc/">
                 <include name="configlogging.properties"/>
             </fileset>
         </copy>
@@ -3562,15 +3601,15 @@
         <fail unless="jdk.exists" message="Couldn't find ${install.jdk.tar.gz}! Check your install.properties file!"/>
 
         <!-- Relative pathnames -->
-        <property name="install.rel.dist" value="dist"/>
-        <property name="install.rel.doc" value="doc"/>
-        <property name="install.rel.etc" value="etc"/>
-        <property name="install.rel.bin" value="bin"/>
+        <!--<property name="install.rel.dist" value="dist"/>-->
+        <!--<property name="install.rel.doc" value="doc"/>-->
+        <!--<property name="install.rel.etc" value="etc"/>-->
+        <!--<property name="install.rel.bin" value="bin"/>-->
         <property name="install.rel.libexec" value="libexec"/>
         <property name="install.rel.logs" value="logs"/>
         <property name="install.rel.ldap" value="${install.rel.etc}/ldapTemplates"/>
         <property name="install.rel.uddi" value="${install.rel.etc}/uddiTemplates"/>
-        <property name="install.rel.conf" value="${install.rel.etc}/conf"/>
+        <!--<property name="install.rel.conf" value="${install.rel.etc}/conf"/>-->
         <property name="install.rel.inf" value="${install.rel.etc}/inf"/>
         <property name="install.rel.partitions" value="partitions"/>
         <property name="install.rel.partitionTemplate" value="partitiontemplate_"/>
@@ -3578,22 +3617,20 @@
         <property name="install.rel.sql" value="${install.rel.etc}/sql"/>
 
         <!-- Absolute source paths -->
-        <property name="install.src.base" value="${build.dir}/install/ssg"/>
-        <property name="install.src.bin" value="${install.src.base}/${install.rel.bin}"/>
-        <property name="install.src.libexec" value="${install.src.base}/${install.rel.libexec}"/>
-        <property name="install.src.lib" value="${install.src.base}/lib"/>
-        <property name="install.src.lib.ext" value="${install.src.lib}/ext"/>
-        <property name="install.src.mods" value="${install.src.base}/modules/lib"/>
-        <property name="install.src.aarmods" value="${install.src.base}/modules/assertions"/>
-        <property name="install.src.dist" value="${install.src.base}/${install.rel.dist}"/>
-        <property name="install.src.doc" value="${install.src.base}/${install.rel.doc}"/>
-        <property name="install.src.jdk" value="${install.src.base}/${install.rel.jdk}"/>
 
-        <property name="install.src.etc" value="${install.src.base}/${install.rel.etc}"/>
-        <property name="install.src.sql" value="${install.src.base}/${install.rel.sql}"/>
+        <property name="install.src.lib" value="${install.src.ssgonly.base}/lib"/>
+        <property name="install.src.lib.ext" value="${install.src.ssgonly.base}/ext"/>
+        <property name="install.src.mods" value="${install.src.ssgonly.base}/modules/lib"/>
+        <property name="install.src.aarmods" value="${install.src.ssgonly.base}/modules/assertions"/>
+        <!--<property name="install.src.dist" value="${install.src.base}/${install.rel.dist}"/>-->
+        <property name="install.src.doc" value="${install.src.ssgonly.base}/${install.rel.doc}"/>
 
-        <property name="install.src.conf" value="${install.src.base}/${install.rel.conf}"/>
-        <property name="install.src.inf" value="${install.src.base}/${install.rel.inf}"/>
+
+        <property name="install.src.etc" value="${install.src.ssgonly.base}/${install.rel.etc}"/>
+        <property name="install.src.sql" value="${install.src.ssgonly.base}/${install.rel.sql}"/>
+
+        <!--<property name="install.src.conf" value="${install.src.ssgonly.base}/${install.rel.conf}"/>-->
+        <property name="install.src.inf" value="${install.src.ssgonly.base}/${install.rel.inf}"/>
         <property name="install.src.partitions" value="${install.src.conf}/${install.rel.partitions}"/>
         <property name="install.src.partitionTemplate" value="${install.src.partitions}/${install.rel.partitionTemplate}"/>
         <property name="install.src.defaultPartition" value="${install.src.partitions}/${install.rel.defaultPartition}"/>
@@ -3601,40 +3638,42 @@
         <property name="install.src.cluster_hostname" value="${install.src.conf}/cluster_hostname"/>
         <property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
         <property name="install.src.uddi.properties" value="${install.src.conf}/uddi.properties"/>
-        <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
-        <property name="install.src.ldap" value="${install.src.base}/${install.rel.ldap}"/>
-        <property name="install.src.uddi" value="${install.src.base}/${install.rel.uddi}"/>
-        <property name="install.src.var" value="${install.src.base}/var"/>
+        <property name="install.src.logs" value="${install.src.ssgonly.base}/${install.rel.logs}"/>
+        <property name="install.src.ldap" value="${install.src.ssgonly.base}/${install.rel.ldap}"/>
+        <property name="install.src.uddi" value="${install.src.ssgonly.base}/${install.rel.uddi}"/>
+        <property name="install.src.var" value="${install.src.ssgonly.base}/var"/>
         <property name="install.src.var.attachments" value="${install.src.var}/attachments"/>
 
         <property name="install.rel.jdk" value="${install.jdk.dir}"/>
 
         <!-- Absolute target paths -->
-        <property name="install.target.base" value="/ssg"/>
+        <!--<property name="install.target.base" value="/ssg"/>-->
         <property name="install.target.ldap" value="${install.target.base}/${install.rel.ldap}"/>
         <property name="install.target.uddi" value="${install.target.base}/${install.rel.uddi}"/>
         <property name="install.target.jdk" value="${install.target.base}/${install.rel.jdk}"/>
         <property name="install.target.logs" value="${install.target.base}/${install.rel.logs}"/>
 
-        <property name="install.src.jar" value="${install.src.base}/Gateway.jar"/>
-        <property name="install.src.configwizard" value="${install.src.base}/configwizard"/>
-        <property name="install.src.flasher" value="${install.src.base}/migration"/>
-        <property name="install.src.sysconfigwizard" value="${install.src.base}/sysconfigwizard"/>
+        <property name="install.src.jar" value="${install.src.ssgonly.base}/Gateway.jar"/>
+        <property name="install.src.configwizard" value="${install.src.ssgonly.base}/configwizard"/>
+        <property name="install.src.flasher" value="${install.src.ssgonly.base}/migration"/>
+        <property name="install.src.sysconfigwizard" value="${install.src.appliance.base}/sysconfigwizard"/>
 
         <echo>Making directories...</echo>
-        <mkdir dir="${install.src.base}"/>
+        <mkdir dir="${install.src.appliance.base}"/>
+        <mkdir dir="${install.src.ssgonly.base}"/>
         <mkdir dir="${install.src.lib}"/>
         <mkdir dir="${install.src.lib.ext}"/>
         <mkdir dir="${install.src.mods}"/>
         <mkdir dir="${install.src.aarmods}"/>
-        <mkdir dir="${install.src.dist}"/>
+        <!--<mkdir dir="${install.src.dist}"/>-->
         <mkdir dir="${install.src.doc}"/>
         <mkdir dir="${install.src.etc}"/>
         <mkdir dir="${install.src.sql}"/>
         <mkdir dir="${install.src.ldap}"/>
         <mkdir dir="${install.src.uddi}"/>
-        <mkdir dir="${install.src.bin}"/>
-        <mkdir dir="${install.src.libexec}"/>
+        <mkdir dir="${install.src.ssgonly.bin}"/>
+        <mkdir dir="${install.src.appliance.bin}"/>
+        <mkdir dir="${install.src.appliance.libexec}"/>
         <mkdir dir="${install.src.conf}"/>
         <mkdir dir="${install.src.partitions}"/>
         <mkdir dir="${install.src.partitionTemplate}"/>
@@ -3659,7 +3698,7 @@
     <target name="INTERNAL-ssg-install-main" depends="INTERNAL-ssg-install-properties" if="ssg.install.enabled">
         <!-- Extract JDK tarball -->
         <!-- Note that the RPM does this later to get the correct JDK for the architecture -->
-        <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
+        <untar src="${install.jdk.tar.gz}" dest="${install.src.base}/appliance/" compression="gzip"/>
 
         <!--copy the config wizard -->
         <copy todir="${install.src.configwizard}">
@@ -3716,7 +3755,7 @@
     -->
     <target name="INTERNAL-ssg-install" depends="INTERNAL-ssg-install-init, INTERNAL-ssg-install-main" if="ssg.install.enabled">
         <!-- Copy Gateway.jar -->
-        <copy todir="${install.src.base}">
+        <copy todir="${install.src.ssgonly.base}">
             <fileset dir="${build.dir}" includes="Gateway.jar"/>
         </copy>
 
@@ -3742,9 +3781,23 @@
             </fileset>
         </copy>
 
-        <!-- copy new sudo exececuted files to new libexec directory -->
-        <copy todir="${install.src.libexec}">
+        <copy todir="${install.src.ssgonly.bin}">
             <fileset dir="${src.root}/etc">
+                <include name="partitionControl.sh"/>
+                <include name="gateway.sh"/>
+                <include name="ssg-java.security"/>
+                <include name="install.sh"/>
+                <include name="configure.sh"/>
+                <include name="profile"/>
+                <include name="ssgruntimedefs.sh"/>
+                <include name="java.sh"/>
+                <include name="ssg-utilities"/>
+            </fileset>
+        </copy>
+
+        <!-- copy new sudo exececuted files to new libexec directory -->
+        <copy todir="${install.src.appliance.libexec}">
+            <fileset dir="${src.root}/etc/appliance/">
                 <include name="load_keydata"/>
                 <include name="save_keydata"/>
                 <include name="wipe_keydata"/>
@@ -3754,37 +3807,34 @@
             </fileset>
         </copy>
 
-        <copy todir="${install.src.bin}">
-            <fileset dir="${src.root}/etc">
+        <copy todir="${install.src.appliance.bin}">
+            <fileset dir="${src.root}/etc/appliance">
+                <include name="setkeys.sh"/>
                 <include name="md5passwd.pl"/>
+                <include name="resetAdmin.sh"/>
                 <include name="rpass.pl"/>
                 <include name="install.pl"/>
                 <include name="upgrade.sh"/>
                 <include name="buildVersion.txt"/>
                 <include name="passServiceUsage.sh"/>
-                <include name="ssgruntimedefs.sh"/>
-                <include name="partition_defs.sh"/>
+                <include name="appliancedefs.sh"/>
                 <include name="ssg_appliance_startup_config.sh"/>
-                <include name="iptables"/>
+				<include name="tcp_tune.sh"/>                
+				<include name="iptables"/>
                 <include name="iptables-singlenet"/>
-                <include name="tarari-initd"/>
+                <include name="partition_firewall.pl"/>
+                <!--<include name="tarari/tarari-initd"/>-->
                 <include name="rotate-binlogs.pl"/>
                 <include name="ssg-initd"/>
                 <include name="ssg-dbstatus-initd"/>
-                <include name="tcp_tune.sh"/>
                 <include name="snmpd.conf"/>
                 <include name="configuser_bashrc"/>
                 <include name="sysconfigscript-initd"/>
-                <include name="partitionControl.sh"/>
-                <include name="gateway.sh"/>
-                <include name="partition_firewall.pl"/>
-                <include name="ssg-java.security"/>
                 <include name="pkcs11_linux.cfg"/>
                 <include name="systeminfo.sh"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
-		        <include name="my.ini"/>
             </fileset>
         </copy>
 
@@ -3803,16 +3853,16 @@
             <fileset dir="${build.dir}/managerlibs" includes="*" />
         </copy>
 
-        <!-- Create tarball -->
+        <!-- Create software only tarball -->
         <property name="tarball" value="${build.dir}/ssg-b${install.build.number}.tar.gz"/>
-        <echo level="info">Creating ${tarball}...</echo>
+        <echo level="info">Creating Software Tarball (${tarball})...</echo>
         <tar destfile="${tarball}" compression="gzip" longfile="gnu">
-            <tarfileset dir="${build.dir}/install" username="gateway" group="gateway" mode="644">
+            <tarfileset dir="${install.src.ssgonly}" username="gateway" group="gateway" mode="644">
                 <include name="**/*"/>
                 <exclude name="**/bin/*"/>
                 <exclude name="ssg/dist/*"/>
             </tarfileset>
-            <tarfileset dir="${build.dir}/install" username="gateway" group="gateway" mode="755">
+            <tarfileset dir="${install.src.ssgonly}" username="gateway" group="gateway" mode="755">
                 <include name="**/bin/*"/>
                 <exclude name="**/bin/*.bat"/>
                 <exclude name="**/bin/*.cnf"/>
@@ -3824,7 +3874,7 @@
                 <exclude name="**/bin/*.txt"/>
                 <exclude name="**/bin/*.xml"/>
             </tarfileset>
-            <tarfileset dir="${build.dir}/install" username="gateway" group="gateway" mode="644">
+            <tarfileset dir="${install.src.ssgonly}" username="gateway" group="gateway" mode="644">
                 <include name="**/bin/*.bat"/>
                 <include name="**/bin/*.cnf"/>
                 <include name="**/bin/*.conf"/>
@@ -3836,7 +3886,16 @@
                 <include name="**/bin/*.xml"/>
             </tarfileset>
         </tar>
-        <echo level="info">BUILD COMPLETE - Produced ${tarball}!</echo>
+
+        <property name="appliance-tarball" value="${build.dir}/ssg-appliance-b${install.build.number}.tar.gz"/>
+        <echo level="info">Creating Appliance Add-On Tarball (${appliance-tarball})...</echo>
+        <tar destfile="${appliance-tarball}" compression="gzip" longfile="gnu">
+            <tarfileset dir="${install.src.appliance}" username="gateway" group="gateway" mode="644">
+                <include name="**/**/*"/>
+            </tarfileset>
+        </tar>
+
+        <echo level="info">BUILD COMPLETE - Produced ${tarball} and ${appliance-tarball}!</echo>
     </target>
 
     <!-- Create the TAR used when building the Solaris PKG -->

@@ -9,7 +9,7 @@
 
 # Source function library.
 . /etc/rc.d/init.d/functions
-. /etc/profile.d/ssgruntimedefs.sh
+. /ssg/etc/profile
 ORIGINAL_JAVA_OPTS="${JAVA_OPTS}"
 
 prog="SSG"
@@ -17,8 +17,8 @@ tries=3
 count=0
 
 USER=$(whoami)
-PARTITION_BASE="$SSG_HOME/etc/conf/partitions/"
-PARTITION_CONTROL="$SSG_HOME/bin/partitionControl.sh"
+PARTITION_BASE="/ssg/etc/conf/partitions/"
+PARTITION_CONTROL="/ssg/bin/partitionControl.sh"
 SINGLE_PARTITION=""
 
 # See how we were called.
@@ -131,7 +131,7 @@ start_ssg() {
     which_partition=$1
     echo -n $"Starting $prog $(basename "${which_partition}"): "
 
-    (sh "${PARTITION_CONTROL}" "start" "${which_partition}" &> /dev/null)
+    (sh "${PARTITION_CONTROL}" "start" "${which_partition} | logger -t SSG-${which_partition}"" &> /dev/null)
     RETVAL=$?
     [ $RETVAL -eq 0 ] && success || failure
     echo

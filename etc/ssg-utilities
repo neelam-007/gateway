@@ -1,0 +1,19 @@
+ensure_JDK() {
+    . ${SSG_ROOT}/etc/profile.d/java.sh
+    if [ -z "${SSG_JAVA_HOME}" ] ; then
+        echo "No JDK is configured. Please run '/ssg/bin/install.sh' to configure."
+        exit 1;
+    fi
+    if [ ! -e "${SSG_JAVA_HOME}" ] ; then
+        echo "The JDK you have specified (${SSG_JAVA_HOME}) does not exist."
+        echo "Please run '/ssg/bin/install.sh' to configure."
+        exit 2;
+    fi
+}
+
+check_user() {
+    USER=${LOGNAME}
+    if [ "$USER" != "ssgconfig" ]; then
+        echo "This utility needs to be run as the ssgconfig user. When prompted, please enter the ssgconfig login password."
+    fi
+}

@@ -44,7 +44,7 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
                 "com.sun.security.sasl.Provider"
             };
 
-    public static final String PKCS11_CFG_FILE = "/ssg/etc/conf/pkcs11.cfg";
+    public static final String PKCS11_CFG_FILE = "/ssg/appliance/pkcs11.cfg";
     public static final String[] HSM_SECURITY_PROVIDERS =
             {
                 "sun.security.pkcs11.SunPKCS11 " + PKCS11_CFG_FILE,
