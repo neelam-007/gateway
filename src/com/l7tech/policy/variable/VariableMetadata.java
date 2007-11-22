@@ -17,7 +17,8 @@ public class VariableMetadata implements Serializable {
     private final DataType type;
 
     public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type) {
-        validateName(name);
+        String err = validateName(name);
+        if (err != null) throw new IllegalArgumentException(err);
         this.name = name;
         this.prefixed = prefixed;
         this.multivalued = multivalued;
@@ -93,16 +94,21 @@ public class VariableMetadata implements Serializable {
         }
     }
 
-    private static void validateName(String name) {
-        char c1 = name.charAt(1);
-        if ("$".indexOf(c1) >= 0 || !Character.isJavaIdentifierStart(c1)) // Java allows '$', we don't
-            throw new IllegalArgumentException("variable names must not start with '" + c1 + "'");
+    public static boolean isNameValid(String name) {
+        return validateName(name) == null;
+    }
+
+    private static String validateName(String name) {
+        char c0 = name.charAt(0);
+        if ("$".indexOf(c0) >= 0 || !Character.isJavaIdentifierStart(c0)) // Java allows '$', we don't
+            return "variable names must not start with '" + c0 + "'";
 
         for (int i = 0; i < name.toCharArray().length; i++) {
             char c = name.toCharArray()[i];
             if (c == '.') continue; // We allow '.', Java doesn't
             if (!Character.isJavaIdentifierPart(c))
-                throw new IllegalArgumentException("variable names must not contain '" + c + "'");
+                return "variable names must not contain '" + c + "'";
         }
+        return null;
     }
 }

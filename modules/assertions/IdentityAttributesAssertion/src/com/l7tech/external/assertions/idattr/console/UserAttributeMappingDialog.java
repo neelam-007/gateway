@@ -3,19 +3,20 @@
  */
 package com.l7tech.external.assertions.idattr.console;
 
+import com.l7tech.common.gui.util.RunOnChangeListener;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.mapping.*;
-import com.l7tech.common.gui.util.RunOnChangeListener;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ResourceBundle;
 import java.util.ArrayList;
+import java.util.ResourceBundle;
 
 /**
  * @author alex
@@ -40,20 +41,30 @@ public class UserAttributeMappingDialog extends JDialog {
 
     private final IdentityMapping mapping;
     private final IdentityProviderConfig config;
-    private final ActionListener radioListener = new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-            enableRadioState();
+    private final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
+        public void run() {
+            enableDisable();
         }
-    };
+    });
 
     private boolean allowCustom = false;
     private final String prefix;
 
-    private void enableRadioState() {
+    private void enableDisable() {
         final boolean builtin = builtInAttributeRadioButton.isSelected();
         builtInAttributeCombo.setEnabled(builtin);
         customAttributeField.setEnabled(!builtin && allowCustom);
         customAttributeRadioButton.setEnabled(allowCustom);
+
+        String vn = variableNameField.getText();
+        boolean ok = true;
+        if (vn == null || vn.trim().length() == 0 || !VariableMetadata.isNameValid(vn)) {
+            ok = false;
+        } else if (customAttributeRadioButton.isSelected()) {
+            final String cf = customAttributeField.getText();
+            if (cf == null || cf.trim().length() == 0) ok = false;
+        }
+        okButton.setEnabled(ok);
     }
 
     public UserAttributeMappingDialog(Frame owner, IdentityMapping mapping, IdentityProviderConfig config, String prefix) throws HeadlessException {
@@ -132,8 +143,13 @@ public class UserAttributeMappingDialog extends JDialog {
 
         multivaluedCheckBox.setSelected(mapping.isMultivalued());
 
-        builtInAttributeRadioButton.addActionListener(radioListener);
-        customAttributeRadioButton.addActionListener(radioListener);
+        builtInAttributeRadioButton.addActionListener(changeListener);
+        customAttributeRadioButton.addActionListener(changeListener);
+        customAttributeRadioButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) { customAttributeField.requestFocus(); }
+        });
+        customAttributeField.getDocument().addDocumentListener(changeListener);
+        variableNameField.getDocument().addDocumentListener(changeListener);
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -174,7 +190,7 @@ public class UserAttributeMappingDialog extends JDialog {
             }
         }));
 
-        enableRadioState();
+        enableDisable();
         
         add(mainPanel);
     }

@@ -140,4 +140,8 @@
       <member id="9d5fb"/>
     </group>
   </buttonGroups>
+  <inspectionSuppressions>
+    <suppress inspection="NoLabelFor" id="12230"/>
+    <suppress inspection="NoLabelFor" id="ce8f1"/>
+  </inspectionSuppressions>
 </form>

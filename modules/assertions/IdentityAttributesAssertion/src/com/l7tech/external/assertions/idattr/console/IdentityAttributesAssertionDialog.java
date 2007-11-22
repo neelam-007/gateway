@@ -5,6 +5,7 @@ package com.l7tech.external.assertions.idattr.console;
 
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.idattr.IdentityAttributesAssertion;
@@ -14,6 +15,7 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.mapping.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -24,6 +26,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 
 /**
  * @author alex
@@ -41,21 +44,20 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
     private JComboBox identityProviderComboBox;
     private JTextField variablePrefixField;
 
-    private final Map<IdentityProviderType, Set<AttributeHeader>> builtinAttributes = new HashMap<IdentityProviderType, Set<AttributeHeader>>() {
+    private final Map<IdentityProviderType, Set<AttributeHeader>> builtinAttributes = Collections.unmodifiableMap(new HashMap<IdentityProviderType, Set<AttributeHeader>>() {
         {
             put(IdentityProviderType.INTERNAL, new HashSet<AttributeHeader>(Arrays.asList(InternalAttributeMapping.getBuiltinAttributes())));
             put(IdentityProviderType.FEDERATED, new HashSet<AttributeHeader>(Arrays.asList(FederatedAttributeMapping.getBuiltinAttributes())));
             put(IdentityProviderType.LDAP, new HashSet<AttributeHeader>(Arrays.asList(LdapAttributeMapping.getBuiltinAttributes())));
         }
-    };
+    });
 
     private boolean ok = false;
 
     private final java.util.List<IdentityMapping> mappings = new ArrayList<IdentityMapping>();
 
     private final IdentityAttributesAssertion assertion;
-    private IdentityProviderConfig oldConfig;
-    private IdentityProviderConfig currentConfig;
+    private IdentityProviderConfig previousProvider;
     private final Map<Long, IdentityProviderConfig> configs = new HashMap<Long, IdentityProviderConfig>();
     private final Map<Long, EntityHeader> headers = new HashMap<Long, EntityHeader>();
     private final IdentityMappingTableModel tableModel = new IdentityMappingTableModel();
@@ -84,6 +86,11 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
         String prefix = assertion.getVariablePrefix();
         if (prefix == null) prefix = DEFAULT_VAR_PREFIX;
         variablePrefixField.setText(prefix);
+        variablePrefixField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            public void run() {
+                enableButtons();
+            }
+        }));
 
         EntityHeader[] tempHeaders;
         try {
@@ -100,13 +107,12 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
         long initialOid = assertion.getIdentityProviderOid();
         final IdentityProviderConfig initialConfig = configs.get(initialOid);
         if (initialConfig != null) {
-            this.currentConfig = initialConfig;
+            this.previousProvider = initialConfig;
         } else {
             // Select the first one
             initialOid = tempHeaders[0].getOid();
-            this.currentConfig = configs.get(initialOid);
+            this.previousProvider = configs.get(initialOid);
         }
-        this.oldConfig = this.currentConfig;
 
         identityProviderComboBox.setModel(new DefaultComboBoxModel(tempHeaders));
         final EntityHeader header = headers.get(initialOid);
@@ -127,7 +133,7 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
                 assertion.setLookupAttributes(mappings.toArray(new IdentityMapping[0]));
                 final String text = variablePrefixField.getText();
                 assertion.setVariablePrefix(text.equals(DEFAULT_VAR_PREFIX) ? null : text);
-                assertion.setIdentityProviderOid(currentConfig.getOid());
+                assertion.setIdentityProviderOid(previousProvider.getOid());
                 ok = true;
                 dispose();
             }
@@ -144,14 +150,14 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
                 IdentityMapping im;
                 AttributeConfig ac = new AttributeConfig(new AttributeHeader());
                 final UsersOrGroups uog = UsersOrGroups.USERS;
-                if (currentConfig.type() == IdentityProviderType.INTERNAL) {
+                if (previousProvider.type() == IdentityProviderType.INTERNAL) {
                     im = new InternalAttributeMapping(ac, uog);
-                } else if (currentConfig.type() == IdentityProviderType.LDAP) {
-                    im = new LdapAttributeMapping(ac, currentConfig.getOid(), uog);
-                } else if (currentConfig.type() == IdentityProviderType.FEDERATED) {
-                    im = new FederatedAttributeMapping(ac, currentConfig.getOid(), uog);
+                } else if (previousProvider.type() == IdentityProviderType.LDAP) {
+                    im = new LdapAttributeMapping(ac, previousProvider.getOid(), uog);
+                } else if (previousProvider.type() == IdentityProviderType.FEDERATED) {
+                    im = new FederatedAttributeMapping(ac, previousProvider.getOid(), uog);
                 } else {
-                    throw new IllegalStateException(MessageFormat.format("Identity Provider #{0} ({1}) is of an unsupported type \"{2}\"", currentConfig.getOid(), currentConfig.getName(), currentConfig.type().description()));
+                    throw new IllegalStateException(MessageFormat.format("Identity Provider #{0} ({1}) is of an unsupported type \"{2}\"", previousProvider.getOid(), previousProvider.getName(), previousProvider.type().description()));
                 }
                 
                 if (edit(im)) {
@@ -204,58 +210,90 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
         EntityHeader which = (EntityHeader) identityProviderComboBox.getSelectedItem();
         if (which == null) throw new IllegalStateException("No provider selected");
 
-        IdentityProviderConfig newConfig;
+        final IdentityProviderConfig newProvider;
         try {
-            newConfig = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(which.getOid());
-        } catch (FindException e1) {
-            throw new RuntimeException(MessageFormat.format("Unable to load Identity Provider #{0} ({1})", which.getOid(), which.getName()));
+            newProvider = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(which.getOid());
+            if (newProvider == null) {
+                DialogDisplayer.showMessageDialog(this, "Identity Provider Deleted", "The selected identity provider has been deleted!", null);
+                dispose();
+                return;
+            }
+        } catch (FindException e) {
+            throw new RuntimeException(MessageFormat.format("Unable to load Identity Provider #{0} ({1})", which.getOid(), which.getName()), e);
         }
 
-        if (oldConfig != null && oldConfig.getOid() != newConfig.getOid()) {
-            for (final Iterator<IdentityMapping> i = mappings.iterator(); i.hasNext();) {
-                IdentityMapping mapping = i.next();
-                final AttributeHeader header = mapping.getAttributeConfig().getHeader();
-                if (oldConfig.type() != newConfig.type()) {
-                    // Check if the new provider type still supports this attribute
-                    Set<AttributeHeader> newBuiltins = builtinAttributes.get(newConfig.type());
-                    boolean ok;
-                    if (newBuiltins.contains(header)) {
-                        // This attribute is supported in this provider
-                        ok = true;
-                    } else if (newConfig.type() != IdentityProviderType.LDAP && !header.isBuiltin()) {
-                        // Custom attributes only supported for LDAP
-                        ok = false;
-                    } else {
-                        ok = false;
-                    }
+        if (newProvider.getOid() == previousProvider.getOid()) return; // No change
 
-                    final boolean[] quit = new boolean[1];
-                    if (!ok) {
-                        DialogDisplayer.showConfirmDialog(this, MessageFormat.format(BAD_ATTRIBUTE_MESSAGE, header.getName(), newConfig.getName()), "Unsupported Attribute", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, new DialogDisplayer.OptionListener() {
-                            public void reportResult(int option) {
-                                if (option == JOptionPane.OK_OPTION) {
-                                    i.remove();
-                                    tableModel.fireTableDataChanged();
-                                    quit[0] = false;
-                                } else {
-                                    // Restore previous selection
-                                    currentConfig = oldConfig;
-                                    identityProviderComboBox.setSelectedItem(headers.get(oldConfig.getOid()));
-                                    quit[0] = true;
-                                }
-                            }
-                        });
-                    }
-                    if (quit[0]) return;
-                } else {
-                    // TODO two providers of the same type can someday have different attribute dictionaries; not today!
-                }
+        final FilterResult result = filterUnsupportedAttributes(previousProvider, newProvider);
+        synchronized(this) {
+            if (result == CANCEL) {
+                identityProviderComboBox.setSelectedItem(headers.get(previousProvider.getOid()));
+                return;
             }
 
+            if (result instanceof FilterRemove) {
+                FilterRemove remove = (FilterRemove) result;
+                for (int what : remove.toRemove) {
+                    mappings.remove(what);
+                }
+                tableModel.fireTableDataChanged();
+            }
+
+            previousProvider = newProvider;
+        }
+    }
+
+    private static abstract class FilterResult { }
+    private static FilterResult OK = new FilterResult() { };
+    private static FilterResult CANCEL = new FilterResult() { };
+    private static class FilterRemove extends FilterResult {
+        private final List<Integer> toRemove = new ArrayList<Integer>();
+    }
+
+    private FilterResult filterUnsupportedAttributes(final IdentityProviderConfig oldProvider,
+                                                     final IdentityProviderConfig newProvider)
+    {
+        final FilterRemove remove = new FilterRemove();
+        for (int i = 0; i < mappings.size(); i++) {
+            IdentityMapping mapping = mappings.get(i);
+            final AttributeHeader header = mapping.getAttributeConfig().getHeader();
+            if (oldProvider.type() != newProvider.type()) {
+                // Check if the new provider type still supports this attribute
+                Set<AttributeHeader> newBuiltins = builtinAttributes.get(newProvider.type());
+
+                if (newBuiltins.contains(header)) continue; // This attribute is supported in this provider
+
+                String name = header.getName();
+                if (name == null) name = mapping.getName();
+                if (name == null) name = mapping.getCustomAttributeName();
+                if (name == null) name = mapping.getAttributeConfig().getName();
+                final boolean[] cancel = new boolean[1];
+                final int i1 = i;
+                DialogDisplayer.showConfirmDialog(
+                        this,
+                        MessageFormat.format(BAD_ATTRIBUTE_MESSAGE, name, newProvider.getName()),
+                        "Unsupported Attribute", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE,
+                        new DialogDisplayer.OptionListener() {
+                            public void reportResult(int option) {
+                                if (option == JOptionPane.OK_OPTION) {
+                                    remove.toRemove.add(i1);
+                                } else {
+                                    cancel[0] = true;
+                                }
+                            }
+                        }
+                );
+                if (cancel[0]) return CANCEL;
+            } else {
+                // TODO two providers of the same type can someday have different attribute dictionaries; not today!
+            }
         }
 
-        oldConfig = currentConfig;
-        currentConfig = newConfig;
+        if (remove.toRemove.isEmpty()) {
+            return OK;
+        } else {
+            return remove;
+        }
     }
 
     private void enableButtons() {
@@ -269,10 +307,13 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
         final boolean sel = gotProvider && attributeTable.getSelectedRow() != -1;
         editButton.setEnabled(sel);
         removeButton.setEnabled(sel);
+
+        final String vp = variablePrefixField.getText();
+        okButton.setEnabled(!mappings.isEmpty() && vp != null && vp.trim().length() > 0 && VariableMetadata.isNameValid(vp));
     }
 
     private boolean edit(IdentityMapping im) {
-        UserAttributeMappingDialog dlg = new UserAttributeMappingDialog(this, im, currentConfig, variablePrefixField.getText());
+        UserAttributeMappingDialog dlg = new UserAttributeMappingDialog(this, im, previousProvider, variablePrefixField.getText());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg);

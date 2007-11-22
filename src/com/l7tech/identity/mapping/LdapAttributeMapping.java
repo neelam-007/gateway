@@ -11,9 +11,8 @@ import com.l7tech.identity.IdentityProviderConfig;
 public class LdapAttributeMapping extends IdentityMapping {
     public static AttributeHeader[] getBuiltinAttributes() {
         AttributeHeader[] supers = IdentityMapping.getBuiltinAttributes();
-        AttributeHeader[] my = new AttributeHeader[supers.length+2];
+        AttributeHeader[] my = new AttributeHeader[supers.length+1];
         System.arraycopy(supers, 0, my, 0, supers.length);
-        my[my.length-2] = AttributeHeader.ID;
         my[my.length-1] = AttributeHeader.SUBJECT_DN;
         return my;
     }

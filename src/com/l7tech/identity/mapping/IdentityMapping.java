@@ -15,6 +15,7 @@ public abstract class IdentityMapping extends AttributeMapping {
 
     public static AttributeHeader[] getBuiltinAttributes() {
         return new AttributeHeader[] {
+            AttributeHeader.ID,
             AttributeHeader.LOGIN,
             AttributeHeader.NAME,
             AttributeHeader.EMAIL,
@@ -118,6 +119,7 @@ public abstract class IdentityMapping extends AttributeMapping {
         return attributeConfig.getVariableName();
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
