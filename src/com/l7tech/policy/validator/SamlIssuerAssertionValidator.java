@@ -54,9 +54,9 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
                     firstCertCred = i;
                 } else if (ass instanceof RequestWssSaml) {
                     RequestWssSaml saml = (RequestWssSaml) ass;
-                    final String confUri = saml.getSubjectConfirmations()[0];
+                    final String[] scs = saml.getSubjectConfirmations();
                     // RequestWssSaml is only a cert-based credential source if it's Holder of Key and has the signature constraint
-                    if (saml.getSubjectConfirmations().length == 1 && HOK_URIS.contains(confUri) && saml.isRequireHolderOfKeyWithMessageSignature()) {
+                    if (scs.length == 1 && HOK_URIS.contains(scs[0]) && saml.isRequireHolderOfKeyWithMessageSignature()) {
                         firstCertCred = i;
                     }
                 }
