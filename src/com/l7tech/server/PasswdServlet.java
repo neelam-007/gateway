@@ -1,9 +1,13 @@
 package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.identity.*;
+import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
@@ -13,7 +17,6 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.transport.TransportModule;
-import sun.misc.BASE64Decoder;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -77,16 +80,16 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             return;
         }
         InternalUser internalUser = null;
-        InternalIdentityProvider provider = null;
-        for (int i = 0; i < results.length; i++) {
-            AuthenticationResult result = results[i];
+        InternalIdentityProvider internalProvider = null;
+        for (AuthenticationResult result : results) {
             User u = result.getUser();
             try {
                 IdentityProviderFactory ipf = (IdentityProviderFactory)getApplicationContext().getBean("identityProviderFactory");
-                provider = (InternalIdentityProvider) ipf.getProvider(u.getProviderId());
+                IdentityProvider provider = ipf.getProvider(u.getProviderId());
 
                 if (provider.getConfig().getTypeVal() == IdentityProviderType.INTERNAL.toVal()) {
                     internalUser = (InternalUser)u;
+                    internalProvider = (InternalIdentityProvider)provider;
                     break;
                 }
             } catch (FindException e) {
@@ -102,17 +105,16 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             return;
         }
         // get the new password
-        String str_newpasswd = req.getHeader(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD);
-        if (str_newpasswd == null || str_newpasswd.length() < 1) {
+        String newpasswd = req.getHeader(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD);
+        if (newpasswd == null || newpasswd.length() < 1) {
             logger.warning("The request did not include a new password in header " +
                            SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD + ", returning 400.");
             sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, "Missing or empty new password.");
             return;
         }
         // unbase 64 it
-        BASE64Decoder decoder = new BASE64Decoder();
         try {
-            str_newpasswd = new String(decoder.decodeBuffer(str_newpasswd));
+            newpasswd = new String(HexUtils.decodeBase64(newpasswd, true), "UTF-8");
         } catch (IOException e) {
             logger.warning("The passed password could not be b64decoded, returning 400.");
             sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, "Password should be b64ed.");
@@ -122,7 +124,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         InternalUser tempUser;
         try {
             tempUser = new InternalUser(internalUser.getLogin());
-            tempUser.setCleartextPassword(str_newpasswd);
+            tempUser.setCleartextPassword(newpasswd);
         } catch (IllegalStateException e) {
             logger.log(Level.SEVERE, "could not compare password", e);
             sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
@@ -143,9 +145,9 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             InternalUser newInternalUser = new InternalUser();
             newInternalUser.copyFrom(internalUser);
             newInternalUser.setVersion(internalUser.getVersion());
-            newInternalUser.setCleartextPassword(str_newpasswd);
+            newInternalUser.setCleartextPassword(newpasswd);
 
-            InternalUserManager userManager = provider.getUserManager();
+            InternalUserManager userManager = internalProvider.getUserManager();
             userManager.update(newInternalUser);
             logger.fine("Password changed for user " + internalUser.getLogin());
             // end transaction
@@ -166,7 +168,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    protected void sendBackError(HttpServletResponse res, int status, String msg) throws IOException {
+    private static void sendBackError(HttpServletResponse res, int status, String msg) throws IOException {
         res.setStatus(status);
         res.getOutputStream().print(msg);
         res.getOutputStream().close();
