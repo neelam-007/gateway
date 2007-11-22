@@ -312,28 +312,15 @@ public class ManagerAppletFilter implements Filter {
             // Fall through and either challenge or send error message
             logger.log(Level.FINE, "Error authenticating administrator, " + ExceptionUtils.getMessage(e), e);
         }
-        // Ensure that we send back a challenge withour 401
-        HttpServletResponseKnob hsrespKnob =
-                (HttpServletResponseKnob)context.getResponse().getKnob(HttpServletResponseKnob.class);
 
-        hsrespKnob.beginChallenge();
-        sendChallenge(hreq, hresp);
-        auditor.logAndAudit(ServiceMessages.APPLET_AUTH_CHALLENGE);
-        return AuthResult.CHALLENGED;
-    }
-
-    private void sendChallenge(HttpServletRequest hreq, HttpServletResponse hresp) throws ServletException, IOException
-    {
-        ServletOutputStream sos = null;
-        try {
-            // the challenge http header is supposed to already been appended at that point-ah
-            hresp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            sos = hresp.getOutputStream();
-            sos.print("Authentication Required");
-            filterConfig.getServletContext().getNamedDispatcher("ssgLoginFormServlet").include(hreq, hresp);
-        } finally {
-            if (sos != null) sos.close();
+        // Request rejected (one of cases is using http rather than https):
+        if (!hreq.isSecure()) {
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_NO_SSL);
+            hresp.sendError(403, "Request must arrive using HTTPS.");
+        } else {
+            hresp.sendError(403);
         }
+        return AuthResult.CHALLENGED;
     }
 
     private void sendClass(HttpServletResponse hresp, byte[] data) throws IOException {
