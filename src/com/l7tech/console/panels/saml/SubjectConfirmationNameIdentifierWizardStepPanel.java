@@ -108,8 +108,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         final SamlPolicyAssertion assertion = (SamlPolicyAssertion) settings;
         version = assertion.getVersion() == null ? 1 : assertion.getVersion();
         enableForVersion();
-        String nq = assertion.getNameQualifier();
-        if (nq != null) nameQualifierTextField.setText(nq);
+        nameQualifierTextField.setText(assertion.getNameQualifier());
 
         if (issueMode) {
             SamlIssuerAssertion sia = (SamlIssuerAssertion) settings;
@@ -184,8 +183,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        String nq = nameQualifierTextField.getText();
-        if (nq != null && nq.length() > 0) ((SamlPolicyAssertion) settings).setNameQualifier(nq);
+        ((SamlPolicyAssertion) settings).setNameQualifier(nameQualifierTextField.getText());
 
         if (issueMode) {
             SamlIssuerAssertion sia = (SamlIssuerAssertion) settings;
