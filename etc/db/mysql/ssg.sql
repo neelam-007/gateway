@@ -329,7 +329,7 @@ CREATE TABLE fed_user (
   INDEX i_login (login),
   INDEX i_subject_dn (subject_dn),
   UNIQUE KEY i_name (provider_oid, name)
-) Type=InnoDB;
+) Type=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS fed_group;
 CREATE TABLE fed_group (
@@ -466,7 +466,7 @@ CREATE TABLE audit_detail_params (
   value MEDIUMTEXT NOT NULL,
   PRIMARY KEY (audit_detail_oid, position),
   FOREIGN KEY (audit_detail_oid) REFERENCES audit_detail (objectid) ON DELETE CASCADE
-) Type=InnoDB;
+) Type=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS message_id;
 CREATE TABLE message_id (
