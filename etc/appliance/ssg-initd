@@ -131,7 +131,7 @@ start_ssg() {
     which_partition=$1
     echo -n $"Starting $prog $(basename "${which_partition}"): "
 
-    (sh "${PARTITION_CONTROL}" "start" "${which_partition} | logger -t SSG-${which_partition}"" &> /dev/null)
+    (sh "${PARTITION_CONTROL}" "start" "${which_partition}" | logger -t "SSG-${which_partition}" &> /dev/null)
     RETVAL=$?
     [ $RETVAL -eq 0 ] && success || failure
     echo
