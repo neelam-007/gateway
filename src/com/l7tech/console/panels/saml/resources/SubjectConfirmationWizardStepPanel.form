@@ -91,7 +91,7 @@
                   <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="2" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="SecurityTokenReference using SHA1 &amp;Thumbprint"/>
+                  <text value="Security Token Reference using SHA1 &amp;Thumbprint"/>
                 </properties>
               </component>
               <component id="52d84" class="javax.swing.JRadioButton" binding="subjectCertLiteralRadioButton">
@@ -115,7 +115,7 @@
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="2" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="SecurityTokenReference using S&amp;KI"/>
+                  <text value="Security Token Reference using S&amp;KI"/>
                 </properties>
               </component>
             </children>

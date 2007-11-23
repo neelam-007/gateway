@@ -92,7 +92,7 @@
             <properties>
               <enabled value="false"/>
               <labelFor value="cb505"/>
-              <text value="Not&amp;Before seconds in past:"/>
+              <text value="Not &amp;Before seconds in past:"/>
             </properties>
           </component>
           <component id="cde95" class="javax.swing.JLabel" binding="notOnOrAfterLabel">
@@ -102,7 +102,7 @@
             <properties>
               <enabled value="false"/>
               <labelFor value="a980"/>
-              <text value="Not&amp;OnOrAfter seconds in future:"/>
+              <text value="Not &amp;On Or After seconds in future:"/>
             </properties>
           </component>
           <component id="cb505" class="javax.swing.JSpinner" binding="notBeforeSpinner">
