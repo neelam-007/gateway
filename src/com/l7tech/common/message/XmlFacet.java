@@ -203,20 +203,22 @@ public class XmlFacet extends MessageFacet {
             public void setBodyBytes(byte[] newBody) throws IOException {
                 delegate.setBodyBytes(newBody);
                 if (fp) {
-                    if (workingDocument != null && originalDocument == null && getMessage().isEnableOriginalDocument())
-                        originalDocument = (Document)workingDocument.getDocument().cloneNode(true); // todo find a way to skip this if it wont be needed
-                    workingDocument = null;
-                    firstPartValid = false;
-                    getMessage().invalidateCaches();
+                    onFirstPartChanged();
                 }
             }
 
+            private void onFirstPartChanged() {
+                if (workingDocument != null && originalDocument == null && getMessage().isEnableOriginalDocument())
+                    originalDocument = (Document)workingDocument.getDocument().cloneNode(true); // todo find a way to skip this if it wont be needed
+                workingDocument = null;
+                firstPartValid = false;
+                getMessage().invalidateCaches();
+            }
+
             public void setContentType(ContentTypeHeader newContentType) {
-                if (fp && !newContentType.isXml()) {
-                    workingDocument = null;
-                    firstPartValid = true;
-                }
                 delegate.setContentType(newContentType);
+                if (fp && !newContentType.isXml())
+                    onFirstPartChanged();
             }
 
             public MimeHeaders getHeaders() {
