@@ -37,7 +37,7 @@ if [ "$1" = "start" ] ; then
        rm -f $GATEWAY_SHUTDOWN
    fi
 
-    ${SSG_JAVA_HOME}/bin/java -Djava.endorsed.dirs="${SSG_JAVA_HOME}/jdk/jre/lib/ext:${SSG_HOME}/lib/ext" $JAVA_OPTS -jar Gateway.jar "$@" &
+    ${SSG_JAVA_HOME}/bin/java -Djava.ext.dirs="${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext" $JAVA_OPTS -jar Gateway.jar "$@" &
 
     if [ ! -z "$GATEWAY_PID" ]; then
         echo $! > $GATEWAY_PID

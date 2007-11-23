@@ -114,7 +114,7 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 %attr(0755,gateway,gateway) /ssg/appliance/bin/*.sh
 
 %dir /ssg/etc/profile.d
-%attr(0775,gateway,gateway) /ssg/etc/profile.d/*.sh
+%attr(0775,gateway,gateway) /ssg/etc/profile.d/appliancedefs.sh
 
 # JDK
 %dir /ssg/jdk
@@ -298,25 +298,6 @@ chmod -Rf 775 /ssg/jdk/jre/lib/security/
 %preun
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then
-    # $1 is  on last uninstall, ie, package remove, not upgrade
-    if [ `grep ^gateway: /etc/passwd` ]; then
-        userdel -r gateway
-    else
-        echo -n ""
-    fi
-
-    if [ `grep ^ssgconfig: /etc/passwd` ]; then
-        userdel -r ssgconfig
-    else
-        echo -n ""
-    fi
-
-    if [ `grep ^gateway: /etc/group` ]; then
-        groupdel gateway
-    else
-        echo -n ""
-    fi
-
     SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
     if [ -n "${SSGCONFIGENTRY}" ]; then
         #remove the sudoers entry for ssgconfig

@@ -3619,7 +3619,7 @@
         <!-- Absolute source paths -->
 
         <property name="install.src.lib" value="${install.src.ssgonly.base}/lib"/>
-        <property name="install.src.lib.ext" value="${install.src.ssgonly.base}/ext"/>
+        <property name="install.src.lib.ext" value="${install.src.lib}/ext"/>
         <property name="install.src.mods" value="${install.src.ssgonly.base}/modules/lib"/>
         <property name="install.src.aarmods" value="${install.src.ssgonly.base}/modules/assertions"/>
         <!--<property name="install.src.dist" value="${install.src.base}/${install.rel.dist}"/>-->

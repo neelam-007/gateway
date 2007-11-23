@@ -24,7 +24,7 @@ launch_wizard(){
 	check_options
 	#check if we're root
 	if [ "$USER" != "ssgconfig" ]; then
-        su -m ssgconfig -c "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar -partitionMigrate &>/dev/null && ${JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*"
+        su -m ssgconfig -c "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar -partitionMigrate &>/dev/null && ${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*"
     else
         su -m ssgconfig -c "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar -partitionMigrate &>/dev/null"
         ${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
