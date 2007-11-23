@@ -5,9 +5,9 @@ import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.common.gui.widgets.SquigglyTextArea;
 import com.l7tech.common.audit.Audit;
 import com.l7tech.console.event.BeanEditSupport;
+import com.l7tech.console.util.LoggerAudit;
 import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.server.audit.LogOnlyAuditor;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -53,7 +53,7 @@ public class RegexDialog extends JDialog {
     private JLabel testResultLabel;
     private JScrollPane testInputScroller;
 
-    private final Audit auditor = new LogOnlyAuditor(Logger.getLogger(RegexDialog.class.getName()));
+    private final Audit auditor = new LoggerAudit(Logger.getLogger(RegexDialog.class.getName()));
 
     public RegexDialog(Frame owner, Regex regexAssertion) throws HeadlessException {
         super(owner, true);
