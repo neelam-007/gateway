@@ -5,24 +5,31 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.message.Message;
+import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SignedSamlTest;
 import com.l7tech.common.security.token.*;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements.SimpleSecureConversationSession;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.apache.activeio.util.ByteArrayInputStream;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Random;
 import java.util.logging.Logger;
 
 /**
@@ -30,6 +37,7 @@ import java.util.logging.Logger;
  */
 public class WssProcessorTest extends TestCase {
     private static Logger log = Logger.getLogger(WssProcessorTest.class.getName());
+    private static final Random random = new Random();
 
     public WssProcessorTest(String name) {
         super(name);
@@ -455,5 +463,62 @@ public class WssProcessorTest extends TestCase {
                                                                new SimpleSecurityTokenResolver(bobCert)));
 
         checkProcessorResult(d, got);
+    }
+
+    private Pair<Message, SimpleSecureConversationSession> makeWsscSignedMessage() throws Exception {
+        Message msg = new Message();
+        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream());
+
+        // Sign this message with WS-SecureConversation
+        final byte[] sessionKey = new byte[256];
+        random.nextBytes(sessionKey);
+        SimpleSecureConversationSession session =
+                new SimpleSecureConversationSession("blah", sessionKey, SoapUtil.WSSC_NAMESPACE);
+
+        DecorationRequirements dreq = new DecorationRequirements();
+        dreq.setSecureConversationSession(session);
+        dreq.setIncludeTimestamp(true);
+        dreq.setSignTimestamp();
+        new WssDecoratorImpl().decorateMessage(msg, dreq);
+        return new Pair<Message, SimpleSecureConversationSession>(msg, session);
+    }
+
+    public void testPartInfoCausingPrematureDomCommit() throws Exception {
+        Pair<Message, SimpleSecureConversationSession> req = makeWsscSignedMessage();
+        final SimpleSecureConversationSession session = req.right;
+
+        byte[] decoratedBytes = HexUtils.slurpStream(req.left.getMimeKnob().getEntireMessageBodyAsInputStream());
+
+        Message msg = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(decoratedBytes));
+
+        // Undecorate the signed documnet
+        SecurityContextFinder scf = new SecurityContextFinder() {
+            public SecurityContext getSecurityContext(String securityContextIdentifier) {
+                return session;
+            }
+        };
+        Document doc = msg.getXmlKnob().getDocumentWritable();
+        ProcessorResult pr = new WssProcessorImpl().undecorateMessage(msg, null, scf, null);
+        assertTrue(pr.getElementsThatWereSigned().length > 0);
+        assertTrue(pr.getSigningTokens(pr.getTimestamp().asElement())[0] instanceof SecurityContextToken);
+
+        if (pr.getProcessedActor() != null &&
+            pr.getProcessedActor() == SecurityActor.L7ACTOR) {
+            Element eltodelete = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
+            eltodelete.getParentNode().removeChild(eltodelete);
+        }
+
+        // Stream out the message
+        byte[] undecoratedBytes = HexUtils.slurpStream(msg.getMimeKnob().getEntireMessageBodyAsInputStream());
+
+        // Security header should have been removed
+        //noinspection IOResourceOpenedButNotSafelyClosed
+        Document gotDoc = XmlUtil.parse(new ByteArrayInputStream(undecoratedBytes));
+        log.info("Undecorated message (pretty-printed): " + XmlUtil.nodeToFormattedString(gotDoc));
+        Element sec = SoapUtil.getSecurityElement(gotDoc);
+        assertNull(sec);
+
+        Element l7sec = SoapUtil.getSecurityElement(gotDoc, SecurityActor.L7ACTOR.getValue());
+        assertNull(l7sec);
     }
 }

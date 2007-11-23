@@ -268,8 +268,9 @@ public class HexUtils {
     /**
      * This ballistic podiatry version of slurpStream will slurp until memory is full.
      * If you wish to limit the size of the returned
-     * byte array, use slurpStream64k(InputStream).  If you wish to provide your own buffer to prevent
-     * copying, use slurpStream(InputStream, byte[]).
+     * byte array, use {@link #slurpStream(java.io.InputStream, int)}.
+     * If you wish to provide your own buffer to prevent
+     * copying, use {@link #slurpStream(InputStream, byte[])}.
      *
      * @param stream  the stream to slurp
      * @return a byte array containing the entire content of the stream, to EOF.  Never null.

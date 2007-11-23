@@ -5,6 +5,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeBodyTest;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TarariLoader;
@@ -206,6 +207,42 @@ public class KnobblyMessageTest extends TestCase {
         String xmlDocFooBar = XmlUtil.nodeToString(docFooBar);
         byte[] bb1b = HexUtils.slurpStream(msg.getMimeKnob().getParts().next().getInputStream(false));
         assertEquals(new String(bb1b), xmlDocFooBar);
+    }
+
+    public void testModifiedDomWithIteratedPartInfoStream() throws Exception {
+        Message msg = new Message();
+        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream());
+
+        // Mutate the document
+        Document doc = msg.getXmlKnob().getDocumentWritable();
+        String tag = "blahMutant";
+        SoapUtil.getPayloadElement(doc).appendChild(doc.createElement(tag));
+        String mutatedStr = XmlUtil.nodeToString(doc);
+
+        // Stream it out
+        byte[] bytes = HexUtils.slurpStream(msg.getMimeKnob().getParts().next().getInputStream(false));
+        String streamedStr = new String(bytes, "UTF-8");
+
+        // Make sure they stayed in sync
+        assertEquals(mutatedStr, streamedStr);
+    }
+
+    public void testModifiedDomWithPartInfoStream() throws Exception {
+        Message msg = new Message();
+        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream());
+
+        // Mutate the document
+        Document doc = msg.getXmlKnob().getDocumentWritable();
+        String tag = "blahMutant";
+        SoapUtil.getPayloadElement(doc).appendChild(doc.createElement(tag));
+        String mutatedStr = XmlUtil.nodeToString(doc);
+
+        // Stream it out
+        byte[] bytes = HexUtils.slurpStream(msg.getMimeKnob().getPart(0).getInputStream(false));
+        String streamedStr = new String(bytes, "UTF-8");
+
+        // Make sure they stayed in sync
+        assertEquals(mutatedStr, streamedStr);
     }
 
     public void testGetSoapKnob() throws Exception {

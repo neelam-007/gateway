@@ -16,6 +16,7 @@ import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements.SimpleSecureConversationSession;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.util.SoapUtil;
@@ -233,14 +234,11 @@ public class WssDecoratorTest extends TestCase {
         if (d.secureConversationKey != null) {
             if (d.encryptedKeySha1 == null) {
                 // Use WS-SecureConversation derived key token
-                reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
-                    public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
-
-                    public byte[] getSecretKey() { return d.secureConversationKey; }
-                    public String getSCNamespace() {
-                        return SoapUtil.WSSC_NAMESPACE;
-                    }
-                });
+                reqs.setSecureConversationSession(new SimpleSecureConversationSession(
+                        "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid",
+                        d.secureConversationKey,
+                        SoapUtil.WSSC_NAMESPACE
+                ));
             } else {
                 // Use KeyInfo #EncryptedKeySHA1, referencing implicit EncryptedKey which recipient is expected
                 // to already possess.

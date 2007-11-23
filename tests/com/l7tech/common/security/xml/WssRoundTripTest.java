@@ -532,13 +532,11 @@ public class WssRoundTripTest extends TestCase {
         reqs.setKeyEncryptionAlgorithm(td.keyEncryptionAlgoritm);
         reqs.setSignPartHeaders(td.signAttachmentHeaders);
         if (td.secureConversationKey != null) {
-            reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
-                public String getId() { return SESSION_ID; }
-                public byte[] getSecretKey() { return td.secureConversationKey; }
-                public String getSCNamespace() {
-                        return SoapUtil.WSSC_NAMESPACE;
-                    }
-            });
+            reqs.setSecureConversationSession(new DecorationRequirements.SimpleSecureConversationSession(
+                SESSION_ID,
+                td.secureConversationKey,
+                SoapUtil.WSSC_NAMESPACE
+            ));
         }
         if (td.elementsToEncrypt != null) {
             for (int i = 0; i < td.elementsToEncrypt.length; i++) {

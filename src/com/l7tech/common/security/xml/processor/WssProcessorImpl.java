@@ -6,6 +6,7 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.FlexKey;
 import com.l7tech.common.security.kerberos.KerberosConfigException;
@@ -1417,7 +1418,11 @@ public class WssProcessorImpl implements WssProcessor {
         // Validate signature
         SignatureContext sigContext = new SignatureContext();
         MimeKnob mimeKnob = (MimeKnob) cntx.message.getKnob(MimeKnob.class);
-        PartIterator iterator = mimeKnob==null ? null : mimeKnob.getParts();
+        PartIterator iterator = null;
+        if (mimeKnob != null) {
+            iterator = mimeKnob.getParts(); // this may prematurely commit our DOM back to the bytes...
+            fixDocument(cntx, sigElement.getOwnerDocument()); // ...so we'll have to fix it.  TODO fix this properly
+        }
         Map<String,PartInfo> partMap = new HashMap();
         sigContext.setEntityResolver(new AttachmentEntityResolver(iterator, XmlUtil.getXss4jEntityResolver(), partMap, signedAttachmentSizeLimit));
         sigContext.setIDResolver(new IDResolver() {
@@ -1454,6 +1459,11 @@ public class WssProcessorImpl implements WssProcessor {
         final Map<Node, Node> strToTarget = cntx.securityTokenReferenceElementToTargetElement;
         sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strToTarget));
         Validity validity = sigContext.verify(sigElement, signingKey);
+
+        if (iterator != null) {
+            // Fix document again after part resolver might have committed our DOM again
+            fixDocument(cntx, sigElement.getOwnerDocument()); // TODO fix this properly
+        }
 
         if (!validity.getCoreValidity()) {
             // if the signature does not match but an encrypted key was previously ignored,
@@ -1538,6 +1548,27 @@ public class WssProcessorImpl implements WssProcessor {
                 signingSecurityToken.addSignedPart(signedPart);
             }
             signingSecurityToken.onPossessionProved();
+        }
+    }
+
+    private void fixDocument(ProcessingStatusHolder cntx, Document doc) throws CausedIOException {
+        try {
+            // XXX We are mixing and matching uses of the XML view of the message with uses of the MIME bytes view
+            //     of it.  As soon as we called getParts() or getPart(), our DOM changes were committed so the MIME parts
+            //     view would be up-to-date (this causes an extra XML serialization, possibly causing our slight
+            //     performance drop).
+            //
+            //     At this point we are really supposed to get a new Document back from the XmlKnob since we
+            //     invalidated the old one by asking for a MIME view of the message instead.
+            //
+            //     However, since we already have a ton of references to element instances from the old Document,
+            //     and since we know it hasn't been changed in the meantime by anyone but us, we'll just forcibly
+            //     reinstate it here.
+            XmlKnob xmlKnob = cntx.message.getXmlKnob();
+            xmlKnob.setDocument(doc);
+            cntx.setDocumentModified();
+        } catch (SAXException e) {
+            throw new CausedIOException(e); // can't happen
         }
     }
 

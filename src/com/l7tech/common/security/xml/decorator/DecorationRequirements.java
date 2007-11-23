@@ -8,6 +8,7 @@ package com.l7tech.common.security.xml.decorator;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.xml.SecurityActor;
+import com.l7tech.common.security.xml.processor.SecurityContext;
 import com.l7tech.common.util.NamespaceFactory;
 import org.w3c.dom.Element;
 
@@ -326,9 +327,52 @@ public class DecorationRequirements {
 
     public interface SecureConversationSession {
         String getId();
-
         byte[] getSecretKey();
         String getSCNamespace();
+    }
+
+    /** A simple implementation of SecureConversationSession for users with simple needs. */
+    public static class SimpleSecureConversationSession implements SecureConversationSession, SecurityContext {
+        private String id;
+        private byte[] key;
+        private String ns;
+
+        public SimpleSecureConversationSession() {
+        }
+
+        public SimpleSecureConversationSession(String id, byte[] key, String ns) {
+            this.id = id;
+            this.key = key;
+            this.ns = ns;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public byte[] getSecretKey() {
+            return key;
+        }
+
+        public String getSCNamespace() {
+            return ns;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public void setSecretKey(byte[] key) {
+            this.key = key;
+        }
+
+        public void setSCNamespace(String ns) {
+            this.ns = ns;
+        }
+
+        public byte[] getSharedSecret() {
+            return key;
+        }
     }
 
     /**
