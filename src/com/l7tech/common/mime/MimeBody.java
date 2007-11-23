@@ -6,19 +6,19 @@
 
 package com.l7tech.common.mime;
 
-import com.l7tech.common.io.EmptyInputStream;
-import com.l7tech.common.io.IOExceptionThrowingInputStream;
-import com.l7tech.common.io.NullOutputStream;
-import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.CausedIllegalStateException;
-import com.l7tech.common.util.HexUtils;
+ import com.l7tech.common.io.*;
+ import com.l7tech.common.util.CausedIOException;
+ import com.l7tech.common.util.CausedIllegalStateException;
+ import com.l7tech.common.util.HexUtils;
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+ import java.io.ByteArrayInputStream;
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.io.SequenceInputStream;
+ import java.util.*;
+ import java.util.concurrent.atomic.AtomicLong;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
 
 /**
  * Encapsulates the body of a message that might be multipart/related.
@@ -40,7 +40,7 @@ import java.util.logging.Logger;
  * MimeBody.</p>
  * @noinspection ForLoopReplaceableByForEach,unchecked
  */
-public class MimeBody {
+public class MimeBody implements Iterable<PartInfo> {
     private static final Logger logger = Logger.getLogger(MimeBody.class.getName());
     private static final int BLOCKSIZE = 4096;
 
@@ -271,12 +271,26 @@ public class MimeBody {
         return new PartIterator() {
             int nextPart = 0;
 
-            public boolean hasNext() throws IOException {
-                return nextPart < partInfos.size() || isMorePartsPossible() && readUpToPartNoThrow(nextPart);
+            public boolean hasNext() throws UncheckedIOException {
+                try {
+                    return nextPart < partInfos.size() || isMorePartsPossible() && readUpToPartNoThrow(nextPart);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
             }
 
-            public PartInfo next() throws IOException, NoSuchPartException {
-                return getPart(nextPart++);
+            public PartInfo next() throws UncheckedIOException, NoSuchElementException {
+                try {
+                    return getPart(nextPart++);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                } catch (NoSuchPartException e) {
+                    throw (NoSuchElementException)new NoSuchElementException().initCause(e);
+                }
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
             }
         };
     }

@@ -1,9 +1,6 @@
 package com.l7tech.common.message;
 
-import com.l7tech.common.mime.ByteArrayStashManager;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.MimeBodyTest;
-import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.*;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -243,6 +240,49 @@ public class KnobblyMessageTest extends TestCase {
 
         // Make sure they stayed in sync
         assertEquals(mutatedStr, streamedStr);
+    }
+
+    public void testDomCommitDelayedUntilPartInfoBytesUsed() throws Exception {
+        Message msg = new Message();
+        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream());
+
+        // Mutate the document
+        Document doc = msg.getXmlKnob().getDocumentWritable();
+        SoapUtil.getPayloadElement(doc).appendChild(doc.createElement("blahMutant1"));
+
+        // Iterate the parts but do not access their bytes.  This should not invalidate our DOM.
+        for (PartInfo partInfo : msg.getMimeKnob()) {
+            partInfo.getContentType();
+            partInfo.getContentId(true);
+            partInfo.getHeaders().size();
+        }
+
+        // Now mutate the document some more
+        SoapUtil.getPayloadElement(doc).appendChild(doc.createElement("blahMutant2"));
+        String mutatedStr = XmlUtil.nodeToString(doc);
+
+        // Stream it back out
+        String streamedStr = new String(HexUtils.slurpStream(msg.getMimeKnob().getEntireMessageBodyAsInputStream()), "UTF-8");
+
+        // Iterating the parts should not have revoked the DOM
+        assertEquals(mutatedStr, streamedStr);
+
+        // Now mutate the document some more still
+        doc = msg.getXmlKnob().getDocumentWritable();
+        SoapUtil.getPayloadElement(doc).appendChild(doc.createElement("blahMutant3"));
+
+        // Iterate the parts but peek at their bytes.  This should invalidate the dom
+        for (PartInfo partInfo : msg.getMimeKnob())
+            partInfo.getInputStream(false).close();
+
+        // Now mutate the document some more
+        SoapUtil.getPayloadElement(doc).appendChild(doc.createElement("blahMutant4"));
+        mutatedStr = XmlUtil.nodeToString(doc);
+
+        // Stream it back out
+        streamedStr = new String(HexUtils.slurpStream(msg.getMimeKnob().getEntireMessageBodyAsInputStream()), "UTF-8");
+
+        assertFalse(mutatedStr.equalsIgnoreCase(streamedStr));
     }
 
     public void testGetSoapKnob() throws Exception {

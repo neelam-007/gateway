@@ -6,9 +6,10 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
-import com.l7tech.common.message.XmlKnob;
-import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.security.FlexKey;
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.kerberos.KerberosConfigException;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosUtils;
@@ -17,12 +18,9 @@ import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.UnsupportedDocumentFormatException;
 import com.l7tech.common.xml.InvalidDocumentSignatureException;
+import com.l7tech.common.xml.UnsupportedDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.common.mime.PartIterator;
-import com.l7tech.common.mime.PartInfo;
-
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -111,35 +109,35 @@ public class WssProcessorImpl implements WssProcessor {
                     removeRefList = processEncryptedKey(securityChildToProcess, cntx);
                 } else {
                     logger.finer("Encountered EncryptedKey element but not of right namespace (" +
-                            securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ')');
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.TIMESTAMP_EL_NAME)) {
                 if (XmlUtil.elementInNamespace(securityChildToProcess, SoapUtil.WSU_URIS_ARRAY)) {
                     processTimestamp(cntx, securityChildToProcess);
                 } else {
                     logger.fine("Encountered Timestamp element but not of right namespace (" +
-                            securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ')');
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.BINARYSECURITYTOKEN_EL_NAME)) {
                 if (XmlUtil.elementInNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processBinarySecurityToken(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered BinarySecurityToken element but not of right namespace (" +
-                            securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ')');
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SIGNATURE_EL_NAME)) {
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.DIGSIG_URI)) {
                     processSignature(securityChildToProcess, securityContextFinder, cntx);
                 } else {
                     logger.fine("Encountered Signature element but not of right namespace (" +
-                            securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ')');
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.USERNAME_TOK_EL_NAME)) {
                 if (XmlUtil.elementInNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processUsernameToken(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered UsernameToken element but not of expected namespace (" +
-                            securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ')');
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME)) {
                 if (XmlUtil.elementInNamespace(securityChildToProcess, SoapUtil.WSSC_NAMESPACE_ARRAY)) {
@@ -163,14 +161,14 @@ public class WssProcessorImpl implements WssProcessor {
                     }
                 } else {
                     logger.fine("Encountered SecurityContextToken element but not of expected namespace (" +
-                            securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ')');
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.WSSC_DK_EL_NAME)) {
                 if (XmlUtil.elementInNamespace(securityChildToProcess,SoapUtil.WSSC_NAMESPACE_ARRAY)) {
                     processDerivedKey(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered DerivedKey element but not of expected namespace (" +
-                            securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ')');
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.REFLIST_EL_NAME)) {
                 // In the case of a Secure Conversation the reference list is declared outside
@@ -179,7 +177,7 @@ public class WssProcessorImpl implements WssProcessor {
                     processReferenceList(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered ReferenceList element but not of expected namespace (" +
-                            securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ')');
                 }
             } else if (securityChildToProcess.getLocalName().equals(SamlConstants.ELEMENT_ASSERTION)) {
                 if (securityChildToProcess.getNamespaceURI().equals(SamlConstants.NS_SAML) ||
@@ -187,21 +185,21 @@ public class WssProcessorImpl implements WssProcessor {
                     processSamlSecurityToken(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered SAML Assertion element but not of expected namespace (" +
-                            securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ')');
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SECURITYTOKENREFERENCE_EL_NAME)) {
                 if (XmlUtil.elementInNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processSecurityTokenReference(securityChildToProcess, securityContextFinder, cntx);
                 } else {
                     logger.fine("Encountered SecurityTokenReference element but not of expected namespace (" +
-                            securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ')');
                 }
             } else if (securityChildToProcess.getLocalName().equals("SignatureConfirmation")) {
                 if (XmlUtil.elementInNamespace(securityChildToProcess, new String[] { SoapUtil.SECURITY11_NAMESPACE } )) {
                     processSignatureConfirmation(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered SignatureConfirmation element but not of expected namespace (" +
-                            securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ')');
                 }
             } else {
                 // Unhandled child elements of the Security Header
@@ -258,7 +256,7 @@ public class WssProcessorImpl implements WssProcessor {
     /**
      * Set a limit on the maximum signed attachment size.
      *
-     * @param size
+     * @param size the limit in bytes
      */
     public void setSignedAttachmentSizeLimit(final long size) {
         signedAttachmentSizeLimit = size;
@@ -1418,11 +1416,8 @@ public class WssProcessorImpl implements WssProcessor {
         // Validate signature
         SignatureContext sigContext = new SignatureContext();
         MimeKnob mimeKnob = (MimeKnob) cntx.message.getKnob(MimeKnob.class);
-        PartIterator iterator = null;
-        if (mimeKnob != null) {
-            iterator = mimeKnob.getParts(); // this may prematurely commit our DOM back to the bytes...
-            fixDocument(cntx, sigElement.getOwnerDocument()); // ...so we'll have to fix it.  TODO fix this properly
-        }
+        PartIterator iterator;
+        iterator = mimeKnob == null ? null : mimeKnob.getParts();
         Map<String,PartInfo> partMap = new HashMap();
         sigContext.setEntityResolver(new AttachmentEntityResolver(iterator, XmlUtil.getXss4jEntityResolver(), partMap, signedAttachmentSizeLimit));
         sigContext.setIDResolver(new IDResolver() {
@@ -1436,7 +1431,8 @@ public class WssProcessorImpl implements WssProcessor {
                         // It's an enveloped signature, so remove any already-processed EncryptedKey elements
                         // before computing this hash
                         Set keys = cntx.getProcessedEncryptedKeys();
-                        for (Iterator i = keys.iterator(); i.hasNext();) {
+                        Iterator i = keys.iterator();
+                        while (i.hasNext()) {
                             Object o = i.next();
                             if (o instanceof EncryptedKey) {
                                 EncryptedKey ek = (EncryptedKey)o;
@@ -1459,11 +1455,6 @@ public class WssProcessorImpl implements WssProcessor {
         final Map<Node, Node> strToTarget = cntx.securityTokenReferenceElementToTargetElement;
         sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strToTarget));
         Validity validity = sigContext.verify(sigElement, signingKey);
-
-        if (iterator != null) {
-            // Fix document again after part resolver might have committed our DOM again
-            fixDocument(cntx, sigElement.getOwnerDocument()); // TODO fix this properly
-        }
 
         if (!validity.getCoreValidity()) {
             // if the signature does not match but an encrypted key was previously ignored,
@@ -1548,27 +1539,6 @@ public class WssProcessorImpl implements WssProcessor {
                 signingSecurityToken.addSignedPart(signedPart);
             }
             signingSecurityToken.onPossessionProved();
-        }
-    }
-
-    private void fixDocument(ProcessingStatusHolder cntx, Document doc) throws CausedIOException {
-        try {
-            // XXX We are mixing and matching uses of the XML view of the message with uses of the MIME bytes view
-            //     of it.  As soon as we called getParts() or getPart(), our DOM changes were committed so the MIME parts
-            //     view would be up-to-date (this causes an extra XML serialization, possibly causing our slight
-            //     performance drop).
-            //
-            //     At this point we are really supposed to get a new Document back from the XmlKnob since we
-            //     invalidated the old one by asking for a MIME view of the message instead.
-            //
-            //     However, since we already have a ton of references to element instances from the old Document,
-            //     and since we know it hasn't been changed in the meantime by anyone but us, we'll just forcibly
-            //     reinstate it here.
-            XmlKnob xmlKnob = cntx.message.getXmlKnob();
-            xmlKnob.setDocument(doc);
-            cntx.setDocumentModified();
-        } catch (SAXException e) {
-            throw new CausedIOException(e); // can't happen
         }
     }
 

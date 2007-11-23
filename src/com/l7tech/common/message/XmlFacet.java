@@ -4,11 +4,12 @@
 
 package com.l7tech.common.message;
 
+import com.l7tech.common.io.UncheckedIOException;
 import com.l7tech.common.mime.*;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.DomElementCursor;
+import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -69,12 +70,18 @@ public class XmlFacet extends MessageFacet {
         }
 
         public PartIterator getParts() throws IOException {
-            ensureFirstPartValid();
             return new PartIteratorWrapper(mk.getParts());
         }
 
+        public PartIterator iterator() {
+            try {
+                return getParts();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
         public PartInfo getPart(int num) throws IOException, NoSuchPartException {
-            ensureFirstPartValid();
             return num == 0 ? getFirstPart() : mk.getPart(num);
         }
 
@@ -94,7 +101,7 @@ public class XmlFacet extends MessageFacet {
         }
 
         public long getContentLength() throws IOException {
-            ensureFirstPartValid();
+            ensureFirstPartValidMaybeCommitDom();
             return mk.getContentLength();
         }
 
@@ -103,7 +110,7 @@ public class XmlFacet extends MessageFacet {
         }
 
         public InputStream getEntireMessageBodyAsInputStream() throws IOException, NoSuchPartException {
-            ensureFirstPartValid();
+            ensureFirstPartValidMaybeCommitDom();
             return mk.getEntireMessageBodyAsInputStream();
         }
 
@@ -111,11 +118,7 @@ public class XmlFacet extends MessageFacet {
          * @throws IOException if XML serialization throws IOException
          */
         public PartInfo getFirstPart() throws IOException {
-            final PartInfo firstPart = new PartInfoWrapper(mk.getFirstPart());
-            if (firstPartValid)
-                return firstPart;
-            ensureFirstPartValid();
-            return firstPart;
+            return new PartInfoWrapper(mk.getFirstPart());
         }
 
         /**
@@ -123,7 +126,7 @@ public class XmlFacet extends MessageFacet {
          *
          * @throws IOException if XML serialization throws IOException, perhaps due to a lazy Document.
          */
-        private void ensureFirstPartValid() throws IOException {
+        private void ensureFirstPartValidMaybeCommitDom() throws IOException {
             if (firstPartValid) {
                 return;
             } else if (workingDocument == null) {
@@ -149,15 +152,101 @@ public class XmlFacet extends MessageFacet {
                 this.delegate = delegate;
             }
 
-            public boolean hasNext() throws IOException {
+            public boolean hasNext() {
                 return delegate.hasNext();
             }
 
-            public PartInfo next() throws IOException, NoSuchPartException {
+            public PartInfo next() {
                 final PartInfo pi = delegate.next();
-                if (pi.getPosition() == 0)
-                    return getFirstPart();
+                if (pi.getPosition() == 0) {
+                    try {
+                        return getFirstPart();
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
                 return pi;
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        private class PartInfoWrapper implements PartInfo {
+            private final PartInfo delegate;
+            private final boolean fp;
+
+            private PartInfoWrapper(PartInfo delegate) {
+                this.delegate = delegate;
+                fp = delegate.getPosition() == 0;  // if it's the first part, we'll need to invalidate DOM sometimes
+            }
+
+            public MimeHeader getHeader(String name) {
+                return delegate.getHeader(name);
+            }
+
+            public int getPosition() {
+                return delegate.getPosition();
+            }
+
+            public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
+                if (fp) ensureFirstPartValidMaybeCommitDom();
+                return delegate.getInputStream(destroyAsRead);
+            }
+
+            public byte[] getBytesIfAlreadyAvailable() {
+                if (fp && !firstPartValid) return null;
+                return delegate.getBytesIfAlreadyAvailable();
+            }
+
+            public void setBodyBytes(byte[] newBody) throws IOException {
+                delegate.setBodyBytes(newBody);
+                if (fp) {
+                    if (workingDocument != null && originalDocument == null && getMessage().isEnableOriginalDocument())
+                        originalDocument = (Document)workingDocument.getDocument().cloneNode(true); // todo find a way to skip this if it wont be needed
+                    workingDocument = null;
+                    firstPartValid = false;
+                    getMessage().invalidateCaches();
+                }
+            }
+
+            public void setContentType(ContentTypeHeader newContentType) {
+                if (fp && !newContentType.isXml()) {
+                    workingDocument = null;
+                    firstPartValid = true;
+                }
+                delegate.setContentType(newContentType);
+            }
+
+            public MimeHeaders getHeaders() {
+                return delegate.getHeaders();
+            }
+
+            public long getContentLength() {
+                if (fp && !firstPartValid) return -1;
+                return delegate.getContentLength();
+            }
+
+            public long getActualContentLength() throws IOException, NoSuchPartException {
+                if (fp) ensureFirstPartValidMaybeCommitDom();
+                return delegate.getActualContentLength();
+            }
+
+            public ContentTypeHeader getContentType() {
+                return delegate.getContentType();
+            }
+
+            public String getContentId(boolean stripAngleBrackets) {
+                return delegate.getContentId(stripAngleBrackets);
+            }
+
+            public boolean isValidated() {
+                return delegate.isValidated();
+            }
+
+            public void setValidated(boolean validated) {
+                delegate.setValidated(validated);
             }
         }
     }
@@ -237,77 +326,6 @@ public class XmlFacet extends MessageFacet {
 
         public boolean isTarariWanted() {
             return tarariWanted;
-        }
-    }
-
-    private class PartInfoWrapper implements PartInfo {
-        private final PartInfo delegate;
-
-        private PartInfoWrapper(PartInfo delegate) {
-            this.delegate = delegate;
-        }
-
-        public MimeHeader getHeader(String name) {
-            return delegate.getHeader(name);
-        }
-
-        public int getPosition() {
-            return delegate.getPosition();
-        }
-
-        public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
-            return delegate.getInputStream(destroyAsRead);
-        }
-
-        public byte[] getBytesIfAlreadyAvailable() {
-            return delegate.getBytesIfAlreadyAvailable();
-        }
-
-        public void setBodyBytes(byte[] newBody) throws IOException {
-            delegate.setBodyBytes(newBody);
-            if (isFirstPart()) {
-                if (workingDocument != null && originalDocument == null && getMessage().isEnableOriginalDocument())
-                    originalDocument = (Document)workingDocument.getDocument().cloneNode(true); // todo find a way to skip this if it wont be needed
-                workingDocument = null;
-                firstPartValid = false;
-                getMessage().invalidateCaches();
-            }
-        }
-
-        private boolean isFirstPart() {
-            return delegate.getPosition() == 0;
-        }
-
-        public void setContentType(ContentTypeHeader newContentType) {
-            delegate.setContentType(newContentType);
-        }
-
-        public MimeHeaders getHeaders() {
-            return delegate.getHeaders();
-        }
-
-        public long getContentLength() {
-            return delegate.getContentLength();
-        }
-
-        public long getActualContentLength() throws IOException, NoSuchPartException {
-            return delegate.getActualContentLength();
-        }
-
-        public ContentTypeHeader getContentType() {
-            return delegate.getContentType();
-        }
-
-        public String getContentId(boolean stripAngleBrackets) {
-            return delegate.getContentId(stripAngleBrackets);
-        }
-
-        public boolean isValidated() {
-            return delegate.isValidated();
-        }
-
-        public void setValidated(boolean validated) {
-            delegate.setValidated(validated);
         }
     }
 }

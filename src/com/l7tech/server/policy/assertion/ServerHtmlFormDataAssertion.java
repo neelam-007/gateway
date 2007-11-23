@@ -4,7 +4,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpServletRequestKnob;
@@ -13,6 +12,7 @@ import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.mime.*;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
@@ -20,10 +20,7 @@ import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -252,7 +249,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                 PartInfo partInfo = null;
                 try {
                     partInfo = itor.next();
-                } catch (NoSuchPartException e) {
+                } catch (NoSuchElementException e) {
                     _logger.info("Multipart/form-data may have improperly terminated MIME body.");
                     break;  // This does not warrant a BAD_REQUEST.
                 }
@@ -326,7 +323,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                 PartInfo subpartInfo = null;
                 try {
                     subpartInfo = itor.next();
-                } catch (NoSuchPartException e) {
+                } catch (NoSuchElementException e) {
                     _logger.info("Nested multipart/mixed may have improperly terminated MIME body.");
                     break;  // This does not warrant a BAD_REQUEST.
                 }

@@ -43,6 +43,10 @@ class MimeFacet extends MessageFacet {
             return getMimeBody().iterator();
         }
 
+        public PartIterator iterator() {
+            return getParts();
+        }
+
         public PartInfo getPart(int num) throws IOException, NoSuchPartException {
             return getMimeBody().getPart(num);
         }

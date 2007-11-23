@@ -1,29 +1,21 @@
 package com.l7tech.common.security.xml;
 
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
-import java.io.SequenceInputStream;
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
+import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.util.CausedIOException;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.l7tech.common.mime.PartIterator;
-import com.l7tech.common.mime.PartInfo;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.io.ByteLimitInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Entity resolver for SOAP attachments.
@@ -182,7 +174,7 @@ public class AttachmentEntityResolver implements EntityResolver {
         if (partIterator != null && partIterator.hasNext()) {
             try {
                 partIterator.next();
-            } catch ( NoSuchPartException nspe ) {
+            } catch ( NoSuchElementException nspe ) {
                 throw new CausedIOException( nspe );
             }
         }
@@ -200,7 +192,7 @@ public class AttachmentEntityResolver implements EntityResolver {
                     parts.add( partIterator.next() );
                 }
             }
-        } catch ( NoSuchPartException nspe ) {
+        } catch ( NoSuchElementException nspe ) {
             throw new CausedIOException( nspe );
         }
 

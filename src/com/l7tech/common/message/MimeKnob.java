@@ -15,7 +15,7 @@ import java.io.InputStream;
 /**
  * Aspect of a Message that contains an outer content type and at least one part's InputStream.
  */
-public interface MimeKnob extends MessageKnob {
+public interface MimeKnob extends MessageKnob,Iterable<PartInfo> {
     /**
      * Check if this is a multipart message or not.  This should almost never be necessary.
      *
@@ -41,6 +41,13 @@ public interface MimeKnob extends MessageKnob {
      * @throws java.io.IOException  if there is a problem reading enough of the message to start the iterator
      */
     PartIterator getParts() throws IOException;
+
+    /**
+     * Identical to {@link #getParts}.  Provided for Iterable interface.
+     *
+     * @return a {@link PartIterator} ready to iterate all parts of this message from beginning to end.  Never null.
+     */
+    PartIterator iterator();
 
     /**
      * Get the specified PartInfo from this message by ordinal position, with the first part as part #0.
