@@ -101,20 +101,26 @@ public class DBDumpUtil {
                 for (int i = 1; i <= rowInfo.getColumnCount(); i++) {
                     int colType = rowInfo.getColumnType(i);
                     switch (colType) {
-                        case Types.BIGINT:
-                            insertStatementToRecord.append(tdataList.getLong(i));
+                        case Types.BIGINT: {
+                            final long value = tdataList.getLong(i);
+                            insertStatementToRecord.append(tdataList.wasNull() ? "NULL" : value);
                             if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                             break;
+                        }
                         case Types.INTEGER:
                         case Types.BIT:
-                        case Types.TINYINT:
-                            insertStatementToRecord.append(tdataList.getInt(i));
+                        case Types.TINYINT: {
+                            final int value = tdataList.getInt(i);
+                            insertStatementToRecord.append(tdataList.wasNull() ? "NULL" : value);
                             if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                             break;
-                        case Types.DOUBLE:
-                            insertStatementToRecord.append(tdataList.getDouble(i));
+                        }
+                        case Types.DOUBLE: {
+                            final double value = tdataList.getDouble(i);
+                            insertStatementToRecord.append(tdataList.wasNull() ? "NULL" : value);
                             if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                             break;
+                        }
                         case Types.VARCHAR:
                         case Types.CHAR:
                         case Types.LONGVARCHAR: // medium text
