@@ -130,9 +130,9 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 }
 
                 nameFormat = assertion.getNameIdentifierFormat();
-                if (nameFormat.equals(SamlConstants.NAMEIDENTIFIER_EMAIL)) {
+                if (nameFormat != null && nameFormat.equals(SamlConstants.NAMEIDENTIFIER_EMAIL)) {
                     nameValue = u.getEmail();
-                } else if (nameFormat.equals(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT)) {
+                } else if (nameFormat != null && nameFormat.equals(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT)) {
                     X509Certificate foundCert = null;
                     for (AuthenticationResult result : context.getAllAuthenticationResults()) {
                         X509Certificate cert = result.getAuthenticatedCert();
