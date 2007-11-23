@@ -24,24 +24,26 @@ import java.net.URLEncoder;
 import java.util.logging.Logger;
 
 /**
- * Extracts fields from an HTML form submission and constructs MIME parts in the current
- * request out of them.  The request must have been received via HTTP.
+ * Extracts MIE parts out of the current request and formats them as an HTML form submission.
  * <p>
- * <b>NOTE</b>: This assertion destroys the current request and replaces it
- * with new content!
+ * <b>NOTE</b>: This assertion destroys the current request and replaces it with new content!
  */
-public class ServerInverseHttpFormPost extends AbstractServerAssertion implements ServerAssertion {
+public class ServerInverseHttpFormPost extends AbstractServerAssertion<InverseHttpFormPost> {
     private static Logger logger = Logger.getLogger(ServerInverseHttpFormPost.class.getName());
     private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
-    private final InverseHttpFormPost assertion;
     private static final String ENCODING = "UTF-8";
+    private final ContentTypeHeader contentType;
 
     public ServerInverseHttpFormPost(InverseHttpFormPost assertion, ApplicationContext springContext) {
         super(assertion);
         this.auditor = new Auditor(this, springContext, logger);
         this.stashManagerFactory = (StashManagerFactory) springContext.getBean("stashManagerFactory", StashManagerFactory.class);
-        this.assertion = assertion;
+        try {
+            this.contentType = ContentTypeHeader.parseValue("application/" + HttpFormPost.X_WWW_FORM_URLENCODED);
+        } catch (IOException e) {
+            throw new RuntimeException(e); // Something has gone horribly wrong
+        }
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -61,16 +63,16 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion implement
                     baos.write(fieldName.getBytes(ENCODING));
                     baos.write("=".getBytes());
                     baos.write(URLEncoder.encode(new String(partBytes, ctype.getEncoding()), ENCODING).getBytes(ENCODING));
-                    if (assertion.getFieldNames().length < i) baos.write("&".getBytes());
+                    if (i < assertion.getFieldNames().length - 1) baos.write("&".getBytes());
                 } catch (NoSuchPartException e) {
-                    auditor.logAndAudit(AssertionMessages.INVERSE_HTTPFORM_NO_SUCH_PART, new String[] { Integer.toString(i) });
+                    auditor.logAndAudit(AssertionMessages.INVERSE_HTTPFORM_NO_SUCH_PART, Integer.toString(i));
                     return AssertionStatus.FAILED;
                 }
             }
 
             try {
                 request.initialize(stashManagerFactory.createStashManager(),
-                        ContentTypeHeader.parseValue("application/" + HttpFormPost.X_WWW_FORM_URLENCODED),
+                        contentType,
                         new ByteArrayInputStream(baos.toByteArray()));
                 return AssertionStatus.NONE;
             } catch (NoSuchPartException e) {
