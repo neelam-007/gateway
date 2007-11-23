@@ -222,7 +222,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         authSamlRadio.addChangeListener(radioChangeListener);
         authTaiRadio.addChangeListener(radioChangeListener);
 
-        if (policy.isSoap()) {
+        if (!policy.isSoap()) {
             authSamlRadio.setEnabled(false);
             wssPromoteRadio.setEnabled(false);
             wssRemoveRadio.setEnabled(false);
