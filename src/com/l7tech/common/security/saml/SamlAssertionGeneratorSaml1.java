@@ -58,10 +58,9 @@ class SamlAssertionGeneratorSaml1 {
       throws CertificateException {
         Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         AssertionType assertionType = getGenericAssertion(
-                now,
-                options.getExpiryMinutes(),
+                now, options.getExpiryMinutes(),
                 options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
-                caDn, options.getBeforeOffsetMinutes());
+                caDn, options.getBeforeOffsetMinutes(), options.getAudienceRestriction());
         final SubjectStatementAbstractType subjectStatementAbstractType;
 
         if (subjectStatement instanceof AuthenticationStatement) {
@@ -128,10 +127,9 @@ class SamlAssertionGeneratorSaml1 {
     {
         Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         AssertionType assertionType = getGenericAssertion(
-                now,
-                options.getExpiryMinutes(),
+                now, options.getExpiryMinutes(),
                 options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
-                caDn, options.getBeforeOffsetMinutes());
+                caDn, options.getBeforeOffsetMinutes(), options.getAudienceRestriction());
 
         for (SubjectStatement subjectStatement : subjectStatements) {
             final SubjectStatementAbstractType subjectStatementAbstractType;
@@ -244,7 +242,7 @@ class SamlAssertionGeneratorSaml1 {
         }
     }
 
-    private AssertionType getGenericAssertion(Calendar now, int expiryMinutes, String assertionId, String caDn, int beforeOffsetMinutes) {
+    private AssertionType getGenericAssertion(Calendar now, int expiryMinutes, String assertionId, String caDn, int beforeOffsetMinutes, String audienceRestriction) {
         Map caMap = CertUtils.dnToAttributeMap(caDn);
         String caCn = (String)((List)caMap.get("CN")).get(0);
 
@@ -260,6 +258,10 @@ class SamlAssertionGeneratorSaml1 {
         assertion.setIssueInstant(now);
 
         ConditionsType ct = ConditionsType.Factory.newInstance();
+        if (audienceRestriction != null) {
+            AudienceRestrictionConditionType ar = ct.addNewAudienceRestrictionCondition();
+            ar.addAudience(audienceRestriction);
+        }
         Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);

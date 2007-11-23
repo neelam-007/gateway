@@ -91,6 +91,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         final LoginCredentials creds = context.getLastCredentials(); // TODO support some choice of credentials
 
         final SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
+        options.setAudienceRestriction(assertion.getAudienceRestriction());
         if (clientAddress != null) try {
             options.setClientAddress(InetAddress.getByName(clientAddress));
         } catch (UnknownHostException e) {

@@ -387,6 +387,14 @@ public class SamlAssertionGenerator {
             this.issuerKeyInfoType = issuerKeyInfoType;
         }
 
+        public String getAudienceRestriction() {
+            return audienceRestriction;
+        }
+
+        public void setAudienceRestriction(String audienceRestriction) {
+            this.audienceRestriction = audienceRestriction;
+        }
+
         private KeyInfoInclusionType issuerKeyInfoType = KeyInfoInclusionType.CERT;
         private boolean proofOfPosessionRequired = true;
         private int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
@@ -397,6 +405,7 @@ public class SamlAssertionGenerator {
         private int samlVersion = VERSION_1;
         private String securityHeaderActor = null;
         private int beforeOffsetMinutes = 2; // TODO surely the default should be a little tighter
+        private String audienceRestriction = null;
     }
 
     static final int DEFAULT_EXPIRY_MINUTES = 5;

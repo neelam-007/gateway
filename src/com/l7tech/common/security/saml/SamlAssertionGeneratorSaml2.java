@@ -53,10 +53,9 @@ public class SamlAssertionGeneratorSaml2 {
                                               String caDn) throws CertificateEncodingException {
         Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         AssertionType assertionType = getGenericAssertion(
-                now,
-                options.getExpiryMinutes(),
+                now, options.getExpiryMinutes(),
                 options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
-                caDn, options.getBeforeOffsetMinutes());
+                caDn, options.getBeforeOffsetMinutes(), options.getAudienceRestriction());
         final SubjectType subjectStatementAbstractType = assertionType.addNewSubject();
 
         if (subjectStatement instanceof AuthenticationStatement) {
@@ -247,7 +246,7 @@ public class SamlAssertionGeneratorSaml2 {
         }
     }
 
-    private AssertionType getGenericAssertion(Calendar now, int expiryMinutes, String assertionId, String caDn, int beforeOffsetMinutes) {
+    private AssertionType getGenericAssertion(Calendar now, int expiryMinutes, String assertionId, String caDn, int beforeOffsetMinutes, String audienceRestriction) {
         Map caMap = CertUtils.dnToAttributeMap(caDn);
         String caCn = (String)((List)caMap.get("CN")).get(0);
 
@@ -265,6 +264,7 @@ public class SamlAssertionGeneratorSaml2 {
         assertion.setIssuer(issuer);
 
         ConditionsType ct = ConditionsType.Factory.newInstance();
+        if (audienceRestriction != null) ct.addNewAudienceRestriction().addAudience(audienceRestriction);
         Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
@@ -374,10 +374,10 @@ public class SamlAssertionGeneratorSaml2 {
     private AssertionType createXmlBeansAssertion(SubjectStatement[] statements, SamlAssertionGenerator.Options options, String caDn) throws CertificateEncodingException {
         Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         AssertionType assertionType = getGenericAssertion(
-                now,
-                options.getExpiryMinutes(),
+                now, options.getExpiryMinutes(),
                 options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
-                caDn, options.getBeforeOffsetMinutes());
+                caDn, options.getBeforeOffsetMinutes(), options.getAudienceRestriction()
+        );
         final SubjectType subjectStatementAbstractType = assertionType.addNewSubject();
 
         populateSubjectStatement(subjectStatementAbstractType, statements[0], caDn);
