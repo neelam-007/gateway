@@ -70,8 +70,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             new ConcurrentHashMap<Long, Reference<HttpTransportModule>>();
 
     static boolean testMode = false; // when test mode enabled, will always use the following two fields
-    static SsgConnector testConnector;
-    static HttpTransportModule testModule;
+    static SsgConnector testConnector = null;
+    static HttpTransportModule testModule = null;
 
     private final long instanceId;
 
