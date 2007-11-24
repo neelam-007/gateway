@@ -304,8 +304,8 @@ public class SamlAssertionGenerator {
     }
 
     public static class Options {
-        public static int VERSION_1 = 1;
-        public static int VERSION_2 = 2;
+        public static final int VERSION_1 = 1;
+        public static final int VERSION_2 = 2;
 
         public int getExpiryMinutes() {
             return expiryMinutes;
