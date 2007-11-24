@@ -55,8 +55,9 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
         Session session;
         try {
             sessionFactory = (SessionFactory)spring.getBean("sessionFactory");
+            if (sessionFactory == null) throw new FatalUpgradeException("Couldn't get required components (sessionFactory)");
             session = sessionFactory.getCurrentSession();
-            if (sessionFactory == null) throw new FatalUpgradeException("Couldn't get required components");
+            if (session == null) throw new FatalUpgradeException("Couldn't get required components (session)");
         } catch (BeansException e) {
             throw new FatalUpgradeException("Couldn't get required components");
         }
