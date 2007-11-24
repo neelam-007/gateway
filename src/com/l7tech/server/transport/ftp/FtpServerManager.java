@@ -16,31 +16,42 @@ import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.SoapFaultManager;
 import org.apache.ftpserver.ConfigurableFtpServerContext;
 import org.apache.ftpserver.FtpServer;
+import org.apache.ftpserver.FtpSessionImpl;
 import org.apache.ftpserver.config.PropertiesConfiguration;
 import org.apache.ftpserver.ftplet.FileSystemManager;
 import org.apache.ftpserver.ftplet.Ftplet;
 import org.apache.ftpserver.ftplet.UserManager;
+import org.apache.ftpserver.ftplet.FtpRequest;
+import org.apache.ftpserver.ftplet.FtpSession;
 import org.apache.ftpserver.interfaces.CommandFactory;
 import org.apache.ftpserver.interfaces.FtpServerContext;
 import org.apache.ftpserver.interfaces.IpRestrictor;
 import org.apache.ftpserver.interfaces.Ssl;
 import org.apache.ftpserver.listener.Listener;
+import org.apache.ftpserver.listener.ConnectionManager;
+import org.apache.ftpserver.listener.Connection;
+import org.apache.ftpserver.listener.mina.MinaConnection;
+import org.apache.mina.common.support.BaseIoSession;
 import org.springframework.context.ApplicationListener;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.PrivateKey;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
+import java.lang.reflect.Field;
 
 /**
  * Creates and controls an embedded FTP server for each configured SsgConnector
  * with an FTP or FTPS scheme.
  */
 public class FtpServerManager extends TransportModule implements ApplicationListener {
+
+    //- PUBLIC
 
     public FtpServerManager(final AuditContext auditContext,
                             final ClusterPropertyManager clusterPropertyManager,
@@ -50,7 +61,8 @@ public class FtpServerManager extends TransportModule implements ApplicationList
                             final LicenseManager licenseManager,
                             final SsgKeyStoreManager ssgKeyStoreManager,
                             final KeystoreUtils defaultKeystore,
-                            final SsgConnectorManager ssgConnectorManager) {
+                            final SsgConnectorManager ssgConnectorManager,
+                            final Timer timer) {
         super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
 
         this.auditContext = auditContext;
@@ -61,7 +73,107 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         this.ssgKeyStoreManager = ssgKeyStoreManager;
         this.defaultKeystore = defaultKeystore;
         this.ssgConnectorManager = ssgConnectorManager;
+        this.timer = timer;
     }
+
+    //- PROTECTED
+
+    @Override
+    protected void init() {
+        timer.schedule(new TimerTask(){
+            public void run() {
+                updateControlConnectionAccessTimes();
+            }
+        }, 30000, 30000 );
+    }
+
+    @Override
+    protected boolean isValidConnectorConfig(final SsgConnector connector) {
+        if (!super.isValidConnectorConfig(connector))
+            return false;
+        if (!connector.offersEndpoint(SsgConnector.Endpoint.MESSAGE_INPUT)) {
+            // The GUI isn't supposed to allow saving enabled FTP connectors without MESSAGE_INPUT checked
+            logger.log(Level.WARNING, "FTP connector OID " + connector.getOid() + " does not allow published service message input");
+            return false;
+        }
+        return true;
+    }
+
+    protected void addConnector(SsgConnector connector) throws ListenerException {
+        removeConnector(connector.getOid());
+        FtpServer ftpServer = createFtpServer(connector);
+        auditStart(connector);
+        try {
+            ftpServer.start();
+            ftpServers.put(connector.getOid(), ftpServer);
+        } catch (Exception e) {
+            throw new ListenerException("Unable to start FTP server " + toString(connector) + ": " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    protected void removeConnector(long oid) {
+        FtpServer ftpServer = ftpServers.remove(oid);
+        if (ftpServer == null)
+            return;
+
+        String listener = "connector OID " + oid;
+        auditStop(listener);
+        try {
+            ftpServer.stop();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error stopping FTP server for " + listener + ": " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    protected Set<String> getSupportedSchemes() {
+        return schemes;
+    }
+
+    @Override
+    protected void doStart() throws LifecycleException {
+        // Start on the refresh event since the auditing system won't work before the initial
+        // refresh is completed
+        try {
+            startInitialConnectors();
+        } catch(Exception e) {
+            auditError("Error during startup.", e);
+        }
+    }
+
+    @Override
+    protected void doStop() throws LifecycleException {
+        try {
+            List<Long> oidsToStop;
+            oidsToStop = new ArrayList<Long>(ftpServers.keySet());
+            for (Long oid : oidsToStop) {
+                removeConnector(oid);
+            }
+        }
+        catch(Exception e) {
+            auditError("Error while shutting down.", e);
+        }
+    }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(FtpServerManager.class.getName());
+
+    private static final String DEFAULT_PROPS = "com/l7tech/server/transport/ftp/ftpserver-normal.properties";
+    private static final String SSL_PROPS = "com/l7tech/server/transport/ftp/ftpserver-ssl.properties";
+    private static final String PROP_FTP_LISTENER = "config.listeners.";
+
+    private final Set<String> schemes = new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_FTP, SsgConnector.SCHEME_FTPS));
+    private final AuditContext auditContext;
+    private final ClusterPropertyManager clusterPropertyManager;
+    private final MessageProcessor messageProcessor;
+    private final SoapFaultManager soapFaultManager;
+    private final StashManagerFactory stashManagerFactory;
+    private final SsgKeyStoreManager ssgKeyStoreManager;
+    private final KeystoreUtils defaultKeystore;
+    private final SsgConnectorManager ssgConnectorManager;
+    private final Timer timer;
+    private final Map<Long, FtpServer> ftpServers = new ConcurrentHashMap<Long, FtpServer>();
+    private Auditor auditor;
 
     private int toInt(String str, String name) throws ListenerException {
         try {
@@ -188,9 +300,6 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         }
     }
 
-    protected void init() {
-    }
-
     private List<SsgConnector> findAllEnabledFtpConnectors() throws FindException {
         Collection<SsgConnector> all = ssgConnectorManager.findAll();
         List<SsgConnector> ret = new ArrayList<SsgConnector>();
@@ -200,17 +309,6 @@ public class FtpServerManager extends TransportModule implements ApplicationList
             }
         }
         return ret;
-    }
-
-    protected boolean isValidConnectorConfig(SsgConnector connector) {
-        if (!super.isValidConnectorConfig(connector))
-            return false;
-        if (!connector.offersEndpoint(SsgConnector.Endpoint.MESSAGE_INPUT)) {
-            // The GUI isn't supposed to allow saving enabled FTP connectors without MESSAGE_INPUT checked
-            logger.log(Level.WARNING, "FTP connector OID " + connector.getOid() + " does not allow published service message input");
-            return false;
-        }
-        return true;
     }
 
     private void startInitialConnectors() throws LifecycleException {
@@ -229,46 +327,6 @@ public class FtpServerManager extends TransportModule implements ApplicationList
             throw new RuntimeException("Unable to find initial FTP connectors: " + ExceptionUtils.getMessage(e), e);
         }
     }
-
-    protected void doStart() throws LifecycleException {
-        // Start on the refresh event since the auditing system won't work before the initial
-        // refresh is completed
-        try {
-            startInitialConnectors();
-        } catch(Exception e) {
-            auditError("Error during startup.", e);
-        }
-    }
-
-    protected void doStop() throws LifecycleException {
-        try {
-            List<Long> oidsToStop;
-            oidsToStop = new ArrayList<Long>(ftpServers.keySet());
-            for (Long oid : oidsToStop) {
-                removeConnector(oid);
-            }
-        }
-        catch(Exception e) {
-            auditError("Error while shutting down.", e);
-        }
-    }
-
-    private static final Logger logger = Logger.getLogger(FtpServerManager.class.getName());
-
-    private static final String DEFAULT_PROPS = "com/l7tech/server/transport/ftp/ftpserver-normal.properties";
-    private static final String SSL_PROPS = "com/l7tech/server/transport/ftp/ftpserver-ssl.properties";
-    private static final String PROP_FTP_LISTENER = "config.listeners.";
-
-    private final AuditContext auditContext;
-    private final ClusterPropertyManager clusterPropertyManager;
-    private final MessageProcessor messageProcessor;
-    private final SoapFaultManager soapFaultManager;
-    private final StashManagerFactory stashManagerFactory;
-    private final SsgKeyStoreManager ssgKeyStoreManager;
-    private final KeystoreUtils defaultKeystore;
-    private final SsgConnectorManager ssgConnectorManager;
-    private final Map<Long, FtpServer> ftpServers = Collections.synchronizedMap(new HashMap<Long, FtpServer>());
-    private Auditor auditor;
 
     private void configure(Ssl ssl, SsgKeyEntry privateKey) {
         if (ssl instanceof FtpSsl) {
@@ -305,34 +363,63 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         return auditor;
     }
 
-    protected void addConnector(SsgConnector connector) throws ListenerException {
-        removeConnector(connector.getOid());
-        FtpServer ftpServer = createFtpServer(connector);
-        auditStart(connector);
+    /**
+     * Update the last access times for the MINA sessions of the control
+     * connections.
+     *
+     * The FtpServer does not correctly manage the control connection
+     * timeout when there are active data connections.
+     */
+    private void updateControlConnectionAccessTimes() {
+        if ( logger.isLoggable(Level.FINER) )
+            logger.log( Level.FINER, "Updating FTP control connection usage for active data connections.");
+
+        // just ignore this bit ...
+        Field field = null;
         try {
-            ftpServer.start();
-            ftpServers.put(connector.getOid(), ftpServer);
-        } catch (Exception e) {
-            throw new ListenerException("Unable to start FTP server " + toString(connector) + ": " + ExceptionUtils.getMessage(e), e);
+            field = MinaConnection.class.getDeclaredField("session");
+            field.setAccessible(true);
+        } catch (NoSuchFieldException nsfe) {
+            logger.warning("IoSession field not found for MINA connection, not updating control connection usage for active data connections.");
         }
-    }
 
-    protected void removeConnector(long oid) {
-        FtpServer ftpServer = ftpServers.remove(oid);
-        if (ftpServer == null)
-            return;
+        if ( field != null) {
+            for ( FtpServer server : ftpServers.values() ) {
+                if ( !server.isStopped() && !server.isSuspended() ) {
+                    ConnectionManager cm = server.getServerContext().getConnectionManager();
+                    List<Connection> connections = cm.getAllConnections();
 
-        String listener = "connector OID " + oid;
-        auditStop(listener);
-        try {
-            ftpServer.stop();
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Error stopping FTP server for " + listener + ": " + ExceptionUtils.getMessage(e), e);
+                    for ( Connection connection : connections ) {
+                        FtpSession session = connection.getSession();
+                        FtpRequest request = session.getCurrentRequest();
+
+                         if ( connection instanceof MinaConnection &&
+                                 request != null &&
+                                  ( "STOR".equals(request.getCommand()) ||
+                                    "STOU".equals(request.getCommand()))) {
+                            logger.log(Level.FINE,
+                                    "Updating FTP control connection usage for data connection ''{0}''",
+                                    request.getArgument());
+
+                            synchronized ( connection ) {
+                                if ( session instanceof FtpSessionImpl) {
+                                    ((FtpSessionImpl)session).updateLastAccessTime();
+                                }
+
+                                try {
+                                    BaseIoSession baseIoSession = (BaseIoSession) field.get(connection);
+                                    baseIoSession.increaseReadBytes(0);
+                                    baseIoSession.increaseWrittenBytes(0);
+                                } catch (IllegalAccessException iae) {
+                                    logger.log(Level.WARNING,
+                                            "Error updating FTP control connection usage for data connection ''{0}'', message is ''{1}''",
+                                            new String[]{ request.getArgument(), iae.getMessage()});
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-    }
-
-    private final Set<String> schemes = new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_FTP, SsgConnector.SCHEME_FTPS));
-    protected Set<String> getSupportedSchemes() {
-        return schemes;
     }
 }

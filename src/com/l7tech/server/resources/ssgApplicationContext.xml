@@ -723,6 +723,7 @@
         <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="keystore"/>
         <constructor-arg ref="ssgConnectorManager"/>
+        <constructor-arg ref="managedBackgroundTimer"/>
     </bean>
 
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">

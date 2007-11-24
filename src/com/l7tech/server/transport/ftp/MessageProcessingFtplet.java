@@ -389,7 +389,8 @@ class MessageProcessingFtplet extends DefaultFtplet {
     /**
      * Convert OutputStream to InputStream.
      */
-    private InputStream getDataInputStream(final DataConnection dataConnection, final String fullPath) throws IOException {
+    private InputStream getDataInputStream(final DataConnection dataConnection,
+                                           final String fullPath) throws IOException {
         final PipedInputStream pis = new PipedInputStream();
 
         final CountDownLatch startedSignal = new CountDownLatch(1);
@@ -400,6 +401,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                     if (logger.isLoggable(Level.FINE))
                         logger.log(Level.FINE, "Starting data transfer for ''{0}''.", fullPath);
 
+                    //noinspection IOResourceOpenedButNotSafelyClosed
                     pos = new PipedOutputStream(pis);
                     startedSignal.countDown();
                     dataConnection.transferFromClient(pos);
