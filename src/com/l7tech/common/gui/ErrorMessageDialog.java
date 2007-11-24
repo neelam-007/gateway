@@ -1,22 +1,21 @@
 package com.l7tech.common.gui;
 
-import com.l7tech.common.gui.widgets.WrappingLabel;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.util.SyspropUtil;
-import com.l7tech.console.util.TopComponents;
 
-import javax.swing.filechooser.FileFilter;
 import javax.swing.*;
-import java.text.SimpleDateFormat;
-import java.text.MessageFormat;
-import java.util.ResourceBundle;
-import java.util.Date;
+import javax.swing.filechooser.FileFilter;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.*;
 import java.io.*;
+import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.ResourceBundle;
 
 /**
  * @author: ghuang
@@ -41,7 +40,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
     private WrappingLabel messageLabel;
 
     private static Runnable shutdownHandler;
-    public static ResourceBundle resources;
+    public static final ResourceBundle resources;
     
     static {
         DialogDisplayer.suppressSheetDisplay(ErrorMessageDialog.class);
