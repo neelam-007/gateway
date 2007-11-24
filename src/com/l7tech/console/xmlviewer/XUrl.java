@@ -30,8 +30,9 @@ import java.net.URL;
  * @version	$Revision$, $Date$
  */
 public class XUrl {
-    private URL url = null;
-    private String xpath = null;
+    private final URL url;
+    private final int urlHashCode;
+    private final String xpath;
 
     /**
      * Constructs a Exchanger Url with the document-url and
@@ -43,6 +44,7 @@ public class XUrl {
     public XUrl(URL url, String xpath) {
         this.url = url;
         this.xpath = xpath;
+        this.urlHashCode = url == null ? 1 : url.toExternalForm().hashCode();
     }
 
     /**
@@ -85,8 +87,15 @@ public class XUrl {
         return result;
     }
 
+    public int hashCode() {
+        int result;
+        result = urlHashCode;
+        result = 31 * result + (xpath != null ? xpath.hashCode() : 0);
+        return result;
+    }
+
     // Compares 2 objects, taking care of null pointer stuff...
-    private boolean compare(Object object1, Object object2) {
+    private static boolean compare(Object object1, Object object2) {
         boolean result = false;
 
         if (object1 != null && object2 != null) {
