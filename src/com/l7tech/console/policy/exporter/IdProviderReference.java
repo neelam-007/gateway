@@ -354,10 +354,8 @@ public class IdProviderReference extends ExternalReference {
                     }
                 }
             } else if (a instanceof MemberOfGroup) {
-                MemberOfGroup mog = (MemberOfGroup)a;
-                if (idAdmin.findGroupByID(providerId, mog.getGroupId()) != null) {
-                    // nothing?
-                }
+                // Ensure no FindException.  TODO do we care whether the group exists?
+                idAdmin.findGroupByID(providerId, ((MemberOfGroup)a).getGroupId());
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "problem getting identity", e);
