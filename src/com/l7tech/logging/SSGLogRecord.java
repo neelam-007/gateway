@@ -169,6 +169,13 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         return true;
     }
 
+    public int hashCode() {
+        int result;
+        result = (requestId != null ? requestId.hashCode() : 0);
+        result = 31 * result + (nodeId != null ? nodeId.hashCode() : 0);
+        return result;
+    }
+
     public long getOid() {
         return getSequenceNumber();
     }
