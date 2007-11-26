@@ -111,7 +111,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
 
     public void update(Policy policy) throws ServerPolicyException, LicenseException, IOException {
         if (policy.getOid() == Policy.DEFAULT_OID) throw new IllegalArgumentException("Can't update a brand-new policy--it must be saved first");
-        logger.log(Level.INFO, "Policy #{0} ({1}) has been created or updated; updating caches", new Object[] { policy.getOid(), policy.getName() });
+        logger.log(Level.FINE, "Policy #{0} ({1}) has been created or updated; updating caches", new Object[] { policy.getOid(), policy.getName() });
         getServerPolicy(policy); // Refresh the cache, don't care about return value
 
         // Prevent reentrant calls from ServerInclude from deadlocking
