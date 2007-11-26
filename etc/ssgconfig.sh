@@ -15,8 +15,8 @@ popd > /dev/null
 OPTIONS="-Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT}"
 
 check_options(){
-    if [ -s "${SCADIAG}" ] ; then
-        OPTIONS="$OPTIONS -Dcom.l7tech.server.keystore.enablehsm=true"
+    if [ -s "${SCADIAG}" ] && [ -s "${SSG_ROOT}/appliance/bin/masterkey-manage.pl" ] ; then
+            OPTIONS="$OPTIONS -Dcom.l7tech.server.keystore.enablehsm=true"
     fi
 }
 
