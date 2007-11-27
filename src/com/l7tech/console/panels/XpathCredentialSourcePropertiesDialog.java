@@ -50,7 +50,8 @@ public class XpathCredentialSourcePropertiesDialog extends JDialog {
         if (namespaces == null) {
             namespaces = new HashMap();
         }
-        if (namespaces.isEmpty()) {
+        // Only for an brand-new Xpath Credential Assertion, add a default namespace. 
+        if (namespaces.isEmpty() && assertion.getXpathExpression() == null) {
             namespaces.put(SoapUtil.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_ENVELOPE);
         }
 
