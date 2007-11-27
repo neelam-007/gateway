@@ -5,6 +5,8 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.common.security.saml.KeyInfoInclusionType;
 import com.l7tech.common.security.saml.NameIdentifierInclusionType;
+import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.util.Functions;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
@@ -13,15 +15,12 @@ import com.l7tech.policy.validator.SamlIssuerAssertionValidator;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.Java5EnumSetTypeMapping;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.Java5EnumSetTypeMapping;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author alex
@@ -40,6 +39,21 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
     private String nameIdentifierValue;
     private KeyInfoInclusionType signatureKeyInfoType = KeyInfoInclusionType.CERT;
     private KeyInfoInclusionType subjectConfirmationKeyInfoType = KeyInfoInclusionType.CERT;
+
+    public static final Set<String> HOK_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+        SamlConstants.CONFIRMATION_HOLDER_OF_KEY,
+        SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY
+    )));
+
+    public static final Set<String> SV_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+        SamlConstants.CONFIRMATION_SENDER_VOUCHES,
+        SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES
+    )));
+
+    public static final Set<String> BEARER_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+        SamlConstants.CONFIRMATION_BEARER,
+        SamlConstants.CONFIRMATION_SAML2_BEARER
+    )));
 
     public SamlIssuerAssertion() {
     }
@@ -188,6 +202,36 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.saml.SamlIssuerAssertionPropertiesEditor");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, SamlIssuerAssertion>() {
+            public String call(SamlIssuerAssertion samlIssuerAssertion) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("Issue ");
+                if (samlIssuerAssertion.isSignAssertion()) sb.append("signed ");
+                final String uri = samlIssuerAssertion.getSubjectConfirmationMethodUri();
+                if (uri != null) {
+                    if (SamlIssuerAssertion.HOK_URIS.contains(uri)) {
+                        sb.append("Holder-of-Key ");
+                    } else if (SamlIssuerAssertion.SV_URIS.contains(uri)) {
+                        sb.append("Sender-Vouches ");
+                    } else if (SamlIssuerAssertion.BEARER_URIS.contains(uri)) {
+                        sb.append("Bearer-Token ");
+                    }
+                }
+                sb.append("SAML Assertion");
+                EnumSet<DecorationType> dts = samlIssuerAssertion.getDecorationTypes();
+                if (dts.isEmpty()) return sb.toString();
+
+                if (dts.contains(DecorationType.ADD_ASSERTION)) {
+                    sb.append(" and add to ");
+                    if (dts.contains(DecorationType.SIGN_BODY)) sb.append("signed ");
+                    if (dts.contains(DecorationType.REQUEST))
+                        sb.append("request");
+                    else
+                        sb.append("response");
+                }
+                return sb.toString();
+            }
+        });
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(NameIdentifierInclusionType.class, "nameIdentifierType"),
             new Java5EnumTypeMapping(KeyInfoInclusionType.class, "subjectConfirmationKeyInfoType"),
