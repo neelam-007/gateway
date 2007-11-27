@@ -203,11 +203,11 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.saml.SamlIssuerAssertionPropertiesEditor");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, SamlIssuerAssertion>() {
-            public String call(SamlIssuerAssertion samlIssuerAssertion) {
+            public String call(SamlIssuerAssertion sia) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("Issue ");
-                if (samlIssuerAssertion.isSignAssertion()) sb.append("signed ");
-                final String uri = samlIssuerAssertion.getSubjectConfirmationMethodUri();
+                if (sia.isSignAssertion()) sb.append("signed ");
+                final String uri = sia.getSubjectConfirmationMethodUri();
                 if (uri != null) {
                     if (SamlIssuerAssertion.HOK_URIS.contains(uri)) {
                         sb.append("Holder-of-Key ");
@@ -218,8 +218,8 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
                     }
                 }
                 sb.append("SAML Assertion");
-                EnumSet<DecorationType> dts = samlIssuerAssertion.getDecorationTypes();
-                if (dts.isEmpty()) return sb.toString();
+                EnumSet<DecorationType> dts = sia.getDecorationTypes();
+                if (dts == null || dts.isEmpty()) return sb.toString();
 
                 if (dts.contains(DecorationType.ADD_ASSERTION)) {
                     sb.append(" and add to ");
