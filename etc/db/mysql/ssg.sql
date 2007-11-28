@@ -138,6 +138,27 @@ CREATE TABLE policy (
   INDEX (policy_type)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+---
+--- Policy XML rollback support
+---
+
+DROP TABLE IF EXISTS policy_version;
+CREATE TABLE policy_version (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  name varchar(255),
+  policy_oid bigint(20) NOT NULL,
+  ordinal int(20) NOT NULL,
+  time bigint(20) NOT NULL,
+  user_provider_oid bigint(20),
+  user_login varchar(255),
+  parent_version_oid bigint(20) NOT NULL,
+  active boolean,
+  xml mediumtext,
+  PRIMARY KEY (objectid),
+  INDEX (ordinal)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 --
 -- Dumping data for table 'published_service'
 --

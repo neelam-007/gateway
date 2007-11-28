@@ -1,11 +1,21 @@
 package com.l7tech.common.util;
 
+import java.beans.Introspector;
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
+
 /**
  * Plumbing for building simple callbacks that don't deserve to have a special interface created just for them.
  * <p/>
  * Requires Java 5.
+ * @noinspection PublicInnerClass,InterfaceNamingConvention,StaticMethodNamingConvention
  */
-public interface Functions {
+public final class Functions {
+    private Functions() {}
+
     /** A function that takes no arguments and returns a value. */
     public interface Nullary<R> {
         R call();
@@ -89,5 +99,168 @@ public interface Functions {
     /** A function that takes any number of arguments and returns void. */
     public interface VariadicVoid<P> {
         void call(P ... args);
+    }
+
+    /**
+     * Transforms a collection of items by applying a map function to each input item
+     * to obtain a corresponding output item.
+     *
+     * @param in a collection of input items
+     * @param transformation a transformation to apply to each input item to produce the corresponding output item
+     * @return a collection of output items
+     */
+    public static <I,O> List<O> map(Collection<I> in, Unary<O,I> transformation) {
+        List<O> ret = new ArrayList<O>();
+        for (I i : in)
+            ret.add(transformation.call(i));
+        return ret;
+    }
+
+    /**
+     * Search the specified collection for the first object matching predicate.
+     *
+     * @param in the collection to search
+     * @param predicate the predicate to match
+     * @return the first matching object, or null if no match was found
+     */
+    public static <I> I grepFirst(Collection<I> in, Unary<Boolean, I> predicate) {
+        for (I i : in) {
+            if (predicate.call(i))
+                return i;
+        }
+        return null;
+    }
+
+    /**
+     * Produce a filtered list of all objects matching the predicate.
+     *
+     * @param in a collection of items to filter
+     * @param predicate the filter to apply
+     * @return a list of all input objects that matched the filter.  may be empty, but will never be null.
+     */
+    public static <I> Collection<I> grep(Iterable<I> in, Unary<Boolean, I> predicate) {
+        return grep(new ArrayList<I>(), in, predicate);
+    }
+
+    /**
+     * Filter all objects matching the predicate into the specified collection.
+     *
+     * @param out  a container in which to collect matching values.  Required.
+     * @param in   a collection of values to match.  Required.
+     * @param predicate the filter to apply
+     * @return a reference to the out container.
+     */
+    public static <T,C extends Collection<T>> C grep(C out, Iterable<T> in, Unary<Boolean, T> predicate) {
+        for (T i : in) {
+            if (predicate.call(i))
+                out.add(i);
+        }
+        return out;
+    }
+
+    /**
+     * Return a new predicate which negates an existing predicate.
+     *
+     * @param predicate the predicate to negate.  Required.
+     * @return a new predicate that returns true in place of false and vice versa
+     */
+    public static <T> Unary<Boolean,T> negate(final Unary<Boolean,T> predicate) {
+        return new Unary<Boolean, T>() {
+            public Boolean call(T t) {
+                return !predicate.call(t);
+            }
+        };
+    }
+
+    /**
+     * Reduce a collection of items to a single summary item using the specified reduction function and initial
+     * value.
+     *
+     * @param in a collection to reduce.
+     * @param initial the initial value to use as the left hand argument to the first call to reduction
+     * @param reduction the reduction to apply
+     * @return the result of applying the reduction to each item in the collection
+     */
+    public static <I,O> O reduce(Iterable<I> in, O initial, Binary<O, O, I> reduction) {
+        O ret = initial;
+        for (I i : in)
+            ret = reduction.call(ret, i);
+        return ret;
+   }
+
+    /**
+     * A convenience wrapper for {@link Collections#sort(java.util.List)} that always
+     * makes a copy of the collection before sorting it.
+     *
+     * @param collection the collection to sort
+     * @return a copy of the collection that has been sorted
+     */
+    public static <T extends Comparable<? super T>> List<T> sort(Collection<T> collection) {
+        List<T> copy = new ArrayList<T>(collection);
+        Collections.sort(copy);
+        return copy;
+    }
+
+    /**
+     * A convenience wrapper for {@link Collections#sort(java.util.List, java.util.Comparator)}
+     * that always makes a copy of the collection before
+     * sorting it.
+     *
+     * @param collection the source collection.  It will not be modified by this method.
+     * @param comparator the comparator to use when sorting the collection.
+     * @return a new copy of the collection, sorted using the specified comparator.
+     */
+    public static <T> List<T> sort(Collection<T> collection, Comparator<? super T> comparator) {
+        List<T> copy = new ArrayList<T>(collection);
+        Collections.sort(copy, comparator);
+        return copy;
+    }
+
+    /**
+     * Convert any non-void nullary method (ie, Component.getWidth()) into a transformation that will,
+     * when passed an instance (ie, of Component) return the result of invoking the method on that
+     * instance (ie, its width).
+     *
+     * @param getter a nullary, non-void method of some class.  Required.
+     *               If this is a static method the resulting transform will ignore any objects passed into it.
+     * @return a Unary that takes an instance of that class and returns the result of invoking the getter on it.  Never null
+     */
+    public static <OUT,IN> Unary<OUT,IN> getterTransform(final Method getter) {
+        return new Unary<OUT,IN>() {
+            public OUT call(IN in) {
+                try {
+                    //noinspection unchecked
+                    return (OUT)getter.invoke(in);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                } catch (InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+    }
+
+    /**
+     * Create a transformation that will, when passed an instance of some class (ie, Component)
+     * return the value of that instances property (ie, "width").
+     * <p/>
+     * Creating a transform may be quite slow (as it may need to load BeanInfo),
+     * but invoking the resulting transform should usually only be slightly slow (ie as fast as any reflective
+     * method invocation).
+     *
+     * @param clazz     the class whose instances are to be transformed (ie, Component).  Required
+     * @param property  the property the transform should produce (ie, "width").  Required.
+     * @return a Unary that, when passed an instance of the class, will return the corresponding property.
+     */
+    public static <OUT,IN> Unary<OUT,IN> propertyTransform(Class<IN> clazz, String property) {
+        try {
+            PropertyDescriptor[] props = Introspector.getBeanInfo(clazz).getPropertyDescriptors();
+            for (PropertyDescriptor prop : props)
+                if (prop.getName().equals(property))
+                    return getterTransform(prop.getReadMethod());
+            throw new IllegalArgumentException("Class " + clazz + " has no property named " + property);
+        } catch (IntrospectionException e) {
+            throw new IllegalArgumentException("Unable to instrospect class " + clazz + ": " + ExceptionUtils.getMessage(e));
+        }
     }
 }

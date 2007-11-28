@@ -18,7 +18,7 @@ public class SsgConnectorSql {
     protected static final Logger logger = Logger.getLogger(SsgConnectorSql.class.getName());
 
     private final SsgConnector connector;
-    private static final Method[] EMPTH_METHOD_ARRAY = new Method[0];
+    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
 
     public SsgConnectorSql(SsgConnector connector) {
         this.connector = connector;
@@ -96,7 +96,7 @@ public class SsgConnectorSql {
                 throw new RuntimeException("Unable to find setter in class " + clazz + " named " + methName);
             ret.add(method);
         }
-        return ret.toArray(EMPTH_METHOD_ARRAY);
+        return ret.toArray(EMPTY_METHOD_ARRAY);
     }
 
     private static Map<String, Method> findSetters(Class clazz) {
@@ -289,12 +289,6 @@ public class SsgConnectorSql {
         } finally {
             ResourceUtils.closeQuietly(rs);
             ResourceUtils.closeQuietly(ps);
-        }
-    }
-
-    private static class MethodNameComparator implements Comparator<Method> {
-        public int compare(Method o1, Method o2) {
-            return o1.getName().compareTo(o2.getName());
         }
     }
 }

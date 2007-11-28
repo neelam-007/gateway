@@ -4,9 +4,10 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.common.policy.Policy;
+import com.l7tech.console.action.DeletePolicyAction;
 import com.l7tech.console.action.EditPolicyAction;
 import com.l7tech.console.action.EditPolicyProperties;
-import com.l7tech.console.action.DeletePolicyAction;
+import com.l7tech.console.action.PolicyRevisionsAction;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -98,6 +99,7 @@ public class PolicyEntityNode extends EntityHeaderNode {
         actions.add(new EditPolicyAction(this));
         actions.add(new EditPolicyProperties(this));
         actions.add(new DeletePolicyAction(this));
+        actions.add(new PolicyRevisionsAction(this));
         // TODO find usages...
 
         return actions.toArray(new Action[0]);

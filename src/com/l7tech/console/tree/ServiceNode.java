@@ -2,10 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.console.action.DeleteServiceAction;
-import com.l7tech.console.action.EditServiceProperties;
-import com.l7tech.console.action.PublishPolicyToUDDIRegistry;
-import com.l7tech.console.action.EditPolicyAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
@@ -135,6 +132,7 @@ public class ServiceNode extends PolicyEntityNode {
         actions.add(new EditServiceProperties(this));
         if (svc.isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
         actions.add(new DeleteServiceAction(this));
+        actions.add(new PolicyRevisionsAction(this));
 
         return actions.toArray(new Action[0]);
     }

@@ -17,6 +17,7 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -68,4 +69,29 @@ public interface PolicyAdmin {
 
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     Set<Policy> findUsages(long oid) throws FindException;
+
+    /**
+     * Find a particular policy revision by its OID.
+     *
+     * @param policyOid the OID of the policy this is a version of.  Required.
+     * @param versionOid the OID to find.  Required.
+     * @return the requested PolicyVersion, or null if that OID wasn't found.
+     * @throws FindException if there is a database problem
+     */
+    @Secured(stereotype=FIND_BY_PRIMARY_KEY, relevantArg=0)
+    @Transactional(readOnly=true)
+    PolicyVersion findPolicyVersionByPrimaryKey(long policyOid, long versionOid) throws FindException;
+
+    /**
+     * Get summary information about all revisions tracked for the specified policy.
+     * <p/>
+     * This returns a list of PolicyVersion instances whose "xml" properties are all null.
+     *
+     * @param policyOid the OID of the owning Policy.  Required.
+     * @return a Set of headers for every PolicyVersion that exists for this Policy.  May be empty but never null.
+     * @throws FindException if there is a database problem
+     */
+    @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)
+    @Transactional(readOnly=true)
+    List<PolicyVersion> findPolicyVersionHeadersByPolicy(long policyOid) throws FindException;    
 }

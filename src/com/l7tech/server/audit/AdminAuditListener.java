@@ -5,11 +5,11 @@ package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.event.system.BackupEvent;
@@ -20,10 +20,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.ApplicationObjectSupport;
 
-import javax.security.auth.Subject;
 import java.rmi.server.ServerNotActiveException;
-import java.security.AccessController;
-import java.security.Principal;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -198,7 +195,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 msg.append(" (").append(note).append(")");
             }
 
-            AdminInfo info = getAdminInfo();
+            AdminInfo info = AdminInfo.find();
             if (info == null) return null;
 
             long oid = PersistentEntity.DEFAULT_OID;
@@ -225,7 +222,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                                         event.getClientAddr());
         } else if (genericEvent instanceof AdminEvent) {
             AdminEvent event = (AdminEvent)genericEvent;
-            AdminInfo info = getAdminInfo();
+            AdminInfo info = AdminInfo.find();
             if (info == null) return null;
 
             return new AdminAuditRecord(level(event), nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_OTHER, event.getNote(), info.identityProviderOid, info.login, info.id, info.ip);
@@ -250,56 +247,6 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         return o == null || o instanceof String && (((String) o).length() == 0);
     }
 
-    private AdminInfo getAdminInfo() {
-        Subject clientSubject = null;
-        String login = null;
-        String uniqueId = null;
-        String address;
-        long providerOid = IdentityProviderConfig.DEFAULT_OID;
-        try {
-            address = RemoteUtils.getClientHost();
-            clientSubject = Subject.getSubject(AccessController.getContext());
-        } catch (ServerNotActiveException e) {
-            logger.warning("The administrative event caused as local call, outside of servicing an adminstrative remote call." +
-              "Will use ip/user" + LOCALHOST_IP + "/" + LOCALHOST_SUBJECT);
-            address = LOCALHOST_IP;
-            login = LOCALHOST_SUBJECT;
-        }
-        if (clientSubject != null) {
-            Set principals = clientSubject.getPrincipals();
-            if (principals != null && !principals.isEmpty()) {
-                Principal p = (Principal)principals.iterator().next();
-                if (p instanceof User) {
-                    User u = (User) p;
-                    login = u.getLogin();
-                    uniqueId = u.getId();
-                    providerOid = u.getProviderId();
-                }
-                if (login == null) login = p.getName();
-                if (uniqueId == null) uniqueId = "principal:"+login;
-            }
-        }
-
-        //return new AdminInfo(...);
-        return new AdminInfo(login, uniqueId, providerOid, address);
-    }
-
-    private static class AdminInfo {
-        public AdminInfo(String login, String id, long ipOid, String ip) {
-            this.ip = ip;
-            this.id = id;
-            this.identityProviderOid = ipOid;
-            this.login = login;
-        }
-
-        private final String login;
-        private final String id;
-        private final long identityProviderOid;
-        private final String ip;
-    }
-
     private Map<Class<? extends Entity>, LevelMapping> levelMappings = new HashMap<Class<? extends Entity>, LevelMapping>();
     private static final Logger logger = Logger.getLogger(AdminAuditListener.class.getName());
-    public static final String LOCALHOST_IP = "127.0.0.1";
-    public static final String LOCALHOST_SUBJECT = "localsystem";
 }

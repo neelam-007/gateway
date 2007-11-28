@@ -38,6 +38,7 @@ public class AllAssertions {
 
     /**
      * the assertions that the agent (ssa) uses
+     * TODO wrap and protect this currently-mutable array
      */
     public static Assertion[] BRIDGE_EVERYTHING = new Assertion[]{
         new HttpBasic(),
@@ -67,6 +68,7 @@ public class AllAssertions {
 
     /**
      * all assertions that the gateway must handle
+     * TODO wrap and protect this currently-mutable array
      */
     public static Assertion[] GATEWAY_EVERYTHING = new Assertion[]{
         new TrueAssertion(),
@@ -124,6 +126,7 @@ public class AllAssertions {
 
     /**
      * all assertions that the serialization must handle
+     * TODO wrap and protect this currently-mutable array
      */
     public static Assertion[] SERIALIZABLE_EVERYTHING = new Assertion[]{
         new HttpBasic(),

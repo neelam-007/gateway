@@ -15,10 +15,11 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.PolicyCheckpointEvent;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.uddi.UddiAgent;
 import com.l7tech.server.service.uddi.UddiAgentException;
@@ -38,6 +39,9 @@ import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -62,7 +66,7 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 6, 2003
  */
-public final class ServiceAdminImpl implements ServiceAdmin {
+public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
     private SSLContext sslContext;
 
     private final AssertionLicense licenseManager;
@@ -81,6 +85,8 @@ public final class ServiceAdminImpl implements ServiceAdmin {
     private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
     private final BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
     private final ExecutorService validatorExecutor;
+
+    private ApplicationContext applicationContext;
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
                             RegistryPublicationManager registryPublicationManager,
@@ -225,6 +231,9 @@ public final class ServiceAdminImpl implements ServiceAdmin {
             throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
         long oid;
+
+        // Preserve revision history
+        applicationContext.publishEvent(new PolicyCheckpointEvent(this, service.getPolicy()));
 
         if (service.getOid() > 0) {
             // UPDATING EXISTING SERVICE
@@ -508,5 +517,9 @@ public final class ServiceAdminImpl implements ServiceAdmin {
 
     public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
         return asyncSupport.getJobResult(jobId);
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 }

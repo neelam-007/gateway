@@ -257,6 +257,7 @@
     <bean id="policyAdmin_UNSECURED" class="com.l7tech.server.policy.PolicyAdminImpl">
         <constructor-arg ref="policyManager"/>
         <constructor-arg ref="policyCache"/>
+        <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="roleManager"/>
     </bean>
 </beans>

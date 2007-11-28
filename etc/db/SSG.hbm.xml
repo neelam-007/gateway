@@ -120,7 +120,7 @@
         <property name="httpMethodNames" column="http_methods" type="text"/>
         <property name="laxResolution" column="lax_resolution" type="boolean"/>
         <many-to-one class="com.l7tech.common.policy.Policy"
-                     name="policy" lazy="false" column="policy_oid" cascade="persist,merge,save-update"/>    
+                     name="policy" lazy="false" column="policy_oid" cascade="persist,merge,save-update"/>
     </class>
 
     <class name="com.l7tech.common.policy.Policy" table="policy" lazy="false">
@@ -132,6 +132,22 @@
         <property name="type" column="policy_type" type="policy_type"/>
         <property name="xml" column="xml" type="text"/>
         <property name="soap" column="soap" type="boolean"/>
+    </class>
+
+    <class name="com.l7tech.common.policy.PolicyVersion" table="policy_version" lazy="false">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <version name="version" type="int"/>
+        <property name="name" column="name" type="string"/>
+        <property name="policyOid" column="policy_oid" type="long"/>
+        <property name="ordinal" column="ordinal" type="long"/>
+        <property name="time" column="time" type="long"/>
+        <property name="userProviderOid" column="user_provider_oid" type="long"/>
+        <property name="userLogin" column="user_login" type="string"/>
+        <property name="parentVersionOid" column="parent_version_oid" type="long"/>
+        <property name="xml" column="xml" type="text" lazy="true"/>
+        <property name="active" column="active" type="boolean"/>
     </class>
 
     <class name="com.l7tech.server.identity.cert.CertEntryRow" table="client_cert" lazy="false">

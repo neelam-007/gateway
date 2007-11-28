@@ -402,7 +402,7 @@ public interface AssertionMetadata {
      * <p/>
      * This property is currently ignored by the SSM but is reserved for future use.
      * <p/>
-     * The default value is "${basePackate}.console.resources.${baseName}Assertion.properties".
+     * The default value is "${basePackage}.console.resources.${baseName}Assertion.properties".
      */
     String PROPERTIES_FILE = "propertiesFile";
 
@@ -419,7 +419,7 @@ public interface AssertionMetadata {
      * holds only one prototype instance per assertion concrete class.
      * <p/>
      * The solution is to use this variantPrototypes property: the default prototype can be queried for a list of
-     * all variant configuraitons offered by this assertion, and each variant provides its own prototype which
+     * all variant configurations offered by this assertion, and each variant provides its own prototype which
      * can be added to the palette folders.  Each variant prototype is then free to customize its returned metadata
      * for such things as paletteNodeName, assertionFactory, or even propertiesEditorFactory.
      * <p/>
