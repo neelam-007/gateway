@@ -5,10 +5,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyType;
-import com.l7tech.objectmodel.EntityManagerStub;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
 import java.util.Set;
@@ -32,5 +29,9 @@ public class PolicyManagerStub extends EntityManagerStub<Policy> implements Poli
             if (policy.getType() == type) hs.add(new EntityHeader(policy.getId(), EntityType.POLICY, policy.getName(), null));
         }
         return hs;
+    }
+
+    public void addManagePolicyRole(Policy policy) throws SaveException {
+        // No-op for stub mode
     }
 }

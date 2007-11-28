@@ -78,6 +78,10 @@ insert into cluster_properties
     (objectid, version, propkey, propvalue)
     values (-400200, 0, "upgrade.task.400200", "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies");
 
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-400201, 0, "upgrade.task.400201", "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions");
+
 --
 -- Reenable FK at very end of script
 --

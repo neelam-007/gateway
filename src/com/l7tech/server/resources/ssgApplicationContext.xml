@@ -766,6 +766,7 @@
     </bean>
 
     <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="roleManager"/>
         <property name="policyCache" ref="policyCache"/>
     </bean>
 

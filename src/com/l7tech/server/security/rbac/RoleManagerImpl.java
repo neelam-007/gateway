@@ -193,12 +193,12 @@ public class RoleManagerImpl
         return null;
     }
 
-    public Role findEntitySpecificRole(final EntityType etype, final PersistentEntity entity) throws FindException {
+    public Role findEntitySpecificRole(final EntityType etype, final long entityId) throws FindException {
         return (Role) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
             protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Criteria crit = session.createCriteria(Role.class);
                 crit.add(Restrictions.eq("entityTypeName", etype.name()));
-                crit.add(Restrictions.eq("entityOid", entity.getOid()));
+                crit.add(Restrictions.eq("entityOid", entityId));
                 return crit.uniqueResult();
             }
         });
@@ -215,9 +215,9 @@ public class RoleManagerImpl
         }
     }
 
-    public void deleteEntitySpecificRole(EntityType etype, final PersistentEntity entity) throws DeleteException {
+    public void deleteEntitySpecificRole(EntityType etype, final long entityOid) throws DeleteException {
         try {
-            Role role = findEntitySpecificRole(etype, entity);
+            Role role = findEntitySpecificRole(etype, entityOid);
             if (role == null) return;
             logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
             delete(role);
@@ -227,7 +227,7 @@ public class RoleManagerImpl
     }
 
     public void renameEntitySpecificRole(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
-        Role role = findEntitySpecificRole(entityType, entity);
+        Role role = findEntitySpecificRole(entityType, entity.getOid());
         if (role == null) {
             logger.warning(MessageFormat.format("No entity-specific role was found for {0} ''{1}'' (#{2})", entity.getName(), entityType.getName(), entity.getOid()));
             return;

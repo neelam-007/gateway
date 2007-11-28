@@ -46,10 +46,16 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
      */
     private static final Map<Class<? extends SystemEvent>, Set<String>> whitelist =
         Collections.unmodifiableMap(new HashMap<Class<? extends SystemEvent>, Set<String>>() {{
-            put(null,           new HashSet<String>(Arrays.asList("com.l7tech.server.upgrade.Upgrade42To43MigratePolicies")));
-            put(Starting.class, new HashSet<String>(Arrays.asList("com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions")));
-            put(Started.class,  new HashSet<String>(Arrays.asList("com.l7tech.server.upgrade.Upgrade35To36AddRoles")));
-        }});
+            p(null,           "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies");
+            p(Starting.class, "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions");
+            p(Started.class,  "com.l7tech.server.upgrade.Upgrade35To36AddRoles",
+                              "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions");
+        }
+            
+        private void p(Class<? extends SystemEvent> clazz, String... strings) {
+            put(clazz, new HashSet<String>(Arrays.asList(strings)));
+        }
+    });
 
     private final ClusterPropertyManager clusterPropertyManager;
     private final PlatformTransactionManager transactionManager; // required for TransactionTemplate

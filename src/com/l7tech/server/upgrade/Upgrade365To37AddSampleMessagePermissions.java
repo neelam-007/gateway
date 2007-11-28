@@ -61,7 +61,7 @@ public class Upgrade365To37AddSampleMessagePermissions implements UpgradeTask {
             throws FindException, UpdateException {
         Collection<PublishedService> services = serviceManager.findAll();
         for (PublishedService service : services) {
-            Role role = roleManager.findEntitySpecificRole(EntityType.SERVICE, service);
+            Role role = roleManager.findEntitySpecificRole(EntityType.SERVICE, service.getOid());
             if (role == null) {
                 logger.warning("Missing admin Role for service " + service.getName() + " (#" + service.getOid() + ")");
                 continue;

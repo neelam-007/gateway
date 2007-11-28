@@ -52,13 +52,9 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
     /**
      * Finds the first role in which every {@link com.l7tech.common.security.rbac.Permission} is scoped to the single
      * provided {@link Entity}.
-     *
-     * @param etype
-     * @param entity the Entity that is being sought.  must not be null. @return the Role in question, or null if none was found.
-     * @throws FindException if there was a problem accessing the database
      */
     @Transactional(readOnly=true)
-    Role findEntitySpecificRole(EntityType etype, PersistentEntity entity) throws FindException;
+    Role findEntitySpecificRole(EntityType etype, long entityOid) throws FindException;
 
     /**
      * Returns true if the specified operation is permitted for <em>all</em> of the specified types; false otherwise
@@ -85,9 +81,9 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
      * provided {@link Entity} (which is presumably being deleted).
      *
      * @param etype
-     * @param entity the Entity that is being deleted @throws com.l7tech.objectmodel.DeleteException
+     * @param entityOid
      */
-    void deleteEntitySpecificRole(EntityType etype, PersistentEntity entity) throws DeleteException;
+    void deleteEntitySpecificRole(EntityType etype, long entityOid) throws DeleteException;
 
     /**
      * Updates the Role corresponding to the provided Entity to match a new name, if it's different

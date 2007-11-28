@@ -12,21 +12,20 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RoleManager;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 
+import javax.security.auth.x500.X500Principal;
+import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.UnsupportedEncodingException;
-import javax.security.auth.x500.X500Principal;
-
-import org.springframework.context.ApplicationEventPublisherAware;
-import org.springframework.context.ApplicationEventPublisher;
 
 /**
  * Server side implementation of the IdentityAdmin interface.
@@ -182,7 +181,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
             manager.delete(ipc);
 
-            roleManager.deleteEntitySpecificRole(ID_PROVIDER_CONFIG, ipc);
+            roleManager.deleteEntitySpecificRole(ID_PROVIDER_CONFIG, ipc.getOid());
             logger.info("Deleted IDProviderConfig: " + ipc);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);

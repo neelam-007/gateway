@@ -288,7 +288,7 @@ public final class ServiceAdminImpl implements ServiceAdmin {
             long oid = toLong(serviceID);
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
-            roleManager.deleteEntitySpecificRole(SERVICE, service);
+            roleManager.deleteEntitySpecificRole(SERVICE, service.getOid());
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);

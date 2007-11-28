@@ -7,9 +7,9 @@ import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.policy.PolicyDeletionForbiddenException;
 import com.l7tech.common.policy.PolicyType;
-import com.l7tech.common.security.rbac.MethodStereotype;
-import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.security.rbac.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.security.rbac.RoleManager;
 
 import java.util.Collection;
 import java.util.Set;
@@ -20,10 +20,12 @@ import java.util.Set;
 public class PolicyAdminImpl implements PolicyAdmin {
     private final PolicyManager policyManager;
     private final PolicyCache policyCache;
+    private final RoleManager roleManager;
 
-    public PolicyAdminImpl(PolicyManager policyManager, PolicyCache policyCache) {
+    public PolicyAdminImpl(PolicyManager policyManager, PolicyCache policyCache, RoleManager roleManager) {
         this.policyManager = policyManager;
         this.policyCache = policyCache;
+        this.roleManager = roleManager;
     }
 
     public Policy findPolicyByPrimaryKey(long oid) throws FindException {
@@ -36,11 +38,14 @@ public class PolicyAdminImpl implements PolicyAdmin {
 
     public void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException {
         policyManager.delete(oid);
+        roleManager.deleteEntitySpecificRole(com.l7tech.common.security.rbac.EntityType.POLICY, oid);
     }
 
     public long savePolicy(Policy policy) throws SaveException {
         if (policy.getOid() == Policy.DEFAULT_OID) {
-            return policyManager.save(policy);
+            final long oid = policyManager.save(policy);
+            policyManager.addManagePolicyRole(policy);
+            return oid;
         } else {
             try {
                 policyManager.update(policy);

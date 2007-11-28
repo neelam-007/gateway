@@ -7,6 +7,7 @@ import static com.l7tech.common.security.rbac.EntityType.POLICY;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -25,6 +26,9 @@ import java.util.Set;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=POLICY)
 public interface PolicyAdmin {
+    String ROLE_NAME_TYPE_SUFFIX = "Policy";
+    String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
+
     /**
      * Finds a particular {@link Policy} with the specified OID, or null if no such policy can be found.
      * @param oid the OID of the Policy to retrieve
