@@ -6,13 +6,14 @@ import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.skunkworks.schemavalidation.Validator;
 import com.l7tech.skunkworks.wsp.pre32.Pre32WspReader;
@@ -286,6 +287,18 @@ public class WspWriterTest extends TestCase {
         log.info("Old policy reader returned the following: " + out);
         assertNotNull(out);
         assertEquals(policy.getClass(), out.getClass());
+    }
+
+    public void testBraServerCertOid() throws Exception {
+        BridgeRoutingAssertion bra = new BridgeRoutingAssertion();
+        bra.setServerCertificateOid(232L);
+
+        String xml = WspWriter.getPolicyXml(bra);
+        log.info("Bra with server cert oid: " + xml);
+
+        Assertion got = WspReader.getDefault().parsePermissively(xml);
+        assertTrue(got instanceof BridgeRoutingAssertion);
+        assertEquals((long)((BridgeRoutingAssertion)got).getServerCertificateOid(), 232L);
     }
 
     public void testDisappearingXslt() throws Exception {
