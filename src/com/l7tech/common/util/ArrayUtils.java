@@ -14,6 +14,12 @@ import java.lang.reflect.Array;
  * Utilities for manipulating arrays.
  */
 public class ArrayUtils {
+    /** An empty Object array, to use in places where one is required and where it needn't be a unique object. */
+    public static final Object[] EMPTY_ARRAY = new Object[0];
+
+    /** An empty String array, to use in places where one is required and where it needn't be a unique object. */
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     /** @return a copy of the array, shifted left one position.  May be empty but never null. */
     public static String[] shift(String[] in) {
         if (in == null || in.length < 2) return new String[0];

@@ -6,8 +6,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.transport.SsgConnector;
 import static com.l7tech.common.transport.SsgConnector.*;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.Pair;
+import com.l7tech.common.util.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 
@@ -20,11 +19,11 @@ import java.net.InetAddress;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class SsgConnectorPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgConnectorPropertiesDialog.class.getName());
+    private static final boolean INCLUDE_ALL_CIPHERS = SyspropUtil.getBoolean("com.l7tech.console.connector.includeAllCiphers");
     private static final String DIALOG_TITLE = "Listen Port Properties";
     private static final int TAB_SSL = 1;
     private static final int TAB_FTP = 2;
@@ -50,7 +49,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
     private static final String WS_COMMA_WS = "\\s*,\\s*";
 
-    private final String CPROP_WASENABLED = getClass().getName() + ".wasEnabled";
+    private static final String CPROP_WASENABLED = SsgConnectorPropertiesDialog.class.getName() + ".wasEnabled";
 
     private JPanel contentPane;
     private JButton okButton;
@@ -79,7 +78,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JButton removePropertyButton;
     private JList propertyList;
 
-    private final InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
     private SsgConnector connector;
     private boolean confirmed = false;
     private CipherSuiteListModel cipherSuiteListModel;
@@ -102,6 +100,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(okButton);
 
+        InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
         inputValidator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onOk();
@@ -181,7 +180,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 //noinspection unchecked
                 Pair<String, String> prop = (Pair<String, String>)value;
-                String msg = prop.left + "=" + prop.right;
+                String msg = prop.left + '=' + prop.right;
                 setText(msg);
                 return this;
             }
@@ -256,7 +255,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         });
         inputValidator.addRule(new InputValidator.ComponentValidationRule(cbEnableMessageInput) {
             public String getValidationError() {
-                if ((!enabledCheckBox.isSelected()) ||
+                boolean disabled = !enabledCheckBox.isSelected();
+                if (disabled ||
                     cbEnableBuiltinServices.isSelected() ||
                     cbEnableMessageInput.isSelected() ||
                     cbEnableSsmApplet.isSelected() ||
@@ -296,13 +296,13 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         });
     }
 
-    private void saveCheckBoxState(JCheckBox... boxes) {
+    private static void saveCheckBoxState(JCheckBox... boxes) {
         for (JCheckBox box : boxes)
             box.putClientProperty(CPROP_WASENABLED, box.isSelected());
     }
 
     private void initializeInterfaceComboBox() {
-        Vector<String> entries = new Vector<String>();
+        List<String> entries = new ArrayList<String>();
 
         entries.add(INTERFACE_ANY);
         InetAddress[] addrs = Registry.getDefault().getTransportAdmin().getAvailableBindAddresses();
@@ -310,17 +310,22 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             entries.add(addr.getHostAddress());
         }
 
-        interfaceComboBoxModel = new DefaultComboBoxModel(entries);
+        interfaceComboBoxModel = new DefaultComboBoxModel(entries.toArray());
         interfaceComboBox.setModel(interfaceComboBoxModel);
     }
 
     public static class JCheckBoxListModel extends AbstractListModel {
         public static final String CLIENT_PROPERTY_ENTRY_CODE = "JCheckBoxListModel.entryCode";
-        protected final List<JCheckBox> entries;
+        private final List<JCheckBox> entries;
         private int armedEntry = -1;
 
         public JCheckBoxListModel(List<JCheckBox> entries) {
-            this.entries = entries;
+            this.entries = new ArrayList<JCheckBox>(entries);
+        }
+
+        protected List<JCheckBox> getEntries() {
+            //noinspection ReturnOfCollectionOrArrayField
+            return entries;
         }
 
         public int getSize() {
@@ -402,13 +407,13 @@ public class SsgConnectorPropertiesDialog extends JDialog {
          * @param entry  one of the checkbox list entries.  Required.
          * @return the code name for this entry, ie "SSL_RSA_WITH_3DES_EDE_CBC_SHA".
          */
-        protected String getEntryCode(JCheckBox entry) {
+        protected static String getEntryCode(JCheckBox entry) {
             Object code = entry.getClientProperty(CLIENT_PROPERTY_ENTRY_CODE);
             return code != null ? code.toString() : entry.getText();
         }
 
         protected String buildEntryCodeString() {
-            StringBuilder ret = new StringBuilder();
+            StringBuilder ret = new StringBuilder(128);
             boolean isFirst = true;
             for (JCheckBox entry : entries) {
                 if (entry.isSelected()) {
@@ -427,8 +432,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         public CipherSuiteListModel(String[] allCiphers, Set<String> defaultCiphers) {
             super(new ArrayList<JCheckBox>());
-            this.allCiphers = allCiphers;
-            this.defaultCiphers = defaultCiphers;
+            this.allCiphers = Arrays.copyOf(allCiphers, allCiphers.length);
+            this.defaultCiphers = new LinkedHashSet<String>(defaultCiphers);
         }
 
         /**
@@ -443,7 +448,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         private String buildDefaultCipherListString() {
-            StringBuilder ret = new StringBuilder();
+            StringBuilder ret = new StringBuilder(128);
             boolean isFirst = true;
             for (String cipher : allCiphers) {
                 if (defaultCiphers.contains(cipher)) {
@@ -472,6 +477,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
             Set<String> enabled = new LinkedHashSet<String>(Arrays.asList(cipherList.split(WS_COMMA_WS)));
             Set<String> all = new LinkedHashSet<String>(Arrays.asList(allCiphers));
+            List<JCheckBox> entries = getEntries();
             entries.clear();
             for (String cipher : enabled) {
                 entries.add(new JCheckBox(cipher, true));
@@ -486,6 +492,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
          * Reset the cipher list to the defaults.
          */
         public void setDefaultCipherList() {
+            List<JCheckBox> entries = getEntries();
             int oldsize = entries.size();
             entries.clear();
             for (String cipher : allCiphers)
@@ -494,6 +501,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
     }
 
+    /**
+     * @noinspection SerializableNonStaticInnerClassWithoutSerialVersionUID,CloneableClassInSecureContext,NonStaticInnerClassInSecureContext
+     */
     private class CipherSuiteListSelectionModel extends DefaultListSelectionModel {
         public void setSelectionInterval(int index0, int index1) {
             super.setSelectionInterval(index0, index1);
@@ -506,7 +516,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
      */
     private static class ComponentListCellRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList list, Object valueObj, int index, boolean isSelected, boolean cellHasFocus) {
-            Component value = (JCheckBox)valueObj;
+            Component value = (Component)valueObj;
             Component supe = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             value.setForeground(supe.getForeground());
             value.setBackground(supe.getBackground());
@@ -515,9 +525,28 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
     }
 
+    private static String[] getCipherSuiteNames() {
+        String[] unfiltered = Registry.getDefault().getTransportAdmin().getAllCipherSuiteNames();
+        if (INCLUDE_ALL_CIPHERS)
+            return unfiltered;
+
+        List<String> ret = new ArrayList<String>();
+        for (String name : unfiltered) {
+            if (name.indexOf("_WITH_NULL_") > 0) {
+                // Skip it -- it doesn't encrypt
+            } else if (name.indexOf("_anon_") > 0) {
+                // Skip it -- it doesn't authenticate
+            } else if (name.indexOf("_RSA_") > 0) {
+                // Include it -- it'll work with our RSA server cert
+                ret.add(name);
+            }
+        }
+        return ret.toArray(new String[ret.size()]);
+    }
+
     private void initializeCipherSuiteControls() {
-        String[] allCiphers = Registry.getDefault().getTransportAdmin().getAllCipherSuiteNames();
-        LinkedHashSet<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
+        String[] allCiphers = getCipherSuiteNames();
+        Set<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
                 Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames()));
         cipherSuiteListModel = new CipherSuiteListModel(allCiphers, defaultCiphers);
         cipherSuiteList.setModel(cipherSuiteListModel);
@@ -544,6 +573,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         });
         // Change unmodified space from 'addToSelection' to 'toggleCheckBox' (ie, same as our above single-click handler)
         cipherSuiteList.getInputMap().put(KeyStroke.getKeyStroke(' '), "toggleCheckBox");
+        //noinspection CloneableClassInSecureContext
         cipherSuiteList.getActionMap().put("toggleCheckBox", new AbstractAction("toggleCheckBox") {
             public void actionPerformed(ActionEvent e) {
                 int selectedIndex = cipherSuiteList.getSelectedIndex();
@@ -589,11 +619,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         return protocolComboBox.getSelectedItem().toString();
     }
 
-    private boolean isSslProto(String protocol) {
+    private static boolean isSslProto(String protocol) {
         return SCHEME_HTTPS.equals(protocol) || SCHEME_FTPS.equals(protocol);
     }
 
-    private boolean isFtpProto(String protocol) {
+    private static boolean isFtpProto(String protocol) {
         return SCHEME_FTP.equals(protocol) || SCHEME_FTPS.equals(protocol);
     }
 
@@ -640,36 +670,36 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote);
         } else {
             enableAndRestore(cbEnableMessageInput, cbEnableBuiltinServices);
-            if (!ssl) {
-                setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote);
-            } else {
+            if (ssl) {
                 // Disallow admin endpoint when private key other than SSL is selected (Bug #4270)
                 String alias = privateKeyComboBox.getSelectedKeyAlias();
                 // TODO fix this hack when we have a more reliable way to detect the default SSL cert,
                 //      OR when it no longer matters what cert you pick once the SSM and Applet can work with any cert
-                if (!(privateKeyComboBox.isDefaultSslKey(alias) || alias == null)) {
-                    setEnableAndSelect(false, false, "Disabled because it requires the 'SSL' private key alias", cbEnableSsmApplet, cbEnableSsmRemote);
-                } else {
+                if (privateKeyComboBox.isDefaultSslKey(alias) || alias == null) {
                     if (CA_REQUIRED.equals(clientAuthComboBox.getSelectedItem())) {
                         setEnableAndSelect(false, false, "Disabled because client certificate authentication is set to 'Required'", cbEnableSsmApplet, cbEnableSsmRemote);
                     } else {
                         enableAndRestore(cbEnableSsmApplet, cbEnableSsmRemote);
                     }
+                } else {
+                    setEnableAndSelect(false, false, "Disabled because it requires the 'SSL' private key alias", cbEnableSsmApplet, cbEnableSsmRemote);
                 }
+            } else {
+                setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote);
             }
         }
     }
 
-    private void enableAndRestore(JCheckBox... boxes) {
+    private static void enableAndRestore(JCheckBox... boxes) {
         for (JCheckBox box : boxes) {
             box.setEnabled(true);
             box.setToolTipText(null);
-            final Boolean b = (Boolean)box.getClientProperty(CPROP_WASENABLED);
-            if (b != null) box.setSelected(b);
+            final Boolean we = (Boolean)box.getClientProperty(CPROP_WASENABLED);
+            if (we != null) box.setSelected(we);
         }
     }
 
-    private void setEnableAndSelect(boolean enabled, boolean selected, String toolTipText, JCheckBox... boxes) {
+    private static void setEnableAndSelect(boolean enabled, boolean selected, String toolTipText, JCheckBox... boxes) {
         for (JCheckBox box : boxes) {
             box.setSelected(selected);
             box.setEnabled(enabled);
@@ -705,7 +735,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         if (cbEnableSsmApplet.isSelected()) endpoints.add(Endpoint.ADMIN_APPLET.name());
         if (cbEnableBuiltinServices.isSelected()) endpoints.add(Endpoint.OTHER_SERVLETS.name());
 
-        return HexUtils.join(",", endpoints.toArray(new String[0])).toString();
+        return HexUtils.join(",", endpoints.toArray(new String[endpoints.size()])).toString();
     }
 
     /**
@@ -716,41 +746,28 @@ public class SsgConnectorPropertiesDialog extends JDialog {
      *                  will be enabled.
      */
     private void setEndpointList(String endpoints) {
-        String[] names = endpoints == null ? new String[0] : endpoints.split(WS_COMMA_WS);
+        String[] names = endpoints == null ? ArrayUtils.EMPTY_STRING_ARRAY : endpoints.split(WS_COMMA_WS);
 
         boolean messages = false;
         boolean ssmRemote = false;
         boolean ssmApplet = false;
         boolean builtin = false;
-        long alacart = 0;
 
         // Currently the GUI only has four checkboxes, so we'll try to behave sensibly if the endpoint
         // list has been customized in more detail than our GUI allows.
         for (String name : names) {
             try {
                 Endpoint endpoint = Endpoint.valueOf(name);
+                //noinspection EnumSwitchStatementWhichMissesCases
                 switch (endpoint) {
                     case MESSAGE_INPUT:     messages  = true;   break;
                     case ADMIN_REMOTE:      ssmRemote = true;   break;
                     case ADMIN_APPLET:      ssmApplet = true;   break;
-                    case OTHER_SERVLETS:    builtin   = true;   break;
-                    case POLICYDISCO:       alacart |=   1;     break;
-                    case STS:               alacart |=   2;     break;
-                    case CSRHANDLER:        alacart |=   4;     break;
-                    case PASSWD:            alacart |=   8;     break;
-                    case WSDLPROXY:         alacart |=  16;     break;
-                    case SNMPQUERY:         alacart |=  32;     break;
-                    default:
-                        logger.fine("Ignoring unrecognized endpoint: " + endpoint);
+                    default:                builtin   = true;   break;
                 }
             } catch (IllegalArgumentException iae) {
                 logger.fine("Ignoring unrecognized endpoint name: " + name);
             }
-        }
-
-        if ((alacart & 63) == 63) {
-            // All builtin services currently known to this SSM were individually enabled
-            builtin = true;
         }
 
         cbEnableMessageInput.setSelected(messages);
@@ -852,11 +869,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     public void setVisible(boolean b) {
         if (b && !isVisible()) confirmed = false;
         super.setVisible(b);
-    }
-
-    private void showErrorMessage(String title, String msg, Throwable e) {
-        logger.log(Level.WARNING, msg, e);
-        DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, null);
     }
 
     public SsgConnector getConnector() {
