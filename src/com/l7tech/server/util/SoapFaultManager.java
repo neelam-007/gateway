@@ -273,10 +273,12 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                         "    <soapenv:Body>\n" +
                         "        <soapenv:Fault>\n" +
-                        "            <faultcode>Server</faultcode>\n" +
+                        "            <faultcode>soapenv:Server</faultcode>\n" +
                         "            <faultstring>Policy Falsified</faultstring>\n" +
                         "            <faultactor/>\n" +
-                        "            <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                        "            <detail>\n" +
+                        "                 <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                        "            </detail>\n" +
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
@@ -285,10 +287,12 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                         "    <soapenv:Body>\n" +
                         "        <soapenv:Fault>\n" +
-                        "            <faultcode>Server</faultcode>\n" +
+                        "            <faultcode>soapenv:Server</faultcode>\n" +
                         "            <faultstring>Error in assertion processing</faultstring>\n" +
                         "            <faultactor/>\n" +
-                        "            <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                        "            <detail>\n" +
+                        "                 <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                        "            </detail>\n" +
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
