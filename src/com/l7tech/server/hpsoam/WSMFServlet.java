@@ -1,13 +1,26 @@
 package com.l7tech.server.hpsoam;
 
+import com.l7tech.common.LicenseException;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.IssuedCertNotPresentedException;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.AuthenticatableHttpServlet;
+import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
+import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.transport.TransportModule;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
@@ -26,12 +39,23 @@ import java.util.regex.Matcher;
  * User: flascell<br/>
  * Date: Jul 6, 2007<br/>
  */
-public class WSMFServlet extends HttpServlet {
+public class WSMFServlet extends AuthenticatableHttpServlet {
 
     private static final String PLACEHOLDER = "^^^INSERT_METHOD_HOST_PORT_HERE^^^";
     private static final Logger logger = Logger.getLogger(WSMFServlet.class.getName());
     private WebApplicationContext applicationContext;
+    private RoleManager roleManager;
     private WSMFService service;
+
+    // Implements {@link AuthenticatableHttpServlet#getFeature}.
+    protected String getFeature() {
+        return GatewayFeatureSets.SERVICE_MESSAGEPROCESSOR;
+    }
+
+    // Implements {@link AuthenticatableHttpServlet#getRequiredEndpoint}.
+    protected SsgConnector.Endpoint getRequiredEndpoint() {
+        return SsgConnector.Endpoint.HPSOAM;
+    }
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -40,6 +64,7 @@ public class WSMFServlet extends HttpServlet {
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
+        roleManager = (RoleManager)applicationContext.getBean("roleManager");
         service = (WSMFService)applicationContext.getBean("wsmfService");
     }
 
@@ -54,8 +79,7 @@ public class WSMFServlet extends HttpServlet {
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        if (!WSMFService.isEnabled()) {
-            returnError(res, "Service disabled", HttpConstants.STATUS_SERVICE_UNAVAILABLE);
+        if (!checkAccess(req, res)) {
             return;
         }
 
@@ -92,8 +116,7 @@ public class WSMFServlet extends HttpServlet {
     }
 
     public void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        if (!WSMFService.isEnabled()) {
-            returnError(res, "Service disabled", HttpConstants.STATUS_SERVICE_UNAVAILABLE);
+        if (!checkAccess(req, res)) {
             return;
         }
 
@@ -112,6 +135,69 @@ public class WSMFServlet extends HttpServlet {
             logger.log(Level.WARNING, "Invalid request " + payload);
             returnError(res, "invalid request " + payload, 500);
         }
+    }
+
+    /**
+     * Checks if access requirements are met.
+     *
+     * @return true if OK; false if failed (in which case <tt>res</tt> is populated with error response)
+     */
+    private boolean checkAccess(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        if (!WSMFService.isEnabled()) {
+            logger.fine("Request blocked: service disabled");
+            returnError(res, "Service disabled", HttpServletResponse.SC_SERVICE_UNAVAILABLE );
+            return false;
+        }
+
+        if (WSMFService.isSSLRequired() && !req.isSecure()) {
+            logger.fine("Request blocked: SSL required");
+            returnError(res, "SSL required", HttpServletResponse.SC_FORBIDDEN);
+            return false;
+        }
+
+        if (WSMFService.isCredentialsRequired()) {
+            if (findCredentialsBasic(req) == null) {
+                logger.fine("Sending challenge response to request without credentials.");
+                res.setStatus(HttpConstants.STATUS_UNAUTHORIZED);
+                res.setHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
+                return false;
+            }
+
+            AuthenticationResult[] results = null;
+            try {
+                results = authenticateRequestBasic(req);
+                if (results.length > 0) {
+                    final User user = results[0].getUser();
+                    if (!roleManager.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.CLUSTER_INFO)) {
+                        logger.warning("Request blocked: user does not have premitted role.");
+                        returnError(res, "Not permitted", HttpServletResponse.SC_FORBIDDEN);
+                        return false;
+                    }
+                }
+            } catch (BadCredentialsException e) {
+                logger.warning("Request blocked: invalid credentials: " + e.toString());
+                returnError(res, "Bad credentials", HttpServletResponse.SC_FORBIDDEN);
+                return false;
+            } catch (IssuedCertNotPresentedException e) {
+                logger.warning("Request blocked: no client cert provided: " + e.toString());
+                returnError(res, "No client certificate", HttpServletResponse.SC_FORBIDDEN);
+                return false;
+            } catch (LicenseException e) {
+                logger.warning("Request blocked: feature not licensed: " + e.toString());
+                returnError(res, "Unlicensed", HttpServletResponse.SC_FORBIDDEN);
+                return false;
+            } catch (TransportModule.ListenerException e) {
+                logger.warning("Request blocked: request did not arrive over a connector configured for this purpose: " + e.toString());
+                returnError(res, "Connector not enabled", HttpServletResponse.SC_FORBIDDEN);
+                return false;
+            } catch (FindException e) {
+                logger.warning("Request blocked: permission checked failed: " + e.toString());
+                returnError(res, "Permission check failed", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void returnError(HttpServletResponse res, String error, int status) throws IOException {

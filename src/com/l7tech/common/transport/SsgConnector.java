@@ -80,8 +80,11 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         /** The Gateway backup service. */
         BACKUP,
 
+        /** Agent web service for HP SOA Manager. */
+        HPSOAM,
+
         /** All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc. */
-        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, PING, BACKUP);
+        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, PING, BACKUP, HPSOAM);
 
         private Endpoint[] enabledKids;
         private Set<Endpoint> enabledSet;

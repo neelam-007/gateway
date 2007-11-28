@@ -44,6 +44,12 @@ public class WSMFService implements ApplicationContextAware {
     /** Name of cluster property that enables/disables integration with HP SOA Manager. */
     public static final String HPSOAM_ENABLED = "hpsoamEnabled";
 
+    /** Name of cluster property that determines whether SSL is required for Agent access. */
+    public static final String HPSOAM_REQUIRE_SSL = "hpsoamRequireSSL";
+
+    /** Name of cluster property that determines whether credentials of Admintrators/Operators are required for Agent access. */
+    public static final String HPSOAM_REQUIRE_CREDENTIALS = "hpsoamRequireCreds";
+
     private ContainerManagedObject containerMO;
     private ServiceManager serviceManager;
     private ApplicationContext applicationContext;
@@ -52,6 +58,14 @@ public class WSMFService implements ApplicationContextAware {
 
     public static boolean isEnabled() {
         return Boolean.valueOf(ServerConfig.getInstance().getProperty(HPSOAM_ENABLED));
+    }
+
+    public static boolean isSSLRequired() {
+        return Boolean.valueOf(ServerConfig.getInstance().getProperty(HPSOAM_REQUIRE_SSL));
+    }
+
+    public static boolean isCredentialsRequired() {
+        return Boolean.valueOf(ServerConfig.getInstance().getProperty(HPSOAM_REQUIRE_CREDENTIALS));
     }
 
     public WSMFService(ServiceManager serviceManager, MessageProcessor messageProcessor) {
