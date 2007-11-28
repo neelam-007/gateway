@@ -66,7 +66,7 @@ public class OSConfigManager {
             while((tmp = grandmasterreader.readLine()) != null) {
                 if (!tmp.startsWith("#")) {
                     File osconfigfile = new File(tmp);
-                    if (osconfigfile.exists()) {
+                    if (osconfigfile.exists() && osconfigfile.isFile()) {
                         logger.info("saving " + osconfigfile.getPath());
                         File target = new File(tmpDirPath + SUBDIR + File.separator + osconfigfile.getPath());
                         FileUtils.ensurePath(target.getParentFile());
