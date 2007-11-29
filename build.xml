@@ -3799,6 +3799,13 @@
             </fileset>
         </copy>
 
+        <!--copy this in so that users have an example to use in case they are acually installing the "software mode" on a RedHat system-->
+        <copy todir="${install.src.ssgonly.bin}">
+            <fileset dir="${src.root}/etc/appliance/">
+                <include name="ssg-initd"/>
+            </fileset>
+        </copy>
+
         <!-- copy new sudo exececuted files to new libexec directory -->
         <copy todir="${install.src.appliance.libexec}">
             <fileset dir="${src.root}/etc/appliance/">

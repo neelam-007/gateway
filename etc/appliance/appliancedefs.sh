@@ -4,8 +4,17 @@
 ulimit -s 2048
 
 # add to path
-PATH=$PATH:$JAVA_HOME/bin:$SSG_HOME/bin
+if [ -z "${PATH}" ] ; then
+        PATH="$JAVA_HOME/bin:SSG_HOME/bin"
+else 
+	if ! echo $PATH | /bin/egrep -q "(^|:)$JAVA_HOME/bin($|:)" ; then
+        	PATH="$PATH:$JAVA_HOME/bin"
+	fi
 
+	if ! echo $PATH | /bin/egrep -q "(^|:)$SSG_HOME/bin($|:)" ; then
+        	PATH="$PATH:$SSG_HOME/bin"
+	fi
+fi
 
 # aliases to start and stop ssg
 alias startssg='/etc/rc.d/init.d/ssg start'
@@ -40,10 +49,6 @@ PARTITION_OPTS="-Xmx${java_ram}k -XX:MaxPermSize=128M -Xss256k"
 # End Per-Partition
 #########################################################################
 
-
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SSG_HOME/lib
-
-export LD_LIBRARY_PATH
 export PARTITION_OPTS
 export PATH
 
