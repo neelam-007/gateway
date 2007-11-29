@@ -432,7 +432,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         public CipherSuiteListModel(String[] allCiphers, Set<String> defaultCiphers) {
             super(new ArrayList<JCheckBox>());
-            this.allCiphers = Arrays.copyOf(allCiphers, allCiphers.length);
+            this.allCiphers = (String[])ArrayUtils.copy(allCiphers);
             this.defaultCiphers = new LinkedHashSet<String>(defaultCiphers);
         }
 
