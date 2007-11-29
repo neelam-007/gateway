@@ -74,8 +74,7 @@ public class EditServiceNameAction extends ServiceNodeAction {
                         new EditServiceNameDialog(wm.getTopParent(), svc, nameChangeListener);
                       DialogDisplayer.display(d);
                   } catch (Exception e) {
-                      //todo: ErroManager someday?
-                      e.printStackTrace();
+                      throw new RuntimeException(e);
                   }
               }
           });

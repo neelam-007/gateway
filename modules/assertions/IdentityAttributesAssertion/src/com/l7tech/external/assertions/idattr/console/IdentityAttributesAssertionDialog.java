@@ -316,7 +316,7 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
         UserAttributeMappingDialog dlg = new UserAttributeMappingDialog(this, im, previousProvider, variablePrefixField.getText());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        DialogDisplayer.display(dlg);
+        dlg.setVisible(true);
         return dlg.isOk();
     }
 

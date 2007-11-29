@@ -50,11 +50,15 @@ public class DialogDisplayer {
      * Display the specified dialog as a sheet if possible, but otherwise as a normal dialog.
      * Even if the dialog is modal, this method <b>may return immediately</b>
      * if the dialog is being displayed as a sheet.
+     * <p/>
+     * <b>Note</b>: any use of this single-argument version of display(), to display a modal dialog,
+     * when it isn't the very last statement in a method that returns void back to the Swing event pump,
+     * is <b>almost certainly a bug</b>.
      *
-     * @param dialog  the dialog to display.  Must not be null.
+     * @param dialogWARNINGReadTheJavadoc  the dialog to display.  Must not be null.
      */
-    public static void display(JDialog dialog) {
-        display(dialog, dialog.getParent(), null);
+    public static void display(JDialog dialogWARNINGReadTheJavadoc) {
+        display(dialogWARNINGReadTheJavadoc, dialogWARNINGReadTheJavadoc.getParent(), null);
     }
 
     /**
