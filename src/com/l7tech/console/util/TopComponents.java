@@ -71,7 +71,7 @@ public class TopComponents {
     public void disconnectFromGateway() {
         MainWindow mw = getMainWindow();
         if (mw != null)
-            mw.disconnectFromGateway();
+            mw.getDisconnectAction().actionPerformed(null);
     }
 
     public PoliciesFolderNode getPoliciesFolderNode() {
