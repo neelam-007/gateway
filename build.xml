@@ -3834,7 +3834,6 @@
 				<include name="iptables"/>
                 <include name="iptables-singlenet"/>
                 <include name="partition_firewall.pl"/>
-                <include name="rotate-binlogs.pl"/>
                 <include name="ssg-initd"/>
                 <include name="ssg-dbstatus-initd"/>
                 <include name="snmpd.conf"/>
