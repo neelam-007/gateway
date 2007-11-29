@@ -53,37 +53,40 @@ public class CreatePolicyAction extends SecureAction {
         final Frame mw = TopComponents.getInstance().getTopParent();
         String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(new FalseAssertion())));
         // canUpdate == true because this action would be disabled if we couldn't create policies
-        OkCancelDialog<Policy> dlg = PolicyPropertiesPanel.makeDialog(mw, new Policy(PolicyType.INCLUDE_FRAGMENT, null, xml, false), true);
+        final OkCancelDialog<Policy> dlg = PolicyPropertiesPanel.makeDialog(mw, new Policy(PolicyType.INCLUDE_FRAGMENT, null, xml, false), true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        DialogDisplayer.display(dlg);
-        if (!dlg.wasOKed()) return;
-
-        Policy policy = dlg.getValue();
-        long oid;
-        try {
-            oid = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
-        } catch (PolicyAssertionException e) {
-            throw new RuntimeException("Couldn't save Policy", e);
-        } catch (SaveException e) {
-            throw new RuntimeException("Couldn't save Policy", e);
-        }
-
-        JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-        if (tree == null) {
-            log.log(Level.WARNING, "Policy tree unreachable.");
-            return;
-        }
-
-        PoliciesFolderNode root = TopComponents.getInstance().getPoliciesFolderNode();
-        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-        final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new EntityHeader(Long.toString(oid), com.l7tech.objectmodel.EntityType.POLICY, policy.getName(), null));
-        model.insertNodeInto(sn, root, root.getInsertPosition(sn));
-
-        tree.setSelectionPath(new TreePath(sn.getPath()));
-        SwingUtilities.invokeLater(new Runnable() {
+        DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
-                new EditPolicyAction((PolicyEntityNode)sn).invoke();
+                if (!dlg.wasOKed()) return;
+
+                Policy policy = dlg.getValue();
+                long oid;
+                try {
+                    oid = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+                } catch (PolicyAssertionException e) {
+                    throw new RuntimeException("Couldn't save Policy", e);
+                } catch (SaveException e) {
+                    throw new RuntimeException("Couldn't save Policy", e);
+                }
+
+                JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                if (tree == null) {
+                    log.log(Level.WARNING, "Policy tree unreachable.");
+                    return;
+                }
+
+                PoliciesFolderNode root = TopComponents.getInstance().getPoliciesFolderNode();
+                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new EntityHeader(Long.toString(oid), com.l7tech.objectmodel.EntityType.POLICY, policy.getName(), null));
+                model.insertNodeInto(sn, root, root.getInsertPosition(sn));
+
+                tree.setSelectionPath(new TreePath(sn.getPath()));
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        new EditPolicyAction((PolicyEntityNode)sn).invoke();
+                    }
+                });
             }
         });
     }
