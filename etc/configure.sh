@@ -6,11 +6,11 @@ pushd .. > /dev/null
 SSG_ROOT=`pwd`
 popd > /dev/null
 
-. ${SSG_ROOT}/bin/ssg-utilities
+. ${SSG_ROOT}/etc/profile
 
 ensure_JDK
 
-CONFWIZARD="${SSG_ROOT}/configwizard/ssgconfig.sh"
+CONFWIZARD="${SSG_HOME}/configwizard/ssgconfig.sh"
 
 doLogout() {
     exit
@@ -23,7 +23,7 @@ do
     echo "Welcome to the SecureSpan Gateway"
     echo
     echo "What would you like to do?"
-        echo "1) Configure the SecureSpan Gateway application on this appliance"
+        echo "1) Configure the SecureSpan Gateway application"
         echo "2) Change the Master Passphrase"
         echo "3) Exit"
         echo -n "Please make a selection: "

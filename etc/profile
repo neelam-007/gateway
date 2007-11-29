@@ -1,12 +1,20 @@
-#!/bin/bash
+origdir=`pwd`
+me=${BASH_ARGV[0]}
 
-cd `dirname $0`
+cd `dirname $me`
 pushd .. > /dev/null
-SSG_ROOT=`pwd`
+SSG_HOME=`pwd`
 popd > /dev/null
+cd $origdir
 
-for i in ${SSG_ROOT}/etc/profile.d/*.sh ; do
+export SSG_HOME
+SSG_JAVA_OPTS=""
+SSG_JAVA_HOME=""
+
+for i in ${SSG_HOME}/etc/profile.d/*.sh ; do
     if [ -r "$i" ]; then
         . $i
     fi
 done
+
+unset i

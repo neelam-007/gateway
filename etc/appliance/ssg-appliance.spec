@@ -59,6 +59,7 @@ mv %{buildroot}/ssg/bin/ssg-dbstatus-initd %{buildroot}/etc/init.d/ssg-dbstatus
 mv %{buildroot}/ssg/bin/my.cnf %{buildroot}/etc/my.cnf.ssg
 mv %{buildroot}/ssg/bin/iptables %{buildroot}/etc/sysconfig/iptables
 mv %{buildroot}/ssg/bin/appliancedefs.sh %{buildroot}/ssg/etc/profile.d/
+mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/ssg/etc/profile.d/
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 mv %{buildroot}/ssg/bin/configuser_bashrc %{buildroot}/home/ssgconfig/.bashrc
@@ -114,7 +115,9 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 %attr(0755,gateway,gateway) /ssg/appliance/bin/*.sh
 
 %dir /ssg/etc/profile.d
-%attr(0775,gateway,gateway) /ssg/etc/profile.d/appliancedefs.sh
+%defattr(0775,gateway,gateway)
+/ssg/etc/profile.d/appliancedefs.sh
+/ssg/etc/profile.d/tarari.sh
 
 # JDK
 %dir /ssg/jdk

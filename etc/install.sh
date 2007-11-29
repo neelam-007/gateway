@@ -1,13 +1,12 @@
 #!/bin/bash
 
-#1.  Enter JDK directory: /opt/jdk1.6.0_0X (this must be the path to a correctly configured JDK)
-#2. Exit
-
 #we're in /SSG_ROOT/bin right now
 cd `dirname $0`
 pushd .. > /dev/null
 SSG_ROOT=`pwd`
 popd > /dev/null
+
+. ${SSG_ROOT}/etc/profile
 
 expected_java_version="1.6.0_02"
 MY_JAVA_HOME=""
@@ -23,9 +22,9 @@ javaclassname=CryptoStrengthProbe
 #		sets cryptoOk = 0 if the crypto is ok, 1 if it is not
 check_crypto() {
     temp_java="${1}"
-#END OF INLINE JAVA CODE
     currentdir=`pwd`
     cd /tmp
+#START OF INLINE JAVA
     cat >CryptoStrengthProbe.java <<-EOF
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -110,7 +109,6 @@ public class CryptoStrengthProbe {
     cd ${currentdir}
 }
 
-#Checks the version of java at the path passed in as an argument
 #	If the argument is a directory, this function will attempt to find java in the bin/ sudirectory
 #	If the argument is not a directory, then it will be used as is to check the version
 #
@@ -180,15 +178,54 @@ get_java_location() {
 	MY_JAVA_HOME=${result}
 }
 
-echo "The SecureSpan Gateway requires Java ${expected_java_version} to be installed."
-get_java_location
-
-. ${SSG_ROOT}/bin/ssg-utilities
-
-check_user
-
-su -m ssgconfig -c "cat >${SSG_ROOT}/etc/profile.d/java.sh <<-EOF
+store_java_location() {
+    su -m ssgconfig -c "cat >${SSG_ROOT}/etc/profile.d/java.sh <<-EOF
 SSG_JAVA_HOME="${MY_JAVA_HOME}"
 export SSG_JAVA_HOME
 EOF"
+}
+configure_java_home() {
+    DOIT="n"
+    if [ -z "${SSG_JAVA_HOME}" ] || [ ! -e ${SSG_JAVA_HOME} ] ; then
+        echo "The SecureSpan Gateway requires Java ${expected_java_version} to be installed."
+        DOIT="y"
+    else
+        echo -n "The gateway is currently configured to use \"${SSG_JAVA_HOME}\" for Java. Would you like to configure a new Java location? [y] "
+        read DOIT
+        if [ -z "$DOIT" ] ; then
+            DOIT="y"
+        fi
+    fi
+
+    if [ "$DOIT" == "y" ] ; then
+        get_java_location
+        store_java_location
+    fi
+}
+
+configure_jvm_options() {
+    if [ ! -e ${SSG_ROOT}/appliance ] ; then
+        echo -n "Would you like to configure the Java options (such as memory usage) for the gateway? [y]"
+        read DOIT
+        if [ -z "${DOIT}" ] ; then
+            DOIT="y"
+        fi
+
+        if [ "${DOIT}" == "y" ] ; then
+            MEM=""
+            while [ -z "${MEM}" ] ; do
+                echo -n "How much memory should be allocated to each gateway partition? (Please answer in megabytes): ";
+                read MEM;
+            done
+
+        su -m ssgconfig -c "cat >${SSG_ROOT}/etc/profile.d/jvmoptions <<-EOM
+-Xmx"${MEM}"m
+EOM"
+        fi
+    fi
+}
+
+check_user
+configure_java_home
+configure_jvm_options
 exit 0

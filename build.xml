@@ -3793,7 +3793,9 @@
                 <include name="profile"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="java.sh"/>
-                <include name="ssg-utilities"/>
+                <include name="ssg-utilities.sh"/>
+                <include name="setopts.sh"/>
+                <include name="jvmoptions"/>
             </fileset>
         </copy>
 
@@ -3825,7 +3827,6 @@
 				<include name="iptables"/>
                 <include name="iptables-singlenet"/>
                 <include name="partition_firewall.pl"/>
-                <!--<include name="tarari/tarari-initd"/>-->
                 <include name="rotate-binlogs.pl"/>
                 <include name="ssg-initd"/>
                 <include name="ssg-dbstatus-initd"/>
@@ -3834,6 +3835,7 @@
                 <include name="sysconfigscript-initd"/>
                 <include name="pkcs11_linux.cfg"/>
                 <include name="systeminfo.sh"/>
+                <include name="tarari.sh"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>

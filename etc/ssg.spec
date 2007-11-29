@@ -29,6 +29,9 @@ mkdir -p %{buildroot}/ssg/etc/profile.d/
 mv %{buildroot}/ssg/bin/profile %{buildroot}/ssg/etc/
 mv %{buildroot}/ssg/bin/java.sh %{buildroot}/ssg/etc/profile.d/
 mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/ssg/etc/profile.d/
+mv %{buildroot}/ssg/bin/ssg-utilities.sh %{buildroot}/ssg/etc/profile.d/
+mv %{buildroot}/ssg/bin/setopts.sh %{buildroot}/ssg/etc/profile.d/
+mv %{buildroot}/ssg/bin/jvmoptions %{buildroot}/ssg/etc/profile.d/
 
 mv %{buildroot}/ssg/bin/ssg-java.security %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/java.security
 mv %{buildroot}/ssg/etc/conf/*.properties %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
@@ -56,7 +59,7 @@ mv %{buildroot}/ssg/etc/conf/cluster_hostname-dist %{buildroot}/ssg/etc/conf/par
 %attr(0755,gateway,gateway) /ssg/bin/*
 
 %dir /ssg/etc/profile.d
-%attr(0775,gateway,gateway) /ssg/etc/profile.d/*.sh
+%attr(0775,gateway,gateway) /ssg/etc/profile.d/*
 
 # Other stuff
 /ssg/etc/ldapTemplates

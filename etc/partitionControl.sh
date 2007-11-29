@@ -4,13 +4,15 @@
 #Control script to start or stop an individual partition.
 ##################################################################################
 
+#SSG_HOME isn't set yet so we have to find it ourselves to get to the profile script
 cd `dirname $0`
-pushd .. > /dev/null
-SSG_ROOT=`pwd`
-popd > /dev/null
+pushd .. > /dev/null	#now in /ssg
+WHEREISSSG=`pwd`
+popd >/dev/null
 
-. ${SSG_ROOT}/bin/ssg-utilities
-. ${SSG_ROOT}/etc/profile
+. ${WHEREISSSG}/etc/profile
+
+#SSG_HOME should be set now
 
 ORIGINAL_JAVA_OPTS="${SSG_JAVA_OPTS} ${PARTITION_OPTS}"
 USER=$(whoami)
@@ -38,9 +40,9 @@ explain_not_enabled() {
 }
 
 build_paths() {
-    PARTITION_DIR="${SSG_ROOT}/etc/conf/partitions/${PARTITION_NAME}"
+    PARTITION_DIR="${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}"
     ENABLED_FILE="${PARTITION_DIR}/enabled"
-    FIREWALL_UPDATER="${SSG_ROOT}/appliance/bin/partition_firewall.pl"
+    FIREWALL_UPDATER="${SSG_HOME}/appliance/bin/partition_firewall.pl"
     FIREWALL_FILE="${PARTITION_DIR}/firewall_rules"
     GATEWAY_PID="${PARTITION_DIR}/ssg.pid"
     GATEWAY_SHUTDOWN="${PARTITION_DIR}/SHUTDOWN.NOW"
@@ -59,8 +61,8 @@ do_control() {
             ORIGINAL_JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true $ORIGINAL_JAVA_OPTS"
         fi
     else
-        if  [ -e "${SSG_ROOT}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname" ]; then
-            RMI_HOSTNAME="$(<${SSG_ROOT}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname)"
+        if  [ -e "${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname" ]; then
+            RMI_HOSTNAME="$(<${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname)"
         else
             RMI_HOSTNAME="$(hostname -f)"
         fi
@@ -74,7 +76,7 @@ do_control() {
 
     JAVA_OPTS="${ORIGINAL_JAVA_OPTS} -Djava.security.properties==${PARTITION_DIR}/java.security -Dcom.l7tech.server.partitionName=${PARTITION_NAME}"
     export JAVA_OPTS
-    export SSG_ROOT
+    export SSG_HOME
     export GATEWAY_PID
     export GATEWAY_SHUTDOWN
 
@@ -85,7 +87,7 @@ do_control() {
 
         (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND} 2>&1") <&- &>/dev/null &
     else
-        (su $SSGUSER -c "${SSG_ROOT}/bin/gateway.sh ${COMMAND}") &>/dev/null
+        (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}") &>/dev/null
     fi
 }
 
@@ -120,14 +122,14 @@ if [ "${COMMAND}" == "usage" ] ; then
     exit 0;
 fi
 
-if [ ! -d "${SSG_ROOT}" ] ; then
-    if [ -z "${SSG_ROOT}" ] ; then
+if [ ! -d "${SSG_HOME}" ] ; then
+    if [ -z "${SSG_HOME}" ] ; then
         echo ""
-        echo "SSG_ROOT is not set! Please set SSG_ROOT to the installation root of the SecureSpan Gateway (ex. /ssg)"
+        echo "SSG_HOME is not set! Please set SSG_HOME to the installation root of the SecureSpan Gateway (ex. /ssg)"
         exit 1;
     else
         echo
-        echo "Invalid SSG_ROOT! Please set SSG_ROOT to the installation root of the SecureSpan Gateway (ex. /ssg)"
+        echo "Invalid SSG_HOME! Please set SSG_HOME to the installation root of the SecureSpan Gateway (ex. /ssg)"
         exit 1;
     fi
 fi

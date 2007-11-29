@@ -2,16 +2,16 @@
 
 #set the current working directory to where this script lives
 umask 0002
-cd `dirname $0`
+whereami=$0
+cd `dirname $whereami`
 pushd .. > /dev/null
 SSG_ROOT=`pwd`
-USER=${LOGNAME}
-SCADIAG="/opt/sun/sca6000/sbin/scadiag"
 popd > /dev/null
 
-. ${SSG_ROOT}/bin/ssg-utilities
-. ${SSG_ROOT}/etc/profile.d/java.sh
+. ${SSG_ROOT}/etc/profile
 
+USER=${LOGNAME}
+SCADIAG="/opt/sun/sca6000/sbin/scadiag"
 OPTIONS="-Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT}"
 
 check_options(){
