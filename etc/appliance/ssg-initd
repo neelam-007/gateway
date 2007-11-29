@@ -145,7 +145,7 @@ status_ssg() {
 
 
 find_tomcat() {
-    pid=$(pidof "${JAVA_HOME}/bin/java")
+    pid=$(pidof "${SSG_JAVA_HOME}/bin/java")
 }
 
 find_single_partition() {
