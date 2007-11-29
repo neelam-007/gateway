@@ -85,8 +85,10 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         if (got.isEmpty()) {
             // Preserve initial revision
             Policy oldPolicy = ((PolicyManager)applicationContext.getBean("policyManager")).findByPrimaryKey(policyOid);
-            PolicyVersion oldVer = snapshot(oldPolicy, adminInfo);  // TODO bug: this saves the wrong admin info for the first revision
-            save(oldVer);
+            if (oldPolicy != null) {
+                PolicyVersion oldVer = snapshot(oldPolicy, adminInfo);  // TODO bug: this saves the wrong admin info for the first revision
+                save(oldVer);
+            }
         }
 
         PolicyVersion ver = snapshot(newPolicy, adminInfo);
