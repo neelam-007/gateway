@@ -128,7 +128,6 @@ public class ServiceNode extends PolicyEntityNode {
         }
 
         actions.add(new EditPolicyAction(this));
-        actions.add(new DeleteServiceAction(this));
         actions.add(new EditServiceProperties(this));
         if (svc.isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
         actions.add(new DeleteServiceAction(this));
