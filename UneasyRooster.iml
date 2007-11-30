@@ -60,15 +60,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/ftp/mina-core-1.1.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/crypto/rsa/jsafeWithNative.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -412,15 +403,6 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-jmx.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/ftp/mina-filter-compression-1.1.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1104,15 +1086,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/ftp/mina-filter-ssl-1.1.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/asm-attrs.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -1456,6 +1429,33 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/gateway/uddi/generic/guddi-1.0.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/mina-filter-ssl-1.1.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/mina-core-1.1.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/mina-filter-compression-1.1.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

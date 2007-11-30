@@ -945,6 +945,7 @@
             <test name="com.l7tech.server.partition.FirewallRulesTest" haltonfailure="no"/>
             <test name="com.l7tech.common.util.BeanUtilsTest" haltonfailure="no"/>
             <test name="com.l7tech.common.util.FunctionsTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.log.syslog.SyslogManagerTest" haltonfailure="no"/>
 
             <!--
               Add possibly-slow intensive nightly tests here **
@@ -2709,7 +2710,7 @@
                 <include name="systemconfig.sh"/>
             </fileset>
         </copy>
-        
+
          <copy todir="${build.dir}/sysconfigwizard">
             <fileset dir="${src.root}/etc/">
                 <include name="configlogging.properties"/>
@@ -3793,16 +3794,7 @@
                 <include name="profile"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="java.sh"/>
-                <include name="ssg-utilities.sh"/>
-                <include name="setopts.sh"/>
-                <include name="jvmoptions"/>
-            </fileset>
-        </copy>
-
-        <!--copy this in so that users have an example to use in case they are acually installing the "software mode" on a RedHat system-->
-        <copy todir="${install.src.ssgonly.bin}">
-            <fileset dir="${src.root}/etc/appliance/">
-                <include name="ssg-initd"/>
+                <include name="ssg-utilities"/>
             </fileset>
         </copy>
 
@@ -3830,10 +3822,12 @@
                 <include name="passServiceUsage.sh"/>
                 <include name="appliancedefs.sh"/>
                 <include name="ssg_appliance_startup_config.sh"/>
-				<include name="tcp_tune.sh"/>                
+				<include name="tcp_tune.sh"/>
 				<include name="iptables"/>
                 <include name="iptables-singlenet"/>
                 <include name="partition_firewall.pl"/>
+                <!--<include name="tarari/tarari-initd"/>-->
+                <include name="rotate-binlogs.pl"/>
                 <include name="ssg-initd"/>
                 <include name="ssg-dbstatus-initd"/>
                 <include name="snmpd.conf"/>
@@ -3841,7 +3835,6 @@
                 <include name="sysconfigscript-initd"/>
                 <include name="pkcs11_linux.cfg"/>
                 <include name="systeminfo.sh"/>
-                <include name="tarari.sh"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
