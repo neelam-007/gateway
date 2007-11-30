@@ -45,7 +45,6 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
 
         User requestingUser = authResult.getUser();
         long requestProvider = requestingUser.getProviderId();
-        String requestUid = requestingUser.getId();
         String requestLogin = requestingUser.getLogin();
 
         // provider must always match
@@ -57,7 +56,7 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
 
         // uid only needs to match if it's set as part of the assertion
         if (requiredUid != null && !"".equals(requiredUid)) {
-            if (!requestingUser.isEquivalentId(requestUid)) {
+            if (!requestingUser.isEquivalentId(requiredUid)) {
                 auditor.logAndAudit(AssertionMessages.USERID_MISMATCH);
                 return AssertionStatus.AUTH_FAILED;
             }
