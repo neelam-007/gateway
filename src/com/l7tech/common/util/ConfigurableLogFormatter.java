@@ -58,6 +58,15 @@ public class ConfigurableLogFormatter extends Formatter {
     }
 
     /**
+     *
+     */
+    public ConfigurableLogFormatter(String logformat) {
+        configured = true;
+        format = logformat;
+        exceptFormat = logformat + "%" + EXCEPTION_ARG + "$s";
+    }
+
+    /**
      * Format the given log record.
      *
      * @param record the log record

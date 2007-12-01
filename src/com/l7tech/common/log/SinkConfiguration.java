@@ -11,6 +11,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.Collections;
 
 /**
  * Describes the configuration of a logging sink.
@@ -58,11 +60,16 @@ public class SinkConfiguration extends NamedEntityImp {
         SEVERE
     }
 
-    public static final HashSet<String> CATEGORIES_SET = new HashSet<String>();
+    public static final String CATEGORY_GATEWAY_LOGS = "Gateway Log";
+    public static final String CATEGORY_TRAFFIC_LOGS = "Traffic Log";
+    public static final String CATEGORY_AUDITS = "Audits";
+    public static final Set<String> CATEGORIES_SET;
     static {
-        CATEGORIES_SET.add("Gateway Log");
-        CATEGORIES_SET.add("Traffic Log");
-        CATEGORIES_SET.add("Audits");
+        Set<String> categories = new HashSet<String>();
+        categories.add(CATEGORY_GATEWAY_LOGS);
+        categories.add(CATEGORY_TRAFFIC_LOGS);
+        categories.add(CATEGORY_AUDITS);
+        CATEGORIES_SET = Collections.unmodifiableSet(categories);
     }
 
     // Log file sink property names
@@ -106,7 +113,7 @@ public class SinkConfiguration extends NamedEntityImp {
      *
      * @param xml The XML string to parse containing the properties.
      */
-    public synchronized void setXmlProperties(String xml) {
+    public void setXmlProperties(String xml) {
         if (xml != null && xml.equals(xmlProperties)) return;
         this.xmlProperties = xml;
         if ( xml != null && xml.length() > 0 ) {
@@ -125,12 +132,13 @@ public class SinkConfiguration extends NamedEntityImp {
      *
      * @return An XML string that contains the current list of properties.
      */
-    public synchronized String getXmlProperties() {
+    public String getXmlProperties() {
         if ( xmlProperties == null ) {
             Map<String, String> properties = this.properties;
             if ( properties == null ) return null;
             BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
             try {
+                //noinspection IOResourceOpenedButNotSafelyClosed
                 XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
                 xe.writeObject(properties);
                 xe.close();
@@ -176,7 +184,7 @@ public class SinkConfiguration extends NamedEntityImp {
      *
      * @param type An instance of SinkType
      */
-    public synchronized void setType(SinkType type) {
+    public void setType(SinkType type) {
         this.type = type;
         xmlProperties = null;
 
@@ -251,7 +259,7 @@ public class SinkConfiguration extends NamedEntityImp {
      * @param propertyName the name of the property to lookup
      * @return the value
      */
-    public synchronized String getProperty(String propertyName) {
+    public String getProperty(String propertyName) {
         String propertyValue = null;
 
         Map<String,String> properties = this.properties;
@@ -268,7 +276,7 @@ public class SinkConfiguration extends NamedEntityImp {
      * @param propertyName the name of the property to update
      * @param propertyValue the new value
      */
-    public synchronized void setProperty(String propertyName, String propertyValue) {
+    public void setProperty(String propertyName, String propertyValue) {
         Map<String,String> properties = this.properties;
         if (properties == null) {
             properties = new HashMap<String, String>();

@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Collection;
 import java.util.ArrayList;
 
+import com.l7tech.common.util.ResourceUtils;
+
 /**
  * MessageSink that dispatches to other MessageSinks.
  *
@@ -20,7 +22,13 @@ public class DispatchingMessageSink implements MessageSink {
      * Create a dispatching sink with no initial clients.
      */
     public DispatchingMessageSink() {
+    }
 
+    /**
+     * Close all underlying Sinks.
+     */
+    public void close() {
+        close( list.getAndSet(Collections.EMPTY_LIST) );
     }
 
     /**
@@ -28,11 +36,13 @@ public class DispatchingMessageSink implements MessageSink {
      *
      * <p>Any null items and duplicates will be ignored.</p>
      *
+     * <p>Any previously held sinks that are no longer used will be closed.</p>
+     *
      * @param sinks The new list of message sinks
      */
-    public void setMessageSinks(Collection<MessageSink> sinks) {
+    public void setMessageSinks( Collection<MessageSink> sinks ) {
+        // create new list
         ArrayList<MessageSink> internal = new ArrayList();
-
         if ( sinks != null ) {
             internal.ensureCapacity(sinks.size());
 
@@ -43,7 +53,13 @@ public class DispatchingMessageSink implements MessageSink {
             }
         }
 
-        list.set(Collections.unmodifiableList(internal));
+        // install and get previous
+        List previousList = list.getAndSet( Collections.unmodifiableList(internal) );
+
+        // close no longer used sinks
+        ArrayList<MessageSink> diffList = new ArrayList( previousList );
+        diffList.removeAll( internal );
+        close( diffList );
     }
 
     /**
@@ -68,4 +84,15 @@ public class DispatchingMessageSink implements MessageSink {
     //- PRIVATE
 
     private final AtomicReference<List<MessageSink>> list = new AtomicReference(Collections.EMPTY_LIST);
+
+    /**
+     * Close the given sinks.
+     *
+     * @param sinks The list of sinks to close;
+     */
+    private void close( List<MessageSink> sinks ) {
+        for ( MessageSink sink : sinks ) {
+            ResourceUtils.closeQuietly( sink );
+        }
+    }
 }
