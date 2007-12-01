@@ -48,6 +48,21 @@ INSERT INTO rbac_permission VALUES (-752,0,-750,'CREATE',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-753,0,-750,'UPDATE',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-754,0,-750,'DELETE',NULL,'SSG_CONNECTOR');
 
+-- Create the sink_config table for logging sink configurations
+DROP TABLE IF EXISTS sink_config;
+CREATE TABLE sink_config (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(32) NOT NULL,
+  description mediumtext,
+  type varchar(32) NOT NULL DEFAULT 'FILE',
+  enabled tinyint(1) NOT NULL DEFAULT 0,
+  severity varchar(32) NOT NULL DEFAULT 'INFO',
+  categories mediumtext,
+  properties mediumtext,
+  PRIMARY KEY  (objectid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 
 ----------------------------------------
 --           POLICY INCLUDES          --

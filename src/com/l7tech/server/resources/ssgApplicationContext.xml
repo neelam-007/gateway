@@ -778,4 +778,6 @@
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
     </bean>
 
+    <bean id="sinkManager" class="com.l7tech.server.log.SinkManager" parent="hibernateBean"/>
+
 </beans>

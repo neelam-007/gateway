@@ -4,22 +4,23 @@ import com.l7tech.admin.AdminContext;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.log.LogSinkAdmin;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
-import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
-import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyPathBuilderFactory;
+import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -57,6 +58,7 @@ public final class RegistryImpl extends Registry
     private RbacAdmin rbacAdmin;
     private TransportAdmin transportAdmin;
     private PolicyAdmin policyAdmin;
+    private LogSinkAdmin logSinkAdmin;
     private PolicyValidator policyValidator;
     private PolicyPathBuilderFactory policyPathBuilderFactory;
 
@@ -227,6 +229,15 @@ public final class RegistryImpl extends Registry
         checkAdminContext();
         if (policyPathBuilderFactory != null) return policyPathBuilderFactory;
         return policyPathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory");
+    }
+
+    public LogSinkAdmin getLogSinkAdmin() {
+        checkAdminContext();
+        if (logSinkAdmin != null) {
+            return logSinkAdmin;
+        }
+        logSinkAdmin = adminContext.getLogSinkAdmin();
+        return logSinkAdmin;
     }
 
     /**

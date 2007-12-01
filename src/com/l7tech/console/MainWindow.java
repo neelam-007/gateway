@@ -150,6 +150,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageClusterLicensesAction manageClusterLicensesAction = null;
     private NewInternalUserAction newInernalUserAction;
     private AuditAlertOptionsAction manageAuditAlertsAction;
+    private ManageLogSinksAction manageLogSinksAction = null;
 
 
     private JPanel frameContentPane = null;
@@ -634,6 +635,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageKerberosMenuItem());
             menu.add(getManageRolesMenuItem());
             menu.add(getManageAuditAlertOptionsMenuItem());
+            menu.add(getManageLogSinksAction());
 
 
             int mnemonic = menu.getText().toCharArray()[0];
@@ -1495,6 +1497,17 @@ public class MainWindow extends JFrame implements SheetHolder {
         this.addLogonListener(manageSsgConnectorsAction);
         addPermissionRefreshListener(manageSsgConnectorsAction);
         return manageSsgConnectorsAction;
+    }
+
+    private Action getManageLogSinksAction() {
+        if (manageLogSinksAction != null)
+            return manageLogSinksAction;
+
+        manageLogSinksAction = new ManageLogSinksAction();
+        manageLogSinksAction.setEnabled(false);
+        this.addLogonListener(manageLogSinksAction);
+        addPermissionRefreshListener(manageLogSinksAction);
+        return manageLogSinksAction;
     }
 
     private Action getManagePrivateKeysAction() {

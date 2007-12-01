@@ -12,6 +12,7 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.VersionException;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.log.LogSinkAdmin;
 import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
@@ -222,6 +223,7 @@ public class SecurityProviderImpl extends SecurityProvider
                         (RbacAdmin) applicationContext.getBean("rbacAdmin"),
                         (TransportAdmin) applicationContext.getBean("transportAdmin"),
                         (PolicyAdmin) applicationContext.getBean("policyAdmin"),
+                        (LogSinkAdmin) applicationContext.getBean("logSinkAdmin"),
                         "", "");
 
         synchronized (this) {

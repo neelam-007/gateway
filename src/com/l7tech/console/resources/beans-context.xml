@@ -81,6 +81,11 @@
         <property name="serviceInterface" value="com.l7tech.common.policy.PolicyAdmin"/>
     </bean>
 
+    <bean id="logSinkAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/LogSinkAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.log.LogSinkAdmin"/>
+    </bean>
+
     <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
          <property name="targetClass" value="com.l7tech.console.util.Registry"/>
          <property name="targetMethod" value="setDefault"/>

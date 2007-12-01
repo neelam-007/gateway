@@ -4,37 +4,39 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.ClusterStatusAdminStub;
 import com.l7tech.common.TestLicenseManager;
 import com.l7tech.common.VersionException;
-import com.l7tech.common.util.Triple;
-import com.l7tech.common.util.Pair;
-import com.l7tech.common.io.PortRange;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditAdminStub;
+import com.l7tech.common.io.PortRange;
+import com.l7tech.common.log.LogSinkAdmin;
+import com.l7tech.common.log.LogSinkAdminStub;
 import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.*;
-import com.l7tech.common.transport.ftp.FtpAdmin;
-import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.transport.TransportAdmin;
+import com.l7tech.common.transport.ftp.FtpAdmin;
+import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.util.Pair;
+import com.l7tech.common.util.Triple;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.PolicyPathBuilderFactory;
+import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarStub;
 import com.l7tech.policy.validator.DefaultPolicyValidator;
-import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.service.*;
 
 import javax.security.auth.login.LoginException;
-import java.net.PasswordAuthentication;
 import java.net.InetAddress;
+import java.net.PasswordAuthentication;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -256,6 +258,10 @@ public class RegistryStub extends Registry {
         return licenseManager;
     }
 
+    public LogSinkAdmin getLogSinkAdmin() {
+        return logSinkAdmin;
+    }
+
     StubDataStore dataStore = StubDataStore.defaultStore();
 
     private IdentityAdmin identityAdmin = new IdentityAdminStub();
@@ -267,4 +273,5 @@ public class RegistryStub extends Registry {
     private ClusterStatusAdmin clusterStatusAdmin = new ClusterStatusAdminStub();
     private TrustedCertAdmin trustedCertAdmin;
     private ConsoleLicenseManager licenseManager = new TestLicenseManager();
+    private LogSinkAdmin logSinkAdmin = new LogSinkAdminStub();
 }

@@ -5,14 +5,15 @@ package com.l7tech.admin;
 
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.log.LogSinkAdmin;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
-import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
@@ -105,4 +106,10 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     PolicyAdmin getPolicyAdmin() throws SecurityException;
+
+    /**
+     * @return the Log sink admin interface implementation.
+     * @throws SecurityException on security error accessing the interface
+     */
+    LogSinkAdmin getLogSinkAdmin() throws SecurityException;
 }

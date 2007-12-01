@@ -87,4 +87,9 @@
         <property name="target" ref="policyAdmin_UNSECURED"/>
         <property name="proxyInterfaces" value="com.l7tech.common.policy.PolicyAdmin"/>
     </bean>
+
+    <bean id="logSinkAdmin" parent="rbacIntercepted">
+        <property name="target" ref="logSinkAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.common.log.LogSinkAdmin"/>
+    </bean>
 </beans>

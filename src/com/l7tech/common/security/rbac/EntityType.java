@@ -12,13 +12,14 @@ import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.audit.SystemAuditRecord;
-import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.log.SinkConfiguration;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.common.security.RevocationCheckPolicy;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.xml.schema.SchemaEntry;
-import com.l7tech.common.policy.Policy;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
@@ -74,6 +75,8 @@ public enum EntityType {
     AUDIT_SYSTEM("Audit Record (System)", SystemAuditRecord.class, UNDEFINED, true),
 
     SSG_CONNECTOR("Listen Port", SsgConnector.class, com.l7tech.objectmodel.EntityType.CONNECTOR, true),
+
+    LOG_SINK("Log Sink", SinkConfiguration.class, UNDEFINED, true),
     ;
 
     private final String name;

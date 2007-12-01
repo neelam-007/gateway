@@ -880,4 +880,18 @@ INSERT INTO rbac_permission VALUES (-754,0,-750,'DELETE',NULL,'SSG_CONNECTOR');
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3');
 
+DROP TABLE IF EXISTS sink_config;
+CREATE TABLE sink_config (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(32) NOT NULL,
+  description mediumtext,
+  type varchar(32) NOT NULL DEFAULT 'FILE',
+  enabled tinyint(1) NOT NULL DEFAULT 0,
+  severity varchar(32) NOT NULL DEFAULT 'INFO',
+  categories mediumtext,
+  properties mediumtext,
+  PRIMARY KEY  (objectid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 SET FOREIGN_KEY_CHECKS = 1;

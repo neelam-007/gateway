@@ -5,14 +5,15 @@ package com.l7tech.admin;
 
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.log.LogSinkAdmin;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
-import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -27,7 +28,7 @@ import java.io.Serializable;
  */
 public class AdminContextBean implements AdminContext, Serializable {
 
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 3L;
     
     private final IdentityAdmin identityAdmin;
     private final AuditAdmin auditAdmin;
@@ -42,6 +43,7 @@ public class AdminContextBean implements AdminContext, Serializable {
     private final RbacAdmin rbacAdmin;
     private final TransportAdmin transportAdmin;
     private final PolicyAdmin policyAdmin;
+    private final LogSinkAdmin logSinkAdmin;
     private final String version;
     private final String softwareVersion;
 
@@ -58,6 +60,7 @@ public class AdminContextBean implements AdminContext, Serializable {
                             RbacAdmin rbacAdmin,
                             TransportAdmin transportAdmin,
 							PolicyAdmin policyAdmin,
+                            LogSinkAdmin logSinkAdmin,
                             String version,
                             String softwareVersion) {
         this.identityAdmin = identityAdmin;
@@ -73,6 +76,7 @@ public class AdminContextBean implements AdminContext, Serializable {
         this.rbacAdmin = rbacAdmin;
         this.transportAdmin = transportAdmin;
         this.policyAdmin = policyAdmin;
+        this.logSinkAdmin = logSinkAdmin;
         this.version = version;
         this.softwareVersion = softwareVersion;
     }
@@ -140,5 +144,9 @@ public class AdminContextBean implements AdminContext, Serializable {
 
     public PolicyAdmin getPolicyAdmin() throws SecurityException {
         return policyAdmin;
+    }
+
+    public LogSinkAdmin getLogSinkAdmin() throws SecurityException {
+        return logSinkAdmin;
     }
 }

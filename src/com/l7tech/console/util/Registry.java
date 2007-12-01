@@ -10,6 +10,7 @@ import com.l7tech.common.transport.ftp.FtpAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.TransportAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
+import com.l7tech.common.log.LogSinkAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -136,6 +137,11 @@ public abstract class Registry {
      */
     public abstract PolicyPathBuilderFactory getPolicyPathBuilderFactory();
 
+    /**
+     * @return the log sink admin interface implementation
+     */
+    public abstract LogSinkAdmin getLogSinkAdmin();
+
     public ConsoleLicenseManager getLicenseManager() {
         return ConsoleLicenseManager.getInstance();
     }
@@ -222,6 +228,10 @@ public abstract class Registry {
         }
 
         public PolicyPathBuilderFactory getPolicyPathBuilderFactory() {
+            return null;
+        }
+
+        public LogSinkAdmin getLogSinkAdmin() {
             return null;
         }
     }

@@ -260,4 +260,8 @@
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="roleManager"/>
     </bean>
+
+    <bean id="logSinkAdmin_UNSECURED" class="com.l7tech.server.log.LogSinkAdminImpl">
+        <constructor-arg ref="sinkManager"/>
+    </bean>
 </beans>

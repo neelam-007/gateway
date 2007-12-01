@@ -26,6 +26,13 @@
         <param name="enumClass">com.l7tech.common.policy.PolicyType</param>
     </typedef>
 
+    <typedef class="com.l7tech.objectmodel.GenericEnumUserType" name="sinkconfiguration_type">
+        <param name="enumClass">com.l7tech.common.log.SinkConfiguration$SinkType</param>
+    </typedef>
+    <typedef class="com.l7tech.objectmodel.GenericEnumUserType" name="sinkconfiguration_severityThreshold">
+        <param name="enumClass">com.l7tech.common.log.SinkConfiguration$SeverityThreshold</param>
+    </typedef>
+    
     <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider" lazy="false" discriminator-value="1">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
@@ -467,6 +474,22 @@
         <property name="revocationCheckPolicyXml" column="revocation_policy_xml" type="string"/>
         <property name="defaultPolicy" column="default_policy" type="boolean"/>
         <property name="defaultSuccess" column="default_success" type="boolean"/>
+    </class>
+
+    <class name="com.l7tech.common.log.SinkConfiguration" table="sink_config">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+
+        <property name="name" column="name" type="string"/>
+        <property name="description" column="description" type="string"/>
+        <property name="type" column="type" type="sinkconfiguration_type"/>
+        <property name="enabled" column="enabled" type="boolean"/>
+        <property name="severity" column="severity" type="sinkconfiguration_severityThreshold"/>
+        <property name="categories" column="categories" type="string"/>
+        <property name="xmlProperties" column="properties" type="text"/>
     </class>
 
 </hibernate-mapping>

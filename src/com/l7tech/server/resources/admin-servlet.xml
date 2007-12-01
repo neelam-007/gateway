@@ -80,4 +80,9 @@
         <property name="serviceInterface" value="com.l7tech.common.transport.TransportAdmin"/>
     </bean>
 
+    <bean name="/LogSinkAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+        <property name="service" ref="logSinkAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.log.LogSinkAdmin"/>
+    </bean>
+
 </beans>
