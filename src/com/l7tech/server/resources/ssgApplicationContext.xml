@@ -775,6 +775,7 @@
     </bean>
 
     <bean id="policyVersionManager" class="com.l7tech.server.policy.PolicyVersionManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="serverConfig"/>
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
     </bean>
 

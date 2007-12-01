@@ -43,13 +43,15 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
      * Value is a {@link Set} of classnames of the {@link UpgradeTask}s that are allowed
      * to be run on that event.  Tasks listed under the null key will be run immediately in
      * {@link #afterPropertiesSet()}.
+     * TODO this metadata should probably come from the UpgradeTasks themselves, and we should just whitelist the entire server.upgrade package
      */
     private static final Map<Class<? extends SystemEvent>, Set<String>> whitelist =
         Collections.unmodifiableMap(new HashMap<Class<? extends SystemEvent>, Set<String>>() {{
             p(null,           "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies");
             p(Starting.class, "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions");
             p(Started.class,  "com.l7tech.server.upgrade.Upgrade35To36AddRoles",
-                              "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions");
+                              "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions",
+                              "com.l7tech.server.upgrade.Upgrade42To43AddInitialPolicyVersions");
         }
             
         private void p(Class<? extends SystemEvent> clazz, String... strings) {

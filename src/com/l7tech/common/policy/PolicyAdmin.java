@@ -6,12 +6,9 @@ package com.l7tech.common.policy;
 import static com.l7tech.common.security.rbac.EntityType.POLICY;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
-import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.security.rbac.RbacAdmin;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,5 +90,19 @@ public interface PolicyAdmin {
      */
     @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)
     @Transactional(readOnly=true)
-    List<PolicyVersion> findPolicyVersionHeadersByPolicy(long policyOid) throws FindException;    
+    List<PolicyVersion> findPolicyVersionHeadersByPolicy(long policyOid) throws FindException;
+
+    /**
+     * Set the comment for the specified policy revision.  Setting the comment to anything but null will
+     * protect this revision from being deleted automatically.
+     *
+     * @param policyOid the OID of the owning Policy.  Required.
+     * @param versionOid the OID of the revision whose comment to set.  Required.
+     * @param comment the comment to assign to this revision, or null to clear any comment.
+     * @throws FindException if the specified policy or revision doesn't exist, or if the specified revision
+     *                       is not owned by the specified policy.
+     * @throws UpdateException if there is a problem setting the comment.
+     */
+    @Secured(stereotype=SET_PROPERTY_BY_ID, relevantArg=0)
+    void setPolicyVersionComment(long policyOid, long versionOid, String comment) throws FindException, UpdateException;
 }

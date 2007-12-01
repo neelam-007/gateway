@@ -12,7 +12,6 @@ public class PolicyVersion extends NamedEntityImp {
     private long time;
     private long userProviderOid;
     private String userLogin;
-    private long parentVersionOid;
     private String xml;
     private long policyOid;
     private boolean active;
@@ -39,14 +38,6 @@ public class PolicyVersion extends NamedEntityImp {
 
     public void setXml(String xml) {
         this.xml = xml;
-    }
-
-    public long getParentVersionOid() {
-        return parentVersionOid;
-    }
-
-    public void setParentVersionOid(long parentVersionOid) {
-        this.parentVersionOid = parentVersionOid;
     }
 
     public String getUserLogin() {

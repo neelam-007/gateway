@@ -152,11 +152,11 @@ CREATE TABLE policy_version (
   time bigint(20) NOT NULL,
   user_provider_oid bigint(20),
   user_login varchar(255),
-  parent_version_oid bigint(20) NOT NULL,
   active boolean,
   xml mediumtext,
   PRIMARY KEY (objectid),
-  INDEX (ordinal)
+  INDEX (policy_oid),
+  FOREIGN KEY (policy_oid) REFERENCES policy (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

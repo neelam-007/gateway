@@ -152,7 +152,6 @@
         <property name="time" column="time" type="long"/>
         <property name="userProviderOid" column="user_provider_oid" type="long"/>
         <property name="userLogin" column="user_login" type="string"/>
-        <property name="parentVersionOid" column="parent_version_oid" type="long"/>
         <property name="xml" column="xml" type="text" lazy="true"/>
         <property name="active" column="active" type="boolean"/>
     </class>

@@ -91,17 +91,16 @@ ALTER TABLE published_service ADD FOREIGN KEY (policy_oid) REFERENCES policy (ob
 
 insert into cluster_properties
     (objectid, version, propkey, propvalue)
-    values (-400200, 0, "upgrade.task.400200", "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies");
+    values (-400300, 0, "upgrade.task.400300", "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies");
 
 INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
-    values (-400201, 0, "upgrade.task.400201", "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions");
+    values (-400301, 0, "upgrade.task.400301", "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions");
 
 ---
 --- Policy XML rollback support
 ---
 
-DROP TABLE IF EXISTS policy_version;
 CREATE TABLE policy_version (
   objectid bigint(20) NOT NULL,
   version int(11) NOT NULL,
@@ -111,12 +110,16 @@ CREATE TABLE policy_version (
   time bigint(20) NOT NULL,
   user_provider_oid bigint(20),
   user_login varchar(255),
-  parent_version_oid bigint(20) NOT NULL,
   active boolean,
   xml mediumtext,
   PRIMARY KEY (objectid),
-  INDEX (ordinal)
+  INDEX (policy_oid),
+  FOREIGN KEY (policy_oid) REFERENCES policy (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-400302, 0, "upgrade.task.400302", "com.l7tech.server.upgrade.Upgrade42To43AddInitialPolicyVersions");
 
 --
 -- Reenable FK at very end of script

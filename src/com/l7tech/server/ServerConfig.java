@@ -123,6 +123,7 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS = "ioHttpPoolMinSpareThreads";
 
     public static final String PARAM_POLICY_VALIDATION_MAX_CONCURRENCY = "serverPolicyValidation.maxConcurrency";
+    public static final String PARAM_POLICY_VERSIONING_MAX_REVISIONS = "policyVersioningMaxRevisions";
 
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 

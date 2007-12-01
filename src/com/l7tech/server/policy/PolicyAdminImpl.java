@@ -98,6 +98,13 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         });
     }
 
+    public void setPolicyVersionComment(long policyOid, long versionOid, String comment) throws FindException, UpdateException {
+        PolicyVersion ver = policyVersionManager.findByPrimaryKey(policyOid, versionOid);
+        if (ver == null) throw new FindException("No PolicyVersion found with policyOid=" + policyOid + " and oid=" + versionOid);
+        ver.setName(comment);
+        policyVersionManager.update(ver);
+    }
+
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
