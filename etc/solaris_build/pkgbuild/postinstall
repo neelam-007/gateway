@@ -2,33 +2,33 @@
 echo "Layer 7 SecureSpan(tm) Gateway v4.0" >/etc/issue
 
 # Startups
-cd /etc/rc3.d
+#cd /etc/rc3.d
 # Network config
-ln -sf ../init.d/ssg_tcp_tune.sh S71SSG_tcptune
+#ln -sf ../init.d/ssg_tcp_tune.sh S71SSG_tcptune
 # SSG startup
-ln -sf ../init.d/ssg S99SSG_ssg
+#ln -sf ../init.d/ssg S99SSG_ssg
 # shutdowns:
-cd /etc/rc0.d
+#cd /etc/rc0.d
 # run network config on shutdown
-ln -s ../init.d/ssg-sysconfig K03SSG_sysconfig
+#ln -s ../init.d/ssg-sysconfig K03SSG_sysconfig
 # and shut down the ssg nicely
-ln -sf ../init.d/ssg K04SSG_ssg
+#ln -sf ../init.d/ssg K04SSG_ssg
 
-cd /ssg
-if [ -x "${EXPECTED_JAVA_HOME}/bin/java" ] ; then
-    my_java_home="${EXPECTED_JAVA_HOME}"
-    ln -s ${my_java_home} /ssg/jdk
-    chown -h gateway:gateway /ssg/jdk
-    JAVA_HOME=/ssg/jdk
-    export JAVA_HOME
-else
-    echo "A compatible version (1.6) of java could not be located. Please install a 1.6 JDK and create a link to it from /ssg/jdk."
-fi
+#cd /ssg
+#if [ -x "${EXPECTED_JAVA_HOME}/bin/java" ] ; then
+#    my_java_home="${EXPECTED_JAVA_HOME}"
+#    ln -s ${my_java_home} /ssg/jdk
+#    chown -h gateway:gateway /ssg/jdk
+#    JAVA_HOME=/ssg/jdk
+#    export JAVA_HOME
+#else
+#    echo "A compatible version (1.6) of java could not be located. Please install a 1.6 JDK and create a link to it from /ssg/jdk."
+#fi
 
 # migrate the structure to the new partitioning scheme using the configuration wizard
 # Set java in version, in case its needed
 
-/ssg/configwizard/ssgconfig.sh -partitionMigrate 
+#/ssg/configwizard/ssgconfig.sh -partitionMigrate 
 
 # Added user previously, pre-expire them
 passwd -x 0 ssgconfig
@@ -55,4 +55,4 @@ fi
 rm -f ${tmpfile}
 
 # Enable ipfilter, you are at risk of being disconnected...
-/usr/sbin/svcadm enable -r network/ipfilter
+#/usr/sbin/svcadm enable -r network/ipfilter

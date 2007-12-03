@@ -1,7 +1,0 @@
-#!/bin/sh
-# logger messages so we can tell this stuff got run
-logger -t SSG-Netconfig -p info $0 $@
-# some debug
-# set > /ssg/logs/sysconfigstartup.out
-# we tee the output so we see it on screen but have a log too
-/bin/bash /ssg/bin/ssg-sysconfig $@ | tee  /ssg/logs/netconfig_log 2>&1

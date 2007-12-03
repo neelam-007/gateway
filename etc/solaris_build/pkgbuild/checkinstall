@@ -2,7 +2,6 @@
 
 expected_release="5.10"
 release=`uname -r`
-expected_java="1.6"
 
 #Preflight check to ensure that we are even dealing with the right OS revision
 #	Exits early if not
@@ -14,23 +13,7 @@ check_system_release() {
 	fi
 }
 
-check_java_set() {
-    if [ -x "${EXPECTED_JAVA_HOME}" ]; then
-        javaver=`${EXPECTED_JAVA_HOME}/bin/java -version 2>&1 | awk -F\" '/version/ {print $2}' | awk -F. '{print $1 "." $2}'`;
-        if [ ${javaver} != ${expected_java} ]; then
-            echo "\n\n\n\tThis package requires Java ${expected_java} to be installed.\n"
-            echo "\tAborting installation.\n\n\n"
-            exit 1;
-        fi
-    else
-        echo "\n\n\n\tThis package requires Java ${expected_java} to be installed.\n"
-        echo "\tAborting installation.\n\n\n"
-        exit 1;
-    fi
-}
-
 check_system_release
-check_java_set
 
 echo "Checkinstall exiting happily."
 exit 0
