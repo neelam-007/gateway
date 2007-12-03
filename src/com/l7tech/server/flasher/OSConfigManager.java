@@ -59,27 +59,29 @@ public class OSConfigManager {
 
     private void doSave() throws IOException {
         File settingsPath = new File(flasherHome, SETTINGS_PATH);
-        FileReader fr = new FileReader(settingsPath);
-        BufferedReader grandmasterreader = new BufferedReader(fr);
-        String tmp;
-        try {
-            while((tmp = grandmasterreader.readLine()) != null) {
-                if (!tmp.startsWith("#")) {
-                    File osconfigfile = new File(tmp);
-                    if (osconfigfile.exists() && osconfigfile.isFile()) {
-                        logger.info("saving " + osconfigfile.getPath());
-                        File target = new File(tmpDirPath + SUBDIR + File.separator + osconfigfile.getPath());
-                        FileUtils.ensurePath(target.getParentFile());
-                        FileUtils.copyFile(osconfigfile, target);
-                    } else {
-                        logger.info("os config file " + osconfigfile.getPath() + " does not exist on this " +
-                                    "system and will not be included in image");
+        if (settingsPath.isFile()) {
+            FileReader fr = new FileReader(settingsPath);
+            BufferedReader grandmasterreader = new BufferedReader(fr);
+            String tmp;
+            try {
+                while((tmp = grandmasterreader.readLine()) != null) {
+                    if (!tmp.startsWith("#")) {
+                        File osconfigfile = new File(tmp);
+                        if (osconfigfile.isFile()) {
+                            logger.info("saving " + osconfigfile.getPath());
+                            File target = new File(tmpDirPath + SUBDIR + File.separator + osconfigfile.getPath());
+                            FileUtils.ensurePath(target.getParentFile());
+                            FileUtils.copyFile(osconfigfile, target);
+                        } else {
+                            logger.info("os config file " + osconfigfile.getPath() + " does not exist on this " +
+                                        "system and will not be included in image");
+                        }
                     }
                 }
+            } finally {
+                grandmasterreader.close();
+                fr.close();
             }
-        } finally {
-            grandmasterreader.close();
-            fr.close();
         }
     }
 
