@@ -1,6 +1,5 @@
 package com.l7tech.server.util;
 
-import org.springframework.aop.ThrowsAdvice;
 import org.springframework.jdbc.*;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.orm.hibernate3.HibernateSystemException;
@@ -27,6 +26,7 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
             "com.mysql.jdbc.exceptions.MySQLTimeoutException",
             "com.mysql.jdbc.AssertionFailedException",
             "com.mysql.jdbc.CommunicationsException",
+            "com.mysql.jdbc.MysqlDataTruncation",
             "com.mysql.jdbc.OperationNotSupportedException",
             "com.mysql.jdbc.PacketTooBigException",
             "com.mysql.jdbc.RowDataDynamic$OperationNotSupportedException",
