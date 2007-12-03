@@ -25,6 +25,8 @@
     -->
     <property file="${src.root}/etc/default_build.properties"/>
 
+
+    <property file="${src.root}/etc/install.properties"/>
     <!-- project classpath -->
     <path id="project.classpath">
         <pathelement location="src"/>
@@ -664,7 +666,7 @@
       Initialize build properties
     -->
     <target name="init">
-        <property name="build.dir" value="${src.root}/build"/>
+        <!--<property name="build.dir" value="${src.root}/build"/>-->
         <property name="build.classes" value="${build.dir}/classes"/>
         <property name="build.test.classes" value="${build.dir}/test-classes"/>
         <property name="build.lib" value="${build.dir}/lib"/>
@@ -3593,7 +3595,7 @@
     <target name="INTERNAL-ssg-install-init" depends="package.readversion, INTERNAL-ssg-install-init-pre, package.gateway.all, init" if="ssg.install.enabled">
         <fail unless="install.build.number"
               message="Set the install.build.number property before running this target!"/>
-        <property file="etc/install.properties"/>
+        <!--<property file="etc/install.properties"/>-->
 
         <fail unless="install.jdk.tar.gz" message="Set the install.jdk.tar.gz property or create install.properties!"/>
 
@@ -3613,7 +3615,7 @@
         <property name="install.rel.ldap" value="${install.rel.etc}/ldapTemplates"/>
         <property name="install.rel.uddi" value="${install.rel.etc}/uddiTemplates"/>
         <!--<property name="install.rel.conf" value="${install.rel.etc}/conf"/>-->
-        <property name="install.rel.inf" value="${install.rel.etc}/inf"/>
+        <!--<property name="install.rel.inf" value="${install.rel.etc}/inf"/>-->
         <property name="install.rel.partitions" value="partitions"/>
         <property name="install.rel.partitionTemplate" value="partitiontemplate_"/>
         <property name="install.rel.defaultPartition" value="default_"/>
@@ -3633,7 +3635,7 @@
         <property name="install.src.sql" value="${install.src.ssgonly.base}/${install.rel.sql}"/>
 
         <!--<property name="install.src.conf" value="${install.src.ssgonly.base}/${install.rel.conf}"/>-->
-        <property name="install.src.inf" value="${install.src.ssgonly.base}/${install.rel.inf}"/>
+        <!--<property name="install.src.inf" value="${install.src.ssgonly.base}/${install.rel.inf}"/>-->
         <property name="install.src.partitions" value="${install.src.conf}/${install.rel.partitions}"/>
         <property name="install.src.partitionTemplate" value="${install.src.partitions}/${install.rel.partitionTemplate}"/>
         <property name="install.src.defaultPartition" value="${install.src.partitions}/${install.rel.defaultPartition}"/>
@@ -3794,7 +3796,16 @@
                 <include name="profile"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="java.sh"/>
-                <include name="ssg-utilities"/>
+                <include name="ssg-utilities.sh"/>
+                <include name="setopts.sh"/>
+                <include name="jvmoptions"/>
+            </fileset>
+        </copy>
+
+        <!--copy this in so that users have an example to use in case they are acually installing the "software mode" on a RedHat system-->
+        <copy todir="${install.src.ssgonly.bin}">
+            <fileset dir="${src.root}/etc/appliance/">
+                <include name="ssg-initd"/>
             </fileset>
         </copy>
 
@@ -3826,8 +3837,6 @@
 				<include name="iptables"/>
                 <include name="iptables-singlenet"/>
                 <include name="partition_firewall.pl"/>
-                <!--<include name="tarari/tarari-initd"/>-->
-                <include name="rotate-binlogs.pl"/>
                 <include name="ssg-initd"/>
                 <include name="ssg-dbstatus-initd"/>
                 <include name="snmpd.conf"/>
@@ -3835,6 +3844,7 @@
                 <include name="sysconfigscript-initd"/>
                 <include name="pkcs11_linux.cfg"/>
                 <include name="systeminfo.sh"/>
+                <include name="tarari.sh"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
