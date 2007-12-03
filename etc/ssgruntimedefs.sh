@@ -28,7 +28,7 @@ export SSG_JAVA_OPTS
 export ALL_PARTITIONS
 export PARTITION_COUNT
 
-if ! echo $LD_LIBRARY_PATH | /bin/egrep -q "(^|:)$SSG_HOME/lib($|:)" ; then
+if ! echo $LD_LIBRARY_PATH | /bin/egrep -s "(^|:)$SSG_HOME/lib($|:)" ; then
 	LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SSG_HOME/lib
 fi
 

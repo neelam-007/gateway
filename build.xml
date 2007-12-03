@@ -3846,6 +3846,9 @@
                 <include name="systeminfo.sh"/>
                 <include name="tarari.sh"/>
             </fileset>
+            <fileset dir="${src.root}/etc">
+                <include name="grandmaster_flash"/>
+            </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
             </fileset>

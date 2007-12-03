@@ -37,6 +37,8 @@ mv %{buildroot}/ssg/bin/ssg-java.security %{buildroot}/ssg/etc/conf/partitions/p
 mv %{buildroot}/ssg/etc/conf/*.properties %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/etc/conf/cluster_hostname-dist %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 
+rm %{buildroot}/ssg/migration/cfg/grandmaster_flash
+
 %files
 # Root owned OS components
 
@@ -153,4 +155,3 @@ if [ "$1" = "0" ] ; then
         echo -n ""
     fi
 fi
-

@@ -52,6 +52,7 @@ mkdir -p %{buildroot}/home/ssgconfig/
 mkdir -p %{buildroot}/ssg/appliance/libexec/
 mkdir -p %{buildroot}/ssg/appliance/bin
 mkdir -p %{buildroot}/ssg/etc/profile.d/
+mkdir -p %{buildroot}/ssg/migration/cfg/
 
 mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg
 mv %{buildroot}/ssg/bin/sysconfigscript-initd %{buildroot}/etc/init.d/ssgsysconfig
@@ -66,6 +67,7 @@ mv %{buildroot}/ssg/bin/configuser_bashrc %{buildroot}/home/ssgconfig/.bashrc
 mv %{buildroot}/ssg/bin/pkcs11_linux.cfg %{buildroot}/ssg/appliance/pkcs11.cfg
 mv %{buildroot}/ssg/bin/* %{buildroot}/ssg/appliance/bin/
 mv %{buildroot}/ssg/libexec/* %{buildroot}/ssg/appliance/libexec
+mv %{buildroot}/ssg/appliance/bin/grandmaster_flash %{buildroot}/ssg/migration/cfg/
 
 # Root war is redundant
 rm -f %{buildroot}/ssg/dist/*
@@ -149,6 +151,7 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 %attr(0755,gateway,gateway) /ssg/sysconfigwizard/*.sh
 
 %attr(0664,ssgconfig,gateway) /home/ssgconfig/.bashrc
+%attr(0775,gateway,gateway) /ssg/migration/cfg/grandmaster_flash
 
 %pre
 if [ `grep ^gateway: /etc/group` ]; then

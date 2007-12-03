@@ -179,7 +179,7 @@ get_java_location() {
 }
 
 store_java_location() {
-    su -m ssgconfig -c "cat >${SSG_ROOT}/etc/profile.d/java.sh <<-EOF
+    su ssgconfig -c "cat >${SSG_ROOT}/etc/profile.d/java.sh <<-EOF
 SSG_JAVA_HOME="${MY_JAVA_HOME}"
 export SSG_JAVA_HOME
 EOF"
@@ -218,7 +218,7 @@ configure_jvm_options() {
                 read MEM;
             done
 
-        su -m ssgconfig -c "cat >${SSG_ROOT}/etc/profile.d/jvmoptions <<-EOM
+        su ssgconfig -c "cat >${SSG_ROOT}/etc/profile.d/jvmoptions <<-EOM
 -Xmx"${MEM}"m
 EOM"
         fi

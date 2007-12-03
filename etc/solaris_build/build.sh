@@ -74,7 +74,7 @@ mv ssg/bin/jvmoptions ssg/etc/profile.d/
 #mv ssg/bin/ssgmigration.sh ssg/migration/
 # because of the way the tarball is built, it only include the linux flash file
 # so I had to move it into the solaris kit that we copy into /ssg/bin
-#*** mv ssg/bin/grandmaster_flash.solaris ssg/migration/cfg/grandmaster_flash
+rm ssg/migration/grandmaster_flash*
 
 echo "Moving properties to partition Template"
 
@@ -97,6 +97,8 @@ chmod -f 755 ssg/bin/*.sh
 chmod -f 755 ssg/bin/*.pl
 chmod -Rf 775 ssg/migration
 chmod -f 755 ssg/migration/*.sh
+chmod -f 755 ssg/etc/profile.d
+chmod -f 775 ssg/etc/*
 
 echo Creating Prototype...
 
