@@ -20,6 +20,8 @@ public class PolicyCheckpointEvent extends ApplicationEvent {
     public PolicyCheckpointEvent(Object source, Policy policyBeingSaved) {
         super(source);
         if (policyBeingSaved == null) throw new NullPointerException();
+        if (policyBeingSaved.getOid() == Policy.DEFAULT_OID)
+            throw new IllegalArgumentException("Policy must have valid OID before it can be checkpointed"); // checkoint before update, but after save
         this.policyBeingSaved = policyBeingSaved;
     }
 

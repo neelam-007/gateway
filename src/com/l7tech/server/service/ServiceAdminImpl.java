@@ -220,6 +220,10 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         }), PolicyValidatorResult.class);
     }
 
+    private boolean isDefaultOid(PersistentEntity entity) {
+        return entity.getOid() == PersistentEntity.DEFAULT_OID;
+    }
+
     /**
      * this save method handles both save and updates.
      * the distinction happens on the server side by inspecting the oid of the object
@@ -232,18 +236,22 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     {
         long oid;
 
-        // Preserve revision history
-        applicationContext.publishEvent(new PolicyCheckpointEvent(this, service.getPolicy()));
+        if (service.getPolicy() != null && isDefaultOid(service) != isDefaultOid(service.getPolicy()))
+            throw new SaveException("Unable to save new service with existing policy, or to update existing service with new policy");
 
         if (service.getOid() > 0) {
             // UPDATING EXISTING SERVICE
             oid = service.getOid();
             logger.fine("Updating PublishedService: " + oid);
+            // checkpoint before update since old policy XML must be preserved
+            applicationContext.publishEvent(new PolicyCheckpointEvent(this, service.getPolicy()));
             serviceManager.update(service);
         } else {
             // SAVING NEW SERVICE
             logger.fine("Saving new PublishedService");
             oid = serviceManager.save(service);
+            // must checkpoint after save since initial policy must have its OID already
+            applicationContext.publishEvent(new PolicyCheckpointEvent(this, service.getPolicy()));
             serviceManager.addManageServiceRole(service);
         }
         return oid;

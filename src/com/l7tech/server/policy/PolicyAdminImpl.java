@@ -10,8 +10,8 @@ import com.l7tech.common.util.BeanUtils;
 import com.l7tech.common.util.Functions.Unary;
 import static com.l7tech.common.util.Functions.map;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.event.PolicyCheckpointEvent;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.event.PolicyCheckpointEvent;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -54,15 +54,17 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
     }
 
     public long savePolicy(Policy policy) throws SaveException {
-        // Preserve revision history
-        applicationContext.publishEvent(new PolicyCheckpointEvent(this, policy));
 
         if (policy.getOid() == Policy.DEFAULT_OID) {
             final long oid = policyManager.save(policy);
+            // Checkpoint after save since it requires a valid OID
+            applicationContext.publishEvent(new PolicyCheckpointEvent(this, policy));
             policyManager.addManagePolicyRole(policy);
             return oid;
         } else {
             try {
+                // Checkpoint before update so it can preserve old policy XML
+                applicationContext.publishEvent(new PolicyCheckpointEvent(this, policy));
                 policyManager.update(policy);
                 return policy.getOid();
             } catch (UpdateException e) {

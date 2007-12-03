@@ -85,7 +85,7 @@ public interface PolicyAdmin {
      * This returns a list of PolicyVersion instances whose "xml" properties are all null.
      *
      * @param policyOid the OID of the owning Policy.  Required.
-     * @return a Set of headers for every PolicyVersion that exists for this Policy.  May be empty but never null.
+     * @return a List of PolicyVersion instances whose "xml" properties are all omitted (null).  May be empty but never null.
      * @throws FindException if there is a database problem
      */
     @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)

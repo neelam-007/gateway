@@ -10,8 +10,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.PolicyCheckpointEvent;
-import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.util.ApplicationEventProxy;
+import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.springframework.beans.BeansException;
@@ -85,43 +85,50 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
     @Transactional(propagation=Propagation.SUPPORTS)
     public void checkpointPolicy(Policy newPolicy) throws FindException, SaveException {
         final long policyOid = newPolicy.getOid();
-        if (policyOid == Policy.DEFAULT_OID) {
-            // A new one.  Take no action; its revision will be created when it is actually created.
-            return;
-        }
+        if (policyOid == Policy.DEFAULT_OID)
+            throw new IllegalArgumentException("Unable to checkpoint policy without a valid OID");
 
         AdminInfo adminInfo = AdminInfo.find();
         PolicyVersion ver = snapshot(newPolicy, adminInfo);
         final long versionOid = save(ver);
 
-        // Delete any uncommented old versions TODO enable this and debug it
-        //noinspection ConstantIfStatement
-        if (true) {
+        // Delete oldest anonymous revisions if we have exceeded MAX_REVISIONS
         int numToKeep = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VERSIONING_MAX_REVISIONS, 20);
         final long lowestOrdinal = ver.getOrdinal() - numToKeep;
         getHibernateTemplate().execute(new HibernateCallback() {
             public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                session.createQuery("delete PolicyVersion where policyOid = :policyOid and oid != :versionOid and name is null and ordinal < :lowestOrdinal")
-                        .setLong("policyOid", policyOid)
-                        .setLong("versionOid", versionOid)
-                        .setLong("lowestOrdinal", lowestOrdinal)
-                        .executeUpdate();
-                return null;
+                FlushMode oldFlushMode = session.getFlushMode();
+                try {
+                    session.setFlushMode(FlushMode.COMMIT);
+                    session.createQuery("delete PolicyVersion where policyOid = :policyOid and oid != :versionOid and name is null and ordinal < :lowestOrdinal")
+                            .setLong("policyOid", policyOid)
+                            .setLong("versionOid", versionOid)
+                            .setLong("lowestOrdinal", lowestOrdinal)
+                            .executeUpdate();
+                    return null;
+                } finally {
+                    session.setFlushMode(oldFlushMode);
+                }
             }
         });
 
         // Deactivate all previous versions
         getHibernateTemplate().execute(new HibernateCallback() {
             public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                session.createQuery("update versioned PolicyVersion set active = :active where policyOid = :policyOid and oid != :versionOid")
-                        .setBoolean("active", false)
-                        .setLong("policyOid", policyOid)
-                        .setLong("versionOid", versionOid)
-                        .executeUpdate();
-                return null;
+                FlushMode oldFlushMode = session.getFlushMode();
+                try {
+                    session.setFlushMode(FlushMode.COMMIT);
+                    session.createQuery("update versioned PolicyVersion set active = :active where policyOid = :policyOid and oid != :versionOid")
+                            .setBoolean("active", false)
+                            .setLong("policyOid", policyOid)
+                            .setLong("versionOid", versionOid)
+                            .executeUpdate();
+                    return null;
+                } finally {
+                    session.setFlushMode(oldFlushMode);
+                }
             }
         });
-        }
     }
 
     private static PolicyVersion snapshot(Policy policy, AdminInfo adminInfo) {
@@ -137,51 +144,22 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         return ver;
     }
 
-    /**
-     * Find the Spring-wrapped instance of ourself, if possible.
-     *
-     * @return a Spring-wrapped instance of this class, if possible.  If one can't be found, just returns this.
-     */
-    private PolicyVersionManager getPolicyVersionManager() {
-        if (applicationContext != null) {
-            PolicyVersionManager pvm = (PolicyVersionManager)applicationContext.getBean("policyVersionManager");
-            if (pvm != null)
-                return pvm;
-        }
-        return this;
-    }
-
+    // We don't just implement ApplicationListener in the outer class because this causes all
+    // calls to onApplicationEvent to go through the transaction interceptor, and onApplicationEvent will be 
+    // called several times per message being processed.
     private ApplicationListener listener = new ApplicationListener() {
         public void onApplicationEvent(ApplicationEvent event) {
-            //noinspection ChainOfInstanceofChecks
             if (event instanceof PolicyCheckpointEvent) {
-                // Redispatch to ourself through Spring if possible, for transactional correctness, even
-                // though this should never be necessary in practice (since if you are mutating a policy
-                // you should already be in a transaction)
                 Policy policy = ((PolicyCheckpointEvent)event).getPolicyBeingSaved();
                 try {
-                    getPolicyVersionManager().checkpointPolicy(policy);
+                    checkpointPolicy(policy);
                 } catch (ObjectModelException e) {
                     logger.log(Level.WARNING, "Unable to checkpoint policy oid " + policy.getOid() + ": " + ExceptionUtils.getMessage(e), e);
                     throw new RuntimeException(e); // Must rethrow to ensure transaction rolled back
                 }
-            } else if (event instanceof Created) {
-                Created created = (Created)event;
-                if (created.getEntity() != null && Policy.class.isAssignableFrom(created.getEntity().getClass())) {
-                    onPolicyCreated((Policy)created.getEntity());
-                }
             }
         }
     };
-
-    private void onPolicyCreated(Policy policy) {
-        try {
-            getPolicyVersionManager().checkpointPolicy(policy);
-        } catch (ObjectModelException e) {
-            logger.log(Level.WARNING, "Unable to checkpoint policy oid " + policy.getOid() + " after Created event: " + ExceptionUtils.getMessage(e), e);
-            throw new RuntimeException(e); // Must rethrow to ensure transaction rolled back
-        }
-    }
 
     public void setApplicationEventProxy(ApplicationEventProxy proxy) {
         proxy.addApplicationListener(listener);
