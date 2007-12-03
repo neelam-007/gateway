@@ -5,10 +5,13 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.log.syslog.SyslogManager;
 
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
@@ -26,7 +29,7 @@ import java.beans.PropertyChangeEvent;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SinkManager
         extends HibernateEntityManager<SinkConfiguration, EntityHeader>
-{
+        implements ApplicationListener {
     //- PUBLIC
 
     public SinkManager( final ServerConfig serverConfig,
@@ -50,13 +53,23 @@ public class SinkManager
         return "sink_config";
     }
 
+    public void onApplicationEvent(final ApplicationEvent event) {
+        if ( event instanceof EntityInvalidationEvent ) {
+            EntityInvalidationEvent evt = (EntityInvalidationEvent) event;
+
+            if ( SinkConfiguration.class.isAssignableFrom(evt.getEntityClass()) ) {
+                rebuildLogSinks();
+            }
+        }
+    }
+
     //- PROTECTED
 
     @Override
     protected void initDao() {
         installHandlers();
         installLogConfigurationListener();
-        initializeLogSinks();
+        rebuildLogSinks();
     }
 
     //- PRIVATE
@@ -93,9 +106,16 @@ public class SinkManager
     /**
      * Attach the configured sinks.
      */
-    private void initializeLogSinks() {
+    private void rebuildLogSinks() {
         List<MessageSink> sinks = new ArrayList();
 
+        // close old first (so file handle released, etc)
+        // this could be removed if we this is not desired behaviour
+        // (in which case the old Sinks that are not used will be automatically
+        // closed by the DispatchingMessageSink)
+        dispatchingSink.setMessageSinks( Collections.<MessageSink>emptySet() );
+
+        // construct new
         Collection<SinkConfiguration> sinkConfigs = loadSinkConfigurations();
         for ( SinkConfiguration sinkConfiguration : sinkConfigs ) {
             if ( sinkConfiguration.isEnabled() ) {
@@ -113,9 +133,13 @@ public class SinkManager
             }
         }
 
+        // install new
         dispatchingSink.setMessageSinks( sinks );
     }
 
+    /**
+     * Load sink configurations 
+     */
     private Collection<SinkConfiguration> loadSinkConfigurations() {
         Collection<SinkConfiguration> sinkConfigurations = Collections.EMPTY_LIST;
 
@@ -131,20 +155,27 @@ public class SinkManager
         return sinkConfigurations;
     }
 
-    private MessageSink buildSinkForConfiguration ( final SinkConfiguration configuration ) {
+    /**
+     * Build a MessageSink for the given configuration
+     */
+    private MessageSink buildSinkForConfiguration( final SinkConfiguration configuration ) {
         MessageSink sink = null;
         SinkConfiguration.SinkType type = configuration.getType();
 
-        switch ( type ) {
-            case FILE:
-                sink = new FileMessageSink( serverConfig, configuration );
-                break;
-            case SYSLOG:
-                sink = new SyslogMessageSink( serverConfig, configuration, syslogManager );
-                break;
-            default:
-                logger.log(Level.WARNING, "Ignoring unknown type of sink ''{0}''.", type);
-                break;
+        try {
+            switch ( type ) {
+                case FILE:
+                    sink = new FileMessageSink( serverConfig, configuration );
+                    break;
+                case SYSLOG:
+                    sink = new SyslogMessageSink( serverConfig, configuration, syslogManager );
+                    break;
+                default:
+                    logger.log(Level.WARNING, "Ignoring unknown type of sink ''{0}''.", type);
+                    break;
+            }
+        } catch (MessageSinkSupport.ConfigurationException ce) {
+            logger.log(Level.WARNING, "Error creating log sink '"+configuration.getName()+"'.", ce);
         }
 
         return sink;

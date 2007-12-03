@@ -39,7 +39,9 @@ class SyslogMessageSink extends MessageSinkSupport {
 
     //- PACKAGE
 
-    SyslogMessageSink( final ServerConfig serverConfig, final SinkConfiguration configuration, final SyslogManager manager) {
+    SyslogMessageSink( final ServerConfig serverConfig,
+                       final SinkConfiguration configuration,
+                       final SyslogManager manager) throws ConfigurationException {
         super( configuration );
         this.syslog = buildSyslog( configuration, manager, serverConfig.getHostname() );
         this.process = "SSG-" + serverConfig.getProperty(ServerConfig.PARAM_PARTITION_NAME);
@@ -110,8 +112,9 @@ class SyslogMessageSink extends MessageSinkSupport {
     /**
      * Construct a syslog for the given config
      */
-    private Syslog buildSyslog( final SinkConfiguration configuration, final SyslogManager manager, final String host ) {
-        //TODO [steve] clean up, finish config load
+    private Syslog buildSyslog( final SinkConfiguration configuration,
+                                final SyslogManager manager,
+                                final String host ) throws ConfigurationException {
         SyslogProtocol protocol;
         String configProtocol = configuration.getProperty(SinkConfiguration.PROP_SYSLOG_PROTOCOL);
         if ( SinkConfiguration.PROP_SYSLOG_PROTOCOL_TCP.equals(configProtocol) ) {
@@ -122,9 +125,19 @@ class SyslogMessageSink extends MessageSinkSupport {
 
         String syslogHost = configuration.getProperty(SinkConfiguration.PROP_SYSLOG_HOST);
         int syslogPort = Integer.parseInt(configuration.getProperty(SinkConfiguration.PROP_SYSLOG_PORT));
-        int facility = Integer.parseInt(configuration.getProperty(SinkConfiguration.PROP_SYSLOG_FACILITY));
         String format = LOG_PATTERN_STANDARD;
+        if ( !Boolean.valueOf(configuration.getProperty(SinkConfiguration.PROP_SYSLOG_LOG_HOSTNAME)) ) {
+            format = LOG_PATTERN_NO_HOST;
+        }
 
-        return manager.getSyslog(protocol, syslogHost, syslogPort, format, null, facility, host, null, null);
+        String timeZoneId = configuration.getProperty(SinkConfiguration.PROP_SYSLOG_TIMEZONE);
+        int facility = Integer.parseInt(configuration.getProperty(SinkConfiguration.PROP_SYSLOG_FACILITY));
+        String charset = configuration.getProperty(SinkConfiguration.PROP_SYSLOG_CHAR_SET);
+
+        try {
+            return manager.getSyslog(protocol, syslogHost, syslogPort, format, timeZoneId, facility, host, charset, null);
+        } catch (IllegalArgumentException iae) {
+            throw new ConfigurationException("Error creating syslog client", iae);    
+        }
     }
 }

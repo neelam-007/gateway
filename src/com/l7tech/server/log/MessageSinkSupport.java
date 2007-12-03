@@ -47,6 +47,19 @@ abstract class MessageSinkSupport implements MessageSink {
      */
     abstract void processMessage( final MessageCategory category, final LogRecord record );
 
+    /**
+     * Exception class used for initialization errors
+     */
+    static class ConfigurationException extends Exception {
+        public ConfigurationException(String message) {
+            super(message);
+        }
+
+        public ConfigurationException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     //- PRIVATE
 
     private final SinkConfiguration configuration;

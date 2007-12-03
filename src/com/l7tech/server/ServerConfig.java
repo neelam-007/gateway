@@ -55,6 +55,8 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_MULTICAST_ADDRESS = "multicastAddress";
     public static final String PARAM_SSG_HOME_DIRECTORY = "ssgHome";
     public static final String PARAM_CONFIG_DIRECTORY = "configDirectory";
+    public static final String PARAM_SSG_LOG_DIRECTORY = "logDirectory";
+    public static final String PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE = "logFileTemplate";
     public static final String PARAM_ATTACHMENT_DIRECTORY = "attachmentDirectory";
     public static final String PARAM_ATTACHMENT_DISK_THRESHOLD = "attachmentDiskThreshold";
     public static final String PARAM_MODULAR_ASSERTIONS_DIRECTORY = "modularAssertionsDirectory";

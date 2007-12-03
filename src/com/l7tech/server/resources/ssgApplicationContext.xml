@@ -614,6 +614,7 @@
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="ssgConnectorManager"/>
+                <ref bean="sinkManager"/>
             </list>
         </property>
         <property name="timer">
