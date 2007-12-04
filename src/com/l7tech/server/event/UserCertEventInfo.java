@@ -22,6 +22,12 @@ public class UserCertEventInfo {
         try {
             IdentityProviderFactory ipf = (IdentityProviderFactory)springContext.getBean("identityProviderFactory");
             IdentityProvider provider = ipf.getProvider(cer.getProvider());
+
+            // For the case: no such identity provider associated with the client certificate
+            if (provider == null) {
+                throw new FindException("The identity provider associated with the client certificate does not exist.");
+            }
+
             this.user = provider.getUserManager().findByPrimaryKey(cer.getUserId());
 
             String note = verb;

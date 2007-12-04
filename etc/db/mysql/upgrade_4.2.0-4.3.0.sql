@@ -121,6 +121,16 @@ INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
     values (-400302, 0, "upgrade.task.400302", "com.l7tech.server.upgrade.Upgrade42To43AddInitialPolicyVersions");
 
+---
+--- Delete the client certificates whose identitiy_provider does not exist.
+---
+DELETE FROM client_cert WHERE provider NOT IN (SELECT objectid FROM identity_provider);
+
+---
+--- Add a foreign key in the table client_cert, so when deleting an identity provider, the database will automatically delete the associated client certificate.
+---
+ALTER TABLE client_cert ADD FOREIGN KEY (provider) REFERENCES identity_provider (objectid) ON DELETE CASCADE;
+
 --
 -- Reenable FK at very end of script
 --
