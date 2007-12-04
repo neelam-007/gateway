@@ -18,7 +18,7 @@
     </bean>
 
     <!-- SSG boot process -->
-    <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties serviceWsdlImportChecker">
+    <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties serviceWsdlImportChecker sinkManager">
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
 
@@ -51,6 +51,13 @@
                         <entry key="jmsBootProcess"><list><value>ioJmsErrorSleep</value></list></entry>
                         <entry key="trustedCertManager"><list><value>trustedCert.expiryCheckPeriod</value></list></entry>
                         <entry key="httpTransportModule"><list><value>ioHttpPoolMaxConcurrency</value></list></entry>
+                        <entry key="trafficLogger">
+                            <list>
+                                <value>trafficLoggerDetail</value>
+                                <value>trafficLoggerRecordReq</value>
+                                <value>trafficLoggerRecordRes</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -644,12 +651,8 @@
     </bean>
 
     <bean id="trafficLogger" class="com.l7tech.server.log.TrafficLogger">
-        <constructor-arg>
-            <bean class="com.l7tech.server.util.ManagedTimer">
-                <constructor-arg value="Traffic logger config refresh"/>
-            </bean>
-        </constructor-arg>
-        <property name="serverConfig" ref="serverConfig"/>
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="soapFaultManager"/>
     </bean>
 
     <bean id="entityFinder" class="com.l7tech.server.EntityFinderImpl">
@@ -785,6 +788,7 @@
     <bean id="sinkManager" class="com.l7tech.server.log.SinkManager" parent="hibernateBean">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="syslogManager"/>
+        <constructor-arg ref="trafficLogger"/>
     </bean>
 
 </beans>

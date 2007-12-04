@@ -19,8 +19,8 @@ abstract class MessageSinkSupport implements MessageSink {
     //- PUBLIC
 
     public void message( final MessageCategory category, final LogRecord record ) {        
-        if ( category != null && record != null) {
-            if ( categories.contains( category ) &&
+        if ( record != null ) {
+            if ( isCategoryEnabled( category ) &&
                  record.getLevel().intValue() >= threshold ) {
                 processMessage( category, record );
             }
@@ -35,8 +35,29 @@ abstract class MessageSinkSupport implements MessageSink {
         this.categories = buildCategories( configuration );
     }
 
+    /**
+     * Get the configuration for this sink.
+     *
+     * @return The SinkConfiguration.
+     */
     SinkConfiguration getConfiguration() {
         return this.configuration;
+    }
+
+    /**
+     * Is the given category enabled for this sink.
+     *
+     * @param category The category to check.
+     * @return True if enabled.
+     */
+    boolean isCategoryEnabled( final MessageCategory category ) {
+        boolean enabled = false;
+
+        if ( category != null && categories.contains( category ) ) {
+            enabled = true;
+        }
+
+        return enabled;
     }
 
     /**
