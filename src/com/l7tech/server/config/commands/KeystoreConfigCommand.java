@@ -78,7 +78,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
 
     private static final String SUDO_COMMAND = "/usr/bin/sudo";
-    private static final String ZERO_HSM_COMMAND = "libexec/zerohsm.sh";
+    private static final String ZERO_HSM_COMMAND = "appliance/libexec/zerohsm.sh";
 
     public static final String MASTERKEYMANAGE_ERRMSG_KEY_PREFIX="hsm.masterkeymanage.errormessage";
     public ResourceBundle resourceBundle;

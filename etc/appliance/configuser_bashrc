@@ -6,7 +6,7 @@ trap doLogout INT
 SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
 CONFWIZARD="/ssg/configwizard/ssgconfig.sh"
 UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh"
-MASTERKEYMANAGE="/ssg/libexec/masterkey-manage.pl"
+MASTERKEYMANAGE="/ssg/appliance/libexec/masterkey-manage.pl"
 GETROOT="su -"
 MASTER_KEY_BACKUP_FILE_NAME="ssg_mkey.bak"
 

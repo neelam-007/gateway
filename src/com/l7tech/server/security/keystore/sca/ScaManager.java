@@ -15,9 +15,9 @@ public class ScaManager {
     protected static final Logger logger = Logger.getLogger(ScaManager.class.getName());
 
     private static final String DEFAULT_SCAKIOD_PATH = "/opt/sun/sca6000/bin/scakiod_load";
-    private static final String DEFAULT_LOAD_KEYDATA_PATH = "/ssg/libexec/load_keydata";
-    private static final String DEFAULT_SAVE_KEYDATA_PATH = "/ssg/libexec/save_keydata";
-    private static final String DEFAULT_WIPE_KEYDATA_PATH = "/ssg/libexec/wipe_keydata";
+    private static final String DEFAULT_LOAD_KEYDATA_PATH = "/ssg/appliance/libexec/load_keydata";
+    private static final String DEFAULT_SAVE_KEYDATA_PATH = "/ssg/appliance/libexec/save_keydata";
+    private static final String DEFAULT_WIPE_KEYDATA_PATH = "/ssg/appliance/libexec/wipe_keydata";
 
     private static final String SYSPROP_BASE = ScaManager.class.getPackage().getName() + ".";
 
