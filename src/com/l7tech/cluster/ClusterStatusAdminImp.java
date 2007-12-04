@@ -178,6 +178,28 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return Collections.unmodifiableMap(known);
     }
 
+    public Collection<ClusterPropertyDescriptor> getAllPropertyDescriptors() {
+        Map<String,String> namesToDesc =  serverConfig.getClusterPropertyNames();
+        Map<String,String> namesToDefs =  serverConfig.getClusterPropertyDefaults();
+        Map<String,String> namesToVisi =  serverConfig.getClusterPropertyVisibilities();
+
+        Collection<ClusterPropertyDescriptor> properties = new ArrayList();
+        for (String name : namesToDesc.keySet()) {
+            String visible = namesToVisi.get(name);
+            if ( visible == null ) {
+                visible = "true";
+            }
+
+            properties.add( new ClusterPropertyDescriptor(
+                    name,
+                    namesToDesc.get(name),
+                    namesToDefs.get(name),
+                    Boolean.valueOf(visible)) );
+        }
+
+        return Collections.unmodifiableCollection(properties);
+    }
+
     public ClusterProperty findPropertyByName(String key) throws FindException {
         return clusterPropertyManager.findByUniqueName(key);
     }

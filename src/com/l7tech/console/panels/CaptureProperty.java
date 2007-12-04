@@ -7,6 +7,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.cluster.ClusterPropertyDescriptor;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.gui.util.DocumentSizeFilter;
@@ -18,7 +19,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.ItemEvent;
-import java.util.Map;
+import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Simple dialog to capture a property (key+value)
@@ -37,15 +40,15 @@ public class CaptureProperty extends JDialog {
     private final ClusterProperty property;
     private String title;
     private boolean oked = false;
-    private Map propertyNamesToDescriptionAndDefault;
+    private Collection<ClusterPropertyDescriptor> descriptors;
     private boolean isEditable;
 
-    public CaptureProperty(JDialog parent, String title, String description, ClusterProperty property, Map suggestedValues, boolean isEditable) {
+    public CaptureProperty(JDialog parent, String title, String description, ClusterProperty property, Collection<ClusterPropertyDescriptor> descriptors, boolean isEditable) {
         super(parent, true);
         this.title = title;
         this.description = description;
         this.property = property;
-        this.propertyNamesToDescriptionAndDefault = suggestedValues;
+        this.descriptors = descriptors;
         this.isEditable = isEditable;
         initialize();
     }
@@ -62,22 +65,22 @@ public class CaptureProperty extends JDialog {
             valueField.setText(property.getValue());
         } else {
             valueField.setText("");
-            if (propertyNamesToDescriptionAndDefault == null || propertyNamesToDescriptionAndDefault.isEmpty()) {
+            if (descriptors == null || descriptors.isEmpty()) {
                 keyComboBox.setModel(new DefaultComboBoxModel());
                 keyComboBox.setEnabled(true);
                 keyComboBox.setEditable(true);
             } else {
-                keyComboBox.setModel(new DefaultComboBoxModel(propertyNamesToDescriptionAndDefault.keySet().toArray(new String[0])));
+                keyComboBox.setModel(new DefaultComboBoxModel(getNames(descriptors)));
                 keyComboBox.setEnabled(true);
                 keyComboBox.setEditable(true);
                 ItemListener itemListener = new ItemListener() {
                     public void itemStateChanged(ItemEvent e) {
-                        String[] values = (String[]) propertyNamesToDescriptionAndDefault.get(keyComboBox.getSelectedItem());
-                        String description = values==null ? null : values[0];
+                        ClusterPropertyDescriptor value =
+                                getClusterPropertyDescriptorByName(descriptors, (String) keyComboBox.getSelectedItem());
+                        String description = value==null ? null : value.getDescription();
                         if (description == null) description = "";
                         descField.setText(description);
-                        String initialValue = values==null ? null : values[1];
-                        if (initialValue == null) initialValue = "";
+                        String initialValue = value==null ? "" : value.getDefaultValue();
                         valueField.setText(initialValue);
                     }
                 };
@@ -106,6 +109,32 @@ public class CaptureProperty extends JDialog {
 
         enableReadOnlyIfNeeded();
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+    private String[] getNames( final Collection<ClusterPropertyDescriptor> properties ) {
+        List<String> names = new ArrayList();
+
+        for ( ClusterPropertyDescriptor descriptor : properties ) {
+            if ( descriptor.isVisible() )
+                names.add( descriptor.getName() );
+        }
+
+        return names.toArray(new String[names.size()]);
+    }
+
+    private ClusterPropertyDescriptor getClusterPropertyDescriptorByName(
+            final Collection<ClusterPropertyDescriptor> properties,
+            final String name ) {
+        ClusterPropertyDescriptor property = null;
+
+        for ( ClusterPropertyDescriptor descriptor : properties ) {
+            if ( name.equals(descriptor.getName()) ) {
+                property = descriptor;
+                break;
+            }
+        }
+
+        return property;
     }
 
     private void enableReadOnlyIfNeeded() {

@@ -110,11 +110,22 @@ public interface ClusterStatusAdmin {
      *
      * <p>Keys are names, values are an String[2] array with description/default either of which may be null</p>
      *
+     * @deprecated Use {@link #getAllPropertyDescriptors()} instead
      * @return a Map of names / descriptions
      */
+    @Deprecated
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
     Map getKnownProperties();
+
+    /**
+     * Get a collection of metadata for all cluster wide properties.
+     *
+     * @return The collection of property descriptors
+     */
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
+    Collection<ClusterPropertyDescriptor> getAllPropertyDescriptors();
 
     /**
      * get cluster wide property

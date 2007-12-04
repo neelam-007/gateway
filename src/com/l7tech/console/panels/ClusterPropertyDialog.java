@@ -7,6 +7,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.cluster.ClusterPropertyDescriptor;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.common.gui.util.Utilities;
@@ -48,7 +49,7 @@ public class ClusterPropertyDialog extends JDialog {
     private JButton closeButton;
     private final ArrayList<ClusterProperty> properties = new ArrayList<ClusterProperty>();
     private final Logger logger = Logger.getLogger(ClusterPropertyDialog.class.getName());
-    private Map knownProperties;
+    private Collection<ClusterPropertyDescriptor> knownProperties;
     private final PermissionFlags flags;
 
     public ClusterPropertyDialog(Frame owner) {
@@ -226,7 +227,7 @@ public class ClusterPropertyDialog extends JDialog {
         if (reg != null && reg.getClusterStatusAdmin() != null) {
 
             if (knownProperties == null) {
-                knownProperties = reg.getClusterStatusAdmin().getKnownProperties();
+                knownProperties = reg.getClusterStatusAdmin().getAllPropertyDescriptors();
             }
 
             final CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, new ClusterProperty(), knownProperties, flags.canUpdateSome());

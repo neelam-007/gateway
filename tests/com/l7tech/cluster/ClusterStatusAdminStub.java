@@ -123,6 +123,10 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         throw new UnsupportedOperationException();        
     }
 
+    public Collection<ClusterPropertyDescriptor> getAllPropertyDescriptors() {
+        throw new UnsupportedOperationException();
+    }
+
     public ClusterProperty findPropertyByName(String key) throws FindException {
         throw new UnsupportedOperationException();
     }

@@ -146,6 +146,7 @@ public class ServerConfig implements ClusterPropertyListener {
     private static final String SUFFIX_SETSYSPROP = ".setSystemProperty";
     private static final String SUFFIX_DESC = ".description";
     private static final String SUFFIX_DEFAULT = ".default";
+    private static final String SUFFIX_VISIBLE = ".visible";
     private static final String SUFFIX_CLUSTER_KEY = ".clusterProperty";
     private static final String SUFFIX_CLUSTER_AGE = ".clusterPropertyAge";
     private static final int CLUSTER_DEFAULT_AGE = 30000;
@@ -348,6 +349,15 @@ public class ServerConfig implements ClusterPropertyListener {
      */
     public Map<String, String> getClusterPropertyDefaults() {
         return getMappedServerConfigPropertyNames(SUFFIX_CLUSTER_KEY, SUFFIX_DEFAULT);
+    }
+
+    /**
+     * Get the Map of all declared cluster properties.
+     *
+     * @return The Map of declared property names to visibility values.
+     */
+    public Map<String, String> getClusterPropertyVisibilities() {
+        return getMappedServerConfigPropertyNames(SUFFIX_CLUSTER_KEY, SUFFIX_VISIBLE);
     }
 
     public String getNameFromClusterName(String clusterPropertyName) {
