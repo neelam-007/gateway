@@ -15,7 +15,7 @@ import com.l7tech.console.panels.PolicyPropertiesPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PolicyEntityNode;
-import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
@@ -65,7 +65,7 @@ public class EditPolicyProperties extends PolicyNodeAction {
             public void call(Boolean changed) {
                 if (changed) {
                     policyNode.clearCachedEntities();
-                    JTree tree = (JTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
+                    JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         model.nodeChanged(node);

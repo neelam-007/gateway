@@ -15,6 +15,7 @@ import com.l7tech.common.util.JaasUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.system.ServiceCacheEvent;
+import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.service.MetricsBin;
@@ -44,12 +45,21 @@ public class ServiceManagerImp
 {
     private static final Logger logger = Logger.getLogger(ServiceManagerImp.class.getName());
 
-    private ResolutionManager resolutionManager;
-    private RoleManager roleManager;
-    private ApplicationContext spring;
-
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ServiceAdmin.ROLE_NAME_TYPE_SUFFIX));
+
+    private final ResolutionManager resolutionManager;
+    private final RoleManager roleManager;
+    private final PolicyCache policyCache;
+
+    private ApplicationContext spring;
+
+
+    public ServiceManagerImp(ResolutionManager resolutionManager, PolicyCache policyCache, RoleManager roleManager) {
+        this.roleManager = roleManager;
+        this.policyCache = policyCache;
+        this.resolutionManager = resolutionManager;
+    }
 
     @Transactional(propagation=SUPPORTS)
     public String resolveWsdlTarget(String url) {
@@ -61,6 +71,13 @@ public class ServiceManagerImp
         long oid = super.save(service);
         logger.info("Saved service #" + oid);
         service.setOid(oid);
+
+        try {
+            policyCache.update(service.getPolicy());
+        } catch (Exception e) {
+            throw new SaveException("Unable to update Policy", e);
+        }
+
         // 2. record resolution parameters
         try {
             resolutionManager.recordResolutionParameters(service);
@@ -88,6 +105,12 @@ public class ServiceManagerImp
             String msg = "cannot update service. duplicate resolution parameters";
             logger.log(Level.INFO, msg, e);
             throw new UpdateException(msg, e);
+        }
+
+        try {
+            policyCache.update(service.getPolicy());
+        } catch (Exception e) {
+            throw new UpdateException("Unable to update Policy", e);
         }
 
         super.update(service);
@@ -127,21 +150,6 @@ public class ServiceManagerImp
     @Transactional(propagation=SUPPORTS)
     public EntityType getEntityType() {
         return EntityType.SERVICE;
-    }
-
-    @Transactional(propagation=SUPPORTS)
-    public void setRoleManager(RoleManager roleManager) {
-        this.roleManager = roleManager;
-    }
-
-    /**
-     * Set the resolution manager. This is managed by Spring runtime.
-     *
-     * @param resolutionManager
-     */
-    @Transactional(propagation=SUPPORTS)
-    public void setResolutionManager(ResolutionManager resolutionManager) {
-        this.resolutionManager = resolutionManager;
     }
 
     protected UniqueType getUniqueType() {

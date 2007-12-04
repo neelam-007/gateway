@@ -121,6 +121,7 @@ public class AllAssertions {
         new HtmlFormDataAssertion(),
         new CodeInjectionProtectionAssertion(),
         new SamlIssuerAssertion(),
+        new Include(),
     };
 
 

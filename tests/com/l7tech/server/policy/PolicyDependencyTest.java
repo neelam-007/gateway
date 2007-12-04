@@ -4,6 +4,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.policy.*;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyPathResult;
@@ -16,6 +17,7 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -46,6 +48,10 @@ public class PolicyDependencyTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
+        AssertionRegistry ar = new AssertionRegistry();
+        ar.registerAssertion(Include.class);
+        WspConstants.setTypeMappingFinder(ar);
+
         setupSimple();
         setupCycle();
         setupClonedGrandchild();

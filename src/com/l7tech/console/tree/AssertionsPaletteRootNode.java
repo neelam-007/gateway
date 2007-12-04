@@ -45,7 +45,9 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
 
         for (Iterator i = nodeList.iterator(); i.hasNext();) {
             AbstractPaletteFolderNode node = (AbstractPaletteFolderNode)i.next();
-            if (!node.isEnabledByLicense() || node.getChildCount() < 1) i.remove();
+            if (!node.isEnabledByLicense() || (node.getChildCount() < 1 && node.isHiddenIfNoChildren())) {
+                i.remove();
+            }
         }
 
         // include the policy templates even if empty

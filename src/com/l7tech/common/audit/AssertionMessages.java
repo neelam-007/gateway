@@ -530,6 +530,7 @@ public class AssertionMessages extends Messages {
     public static final M IDENTITY_ATTRIBUTE_MULTI_USERS = m(8451, Level.INFO, "Multiple users from the expected identity provider have been authenticated; choosing the first");
 
     public static final M INCLUDE_POLICY_EXCEPTION       = m(8500, Level.WARNING, "Included policy was updated, and is now invalid: {0}");
+    public static final M INCLUDE_POLICY_NOT_FOUND       = m(8501, Level.WARNING, "Included policy #{0} ({1}) could not be located");
 
     public static final M WS_ADDRESSING_NO_HEADERS            = m(8550, Level.WARNING, "Required WS-Addressing headers not present");
     public static final M WS_ADDRESSING_NO_SIGNED_HEADERS     = m(8551, Level.WARNING, "Required signed WS-Addressing headers not present");

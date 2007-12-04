@@ -1,30 +1,29 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.common.LicenseException;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.AssertionFinder;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
-import com.l7tech.common.util.Functions;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.LicenseException;
 
 import java.util.Comparator;
-import java.util.Set;
 import java.util.Iterator;
-import java.util.logging.Logger;
+import java.util.Set;
 import java.util.logging.Level;
-import java.rmi.RemoteException;
+import java.util.logging.Logger;
 
 /**
  * User: megery
  * Date: Mar 9, 2006
  * Time: 3:05:19 PM
  */
-public abstract class AbstractPaletteFolderNode extends AbstractAssertionPaletteNode{
+public abstract class AbstractPaletteFolderNode extends AbstractAssertionPaletteNode {
     protected static final Logger logger = Logger.getLogger(AbstractPaletteFolderNode.class.getName());
 
     private final String id;

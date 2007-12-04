@@ -266,9 +266,11 @@
 
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
-        <property name="resolutionManager" ref="resolutionManager"/>
-        <property name="roleManager" ref="roleManager"/>
+        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="policyCache"/>
+        <constructor-arg ref="resolutionManager"/>
     </bean>
+
     <!-- server side resolution manager -->
     <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ReolutionManagerImpl">
         <constructor-arg>

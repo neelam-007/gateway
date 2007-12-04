@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module relativePaths="true" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5" inherit-compiler-output="true">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/build/classes" />
     <exclude-output />
     <output-test url="file://$MODULE_DIR$/build/test-classes" />
@@ -1458,6 +1458,16 @@
         </CLASSES>
         <JAVADOC />
         <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="MQ6">
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/lib/gateway/jms/mqseries6" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://$MODULE_DIR$/lib/gateway/jms/mqseries6" recursive="false" />
       </library>
     </orderEntry>
     <orderEntryProperties />

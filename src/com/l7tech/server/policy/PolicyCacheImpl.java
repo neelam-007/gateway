@@ -36,7 +36,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
     private PolicyManager policyManager;
     private final ServerPolicyFactory policyFactory;
 
-    private final Map<Long, ServerPolicyInfo> serverPolicyCache = new HashMap<Long, ServerPolicyInfo>();
+    private final Map<Long, ServerAssertion> serverPolicyCache = new HashMap<Long, ServerAssertion>();
     private final Map<Long, PolicyDependencyInfo> dependencyCache = new HashMap<Long, PolicyCacheImpl.PolicyDependencyInfo>();
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -52,19 +52,17 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
         Lock write = lock.writeLock();
         try {
             read.lock();
-            ServerPolicyInfo spi = serverPolicyCache.get(oid);
-            if (spi != null) return spi.serverPolicy;
-
+            ServerAssertion sass = serverPolicyCache.get(oid);
+            if (sass != null) return sass;
             read.unlock(); read = null;
 
             // Must not hold either lock here, we're reentrant if an Include assertion is in the policy
-            final ServerAssertion assertion = policyFactory.compilePolicy(policy.getAssertion(), true);
-            spi = new ServerPolicyInfo(policy, assertion);
+            sass = policyFactory.compilePolicy(policy.getAssertion(), true);
 
             try {
                 write.lock();
-                serverPolicyCache.put(oid, spi);
-                return assertion;
+                serverPolicyCache.put(oid, sass);
+                return sass;
             } finally {
                 write.unlock();
             }
@@ -76,14 +74,13 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
     public ServerAssertion getServerPolicy(long policyOid)
             throws FindException, IOException, ServerPolicyException, LicenseException
     {
-        ServerPolicyInfo spi;
-        ServerAssertion assertion;
+        ServerAssertion sass;
 
         Lock read = lock.readLock();
         try {
             read.lock();
-            spi = serverPolicyCache.get(policyOid);
-            if (spi != null) return spi.serverPolicy;
+            sass = serverPolicyCache.get(policyOid);
+            if (sass != null) return sass;
         } finally {
             read.unlock();
         }
@@ -98,11 +95,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
                 logger.info("Policy #" + policyOid + " has been deleted");
                 return null;
             } else {
-                assertion = policyFactory.compilePolicy(policy.getAssertion(), true);
+                sass = policyFactory.compilePolicy(policy.getAssertion(), true);
 
                 write.lock();
-                serverPolicyCache.put(policyOid, new ServerPolicyInfo(policy, assertion));
-                return assertion;
+                serverPolicyCache.put(policyOid, sass);
+                return sass;
             }
         } finally {
             write.unlock();
@@ -119,10 +116,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
 
         this.lock.writeLock().lock();
         try {
+            final PolicyDependencyInfo pdi = dependencyCache.get(policy.getOid());
             findDependentPolicies(policy, new HashSet<Long>());
             updateUsedBy();
             serverPolicyCache.remove(policy.getOid());
-            serverPolicyCache.put(policy.getOid(), new ServerPolicyInfo(policy, sass));
+            serverPolicyCache.put(policy.getOid(), sass);
         } catch (FindException e) {
             throw new ServerPolicyException(policy.getAssertion(), "Included policy could not be loaded", e);
         } finally {
@@ -134,7 +132,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
         try {
             lock.readLock().lock();
             PolicyDependencyInfo pdi = dependencyCache.get(oid);
-            return Collections.unmodifiableSet(pdi.usedBy);
+            final Set<Long> usedByOids = pdi.usedBy;
+            Set<Policy> policies = new HashSet<Policy>();
+            for (Long aLong : usedByOids) {
+                policies.add(dependencyCache.get(aLong).policy);
+            }
+            return Collections.unmodifiableSet(policies);
         } finally {
             lock.readLock().unlock();
         }
@@ -149,13 +152,14 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
             } else {
                 final Policy deletedPolicy = pdi.policy;
                 if (!pdi.usedBy.isEmpty()) {
-                    throw new PolicyDeletionForbiddenException(deletedPolicy, EntityType.POLICY, pdi.usedBy.iterator().next());
+                    final Policy policy = dependencyCache.get(pdi.usedBy.iterator().next()).policy;
+                    throw new PolicyDeletionForbiddenException(deletedPolicy, EntityType.POLICY, policy);
                 }
 
-                for (Policy usee : pdi.uses) {
-                    PolicyDependencyInfo useePdi = dependencyCache.get(usee.getOid());
+                for (Long useeOid : pdi.uses) {
+                    PolicyDependencyInfo useePdi = dependencyCache.get(useeOid);
                     if (useePdi == null) continue;
-                    useePdi.usedBy.remove(deletedPolicy);
+                    useePdi.usedBy.remove(deletedPolicy.getOid());
                 }
                 logger.log(Level.INFO, "Policy #{0} has been deleted; removing from cache", oid);
                 dependencyCache.remove(oid);
@@ -230,9 +234,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
         }
 
         for (PolicyCacheImpl.PolicyDependencyInfo pdi : dependencyCache.values()) {
-            for (Policy usedPolicy : pdi.uses) {
-                PolicyCacheImpl.PolicyDependencyInfo usedPdi = dependencyCache.get(usedPolicy.getOid());
-                usedPdi.usedBy.add(pdi.policy);
+            for (Long usedPolicyOid : pdi.uses) {
+                PolicyCacheImpl.PolicyDependencyInfo usedPdi = dependencyCache.get(usedPolicyOid);
+                usedPdi.usedBy.add(pdi.policy.getOid());
             }
         }
     }
@@ -244,7 +248,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
      *
      * @param thisPolicy the Policy to run the dependency check on
      * @param seenOids the Policy OIDs seen thus far in this policy stack, to detect cycles
-     *        (always pass <code>new {@link HashSet}&lt;{@link Long}&gt;())
+     *        (always pass a new, mutable <code>{@link Set}&lt;{@link Long}&gt;)
      * @throws IOException if this policy, or one of its descendants, could not be parsed
      * @throws FindException if one of this policy's descendants could not be loaded
      */
@@ -259,59 +263,51 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
         if (thisInfo == null) {
             thisInfo = new PolicyCacheImpl.PolicyDependencyInfo(thisPolicy);
             dependencyCache.put(thisPolicy.getOid(), thisInfo);
+        } else {
+            thisInfo.uses.clear(); // We're about to rebuild it in this and subsequent recursive invocations
         }
 
         final Assertion thisRootAssertion = thisPolicy.getAssertion();
         final Iterator assit = thisRootAssertion.preorderIterator();
         while (assit.hasNext()) {
-            Assertion ass = (Assertion) assit.next();
-            if (ass instanceof Include) {
-                Include include = (Include) ass;
-                Long includedOid = include.getPolicyOid();
-                logger.log(Level.FINE, "Policy #{0} ({1}) includes Policy #{2} ({3})", new Object[] { thisPolicy.getOid(), thisPolicy.getName(), includedOid, include.getPolicyName() });
-                if (includedOid == null) throw new RuntimeException("Found Include assertion with no PolicyOID in Policy #" + thisPolicy.getOid());
-                if (seenOids.contains(includedOid)) throw new CircularPolicyException(thisPolicy, includedOid, include.getPolicyName());
+            final Assertion ass = (Assertion) assit.next();
+            if (!(ass instanceof Include)) continue;
 
-                PolicyCacheImpl.PolicyDependencyInfo includedInfo = dependencyCache.get(includedOid);
-                Policy includedPolicy;
-                if (includedInfo == null) {
-                    logger.log(Level.FINE, "Creating new dependency info for #{0} ({1})", new Object[] { Long.toString(includedOid), include.getPolicyName() });
-                    includedPolicy = policyManager.findByPrimaryKey(includedOid);
-                    if (includedPolicy == null) {
-                        logger.info("Include assertion in Policy #" + thisPolicy.getOid() + " refers to Policy #" + includedOid + ", which does not exist");
-                        continue;
-                    }
+            final Include include = (Include) ass;
+            final Long includedOid = include.getPolicyOid();
+            logger.log(Level.FINE, "Policy #{0} ({1}) includes Policy #{2} ({3})", new Object[] { thisPolicy.getOid(), thisPolicy.getName(), includedOid, include.getPolicyName() });
+            if (includedOid == null) throw new RuntimeException("Found Include assertion with no PolicyOID in Policy #" + thisPolicy.getOid());
+            if (seenOids.contains(includedOid)) throw new CircularPolicyException(thisPolicy, includedOid, include.getPolicyName());
 
-                    includedInfo = new PolicyCacheImpl.PolicyDependencyInfo(includedPolicy);
-                    dependencyCache.put(includedOid, includedInfo);
-                } else {
-                    includedPolicy = includedInfo.policy;
+            PolicyDependencyInfo includedInfo = dependencyCache.get(includedOid);
+            final Policy includedPolicy;
+            if (includedInfo == null) {
+                logger.log(Level.FINE, "Creating new dependency info for #{0} ({1})", new Object[] { Long.toString(includedOid), include.getPolicyName() });
+                includedPolicy = policyManager.findByPrimaryKey(includedOid);
+                if (includedPolicy == null) {
+                    logger.info("Include assertion in Policy #" + thisPolicy.getOid() + " refers to Policy #" + includedOid + ", which does not exist");
+                    continue;
                 }
-                findDependentPolicies(includedPolicy, seenOids);
-                seenOids.remove(includedOid);
-                thisInfo.uses.add(includedInfo.policy);
-                includedInfo.usedBy.add(thisPolicy);
+
+                includedInfo = new PolicyDependencyInfo(includedPolicy);
+                dependencyCache.put(includedOid, includedInfo);
+            } else {
+                includedPolicy = includedInfo.policy;
             }
+            findDependentPolicies(includedPolicy, seenOids);
+            seenOids.remove(includedOid);
+            thisInfo.uses.add(includedInfo.policy.getOid());
+            includedInfo.usedBy.add(thisPolicy.getOid());
         }
     }
 
     private static class PolicyDependencyInfo {
         private final Policy policy;
-        private final Set<Policy> uses = new HashSet<Policy>();
-        private final Set<Policy> usedBy = new HashSet<Policy>();
+        private final Set<Long> uses = new HashSet<Long>();
+        private final Set<Long> usedBy = new HashSet<Long>();
 
         private PolicyDependencyInfo(Policy policy) {
             this.policy = policy;
-        }
-    }
-
-    private static class ServerPolicyInfo {
-        private final Policy policy;
-        private final ServerAssertion serverPolicy;
-
-        public ServerPolicyInfo(Policy policy, ServerAssertion serverPolicy) {
-            this.policy = policy;
-            this.serverPolicy = serverPolicy;
         }
     }
 
