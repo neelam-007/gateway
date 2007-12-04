@@ -57,12 +57,36 @@ public interface PolicyAdmin {
 
     /**
      * Saves or updates the specified policy.
+     * <p/>
+     * The policy XML will be made the active version of this policy.
+     * <p/>
+     * This method is the same as {@link #savePolicy(Policy, boolean)} with <b>true</b> passed
+     * as the second argument.
+     *
      * @param policy the policy to be saved.
      * @return the OID of the policy that was saved.
      * @throws PolicyAssertionException if there is a problem with the policy
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
     long savePolicy(Policy policy) throws PolicyAssertionException, SaveException;
+
+    /**
+     * Saves or updates the specified policy.
+     * <p/>
+     * The policy XML will be made the active version of this policy if activateAsWell is true.
+     *
+     * @param policy the policy to be saved.
+     * @param activateAsWell if true, the new version of the policy XML will take effect immediately
+     *                       as the active version of the policy XML.
+     *                       if false, the new version of the policy XML will be stored as a new revision
+     *                       but will not take effect.
+     *                       (<b>NOTE:</b> Any other changes to the Policy bean, aside from policy XML, will
+     *                       ALWAYS take effect immediately.)
+     * @return the OID of the policy that was saved.
+     * @throws PolicyAssertionException if there is a problem with the policy
+     */
+    @Secured(stereotype=SAVE_OR_UPDATE)
+    long savePolicy(Policy policy, boolean activateAsWell) throws PolicyAssertionException, SaveException;
 
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     Set<Policy> findUsages(long oid) throws FindException;
@@ -105,4 +129,28 @@ public interface PolicyAdmin {
      */
     @Secured(stereotype=SET_PROPERTY_BY_ID, relevantArg=0)
     void setPolicyVersionComment(long policyOid, long versionOid, String comment) throws FindException, UpdateException;
+
+    /**
+     * Set the active version for the specified policy to the specified version.
+     * This will mutate the current Policy but without adding any new entries to this policy's revision history.
+     *
+     * @param policyOid the OID of the Policy to alter.  Required.
+     * @param versionOid the OID of the revision to set as the active revision,
+     *                   or {@link PolicyVersion#DEFAULT_OID} to clear the active revision.  Required.
+     * @throws FindException if the specified policy or revision doesn't exist, or if the specified revision
+     *                       is not owned by the specified policy.
+     */
+    @Secured(stereotype=SET_PROPERTY_BY_ID, relevantArg=0)
+    void setActivePolicyVersion(long policyOid, long versionOid) throws FindException, UpdateException;
+
+    /**
+     * Clear the active version for the specified policy.
+     * This will have the effect of disabling the current Policy, but without adding any new entries to this policy's
+     * revision history.
+     *
+     * @param policyOid the OID of the Policy to disable.  Required.
+     * @throws FindException if the specified policy doesn't exist.
+     */
+    @Secured(stereotype=SET_PROPERTY_BY_ID, relevantArg=0)
+    void clearActivePolicyVersion(long policyOid) throws FindException, UpdateException;
 }

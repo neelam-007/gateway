@@ -4,6 +4,7 @@ import com.l7tech.common.util.Functions;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -69,5 +70,31 @@ public class SimpleTableModel<RT> extends AbstractTableModel {
                 return i;
         }
         return -1;
+    }
+
+    /**
+     * Find all row indexes that match the specified predicate.
+     *
+     * @param predicate a Unary that, when invoked on an instance of {@link RT}, returns true
+     *                  iff. that instance passes the desired test(s).
+     * @return the indexes of the every row that matched.  May be empty if no row matched.
+     */
+    public List<Integer> findRows(Functions.Unary<Boolean, RT> predicate) {
+        List<Integer> ret = new ArrayList<Integer>();
+        for (int i = 0; i < rows.size(); i++) {
+            RT row = rows.get(i);
+            if (predicate.call(row))
+                ret.add(i);
+        }
+        return ret;
+    }
+    
+    /**
+     * Provide direct, read-only access to the row list.
+     *
+     * @return a read-only view of the row list.
+     */
+    public List<RT> getRows() {
+        return Collections.unmodifiableList(rows);
     }
 }

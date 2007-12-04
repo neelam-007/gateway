@@ -234,6 +234,15 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     public long savePublishedService(PublishedService service)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
+        return savePublishedService(service, true);
+    }
+
+    public long savePublishedService(PublishedService service, boolean activateAsWell)
+            throws UpdateException, SaveException, VersionException, PolicyAssertionException
+    {
+        if (!activateAsWell)
+            throw new SaveException("TODO Saving a service without activating its Policy is not yet implemented"); // TODO implement this
+
         long oid;
 
         if (service.getPolicy() != null && isDefaultOid(service) != isDefaultOid(service.getPolicy()))

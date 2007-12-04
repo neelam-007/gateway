@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 
+import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 
 /**
@@ -21,23 +22,41 @@ import java.io.ByteArrayOutputStream;
  */
 public class SavePolicyAction extends PolicyNodeAction {
     protected AssertionTreeNode node;
+    private final boolean activateAsWell;
 
-    public SavePolicyAction() {
+    public SavePolicyAction(boolean activateAsWell) {
         super(null);
+        this.activateAsWell = activateAsWell;
+        putValue(Action.NAME, getLabel());
+        putValue(Action.SHORT_DESCRIPTION, getShortDesc());
+    }
+
+    private String getLabel() {
+        return activateAsWell ? "Save and Activate" : "Save";
+    }
+
+    private String getShortDesc() {
+        return activateAsWell
+               ? "Save the policy and make this version of it active"
+               : "Save the policy but do not activate this version of it yet";
+    }
+
+    public boolean isActivateAsWell() {
+        return activateAsWell;
     }
 
     /**
      * @return the action name
      */
     public String getName() {
-        return "Save";
+        return getLabel();
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Save the policy";
+        return getShortDesc();
     }
 
     /**
@@ -83,11 +102,11 @@ public class SavePolicyAction extends PolicyNodeAction {
             if (policyNode instanceof ServiceNode) {
                 final PublishedService svc = ((ServiceNode) policyNode).getPublishedService();
                 svc.getPolicy().setXml(xml);
-                Registry.getDefault().getServiceManager().savePublishedService(svc);
+                Registry.getDefault().getServiceManager().savePublishedService(svc, activateAsWell);
             } else {
                 Policy policy = policyNode.getPolicy();
                 policy.setXml(xml);
-                Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+                Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell);
             }
             policyNode.clearCachedEntities();
         } catch (Exception e) {

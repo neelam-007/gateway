@@ -138,7 +138,7 @@ public final class Functions {
      * @param predicate the filter to apply
      * @return a list of all input objects that matched the filter.  may be empty, but will never be null.
      */
-    public static <I> Collection<I> grep(Iterable<I> in, Unary<Boolean, I> predicate) {
+    public static <I> List<I> grep(Iterable<I> in, Unary<Boolean, I> predicate) {
         return grep(new ArrayList<I>(), in, predicate);
     }
 

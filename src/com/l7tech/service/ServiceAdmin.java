@@ -59,6 +59,11 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
      * Store the specified new or existing published service. If the specified {@link PublishedService} contains a
      * unique object ID that already exists, this will replace the objects current configuration with the new configuration.
      * Otherwise, a new object will be created.
+     * <p/>
+     * The policy XML in the policy property will be made the active version of the policy.
+     * <p/>
+     * This method is the same as {@link #savePublishedService(PublishedService, boolean)} with <b>true</b> passed
+     * as the second argument.
      *
      * @param service the published service to create or update.  Must not be null.
      * @return the unique object ID that was updated or created.
@@ -71,10 +76,33 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
     long savePublishedService(PublishedService service)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException;
 
+
+    /**
+     * Save a published service but do not necessarily activate the new version of its policy.
+     *
+     * @param service the published service to create or update.  Must not be null.
+     * @param activateAsWell if true, the new version of the policy XML will take effect immediately
+     *                       as the active version of the policy XML.
+     *                       if false, the new version of the policy XML will be stored as a new revision
+     *                       but will not take effect.
+     *                       (<b>NOTE:</b> Any other changes to the service or policy, aside from policy XML, will
+     *                       ALWAYS take effect immediately.)
+     * @return the unique object ID that was updated or created.
+     * @throws SaveException   if the requested information could not be saved
+     * @throws UpdateException if the requested information could not be updated
+     * @throws VersionException if the service version conflict is detected
+     * @throws PolicyAssertionException if the server policy could not be instantiated for this policy
+     */
+    @Secured(stereotype=SAVE_OR_UPDATE)
+    long savePublishedService(PublishedService service, boolean activateAsWell)
+            throws UpdateException, SaveException, VersionException, PolicyAssertionException;
+
     /**
      * Store the specified new or existing published service. If the specified {@link PublishedService} contains a
      * unique object ID that already exists, this will replace the objects current configuration with the new configuration.
      * Otherwise, a new object will be created.
+     * <p/>
+     * The policy XML in the policy property of the PublishedService will be made the active version of the policy.
      *
      * @param service the published service to create or update.  Must not be null.
      * @param serviceDocuments the serviceDocuments to save. Null means no documents.

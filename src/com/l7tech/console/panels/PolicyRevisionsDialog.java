@@ -57,6 +57,16 @@ public class PolicyRevisionsDialog extends JDialog {
 
     private SimpleTableModel<PolicyVersion> tableModel;
 
+    /** Predicate that matches any PolicyVersion whose 'active' flag is true. */
+    private static final Functions.Unary<Boolean, PolicyVersion> IS_ACTIVE = new Functions.Unary<Boolean, PolicyVersion>() {
+        public Boolean call(PolicyVersion policyVersion) {
+            return policyVersion.isActive();
+        }
+    };
+
+    /** Index of the "Act." table column in the table model. */
+    private static final int COLUMN_IDX_ACTIVE = 0;
+
     public PolicyRevisionsDialog(Frame owner, long policyOid) {
         super(owner);
         this.policyOid = policyOid;
@@ -74,20 +84,22 @@ public class PolicyRevisionsDialog extends JDialog {
         setModal(true);
         setContentPane(mainForm);
 
-        tableModel = TableUtil.configureTable(versionTable,
-                                              column("Act.", 12, 38, 64, new Functions.Unary<Object,PolicyVersion>() {
-                                                  public Object call(PolicyVersion policyVersion) {
-                                                      return policyVersion.isActive() ? "*" : "";
-                                                  }
-                                              }),
-                                              column("Vers.", 12, 46, 64, property("ordinal")),
-                                              column("Administrator", 32, 64, 999999, property("userLogin")),
-                                              column("Date and Time", 64, 120, 220, new Functions.Unary<Object,PolicyVersion>() {
-                                                  public Object call(PolicyVersion policyVersion) {
-                                                      return dateFormat.format(policyVersion.getTime());
-                                                  }
-                                              }),
-                                              column("Comment", 128, 128, 999999, property("name")));
+        tableModel = TableUtil.configureTable(
+                versionTable,
+                column("Act.", 12, 38, 64, new Functions.Unary<Object,PolicyVersion>() {
+                    public Object call(PolicyVersion policyVersion) {
+                        return policyVersion.isActive() ? "*" : "";
+                    }
+                }),
+                column("Vers.", 12, 46, 64, property("ordinal")),
+                column("Administrator", 32, 64, 999999, property("userLogin")),
+                column("Date and Time", 64, 120, 220, new Functions.Unary<Object,PolicyVersion>() {
+                    public Object call(PolicyVersion policyVersion) {
+                        return dateFormat.format(policyVersion.getTime());
+                    }
+                }),
+                column("Comment", 128, 128, 999999, property("name"))
+        );
 
         versionTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
@@ -96,34 +108,21 @@ public class PolicyRevisionsDialog extends JDialog {
             }
         });
 
+        setActiveButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                doSetActive();
+            }
+        });
+
+        clearActiveButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                doClearActive();
+            }
+        });
+
         setCommentButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Pair<Integer, PolicyVersion> info = getSelectedPolicyVersion();
-                int row = info.left;
-                PolicyVersion version = info.right;
-                if (version == null)
-                    return;
-
-                String comment = version.getName();
-                if (comment == null) comment = "";
-                comment = JOptionPane.showInputDialog(PolicyRevisionsDialog.this,
-                                                             "<html>Enter a comment for this revision, or leave blank to remove any comment.<br/>Note that revisions with comments will be retained forever.",
-                                                             comment);
-                if (comment == null)
-                    return;
-
-                if (comment.trim().length() < 1)
-                    comment = null;
-
-                try {
-                    Registry.getDefault().getPolicyAdmin().setPolicyVersionComment(version.getPolicyOid(), version.getOid(), comment);
-                    version.setName(comment);
-                    tableModel.fireTableRowsUpdated(row, row);
-                } catch (FindException e1) {
-                    showErrorMessage("Unable to Set Comment", "Unable to set comment: " + ExceptionUtils.getMessage(e1), e1);
-                } catch (UpdateException e1) {
-                    showErrorMessage("Unable to Set Comment", "Unable to set comment: " + ExceptionUtils.getMessage(e1), e1);
-                }
+                doSetComment();
             }
         });
 
@@ -138,21 +137,98 @@ public class PolicyRevisionsDialog extends JDialog {
 
         fetchUpdatedRows();
 
-        int row = tableModel.findFirstRow(new Functions.Unary<Boolean, PolicyVersion>() {
-            public Boolean call(PolicyVersion policyVersion) {
-                return policyVersion.isActive();
-            }
-        });
-        if (row >= 0)
-            versionTable.getSelectionModel().setSelectionInterval(row, row);
+        int actRow = tableModel.findFirstRow(IS_ACTIVE);
+        if (actRow >= COLUMN_IDX_ACTIVE)
+            versionTable.getSelectionModel().setSelectionInterval(actRow, actRow);
 
         enableOrDisableButtons();
         showSelectedPolicyXml();
     }
 
+    private void doSetActive() {
+        Pair<Integer, PolicyVersion> info = getSelectedPolicyVersion();
+        if (info == null)
+            return;
+
+
+
+        try {
+            Registry.getDefault().getPolicyAdmin().setActivePolicyVersion(policyOid, info.right.getOid());
+
+            for (Integer row : tableModel.findRows(IS_ACTIVE)) {
+                tableModel.getRowObject(row).setActive(false);
+                tableModel.fireTableCellUpdated(row, COLUMN_IDX_ACTIVE);
+            }
+
+            info.right.setActive(true);
+            tableModel.fireTableRowsUpdated(info.left, info.left);
+        } catch (Exception e) {
+            showErrorMessage("Unable to Set Active Version", "Unable to set active version: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    private void doClearActive() {
+        Pair<Integer, PolicyVersion> info = getSelectedPolicyVersion();
+        if (info == null)
+            return;
+
+        DialogDisplayer.showConfirmDialog(this,
+                                          "This will disable this policy.  Continue anyway?",
+                                          "Clear Active Version",
+                                          JOptionPane.OK_CANCEL_OPTION,
+                                          new DialogDisplayer.OptionListener() {
+            public void reportResult(int option) {
+                if (option != JOptionPane.OK_OPTION)
+                    return;
+                try {
+                    Registry.getDefault().getPolicyAdmin().clearActivePolicyVersion(policyOid);
+
+                    for (Integer row : tableModel.findRows(IS_ACTIVE)) {
+                        tableModel.getRowObject(row).setActive(false);
+                        tableModel.fireTableCellUpdated(row, COLUMN_IDX_ACTIVE);
+                    }
+                } catch (Exception e) {
+                    showErrorMessage("Unable to Clear Active Version", "Unable to clear active version: " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+        });
+    }
+
+    private void doSetComment() {
+        Pair<Integer, PolicyVersion> info = getSelectedPolicyVersion();
+        if (info == null)
+            return;
+        PolicyVersion version = info.right;
+
+        String comment = version.getName();
+        if (comment == null) comment = "";
+        comment = JOptionPane.showInputDialog(
+                this,
+                "<html>Enter a comment for this revision, or leave blank to remove any comment.<br/>Note that revisions with comments will be retained forever.",
+                comment);
+        if (comment == null)
+            return;
+
+        if (comment.trim().length() < 1)
+            comment = null;
+
+        try {
+            Registry.getDefault().getPolicyAdmin().setPolicyVersionComment(version.getPolicyOid(), version.getOid(), comment);
+            version.setName(comment);
+            tableModel.fireTableRowsUpdated(info.left, info.left);
+        } catch (FindException e1) {
+            showErrorMessage("Unable to Set Comment", "Unable to set comment: " + ExceptionUtils.getMessage(e1), e1);
+        } catch (UpdateException e1) {
+            showErrorMessage("Unable to Set Comment", "Unable to set comment: " + ExceptionUtils.getMessage(e1), e1);
+        }
+    }
+
     private Pair<Integer, PolicyVersion> getSelectedPolicyVersion() {
         int row = versionTable.getSelectedRow();
-        return row < 0 ? null : new Pair<Integer, PolicyVersion>(row, tableModel.getRowObject(row));
+        if (row < COLUMN_IDX_ACTIVE) return null;
+        PolicyVersion v = tableModel.getRowObject(row);
+        if (v == null) return null;
+        return new Pair<Integer, PolicyVersion>(row, v);
     }
 
     private void enableOrDisableButtons() {

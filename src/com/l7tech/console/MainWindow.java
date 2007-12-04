@@ -2667,7 +2667,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     public void firePolicyEdit(PolicyEditorPanel policyPanel) {
         // enable the items that make sense to show when a policy is being edited
         getValidateMenuItem().setAction(policyPanel.getValidateAction());
-        getSaveMenuItem().setAction(policyPanel.getSaveAction());
+        getSaveMenuItem().setAction(policyPanel.getSaveAndActivateAction());
         getExportMenuItem().setAction(policyPanel.getExportAction());
         getImportMenuItem().setAction(policyPanel.getImportAction());
     }

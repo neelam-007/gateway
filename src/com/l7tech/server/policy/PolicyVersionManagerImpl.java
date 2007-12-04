@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
@@ -82,8 +83,15 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         return findMatching(map);
     }
 
+    /**
+     * Examine the specified policy and record a new PolicyVersion if necessary.
+     *
+     * @param newPolicy a possibly-mutated policy that has not yet been committed to the database.
+     * @throws com.l7tech.objectmodel.FindException if there is a problem finding needed information from the database
+     * @throws com.l7tech.objectmodel.SaveException if there is a problem saving information to the database
+     */
     @Transactional(propagation=Propagation.SUPPORTS)
-    public void checkpointPolicy(Policy newPolicy) throws FindException, SaveException {
+    private void checkpointPolicy(Policy newPolicy) throws FindException, SaveException, UpdateException {
         final long policyOid = newPolicy.getOid();
         if (policyOid == Policy.DEFAULT_OID)
             throw new IllegalArgumentException("Unable to checkpoint policy without a valid OID");
@@ -113,22 +121,31 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         });
 
         // Deactivate all previous versions
-        getHibernateTemplate().execute(new HibernateCallback() {
-            public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                FlushMode oldFlushMode = session.getFlushMode();
-                try {
-                    session.setFlushMode(FlushMode.COMMIT);
-                    session.createQuery("update versioned PolicyVersion set active = :active where policyOid = :policyOid and oid != :versionOid")
-                            .setBoolean("active", false)
-                            .setLong("policyOid", policyOid)
-                            .setLong("versionOid", versionOid)
-                            .executeUpdate();
-                    return null;
-                } finally {
-                    session.setFlushMode(oldFlushMode);
+        deactivateVersions(policyOid, versionOid);
+    }
+
+    @Transactional(propagation=Propagation.SUPPORTS)
+    public void deactivateVersions(final long policyOid, final long versionOid) throws UpdateException {
+        try {
+            getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    FlushMode oldFlushMode = session.getFlushMode();
+                    try {
+                        session.setFlushMode(FlushMode.COMMIT);
+                        session.createQuery("update versioned PolicyVersion set active = :active where policyOid = :policyOid and oid != :versionOid")
+                                .setBoolean("active", false)
+                                .setLong("policyOid", policyOid)
+                                .setLong("versionOid", versionOid)
+                                .executeUpdate();
+                        return null;
+                    } finally {
+                        session.setFlushMode(oldFlushMode);
+                    }
                 }
-            }
-        });
+            });
+        } catch (DataAccessException e) {
+            throw new UpdateException(e);
+        }
     }
 
     private static PolicyVersion snapshot(Policy policy, AdminInfo adminInfo) {

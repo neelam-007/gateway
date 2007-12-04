@@ -63,6 +63,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
@@ -86,7 +87,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private boolean messageAreaVisible = false;
     private JTabbedPane messagesTab;
     private boolean validating = false;
-    private SecureAction saveAction;
+    private SecureAction saveAndActivateAction;
+    private SecureAction saveOnlyAction;
     private ValidatePolicyAction validateAction;
     private ValidatePolicyAction serverValidateAction;
     private ExportPolicyToFileAction exportPolicyAction;
@@ -512,7 +514,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     /**
      */
     final class PolicyEditToolBar extends JToolBar {
-        private JButton buttonSave;
+        private JButton buttonSaveAndActivate;
+        private JButton buttonSaveOnly;
         private JButton buttonValidate;
 
         public PolicyEditToolBar() {
@@ -522,19 +525,29 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
 
         private void initComponents() {
-            buttonSave = new JButton(getSaveAction());
-
-            add(buttonSave);
-            final BaseAction ba = (BaseAction)buttonSave.getAction();
+            buttonSaveOnly = new JButton(getSaveOnlyAction());
+            final BaseAction bsaa = (BaseAction)buttonSaveOnly.getAction();
+            buttonSaveAndActivate = new JButton(getSaveAndActivateAction());
+            add(buttonSaveAndActivate);
+            final BaseAction ba = (BaseAction)buttonSaveAndActivate.getAction();
             ba.setEnabled(false);
             ba.addActionListener(new ActionListener() {
-                /**
-                 * Invoked when an action occurs.
-                 */
                 public void actionPerformed(ActionEvent e) {
-                    appendToMessageArea("<i>Policy saved.</i>");
+                    appendToMessageArea("<i>Policy saved and made active.</i>");
                     ba.setEnabled(false);
-                    buttonSave.setEnabled(false);
+                    buttonSaveAndActivate.setEnabled(false);
+                    bsaa.setEnabled(false);
+                    buttonSaveOnly.setEnabled(false);
+                }
+            });
+
+            add(buttonSaveOnly);
+            bsaa.setEnabled(false);
+            bsaa.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    appendToMessageArea("<i>Policy saved but not activated.</i>");
+                    bsaa.setEnabled(false);
+                    buttonSaveOnly.setEnabled(false);
                 }
             });
 
@@ -581,6 +594,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             renderPolicy(identityView);
             validatePolicy();
             policyTree.getModel().addTreeModelListener(policyTreeModellistener);
+        }
+
+        private void setSaveButtonsEnabled(boolean enabled) {
+            buttonSaveAndActivate.setEnabled(enabled);
+            buttonSaveAndActivate.getAction().setEnabled(enabled);
+            buttonSaveOnly.setEnabled(enabled);
+            buttonSaveOnly.getAction().setEnabled(enabled);
         }
     }
 
@@ -704,14 +724,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
            }
            overWriteMessageArea("");
         for (PolicyValidatorResult.Error pe : r.getErrors()) {
-            appendToMessageArea(getValidateMessageIntro(pe)
-                    +
-                    "</a>" + " Error: " + pe.getMessage() + "");
+            appendToMessageArea(MessageFormat.format("{0}</a> Error: {1}", getValidateMessageIntro(pe), pe.getMessage()));
         }
         for (PolicyValidatorResult.Warning pw : r.getWarnings()) {
-            appendToMessageArea(getValidateMessageIntro(pw)
-                    +
-                    " Warning: " + pw.getMessage() + "");
+            appendToMessageArea(MessageFormat.format("{0} Warning: {1}", getValidateMessageIntro(pw), pw.getMessage()));
         }
         if (r.getErrors().isEmpty() && r.getWarnings().isEmpty()) {
             appendToMessageArea("<i>Policy validated ok.</i>");
@@ -722,8 +738,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         for (int i = 0; i < actions.length; i++) {
             Action action = actions[i];
             if (action instanceof SavePolicyAction) {
-                actions[i] = policyEditorToolbar.buttonSave.getAction();
-                actions[i].setEnabled(policyEditorToolbar.buttonSave.isEnabled());
+                if (((SavePolicyAction)action).isActivateAsWell()) {
+                    actions[i] = policyEditorToolbar.buttonSaveAndActivate.getAction();
+                    actions[i].setEnabled(policyEditorToolbar.buttonSaveAndActivate.isEnabled());
+                } else {
+                    actions[i] = policyEditorToolbar.buttonSaveOnly.getAction();
+                    actions[i].setEnabled(policyEditorToolbar.buttonSaveOnly.isEnabled());
+                }
             } else if (action instanceof ValidatePolicyAction) {
                 actions[i] = policyEditorToolbar.buttonValidate.getAction();
                 actions[i].setEnabled(policyEditorToolbar.buttonValidate.isEnabled());
@@ -809,7 +830,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         private void enableButtonSave() {
             overWriteMessageArea("");
-            policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+            policyEditorToolbar.setSaveButtonsEnabled(true);
         }
     };
 
@@ -827,8 +848,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             for (Object child : children) {
                 if (child == subject.getPolicyNode()) {
                     log.fine("Service or Policy node deleted, disabling save controls");
-                    policyEditorToolbar.buttonSave.setEnabled(false);
-                    policyEditorToolbar.buttonSave.getAction().setEnabled(false);
+                    policyEditorToolbar.setSaveButtonsEnabled(false);
                 }
             }
         }
@@ -854,8 +874,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
               } else if ("policy".equals(evt.getPropertyName())) {
                   rootAssertion = null;
                   renderPolicy(false);
-                  policyEditorToolbar.buttonSave.setEnabled(true);
-                  policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+                  policyEditorToolbar.setSaveButtonsEnabled(true);
                   validatePolicy();
               }
           }
@@ -935,15 +954,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public void componentWillRemove(ContainerEvent e)
       throws ContainerVetoException {
         if (e.getChild() == this) {
-            if (policyEditorToolbar.buttonSave.isEnabled()) {
+            if (policyEditorToolbar.buttonSaveOnly.isEnabled()) {
                 if (!TopComponents.getInstance().isConnectionLost()) {
                     int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                       "<html><center><b>Do you want to save changes to service policy " +
-                      "for<br> '" + subjectName + "' ?</b></center></html>",
+                      "for<br> '" + subjectName + "' ?</b><br>The changed policy will not be activated.</center></html>",
                       "Save Service policy",
                       JOptionPane.YES_NO_CANCEL_OPTION));
                     if (answer == JOptionPane.YES_OPTION) {
-                        policyEditorToolbar.buttonSave.getAction().actionPerformed(null);
+                        policyEditorToolbar.buttonSaveOnly.getAction().actionPerformed(null);
                     } else if ((answer == JOptionPane.CANCEL_OPTION)) {
                         throw new ContainerVetoException(e, "User aborted");
                     }
@@ -992,51 +1011,72 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return TopComponents.getInstance().isApplet() ? null :  preferences.getHomePath();
     }
 
-    public Action getSaveAction() {
-        if (saveAction == null) {
-            if (subject.getPolicyNode() == null) {
-                saveAction = new ExportPolicyToFileAction(getHomePath()) {
-                    public String getName() {
-                        return "Save Policy";
-                    }
-                    public String getDescription() {
-                        return "Save the policy to a file along with external references.";
-                    }
-                    protected void performAction() {
-                        Assertion assertion = rootAssertion.asAssertion();
-                        String dialogTitle = "Save Policy to File";
-                        File policyFile = exportPolicy(dialogTitle, assertion);
-                        if (policyFile != null) {
-                            subjectName = policyFile.getName();
-                            updateHeadings();
+    public Action getSaveAndActivateAction() {
+        if (saveAndActivateAction != null) return saveAndActivateAction;
+        if (subject.getPolicyNode() == null) {
+            saveAndActivateAction = makeExportAction();
+            return saveAndActivateAction;
+        }
+        try {
+            saveAndActivateAction = makeSavePolicyAction(true);
+            return saveAndActivateAction;
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't get current PublishedService", e);
+        }
+    }
+
+    private Action getSaveOnlyAction() {
+        if (saveOnlyAction != null) return saveOnlyAction;
+        if (subject.getPolicyNode() == null) {
+            saveOnlyAction = makeExportAction();
+            return saveOnlyAction;
+        }
+        try {
+            saveOnlyAction = makeSavePolicyAction(false);
+            return saveOnlyAction;
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't get current PublishedService", e);
+        }
+    }
+
+    private SecureAction makeSavePolicyAction(final boolean activateAsWell) {
+        return new SavePolicyAction(activateAsWell) {
+            protected void performAction() {
+                // fla, bugzilla 1094. all saves are now preceeded by a validation action
+                if (!validating) {
+                    try {
+                        validating = true;
+                        String xml = fullValidate();
+                        if (xml != null) {
+                            this.node = rootAssertion;
+                            super.performAction(xml);
                         }
+                    } finally {
+                        validating = false;
                     }
-                };
-            } else {
-                try {
-                    saveAction = new SavePolicyAction() {
-                        protected void performAction() {
-                            // fla, bugzilla 1094. all saves are now preceeded by a validation action
-                            if (!validating) {
-                                try {
-                                    validating = true;
-                                    String xml = fullValidate();
-                                    if (xml != null) {
-                                        this.node = rootAssertion;
-                                        super.performAction(xml);
-                                    }
-                                } finally {
-                                    validating = false;
-                                }
-                            }
-                        }
-                    };
-                } catch (Exception e) {
-                    throw new RuntimeException("Couldn't get current PublishedService", e);
                 }
             }
-        }
-        return saveAction;
+        };
+    }
+
+    private SecureAction makeExportAction() {
+        return new ExportPolicyToFileAction(getHomePath()) {
+            public String getName() {
+                return "Save Policy";
+            }
+            public String getDescription() {
+                return "Save the policy to a file along with external references.";
+            }
+            protected void performAction() {
+                Assertion assertion = rootAssertion.asAssertion();
+                String dialogTitle = "Save Policy to File";
+                File policyFile = exportPolicy(dialogTitle, assertion);
+                if (policyFile != null) {
+                    subjectName = policyFile.getName();
+                    updateHeadings();
+                }
+            }
+        };
     }
 
     public Action getExportAction() {
@@ -1096,8 +1136,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     getPublishedService().getPolicy().setXml(wiz.importedPolicy());
                     rootAssertion = null;
                     renderPolicy(false);
-                    policyEditorToolbar.buttonSave.setEnabled(true);
-                    policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+                    policyEditorToolbar.setSaveButtonsEnabled(true);
                     validatePolicy();
                 }
             }
@@ -1119,8 +1158,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                             if (importPolicy(policy)) {
                                 rootAssertion = null;
                                 renderPolicy(false);
-                                policyEditorToolbar.buttonSave.setEnabled(true);
-                                policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+                                policyEditorToolbar.setSaveButtonsEnabled(true);
                                 validatePolicy();
                             }
                         } catch (FindException e) {

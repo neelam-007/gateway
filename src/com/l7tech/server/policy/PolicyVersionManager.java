@@ -1,11 +1,10 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyVersion;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 
 import java.util.List;
 
@@ -33,11 +32,11 @@ public interface PolicyVersionManager extends EntityManager<PolicyVersion, Entit
     List<PolicyVersion> findAllForPolicy(long policyOid) throws FindException;
 
     /**
-     * Examine the specified policy and record a new PolicyVersion if necessary.
-     * 
-     * @param policy a possibly-mutated policy that has not yet been saved or committed to the database.
-     * @throws com.l7tech.objectmodel.FindException if there is a problem finding needed information from the database
-     * @throws com.l7tech.objectmodel.SaveException if there is a problem saving information to the database
+     * Clears the 'active' flag for all versions of the specified policy except for the specified version.
+     *
+     * @param policyOid   the policy whose versions are to have the 'active' flag cleared.  Required.
+     * @param versionOid  a version to leave alone (its 'active' flag will not be altered); or,
+     *                    {@link PolicyVersion#DEFAULT_OID} to deactivate all versions.    
      */
-    void checkpointPolicy(Policy policy) throws FindException, SaveException;
+    void deactivateVersions(long policyOid, long versionOid) throws UpdateException;
 }

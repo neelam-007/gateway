@@ -69,6 +69,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return serviceManager.save(service);
     }
 
+    public long savePublishedService(PublishedService service, boolean activateAsWell)
+            throws UpdateException, SaveException, VersionException, PolicyAssertionException {
+        return serviceManager.save(service);
+    }
+
     /**
      * saves a published service along with it's policy assertions
      *

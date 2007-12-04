@@ -95,6 +95,6 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
     public boolean accept(AbstractTreeNode draggingNode) {
         return super.accept(draggingNode) &&
                 (draggingNode instanceof PolicyTemplateNode || getParent() != null) &&
-                new SavePolicyAction().isAuthorized();
+                new SavePolicyAction(true).isAuthorized();
     }
 }
