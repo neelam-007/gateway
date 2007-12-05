@@ -948,6 +948,8 @@
             <test name="com.l7tech.common.util.BeanUtilsTest" haltonfailure="no"/>
             <test name="com.l7tech.common.util.FunctionsTest" haltonfailure="no"/>
             <test name="com.l7tech.server.log.syslog.SyslogManagerTest" haltonfailure="no"/>
+            <test name="com.l7tech.policy.variable.VariableMetadataTest" haltonfailure="no"/>
+            <test name="com.l7tech.policy.ExpandVariablesTest" haltonfailure="no"/>
 
             <!--
               Add possibly-slow intensive nightly tests here **

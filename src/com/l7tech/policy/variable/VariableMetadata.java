@@ -100,13 +100,13 @@ public class VariableMetadata implements Serializable {
 
     public static String validateName(String name) {
         char c0 = name.charAt(0);
-        if ("$".indexOf(c0) >= 0 || !Character.isJavaIdentifierStart(c0)) // Java allows '$', we don't
+        if (!(Character.isLetter(c0) || c0 == '_')) // We have more restrictive rules than Java for initial characters
             return "variable names must not start with '" + c0 + "'";
 
         for (int i = 0; i < name.toCharArray().length; i++) {
             char c = name.toCharArray()[i];
             if (c == '.') continue; // We allow '.', Java doesn't
-            if (!Character.isJavaIdentifierPart(c))
+            if (!Character.isJavaIdentifierPart(c) || c == '$') // Java allows '$', we don't
                 return "variable names must not contain '" + c + "'";
         }
         return null;
