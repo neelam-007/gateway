@@ -11,28 +11,27 @@ import com.l7tech.common.audit.MessageSummaryAuditDetail;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
 
 import javax.wsdl.Operation;
+import java.io.UnsupportedEncodingException;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Arrays;
-import java.util.List;
-import java.text.MessageFormat;
-import java.io.UnsupportedEncodingException;
 
 /**
  * A MessageSummaryAuditRecord must be generated upon the conclusion of the processing of a message,
@@ -170,7 +169,7 @@ public class MessageSummaryAuditFactory {
                 return null;
             }
             final PartInfo part = mk.getFirstPart();
-            byte[] req = HexUtils.slurpStream(part.getInputStream(isRequest));
+            byte[] req = HexUtils.slurpStream(part.getInputStream(false));
             lengthHolder[0] = req.length;
             ContentTypeHeader cth = part.getContentType();
             String encoding = null;
