@@ -3836,7 +3836,6 @@
                 <include name="ssg_appliance_startup_config.sh"/>
 				<include name="tcp_tune.sh"/>
 				<include name="iptables"/>
-                <include name="iptables-singlenet"/>
                 <include name="partition_firewall.pl"/>
                 <include name="ssg-initd"/>
                 <include name="ssg-dbstatus-initd"/>
