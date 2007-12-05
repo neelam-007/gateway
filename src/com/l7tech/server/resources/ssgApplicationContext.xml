@@ -58,6 +58,8 @@
                                 <value>trafficLoggerRecordRes</value>
                             </list>
                         </entry>
+                        <entry key="sinkManager"><list><value>logLevels</value></list></entry>
+                        <entry key="auditLogListenerTarget"><list><value>auditBatchExternal</value></list></entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -476,6 +478,7 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
         <property name="keystore" ref="keystore"/>
+        <!-- <property name="auditLogListener" ref="auditLogListener"/>-->
     </bean>
 
     <!-- server side Status Update Manager -->
@@ -791,6 +794,21 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="syslogManager"/>
         <constructor-arg ref="trafficLogger"/>
+    </bean>
+
+    <bean id="auditLogListenerTarget" class="com.l7tech.server.log.FilteringAuditLogListener">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg>
+            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+                <property name="targetObject" ref="sinkManager"/>
+                <property name="targetMethod" value="getPublishingSink"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="auditLogListener" class="com.l7tech.spring.factory.config.LazyProxyFactoryBean">
+        <constructor-arg value="auditLogListenerTarget"/>
+        <constructor-arg value="com.l7tech.server.audit.AuditLogListener"/>
     </bean>
 
 </beans>

@@ -40,4 +40,11 @@
     <bean id="clusterPropertyManager" class="com.l7tech.cluster.MockClusterPropertyManager"/>
 
     <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerStub"/>
+
+    <bean id="auditLogListener" class="com.l7tech.server.log.FilteringAuditLogListener">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.log.LoggingMessageSink"/>
+        </constructor-arg>
+    </bean>
 </beans>

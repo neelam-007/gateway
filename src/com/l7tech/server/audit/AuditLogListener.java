@@ -34,6 +34,7 @@ public interface AuditLogListener {
      * Notification of persistence of and audit record.
      *
      * @param record the record being persisted.
+     * @param header true if header
      */
-    void notifyRecordFlushed(AuditRecord record);
+    void notifyRecordFlushed(AuditRecord record, boolean header);
 }

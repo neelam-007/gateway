@@ -54,15 +54,16 @@ public class SinkConfiguration extends NamedEntityImp {
     }
 
     public static enum SeverityThreshold {
+        ALL,
         CONFIG,
         INFO,
         WARNING,
         SEVERE
     }
 
-    public static final String CATEGORY_GATEWAY_LOGS = "Gateway Log";
-    public static final String CATEGORY_TRAFFIC_LOGS = "Traffic Log";
-    public static final String CATEGORY_AUDITS = "Audits";
+    public static final String CATEGORY_GATEWAY_LOGS = "LOG";
+    public static final String CATEGORY_TRAFFIC_LOGS = "TRAFFIC";
+    public static final String CATEGORY_AUDITS = "AUDIT";
     public static final Set<String> CATEGORIES_SET;
     static {
         Set<String> categories = new HashSet<String>();
@@ -79,6 +80,18 @@ public class SinkConfiguration extends NamedEntityImp {
     public static final String PROP_FILE_LOG_COUNT = "file.logCount";
     /** the property name for the format */
     public static final String PROP_FILE_FORMAT = "file.format";
+
+    public static final String FILE_FORMAT_RAW = "RAW";
+    public static final String FILE_FORMAT_STANDARD = "STANDARD";
+    public static final String FILE_FORMAT_VERBOSE = "VERBOSE";
+    public static final Set<String> FILE_FORMAT_SET;
+    static {
+        Set<String> formats = new HashSet<String>();
+        formats.add(FILE_FORMAT_RAW);
+        formats.add(FILE_FORMAT_STANDARD);
+        formats.add(FILE_FORMAT_VERBOSE);
+        FILE_FORMAT_SET = Collections.unmodifiableSet(formats);
+    }
 
     // Syslog sink property names
     /** The property name for the syslog protocol to use */

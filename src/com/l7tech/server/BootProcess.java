@@ -18,13 +18,11 @@ import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.system.*;
-import com.l7tech.server.service.ServiceManager;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.dao.DataAccessException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.SAXParserFactory;
@@ -48,10 +46,17 @@ public class BootProcess
     private boolean wasStarted = false;
 
     static {
-        String DEFAULT_LOGPROPERTIES_PATH = ServerConfig.getInstance().getPropertyCached("configDirectory") + File.separator + "ssglog.properties";
-        JdkLoggerConfigurator.configure("com.l7tech.logging",
-          new File(DEFAULT_LOGPROPERTIES_PATH).exists() ?
-            DEFAULT_LOGPROPERTIES_PATH : "ssglog.properties", true);
+        ServerConfig serverConfig = ServerConfig.getInstance();
+        String logConfigurationPath = serverConfig.getPropertyCached("configDirectory") + File.separator + "ssglog.properties";
+
+        if ( new File(logConfigurationPath).exists() ) {
+            JdkLoggerConfigurator.configure("com.l7tech.logging", "ssglog.properties", logConfigurationPath, true);
+        } else {
+            // specify "ssglog.properties" twice since the non-default one can be overridden by
+            // a system property.
+            JdkLoggerConfigurator.configure("com.l7tech.logging", "ssglog.properties", "ssglog.properties", true);
+        }
+
         logger = Logger.getLogger(BootProcess.class.getName());
     }
 
@@ -313,6 +318,7 @@ public class BootProcess
         file = new File(file, "jaxp.properties");
         InputStream in = null;
         try {
+            //noinspection IOResourceOpenedButNotSafelyClosed
             in = new FileInputStream(file);
             jaxpProps.load(in);
         } catch (IOException e) {

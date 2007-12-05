@@ -1,13 +1,17 @@
 package com.l7tech.common.util;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+import java.io.SequenceInputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
+import java.util.Collections;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -27,6 +31,7 @@ import java.util.logging.Logger;
  * @version 23-Apr-2004
  */
 public class JdkLoggerConfigurator {
+    private static final Logger logger = Logger.getLogger(JdkLoggerConfigurator.class.getName());
     private static Probe probe;
     private static AtomicBoolean serviceNameAppenderState =
             new AtomicBoolean(Boolean.getBoolean("com.l7tech.logging.appendservicename"));
@@ -49,7 +54,7 @@ public class JdkLoggerConfigurator {
      * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found,
      */
     public static synchronized void configure(String classname, String shippedLoggingProperties) {
-        configure(classname, shippedLoggingProperties, false);
+        configure(classname, null, shippedLoggingProperties, false);
     }
 
     /**
@@ -63,7 +68,21 @@ public class JdkLoggerConfigurator {
      * @param reloading                whether to start the configuration reloading thread
      */
     public static synchronized void configure(String classname, String shippedLoggingProperties, boolean reloading) {
-        InputStream in = null;
+        configure(classname, null, shippedLoggingProperties, reloading);
+    }
+
+    /**
+     * initialize logging, try different strategies. First look for the system
+     * property <code>java.util.logging.config.file</code>, then look for
+     * <code>logging.properties</code>. If that fails fall back to the
+     * <code>shippedLoggingProperties</code>
+     *
+     * @param classname                the classname to use for logging info about which logging.properties was found
+     * @param shippedDefaults          path or file for default log properties (these are overridden by those in shippedLoggingProperties)
+     * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found
+     * @param reloading                whether to start the configuration reloading thread
+     */
+    public static synchronized void configure(String classname, String shippedDefaults, String shippedLoggingProperties, boolean reloading) {
         try {
             System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
             String cf = SyspropUtil.getProperty("java.util.logging.config.file");
@@ -77,37 +96,58 @@ public class JdkLoggerConfigurator {
             boolean configFound = false;
             String configCandidate = null;
             File probeFile = null;
+            URL probeDef = null;
+            final ClassLoader cl = JdkLoggerConfigurator.class.getClassLoader();
             final LogManager logManager = LogManager.getLogManager();
+
+            // Check for defaults
+            if ( shippedDefaults!=null ) {
+                File defaultsFile = new File(shippedDefaults);
+                if ( defaultsFile.exists() ) {
+                    probeDef = defaultsFile.toURI().toURL();
+                } else {
+                    probeDef = cl.getResource(shippedDefaults);
+                }
+            }
+
+            // Check config files
             for (Iterator iterator = configCandidates.iterator(); iterator.hasNext();) {
                 configCandidate = (String)iterator.next();
-                final File file = new File(configCandidate);
 
+                final File file = new File(configCandidate);
                 if (file.exists()) {
-                    in = file.toURI().toURL().openStream();
-                    if (in != null) {
-                        logManager.readConfiguration(in);
-                        probeFile = file;
+                    if  ( readConfiguration(logManager, probeDef, file.toURI().toURL()) ) {
                         configFound = true;
-                        updateState();
+                        probeFile = file;
                         break;
                     }
                 }
-                ClassLoader cl = JdkLoggerConfigurator.class.getClassLoader();
+
                 URL resource = cl.getResource(configCandidate);
-                if (resource != null) {
-                    logManager.readConfiguration(resource.openStream());
+                if ( readConfiguration(logManager, probeDef, resource) ) {
                     configFound = true;
-                    updateState();
                     probeFile = new File(resource.getPath());
                     break;
                 }
             }
+
             Logger logger = Logger.getLogger(classname);
-            if (configFound) {
-                logger.config("Logging initialized from '" + configCandidate + "'");
+            if ( probeDef!=null || configFound ) {
+                updateState();
+
+                if ( probeDef!=null) {
+                    if ( configFound ) {
+                        logger.config("Logging initialized from '"+configCandidate+"', with defaults from '"+probeDef+"'");
+                    } else {
+                        logger.config("Logging initialized with defaults from '"+probeDef+"'");
+                    }
+                } else {
+                    logger.config("Logging initialized from '" + configCandidate + "'");
+                }
             } else {
                 logger.warning("No logging configuration found " + configCandidates);
             }
+
             if (reloading && probeFile != null) {
                 if (probe != null) { // kill the old probe
                     probe.interrupt();
@@ -118,18 +158,13 @@ public class JdkLoggerConfigurator {
                     }
                     probe = null;
                 }
-                probe = new Probe(probeFile, getInterval(), classname);
+                probe = new Probe(probeFile, probeDef, getInterval(), classname);
                 probe.start();
             }
         } catch (IOException e) {
             e.printStackTrace(System.err);
         } catch (SecurityException e) {
             e.printStackTrace(System.err);
-        } finally {
-            try {
-                if (in != null) in.close();
-            } catch (IOException e) { /*swallow*/
-            }
         }
 
         setupLog4j();
@@ -149,6 +184,69 @@ public class JdkLoggerConfigurator {
     }
 
     /**
+     * Read log configuration from the given URL to the given manager.
+     *
+     * This will read configuration from the defaults URL and from the
+     * configuration url in that order (as though they were a single
+     * log config file)
+     *
+     * If either URL is null it is ignored
+     */
+    private static boolean readConfiguration(final LogManager logManager,
+                                             final URL configDefs,
+                                             final URL config) throws IOException {
+        boolean readConfigUrl = false;
+
+        InputStream defaultsIn = null;
+        InputStream configIn = null;
+        InputStream fullIn = null;
+        try {
+            //
+            defaultsIn = configDefs!=null ? configDefs.openStream() : null;
+            configIn = config!=null ? config.openStream() : null;
+
+            // read into memory
+            if ( configIn == null ) {
+                fullIn = defaultsIn;
+            } else if ( defaultsIn == null ) {
+                fullIn = configIn;
+                readConfigUrl = true;
+            } else {
+                //noinspection IOResourceOpenedButNotSafelyClosed
+                fullIn = new SequenceInputStream(defaultsIn, configIn);
+                readConfigUrl = true;
+            }
+
+            if ( fullIn != null ) {
+                byte[] configBytes = HexUtils.slurpStream(fullIn);
+
+                // work around bug http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5035854
+                // by ensuring all Loggers mentioned in the configuration actually exist.
+                ByteArrayInputStream bais = new ByteArrayInputStream(configBytes);
+                Properties loggerProps = new Properties();
+                loggerProps.load(bais);
+
+                for (String propertyName : (Collection<String>) Collections.list(loggerProps.propertyNames())) {
+                    if (propertyName.endsWith(".level")) {
+                        String loggerName = propertyName.substring(0, propertyName.length()-6);
+                        Logger.getLogger(loggerName);
+                    }
+                }
+
+                // load configuration
+                bais = new ByteArrayInputStream(configBytes);
+                logManager.readConfiguration(bais);
+            }
+        } finally {
+            ResourceUtils.closeQuietly( fullIn );
+            ResourceUtils.closeQuietly( defaultsIn );
+            ResourceUtils.closeQuietly( configIn );
+        }
+
+        return readConfigUrl;
+    }
+
+    /**
      * If the Log4j library is present then configure it to use our
      * logging framework.
      */
@@ -156,8 +254,8 @@ public class JdkLoggerConfigurator {
         try {
             Class configClass = Class.forName("com.l7tech.common.util.Log4jJdkLogAppender");
             java.lang.reflect.Method configMethod = configClass.getMethod("init", new Class[0]);
-            configMethod.invoke(null, new Object[0]);
-            Logger.getLogger(JdkLoggerConfigurator.class.getName()).log(Level.INFO, "Redirected Log4j logging to JDK logging.");
+            configMethod.invoke(null);
+            logger.log(Level.INFO, "Redirected Log4j logging to JDK logging.");
         }
         catch(NoClassDefFoundError ncdfe) {
             // then we won't configure it ...            
@@ -183,7 +281,13 @@ public class JdkLoggerConfigurator {
         /**
          * The last file read
          */
-        private File file;
+        private final File file;
+
+        /**
+         * URL for logging configuration defaults
+         */
+        private final URL defaultsUrl;
+
         /**
          * The lastModified time of prevFile
          */
@@ -194,17 +298,12 @@ public class JdkLoggerConfigurator {
          */
         private String loggerName;
 
-        Probe(File file) {
-            this(file, getInterval(), "com.l7tech.logging");
-        }
-
-        Probe(File file, long interval, String loggerName) {
-            super("Logging config file probe");
-            setDaemon(true);
-            this.interval = interval;
+        Probe(File file, URL defaultsUrl, long interval, String loggerName) {
             this.file = file;
+            this.defaultsUrl = defaultsUrl;
+            this.interval = interval;
             this.loggerName = loggerName;
-            prevModified = this.file.lastModified();
+            this.prevModified = this.file.lastModified();
         }
 
         public void run() {
@@ -219,8 +318,7 @@ public class JdkLoggerConfigurator {
                       (lastModified != prevModified)) {
                         InputStream in = null;
                         try {
-                            in = new FileInputStream(file);
-                            logManager.readConfiguration(in);
+                            readConfiguration(logManager, defaultsUrl, file.toURI().toURL());
                             interval = getInterval();
                             logger.log(Level.CONFIG,
                                        "logging config file reread complete, new interval is {0} secs",

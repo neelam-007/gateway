@@ -1,6 +1,7 @@
 package com.l7tech.server.log;
 
 import com.l7tech.common.log.SinkConfiguration;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.FindException;
@@ -16,13 +17,18 @@ import org.springframework.context.ApplicationListener;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Properties;
+import java.util.Map;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
+import java.io.StringReader;
+import java.io.IOException;
 
 /**
  * Provides the ability to do CRUD operations on SinkConfiguration rows in the database.
@@ -30,7 +36,7 @@ import java.io.File;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SinkManager
         extends HibernateEntityManager<SinkConfiguration, EntityHeader>
-        implements ApplicationListener {
+        implements ApplicationListener, PropertyChangeListener {
     //- PUBLIC
 
     public SinkManager( final ServerConfig serverConfig,
@@ -56,6 +62,46 @@ public class SinkManager
         return "sink_config";
     }
 
+    /**
+     * Test the given sinkConfiguration (useful for syslog)
+     *
+     * @param sinkConfiguration The configuration to test.
+     * @param testMessage The message to send.
+     * @return True if the message may have been sent
+     */
+    public boolean test(final SinkConfiguration sinkConfiguration, final String testMessage) {
+        boolean success = false;
+
+        if ( sinkConfiguration != null ) {
+            MessageSinkSupport sink = buildSinkForConfiguration( sinkConfiguration );
+            if ( sink != null ) {
+                try {
+                    for ( MessageCategory category : MessageCategory.values() ) {
+                        if ( sink.isCategoryEnabled(category) ) {
+                            LogRecord testRecord = new LogRecord( Level.INFO,
+                                    testMessage==null ? "Test message." : testMessage );
+
+                            // up level if required for message to be sent
+                            Level testLevel = Level.parse(sinkConfiguration.getSeverity().toString());
+                            if ( testLevel.intValue() > Level.INFO.intValue() ) {
+                                testRecord.setLevel(testLevel);
+                            }
+
+                            sink.message(category, testRecord);
+
+                            break;
+                        }
+                    }
+                } finally {
+                    // we don't know how long it will take to send a message so leave open for 60 secs
+                    delayedClose(sink, 60000);                    
+                }
+            }
+        }
+
+        return success;
+    }
+
     public void onApplicationEvent(final ApplicationEvent event) {
         if ( event instanceof EntityInvalidationEvent ) {
             EntityInvalidationEvent evt = (EntityInvalidationEvent) event;
@@ -66,11 +112,20 @@ public class SinkManager
         }
     }
 
+    public void propertyChange(PropertyChangeEvent evt) {
+        updateLogLevels( (String)evt.getOldValue(), (String)evt.getNewValue() );    
+    }
+
+    public MessageSink getPublishingSink() {
+        return publishingSink;
+    }
+
     //- PROTECTED
 
     @Override
     protected void initDao() {
         installHandlers();
+        updateLogLevels(null, null);
         installLogConfigurationListener();
         rebuildLogSinks();
     }
@@ -80,8 +135,11 @@ public class SinkManager
     private static final Logger logger = Logger.getLogger(SinkManager.class.getName());
 
     private static final String DEFAULT_TRAFFIC_LOG_NAME_POSTFIX = "_%g_%u.log";
-    
+    private static final String SCPROP_LOG_LEVELS = "logLevels";
+    private static final String TRAFFIC_LOGGER_NAME = "com.l7tech.traffic";
+
     private final DispatchingMessageSink dispatchingSink = new DispatchingMessageSink();
+    private final MessageSink publishingSink = new DelegatingMessageSink(dispatchingSink);
     private final ServerConfig serverConfig;
     private final SyslogManager syslogManager;
     private final TrafficLogger trafficLogger;
@@ -93,8 +151,71 @@ public class SinkManager
         Logger rootLogger = Logger.getLogger("");
         rootLogger.addHandler(new SinkHandler(dispatchingSink, MessageCategory.LOG));
 
-        Logger trafficLogger = Logger.getLogger("com.l7tech.traffic");
+        Logger trafficLogger = Logger.getLogger(TRAFFIC_LOGGER_NAME);
         trafficLogger.addHandler(new SinkHandler(dispatchingSink, MessageCategory.TRAFFIC));
+
+        String value = LogManager.getLogManager().getProperty(TRAFFIC_LOGGER_NAME + ".useParentHandlers");
+        if ( value != null ) {
+            trafficLogger.setUseParentHandlers( Boolean.valueOf(value) );
+        }        
+    }
+
+    /**
+     * Update the log levels with any customized properties.
+     *
+     * We detect if a log level has been removed so we can set it to it's parent value.
+     */
+    private void updateLogLevels(final String oldValue, final String newValue) {
+        String loggingLevels = newValue;
+        if ( loggingLevels == null )
+            loggingLevels = serverConfig.getPropertyCached(SCPROP_LOG_LEVELS);
+
+        try {
+            // load props
+            Properties levelProps = new Properties();
+            levelProps.load(new StringReader(loggingLevels));
+
+            Properties oldProps = new Properties();
+            if (oldValue != null)
+                oldProps.load(new StringReader(oldValue));
+
+            // get manager
+            LogManager manager = LogManager.getLogManager();
+
+            // set configured levels
+            for ( Map.Entry<Object,Object> property : levelProps.entrySet() ) {
+                String key = (String) property.getKey();
+                String value = (String) property.getValue();
+
+                if ( key.endsWith(".level") && manager.getProperty(key)==null) {
+                    String name = key.substring(0, key.length()-6);
+                    try {
+                        Level configLevel = Level.parse(value);
+                        Logger configLogger = Logger.getLogger(name);
+                        configLogger.setLevel(configLevel);
+                    } catch (IllegalArgumentException iae) {
+                        // ignore invalid level
+                        logger.log(Level.CONFIG, "Ignoring invalid level ''{0}'', for logger ''{1}''.", 
+                                new Object[]{value, name});
+                    }
+                }
+            }
+
+            // clear removed levels (so parent level is used)
+            for ( Object KeyObj : oldProps.keySet() ) {
+                String key = (String) KeyObj;
+
+                if ( key.endsWith(".level") &&
+                        manager.getProperty(key)==null &&
+                        levelProps.getProperty(key)==null) {
+                    String name = key.substring(0, key.length()-6);
+                    Logger configLogger = Logger.getLogger(name);
+                    configLogger.setLevel(null);
+                }
+            }
+        } catch (IOException ioe) {
+            logger.log(Level.WARNING, "Unexpected error processing logging levels.", ioe);
+        }
     }
 
     /**
@@ -105,6 +226,7 @@ public class SinkManager
         LogManager.getLogManager().addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
                 installHandlers();
+                updateLogLevels(null, null);
             }
         });
     }
@@ -223,13 +345,13 @@ public class SinkManager
                 // cleanup any remaining wildcards ...
                 name = name.replace('%', '_');
 
-                // TODO [steve] configure the format for the traffic log
                 SinkConfiguration configuration = new SinkConfiguration();
                 configuration.setName( name );
                 configuration.setSeverity( SinkConfiguration.SeverityThreshold.INFO );
                 configuration.setCategories( SinkConfiguration.CATEGORY_TRAFFIC_LOGS );
                 configuration.setProperty( SinkConfiguration.PROP_FILE_MAX_SIZE, limit );
                 configuration.setProperty( SinkConfiguration.PROP_FILE_LOG_COUNT, count );
+                configuration.setProperty( SinkConfiguration.PROP_FILE_FORMAT, SinkConfiguration.FILE_FORMAT_RAW );
                 sink = new FileMessageSink( serverConfig, configuration );
             } catch (MessageSinkSupport.ConfigurationException ce) {
                 logger.log( Level.WARNING, "Error creating traffic log for cluster properties.", ce);            
@@ -281,5 +403,40 @@ public class SinkManager
         }
 
         return sink;
+    }
+
+    /**
+     * Close the given sink after a timeout.
+     *
+     * This method should not be used often. 
+     */
+    private void delayedClose( final MessageSink sink, final long time ) {
+        Thread cleanup = new Thread( new Runnable(){
+            public void run() {
+                try {
+                    Thread.sleep(time);
+                    ResourceUtils.closeQuietly( sink );
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }, "SinkTest-Cleanup" );
+        cleanup.setDaemon(true);
+        cleanup.start();
+    }
+
+    private static final class DelegatingMessageSink implements MessageSink {
+        private final MessageSink sink;
+
+        private DelegatingMessageSink( final MessageSink sink ) {
+            this.sink = sink;
+        }
+
+        public void message(final MessageCategory category, final LogRecord record) {
+            sink.message(category, record);
+        }
+
+        public void close() {            
+        }
     }
 }

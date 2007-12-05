@@ -35,7 +35,7 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
     public FilteringAuditLogListener(final ServerConfig serverConfig,
                                      final MessageSink sink) {
         this.sink = sink;
-        this.auditOnCreate.set(serverConfig.getBooleanPropertyCached(PROP_BATCH, PROP_BATCH_DEFAULT, 30000L));
+        this.auditOnCreate.set(!serverConfig.getBooleanPropertyCached(PROP_BATCH, PROP_BATCH_DEFAULT, 30000L));
     }
 
     /**
@@ -78,10 +78,12 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      * Handle notification of an audit record flush.
      *
      * @param audit The audit record
+     * @param header True if is header
      */
-    public void notifyRecordFlushed(final AuditRecord audit) {
-        LogRecord record = generateMessage(audit);
-        processMessage(record);
+    public void notifyRecordFlushed(final AuditRecord audit, final boolean header) {
+        LogRecord record = generateMessage(audit, header);
+        if ( record != null )
+            processMessage(record);
     }
 
     /**
@@ -91,7 +93,7 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      */
     public void propertyChange(final PropertyChangeEvent evt) {
         if ( PROP_BATCH.equals( evt.getPropertyName() ) ) {
-            auditOnCreate.set(Boolean.parseBoolean((String)evt.getNewValue()));
+            auditOnCreate.set(!Boolean.parseBoolean((String)evt.getNewValue()));
         }
     }
 
@@ -110,7 +112,7 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
                                       final AuditDetailMessage message,
                                       final String[] params,
                                       final Throwable thrown) {
-        AuditLogRecord record = new AuditLogRecord(message.getLevel(), message.getMessage());
+        AuditLogRecord record = new AuditLogRecord(message.getLevel(), message.getId() + ": " + message.getMessage());
 
         record.setLoggerName(source);
         if (thrown != null)
@@ -145,16 +147,34 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
     /**
      * Generate a LogRecord
      */
-    private LogRecord generateMessage(final AuditRecord audit) {
-        AuditLogRecord record = new AuditLogRecord(audit.getLevel(), audit.getMessage());
+    private LogRecord generateMessage(final AuditRecord audit, final boolean header) {
+        AuditLogRecord record = null;
 
-        // TODO move this to the AuditRecord subclasses
-        if ( audit instanceof MessageSummaryAuditRecord) {
-            record.setLoggerName("com.l7tech.server.message");
-        } else if ( audit instanceof AdminAuditRecord ) {
-            record.setLoggerName("com.l7tech.server.admin");
+        if ( header ) {
+            if ( audit instanceof MessageSummaryAuditRecord) {
+                PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
+
+                if ( pec != null && pec.getService() != null ) {
+                    String serviceDesc = pec.getService().getName();
+                    if ( pec.getService().getRoutingUri() != null ) {
+                        serviceDesc += " [" + pec.getService().getRoutingUri() + "]";
+                    }
+                    record = new AuditLogRecord(Level.INFO, "Processing request for service: " + serviceDesc);
+                }
+            }
         } else {
-            record.setLoggerName("com.l7tech.server");
+            record = new AuditLogRecord(audit.getLevel(), audit.getMessage());
+        }
+
+        if ( record != null ) {
+            // TODO move this to the AuditRecord subclasses
+            if ( audit instanceof MessageSummaryAuditRecord) {
+                record.setLoggerName("com.l7tech.server.message");
+            } else if ( audit instanceof AdminAuditRecord ) {
+                record.setLoggerName("com.l7tech.server.admin");
+            } else {
+                record.setLoggerName("com.l7tech.server");
+            }
         }
 
         return record;

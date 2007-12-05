@@ -126,6 +126,8 @@ public class LogSinkManagerWindow extends JDialog {
             }
         });
 
+        Utilities.setDoubleClickAction(logSinkTable, propertiesButton);
+
         loadSinkConfigurations();
         pack();
         enableOrDisableButtons();

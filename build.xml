@@ -1339,6 +1339,7 @@
         </javac>
         <copy todir="${build.classes}">
             <fileset dir="${src.root}/etc">
+                <include name="ssglog.properties"/>
                 <include name="serverconfig.properties"/>
                 <include name="ehcache.xml"/>
             </fileset>
@@ -1349,18 +1350,6 @@
                 <include name="**/XMLSchema.dtd"/>
                 <include name="**/*.aegis.xml"/>
             </fileset>
-        </copy>
-        <!-- include a copy of ssglog.properties that outputs to the console at CONFIG level -->
-        <copy todir="${build.classes}" preservelastmodified="true">
-            <fileset dir="${src.root}/etc">
-                <include name="ssglog.properties"/>
-            </fileset>
-            <filterchain>
-                <tokenfilter>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}handlers[ ]{0,32}=)[ 0-9\._\-,a-zA-Z]{0,1024}$" replace=" java.util.logging.ConsoleHandler"/>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}java.util.logging.ConsoleHandler.level[ ]{0,32}=)[ 0-9\._\-,a-zA-Z]{0,1024}$" replace=" CONFIG"/>
-                </tokenfilter>
-            </filterchain>
         </copy>
     </target>
 
@@ -1477,6 +1466,18 @@
                     <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.connection.password[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${deploy.db.password}"/>
                     <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.connection.driver_class[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${database.driver}"/>
                     <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.dbcp.validationQuery[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${database.pingstmt}"/>
+                </tokenfilter>
+            </filterchain>
+        </copy>
+        <!-- include a copy of ssglog.properties that outputs to the console at CONFIG level -->
+        <copy todir="${deploy.dir}/etc/conf/partitions/default_">
+            <fileset dir="${src.root}/etc">
+                <include name="ssglog.properties"/>
+            </fileset>
+            <filterchain>
+                <tokenfilter>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}handlers[ ]{0,32}=)[ 0-9\._\-,a-zA-Z]{0,1024}$" replace=" java.util.logging.ConsoleHandler"/>
+                    <replaceregex pattern="(?&lt;=^[ ]{0,32}java.util.logging.ConsoleHandler.level[ ]{0,32}=)[ 0-9\._\-,a-zA-Z]{0,1024}$" replace=" CONFIG"/>
                 </tokenfilter>
             </filterchain>
         </copy>
@@ -3561,14 +3562,8 @@
             <substitution expression="keystoredir=${install.target.keys}"/>
         </replaceregexp>
 
-        <copy file="${src.root}/etc/ssglog.properties" tofile="${install.src.ssglog.properties}"/>
+        <copy file="${src.root}/etc/ssglog.template.properties" tofile="${install.src.ssglog.properties}"/>
         <copy file="${src.root}/etc/uddi.properties" tofile="${install.src.uddi.properties}"/>
-
-        <echo>Patching ${install.src.ssglog.properties}...</echo>
-        <replaceregexp file="${install.src.ssglog.properties}">
-            <regexp pattern="java.util.logging.FileHandler.pattern=.*"/>
-            <substitution expression="java.util.logging.FileHandler.pattern=${install.target.logs}/ssg_%g_%u.log"/>
-        </replaceregexp>
 
         <!-- Copy cluster_hostname -->
         <copy file="${src.root}/etc/cluster_hostname" tofile="${install.src.cluster_hostname}-dist"/>

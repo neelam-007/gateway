@@ -2,17 +2,21 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DocumentSizeFilter;
 import com.l7tech.common.log.SinkConfiguration;
 import com.l7tech.common.log.LogSinkAdmin;
 import static com.l7tech.common.log.SinkConfiguration.SeverityThreshold;
 import static com.l7tech.common.log.SinkConfiguration.SinkType;
+import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
+import java.text.MessageFormat;
 
 /**
  * This is the dialog for updating the properties of a log sink configuration.
@@ -48,61 +52,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
     private InputValidator inputValidator;
     private SinkConfiguration sinkConfiguration;
+    private int testCount = 0;
     private boolean confirmed = false;
-
-    /**
-     * Provides a visible label and an enum value for the type combo box.
-     */
-    private static class TypeComboBoxValue {
-        String name;
-        SinkType value;
-
-        public TypeComboBoxValue(String name, SinkType value) {
-            this.name = name;
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
-
-    /**
-     * Provides a visible label and an enum value for the severity combo box.
-     */
-    private static class SeverityComboBoxValue {
-        String name;
-        SeverityThreshold value;
-
-        public SeverityComboBoxValue(String name, SeverityThreshold value) {
-            this.name = name;
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
-
-    /**
-     * Provides a visible label and a String value for the format combo box.
-     */
-    private static class FormatComboBoxValue {
-        String name;
-        String value;
-
-        public FormatComboBoxValue(String name, String value) {
-            this.name = name;
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
 
     /**
      * Creates a new instance of SinkConfigurationPropertiesDialog. The fields in the dialog
@@ -138,48 +89,6 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private void initResources() {
         Locale locale = Locale.getDefault();
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.SinkConfigurationPropertiesDialog", locale);
-    }
-
-    /**
-     * Creates the values for the type combo box. The visible labels are read from the resource bundle
-     * and the values are items from the SinkType enum.
-     *
-     * @return An array of values for the type combo box
-     */
-    private TypeComboBoxValue[] getTypeComboBoxValues() {
-        TypeComboBoxValue[] values = new TypeComboBoxValue[SinkType.values().length];
-        int i = 0;
-        for(SinkType value : SinkType.values()) {
-            String resourceString = resources.getString("baseSettings.type." + value.name() + ".text");
-            if(resourceString == null) {
-                values[i++] = new TypeComboBoxValue(value.name(), value);
-            } else {
-                values[i++] = new TypeComboBoxValue(resourceString, value);
-            }
-        }
-
-        return values;
-    }
-
-    /**
-     * Creates the values for the severity combo box. The visible labels are read from the resource bundle
-     * and the values are from the SeverityThreshold enum.
-     *
-     * @return An array of values for the severity combo box
-     */
-    private SeverityComboBoxValue[] getSeverityComboBoxValues() {
-        SeverityComboBoxValue[] values = new SeverityComboBoxValue[SeverityThreshold.values().length];
-        int i = 0;
-        for(SeverityThreshold value : SeverityThreshold.values()) {
-            String resourceString = resources.getString("baseSettings.severity." + value.name() + ".text");
-            if(resourceString == null) {
-                values[i++] = new SeverityComboBoxValue(value.name(), value);
-            } else {
-                values[i++] = new SeverityComboBoxValue(resourceString, value);
-            }
-        }
-
-        return values;
     }
 
     /**
@@ -234,22 +143,39 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         // When the type field is changed, enable or disable the tabs that aren't associated
         // with the new type value.
-        typeField.setModel(new DefaultComboBoxModel(getTypeComboBoxValues()));
+        typeField.setModel(new DefaultComboBoxModel(SinkType.values()));
+        typeField.setRenderer(new KeyedResourceRenderer(resources, "baseSettings.type.{0}.text"));
         typeField.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 enableDisableTabs();
             }
         });
 
-        severityField.setModel(new DefaultComboBoxModel(getSeverityComboBoxValues()));
+        severityField.setModel(new DefaultComboBoxModel(SeverityThreshold.values()));
+        severityField.setRenderer(new KeyedResourceRenderer(resources, "baseSettings.severity.{0}.text"));
 
         categoriesList.setListData(SinkConfiguration.CATEGORIES_SET.toArray());
+        categoriesList.setCellRenderer(new KeyedResourceRenderer(resources, "baseSettings.categories.{0}.text"));
+        inputValidator.addRule(new InputValidator.ValidationRule(){
+            public String getValidationError() {
+                String error = null;
+
+                if ( categoriesList.getSelectedValues().length==0 ) {
+                    return resources.getString("baseSettings.categories.errors.empty");
+                }
+
+                return error;
+            }
+        });
 
         // Name field must not be empty and must not be longer than 128 characters
+        ((AbstractDocument)nameField.getDocument()).setDocumentFilter(new DocumentSizeFilter(128));
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, new InputValidator.ComponentValidationRule(nameField) {
             public String getValidationError() {
-                if(nameField.getText().length() > 128) {
-                    return resources.getString("baseSettings.name.errors.tooLong");
+                if( nameField.getText().trim().length()==0 ) {
+                    return resources.getString("baseSettings.name.errors.empty");
+                } else if ( !ValidationUtils.isValidCharacters(nameField.getText().trim(), ValidationUtils.ALPHA_NUMERIC + "_-") ) {
+                    return resources.getString("baseSettings.name.errors.chars");
                 }
 
                 return null;
@@ -258,15 +184,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         inputValidator.validateWhenDocumentChanges(nameField);
 
         // Description field must not be longer than 1000 characters
-        inputValidator.constrainTextField(descriptionField, new InputValidator.ComponentValidationRule(descriptionField) {
-            public String getValidationError() {
-                if(descriptionField.getText().length() > 1000) {
-                    return resources.getString("baseSettings.description.errors.tooLong");
-                }
-
-                return null;
-            }
-        });
+        ((AbstractDocument)descriptionField.getDocument()).setDocumentFilter(new DocumentSizeFilter(1000));
     }
 
     /**
@@ -283,11 +201,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         numberEditor.getModel().setMinimum(1);
         numberEditor.getModel().setValue(1);
 
-        fileFormatField.setModel(new DefaultComboBoxModel(new Object[] {
-                new FormatComboBoxValue(resources.getString("fileSettings.format.RAW.text"), "RAW"),
-                new FormatComboBoxValue(resources.getString("fileSettings.format.STANDARD.text"), "STANDARD"),
-                new FormatComboBoxValue(resources.getString("fileSettings.format.VERBOSE.text"), "VERBOSE")
-        }));
+        fileFormatField.setModel(new DefaultComboBoxModel(SinkConfiguration.FILE_FORMAT_SET.toArray()));
+        fileFormatField.setRenderer(new KeyedResourceRenderer(resources, "fileSettings.format.{0}.text"));
         fileFormatField.setSelectedIndex(1);
     }
 
@@ -328,22 +243,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         // Setup the test button
         inputValidator.attachToButton(syslogTestMessageButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                SinkConfiguration newSinkConfiguration = null;
-                synchronized(SinkConfigurationPropertiesDialog.this) {
-                    SinkConfiguration oldSinkConfiguration = sinkConfiguration;
-
-                    try {
-                        sinkConfiguration = new SinkConfiguration();
-                        viewToModel();
-                        newSinkConfiguration = sinkConfiguration;
-                    } finally {
-                        sinkConfiguration = oldSinkConfiguration;
-                    }
-                }
-
-                if(newSinkConfiguration == null) {
-                    return;
-                }
+                SinkConfiguration newSinkConfiguration = new SinkConfiguration();
+                viewToModel( newSinkConfiguration );
 
                 Registry reg = Registry.getDefault();
                 if (!reg.isAdminContextPresent())
@@ -353,14 +254,15 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                     return;
                 }
 
-                logSinkAdmin.sendTestSyslogMessage(newSinkConfiguration);
+                logSinkAdmin.sendTestSyslogMessage(newSinkConfiguration, "Test message " + (++testCount) + ".");
             }
         });
 
         // If type is set to SYSLOG, then the syslog host must not be empty
+        ((AbstractDocument)syslogHostField.getDocument()).setDocumentFilter(new DocumentSizeFilter(512));
         inputValidator.constrainTextField(syslogHostField, new InputValidator.ComponentValidationRule(syslogHostField) {
             public String getValidationError() {
-                if(((TypeComboBoxValue)typeField.getSelectedItem()).value != SinkType.SYSLOG) {
+                if( typeField.getSelectedItem() != SinkType.SYSLOG ) {
                     return null;
                 }
 
@@ -372,9 +274,10 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             }
         });
         // If type is set to SYSLOG, then the syslog port must be between 0 and 65535
+        ((AbstractDocument)syslogPortField.getDocument()).setDocumentFilter(new DocumentSizeFilter(5));
         inputValidator.constrainTextField(syslogPortField, new InputValidator.ComponentValidationRule(syslogPortField) {
             public String getValidationError() {
-                if(((TypeComboBoxValue)typeField.getSelectedItem()).value != SinkType.SYSLOG) {
+                if( typeField.getSelectedItem() != SinkType.SYSLOG) {
                     return null;
                 }
 
@@ -401,7 +304,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      * of the type field.
      */
     private void enableDisableTabs() {
-        SinkType type = ((TypeComboBoxValue)typeField.getSelectedItem()).value;
+        SinkType type = (SinkType) typeField.getSelectedItem();
         switch(type) {
         case FILE:
             tabbedPane.setEnabledAt(1, true);
@@ -421,51 +324,50 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     /**
      * Updates the dialog fields to match the values from the backing SinkConfiguration.
      */
-    private synchronized void modelToView() {
-        modelToViewBase();
+    private void modelToView() {
+        modelToView(sinkConfiguration);
+    }
+
+    /**
+     * Updates the dialog fields to match the values from the given SinkConfiguration.
+     */
+    private void modelToView(final SinkConfiguration sinkConfiguration) {
+        modelToViewBase(sinkConfiguration);
         if(sinkConfiguration.getType() == null) {
-            modelToViewFile();
+            modelToViewFile(sinkConfiguration);
         } else {
             switch(sinkConfiguration.getType()) {
             case FILE:
-                modelToViewFile();
+                modelToViewFile(sinkConfiguration);
                 break;
             case SYSLOG:
-                modelToViewSyslog();
+                modelToViewSyslog(sinkConfiguration);
                 break;
             }
         }
     }
 
     /**
-     * Updates the base settings fields to match the values from the backing SinkConfiguration.
+     * Updates the base settings fields to match the values from the given SinkConfiguration.
      */
-    private void modelToViewBase() {
+    private void modelToViewBase(final SinkConfiguration sinkConfiguration) {
+        if ( sinkConfiguration.getOid() != SinkConfiguration.DEFAULT_OID ) {
+            nameField.setEditable(false);
+        }
         nameField.setText(sinkConfiguration.getName());
         enabledField.setSelected(sinkConfiguration.isEnabled());
         descriptionField.setText(sinkConfiguration.getDescription());
+        if ( sinkConfiguration.getType()!=null )
+            typeField.setSelectedItem(sinkConfiguration.getType());
+        else
+            typeField.setSelectedItem(SinkType.FILE);
+        if ( sinkConfiguration.getSeverity()!=null )
+            severityField.setSelectedItem(sinkConfiguration.getSeverity());
+        else
+            severityField.setSelectedItem(SeverityThreshold.INFO);
 
-        for(int i = 0;i < typeField.getModel().getSize();i++) {
-            TypeComboBoxValue value = (TypeComboBoxValue)typeField.getItemAt(i);
-            if(sinkConfiguration.getType() == null && value.value == SinkType.FILE ||
-                    sinkConfiguration.getType() == value.value)
-            {
-                typeField.setSelectedIndex(i);
-                break;
-            }
-        }
-
-        for(int i = 0;i < severityField.getModel().getSize();i++) {
-            SeverityComboBoxValue value = (SeverityComboBoxValue)severityField.getItemAt(i);
-            if(sinkConfiguration.getSeverity() == null && value.value == SeverityThreshold.INFO ||
-                    sinkConfiguration.getSeverity() == value.value)
-            {
-                severityField.setSelectedIndex(i);
-                break;
-            }
-        }
-        
         categoriesList.clearSelection();
+        boolean selected = false;
         if(sinkConfiguration.getCategories() != null) {
             HashSet<String> values = new HashSet<String>();
             String[] categories = sinkConfiguration.getCategories().split(",");
@@ -473,38 +375,36 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
             for(int i = 0;i < categoriesList.getModel().getSize();i++) {
                 if(values.contains(categoriesList.getModel().getElementAt(i))) {
+                    selected = true;
                     categoriesList.getSelectionModel().addSelectionInterval(i, i);
                 }
             }
         }
+        if (!selected) {
+            categoriesList.setSelectedValue(SinkConfiguration.CATEGORY_GATEWAY_LOGS, true);
+        }
     }
 
     /**
-     * Updates the file settings fields to match the values from the backing SinkConfiguration.
+     * Updates the file settings fields to match the values from the given SinkConfiguration.
      */
-    private void modelToViewFile() {
+    private void modelToViewFile(final SinkConfiguration sinkConfiguration) {
         String value = sinkConfiguration.getProperty(SinkConfiguration.PROP_FILE_MAX_SIZE);
         fileMaxSizeField.setValue(value == null ? 1024 : Integer.parseInt(value));
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_FILE_LOG_COUNT);
         fileLogCount.setValue(value == null ? 1 : Integer.parseInt(value));
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_FILE_FORMAT);
         if(value == null) {
-            fileFormatField.setSelectedIndex(1);
+            fileFormatField.setSelectedItem(SinkConfiguration.FILE_FORMAT_STANDARD);
         } else {
-            for(int i = 0;i < fileFormatField.getItemCount();i++) {
-                FormatComboBoxValue formatValue = (FormatComboBoxValue)fileFormatField.getItemAt(i);
-                if(formatValue.value.equals(value)) {
-                    fileFormatField.setSelectedIndex(i);
-                    break;
-                }
-            }
+            fileFormatField.setSelectedItem(value);
         }
     }
 
     /**
-     * Updates the syslog settings to match the values from the backing SinkConfiguration.
+     * Updates the syslog settings to match the values from the given SinkConfiguration.
      */
-    private void modelToViewSyslog() {
+    private void modelToViewSyslog(final SinkConfiguration sinkConfiguration) {
         String value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_PROTOCOL);
         if(value == null || value.equals(SinkConfiguration.PROP_SYSLOG_PROTOCOL_TCP)) {
             syslogProtocolField.setSelectedItem(resources.getString("syslogSettings.protocol.TCP.text"));
@@ -528,14 +428,21 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     /**
      * Updates the backing SinkConfiguration with the values from this dialog.
      */
-    private synchronized void viewToModel() {
-        viewToModelBase();
+    private void viewToModel() {
+        viewToModel(sinkConfiguration);
+    }
+
+    /**
+     * Updates the backing SinkConfiguration with the values from this dialog.
+     */
+    private void viewToModel(final SinkConfiguration sinkConfiguration) {
+        viewToModelBase(sinkConfiguration);
         switch(sinkConfiguration.getType()) {
         case FILE:
-            viewToModelFile();
+            viewToModelFile(sinkConfiguration);
             break;
         case SYSLOG:
-            viewToModelSyslog();
+            viewToModelSyslog(sinkConfiguration);
             break;
         }
     }
@@ -543,12 +450,13 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     /**
      * Updates the backing SinkConfiguration with the base settings field values.
      */
-    private void viewToModelBase() {
-        sinkConfiguration.setName(nameField.getText());
+    private void viewToModelBase(final SinkConfiguration sinkConfiguration) {
+        if ( nameField.isEditable())
+            sinkConfiguration.setName(nameField.getText().trim());
         sinkConfiguration.setEnabled(enabledField.isSelected());
         sinkConfiguration.setDescription(descriptionField.getText());
-        sinkConfiguration.setType(((TypeComboBoxValue)typeField.getSelectedItem()).value);
-        sinkConfiguration.setSeverity(((SeverityComboBoxValue)severityField.getSelectedItem()).value);
+        sinkConfiguration.setType((SinkType)typeField.getSelectedItem());
+        sinkConfiguration.setSeverity((SeverityThreshold)severityField.getSelectedItem());
         StringBuilder sb = new StringBuilder();
         for(Object selectedValue : categoriesList.getSelectedValues()) {
             if(sb.length() > 0) {
@@ -562,16 +470,16 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     /**
      * Updates the backing SinkConfiguration with the file settings field values.
      */
-    private void viewToModelFile() {
+    private void viewToModelFile(final SinkConfiguration sinkConfiguration) {
         sinkConfiguration.setProperty(SinkConfiguration.PROP_FILE_MAX_SIZE, fileMaxSizeField.getValue().toString());
         sinkConfiguration.setProperty(SinkConfiguration.PROP_FILE_LOG_COUNT, fileLogCount.getValue().toString());
-        sinkConfiguration.setProperty(SinkConfiguration.PROP_FILE_FORMAT, ((FormatComboBoxValue)fileFormatField.getSelectedItem()).value);
+        sinkConfiguration.setProperty(SinkConfiguration.PROP_FILE_FORMAT, (String)fileFormatField.getSelectedItem());
     }
 
     /**
      * Updates the backing SinkConfiguration with the syslog settings field values.
      */
-    private void viewToModelSyslog() {
+    private void viewToModelSyslog(final SinkConfiguration sinkConfiguration) {
         String value = (String) syslogProtocolField.getSelectedItem();
         if (value.equals(resources.getString("syslogSettings.protocol.TCP.text"))) {
             sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_PROTOCOL, SinkConfiguration.PROP_SYSLOG_PROTOCOL_TCP);
@@ -624,5 +532,50 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         s.setVisible(true);
         s.dispose();
         f.dispose();
+    }
+
+    /**
+     * Renderer for items keyed into given resource bundle.
+     */
+    private static final class KeyedResourceRenderer extends JLabel implements ListCellRenderer {
+        private final ResourceBundle bundle;
+        private final String keyFormat;
+
+        public KeyedResourceRenderer( final ResourceBundle bundle,
+                                      final String keyFormat ) {
+            this.bundle = bundle;
+            this.keyFormat = keyFormat;
+        }
+
+        public Component getListCellRendererComponent( JList list,
+                                                       Object value,
+                                                       int index,
+                                                       boolean isSelected,
+                                                       boolean cellHasFocus)
+        {
+            Object[] keyFormatArgs = new Object[]{ value };
+
+            String label = "";
+            if ( value != null ) {
+                label = bundle.getString(MessageFormat.format(keyFormat, keyFormatArgs));
+            }
+
+            setText(label);
+
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                setForeground(list.getSelectionForeground());
+                setOpaque(true);
+            } else {
+                setBackground(list.getBackground());
+                setForeground(list.getForeground());
+                setOpaque(false);
+            }
+
+            setEnabled(list.isEnabled());
+            setFont(list.getFont());
+
+            return this;
+        }
     }
 }

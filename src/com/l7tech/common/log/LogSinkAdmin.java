@@ -72,7 +72,8 @@ public interface LogSinkAdmin {
      * Creates a new syslog sink based on the provided configuration and sends a test message to it.
      *
      * @param sinkConfiguration The sink configuration to use
+     * @param message The test message contents
      * @return Whether the message was successfully sent or not
      */
-    boolean sendTestSyslogMessage(SinkConfiguration sinkConfiguration);
+    boolean sendTestSyslogMessage(SinkConfiguration sinkConfiguration, String message);
 }

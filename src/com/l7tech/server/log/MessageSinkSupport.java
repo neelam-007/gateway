@@ -94,6 +94,9 @@ abstract class MessageSinkSupport implements MessageSink {
         Level level = Level.WARNING;
 
         switch ( configuration.getSeverity() ) {
+            case ALL:
+                level = Level.ALL; 
+                break;
             case CONFIG:
                 level = Level.CONFIG;
                 break;
@@ -123,12 +126,10 @@ abstract class MessageSinkSupport implements MessageSink {
 
             while ( strtok.hasMoreTokens() ) {
                 String catStr = strtok.nextToken().trim();
-                if ( SinkConfiguration.CATEGORY_GATEWAY_LOGS.equals(catStr) ) {
-                    categories.add(MessageCategory.LOG);
-                } else if ( SinkConfiguration.CATEGORY_TRAFFIC_LOGS.equals(catStr) ) {
-                    categories.add(MessageCategory.TRAFFIC);
-                } else if ( SinkConfiguration.CATEGORY_AUDITS.equals(catStr) ) {
-                    categories.add(MessageCategory.AUDIT);                    
+                try {
+                    categories.add(MessageCategory.valueOf(catStr));
+                } catch (IllegalArgumentException iae) {
+                    // ignore invalid categories
                 }
             }
         }

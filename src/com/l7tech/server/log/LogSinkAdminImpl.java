@@ -40,7 +40,7 @@ public class LogSinkAdminImpl implements LogSinkAdmin {
         sinkManager.delete(oid);
     }
 
-    public boolean sendTestSyslogMessage(SinkConfiguration sinkConfiguration) {
-        return true;
+    public boolean sendTestSyslogMessage(SinkConfiguration sinkConfiguration, String message) {
+        return sinkManager.test(sinkConfiguration, message);
     }
 }

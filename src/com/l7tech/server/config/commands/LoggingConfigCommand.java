@@ -17,26 +17,22 @@ import java.util.logging.Logger;
  * Date: Aug 23, 2005
  */
 public class LoggingConfigCommand extends BaseConfigurationCommand {
-    static Logger logger = Logger.getLogger(LoggingConfigCommand.class.getName());
 
-
-    private static final String SSG_LOG_DIR = "logs/";
-    private static final String SSG_LOG_PATTERN = "ssg_%g_%u.log";
+    private static final Logger logger = Logger.getLogger(LoggingConfigCommand.class.getName());
     private static final String BACKUP_FILE_NAME = "logging_config_backups";
-    private static final String LOG_PATTERN_PROPERTY = "java.util.logging.FileHandler.pattern";
     private static final String PROPERTY_COMMENT = "This file was updated by the SSG configuration utility";
-    private String partitionName;
+
     public LoggingConfigCommand(ConfigurationBean bean) {
         super(bean);
     }
 
     public boolean execute() {
-        boolean success = true;
+        boolean success = false;
         PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
-        partitionName = pi.getPartitionId();
         String ssgLogPropsPath = pi.getOSSpecificFunctions().getSsgLogPropertiesFile();
+
         File logProps = new File(ssgLogPropsPath);
-        if (logProps.exists()) {
+        if ( logProps.exists() ) {
             File[] files = new File[]
             {
                 logProps
@@ -45,7 +41,8 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
             backupFiles(files, BACKUP_FILE_NAME);
         }
 
-        success = updateSsgLogProperties(ssgLogPropsPath);
+        success =  updateSsgLogProperties(ssgLogPropsPath);
+
         return success;
     }
 
@@ -61,9 +58,14 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
                     new File(ssgLogPropsPath + "." + getOsFunctions().getUpgradedNewFileExtension()),
                     true, true);
 
-            String fullLogPattern = getOsFunctions().getSsgInstallRoot() + SSG_LOG_DIR + partitionName + "-" + SSG_LOG_PATTERN;
-            props.setProperty(LOG_PATTERN_PROPERTY, fullLogPattern);
+            // remove handler configuration from ssglog.properties (now created by ssglog.properties in Gateway.jar)
+            //
+            // we could remove all the ConsoleHandler and FileHandler configuration also but will leave as
+            // it is then easier to restore a customized configuration.
+            //
+            props.clearProperty("handlers");
 
+            //noinspection IOResourceOpenedButNotSafelyClosed
             fos = new FileOutputStream(loggingPropertiesFile);
             props.setHeader(PROPERTY_COMMENT + "\n" + new Date());
             props.save(fos, "iso-8859-1");
