@@ -98,7 +98,7 @@ public class VariableMetadata implements Serializable {
         return validateName(name) == null;
     }
 
-    private static String validateName(String name) {
+    public static String validateName(String name) {
         char c0 = name.charAt(0);
         if ("$".indexOf(c0) >= 0 || !Character.isJavaIdentifierStart(c0)) // Java allows '$', we don't
             return "variable names must not start with '" + c0 + "'";

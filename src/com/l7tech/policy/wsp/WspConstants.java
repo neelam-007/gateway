@@ -35,6 +35,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.policy.variable.DataType;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -155,6 +156,7 @@ public class WspConstants {
         new WspEnumTypeMapping(HtmlFormDataType.class, "fieldDataType"),
         new WspEnumTypeMapping(HtmlFormDataLocation.class, "fieldLocation"),
         new WspEnumTypeMapping(CodeInjectionProtectionType.class, "protectionType"),
+        new WspEnumTypeMapping(DataType.class, "variableDataType"),
 
         // Container types
         new ArrayTypeMapping(new Object[0], "arrayValue"),

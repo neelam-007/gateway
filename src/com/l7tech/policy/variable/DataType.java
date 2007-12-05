@@ -38,9 +38,10 @@ public final class DataType implements Serializable {
     public static final DataType BOOLEAN = new DataType("boolean", "Boolean", new Class[] { Boolean.class, Boolean.TYPE });
     public static final DataType BINARY = new DataType("binary", "Binary", new Class[] { byte[].class, String.class });
     public static final DataType DATE_TIME = new DataType("dateTime", "Date/Time", new Class[] { Date.class, Calendar.class, Long.TYPE, Long.class });
+    public static final DataType MESSAGE = new DataType("message", "Message", new Class[] { Object.class /* Message.class would have bring in lots of dependencies to Layer 7 API. */ });
     public static final DataType UNKNOWN = new DataType("other", "Unknown/Other", new Class[] { Object.class });
 
-    public static final DataType[] VALUES = new DataType[] { STRING, CERTIFICATE, INTEGER, DECIMAL, FLOAT, ELEMENT, BOOLEAN, BINARY, DATE_TIME, UNKNOWN };
+    public static final DataType[] VALUES = new DataType[] { STRING, CERTIFICATE, INTEGER, DECIMAL, FLOAT, ELEMENT, BOOLEAN, BINARY, DATE_TIME, MESSAGE, UNKNOWN };
 
     private final String shortName;
     private final String name;

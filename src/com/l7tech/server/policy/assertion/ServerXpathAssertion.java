@@ -16,7 +16,9 @@ import com.l7tech.common.xml.xpath.XpathResultIterator;
 import com.l7tech.common.xml.xpath.XpathResultNodeSet;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.ResponseXpathAssertion;
 import com.l7tech.policy.assertion.SimpleXpathAssertion;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
@@ -32,6 +34,11 @@ import java.util.logging.Logger;
 /**
  * Abstract superclass for server assertions whose operation centers around running a single xpath against
  * either the request or the response message, possibly with variable capture.
+ *
+ * <p>Related function specifications:
+ * <ul>
+ *  <li><a href="http://sarek.l7tech.com/mediawiki/index.php?title=XML_Variables">XML Variables</a> (4.3)
+ * </ul>
  */
 public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
     private static final Logger logger = Logger.getLogger(ServerXpathAssertion.class.getName());
@@ -54,7 +61,34 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
-        final Message message = req ? context.getRequest() : context.getResponse();
+        // Determines the message object to apply XPath to.
+        Message message = null;
+        if (req) {
+            message = context.getRequest();
+        } else {
+            if (!(assertion instanceof ResponseXpathAssertion)) {
+                // Should never happen.
+                throw new RuntimeException("Unexpect assertion type (expected=" + ResponseXpathAssertion.class + ", actual=" + assertion.getClass() + ").");
+            }
+            final ResponseXpathAssertion ass = (ResponseXpathAssertion)assertion;
+            final String variableName = ass.getXmlMsgSrc();
+            if (variableName == null) {
+                message = context.getResponse();
+            } else {
+                try {
+                    final Object value = context.getVariable(variableName);
+                    if (!(value instanceof Message)) {
+                        // Should never happen.
+                        throw new RuntimeException("XML message source (\"" + variableName +
+                                "\") is a context variable of the wrong type (expected=" + Message.class + ", actual=" + value.getClass() + ").");
+                    }
+                    message = (Message) value;
+                } catch (NoSuchVariableException e) {
+                    // Should never happen.
+                    throw new RuntimeException("XML message source is a non-existent context variable (\"" + variableName + "\").");
+                }
+            }
+        }
 
         context.setVariable(vfound, SimpleXpathAssertion.FALSE);
         context.setVariable(vcount, "0");

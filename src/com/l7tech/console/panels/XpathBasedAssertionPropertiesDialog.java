@@ -1,21 +1,23 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.SpeedIndicator;
 import com.l7tech.common.gui.widgets.SquigglyField;
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.security.xml.XencAlgorithm;
+import com.l7tech.common.util.Functions;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.Functions;
-import com.l7tech.common.xml.*;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.XpathEvaluator;
+import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.common.xml.xpath.FastXpath;
 import com.l7tech.common.xml.xpath.XpathExpression;
-import com.l7tech.console.util.SoapMessageGenerator.Message;
-import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.*;
@@ -24,6 +26,7 @@ import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SoapMessageGenerator;
+import com.l7tech.console.util.SoapMessageGenerator.Message;
 import com.l7tech.console.xmlviewer.ExchangerDocument;
 import com.l7tech.console.xmlviewer.Viewer;
 import com.l7tech.console.xmlviewer.ViewerToolBar;
@@ -41,16 +44,19 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.PolicyVariableUtils;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.cluster.ClusterStatusAdmin;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
-import org.jaxen.XPathSyntaxException;
 import org.jaxen.NamespaceContext;
+import org.jaxen.XPathSyntaxException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -70,7 +76,9 @@ import javax.xml.soap.SOAPMessage;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.List;
@@ -91,6 +99,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JButton cancelButton;
     private JButton helpButton;
     private JLabel descriptionLabel;
+    private JPanel xmlMsgSrcPanel;
+    private JComboBox xmlMsgSrcComboBox;
     private XpathBasedAssertionTreeNode node;
     private XpathBasedAssertion assertion;
     private ServiceNode serviceNode;
@@ -179,6 +189,27 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         serviceNode = AssertionTreeNode.getServiceNode(node);
         if (serviceNode == null) {
             throw new IllegalStateException("Unable to determine the service node for " + assertion);
+        }
+
+        if (assertion instanceof ResponseXpathAssertion) {
+            final ResponseXpathAssertion ass = (ResponseXpathAssertion)assertion;
+            xmlMsgSrcPanel.setVisible(true);
+
+            // Populates xml message source combo box, and selects according to assertion.
+            xmlMsgSrcComboBox.addItem(new MsgSrcComboBoxItem(null, "Default Response"));
+            final Map<String, VariableMetadata> predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion);
+            final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
+            for (String variableName: predecessorVariableNames) {
+                if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
+                    final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(variableName, "Context Variable: " + ExpandVariables.SYNTAX_PREFIX + variableName + ExpandVariables.SYNTAX_SUFFIX);
+                    xmlMsgSrcComboBox.addItem(item);
+                    if (variableName.equals(ass.getXmlMsgSrc())) {
+                        xmlMsgSrcComboBox.setSelectedItem(item);
+                    }
+                }
+            }
+        } else {
+            xmlMsgSrcPanel.setVisible(false);
         }
 
         signatureResponseConfigPanel.setVisible(assertion instanceof ResponseWssIntegrity);
@@ -462,6 +493,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
                 if (assertion instanceof SimpleXpathAssertion) {
                     ((SimpleXpathAssertion)assertion).setVariablePrefix(varPrefixField.getText());
+                }
+
+                if (assertion instanceof ResponseXpathAssertion) {
+                    final ResponseXpathAssertion ass = (ResponseXpathAssertion)assertion;
+                    ass.setXmlMsgSrc(((MsgSrcComboBoxItem)xmlMsgSrcComboBox.getSelectedItem()).getVariableName());
                 }
 
                 collectEncryptionConfig();
@@ -1100,5 +1136,16 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         public boolean isEmpty() {
             return EMPTY_MSG.equals(shortMessage);
         }
+    }
+
+    private static class MsgSrcComboBoxItem {
+        private final String _variableName;
+        private final String _displayName;
+                public MsgSrcComboBoxItem(String variableName, String displayName) {
+            _variableName = variableName;
+            _displayName = displayName;
+        }
+        public String getVariableName() { return _variableName; }
+        public String toString() { return _displayName; }
     }
 }

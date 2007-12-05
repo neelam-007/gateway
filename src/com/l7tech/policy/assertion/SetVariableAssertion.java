@@ -1,51 +1,87 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.policy.variable.*;
 
+/**
+ * Assertion to set a context variable, either built-in or user-defined.
+ *
+ * <p>Related function specifications:
+ * <ul>
+ *  <li><a href="http://sarek.l7tech.com/mediawiki/index.php?title=XML_Variables">XML Variables</a> (4.3)
+ * </ul>
+ */
 public class SetVariableAssertion extends Assertion implements SetsVariables, UsesVariables {
-    private String variableToSet;
-    private String expression;
+    private String _variableToSet;
+    private DataType _dataType;
+    private String _expression;
 
-    private transient VariableMetadata meta;
+    /** Used only if {@link #_dataType} == {@link DataType#MESSAGE}. */
+    private String _contentType;
+
+    private transient VariableMetadata _meta;   // just for caching
 
     public String getVariableToSet() {
-        return variableToSet;
+        return _variableToSet;
     }
 
     public void setVariableToSet(String variableToSet) throws VariableNotSettableException {
-        VariableMetadata meta = getMetadata(variableToSet);
-        if (meta != null && !meta.isSettable()) throw new VariableNotSettableException(variableToSet);
-        this.variableToSet = variableToSet;
-        this.meta = null;
+        final VariableMetadata meta = BuiltinVariables.getMetadata(variableToSet);
+        if (meta != null) { // It's built-in variable.
+            if (!meta.isSettable()) throw new VariableNotSettableException(variableToSet);
+            _dataType = meta.getType(); // forces data type for built-in variable.
+        }
+
+        _variableToSet = variableToSet;
+        _meta = null;   // need to refresh cache
     }
 
-    private VariableMetadata getMetadata(String variableToSet) {
-        if (meta == null) {
-            meta = BuiltinVariables.getMetadata(variableToSet);
-            if (meta == null) meta = new VariableMetadata(variableToSet, false, false, null, true);
+    public DataType getDataType() {
+        return _dataType;
+    }
+
+    public void setDataType(DataType dataType) {
+        if (_variableToSet != null) {
+            final VariableMetadata meta = BuiltinVariables.getMetadata(_variableToSet);
+            if (meta != null) { // It's built-in variable.
+                if (meta.getType() != dataType) throw new VariableDataTypeNotChangeableException(_variableToSet);
+            }
         }
-        return meta;
+
+        _dataType = dataType;
+        _meta = null;   // need to refresh cache
+    }
+
+    public void setContentType(String contentType) {
+        _contentType = contentType;
+    }
+
+    public String getContentType() {
+        return _contentType;
     }
 
     public String getExpression() {
-        return expression;
+        return _expression;
     }
 
     public void setExpression(String expression) {
-        this.expression = expression;
-        this.meta = null;
+        _expression = expression;
     }
 
     public VariableMetadata[] getVariablesSet() {
-        if (variableToSet == null) return new VariableMetadata[0];
-        return new VariableMetadata[] { getMetadata(variableToSet) };
+        if (_variableToSet == null) return new VariableMetadata[0];
+        return new VariableMetadata[] { getMetadata() };
     }
 
     public String[] getVariablesUsed() {
-        if (expression == null) return new String[0];
-        return ExpandVariables.getReferencedNames(expression);
+        if (_expression == null) return new String[0];
+        return ExpandVariables.getReferencedNames(_expression);
+    }
+
+    private VariableMetadata getMetadata() {
+        if (_meta == null) {
+            _meta = BuiltinVariables.getMetadata(_variableToSet);
+            if (_meta == null) _meta = new VariableMetadata(_variableToSet, false, false, null, true, _dataType);
+        }
+        return _meta;
     }
 }

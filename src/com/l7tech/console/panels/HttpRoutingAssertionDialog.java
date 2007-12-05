@@ -1,5 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.PauseListener;
+import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.IpListPanel;
 import com.l7tech.common.gui.widgets.UrlPanel;
@@ -20,29 +23,51 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
+import com.l7tech.policy.variable.*;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.EventListener;
-import java.util.Iterator;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * <code>HttpRoutingAssertionDialog</code> is the protected service
  * policy edit dialog.
+ *
+ * <p>Related function specifications:
+ * <ul>
+ *  <li><a href="http://sarek.l7tech.com/mediawiki/index.php?title=XML_Variables">XML Variables</a> (4.3)
+ * </ul>
  */
 public class HttpRoutingAssertionDialog extends JDialog {
+
+    private static class MsgSrcComboBoxItem {
+        private final String _variableName;
+        private final String _displayName;
+        public MsgSrcComboBoxItem(String variableName, String displayName) {
+            _variableName = variableName;
+            _displayName = displayName;
+        }
+        public String getVariableName() { return _variableName; }
+        public String toString() { return _displayName; }
+    }
+
+    final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
+    final ImageIcon INFO_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Info16.png"));
+    final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
+
     private static final Logger log = Logger.getLogger(HttpRoutingAssertionDialog.class.getName());
     private HttpRuleTableHandler responseHttpRulesTableHandler;
     private HttpRuleTableHandler requestHttpRulesTableHandler;
@@ -84,6 +109,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JTable resHeadersTable;
     private JButton resHeadersAdd;
     private JButton resHeadersDelete;
+    private JComboBox reqMsgSrcComboBox;
     private JRadioButton reqHeadersAll;
     private JRadioButton reqHeadersCustomize;
     private JTable reqHeadersTable;
@@ -100,6 +126,10 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JButton editResHrButton;
     private JRadioButton failOnErrorRadio;
     private JRadioButton neverFailRadio;
+    private JRadioButton resMsgDestDefaultRadioButton;
+    private JRadioButton resMsgDestVariableRadioButton;
+    private JTextField resMsgDestVariableTextField;
+    private JLabel resMsgDestVariableStatusLabel;
 
     private final SecureAction okButtonAction;
     private boolean confirmed = false;
@@ -259,6 +289,46 @@ public class HttpRoutingAssertionDialog extends JDialog {
             }
         });
 
+        // Populates request message source combo box, and selects according to assertion.
+        reqMsgSrcComboBox.addItem(new MsgSrcComboBoxItem(null, resources.getString("request.msgSrc.default.text")));
+        final MessageFormat displayFormat = new MessageFormat(resources.getString("request.msgSrc.contextVariable.format"));
+        final Map<String, VariableMetadata> predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion);
+        final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
+        for (String variableName: predecessorVariableNames) {
+            if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
+                final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(variableName, displayFormat.format(new Object[]{ExpandVariables.SYNTAX_PREFIX, variableName, ExpandVariables.SYNTAX_SUFFIX}));
+                reqMsgSrcComboBox.addItem(item);
+                if (variableName.equals(assertion.getRequestMsgSrc())) {
+                    reqMsgSrcComboBox.setSelectedItem(item);
+                }
+            }
+        }
+
+        resMsgDestVariableRadioButton.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                validateResMsgDest();
+            }
+        });
+        TextComponentPauseListenerManager.registerPauseListener(
+                resMsgDestVariableTextField,
+                new PauseListener() {
+                    public void textEntryPaused(JTextComponent component, long msecs) {
+                        validateResMsgDest();
+                    }
+
+                    public void textEntryResumed(JTextComponent component) {
+                        clearResMsgDestVariableStatus();
+                    }
+                },
+                500);
+        final String resMsgDest = assertion.getResponseMsgDest();
+        if (resMsgDest == null) {
+            resMsgDestDefaultRadioButton.doClick();
+        } else {
+            resMsgDestVariableTextField.setText(resMsgDest);
+            resMsgDestVariableRadioButton.doClick();
+        }
+
         initializeHttpRulesTabs();
 
         okButton.setAction(okButtonAction);
@@ -412,79 +482,94 @@ public class HttpRoutingAssertionDialog extends JDialog {
         }
         if (bad) {
             JOptionPane.showMessageDialog(okButton, MessageFormat.format(resources.getString("invalidUrlMessage"), url));
-        } else {
-            if (authPasswordRadio.isSelected())
-                httpAuthPanel.updateModel();
-            else {
-                assertion.setLogin(null);
-                assertion.setPassword(null);
-                assertion.setRealm(null);
-                assertion.setNtlmHost(null);
-            }
-
-            if (authSamlRadio.isSelected()) {
-                samlAuthPanel.updateModel();
-            } else {
-                assertion.setAttachSamlSenderVouches(false);
-            }
-
-            assertion.setProtectedServiceUrl(url);
-            assertion.setAttachSamlSenderVouches(authSamlRadio.isSelected());
-            assertion.setTaiCredentialChaining(authTaiRadio.isSelected());
-            assertion.setPassthroughHttpAuthentication(authPassthroughRadio.isSelected());
-
-            if (ipListPanel.isAddressesEnabled()) {
-                assertion.setCustomIpAddresses(ipListPanel.getAddresses());
-                assertion.setFailoverStrategyName(ipListPanel.getFailoverStrategyName());
-            } else {
-                assertion.setCustomIpAddresses(null);
-                assertion.setFailoverStrategyName(ipListPanel.getFailoverStrategyName());
-            }
-
-            if (connectTimeoutDefaultCheckBox.isSelected())
-                assertion.setConnectionTimeout(null);
-            else
-                assertion.setConnectionTimeout((Integer)connectTimeoutSpinner.getValue()*1000);
-            if (readTimeoutDefaultCheckBox.isSelected())
-                assertion.setTimeout(null);
-            else
-                assertion.setTimeout((Integer)readTimeoutSpinner.getValue()*1000);
-
-            if (wssPromoteRadio.isSelected()) {
-                String currentVal = (String)wssPromoteActorCombo.getSelectedItem();
-                if (currentVal != null && currentVal.length() > 0) {
-                    assertion.setXmlSecurityActorToPromote(currentVal);
-                    assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER);
-                } else {
-                    JOptionPane.showMessageDialog(okButton, resources.getString("actorRequiredMessage"));
-                    return;
-                }
-            } else if (wssRemoveRadio.isSelected()) {
-                assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER);
-                assertion.setXmlSecurityActorToPromote(null);
-            } else if (wssLeaveRadio.isSelected()) {
-                assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
-                assertion.setXmlSecurityActorToPromote(null);
-            }
-
-            assertion.getResponseHeaderRules().setRules(responseHttpRulesTableHandler.getData());
-            assertion.getResponseHeaderRules().setForwardAll(resHeadersAll.isSelected());
-
-            assertion.getRequestHeaderRules().setRules(requestHttpRulesTableHandler.getData());
-            assertion.getRequestHeaderRules().setForwardAll(reqHeadersAll.isSelected());
-
-            if (requestParamsRulesTableHandler != null) { // this will be null in case of BRA
-                assertion.getRequestParamRules().setRules(requestParamsRulesTableHandler.getData());
-                assertion.getRequestParamRules().setForwardAll(reqParamsAll.isSelected());
-            }
-            assertion.setFollowRedirects(followRedirectCheck.isSelected());
-            assertion.setFailOnErrorStatus(failOnErrorRadio.isSelected());
-
-            confirmed = true;
-            fireEventAssertionChanged(assertion);
-
-            this.dispose();
+            return;
         }
+
+        // Check response message destination.
+        if (!validateResMsgDest()) {
+            JOptionPane.showMessageDialog(okButton, MessageFormat.format(resources.getString("invalidResMsgDestMessage"), url));
+            return;
+        }
+
+        if (authPasswordRadio.isSelected())
+            httpAuthPanel.updateModel();
+        else {
+            assertion.setLogin(null);
+            assertion.setPassword(null);
+            assertion.setRealm(null);
+            assertion.setNtlmHost(null);
+        }
+
+        if (authSamlRadio.isSelected()) {
+            samlAuthPanel.updateModel();
+        } else {
+            assertion.setAttachSamlSenderVouches(false);
+        }
+
+        assertion.setProtectedServiceUrl(url);
+        assertion.setAttachSamlSenderVouches(authSamlRadio.isSelected());
+        assertion.setTaiCredentialChaining(authTaiRadio.isSelected());
+        assertion.setPassthroughHttpAuthentication(authPassthroughRadio.isSelected());
+
+        if (ipListPanel.isAddressesEnabled()) {
+            assertion.setCustomIpAddresses(ipListPanel.getAddresses());
+            assertion.setFailoverStrategyName(ipListPanel.getFailoverStrategyName());
+        } else {
+            assertion.setCustomIpAddresses(null);
+            assertion.setFailoverStrategyName(ipListPanel.getFailoverStrategyName());
+        }
+
+        if (connectTimeoutDefaultCheckBox.isSelected())
+            assertion.setConnectionTimeout(null);
+        else
+            assertion.setConnectionTimeout((Integer)connectTimeoutSpinner.getValue()*1000);
+        if (readTimeoutDefaultCheckBox.isSelected())
+            assertion.setTimeout(null);
+        else
+            assertion.setTimeout((Integer)readTimeoutSpinner.getValue()*1000);
+
+        if (wssPromoteRadio.isSelected()) {
+            String currentVal = (String)wssPromoteActorCombo.getSelectedItem();
+            if (currentVal != null && currentVal.length() > 0) {
+                assertion.setXmlSecurityActorToPromote(currentVal);
+                assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER);
+            } else {
+                JOptionPane.showMessageDialog(okButton, resources.getString("actorRequiredMessage"));
+                return;
+            }
+        } else if (wssRemoveRadio.isSelected()) {
+            assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER);
+            assertion.setXmlSecurityActorToPromote(null);
+        } else if (wssLeaveRadio.isSelected()) {
+            assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
+            assertion.setXmlSecurityActorToPromote(null);
+        }
+
+        assertion.setRequestMsgSrc(((MsgSrcComboBoxItem)reqMsgSrcComboBox.getSelectedItem()).getVariableName());
+
+        if (resMsgDestDefaultRadioButton.isSelected()) {
+            assertion.setResponseMsgDest(null);
+        } else if (resMsgDestVariableRadioButton.isSelected()) {
+            assertion.setResponseMsgDest(resMsgDestVariableTextField.getText());
+        }
+
+        assertion.getResponseHeaderRules().setRules(responseHttpRulesTableHandler.getData());
+        assertion.getResponseHeaderRules().setForwardAll(resHeadersAll.isSelected());
+
+        assertion.getRequestHeaderRules().setRules(requestHttpRulesTableHandler.getData());
+        assertion.getRequestHeaderRules().setForwardAll(reqHeadersAll.isSelected());
+
+        if (requestParamsRulesTableHandler != null) { // this will be null in case of BRA
+            assertion.getRequestParamRules().setRules(requestParamsRulesTableHandler.getData());
+            assertion.getRequestParamRules().setForwardAll(reqParamsAll.isSelected());
+        }
+        assertion.setFollowRedirects(followRedirectCheck.isSelected());
+        assertion.setFailOnErrorStatus(failOnErrorRadio.isSelected());
+
+        confirmed = true;
+        fireEventAssertionChanged(assertion);
+
+        this.dispose();
     }
 
     private void updateAuthMethod() {
@@ -593,6 +678,64 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 }
             }
         }
+    }
+
+    private void clearResMsgDestVariableStatus() {
+        resMsgDestVariableStatusLabel.setIcon(BLANK_ICON);
+        resMsgDestVariableStatusLabel.setText(null);
+    }
+
+    /**
+     * Validates the response message destination; with the side effect of setting the status icon and text.
+     *
+     * @return <code>true</code> if response messge destination is valid, <code>false</code> if invalid
+     */
+    private boolean validateResMsgDest() {
+        boolean ok = true;
+        clearResMsgDestVariableStatus();
+
+        resMsgDestVariableTextField.setEnabled(resMsgDestVariableRadioButton.isSelected());
+
+        if (resMsgDestVariableRadioButton.isSelected()) {
+            final String variableName = resMsgDestVariableTextField.getText();
+            String validateNameResult = null;
+            if (variableName.isEmpty()) {
+                ok = false;
+            } else if ((validateNameResult = VariableMetadata.validateName(variableName)) != null) {
+                ok = false;
+                resMsgDestVariableStatusLabel.setIcon(WARNING_ICON);
+                resMsgDestVariableStatusLabel.setText(validateNameResult);
+            } else {
+                final VariableMetadata meta = BuiltinVariables.getMetadata(variableName);
+                if (meta == null) {
+                    resMsgDestVariableStatusLabel.setIcon(INFO_ICON);
+                    resMsgDestVariableStatusLabel.setText(resources.getString("response.msgDest.variable.status.new"));
+                } else {
+                    if (meta.isSettable()) {
+                        if (meta.getType() == DataType.MESSAGE) {
+                            resMsgDestVariableStatusLabel.setIcon(INFO_ICON);
+                            resMsgDestVariableStatusLabel.setText(resources.getString("response.msgDest.variable.status.builtinSettable"));
+                        } else {
+                            ok = false;
+                            resMsgDestVariableStatusLabel.setIcon(WARNING_ICON);
+                            resMsgDestVariableStatusLabel.setText(resources.getString("response.msgDest.variable.status.builtinNotMessageType"));
+                        }
+                    } else {
+                        ok = false;
+                        resMsgDestVariableStatusLabel.setIcon(WARNING_ICON);
+                        resMsgDestVariableStatusLabel.setText(resources.getString("response.msgDest.variable.status.builtinNotSettable"));
+                    }
+                }
+
+                final Set<String> predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+                if (predecessorVariables.contains(variableName)) {
+                    resMsgDestVariableStatusLabel.setIcon(INFO_ICON);
+                    resMsgDestVariableStatusLabel.setText(resources.getString("response.msgDest.variable.status.overwrite"));
+                }
+            }
+        }
+
+        return ok;
     }
 
     public boolean isConfirmed() {

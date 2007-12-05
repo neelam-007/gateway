@@ -13,6 +13,8 @@ import javax.swing.*;
  * {@link com.l7tech.policy.assertion.SetVariableAssertion}.
  */
 public class SetVariableAssertionPolicyNode extends LeafAssertionTreeNode {
+    private static final int MAX_DISPLAY_LENGTH = 40;
+
     private SetVariableAssertion assertion;
 
     public SetVariableAssertionPolicyNode(SetVariableAssertion assertion) {
@@ -26,8 +28,20 @@ public class SetVariableAssertionPolicyNode extends LeafAssertionTreeNode {
     public String getName() {
         StringBuffer name = new StringBuffer("Set ");
         name.append(assertion.getVariableToSet());
-        name.append(" to ");
-        name.append(assertion.getExpression());
+        name.append(" as ");
+        name.append(assertion.getDataType().getName());
+        name.append(" to");
+        final String expression = assertion.getExpression();
+        if (expression.isEmpty()) {
+            name.append(" empty");
+        } else if (expression.length() <= MAX_DISPLAY_LENGTH) {
+            name.append(": ");
+            name.append(expression);
+        } else {
+            name.append(": ");
+            name.append(expression, 0, MAX_DISPLAY_LENGTH - 1);
+            name.append("...");
+        }
         return name.toString();
     }
 

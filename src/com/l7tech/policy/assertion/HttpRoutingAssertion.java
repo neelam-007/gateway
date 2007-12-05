@@ -5,11 +5,20 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.apache.commons.lang.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
+ *
+ * <p>Related function specifications:
+ * <ul>
+ *  <li><a href="http://sarek.l7tech.com/mediawiki/index.php?title=XML_Variables">XML Variables</a> (4.3)
+ * </ul>
  *
  * @author mike
  * @version 1.0
@@ -36,6 +45,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     private boolean taiCredentialChaining = false;
     protected Integer connectionTimeout;
     protected Integer timeout;
+    protected String requestMsgSrc;
+    protected String responseMsgDest;
     protected HttpPassthroughRuleSet responseHeaderRules = new HttpPassthroughRuleSet(false,
                                                             new HttpPassthroughRule[]{
                                                              new HttpPassthroughRule("Set-Cookie", false, null)});
@@ -120,6 +131,38 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
     public void setFailOnErrorStatus(boolean failOnErrorStatus) {
         this.failOnErrorStatus = failOnErrorStatus;
+    }
+
+    /**
+     * @return <code>null</code> for default request; otherwise name of a message type context variable
+     */
+    public String getRequestMsgSrc() {
+        return requestMsgSrc;
+    }
+
+    /**
+     * Sets the request message source.
+     *
+     * @param variableName <code>null</code> for default request; otherwise name of a message type context variable
+     */
+    public void setRequestMsgSrc(String variableName) {
+        requestMsgSrc = variableName;
+    }
+
+    /**
+     * @return <code>null</code> for default request; otherwise name of a message type context variable
+     */
+    public String getResponseMsgDest() {
+        return responseMsgDest;
+    }
+
+    /**
+     * Sets the response message source.
+     *
+     * @param variableName  <code>null</code> for default request; otherwise name of a message type context variable (either existing or to be created)
+     */
+    public void setResponseMsgDest(String variableName) {
+        responseMsgDest = variableName;
     }
 
     public HttpPassthroughRuleSet getResponseHeaderRules() {
@@ -270,6 +313,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         if (!StringUtils.isEmpty(ntlmHost)) tmp.append(ntlmHost);
         if (!StringUtils.isEmpty(realm)) tmp.append(realm);
 
+        if (requestMsgSrc != null) tmp.append(ExpandVariables.SYNTAX_PREFIX).append(requestMsgSrc).append(ExpandVariables.SYNTAX_SUFFIX);
+
         HttpPassthroughRuleSet[] ruleset = {responseHeaderRules, requestHeaderRules, requestParamRules};
         for (int i = 0; i < ruleset.length; i++) {
             HttpPassthroughRuleSet rules = ruleset[i];
@@ -284,10 +329,13 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     }
 
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
-            new VariableMetadata(VAR_ROUTING_LATENCY, false, false, VAR_ROUTING_LATENCY, false),
-            new VariableMetadata(VAR_SERVICE_URL, false, false, VAR_SERVICE_URL, false)
-        };
+        final List<VariableMetadata> vars = new ArrayList<VariableMetadata>();
+        vars.add(new VariableMetadata(VAR_ROUTING_LATENCY, false, false, VAR_ROUTING_LATENCY, false));
+        vars.add(new VariableMetadata(VAR_SERVICE_URL, false, false, VAR_SERVICE_URL, false));
+        if (responseMsgDest != null) {
+            vars.add(new VariableMetadata(responseMsgDest, false, false, responseMsgDest, true, DataType.MESSAGE));
+        }
+        return vars.toArray(new VariableMetadata[vars.size()]);
     }
 
     public boolean isTaiCredentialChaining() {

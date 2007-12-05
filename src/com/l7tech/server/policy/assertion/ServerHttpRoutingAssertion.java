@@ -8,14 +8,13 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.http.*;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
-import com.l7tech.common.message.HttpRequestKnob;
-import com.l7tech.common.message.HttpResponseKnob;
-import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
@@ -28,10 +27,11 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
-import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -58,6 +58,11 @@ import java.util.logging.Logger;
 
 /**
  * Server-side implementation of HTTP routing assertion.
+ *
+ * <p>Related function specifications:
+ * <ul>
+ *  <li><a href="http://sarek.l7tech.com/mediawiki/index.php?title=XML_Variables">XML Variables</a> (4.3)
+ * </ul>
  */
 public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingAssertion<HttpRoutingAssertion> {
     public static final String USER_AGENT = HttpConstants.HEADER_USER_AGENT;
@@ -330,28 +335,32 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     }
 
     private GenericHttpClient.GenericHttpMethod methodFromRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams) {
-        if (context.getRequest().isHttpRequest()) {
-            HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
-            // Check the request method
-            String requestMethod = httpRequestKnob.getMethod();
-            if (requestMethod.equals("GET")) {
-                routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
-                return GenericHttpClient.GET;
-            } else if (requestMethod.equals("POST")) {
-                // redirects not supported under POST
-                return GenericHttpClient.POST;
-            } else if (requestMethod.equals("PUT")) {
-                // redirects not supported under PUT
-                return GenericHttpClient.PUT;
-            }  else if (requestMethod.equals("DELETE")) {
-                routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
-                return GenericHttpClient.DELETE;
+        if (assertion.getRequestMsgSrc() == null) {
+            if (context.getRequest().isHttpRequest()) {
+                HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
+                // Check the request method
+                String requestMethod = httpRequestKnob.getMethod();
+                if (requestMethod.equals("GET")) {
+                    routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
+                    return GenericHttpClient.GET;
+                } else if (requestMethod.equals("POST")) {
+                    // redirects not supported under POST
+                    return GenericHttpClient.POST;
+                } else if (requestMethod.equals("PUT")) {
+                    // redirects not supported under PUT
+                    return GenericHttpClient.PUT;
+                }  else if (requestMethod.equals("DELETE")) {
+                    routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
+                    return GenericHttpClient.DELETE;
+                } else {
+                    logger.severe("Unexpected method " + requestMethod);
+                }
             } else {
-                logger.severe("Unexpected method " + requestMethod);
+                logger.info("assuming http method for downstream service (POST) because " +
+                            "there is no incoming http method to base this on");
             }
         } else {
-            logger.info("assuming http method for downstream service (POST) because " +
-                        "there is no incoming http method to base this on");
+            logger.info("assuming http method for downstream service (POST) when request message source is a context variable");
         }
         return GenericHttpClient.POST;
     }
@@ -366,7 +375,26 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             // todo: check if we need to support HTTP 1.1.
 
             // Serialize the request
-            final MimeKnob reqMime = context.getRequest().getMimeKnob();
+            MimeKnob reqMime_ = null;
+            if (assertion.getRequestMsgSrc() == null) {
+                reqMime_ = context.getRequest().getMimeKnob();
+            } else {
+                final String variableName = assertion.getRequestMsgSrc();
+                try {
+                    final Object requestSrc = context.getVariable(variableName);
+                    if (!(requestSrc instanceof Message)) {
+                        // Should never happen.
+                        throw new RuntimeException("Request message source (\"" + variableName +
+                                "\") is a context variable of the wrong type (expected=" + Message.class + ", actual=" + requestSrc.getClass() + ").");
+                    }
+                    final Message requestMsg = (Message)requestSrc;
+                    reqMime_ = requestMsg.getMimeKnob();
+                } catch (NoSuchVariableException e) {
+                    // Should never happen.
+                    throw new RuntimeException("Request message source is a non-existent context variable (\"" + variableName + "\").");
+                }
+            }
+            final MimeKnob reqMime = reqMime_;
 
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
             final long contentLength = reqMime.getContentLength();
@@ -449,7 +477,22 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             status = routedResponse.getStatus();
 
-            boolean readOk = readResponse(context, routedResponse, status);
+            // Determines the routed response destination.
+            Message routedResponseDestination = null;
+            final String variableToSaveResponse = assertion.getResponseMsgDest();
+            if (variableToSaveResponse == null) {
+                routedResponseDestination = context.getResponse();
+            } else {
+                routedResponseDestination = new Message();
+                routedResponseDestination.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
+                    public void addCookie(HttpCookie cookie) {
+                        // TODO what to do with the cookie?
+                    }
+                });
+                context.setVariable(variableToSaveResponse, routedResponseDestination);
+            }
+
+            boolean readOk = readResponse(context, routedResponse, routedResponseDestination);
             long latencyTimerEnd = System.currentTimeMillis();
             if (readOk) {
                 long latency = latencyTimerEnd - latencyTimerStart;
@@ -471,7 +514,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_CHALLENGE);
             }
 
-            HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
+            HttpResponseKnob httpResponseKnob = (HttpResponseKnob) routedResponseDestination.getKnob(HttpResponseKnob.class);
             if (readOk && httpResponseKnob != null) {
                 httpResponseKnob.setStatus(status);
 
@@ -573,6 +616,54 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
+        }
+        return responseOk;
+    }
+
+    /**
+     * Read the routing response and copy into the destination message object.
+     *
+     * @param context           the policy enforcement context
+     * @param routedResponse    response from back end
+     * @param destination       the destination message object to copy <code>routedResponse</code> into
+     * @return <code>false</code> if error reading <code>routedResponse</code> or it is an error response
+     */
+    private boolean readResponse(final PolicyEnforcementContext context,
+                                 final GenericHttpResponse routedResponse,
+                                 final Message destination) {
+        boolean responseOk = true;
+        try {
+            final int status = routedResponse.getStatus();
+            final InputStream responseStream = routedResponse.getInputStream();
+            final String ctype = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_TYPE);
+            final ContentTypeHeader outerContentType = ctype != null ? ContentTypeHeader.parseValue(ctype) : null;
+            boolean passthroughSoapFault = false;
+            if (status == 500 && context.getService() != null && context.getService().isSoap() &&
+                outerContentType != null && outerContentType.isXml()) {
+                passthroughSoapFault = true;
+            }
+
+            // Handle missing content type error
+            if (status == HttpConstants.STATUS_OK && outerContentType == null) {
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOCONTENTTYPE, Integer.toString(status));
+                responseOk = false;
+            } else if (data.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
+                destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
+                responseOk = false;
+            } else if (status >= 400 && data.isFailOnErrorStatus() && !passthroughSoapFault) {
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
+                responseOk = false;
+            } else if (outerContentType != null) { // response OK
+                if (responseStream == null) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_CTYPEWOUTPAYLOAD, outerContentType.getFullValue());
+                } else {
+                    StashManager stashManager = stashManagerFactory.createStashManager();
+                    destination.initialize(stashManager, outerContentType, responseStream);
+                }
+            }
+        } catch (Exception e) {
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
+            responseOk = false;
         }
         return responseOk;
     }

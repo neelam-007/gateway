@@ -7,6 +7,7 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
+import com.l7tech.policy.variable.ExpandVariables;
 
 /**
  * @author Franco
@@ -18,7 +19,16 @@ public class ResponseXpathPolicyTreeNode extends XpathBasedAssertionTreeNode {
     }
 
     public String getBaseName() {
-        StringBuffer sb = new StringBuffer("Response must match XPath ");
+        StringBuffer sb = new StringBuffer();
+        final String variableName = _assertion.getXmlMsgSrc();
+        if (variableName == null) {
+            sb.append("Response");
+        } else {
+            sb.append(ExpandVariables.SYNTAX_PREFIX);
+            sb.append(variableName);
+            sb.append(ExpandVariables.SYNTAX_SUFFIX);
+        }
+        sb.append(" must match XPath ");
         if (_assertion.getXpathExpression() == null) {
             sb.append("[XPath expression not set]");
         } else {

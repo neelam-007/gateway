@@ -3,38 +3,60 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.policy.assertion.SetVariableAssertion;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.PolicyVariableUtils;
+import com.l7tech.policy.assertion.SetVariableAssertion;
+import com.l7tech.policy.variable.*;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import javax.swing.border.Border;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.Set;
 
 /**
- * GUI for {@link com.l7tech.policy.assertion.SetVariableAssertion}
+ * Dialog for {@link com.l7tech.policy.assertion.SetVariableAssertion}.
+ *
+ * <p>Related function specifications:
+ * <ul>
+ *  <li><a href="http://sarek.l7tech.com/mediawiki/index.php?title=XML_Variables">XML Variables</a> (4.3)
+ * </ul>
  */
 public class SetVariableAssertionDialog extends JDialog {
-    private JButton cancelButton;
-    private JButton okButton;
-    private JTextField variableNameField;
-    private JPanel mainPanel;
-    private JTextField variableNameStatusField;
-    private JTextArea expressionStatusField;
-    private JTextArea expressionField;
 
-    private boolean assertionModified;
-    private final Set<String> predecessorVariables;
+    private static class DataTypeComboBoxItem {
+        private final DataType _dataType;
+        public DataTypeComboBoxItem(DataType dataType) { _dataType = dataType; }
+        public DataType getDataType() { return _dataType; }
+        public String toString() { return _dataType.getName(); }
+    }
+
+    final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
+    final ImageIcon OK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Check16.png"));
+    final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
+
+    private JPanel _mainPanel;
+    private JTextField _variableNameTextField;
+    private JLabel _variableNameStatusLabel;
+    private JComboBox _dataTypeComboBox;
+    private JTextField _contentTypeTextField;
+    private JLabel _contentTypeStatusLabel;
+    private JTextArea _expressionTextField;
+    private JLabel _expressionStatusLabel;
+    private JTextArea _expressionStatusTextArea;
+    private JScrollPane _expressionStatusScrollPane;
+    private JButton _cancelButton;
+    private JButton _okButton;
+
+    private boolean _assertionModified;
+    private final Set<String> _predecessorVariables;
+    private Border _expressionStatusBorder;
 
     public SetVariableAssertionDialog(Frame owner, final SetVariableAssertion assertion) throws HeadlessException {
         this(owner, assertion, null);
@@ -43,114 +65,219 @@ public class SetVariableAssertionDialog extends JDialog {
     public SetVariableAssertionDialog(Frame owner, final SetVariableAssertion assertion, final Assertion contextAssertion) throws HeadlessException {
         super(owner, "Set Variable", true);
 
-        add(mainPanel);
+        _expressionStatusBorder = _expressionStatusScrollPane.getBorder();
+        clearVariableNameStatus();
+        clearContentTypeStatus();
+        clearExpressionStatus();
 
-        variableNameField.setText(assertion.getVariableToSet());
-        expressionField.setText(assertion.getExpression());
-
-        updateFast();
-
-        DocumentListener dl = new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { updateFast(); }
-            public void removeUpdate(DocumentEvent e) { updateFast(); }
-            public void changedUpdate(DocumentEvent e) { updateFast(); }
-        };
-
-        predecessorVariables = contextAssertion==null ?
+        _predecessorVariables = contextAssertion==null ?
                 PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet() :
                 PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(contextAssertion).keySet();
 
-        variableNameField.getDocument().addDocumentListener(dl);
-        expressionField.getDocument().addDocumentListener(dl);
-
-        okButton.addActionListener(new ActionListener() {
+        // Populates data type combo box with supported data types.
+        _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.STRING));
+        _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.MESSAGE));
+        _dataTypeComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                assertion.setVariableToSet(variableNameField.getText());
-                assertion.setExpression(expressionField.getText());
-                assertionModified = true;
+                _contentTypeTextField.setEnabled(getSelectedDataType() == DataType.MESSAGE);
+                validateFields();
+            }
+        });
+
+        TextComponentPauseListenerManager.registerPauseListener(
+                _variableNameTextField,
+                new PauseListener() {
+                    public void textEntryPaused(JTextComponent component, long msecs) {
+                        validateFields();
+                    }
+
+                    public void textEntryResumed(JTextComponent component) {
+                        clearVariableNameStatus();
+                    }
+                },
+                500);
+        TextComponentPauseListenerManager.registerPauseListener(
+                _contentTypeTextField,
+                new PauseListener() {
+                    public void textEntryPaused(JTextComponent component, long msecs) {
+                        validateFields();
+                    }
+
+                    public void textEntryResumed(JTextComponent component) {
+                        clearContentTypeStatus();
+                    }
+                },
+                500);
+        TextComponentPauseListenerManager.registerPauseListener(
+                _expressionTextField,
+                new PauseListener() {
+                    public void textEntryPaused(JTextComponent component, long msecs) {
+                        validateFields();
+                    }
+
+                    public void textEntryResumed(JTextComponent component) {
+                        clearExpressionStatus();
+                    }
+                },
+                500);
+
+        _cancelButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                _assertionModified = false;
                 dispose();
             }
         });
 
-        cancelButton.addActionListener(new ActionListener() {
+        _okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                assertionModified = false;
+                assertion.setVariableToSet(_variableNameTextField.getText());
+                final DataType dataType = getSelectedDataType();
+                assertion.setDataType(dataType);
+                if (dataType == DataType.MESSAGE) {
+                    assertion.setContentType(_contentTypeTextField.getText());
+                } else {
+                    assertion.setContentType(null);
+                }
+                assertion.setExpression(_expressionTextField.getText());
+                _assertionModified = true;
                 dispose();
             }
         });
 
+        // Sets dialog to assertion data.
+        _variableNameTextField.setText(assertion.getVariableToSet());
+        selectDataType(assertion.getDataType());
+        _contentTypeTextField.setText(assertion.getContentType());
+        _expressionTextField.setText(assertion.getExpression());
+        validateFields();
 
-        TextComponentPauseListenerManager.registerPauseListener(expressionField, new PauseListener() {
-            public void textEntryPaused(JTextComponent component, long msecs) {
-                updateSlow();
-            }
-
-            public void textEntryResumed(JTextComponent component) {
-                expressionStatusField.setText("");
-            }
-        }, 500);
-
-        TextComponentPauseListenerManager.registerPauseListener(variableNameField, new PauseListener() {
-            public void textEntryPaused(JTextComponent component, long msecs) {
-                updateSlow();
-            }
-
-            public void textEntryResumed(JTextComponent component) {
-                variableNameStatusField.setText("");
-            }
-        }, 500);
+        add(_mainPanel);
     }
 
-    private void updateFast() {
-        okButton.setEnabled(variableNameField.getText().length() > 0 && expressionField.getText().length() > 0);
-    }
+    /**
+     * Set which item is selected in the data type combobox.
+     * @param dataType  the data type to select
+     */
+    private void selectDataType(final DataType dataType) {
+        if (dataType == null) return;
 
-    private void updateSlow() {
-        boolean varOk = false;
-        boolean exprOk;
-        String var = variableNameField.getText();
-        String expr = expressionField.getText();
-        if (var == null || var.length() == 0 || expr == null || expr.length() == 0) {
-            okButton.setEnabled(false);
-            return;
+        for (int i = 0; i < _dataTypeComboBox.getItemCount(); ++i) {
+            if (((DataTypeComboBoxItem) _dataTypeComboBox.getItemAt(i)).getDataType() == dataType) {
+                _dataTypeComboBox.setSelectedIndex(i);
+                return;
+            }
         }
 
-        VariableMetadata meta = BuiltinVariables.getMetadata(var);
-        if (meta != null) {
-            if (meta.isSettable()) {
-                variableNameStatusField.setText("OK (Built-in, settable)");
-                varOk = true;
+        throw new RuntimeException("Data type \"" + dataType.getName() + "\" not available in combobox.");
+    }
+
+    /**
+     * @return the data type currently selected in the data type combobox
+     */
+    private DataType getSelectedDataType() {
+        return ((DataTypeComboBoxItem) _dataTypeComboBox.getSelectedItem()).getDataType();
+    }
+
+    private void clearVariableNameStatus() {
+        _variableNameStatusLabel.setIcon(BLANK_ICON);
+        _variableNameStatusLabel.setText(null);
+    }
+
+    private void clearContentTypeStatus() {
+        _contentTypeStatusLabel.setIcon(BLANK_ICON);
+        _contentTypeStatusLabel.setText(null);
+    }
+
+    private void clearExpressionStatus() {
+        _expressionStatusLabel.setIcon(BLANK_ICON);
+        _expressionStatusTextArea.setText(null);
+        _expressionStatusScrollPane.setBorder(null);
+    }
+
+    /**
+     * Validates values in various fields and sets the status labels as appropriate.
+     */
+    private void validateFields() {
+        final String variableName = _variableNameTextField.getText();
+        final String contentType = _contentTypeTextField.getText();
+        final String expression = _expressionTextField.getText();
+
+        boolean ok = true;
+
+        String validateNameResult = null;
+        if (variableName.isEmpty()) {
+            ok = false;
+        } else if ((validateNameResult = VariableMetadata.validateName(variableName)) != null) {
+            ok = false;
+            _variableNameStatusLabel.setIcon(WARNING_ICON);
+            _variableNameStatusLabel.setText(validateNameResult);
+        } else {
+            final VariableMetadata meta = BuiltinVariables.getMetadata(variableName);
+            if (meta == null) {
+                _variableNameStatusLabel.setIcon(OK_ICON);
+                _variableNameStatusLabel.setText("OK");
+                _dataTypeComboBox.setEnabled(true);
             } else {
-                variableNameStatusField.setForeground(Color.RED);
-                variableNameStatusField.setFont(variableNameStatusField.getFont().deriveFont(Font.BOLD));
-                variableNameStatusField.setText("Built-in, not settable!");
+                if (meta.isSettable()) {
+                    _variableNameStatusLabel.setIcon(OK_ICON);
+                    _variableNameStatusLabel.setText("OK (Built-in, settable)");
+                } else {
+                    ok = false;
+                    _variableNameStatusLabel.setIcon(WARNING_ICON);
+                    _variableNameStatusLabel.setText("Built-in, not settable");
+                }
+                selectDataType(meta.getType());
+                _dataTypeComboBox.setEnabled(false);
+            }
+        }
+
+        if (getSelectedDataType() == DataType.MESSAGE) {
+            _contentTypeTextField.setEnabled(true);
+            if (contentType.isEmpty()) {
+                ok = false;
+            } else {
+                try {
+                    ContentTypeHeader.parseValue(_contentTypeTextField.getText());
+                    _contentTypeStatusLabel.setIcon(OK_ICON);
+                    _contentTypeStatusLabel.setText("OK");
+                } catch (IOException e) {
+                    ok = false;
+                    _contentTypeStatusLabel.setIcon(WARNING_ICON);
+                    _contentTypeStatusLabel.setText("Incorrect syntax");
+                    _okButton.setEnabled(false);
+                }
             }
         } else {
-            variableNameStatusField.setText("OK");
-            varOk = true;
+            _contentTypeTextField.setEnabled(false);
+            clearContentTypeStatus();
         }
 
-        String[] names = ExpandVariables.getReferencedNames(expr);
-        exprOk = true;
-        StringBuilder messages = new StringBuilder();
+        // Expression. Blank is OK.
+        final StringBuilder expressionStatus = new StringBuilder();
+        final String[] names = ExpandVariables.getReferencedNames(expression);
         for (String name : names) {
-            meta = BuiltinVariables.getMetadata(name);
-            if (meta == null && !predecessorVariables.contains(name)) {
-                exprOk = false;
-                if (messages.length() > 0) messages.append("\n");
-                messages.append(name).append(": No such variable");
+            final VariableMetadata meta = BuiltinVariables.getMetadata(name);
+            if (meta == null && !_predecessorVariables.contains(name)) {
+                if (expressionStatus.length() > 0) expressionStatus.append("\n");
+                expressionStatus.append(name).append(": No such variable");
             }
         }
-        expressionStatusField.setText(exprOk ? "OK" : messages.toString());
 
-        okButton.setEnabled(varOk && exprOk);
+        if (expressionStatus.length() == 0) {
+            _expressionStatusLabel.setIcon(OK_ICON);
+            _expressionStatusTextArea.setText("OK");
+            _expressionStatusScrollPane.setBorder(null);
+        } else {
+            ok = false;
+            _expressionStatusLabel.setIcon(WARNING_ICON);
+            _expressionStatusTextArea.setText(expressionStatus.toString());
+            _expressionStatusScrollPane.setBorder(_expressionStatusBorder);
+        }
+
+        _okButton.setEnabled(ok);
     }
 
     public boolean isAssertionModified() {
-        return assertionModified;
-    }
-
-    private void createUIComponents() {
-        // TODO: place custom component creation code here
+        return _assertionModified;
     }
 }
