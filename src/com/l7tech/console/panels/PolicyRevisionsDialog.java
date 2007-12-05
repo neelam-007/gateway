@@ -5,14 +5,19 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.TableUtil;
 import static com.l7tech.common.gui.util.TableUtil.column;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyVersion;
 import com.l7tech.common.util.BeanUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
 import com.l7tech.common.util.Pair;
+import com.l7tech.console.action.EditPolicyAction;
+import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.policy.PolicyTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.Assertion;
@@ -108,6 +113,12 @@ public class PolicyRevisionsDialog extends JDialog {
             }
         });
 
+        editButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                doEdit(evt);
+            }
+        });
+
         setActiveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 doSetActive();
@@ -145,12 +156,35 @@ public class PolicyRevisionsDialog extends JDialog {
         showSelectedPolicyXml();
     }
 
+    private void doEdit(ActionEvent evt) {
+        try {
+            Pair<Integer, PolicyVersion> info = getSelectedPolicyVersion();
+            if (info == null)
+                return;
+            PolicyEntityNode node = makeEditablePolicyEntityNode(info.right);
+            EditPolicyAction editAction = new EditPolicyAction(node);
+            dispose();
+            editAction.actionPerformed(evt);
+        } catch (FindException e) {
+            showErrorMessage("Unable to Edit Version", "Unable to start a new edit from this version: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    /* @return a PolicyEntityNode representing the specified revision of this policy. */
+    private PolicyEntityNode makeEditablePolicyEntityNode(final PolicyVersion version) throws FindException {
+        return new PolicyEntityNode(new EntityHeader(Long.toString(policyOid), EntityType.POLICY, null, null)) {
+            public Policy refreshPolicy() throws FindException {
+                super.refreshPolicy();
+                policy.setXml(version.getXml());
+                return policy;
+            }
+        };
+    }
+
     private void doSetActive() {
         Pair<Integer, PolicyVersion> info = getSelectedPolicyVersion();
         if (info == null)
             return;
-
-
 
         try {
             Registry.getDefault().getPolicyAdmin().setActivePolicyVersion(policyOid, info.right.getOid());
