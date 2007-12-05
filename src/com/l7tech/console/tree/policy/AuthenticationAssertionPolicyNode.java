@@ -5,6 +5,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.Functions;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.security.rbac.FindEntityDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
@@ -12,14 +13,14 @@ import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.awt.event.ActionEvent;
 
 /**
  * @author alex
  */
 public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode<AuthenticationAssertion> {
-    private final AbstractAction propertiesAction = new AbstractAction() {
-        public void actionPerformed(ActionEvent e) {
+    private final AbstractAction propertiesAction = new SecureAction(null) {
+        @Override
+        protected void performAction() {
             FindEntityDialog.find(EntityType.ID_PROVIDER_CONFIG, new Functions.UnaryVoid<EntityHeader>() {
                 public void call(EntityHeader entityHeader) {
                     assertion.setIdentityProviderOid(entityHeader.getOid());
@@ -32,7 +33,12 @@ public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode
         }
 
         @Override
-        public String toString() {
+        protected String iconResource() {
+            return "com/l7tech/console/resources/Properties16.gif";
+        }
+
+        @Override
+        public String getName() {
             return "Authentication Assertion Properties";
         }
     };
