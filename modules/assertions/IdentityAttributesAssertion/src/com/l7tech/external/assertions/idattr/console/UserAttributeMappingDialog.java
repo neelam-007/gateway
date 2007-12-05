@@ -88,11 +88,10 @@ public class UserAttributeMappingDialog extends JDialog {
 
         variablePrefixLabel.setText(prefix + " . ");
         
-        providerNameLabel.setBorder(LineBorder.createGrayLineBorder());
-        providerNameLabel.setText(config.getName());
-
         IdentityProviderType type = config.type();
         if (type == null) throw new IllegalArgumentException("IdentityProviderType is null");
+        String idpName = config.getName();
+
         final AttributeHeader header = mapping.getAttributeConfig().getHeader();
 
         // TODO display only user attributes if applicable
@@ -102,13 +101,18 @@ public class UserAttributeMappingDialog extends JDialog {
             allowCustom = false;
         } else if (type == IdentityProviderType.FEDERATED) {
             builtinAtts = FederatedAttributeMapping.getBuiltinAttributes();
+            idpName += " [" + type.description() + "]";
             allowCustom = false;
         } else if (type == IdentityProviderType.LDAP) {
             builtinAtts = LdapAttributeMapping.getBuiltinAttributes();
+            idpName += " [" + type.description() + "]";
             allowCustom = true;
         } else {
             throw new IllegalArgumentException("Can't handle IDP of type " + type.description());
         }
+
+        providerNameLabel.setBorder(LineBorder.createGrayLineBorder());
+        providerNameLabel.setText(idpName);
 
         java.util.List<AttributeHeader> displayHeaders = new ArrayList<AttributeHeader>();
         for (AttributeHeader att : builtinAtts) {
