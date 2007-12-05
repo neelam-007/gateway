@@ -2,14 +2,12 @@ package com.l7tech.server.service;
 
 import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyType;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.uddi.WsdlInfo;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.Resolver;
-import com.l7tech.common.util.ResolvingComparator;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
@@ -50,11 +48,13 @@ import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,8 +65,11 @@ import java.util.logging.Logger;
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>
  * Date: Jun 6, 2003
+ * @noinspection OverloadedMethodsWithSameNumberOfParameters
  */
 public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
+    private static final EntityHeader[] EMPTY_ENTITY_HEADER_ARRAY = new EntityHeader[0];
+
     private SSLContext sslContext;
 
     private final AssertionLicense licenseManager;
@@ -127,12 +130,11 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             HostConfiguration hconf = getHostConfigurationWithTrustManager(urltarget);
             // bugfix for 1857 (next 3 lines)
             clientParams.setVersion(HttpVersion.HTTP_1_1);
-            String hostval = urltarget.getHost();
-            if (urltarget.getPort() > 0) {
-                hostval = hostval + ":" + urltarget.getPort();
-            }
+            StringBuilder hostval = new StringBuilder(urltarget.getHost());
+            if (urltarget.getPort() > 0)
+                hostval.append(':').append(urltarget.getPort());
             get = hconf == null ? new GetMethod(url) : new GetMethod(urltarget.getFile());
-            get.setRequestHeader("HOST", hostval);
+            get.setRequestHeader("HOST", hostval.toString());
 
             // support for passing username and password in the url from the ssm
             String userinfo = urltarget.getUserInfo();
@@ -152,6 +154,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
                 ret = client.executeMethod(get);
             }
             if (ret == 200) {
+                //noinspection IOResourceOpenedButNotSafelyClosed
                 byte[] body = HexUtils.slurpStream(new ByteLimitInputStream(get.getResponseBodyAsStream(), 16, 10*1024*1024));
                 String charset = get.getResponseCharSet();
                 return new String(body, charset);
@@ -220,8 +223,12 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         }), PolicyValidatorResult.class);
     }
 
-    private boolean isDefaultOid(PersistentEntity entity) {
+    private static boolean isDefaultOid(PersistentEntity entity) {
         return entity.getOid() == PersistentEntity.DEFAULT_OID;
+    }
+
+    private void checkpointPolicy(Policy toCheckpoint, boolean activate) {
+        applicationContext.publishEvent(new PolicyCheckpointEvent(this, toCheckpoint, activate));
     }
 
     /**
@@ -240,30 +247,79 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     public long savePublishedService(PublishedService service, boolean activateAsWell)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
-        if (!activateAsWell)
-            throw new SaveException("TODO Saving a service without activating its Policy is not yet implemented"); // TODO implement this
-
-        long oid;
-
         if (service.getPolicy() != null && isDefaultOid(service) != isDefaultOid(service.getPolicy()))
             throw new SaveException("Unable to save new service with existing policy, or to update existing service with new policy");
+
+        if (!activateAsWell)
+            return saveWithoutActivating(service);
+
+        long oid;
 
         if (service.getOid() > 0) {
             // UPDATING EXISTING SERVICE
             oid = service.getOid();
             logger.fine("Updating PublishedService: " + oid);
-            // checkpoint before update since old policy XML must be preserved
-            applicationContext.publishEvent(new PolicyCheckpointEvent(this, service.getPolicy()));
             serviceManager.update(service);
+            checkpointPolicy(service.getPolicy(), activateAsWell);
         } else {
             // SAVING NEW SERVICE
             logger.fine("Saving new PublishedService");
             oid = serviceManager.save(service);
-            // must checkpoint after save since initial policy must have its OID already
-            applicationContext.publishEvent(new PolicyCheckpointEvent(this, service.getPolicy()));
+            checkpointPolicy(service.getPolicy(), activateAsWell);
             serviceManager.addManageServiceRole(service);
         }
         return oid;
+    }
+
+    private long saveWithoutActivating(PublishedService service) throws SaveException {
+        assert service != null;
+        assert service.getPolicy() != null;
+        assert isDefaultOid(service) == isDefaultOid(service.getPolicy());
+
+        Policy policy = service.getPolicy();
+
+        if (isDefaultOid(service)) {
+            // Save new service without activating its policy
+            String revisionXml = policy.getXml();
+            policy.disable();
+            long oid = serviceManager.save(service);
+            long poid = service.getPolicy().getOid();
+            assert poid != Policy.DEFAULT_OID;
+            serviceManager.addManageServiceRole(service);
+            checkpointPolicy(makeCopyWithDifferentXml(policy, revisionXml), false);
+            return oid;
+        }
+
+        try {
+            // Save updated service without activating its policy or changing the enable/disable state of the currently-in-effect policy
+            String revisionXml = policy.getXml();
+            PublishedService currentServ = serviceManager.findByPrimaryKey(service.getOid());
+            if (currentServ == null)
+                throw new SaveException("No existing published service found with OID=" + service.getOid());
+            Policy current = currentServ.getPolicy();
+            if (current == null)
+                throw new IllegalStateException("Existing published service OID=" + service.getOid() + " does not have a corresponding Policy");
+            String currentXml = current.getXml();
+            policy.setXml(currentXml + ' ');
+            serviceManager.save(currentServ);
+            checkpointPolicy(makeCopyWithDifferentXml(policy, revisionXml), false);
+            return service.getOid();
+        } catch (FindException e) {
+            throw new SaveException(e);
+        }
+    }
+
+    private static Policy makeCopyWithDifferentXml(Policy policy, String revisionXml) throws SaveException {
+        try {
+            Policy toCheckpoint = new Policy(policy.getType(), policy.getName(), revisionXml, policy.isSoap());
+            BeanUtils.copyProperties(policy, toCheckpoint);
+            toCheckpoint.setXml(revisionXml);
+            return toCheckpoint;
+        } catch (InvocationTargetException e) {
+            throw new SaveException("Unable to copy Policy properties", e); // can't happen
+        } catch (IllegalAccessException e) {
+            throw new SaveException("Unable to copy Policy properties", e); // can't happen
+        }
     }
 
     /**
@@ -326,7 +382,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     // ************************************************
 
     private EntityHeader[] collectionToHeaderArray(Collection<EntityHeader> input) {
-        if (input == null) return new EntityHeader[0];
+        if (input == null) return EMPTY_ENTITY_HEADER_ARRAY;
         EntityHeader[] output = new EntityHeader[input.size()];
         int count = 0;
         for (EntityHeader in : input) {
@@ -354,12 +410,12 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         String url;
         List<String> urlList = new ArrayList<String>();
         do {
-            url = uddiProps.getProperty(UddiAgent.PROP_INQUIRY_URLS + "." + uddiNumber++);
+            url = uddiProps.getProperty(UddiAgent.PROP_INQUIRY_URLS + '.' + uddiNumber++);
             if (url != null) urlList.add(url);
         } while (url != null);
 
         String[] urls = new String[urlList.size()];
-        if(urlList.size() > 0) {
+        if(!urlList.isEmpty()) {
             for (int i = 0; i < urlList.size(); i++) {
                 urls[i] = urlList.get(i);
             }
@@ -442,7 +498,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
      * @throws IllegalArgumentException if service ID is null
      * @throws NumberFormatException on parse error
      */
-    private long toLong(String serviceID)
+    private static long toLong(String serviceID)
       throws IllegalArgumentException {
         if (serviceID == null) {
                 throw new IllegalArgumentException();
@@ -480,7 +536,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     private HostConfiguration getHostConfigurationWithTrustManager(URL url) {
         HostConfiguration hconf = null;
         if ("https".equals(url.getProtocol())) {
-            final int port = url.getPort() == -1 ? 443 : url.getPort();
+            final int fport = url.getPort() == -1 ? 443 : url.getPort();
             hconf = new HostConfiguration();
             Protocol protocol = new Protocol(url.getProtocol(), (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
                 public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
@@ -510,8 +566,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
 
                     return socket;
                 }
-            }, port);
-            hconf.setHost(url.getHost(), port, protocol);
+            }, fport);
+            hconf.setHost(url.getHost(), fport, protocol);
         }
         return hconf;
     }

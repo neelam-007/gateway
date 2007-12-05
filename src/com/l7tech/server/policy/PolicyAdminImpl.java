@@ -10,8 +10,6 @@ import com.l7tech.common.util.BeanUtils;
 import com.l7tech.common.util.Functions.Unary;
 import static com.l7tech.common.util.Functions.map;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.assertion.FalseAssertion;
-import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.event.PolicyCheckpointEvent;
 import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.beans.BeansException;
@@ -19,6 +17,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -60,24 +59,66 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
 
     public long savePolicy(Policy policy, boolean activateAsWell) throws SaveException {
         if (!activateAsWell)
-            throw new SaveException("TODO Saving a Policy without activating it is not yet implemented"); // TODO implement this
+            return saveWithoutActivating(policy);
 
         if (policy.getOid() == Policy.DEFAULT_OID) {
             final long oid = policyManager.save(policy);
-            // Checkpoint after save since it requires a valid OID
-            applicationContext.publishEvent(new PolicyCheckpointEvent(this, policy));
+            checkpointPolicy(policy, activateAsWell);
             policyManager.addManagePolicyRole(policy);
             return oid;
         } else {
             try {
-                // Checkpoint before update so it can preserve old policy XML
-                applicationContext.publishEvent(new PolicyCheckpointEvent(this, policy));
                 policyManager.update(policy);
+                checkpointPolicy(policy, activateAsWell);
                 return policy.getOid();
             } catch (UpdateException e) {
                 throw new SaveException("Couldn't update policy", e.getCause());
             }
         }
+    }
+
+    private long saveWithoutActivating(Policy policy) throws SaveException {
+        if (policy.getOid() == Policy.DEFAULT_OID) {
+            // Save new policy without activating it
+            String revisionXml = policy.getXml();
+            policy.disable();
+            long oid = policyManager.save(policy);
+            policyManager.addManagePolicyRole(policy);
+            checkpointPolicy(makeCopyWithDifferentXml(policy, revisionXml), false);
+            return oid;
+        }
+
+        try {
+            // Save updated policy without activating it or changing the enable/disable state of the currently-in-effect policy
+            String revisionXml = policy.getXml();
+            Policy current = policyManager.findByPrimaryKey(policy.getOid());
+            if (current == null)
+                throw new SaveException("No existing policy found with OID=" + policy.getOid());
+            String currentXml = current.getXml();
+            policy.setXml(currentXml + ' ');
+            policyManager.save(policy);
+            checkpointPolicy(makeCopyWithDifferentXml(policy, revisionXml), false);
+            return policy.getOid();
+        } catch (FindException e) {
+            throw new SaveException(e);
+        }
+    }
+
+    private static Policy makeCopyWithDifferentXml(Policy policy, String revisionXml) throws SaveException {
+        try {
+            Policy toCheckpoint = new Policy(policy.getType(), policy.getName(), revisionXml, policy.isSoap());
+            BeanUtils.copyProperties(policy, toCheckpoint);
+            toCheckpoint.setXml(revisionXml);
+            return toCheckpoint;
+        } catch (InvocationTargetException e) {
+            throw new SaveException("Unable to copy Policy properties", e); // can't happen
+        } catch (IllegalAccessException e) {
+            throw new SaveException("Unable to copy Policy properties", e); // can't happen
+        }
+    }
+
+    private void checkpointPolicy(Policy toCheckpoint, boolean activate) {
+        applicationContext.publishEvent(new PolicyCheckpointEvent(this, toCheckpoint, activate));
     }
 
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
@@ -130,7 +171,7 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         Policy policy = policyManager.findByPrimaryKey(policyOid);
         if (policy == null) throw new FindException("No Policy found with policyOid=" + policyOid);
 
-        policy.setXml(WspWriter.getPolicyXml(new FalseAssertion())); // TODO better way to deactivate policies
+        policy.disable();
         policyManager.update(policy);
         policyVersionManager.deactivateVersions(policyOid, PolicyVersion.DEFAULT_OID);
     }

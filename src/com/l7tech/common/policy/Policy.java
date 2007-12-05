@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.WspWriter;
 
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -50,18 +51,18 @@ public class Policy extends NamedEntityImp {
         if (xml == null || xml.length() == 0) {
             logger.warning(MessageFormat.format("Policy #{0} ({1}) has an invalid or empty policy_xml field.  Using null policy.", _oid, _name));
             return FalseAssertion.getInstance();
-        } else {
-            if (assertion == null) {
-                assertion = WspReader.getDefault().parsePermissively(xml);
-                assertion.setOwnerPolicyOid(getOid());
-                updatePolicyHints(assertion);
-            }
+        }
+
+        if (assertion == null) {
+            assertion = WspReader.getDefault().parsePermissively(xml);
+            assertion.setOwnerPolicyOid(getOid());
+            updatePolicyHints(assertion);
         }
 
         return assertion;
     }
 
-    /** Caller must hold lock */
+    /* Caller must hold lock */
     private void updatePolicyHints(Assertion rootAssertion) {
         // TODO split request/response into separate flags
         tarariWanted = false;
@@ -77,7 +78,7 @@ public class Policy extends NamedEntityImp {
     }
 
     /**
-     * Indicates that at least one assertion in this service's policy strongly prefers to use Tarari rather than use a
+     * @return true if at least one assertion in this service's policy strongly prefers to use Tarari rather than use a
      * pre-parsed DOM tree.
      */
     public boolean isTarariWanted() {
@@ -85,7 +86,7 @@ public class Policy extends NamedEntityImp {
     }
 
     /**
-     * Indicates that there is a WSS assertion in this services policy, in which case DOM would likely be better than
+     * @return true if there is a WSS assertion in this services policy, in which case DOM would likely be better than
      * using Tarari.
      */
     public boolean isWssInPolicy() {
@@ -119,6 +120,11 @@ public class Policy extends NamedEntityImp {
 
     public void setSoap(boolean soap) {
         this.soap = soap;
+    }
+
+    public void disable() {
+        // TODO find better way to disable policies
+        setXml(WspWriter.getPolicyXml(new FalseAssertion()));
     }
 
     @SuppressWarnings({"RedundantIfStatement"})
