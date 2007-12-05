@@ -699,7 +699,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         if (resMsgDestVariableRadioButton.isSelected()) {
             final String variableName = resMsgDestVariableTextField.getText();
             String validateNameResult = null;
-            if (variableName.isEmpty()) {
+            if (variableName.length() == 0) {
                 ok = false;
             } else if ((validateNameResult = VariableMetadata.validateName(variableName)) != null) {
                 ok = false;

@@ -32,7 +32,7 @@ public class SetVariableAssertionPolicyNode extends LeafAssertionTreeNode {
         name.append(assertion.getDataType().getName());
         name.append(" to");
         final String expression = assertion.getExpression();
-        if (expression.isEmpty()) {
+        if (expression.length() == 0) {
             name.append(" empty");
         } else if (expression.length() <= MAX_DISPLAY_LENGTH) {
             name.append(": ");

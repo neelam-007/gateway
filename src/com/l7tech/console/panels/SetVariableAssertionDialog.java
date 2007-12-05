@@ -205,7 +205,7 @@ public class SetVariableAssertionDialog extends JDialog {
         boolean ok = true;
 
         String validateNameResult = null;
-        if (variableName.isEmpty()) {
+        if (variableName.length() == 0) {
             ok = false;
         } else if ((validateNameResult = VariableMetadata.validateName(variableName)) != null) {
             ok = false;
@@ -233,7 +233,7 @@ public class SetVariableAssertionDialog extends JDialog {
 
         if (getSelectedDataType() == DataType.MESSAGE) {
             _contentTypeTextField.setEnabled(true);
-            if (contentType.isEmpty()) {
+            if (contentType.length() == 0) {
                 ok = false;
             } else {
                 try {
