@@ -29,6 +29,11 @@ import java.util.logging.Logger;
 public class LogSinkManagerWindow extends JDialog {
     protected static final Logger logger = Logger.getLogger(LogSinkManagerWindow.class.getName());
 
+    private static final String WINDOW_TITLE = "Manage Log Sinks";
+
+    /** Resource bundle with default locale */
+    private ResourceBundle resources = null;
+
     private JPanel contentPane;
     private JScrollPane mainScrollPane;
     private JButton createButton;
@@ -45,7 +50,7 @@ public class LogSinkManagerWindow extends JDialog {
      * @param owner The owner of this dialog
      */
     public LogSinkManagerWindow(Frame owner) {
-        super(owner, "Manage Listen Ports");
+        super(owner, WINDOW_TITLE);
         initialize();
     }
 
@@ -55,11 +60,23 @@ public class LogSinkManagerWindow extends JDialog {
      * @param owner The owner of this dialog
      */
     public LogSinkManagerWindow(Dialog owner) {
-        super(owner, "Manage Listen Ports");
+        super(owner, WINDOW_TITLE);
         initialize();
     }
 
+    /**
+     * Loads locale-specific resources: strings, images, etc
+     */
+    private void initResources() {
+        Locale locale = Locale.getDefault();
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.LogSinkManagerWindow", locale);
+    }
+
     private void initialize() {
+        initResources();
+
+        setTitle(resources.getString("window.title"));
+        
         flags = PermissionFlags.get(EntityType.LOG_SINK);
 
         setContentPane(contentPane);
@@ -74,7 +91,7 @@ public class LogSinkManagerWindow extends JDialog {
 
         Utilities.setEscKeyStrokeDisposes(this);
 
-        logSinkTable = new LogSinkTable();
+        logSinkTable = new LogSinkTable(resources);
         mainScrollPane.setViewport(null);
         mainScrollPane.setViewportView(logSinkTable);
         mainScrollPane.getViewport().setBackground(Color.white);
@@ -119,9 +136,11 @@ public class LogSinkManagerWindow extends JDialog {
         if (sinkConfiguration == null)
             return;
 
+        String message = resources.getString("confirmDelete.message.long");
+        message = message.replace("$1", sinkConfiguration.getName());
         int result = JOptionPane.showConfirmDialog(this,
-                                                   "Are you sure you want to remove the log sink \"" + sinkConfiguration.getName() + "\"?",
-                                                   "Confirm Removal",
+                                                   message,
+                                                   resources.getString("confirmDelete.message.short"),
                                                    JOptionPane.YES_NO_CANCEL_OPTION,
                                                    JOptionPane.QUESTION_MESSAGE);
         if (result != JOptionPane.YES_OPTION)
@@ -134,9 +153,13 @@ public class LogSinkManagerWindow extends JDialog {
             logSinkAdmin.deleteSinkConfiguration(sinkConfiguration.getOid());
             loadSinkConfigurations();
         } catch (DeleteException e) {
-            showErrorMessage("Remove Failed", "Failed to remove listen port: " + ExceptionUtils.getMessage(e), e);
+            showErrorMessage(resources.getString("errors.removalFailed.title"),
+                    resources.getString("errors.removalFailed.message") + " " + ExceptionUtils.getMessage(e),
+                    e);
         } catch (FindException e) {
-            showErrorMessage("Remove Failed", "Failed to remove listen port: " + ExceptionUtils.getMessage(e), e);
+            showErrorMessage(resources.getString("errors.removalFailed.title"),
+                    resources.getString("errors.removalFailed.message") + " " + ExceptionUtils.getMessage(e),
+                    e);
         }
     }
 
@@ -172,9 +195,15 @@ public class LogSinkManagerWindow extends JDialog {
                         loadSinkConfigurations();
                         logSinkTable.setSelectedConnector(sinkConfiguration);
                     } catch (SaveException e) {
-                        showErrorMessage("Save Failed", "Failed to save log sink: " + ExceptionUtils.getMessage(e), e, reedit);
+                        showErrorMessage(resources.getString("errors.saveFailed.title"),
+                                resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(e),
+                                e,
+                                reedit);
                     } catch (UpdateException e) {
-                        showErrorMessage("Save Failed", "Failed to save log sink: " + ExceptionUtils.getMessage(e), e, reedit);
+                        showErrorMessage(resources.getString("errors.saveFailed.title"),
+                                resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(e),
+                                e,
+                                reedit);
                     }
                 }
             }
@@ -199,7 +228,7 @@ public class LogSinkManagerWindow extends JDialog {
         DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, continuation);
     }
 
-    /** @return the TransportAdmin interface, or null if not connected or it's unavailable for some other reason */
+    /** @return the LogSinkAdmin interface, or null if not connected or it's unavailable for some other reason */
     private LogSinkAdmin getLogSinkAdmin() {
         Registry reg = Registry.getDefault();
         if (!reg.isAdminContextPresent())
@@ -210,7 +239,7 @@ public class LogSinkManagerWindow extends JDialog {
     private void loadSinkConfigurations() {
         try {
             LogSinkAdmin logSinkAdmin = getLogSinkAdmin();
-            if (/*!flags.canReadSome() || */logSinkAdmin == null) {
+            if (!flags.canReadSome() || logSinkAdmin == null) {
                 // Not connected to Gateway, or no permission to read connector list
                 logSinkTable.setData(Collections.<LogSinkTableRow>emptyList());
                 return;
@@ -218,19 +247,23 @@ public class LogSinkManagerWindow extends JDialog {
             Collection<SinkConfiguration> sinkConfigurations = logSinkAdmin.findAllSinkConfigurations();
             java.util.List<LogSinkTableRow> rows = new ArrayList<LogSinkTableRow>();
             for (SinkConfiguration sinkConfiguration : sinkConfigurations)
-                rows.add(new LogSinkTableRow(sinkConfiguration));
+                rows.add(new LogSinkTableRow(sinkConfiguration, resources));
             logSinkTable.setData(rows);
 
         } catch (FindException e) {
-            showErrorMessage("Deletion Failed", "Unable to delete listen port: " + ExceptionUtils.getMessage(e), e);
+            showErrorMessage(resources.getString("errors.loadFailed.title"),
+                    resources.getString("errors.loadFailed.message") + " " + ExceptionUtils.getMessage(e),
+                    e);
         }
     }
 
     private static class LogSinkTableRow {
         private final SinkConfiguration sinkConfiguration;
+        private ResourceBundle resources = null;
 
-        public LogSinkTableRow(SinkConfiguration sinkConfiguration) {
+        public LogSinkTableRow(SinkConfiguration sinkConfiguration, ResourceBundle resources) {
             this.sinkConfiguration = sinkConfiguration;
+            this.resources = resources;
         }
 
         public SinkConfiguration getSinkConfiguration() {
@@ -238,7 +271,7 @@ public class LogSinkManagerWindow extends JDialog {
         }
 
         public Object getEnabled() {
-            return sinkConfiguration.isEnabled() ? "Yes" : "No";
+            return sinkConfiguration.isEnabled() ? resources.getString("enabledColumn.values.yes.text") : resources.getString("enabledColumn.values.no.text");
         }
 
         public Object getName() {
@@ -246,7 +279,7 @@ public class LogSinkManagerWindow extends JDialog {
         }
 
         public Object getType() {
-            return sinkConfiguration.getType();
+            return resources.getString("typeColumn.values." + sinkConfiguration.getType().name() + ".text");
         }
 
         public Object getDescription() {
@@ -255,9 +288,11 @@ public class LogSinkManagerWindow extends JDialog {
     }
 
     private static class LogSinkTable extends JTable {
-        private final LogSinkTableModel model = new LogSinkTableModel();
+        private final LogSinkTableModel model;
 
-        LogSinkTable() {
+        LogSinkTable(ResourceBundle resources) {
+            model = new LogSinkTableModel(resources);
+            
             setModel(model);
             getTableHeader().setReorderingAllowed(false);
             getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -348,35 +383,36 @@ public class LogSinkManagerWindow extends JDialog {
             }
         }
 
-        public final Col[] columns = new Col[] {
-                new Col("Name", 60, 90, 999999) {
-                    Object getValueForRow(LogSinkTableRow row) {
-                        return row.getName();
-                    }
-                },
-
-                new Col("Type", 3, 100, 150) {
-                    Object getValueForRow(LogSinkTableRow row) {
-                        return row.getType();
-                    }
-                },
-
-                new Col("Description", 60, 90, 999999) {
-                    Object getValueForRow(LogSinkTableRow row) {
-                        return row.getDescription();
-                    }
-                },
-
-                new Col("Enabled", 60, 90, 90) {
-                    Object getValueForRow(LogSinkTableRow row) {
-                        return row.getEnabled();
-                    }
-                },
-        };
+        public final Col[] columns;
 
         private final ArrayList<LogSinkTableRow> rows = new ArrayList<LogSinkTableRow>();
 
-        public LogSinkTableModel() {
+        public LogSinkTableModel(final ResourceBundle resources) {
+            columns = new Col[] {
+                    new Col(resources.getString("columns.name.title"), 60, 90, 999999) {
+                        Object getValueForRow(LogSinkTableRow row) {
+                            return row.getName();
+                        }
+                    },
+
+                    new Col(resources.getString("columns.type.title"), 3, 100, 150) {
+                        Object getValueForRow(LogSinkTableRow row) {
+                            return row.getType();
+                        }
+                    },
+
+                    new Col(resources.getString("columns.description.title"), 60, 90, 999999) {
+                        Object getValueForRow(LogSinkTableRow row) {
+                            return row.getDescription();
+                        }
+                    },
+
+                    new Col(resources.getString("columns.enabled.title"), 60, 90, 90) {
+                        Object getValueForRow(LogSinkTableRow row) {
+                            return row.getEnabled();
+                        }
+                    },
+            };
         }
 
         public int getColumnMinWidth(int column) {

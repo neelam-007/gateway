@@ -16,7 +16,7 @@ public class ManageLogSinksAction extends SecureAction {
     static final Logger log = Logger.getLogger(ManageSsgConnectorsAction.class.getName());
 
     public ManageLogSinksAction() {
-        super(new AttemptedAnyOperation(EntityType.SSG_CONNECTOR));
+        super(new AttemptedAnyOperation(EntityType.LOG_SINK));
     }
 
     public String getName() {

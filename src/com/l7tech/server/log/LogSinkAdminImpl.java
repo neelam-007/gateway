@@ -6,7 +6,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.server.ServerConfig;
 
 import java.util.Collection;
 
@@ -39,5 +38,9 @@ public class LogSinkAdminImpl implements LogSinkAdmin {
 
     public void deleteSinkConfiguration(long oid) throws DeleteException, FindException {
         sinkManager.delete(oid);
+    }
+
+    public boolean sendTestSyslogMessage(SinkConfiguration sinkConfiguration) {
+        return true;
     }
 }

@@ -26,4 +26,8 @@ public class LogSinkAdminStub implements LogSinkAdmin {
 
     public void deleteSinkConfiguration(long oid) throws DeleteException, FindException {
     }
+
+    public boolean sendTestSyslogMessage(SinkConfiguration sinkConfiguration) {
+        return true;
+    }
 }

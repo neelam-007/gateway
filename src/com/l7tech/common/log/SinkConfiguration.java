@@ -77,6 +77,8 @@ public class SinkConfiguration extends NamedEntityImp {
     public static final String PROP_FILE_MAX_SIZE = "file.maxSize";
     /** The property name for the maximum number of rotated log files to keep */
     public static final String PROP_FILE_LOG_COUNT = "file.logCount";
+    /** the property name for the format */
+    public static final String PROP_FILE_FORMAT = "file.format";
 
     // Syslog sink property names
     /** The property name for the syslog protocol to use */
@@ -94,7 +96,7 @@ public class SinkConfiguration extends NamedEntityImp {
     /** The property name for the timezone to use for log messages */
     public static final String PROP_SYSLOG_TIMEZONE = "syslog.timezone";
 
-    public static final String PROP_SYSLOG_PROTOCOL_TCP = "TCP (plain)";
+    public static final String PROP_SYSLOG_PROTOCOL_TCP = "TCP";
     public static final String PROP_SYSLOG_PROTOCOL_UDP = "UDP";
 
     private String description;

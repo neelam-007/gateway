@@ -67,4 +67,12 @@ public interface LogSinkAdmin {
      */
     @Secured(stereotype=DELETE_BY_ID)
     void deleteSinkConfiguration(long oid) throws DeleteException, FindException;
+
+    /**
+     * Creates a new syslog sink based on the provided configuration and sends a test message to it.
+     *
+     * @param sinkConfiguration The sink configuration to use
+     * @return Whether the message was successfully sent or not
+     */
+    boolean sendTestSyslogMessage(SinkConfiguration sinkConfiguration);
 }

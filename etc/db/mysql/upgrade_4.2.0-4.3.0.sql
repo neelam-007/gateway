@@ -63,6 +63,15 @@ CREATE TABLE sink_config (
   PRIMARY KEY  (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+-- Create the 'Manage Log Sinks' role
+DELETE FROM rbac_permission WHERE role_oid=-800;
+DELETE FROM rbac_role WHERE objectid=-800;
+INSERT INTO rbac_role VALUES (-800,0,'Manage Log Sinks', null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete log sinks.');
+INSERT INTO rbac_permission VALUES (-801,0,-800,'READ',NULL,'LOG_SINK');
+INSERT INTO rbac_permission VALUES (-802,0,-800,'CREATE',NULL,'LOG_SINK');
+INSERT INTO rbac_permission VALUES (-803,0,-800,'UPDATE',NULL,'LOG_SINK');
+INSERT INTO rbac_permission VALUES (-804,0,-800,'DELETE',NULL,'LOG_SINK');
+
 
 ----------------------------------------
 --           POLICY INCLUDES          --
