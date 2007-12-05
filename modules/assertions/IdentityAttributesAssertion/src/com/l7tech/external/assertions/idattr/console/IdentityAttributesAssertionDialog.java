@@ -93,10 +93,15 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
         }));
 
         EntityHeader[] tempHeaders;
+        
         try {
             tempHeaders = Registry.getDefault().getIdentityAdmin().findAllIdentityProviderConfig();
             for (EntityHeader header : tempHeaders) {
                 final IdentityProviderConfig config = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(header.getOid());
+                IdentityProviderType type = config.type();
+                if (type != IdentityProviderType.INTERNAL) {
+                    header.setName(header.getName() + " [" + type.description() + "]");
+                }
                 this.configs.put(header.getOid(), config);
                 this.headers.put(header.getOid(), header);
             }
