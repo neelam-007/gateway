@@ -92,7 +92,7 @@ public class ManualStepsManager {
 
         List<String> steps = new ArrayList<String>();
 
-        if (getClusteringType() != ClusteringType.CLUSTER_NONE &&
+        if (getClusteringType() != ClusteringType.CLUSTER_MASTER &&
             getClusteringType() != ClusteringType.UNDEFINED) {
             steps.add(timeSyncLine);
             steps.add("<br>");
@@ -101,28 +101,28 @@ public class ManualStepsManager {
         if (getKeystoreType() != KeystoreType.LUNA_KEYSTORE_NAME &&
             getKeystoreType() != KeystoreType.UNDEFINED) {
             switch (getClusteringType()) {
-                case CLUSTER_NONE:
-                case CLUSTER_NEW:
+                case CLUSTER_MASTER:
+                case CLUSTER_CLONE:
                     return steps;
 
-                case CLUSTER_JOIN:
-                    steps.add(runSSgConfigLine);
-                    steps.add(copykeysLine);
-                    break;
+//                case CLUSTER_JOIN:
+//                    steps.add(runSSgConfigLine);
+//                    steps.add(copykeysLine);
+//                    break;
                 case UNDEFINED:
                     break;
 
             }
         } else {
             switch (getClusteringType()) {
-                case CLUSTER_NONE:
-                case CLUSTER_NEW:
+                case CLUSTER_MASTER:
+                case CLUSTER_CLONE:
                     steps.add(getOsFunctions().isUnix()? unixUpdateCrystokiLine :windowsUpdateCrystokiLine);
                     break;
 
-                case CLUSTER_JOIN:
-                    steps.add(getOsFunctions().isUnix()? unixLunaConfigCopy :windowsLunaConfigCopy);
-                    break;
+//                case CLUSTER_JOIN:
+//                    steps.add(getOsFunctions().isUnix()? unixLunaConfigCopy :windowsLunaConfigCopy);
+//                    break;
                 case UNDEFINED:
                     break;
             }

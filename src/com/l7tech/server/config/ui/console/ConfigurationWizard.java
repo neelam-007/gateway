@@ -42,6 +42,8 @@ public class ConfigurationWizard {
     private ManualStepsManager manualStepsManager;
     private SharedWizardInfo sharedWizardInfo;
 
+    boolean jumpToApply = false;
+
     static {
         currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
         String subMinor = BuildInfo.getProductVersionSubMinor();
@@ -99,6 +101,9 @@ public class ConfigurationWizard {
         ConfigWizardConsoleStep step;
         while (stepsIterator.hasNext()) {
             step = stepsIterator.next();
+            if (isJumpToApply()) {
+                if (!step.shouldApplyConfiguration()) continue;
+            }
             step.showTitle();
 
 
@@ -112,8 +117,9 @@ public class ConfigurationWizard {
                 step.showStep(true);
                 if (step.shouldApplyConfiguration()) applyConfiguration();
             } catch (WizardNavigationException e) {
-                if (e.getMessage().equals(WizardNavigationException.NAVIGATE_NEXT)) {
-                } else if (e.getMessage().equals(WizardNavigationException.NAVIGATE_PREV)) {
+                String message = e.getMessage();
+                if (WizardNavigationException.NAVIGATE_NEXT.equals(message)) {
+                } else if (WizardNavigationException.NAVIGATE_PREV.equals(message)) {
                     //since the iterator has already advanced with next(), we need to make two calls to previous().
                     stepsIterator.previous();
                     step = stepsIterator.previous();
@@ -202,5 +208,13 @@ public class ConfigurationWizard {
 
     public void setDbInfo(DBInformation dbInfo) {
         sharedWizardInfo.setDbinfo(dbInfo);
+    }
+
+    public boolean isJumpToApply() {
+        return jumpToApply;
+    }
+
+    public void setJumpToApply(boolean jumpToApply) {
+        this.jumpToApply = jumpToApply;
     }
 }

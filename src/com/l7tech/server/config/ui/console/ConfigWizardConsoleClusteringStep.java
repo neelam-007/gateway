@@ -1,8 +1,9 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.ClusteringType;
+import com.l7tech.server.config.*;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.commands.ClusteringConfigCommand;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import org.apache.commons.lang.StringUtils;
 
@@ -19,7 +20,10 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
     private static final Logger logger = Logger.getLogger(ConfigWizardConsoleClusteringStep.class.getName());
 
     ClusteringConfigBean clusterBean;
-    private static final String TITLE = "Set Up SSG Clustering";
+    private static final String TITLE = "Configuration Type";
+    private static final String HEADER_DB_INFO = "-- Database Connection Information --";
+    private static final String COPY_MASTER_CONFIG = "Enter the database information for the database used by the cluster.";
+    private static final String REPLICATED_HOSTNAME_INSTRUCTIONS = "Specify the database hostname. If you are using a replicated database, enter the hostnames of the replicated pair in failover order, separated by commas.";
 
     public ConfigWizardConsoleClusteringStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -33,17 +37,15 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
     }
 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
-
-        String defaultClusterHostname = getDefaultHostName();
-
         if (!validated) {
             printText("*** There were errors in your input, please try again. ***" + getEolChar());
         }
 
         try {
-            doHostnamePrompt(defaultClusterHostname);
-            printText("\n");
-            doClusterTypePrompt(false);
+            boolean continueInterview = doGetConfigTypePrompt(false);
+            if (continueInterview) {
+                doHostnamePrompt(getDefaultHostName());
+            }
             storeInput();
         } catch (IOException e) {
             e.printStackTrace();
@@ -73,44 +75,113 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         getParentWizard().setHostname(input.trim());
     }
 
-    private void doClusterTypePrompt(boolean invalidInput) throws IOException, WizardNavigationException {
+    private boolean doGetConfigTypePrompt(boolean invalidInput) throws IOException, WizardNavigationException {
 
         if (invalidInput) {
             printText("Please select one of the options shown" + getEolChar());
         }
 
-        List<String> clusterTypePrompts = new ArrayList<String>();
+        List<String> configTypePrompts = new ArrayList<String>();
 
-        clusterTypePrompts.add("-- Creating or joining a cluster --" + getEolChar());
+        Map<String, ConfigurationType> configTypeMapper = new TreeMap<String, ConfigurationType>();
+        //get config type preference
+        int i = 1;
+        for (ConfigurationType clusterType : ConfigurationType.values()) {
+            if (clusterType != ConfigurationType.UNDEFINED)
+                configTypeMapper.put(String.valueOf(i++), clusterType);
+        }
 
-        Map<String, ClusteringType> clusterPromptMapper = new TreeMap<String, ClusteringType>();
+        Set<String> keys = configTypeMapper.keySet();
+        for (String key : keys) {
+            ConfigurationType ctype = configTypeMapper.get(key);
+            configTypePrompts.add(key + ") " + ctype + getEolChar());
+        }
 
+        configTypePrompts.add("Please make a selection: [1]");
+
+        String input = getData(
+                configTypePrompts.toArray(new String[configTypePrompts.size()]),
+                "1",
+                configTypeMapper.keySet().toArray(new String[configTypeMapper.keySet().size()]),
+                null
+        );
+
+        ConfigurationType configType = configTypeMapper.get(input);
+        SharedWizardInfo.getInstance().setConfigType(configType);
+        if (configType == ConfigurationType.CONFIG_CLUSTER) {
+            doClusteringPrompts();
+            if (clusterBean.getClusterType() == ClusteringType.CLUSTER_CLONE) {
+                doCloningPrompts();
+                loadSettingsFromDb();
+                if (shouldApplyNewSettings()) {
+                    parent.setJumpToApply(true);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean shouldApplyNewSettings() throws IOException, WizardNavigationException {
+        printText(getEolChar());
+        return getConfirmationFromUser(
+                "Settings have been successfully extracted and are ready to apply." + getEolChar() +
+                "Would you like to apply this configuration?", "no");
+    }
+
+    private void loadSettingsFromDb() throws IOException, WizardNavigationException {
+        DBInformation dbInfo = SharedWizardInfo.getInstance().getDbinfo();
+        String msg = "Connecting to Database using " + dbInfo.getUsername() + "@" + dbInfo.getHostname() + "/" + dbInfo.getDbName();
+        printText(msg + getEolChar());
+        logger.info(msg);
+
+        SilentConfigurator silentConf = new SilentConfigurator();
+        silentConf.loadConfigFromDb(dbInfo);
+
+        String passphrase = getSecretData(new String[]{
+                "Retrieved configuration settings from the database. Please enter the passphrase to extract these settings: "},
+                null, null, null);
+        silentConf.decryptConfigSettings(passphrase);
+    }
+
+    private void doCloningPrompts() throws IOException, WizardNavigationException {
+        printText(getEolChar() + HEADER_DB_INFO + getEolChar() + getEolChar());
+        printText(COPY_MASTER_CONFIG + getEolChar());
+        printText(getEolChar() + REPLICATED_HOSTNAME_INSTRUCTIONS + getEolChar());
+        DBInformation dbInfo = new DBInfoGetter(parent.getWizardUtils(),isShowNavigation()).getDbInfo("localhost","ssg","gateway","",false);
+        parent.setDbInfo(dbInfo);
+    }
+
+    private void doClusteringPrompts() throws IOException, WizardNavigationException {
+        List<String> clusteringTypePrompts = new ArrayList<String>();
+
+        Map<String, ClusteringType> clusterTypeMapper = new TreeMap<String, ClusteringType>();
         //get clustering type preference
         int i = 1;
         for (ClusteringType clusterType : ClusteringType.values()) {
             if (clusterType != ClusteringType.UNDEFINED)
-                clusterPromptMapper.put(String.valueOf(i++), clusterType);
+                clusterTypeMapper.put(String.valueOf(i++), clusterType);
         }
 
-        Set<String> keys = clusterPromptMapper.keySet();
+        clusteringTypePrompts.add(getEolChar() + "-- Clustering Configuration --" + getEolChar() + getEolChar());
+        Set<String> keys = clusterTypeMapper.keySet();
         for (String key : keys) {
-            ClusteringType ctype = clusterPromptMapper.get(key);
-            clusterTypePrompts.add(key + ") " + ctype + getEolChar());
+            ClusteringType ctype = clusterTypeMapper.get(key);
+            clusteringTypePrompts.add(key + ") " + ctype + getEolChar());
         }
 
-        clusterTypePrompts.add("Please make a selection: [1]");
+        clusteringTypePrompts.add("Please make a selection: [1]");
 
         String input = getData(
-                clusterTypePrompts.toArray(new String[0]),
+                clusteringTypePrompts.toArray(new String[clusteringTypePrompts.size()]),
                 "1",
-                clusterPromptMapper.keySet().toArray(new String[]{}),
+                clusterTypeMapper.keySet().toArray(new String[clusterTypeMapper.keySet().size()]),
                 null
         );
 
-        ClusteringType clusterType = clusterPromptMapper.get(input);
-
-        clusterBean.setDoClusterType(clusterType);
-        getParentWizard().setClusteringType(clusterBean.getClusterType());
+        ClusteringType clusteringType = clusterTypeMapper.get(input);
+        clusterBean.setDoClusterType(clusteringType);
+        SharedWizardInfo.getInstance().setClusterType(clusterBean.getClusterType());
     }
 
     public String getTitle() {
@@ -118,23 +189,24 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
     }
 
     public boolean validateStep() {
-        boolean validatedHostname = false;
-        String clusterHostName = clusterBean.getClusterHostname();
-        if (StringUtils.isNotEmpty(clusterHostName)) {
-            validatedHostname = true;
-        }
+//        boolean validatedHostname = false;
+//        String clusterHostName = clusterBean.getClusterHostname();
+//        if (StringUtils.isNotEmpty(clusterHostName)) {
+//            validatedHostname = true;
+//        }
 
-        boolean validatedType;
-        switch (clusterBean.getClusterType()) {
-            case CLUSTER_NONE:
-            case CLUSTER_NEW:
-            case CLUSTER_JOIN:
-                validatedType = true;
-                break;
-            default:
-                validatedType = false;
-        }
+//        boolean validatedType;
+//        switch (clusterBean.getClusterType()) {
+//            case CLUSTER_MASTER:
+//            case CLUSTER_CLONE:
+//            case CLUSTER_JOIN:
+//                validatedType = true;
+//                break;
+//            default:
+//                validatedType = false;
+//        }
 
-        return validatedHostname && validatedType;
+//        return validatedHostname;
+        return true;
     }
 }

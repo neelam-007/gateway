@@ -1,5 +1,6 @@
 package com.l7tech.server.config.ui.console;
 
+import com.l7tech.server.config.DBInfoGetter;
 import com.l7tech.server.config.DefaultLicenseChecker;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PropertyHelper;
@@ -30,14 +31,15 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
     private static final String HEADER_DB_CONN_TYPE = "-- Select Database Connection Type --" + getEolChar();
     private static final String HEADER_NEW_DB_INFO = "-- Information for new database --";
     private static final String HEADER_EXISTING_DB_INFO = "-- Information for existing database --";
+    private static final String REPLICATED_HOSTNAME_INSTRUCTIONS = "Specify the database hostname. If you are using a replicated database, enter the hostnames of the replicated pair in failover order, separated by commas.";
 
     private static final String PROMPT_MAKE_NEW_DB = "1) Create a new SSG database" + getEolChar();
     private static final String PROMPT_USE_EXISTING_DB = "2) Connect to an existing SSG database" + getEolChar();
-    private static final String PROMPT_DB_PASSWORD = "SSG Database user password: ";
-    private static final String PROMPT_DB_USERNAME = "SSG Database username: ";
-    private static final String PROMPT_DB_NAME = "Name of the SSG database: ";
-
-    private static final String PROMPT_DB_HOSTNAME = "Hostname: ";
+//    private static final String PROMPT_DB_PASSWORD = "SSG Database user password: ";
+//    private static final String PROMPT_DB_USERNAME = "SSG Database username: ";
+//    private static final String PROMPT_DB_NAME = "Name of the SSG database: ";
+//
+//    private static final String PROMPT_DB_HOSTNAME = "Hostname: ";
 
     private static final String TITLE = "Set Up the SSG Database";
     private DBActions dbActions;
@@ -138,13 +140,13 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
         else printText(HEADER_EXISTING_DB_INFO + getEolChar());
 
-        doDbHostnamePrompt(defaultHostname);
-        doDBNamePrompt(defaultDbName);
-        doDBUsernamePrompts(defaultDbUsername);
-        //don't pass in a default password so a user can enter a blank one if so desired
-        doDBPasswordPrompts("");
-        DBInformation dbInfo = new DBInformation(databaseBean.getDbHostname(), databaseBean.getDbName(), databaseBean.getDbUsername(), databaseBean.getDbPassword(), null, null);
-        dbInfo.setNew(createNewDb);
+        printText(REPLICATED_HOSTNAME_INSTRUCTIONS + getEolChar() + getEolChar());
+
+        DBInformation dbInfo = new DBInfoGetter(parent.getWizardUtils(), isShowNavigation()).getDbInfo(defaultHostname, defaultDbName, defaultDbUsername, "", createNewDb);
+        databaseBean.setDbHostname(dbInfo.getHostname());
+        databaseBean.setDbName(dbInfo.getDbName());
+        databaseBean.setDbUsername(dbInfo.getUsername());
+        databaseBean.setDbPassword(dbInfo.getPassword());
         getParentWizard().setDbInfo(dbInfo);
     }
 
@@ -166,33 +168,33 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         return username;
     }
 
-    private void doDBPasswordPrompts(String defaultDbPassword) throws IOException, WizardNavigationException {
-        String[] prompts = new String[] {
-            PROMPT_DB_PASSWORD + "[" + defaultDbPassword + "] ",
-        };
-        databaseBean.setDbPassword(getSecretData(prompts, defaultDbPassword, null, null));
-    }
-
-    private void doDBUsernamePrompts(String defaultDbUsername) throws IOException, WizardNavigationException {
-        String[] prompts = new String[] {
-            PROMPT_DB_USERNAME + "[" + defaultDbUsername + "] ",
-        };
-        databaseBean.setDbUsername(getData(prompts, defaultDbUsername, (String[]) null,null));
-    }
-
-    private void doDBNamePrompt(String defaultDbName) throws IOException, WizardNavigationException {
-        String[] prompts = new String[] {
-                PROMPT_DB_NAME + "[" + defaultDbName + "] ",
-        };
-        databaseBean.setDbName(getData(prompts, defaultDbName, (String[]) null,null).trim());
-    }
-
-    private void doDbHostnamePrompt(String defaultHostname) throws IOException, WizardNavigationException {
-        String[] prompts = new String[] {
-                PROMPT_DB_HOSTNAME + "[" + defaultHostname + "] ",
-        };
-        databaseBean.setDbHostname(getData(prompts, defaultHostname, (String[]) null,null).trim());
-    }
+//    private void doDBPasswordPrompts(String defaultDbPassword) throws IOException, WizardNavigationException {
+//        String[] prompts = new String[] {
+//            PROMPT_DB_PASSWORD + "[" + defaultDbPassword + "] ",
+//        };
+//        databaseBean.setDbPassword(getSecretData(prompts, defaultDbPassword, null, null));
+//    }
+//
+//    private void doDBUsernamePrompts(String defaultDbUsername) throws IOException, WizardNavigationException {
+//        String[] prompts = new String[] {
+//            PROMPT_DB_USERNAME + "[" + defaultDbUsername + "] ",
+//        };
+//        databaseBean.setDbUsername(getData(prompts, defaultDbUsername, (String[]) null,null));
+//    }
+//
+//    private void doDBNamePrompt(String defaultDbName) throws IOException, WizardNavigationException {
+//        String[] prompts = new String[] {
+//                PROMPT_DB_NAME + "[" + defaultDbName + "] ",
+//        };
+//        databaseBean.setDbName(getData(prompts, defaultDbName, (String[]) null,null).trim());
+//    }
+//
+//    private void doDbHostnamePrompt(String defaultHostname) throws IOException, WizardNavigationException {
+//        String[] prompts = new String[] {
+//                PROMPT_DB_HOSTNAME + "[" + defaultHostname + "] ",
+//        };
+//        databaseBean.setDbHostname(getData(prompts, defaultHostname, (String[]) null,null).trim());
+//    }
 
     private void doDbConnectionTypePrompts(boolean isCurrentDbExists) throws WizardNavigationException, IOException {
         String defaultValue = isCurrentDbExists?"2":"1";

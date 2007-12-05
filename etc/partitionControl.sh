@@ -63,7 +63,7 @@ do_control() {
     if  [ -e "${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname" ]; then
     	RMI_HOSTNAME="$(<${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname)"
     else
-        RMI_HOSTNAME="$(hostname -f)"
+        RMI_HOSTNAME="$(hostname)"
     fi
 
     echo ${ORIGINAL_JAVA_OPTS} | grep java.rmi.server.hostname &>/dev/null

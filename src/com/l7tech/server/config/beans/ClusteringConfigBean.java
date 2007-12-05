@@ -1,6 +1,8 @@
 package com.l7tech.server.config.beans;
 
 import com.l7tech.server.config.ClusteringType;
+import com.l7tech.server.config.ConfigurationType;
+import com.l7tech.server.config.SharedWizardInfo;
 import org.apache.commons.lang.StringUtils;
 
 import java.net.InetAddress;
@@ -72,21 +74,31 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     protected void populateExplanations() {
         explanations.add(getName() + " - " + getDescription());
 
-        switch (clusterType) {
-            case CLUSTER_NONE:
-                explanations.add(insertTab + NOTHING_TO_DO_INFO);
+        ConfigurationType configType = SharedWizardInfo.getInstance().getConfigType();
+        switch (configType) {
+            case CONFIG_STANDALONE:
+                explanations.add(insertTab + "Configuring a standalone SSG (No clustering)");
                 break;
-            default:
-                explanations.add(insertTab + CLUSTER_HOSTFILE_UPDATE_INFO + getClusterHostname());
+            case CONFIG_CLUSTER:
+                ClusteringType clusterType = SharedWizardInfo.getInstance().getClusterType();
+                switch (clusterType) {
+                    case CLUSTER_MASTER:
+                        explanations.add(insertTab + "Configuring the first node in a cluster. Settings will be saved to the database.");
+                        break;
+                    default:
+                        explanations.add(insertTab + "Configuring a new node in the cluster. Settings will be cloned from the master node.");
+                        break;
+                    }
                 break;
         }
+
     }
 
     public void reset() {
         isNewHostName = false;
         clusterHostname = "";
         localHostName  = "";
-        clusterType = ClusteringType.CLUSTER_NONE;
+        clusterType = ClusteringType.CLUSTER_MASTER;
     }
 
     public void setClusterHostname(String hostName) {

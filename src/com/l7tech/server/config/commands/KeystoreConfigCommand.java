@@ -801,8 +801,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         String hostname = ksBean.getHostname();
         boolean exportOnly = false;
         try {
-            exportOnly = (sharedWizardInfo.getClusterType() == ClusteringType.CLUSTER_JOIN);
-            MakeLunaCerts.makeCerts(hostname, true, exportOnly, caCertFile, sslCertFile);
+//            exportOnly = (sharedWizardInfo.getClusterType() == ClusteringType.CLUSTER_JOIN);
+            MakeLunaCerts.makeCerts(hostname, true, false, caCertFile, sslCertFile);
             success = true;
         } catch (LunaCmu.LunaCmuException e) {
             logger.severe("Could not locate the Luna CMU. Please rerun the wizard and check the Luna paths");

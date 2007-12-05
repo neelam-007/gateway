@@ -51,7 +51,7 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         boolean success = true;
         ClusteringConfigBean clusterBean = (ClusteringConfigBean) configBean;
 
-        boolean configureCluster = clusterBean.getClusterType() != ClusteringType.CLUSTER_NONE;
+        boolean configureCluster = clusterBean.getClusterType() != ClusteringType.CLUSTER_MASTER;
 
         File clusterHostNameFile = configureCluster? new File(getOsFunctions().getClusterHostFile()):null;
         File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
