@@ -400,21 +400,21 @@ public class MinaManagedSyslog extends ManagedSyslog {
         }
 
         /**
-         * Fire connected notification
+         * Fire connected notification (unless UDP)
          */
         private void fireConnected() {
             SyslogConnectionListener listener = this.listener.get();
-            if ( listener != null ) {
+            if ( listener != null && SyslogProtocol.UDP != protocol ) {
                 listener.notifyConnected(address);
             }
         }
 
         /**
-         * Fire disconnected notification
+         * Fire disconnected notification (unless UDP)
          */
         private void fireDisconnected() {
             SyslogConnectionListener listener = this.listener.get();
-            if ( listener != null ) {
+            if ( listener != null && SyslogProtocol.UDP != protocol  ) {
                 listener.notifyDisconnected(address);
             }
         }

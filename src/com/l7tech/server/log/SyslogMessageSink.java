@@ -117,7 +117,7 @@ class SyslogMessageSink extends MessageSinkSupport {
                                 final String host ) throws ConfigurationException {
         SyslogProtocol protocol;
         String configProtocol = configuration.getProperty(SinkConfiguration.PROP_SYSLOG_PROTOCOL);
-        if ( SinkConfiguration.PROP_SYSLOG_PROTOCOL_TCP.equals(configProtocol) ) {
+        if ( SinkConfiguration.SYSLOG_PROTOCOL_TCP.equals(configProtocol) ) {
             protocol = SyslogProtocol.TCP;
         } else {
             protocol = SyslogProtocol.UDP;    

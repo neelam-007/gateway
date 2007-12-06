@@ -212,10 +212,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      * Initializes the syslog settings fields.
      */
     private void initializeSyslogFields() {
-        syslogProtocolField.setModel(new DefaultComboBoxModel(new Object[] {
-                resources.getString("syslogSettings.protocol.TCP.text"),
-                resources.getString("syslogSettings.protocol.UDP.text")
-        }));
+        syslogProtocolField.setModel(new DefaultComboBoxModel(SinkConfiguration.SYSLOG_PROTOCOL_SET.toArray()));
+        syslogProtocolField.setRenderer(new KeyedResourceRenderer(resources, "syslogSettings.protocol.{0}.text"));
 
         JSpinner.NumberEditor numberEditor = new JSpinner.NumberEditor(syslogFacilityField);
         syslogFacilityField.setEditor(numberEditor);
@@ -412,10 +410,10 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      */
     private void modelToViewSyslog(final SinkConfiguration sinkConfiguration) {
         String value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_PROTOCOL);
-        if(value == null || value.equals(SinkConfiguration.PROP_SYSLOG_PROTOCOL_TCP)) {
-            syslogProtocolField.setSelectedItem(resources.getString("syslogSettings.protocol.TCP.text"));
-        } else if(value.equals(SinkConfiguration.PROP_SYSLOG_PROTOCOL_UDP)) {
-            syslogProtocolField.setSelectedItem(resources.getString("syslogSettings.protocol.UDP.text"));
+        if( value == null ) {
+            syslogProtocolField.setSelectedItem(SinkConfiguration.SYSLOG_PROTOCOL_TCP);
+        } else {
+            syslogProtocolField.setSelectedItem(value);
         }
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_HOST);
         syslogHostField.setText(value);
@@ -486,13 +484,6 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      * Updates the backing SinkConfiguration with the syslog settings field values.
      */
     private void viewToModelSyslog(final SinkConfiguration sinkConfiguration) {
-        String value = (String) syslogProtocolField.getSelectedItem();
-        if (value.equals(resources.getString("syslogSettings.protocol.TCP.text"))) {
-            sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_PROTOCOL, SinkConfiguration.PROP_SYSLOG_PROTOCOL_TCP);
-        } else if (value.equals(resources.getString("syslogSettings.protocol.UDP.text"))) {
-            sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_PROTOCOL, SinkConfiguration.PROP_SYSLOG_PROTOCOL_UDP);
-        }
-
         sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_PROTOCOL, (String) syslogProtocolField.getSelectedItem());
         sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_HOST, syslogHostField.getText());
         sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_PORT, syslogPortField.getText());
@@ -506,7 +497,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_CHAR_SET, (String) syslogCharsetField.getSelectedItem());
 
-        value = (String) syslogTimezoneField.getSelectedItem();
+        String value = (String) syslogTimezoneField.getSelectedItem();
         if (value != null && !value.equals(resources.getString("syslogSettings.timezone.values.useExisting"))) {
             sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_TIMEZONE, (String) syslogTimezoneField.getSelectedItem());
         } else {

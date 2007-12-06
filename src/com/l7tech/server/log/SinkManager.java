@@ -7,12 +7,16 @@ import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.system.SyslogEvent;
 import com.l7tech.server.log.syslog.SyslogManager;
+import com.l7tech.server.log.syslog.SyslogConnectionListener;
 
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
@@ -29,6 +33,7 @@ import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.StringReader;
 import java.io.IOException;
+import java.net.SocketAddress;
 
 /**
  * Provides the ability to do CRUD operations on SinkConfiguration rows in the database.
@@ -36,7 +41,7 @@ import java.io.IOException;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SinkManager
         extends HibernateEntityManager<SinkConfiguration, EntityHeader>
-        implements ApplicationListener, PropertyChangeListener {
+        implements ApplicationContextAware, ApplicationListener, PropertyChangeListener {
     //- PUBLIC
 
     public SinkManager( final ServerConfig serverConfig,
@@ -102,6 +107,11 @@ public class SinkManager
         return success;
     }
 
+    public void setApplicationContext(final ApplicationContext applicationContext) {
+        if ( this.applicationContext == null )
+            this.applicationContext = applicationContext;
+    }
+
     public void onApplicationEvent(final ApplicationEvent event) {
         if ( event instanceof EntityInvalidationEvent ) {
             EntityInvalidationEvent evt = (EntityInvalidationEvent) event;
@@ -127,6 +137,7 @@ public class SinkManager
         installHandlers();
         updateLogLevels(null, null);
         installLogConfigurationListener();
+        installConnectionListener();
         rebuildLogSinks();
     }
 
@@ -143,6 +154,7 @@ public class SinkManager
     private final ServerConfig serverConfig;
     private final SyslogManager syslogManager;
     private final TrafficLogger trafficLogger;
+    private ApplicationContext applicationContext;
 
     /**
      * Re-install logging handlers.
@@ -227,6 +239,28 @@ public class SinkManager
             public void propertyChange(PropertyChangeEvent evt) {
                 installHandlers();
                 updateLogLevels(null, null);
+            }
+        });
+    }
+
+    /**
+     * Install a syslog connection listener to audit connection errors.
+     */
+    private void installConnectionListener() {
+        syslogManager.setConnectionListener(new SyslogConnectionListener(){
+            public void notifyConnected(final SocketAddress address) {
+                fireEvent(address, true);
+            }
+
+            public void notifyDisconnected(final SocketAddress address) {
+                fireEvent(address, false);
+            }
+
+            private void fireEvent(final SocketAddress address, final boolean connected) {
+                if ( applicationContext != null ) {
+                    applicationContext.publishEvent(
+                            new SyslogEvent(SinkManager.this, address.toString(), connected));
+                }
             }
         });
     }

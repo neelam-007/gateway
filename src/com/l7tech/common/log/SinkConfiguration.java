@@ -9,10 +9,10 @@ import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 
 /**
  * Describes the configuration of a logging sink.
@@ -66,7 +66,7 @@ public class SinkConfiguration extends NamedEntityImp {
     public static final String CATEGORY_AUDITS = "AUDIT";
     public static final Set<String> CATEGORIES_SET;
     static {
-        Set<String> categories = new HashSet<String>();
+        Set<String> categories = new LinkedHashSet<String>();
         categories.add(CATEGORY_GATEWAY_LOGS);
         categories.add(CATEGORY_TRAFFIC_LOGS);
         categories.add(CATEGORY_AUDITS);
@@ -86,7 +86,7 @@ public class SinkConfiguration extends NamedEntityImp {
     public static final String FILE_FORMAT_VERBOSE = "VERBOSE";
     public static final Set<String> FILE_FORMAT_SET;
     static {
-        Set<String> formats = new HashSet<String>();
+        Set<String> formats = new LinkedHashSet<String>();
         formats.add(FILE_FORMAT_RAW);
         formats.add(FILE_FORMAT_STANDARD);
         formats.add(FILE_FORMAT_VERBOSE);
@@ -109,8 +109,15 @@ public class SinkConfiguration extends NamedEntityImp {
     /** The property name for the timezone to use for log messages */
     public static final String PROP_SYSLOG_TIMEZONE = "syslog.timezone";
 
-    public static final String PROP_SYSLOG_PROTOCOL_TCP = "TCP";
-    public static final String PROP_SYSLOG_PROTOCOL_UDP = "UDP";
+    public static final String SYSLOG_PROTOCOL_TCP = "TCP";
+    public static final String SYSLOG_PROTOCOL_UDP = "UDP";
+    public static final Set<String> SYSLOG_PROTOCOL_SET;
+    static {
+        Set<String> protocols = new LinkedHashSet<String>();
+        protocols.add(SYSLOG_PROTOCOL_TCP);
+        protocols.add(SYSLOG_PROTOCOL_UDP);
+        SYSLOG_PROTOCOL_SET = Collections.unmodifiableSet(protocols);
+    }
 
     private String description;
     private SinkType type;
