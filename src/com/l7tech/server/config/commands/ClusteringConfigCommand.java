@@ -3,6 +3,7 @@ package com.l7tech.server.config.commands;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.ClusteringType;
+import com.l7tech.server.config.ConfigurationType;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.beans.ConfigurationBean;
@@ -26,6 +27,10 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
     private String clusterHostname;
     private static final String BACKUP_FILE_NAME = "cluster_config_backups";
     private static final String PROP_RMI_HOSTNAME = "java.rmi.server.hostname";
+
+    public ClusteringConfigCommand() {
+        super();
+    }
 
     public ClusteringConfigCommand(ConfigurationBean bean) {
         super(bean);
@@ -51,7 +56,9 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         boolean success = true;
         ClusteringConfigBean clusterBean = (ClusteringConfigBean) configBean;
 
-        boolean configureCluster = clusterBean.getClusterType() != ClusteringType.CLUSTER_MASTER;
+        ConfigurationType confType = clusterBean.getConfigType();
+
+        boolean configureCluster = confType != ConfigurationType.CONFIG_STANDALONE;
 
         File clusterHostNameFile = configureCluster? new File(getOsFunctions().getClusterHostFile()):null;
         File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());

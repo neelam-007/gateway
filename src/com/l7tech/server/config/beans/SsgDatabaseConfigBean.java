@@ -1,12 +1,13 @@
 package com.l7tech.server.config.beans;
 
 import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.db.DBInformation;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by IntelliJ IDEA.
@@ -19,21 +20,14 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
     private final static String NAME = "Database Configuration";
     private final static String DESCRIPTION = "Configures the database properties for an SSG";
 
-    private String privUsername;
-    private String privPassword;
-    private String dbHostname;
-    private String dbUsername;
-    private String dbPassword;
-    private String dbName;
-
     public final static String PROP_DB_USERNAME = "hibernate.connection.username";
     public final static String PROP_DB_URL = "hibernate.connection.url";
     public final static String PROP_DB_PASSWORD = "hibernate.connection.password" ;
     public final static Pattern dbUrlPattern = Pattern.compile("^.*//(.*)/(.*)\\?.*$");
+    private DBInformation dbInformation;
 
     public SsgDatabaseConfigBean() {
         super(NAME, DESCRIPTION);
-        ELEMENT_KEY = this.getClass().getName();
         init();
     }
 
@@ -51,9 +45,12 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
                 PROP_DB_PASSWORD
         });
 
-        dbUsername = defaults.get(PROP_DB_USERNAME);
-        dbPassword = defaults.get(PROP_DB_PASSWORD);
+        String dbUsername = defaults.get(PROP_DB_USERNAME);
+        String dbPassword = defaults.get(PROP_DB_PASSWORD);
         String existingDBUrl = (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_URL);
+
+        String dbHostname = "";
+        String dbName = "";
 
         if (StringUtils.isNotEmpty(existingDBUrl)) {
             Matcher matcher = SsgDatabaseConfigBean.dbUrlPattern.matcher(existingDBUrl);
@@ -61,12 +58,17 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
                 dbHostname = matcher.group(1);
                 dbName = matcher.group(2);
             }
+            dbInformation.setHostname(dbHostname);
+            dbInformation.setDbName(dbName);
+            dbInformation.setUsername(dbUsername);
+            dbInformation.setPassword(dbPassword);
         } else {
             throw new IOException("no database url was found while reading the configfile [" + configFile + "].");
         }
     }
 
     private void init() {
+        dbInformation = new DBInformation();
     }
 
     public void reset() {}
@@ -80,50 +82,58 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
     }
 
     public void setPrivUserName(String username) {
-        privUsername = username;
+        dbInformation.setPrivUsername(username);
     }
 
     public void setPrivPassword(String password) {
-        privPassword = password;
+        dbInformation.setPrivPassword(password);
     }
 
     public void setDbHostname(String hostname) {
-        dbHostname = hostname;
+        dbInformation.setHostname(hostname);
     }
 
     public void setDbUsername(String username) {
-        dbUsername = username;
+        dbInformation.setUsername(username);
     }
 
     public void setDbPassword(String password) {
-        dbPassword = password;
+        dbInformation.setPassword(password);
     }
 
     public void setDbName(String name) {
-        dbName = name;
+        dbInformation.setDbName(name);
     }
 
     public String getPrivUsername() {
-        return privUsername;
+        return dbInformation.getPrivUsername();
     }
 
     public String getPrivPassword() {
-        return privPassword;
+        return dbInformation.getPrivPassword();
     }
 
     public String getDbHostname() {
-        return dbHostname;
+        return dbInformation.getHostname();
     }
 
     public String getDbUsername() {
-        return dbUsername;
+        return dbInformation.getUsername();
     }
 
     public String getDbPassword() {
-        return dbPassword;
+        return dbInformation.getPassword();
     }
 
     public String getDbName() {
-        return dbName;
+        return dbInformation.getDbName();
+    }
+
+    public DBInformation getDbInformation() {
+        return dbInformation;
+    }
+
+    public void setDbInformation(DBInformation dbInformation) {
+        this.dbInformation = dbInformation;
     }
 }

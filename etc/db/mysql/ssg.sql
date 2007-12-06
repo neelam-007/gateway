@@ -903,4 +903,11 @@ CREATE TABLE sink_config (
 
 INSERT INTO sink_config VALUES (-810,0,'ssg','Main log','FILE',1,'INFO','AUDIT,LOG','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>');
 
+DROP TABLE IF EXISTS config_data;
+CREATE TABLE config_data (
+  objectid bigint(20) NOT NULL,
+  configdata mediumblob DEFAULT NULL,
+  PRIMARY KEY (objectid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -1,14 +1,11 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.partition.PartitionManager;
-import com.l7tech.common.util.ResourceUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -33,7 +30,11 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
     private Date currentTime;
 
     protected BaseConfigurationCommand(ConfigurationBean bean) {
+        this();
         this.configBean = bean;
+    }
+
+    public BaseConfigurationCommand() {
         formatter = new SimpleDateFormat("E_MMM_d_yyyy_HH_mm");
     }
 
@@ -83,9 +84,16 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
     protected OSSpecificFunctions getOsFunctions() {
         return PartitionManager.getInstance().getActivePartition().getOSSpecificFunctions();
     }
-
+    
     public String[] getActions() {
         return (configBean != null)?configBean.explain():null;
     }
 
+    public ConfigurationBean getConfigBean() {
+        return this.configBean;
+    }
+
+    public void setConfigBean(ConfigurationBean configBean) {
+        this.configBean = configBean;
+    }
 }

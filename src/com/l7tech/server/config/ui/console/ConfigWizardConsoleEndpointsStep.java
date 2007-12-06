@@ -141,7 +141,8 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
         PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
         try {
             doConfigureEndpointsPrompts(pinfo, validated);
-            ( (EndpointConfigBean)configBean).setEndpointsToAdd(endpointsToAdd);
+            endpointBean.setEndpointsToAdd(endpointsToAdd);
+            endpointBean.setPartitionInfo(pinfo);
         } catch (IOException e) {
             logger.severe(ExceptionUtils.getMessage(e));
         }

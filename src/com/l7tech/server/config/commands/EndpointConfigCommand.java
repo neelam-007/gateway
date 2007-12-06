@@ -13,7 +13,6 @@ import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.db.SsgConnectorSql;
 import com.l7tech.server.partition.FirewallRules;
 import com.l7tech.server.partition.PartitionInformation;
-import com.l7tech.server.partition.PartitionManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +34,10 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
     EndpointConfigBean endpointBean;
     private static final String CLUSTER_PORT_SYSPROP_KEY = "com.l7tech.server.clusterPort";
 
+    public EndpointConfigCommand() {
+        super();
+    }
+
     public EndpointConfigCommand(ConfigurationBean bean) {
         super(bean);
         endpointBean = (EndpointConfigBean) configBean;
@@ -43,7 +46,7 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
     public boolean execute() {
         boolean success = true;
         try {
-            PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
+            PartitionInformation pinfo = endpointBean.getPartitionInfo();
             enableDbEndpointsIfNecessary();
             addEndpoints(endpointBean.getEndpointsToAdd(), "Error while adding new endpoints.");
             addEndpoints(endpointBean.getLegacyEndpoints(), "Error while adding legacy endpoints.");
@@ -110,7 +113,7 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
     }
 
     private void enableDbEndpointsIfNecessary() throws ClassNotFoundException, SQLException {
-        PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
+        PartitionInformation pinfo = endpointBean.getPartitionInfo();
         DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
 
         if (isDefaultPartition(pinfo)) {
@@ -194,6 +197,4 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
         DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
         return dba.getConnection(dbinfo);
     }
-
-
 }

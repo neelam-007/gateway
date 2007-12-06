@@ -32,8 +32,8 @@ public class PartitionInformation{
 
     public static final String SYSTEM_PROP_PARTITIONNAME = "com.l7tech.server.partitionName";
 
-    String partitionId;
-    String oldPartitionId;
+    private String partitionId;
+    private String oldPartitionId;
     boolean isNewPartition = false;
     boolean isEnabled = false;
     private boolean shouldDisable = false;
@@ -93,6 +93,9 @@ public class PartitionInformation{
         public String toString() {return endpointName;}
     }
 
+    public PartitionInformation() {
+    }
+
     public PartitionInformation(String partitionName) {
         this.partitionId = partitionName;
         isNewPartition = true;
@@ -107,7 +110,7 @@ public class PartitionInformation{
         theCopy.setEnabled(this.isEnabled());
         theCopy.setNewPartition(this.isNewPartition());
         theCopy.setOriginalDom(this.getOriginalDom());
-        theCopy.setShouldDisable(this.shouldDisable());
+        theCopy.setShouldDisable(this.isShouldDisable());
         theCopy.setHttpEndpointsList(this.getHttpEndpoints());
         theCopy.setFtpEndpointsList(this.getFtpEndpoints());
         theCopy.setOtherEndpointsList(this.getOtherEndpoints());
@@ -230,14 +233,13 @@ public class PartitionInformation{
         return oldPartitionId;
     }
 
-    public void setNewPartition(boolean newPartition) {
-        isNewPartition = newPartition;
-    }
-
     public boolean isNewPartition() {
         return isNewPartition;
     }
 
+    public void setNewPartition(boolean newPartition) {
+        isNewPartition = newPartition;
+    }
 
     public boolean isEnabled() {
         return isEnabled;
@@ -247,7 +249,7 @@ public class PartitionInformation{
         isEnabled = enabled;
     }
 
-    public boolean shouldDisable() {
+    public boolean isShouldDisable() {
         return shouldDisable;
     }
 

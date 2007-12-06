@@ -6,14 +6,13 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.db.DBActions;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.*;
@@ -203,7 +202,7 @@ public class PartitionActions {
      * @param partitionDir which partition dir should be changed
      * @throws FileNotFoundException
      */
-    public static void fixConnectorAttributes(File partitionDir, PartitionInformation piToUpdate) throws FileNotFoundException {
+    public static void fixKeystoreValues(File partitionDir, PartitionInformation piToUpdate) throws FileNotFoundException {
         File keystoreProperties = new File(partitionDir, "keystore.properties");
         FileInputStream keystoreConfigFis = null;
         FileOutputStream keystoreConfigFos = null;
@@ -231,7 +230,7 @@ public class PartitionActions {
 
         //edit the system.properties file so the name is correct
         try {
-            fixConnectorAttributes(new File(newPartition.getOSSpecificFunctions().getPartitionBase() + newPartition.getPartitionId()), newPartition);
+            fixKeystoreValues(new File(newPartition.getOSSpecificFunctions().getPartitionBase() + newPartition.getPartitionId()), newPartition);
             updateSystemProperties(newPartition, false);
         } catch (FileNotFoundException e) {
             logger.warning("Error while preparing the \"" + newPartition.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
@@ -376,14 +375,16 @@ public class PartitionActions {
                 OSSpecificFunctions osf = partitionToRemove.getOSSpecificFunctions();
 
                 SsgDatabaseConfigBean dbBean = new SsgDatabaseConfigBean(osf.getDatabaseConfig());
+                DBInformation dbInfo = dbBean.getDbInformation();
+
                 DBActions dba = new DBActions(osf);
                 boolean removeDb = listener.getPartitionActionsConfirmation(
                         "This wizard can remove the database used by this partition.\n" +
                         "This will remove all data in the database and cannot be undone.\n\n" +
-                        "Are you sure you want to delete the database named \"" + dbBean.getDbName() + "\" ?");
+                        "Are you sure you want to delete the database named \"" + dbInfo.getDbName() + "\" ?");
 
                 if (removeDb)
-                        dba.dropDatabase(dbBean.getDbName(), dbBean.getDbHostname(), dbBean.getDbUsername(), dbBean.getDbPassword(), true);
+                        dba.dropDatabase(dbInfo.getDbName(), dbInfo.getHostname(), dbInfo.getUsername(), dbInfo.getPassword(), true);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -711,30 +712,30 @@ public class PartitionActions {
         return null;
     }
 
-    public static  Map<PartitionInformation.HttpEndpointType, Element> getHttpConnectorsByType(NodeList connectors) {
-        Map<PartitionInformation.HttpEndpointType,Element> elementMap = new HashMap<PartitionInformation.HttpEndpointType, Element>();
-        for (int i = 0; i < connectors.getLength(); i++) {
-            Element connector = (Element) connectors.item(i);
-            if (!StringUtils.equals(connector.getAttribute("secure"), "true")) {
-                elementMap.put(PartitionInformation.HttpEndpointType.BASIC_HTTP, connector);
-            } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
-                       StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
-                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP, connector);
-            } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
-                       !StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
-                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, connector);
-            }
-        }
-
-        return elementMap;
-    }
+//    public static  Map<PartitionInformation.HttpEndpointType, Element> getHttpConnectorsByType(NodeList connectors) {
+//        Map<PartitionInformation.HttpEndpointType,Element> elementMap = new HashMap<PartitionInformation.HttpEndpointType, Element>();
+//        for (int i = 0; i < connectors.getLength(); i++) {
+//            Element connector = (Element) connectors.item(i);
+//            if (!StringUtils.equals(connector.getAttribute("secure"), "true")) {
+//                elementMap.put(PartitionInformation.HttpEndpointType.BASIC_HTTP, connector);
+//            } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
+//                       StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
+//                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP, connector);
+//            } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
+//                       !StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
+//                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, connector);
+//            }
+//        }
+//
+//        return elementMap;
+//    }
 
 
     public static void enablePartitionForStartup(PartitionInformation pInfo){
         OSSpecificFunctions osf = pInfo.getOSSpecificFunctions();
         if (osf.isUnix()) {
             File enableStartupFile = new File(osf.getPartitionBase() + pInfo.getPartitionId(), PartitionInformation.ENABLED_FILE);
-            if (pInfo.shouldDisable()) {
+            if (pInfo.isShouldDisable()) {
                 logger.warning("Disabling the \"" + pInfo.getPartitionId() + "\" partition.");
                 enableStartupFile.delete();
             } else {

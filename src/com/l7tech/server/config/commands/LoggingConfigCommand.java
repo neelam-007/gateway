@@ -22,6 +22,11 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
     private static final String BACKUP_FILE_NAME = "logging_config_backups";
     private static final String PROPERTY_COMMENT = "This file was updated by the SSG configuration utility";
 
+
+    public LoggingConfigCommand() {
+        super();
+    }
+
     public LoggingConfigCommand(ConfigurationBean bean) {
         super(bean);
     }

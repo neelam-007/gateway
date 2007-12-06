@@ -107,15 +107,19 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         );
 
         ConfigurationType configType = configTypeMapper.get(input);
+        clusterBean.setConfigType(configType);
         SharedWizardInfo.getInstance().setConfigType(configType);
         if (configType == ConfigurationType.CONFIG_CLUSTER) {
             doClusteringPrompts();
             if (clusterBean.getClusterType() == ClusteringType.CLUSTER_CLONE) {
                 doCloningPrompts();
-                loadSettingsFromDb();
-                if (shouldApplyNewSettings()) {
-                    parent.setJumpToApply(true);
-                    return false;
+                SilentConfigData configData = loadSettingsFromDb();
+                if (configData != null) {
+                    if (shouldApplyNewSettings()) {
+                        parent.setSilentConfigData(configData);
+                        parent.setJumpToApply(true);
+                        return false;
+                    }
                 }
             }
         }
@@ -129,19 +133,22 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
                 "Would you like to apply this configuration?", "no");
     }
 
-    private void loadSettingsFromDb() throws IOException, WizardNavigationException {
+    private SilentConfigData loadSettingsFromDb() throws IOException, WizardNavigationException {
+        SilentConfigData configData = null;
         DBInformation dbInfo = SharedWizardInfo.getInstance().getDbinfo();
         String msg = "Connecting to Database using " + dbInfo.getUsername() + "@" + dbInfo.getHostname() + "/" + dbInfo.getDbName();
         printText(msg + getEolChar());
         logger.info(msg);
 
-        SilentConfigurator silentConf = new SilentConfigurator();
-        silentConf.loadConfigFromDb(dbInfo);
-
-        String passphrase = getSecretData(new String[]{
-                "Retrieved configuration settings from the database. Please enter the passphrase to extract these settings: "},
-                null, null, null);
-        silentConf.decryptConfigSettings(passphrase);
+        SilentConfigurator silentConf = new SilentConfigurator(osFunctions);
+        byte[] configBytes = silentConf.loadConfigFromDb(dbInfo);
+        if (configBytes != null) {
+            String passphrase = getSecretData(new String[]{
+                    "Retrieved configuration settings from the database. Please enter the passphrase to extract these settings: "},
+                    null, null, null);
+            configData = silentConf.decryptConfigSettings(passphrase, configBytes);
+        }
+        return configData;
     }
 
     private void doCloningPrompts() throws IOException, WizardNavigationException {
@@ -180,7 +187,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         );
 
         ClusteringType clusteringType = clusterTypeMapper.get(input);
-        clusterBean.setDoClusterType(clusteringType);
+        clusterBean.setClusterType(clusteringType);
         SharedWizardInfo.getInstance().setClusterType(clusterBean.getClusterType());
     }
 

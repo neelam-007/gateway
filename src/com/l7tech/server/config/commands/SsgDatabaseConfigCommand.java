@@ -73,6 +73,10 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         connectionUrlParamDefaults.put("queriesBeforeRetryMaster", "2000");
     }
 
+    public SsgDatabaseConfigCommand() {
+        super();
+    }
+
     public SsgDatabaseConfigCommand(ConfigurationBean bean) {
         super(bean);
         init();

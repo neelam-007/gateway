@@ -1,5 +1,7 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.server.config.beans.ConfigurationBean;
+
 /**
  * Created by IntelliJ IDEA.
  * User: megery
@@ -10,4 +12,6 @@ package com.l7tech.server.config.commands;
 public interface ConfigurationCommand {
     public boolean execute();
     String[] getActions();
+    public ConfigurationBean getConfigBean();
+    public void setConfigBean(ConfigurationBean configBean);
 }

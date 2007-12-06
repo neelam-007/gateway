@@ -73,25 +73,29 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 "com.sun.net.ssl.internal.ssl.Provider"
             };
 
-    private KeystoreConfigBean ksBean;
-    private SharedWizardInfo sharedWizardInfo;
-
-
     private static final String SUDO_COMMAND = "/usr/bin/sudo";
     private static final String ZERO_HSM_COMMAND = "appliance/libexec/zerohsm.sh";
 
     public static final String MASTERKEYMANAGE_ERRMSG_KEY_PREFIX="hsm.masterkeymanage.errormessage";
     public ResourceBundle resourceBundle;
 
+    public KeystoreConfigCommand() {
+        super();
+        initialize();
+    }
+
     public KeystoreConfigCommand(ConfigurationBean bean) {
         super(bean);
-        ksBean = (KeystoreConfigBean) configBean;
-        sharedWizardInfo = SharedWizardInfo.getInstance();
+        initialize();
+    }
+
+    private void initialize() {
         resourceBundle = ResourceBundle.getBundle("com.l7tech.server.config.resources.configwizard");
     }
 
     public boolean execute() {
         boolean success = true;
+        KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         if (ksBean.isDoKeystoreConfig()) {
             KeystoreType ksType = ksBean.getKeyStoreType();
             try {
@@ -157,7 +161,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             Certificate[] chain = newKs.getCertificateChain(KeyStoreConstants.SSL_ALIAS);
             Key newKey = chain[0].getPublicKey();
 
-            DBInformation dbInfo = sharedWizardInfo.getDbinfo();
+            DBInformation dbInfo = ksBean.getDbInformation();
             try {
                 DBActions dba = new DBActions();
                 Connection conn = null;
@@ -532,7 +536,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private void insertKeystoreIntoDatabase(ScaManager scaManager) throws ScaException, KeystoreActionsException {
         try {
             byte[] keyData = scaManager.loadKeydata();
-            DBInformation dbinfo = sharedWizardInfo.getDbinfo();
+            KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
+
+            DBInformation dbinfo = ksBean.getDbInformation();
+
             putKeydataInDatabase(dbinfo, keyData);
         } catch (ScaException e) {
             logger.severe("Could not load the keystore information from the disk: " + e.getMessage());
@@ -557,6 +564,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private void makeHSMKeys(File keystoreDir, char[] fullKeystoreAccessPassword, boolean isRestoreHsm) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, SignatureException, InvalidKeyException, UnrecoverableEntryException, KeystoreActionsException {
         if ( !keystoreDir.exists() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' does not exist" );
         if ( !keystoreDir.isDirectory() ) throw new IOException( "Keystore directory '" + keystoreDir.getAbsolutePath() + "' is not a directory" );
+
+        KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
 
         File caCertFile = new File(keystoreDir,KeyStoreConstants.CA_CERT_FILE);
         File sslCertFile = new File(keystoreDir,KeyStoreConstants.SSL_CERT_FILE);
@@ -591,7 +600,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             caPrivateKey = cakp.getPrivate();
             logger.info("Generating self-signed CA cert");
             caCert = BouncyCastleRsaSignerEngine.makeSelfSignedRootCertificate(
-                    KeyStoreConstants.CA_DN_PREFIX + sharedWizardInfo.getHostname(),
+                    KeyStoreConstants.CA_DN_PREFIX + ksBean.getHostname(),
                     KeyStoreConstants.CA_VALIDITY_DAYS, cakp);
 
             logger.info("Storing CA cert in HSM");
@@ -601,7 +610,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             KeyPair sslkp = JceProvider.generateRsaKeyPair();
 
             logger.info("Generating SSL cert");
-            sslCert = BouncyCastleRsaSignerEngine.makeSignedCertificate(KeyStoreConstants.SSL_DN_PREFIX + sharedWizardInfo.getHostname(),
+            sslCert = BouncyCastleRsaSignerEngine.makeSignedCertificate(KeyStoreConstants.SSL_DN_PREFIX + ksBean.getHostname(),
                                                                            KeyStoreConstants.SSL_VALIDITY_DAYS,
                                                                            sslkp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
 

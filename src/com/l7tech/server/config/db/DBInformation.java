@@ -1,12 +1,14 @@
 package com.l7tech.server.config.db;
 
-public class DBInformation {
-    private String hostname;
-    private String dbName;
-    private String username;
-    private String password;
-    private String privUsername;
-    private String privPassword;
+import java.io.Serializable;
+
+public class DBInformation implements Serializable {
+    private String hostname = "";
+    private String dbName = "";
+    private String username = "";
+    private String password = "";
+    private String privUsername = "";
+    private String privPassword = "";
     private boolean isNew;
 
     public DBInformation(String hostname, String dbName, String username, String password, String privUsername, String privPassword) {
@@ -16,6 +18,9 @@ public class DBInformation {
         this.password = password;
         this.privUsername = privUsername;
         this.privPassword = privPassword;
+    }
+
+    public DBInformation() {
     }
 
     public String getHostname() {

@@ -1,6 +1,7 @@
 package com.l7tech.server.config.ui.console;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.server.config.*;
 import com.l7tech.server.config.commands.ConfigurationCommand;
@@ -8,10 +9,14 @@ import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
+import org.xml.sax.SAXException;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -19,6 +24,8 @@ import java.util.*;
  * Time: 3:42:52 PM
  */
 public class ConfigurationWizard {
+    private static final Logger logger = Logger.getLogger(ConfigurationWizard.class.getName());
+
     public static final int SILENT_INDEX = 0;
     public static final int FILENAME_INDEX = 1;
 
@@ -27,7 +34,7 @@ public class ConfigurationWizard {
     protected OSSpecificFunctions osFunctions;
 
     private List<ConfigWizardConsoleStep> steps = new ArrayList<ConfigWizardConsoleStep>();
-    private Set<ConfigurationCommand> commands;
+    private Collection<ConfigurationCommand> commands;
     private Set<ConfigurationCommand> additionalCommands;
     private boolean hadFailures;
     static String currentVersion = null;
@@ -43,6 +50,7 @@ public class ConfigurationWizard {
     private SharedWizardInfo sharedWizardInfo;
 
     boolean jumpToApply = false;
+    private SilentConfigData silentConfigData;
 
     static {
         currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
@@ -133,11 +141,41 @@ public class ConfigurationWizard {
     }
 
     private void applyConfiguration() {
-        if (additionalCommands != null)
-            commands.addAll(additionalCommands);
+        hadFailures = false;
+
+        SilentConfigData silentConfig = getSilentConfigData();
+        if (silentConfig != null) {
+            commands = silentConfig.getCommands();
+            PartitionInformation pInfo = silentConfig.getPartitionInfo();
+            File f = new File(getOsFunctions().getPartitionBase() + pInfo.getPartitionId());
+
+            if (!f.exists()) {
+                PartitionActions pa = new PartitionActions(getOsFunctions());
+                Exception ex = null;
+                try {
+                    pa.createNewPartition(pInfo.getPartitionId());
+                    PartitionActions.prepareNewpartition(pInfo);
+                } catch (IOException e) {
+                    ex = e;
+                } catch (InterruptedException e) {
+                    ex = e;
+                } catch (SAXException e) {
+                    ex = e;
+                } finally {
+                    if (ex != null) {
+                        logger.severe("there was an error while creating the partition " + pInfo.getPartitionId() + ": " + ExceptionUtils.getMessage(ex));
+                        hadFailures = true;
+                        return;
+                    }
+                }
+            }
+        } else {
+            if (additionalCommands != null)
+                commands.addAll(additionalCommands);
+        }
 
         Iterator<ConfigurationCommand> iterator = commands.iterator();
-        hadFailures = false;
+
 
         wizardUtils.printText("Please wait while the configuration is applied ..." + ConsoleWizardUtils.EOL_CHAR);
 
@@ -146,6 +184,26 @@ public class ConfigurationWizard {
             boolean successful = command.execute();
             if (!successful) {
                 hadFailures = true;
+            }
+        }
+
+        saveConfigData();
+    }
+
+    private void saveConfigData() {
+        SilentConfigurator sc = new SilentConfigurator(osFunctions);
+
+        ConfigurationType configType = SharedWizardInfo.getInstance().getConfigType();
+        if (configType == ConfigurationType.CONFIG_CLUSTER) {
+            ClusteringType clusterType = SharedWizardInfo.getInstance().getClusterType();
+            if (clusterType == ClusteringType.CLUSTER_MASTER) {
+                SilentConfigData configData = new SilentConfigData();
+                configData.setCommands(commands);
+                configData.setDbInfo(sharedWizardInfo.getDbinfo());
+                configData.setPartitionInfo(PartitionManager.getInstance().getActivePartition());
+                configData.setSslKeystore(null);
+                configData.setCaKeystore(null);
+                sc.saveConfigToDb(sharedWizardInfo.getDbinfo(), "",configData);
             }
         }
     }
@@ -216,5 +274,13 @@ public class ConfigurationWizard {
 
     public void setJumpToApply(boolean jumpToApply) {
         this.jumpToApply = jumpToApply;
+    }
+
+    public void setSilentConfigData(SilentConfigData configData) {
+        this.silentConfigData = configData;
+    }
+
+    public SilentConfigData getSilentConfigData() {
+        return silentConfigData;
     }
 }

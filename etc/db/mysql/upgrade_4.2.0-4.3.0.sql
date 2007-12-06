@@ -142,6 +142,12 @@ DELETE FROM client_cert WHERE provider NOT IN (SELECT objectid FROM identity_pro
 ---
 ALTER TABLE client_cert ADD FOREIGN KEY (provider) REFERENCES identity_provider (objectid) ON DELETE CASCADE;
 
+CREATE TABLE config_data (
+  objectid bigint(20) NOT NULL,
+  configdata mediumblob DEFAULT NULL,
+  PRIMARY KEY (objectid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 --
 -- Reenable FK at very end of script
 --

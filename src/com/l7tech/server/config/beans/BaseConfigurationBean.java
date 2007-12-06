@@ -1,9 +1,10 @@
 package com.l7tech.server.config.beans;
 
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +19,6 @@ import java.util.Map;
  */
 public abstract class BaseConfigurationBean implements ConfigurationBean {
 
-    protected String ELEMENT_KEY;
     protected Map affectedObjects;
 
     protected String elementName;
@@ -29,6 +29,9 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
     protected String insertTab = "\t";
     protected static String eol = System.getProperty("line.separator");
 
+    protected BaseConfigurationBean() {
+    }
+
     public BaseConfigurationBean(String name, String description) {
         affectedObjects = new HashMap();
         elementName = name;
@@ -37,10 +40,6 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
     }
 
     public abstract void reset();
-
-    public String getElementKey() {
-        return ELEMENT_KEY;
-    }
 
     public String getName() {
         return elementName;

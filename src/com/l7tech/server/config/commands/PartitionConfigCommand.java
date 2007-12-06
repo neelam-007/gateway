@@ -1,10 +1,12 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.partition.PartitionInformation;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -13,16 +15,18 @@ import java.io.IOException;
  * Time: 10:51:03 AM
  */
 public class PartitionConfigCommand extends BaseConfigurationCommand{
-//    private static final Logger logger = Logger.getLogger(PartitionConfigCommand.class.getName());
-    PartitionConfigBean partitionBean;
+
+    public PartitionConfigCommand() {
+        super();
+    }
 
     public PartitionConfigCommand(ConfigurationBean bean) {
         super(bean);
-        partitionBean = (PartitionConfigBean) configBean;
     }
 
     public boolean execute() {
         boolean success = true;
+        PartitionConfigBean partitionBean = (PartitionConfigBean) configBean;
         PartitionInformation pInfo = partitionBean.getPartitionInfo();
         try {
             PartitionActions.updateSystemProperties(pInfo, true);

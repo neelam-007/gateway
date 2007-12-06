@@ -60,6 +60,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 doKeystoreTypePrompts();
             }
             keystoreBean.setHostname(getParentWizard().getHostname());
+            keystoreBean.setDbInformation(SharedWizardInfo.getInstance().getDbinfo());
             storeInput();
         } catch (IOException e) {
             e.printStackTrace();
@@ -288,7 +289,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         String input = getData(prompts, defaultValue, new String[]{"1","2"}, null);
 
         shouldConfigure = input != null && input.trim().equals("2");
-        keystoreBean.doKeystoreConfig(shouldConfigure);
+        keystoreBean.setDoKeystoreConfig(shouldConfigure);
         getParentWizard().setKeystoreType(KeystoreType.NO_KEYSTORE);
 
         PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();

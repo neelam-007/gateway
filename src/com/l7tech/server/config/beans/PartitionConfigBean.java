@@ -45,11 +45,11 @@ public class PartitionConfigBean extends BaseConfigurationBean{
         }
     }
 
-    public void setPartition(PartitionInformation pi) {
-        this.partitionInfo = pi;
-    }
-
     public PartitionInformation getPartitionInfo() {
         return partitionInfo;
+    }
+
+    public void setPartitionInfo(PartitionInformation partitionInfo) {
+        this.partitionInfo = partitionInfo;
     }
 }

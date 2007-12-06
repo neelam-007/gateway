@@ -1,6 +1,7 @@
 package com.l7tech.server.config.beans;
 
 import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.server.partition.PartitionInformation;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,6 +17,8 @@ public class EndpointConfigBean extends BaseConfigurationBean{
 
     private List<SsgConnector> endpointsToAdd;
     private Collection<SsgConnector> legacyEndpoints;
+
+    PartitionInformation partitionInfo;
 
     public EndpointConfigBean() {
         super(NAME, DESCRIPTION);
@@ -59,5 +62,13 @@ public class EndpointConfigBean extends BaseConfigurationBean{
 
     public Collection<SsgConnector> getEndpointsToAdd() {
         return endpointsToAdd;
+    }
+
+    public PartitionInformation getPartitionInfo() {
+        return partitionInfo;
+    }
+
+    public void setPartitionInfo(PartitionInformation partitionInfo) {
+        this.partitionInfo = partitionInfo;
     }
 }

@@ -92,13 +92,12 @@ public class PartitionManager {
     }
 
     public void addPartition(String partitionId) {
-        OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions(partitionId);
         PartitionInformation pi;
 
         pi = new PartitionInformation(partitionId);
         pi.setNewPartition(false);
         pi.setEnabled(false);
-        pi.shouldDisable(); //make sure that unless something changes, this stays disabled.
+        pi.isShouldDisable(); //make sure that unless something changes, this stays disabled.
         partitions.put(pi.getPartitionId(), pi);
     }
 

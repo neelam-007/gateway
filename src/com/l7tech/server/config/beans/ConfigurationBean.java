@@ -11,5 +11,5 @@ public interface ConfigurationBean {
     public String getName();
     public String getDescription();
     public String[] explain();
-    public String getElementKey();
+//    public String getElementKey();
 }

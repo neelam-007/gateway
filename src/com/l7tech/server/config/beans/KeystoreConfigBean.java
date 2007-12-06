@@ -1,7 +1,7 @@
 package com.l7tech.server.config.beans;
 
 import com.l7tech.server.config.KeystoreType;
-import com.l7tech.server.config.SharedWizardInfo;
+import com.l7tech.server.config.db.DBInformation;
 
 /**
  * User: megery
@@ -27,13 +27,13 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private boolean doKeystoreConfig;
     private KeystoreType keyStoreType;
     private boolean initializeHSM;
-    private SharedWizardInfo sharedWizardInfo;
 
     private byte[] clusterSharedKey;
     private byte[] sharedKeyData;
     private boolean shouldBackupMasterKey;
     private char[] masterKeyBackupPassword;
 
+    private DBInformation dbInformation;
     public static final String[] DEFAULT_SECURITY_PROVIDERS =
             {
                 "sun.security.provider.Sun",
@@ -53,14 +53,12 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
                 "com.sun.crypto.provider.SunJCE"
             };
 
-
     public KeystoreType getKeyStoreType() {
         return keyStoreType;
     }
 
     public void setKeyStoreType(KeystoreType keyStoreType) {
         this.keyStoreType = keyStoreType;
-        sharedWizardInfo.setKeystoreType(keyStoreType);
     }
 
     public KeystoreConfigBean() {
@@ -69,8 +67,7 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     }
 
     private void init() {
-        ELEMENT_KEY = this.getClass().getName();
-        sharedWizardInfo = SharedWizardInfo.getInstance();
+        setKeyStoreType(KeystoreType.DEFAULT_KEYSTORE_NAME);
     }
 
     public void reset() {
@@ -150,12 +147,12 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
         }
     }
 
-    public void doKeystoreConfig(boolean b) {
-        this.doKeystoreConfig = b;
-    }
-
     public boolean isDoKeystoreConfig() {
         return doKeystoreConfig;
+    }
+
+    public void setDoKeystoreConfig(boolean doKeystoreConfig) {
+        this.doKeystoreConfig = doKeystoreConfig;
     }
 
     public void setInitializeHSM(boolean shouldInitialise) {
@@ -195,8 +192,15 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
         this.masterKeyBackupPassword = backupPassword;
     }
 
-
     public char[] getMasterKeyBackupPassword() {
         return masterKeyBackupPassword;
+    }
+
+    public DBInformation getDbInformation() {
+        return dbInformation;
+    }
+
+    public void setDbInformation(DBInformation dbInformation) {
+        this.dbInformation = dbInformation;
     }
 }
