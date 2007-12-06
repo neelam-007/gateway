@@ -3,10 +3,10 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.policy.assertion.HtmlFormDataAssertion;
 import com.l7tech.policy.assertion.HtmlFormDataLocation;
 import com.l7tech.policy.assertion.HtmlFormDataType;
-import com.l7tech.common.gui.util.ImageCache;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -340,6 +340,8 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
     private JButton _okButton;
     private JButton _cancelButton;
 
+    private final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
+
     /**
      * This is for displaying warning against invalid value(s) in {@link #_fieldTable}.
      * The Jlabel icon is turned on if any cell has invalid value.
@@ -553,8 +555,7 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
         _okButton.setEnabled((_allowGetCheckbox.isSelected() || _allowPostCheckbox.isSelected())
                              && !hasWarning);
         if (hasWarning) {
-            final ImageIcon warningIcon = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Alert16x16.gif"));
-            _warningLabel.setIcon(warningIcon);
+            _warningLabel.setIcon(WARNING_ICON);
             if (_warningLabel.getText() == null) {
                 _warningLabel.setText("Invalid value(s) detected; select a highlighted cell for more information");
             }
