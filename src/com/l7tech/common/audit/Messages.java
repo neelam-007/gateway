@@ -82,28 +82,7 @@ public class Messages {
         }
     }
 
-    public static String getMessageById(int id) {
-        M message = (M) messagesById.get(id);
-        if(message != null) return message.getMessage();
-        return null;
+    public static AuditDetailMessage getAuditDetailMessageById(int id) {
+        return messagesById.get(id);
     }
-
-    public static Level getSeverityLevelById(int id) {
-        M message = (M) messagesById.get(id);
-        if(message != null) return message.getLevel();
-        return null;
-    }
-
-    public static String getSeverityLevelNameById(int id) {
-        M message = (M) messagesById.get(id);
-        if(message != null) return message.getLevel().getName();
-        return null;
-    }
-
-    public static Set<AuditDetailMessage.Hint> getHintsById(int id) {
-        M message = (M) messagesById.get(id);
-        if(message != null) return message.getHints();
-        return null;
-    }
-
 }

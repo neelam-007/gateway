@@ -37,6 +37,10 @@ public class ThreadLocalAuditContext implements AuditContext, ApplicationContext
         threadLocalDelegate.get().addDetail(detail, source);
     }
 
+    public void addDetail(AuditDetail detail, Object source, Throwable exception) {
+        threadLocalDelegate.get().addDetail(detail, source, exception);
+    }
+
     public void flush() {
         threadLocalDelegate.get().flush();
     }

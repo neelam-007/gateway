@@ -36,7 +36,7 @@ public class Auditor implements Audit {
     }
 
     public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
-        context.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e)));
+        context.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e), e));
 
         if (logger == null) return;
 

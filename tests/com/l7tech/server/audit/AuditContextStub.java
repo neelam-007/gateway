@@ -34,6 +34,10 @@ public class AuditContextStub implements AuditContextStubInt {
         details.add(detail);
     }
 
+    public void addDetail(AuditDetail detail, Object source, Throwable exception) {
+        details.add(detail);
+    }
+
     public Set<AuditDetailMessage.Hint> getHints() {
         return Collections.emptySet();
     }

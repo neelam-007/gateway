@@ -33,7 +33,8 @@ public class MessagesTest extends TestCase {
      */
     public void testMessageText() {
         for(int i=0; i<MESSAGE_MAX_ID; i++) {
-            String messageText = Messages.getMessageById(i);
+            AuditDetailMessage message = Messages.getAuditDetailMessageById(i);
+            String messageText = message==null ? null : message.getMessage();
             if(messageText!=null) {
                 // Check for odd numbers of single quotes, this is a an error since a single quote should be escaped
                 char[] characters = messageText.toCharArray();
@@ -62,7 +63,8 @@ public class MessagesTest extends TestCase {
      */
     public void testMessageLevel() {
         for(int i=0; i<MESSAGE_MAX_ID; i++) {
-            Level level = Messages.getSeverityLevelById(i);
+            AuditDetailMessage message = Messages.getAuditDetailMessageById(i);
+            Level level = message==null ? null : message.getLevel();
             if(level!=null) {
                 if (level.intValue() >= Level.SEVERE.intValue()) {
                     fail("Message '"+i+"', level is too high (must be < SEVERE).");                    

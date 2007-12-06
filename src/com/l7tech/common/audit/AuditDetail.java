@@ -165,7 +165,8 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         out.write("\\".getBytes());
         out.write(AuditRecord.SERSEP.getBytes());
 
-        String reConstructedMsg = Messages.getMessageById(messageId);
+        AuditDetailMessage message = Messages.getAuditDetailMessageById(messageId);
+        String reConstructedMsg = message==null ? null : message.getMessage();
         StringBuffer tmp = new StringBuffer();
         if (reConstructedMsg != null && params != null) {
             MessageFormat mf = new MessageFormat(reConstructedMsg);

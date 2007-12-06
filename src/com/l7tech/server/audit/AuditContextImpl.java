@@ -44,13 +44,6 @@ import java.io.ByteArrayOutputStream;
  */
 public class AuditContextImpl implements AuditContext {
 
-    private static final Logger logger = Logger.getLogger(AuditContextImpl.class.getName());
-    private static final String CONFIG_AUDIT_SIGN = "auditSigningEnabled";
-    private static final Boolean DEFAULT_AUDIT_SIGN = false;
-    private volatile int ordinal = 0;
-    private final ServerConfig serverConfig;
-    private KeystoreUtils keystore;
-
     public AuditContextImpl(ServerConfig serverConfig, AuditRecordManager auditRecordManager) {
         if (serverConfig == null) {
             throw new IllegalArgumentException("Server Config is required");
@@ -75,31 +68,36 @@ public class AuditContextImpl implements AuditContext {
     }
 
     public void addDetail(AuditDetail detail, Object source) {
+        addDetail(detail, source, null);
+    }
+
+    public void addDetail(AuditDetail detail, Object source, Throwable thrown) {
         if (detail == null) throw new NullPointerException();
 
-        Level severity = Messages.getSeverityLevelById(detail.getMessageId());
+        AuditDetailMessage message = Messages.getAuditDetailMessageById(detail.getMessageId());
+        Level severity = message==null ? null : message.getLevel();
         if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
         detail.setOrdinal(ordinal++);
         // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
-        getDetailList(source).add(detail);
+        getDetailList(source).add(new AuditDetailWithInfo(source, detail, thrown));
         if(getUseAssociatedLogsThreshold() && severity.intValue() > highestLevelYetSeen.intValue()) {
             highestLevelYetSeen = severity;
         }
     }
 
 
-    public KeystoreUtils getKeystore() {
-        return keystore;
-    }
-
-    public void setKeystore(KeystoreUtils keystore) {
+    public void setKeystore(final KeystoreUtils keystore) {
         this.keystore = keystore;
     }
 
-    private List<AuditDetail> getDetailList(Object source) {
-        List<AuditDetail> details = this.details.get(source);
+    public void setAuditLogListener(final AuditLogListener listener) {
+        this.listener = listener;
+    }
+
+    private List<AuditDetailWithInfo> getDetailList(Object source) {
+        List<AuditDetailWithInfo> details = this.details.get(source);
         if (details == null) {
-            details = new LinkedList<AuditDetail>();
+            details = new LinkedList<AuditDetailWithInfo>();
             this.details.put(source, details);
         }
         return details;
@@ -112,9 +110,10 @@ public class AuditContextImpl implements AuditContext {
      */
     public Set getHints() {
         Set<AuditDetailMessage.Hint> hints = new HashSet<AuditDetailMessage.Hint>();
-        for (List<AuditDetail> list : details.values()) {
-            for (AuditDetail detail : list) {
-                Set<AuditDetailMessage.Hint> dHints = Messages.getHintsById(detail.getMessageId());
+        for (List<AuditDetailWithInfo> list : details.values()) {
+            for (AuditDetailWithInfo detailWithInfo : list) {
+                AuditDetailMessage message = Messages.getAuditDetailMessageById(detailWithInfo.detail.getMessageId());
+                Set<AuditDetailMessage.Hint> dHints = message==null ? null : message.getHints();
                 if (dHints != null) {
                     hints.addAll(dHints);
                 }
@@ -179,20 +178,33 @@ public class AuditContextImpl implements AuditContext {
                 }
             }
 
+            currentRecord.setLevel(highestLevelYetSeen);
+            listener.notifyRecordFlushed(currentRecord, true);
+
             Set<AuditDetail> detailsToSave = new HashSet<AuditDetail>();
-            for (List<AuditDetail> list : details.values()) {
-                for (AuditDetail detail : list) {
-                    Level severity = Messages.getSeverityLevelById(detail.getMessageId());
-                    if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
+            for (List<AuditDetailWithInfo> list : details.values()) {
+                for (AuditDetailWithInfo detailWithInfo : list) {
+                    int mid = detailWithInfo.detail.getMessageId();
+                    AuditDetailMessage message = Messages.getAuditDetailMessageById(mid);
+                    Level severity = message==null ? null : message.getLevel();
+                    if(severity == null)
+                        throw new RuntimeException("Cannot find the message (id=" + mid + ")" + " in the Message Map.");
                     if(severity.intValue() >= getAssociatedLogsThreshold().intValue()) {
-                        detail.setAuditRecord(currentRecord);
-                        detailsToSave.add(detail);
+                        detailWithInfo.detail.setAuditRecord(currentRecord);
+                        detailsToSave.add(detailWithInfo.detail);
+
+                        listener.notifyDetailFlushed(
+                                getSource(detailWithInfo.source, "com.l7tech.server.audit"),
+                                message,
+                                detailWithInfo.detail.getParams(),
+                                detailWithInfo.exception);
                     }
                 }
             }
 
             currentRecord.setDetails(detailsToSave);
-            currentRecord.setLevel(highestLevelYetSeen);
+            listener.notifyRecordFlushed(currentRecord, false);
+
             if ( isSignAudits() ) {
                 signRecord(currentRecord);
             }
@@ -238,7 +250,17 @@ public class AuditContextImpl implements AuditContext {
     }
 
     public Map<Object, List<AuditDetail>> getDetails() {
-        return Collections.unmodifiableMap(details);
+        Map<Object,List<AuditDetail>> ads = new HashMap();
+
+        for ( Map.Entry<Object,List<AuditDetailWithInfo>> entry : details.entrySet() ) {
+            List<AuditDetail> ds = new ArrayList();
+            for ( AuditDetailWithInfo detailWithInfo : entry.getValue() ) {
+                ds.add( detailWithInfo.detail );
+            }
+            ads.put(entry.getKey(), ds);
+        }
+
+        return Collections.unmodifiableMap(ads);
     }
 
     private Level getSystemMessageThreshold() {
@@ -372,20 +394,54 @@ public class AuditContextImpl implements AuditContext {
         return level;
     }
 
+    private String getSource( Object sourceObj, String defaultValue ) {
+        String source = defaultValue;
+
+        if ( sourceObj != null ) {
+            source = sourceObj.getClass().getName();
+        }
+
+        return source;
+    }
+
+    private static final Logger logger = Logger.getLogger(AuditContextImpl.class.getName());
+    private static final String CONFIG_AUDIT_SIGN = "auditSigningEnabled";
+    private static final Boolean DEFAULT_AUDIT_SIGN = false;
+
+    private final ServerConfig serverConfig;
+    private final AuditRecordManager auditRecordManager;
+    private KeystoreUtils keystore;
+    private AuditLogListener listener;
+
     private Level currentMessageThreshold;
     private Level currentAdminThreshold;
     private Level currentSystemClientThreshold;
     private Level currentAssociatedLogsThreshold;
     private Boolean currentUseAssociatedLogsThreshold;
     private Boolean currentSignAuditSetting;
-    private final AuditRecordManager auditRecordManager;
 
     private AuditRecord currentRecord;
     private Level highestLevelYetSeen = Level.ALL;
+    private volatile int ordinal = 0;
+
 
     /**
      * The source might be null, but HashMap allows the null key, so all the details
      * created by unknown objects will end up in the same List, which is fine.
      */
-    private final Map<Object, List<AuditDetail>> details = new LinkedHashMap<Object, List<AuditDetail>>();
+    private final Map<Object, List<AuditDetailWithInfo>> details = new LinkedHashMap<Object, List<AuditDetailWithInfo>>();
+
+    private final static class AuditDetailWithInfo {
+        private final Object source;
+        private final AuditDetail detail;
+        private final Throwable exception;
+
+        private AuditDetailWithInfo(final Object source,
+                                    final AuditDetail detail,
+                                    final Throwable exception) {
+            this.source = source;
+            this.detail = detail;
+            this.exception = exception;                    
+        }
+    }
 }

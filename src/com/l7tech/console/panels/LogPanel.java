@@ -693,7 +693,8 @@ public class LogPanel extends JPanel {
                     int id = ad.getMessageId();
                     // TODO get the CellRenderer to display the user messages differently when id < 0 (add field to AssociatedLog class?)
                     String associatedLogMessage = getMessageById(id);
-                    String associatedLogLevel = Messages.getSeverityLevelNameById(id);
+                    AuditDetailMessage message = Messages.getAuditDetailMessageById(id);
+                    String associatedLogLevel = message==null ? null : message.getLevelName();
 
                     StringBuffer result = new StringBuffer();
                     if (associatedLogMessage != null) {
@@ -730,7 +731,8 @@ public class LogPanel extends JPanel {
                 }
             }
             if (output == null) {
-                output = Messages.getMessageById(id);
+                AuditDetailMessage message = Messages.getAuditDetailMessageById(id);
+                output = message==null ? null : message.getMessage();
             }
             cachedAuditMessages.put(id, output);
         }

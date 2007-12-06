@@ -98,6 +98,20 @@ public interface AuditContext {
     void addDetail(AuditDetail detail, Object source);
 
     /**
+     * Adds an {@link com.l7tech.common.audit.AuditDetail} record to the current context.
+     *
+     * <p>
+     * AuditDetail records are saved when their parent AuditRecord is saved via
+     * a call to {@link #flush}.
+     * </p>
+     *
+     * @param detail the {@link com.l7tech.common.audit.AuditDetail} record to add. Must not be null.
+     * @param source the source of the {@link com.l7tech.common.audit.AuditDetailEvent}.
+     * @param thrown the exception associated with the {@link com.l7tech.common.audit.AuditDetailEvent}.
+     */
+    void addDetail(AuditDetail detail, Object source, Throwable thrown);
+
+    /**
      * Get the currently acumulated hints.
      *
      * @return the Set of AuditDetailMessage.Hint's

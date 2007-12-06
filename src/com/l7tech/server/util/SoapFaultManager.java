@@ -3,6 +3,7 @@ package com.l7tech.server.util;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.Messages;
+import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -230,7 +231,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                     for (AuditDetail detail : details) {
                         int msgid = detail.getMessageId();
                         // only show details FINE and higher for medium details, show all details for full details
-                        if (includeSuccesses || (Messages.getSeverityLevelById(msgid).intValue() >= Level.INFO.intValue())) {       
+                        if (includeSuccesses || (Messages.getAuditDetailMessageById(msgid).getLevel().intValue() >= Level.INFO.intValue())) {
                             Element detailMsgEl = tmp.createElementNS(FAULT_NS, "l7:detailMessage");
                             detailMsgEl.setAttribute("id", Long.toString(detail.getMessageId()));
                             // add text node with actual message. see below for logpanel sample:
@@ -266,7 +267,8 @@ public class SoapFaultManager implements ApplicationContextAware {
         } finally {
             lock.unlock();
         }
-        return Messages.getMessageById(msgid);
+        AuditDetailMessage message = Messages.getAuditDetailMessageById(msgid);
+        return message==null ? null : message.getMessage();
     }
 
     private static final String GENERIC_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

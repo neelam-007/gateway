@@ -10,6 +10,7 @@ import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.Messages;
+import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
@@ -396,7 +397,9 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                     }
 
                     try {
-                        currentMessage = Messages.getMessageById(Integer.parseInt(detailPart.substring(AUDITDETAILMESSAGEID.length())));
+                        int id = Integer.parseInt(detailPart.substring(AUDITDETAILMESSAGEID.length()));
+                        AuditDetailMessage message = Messages.getAuditDetailMessageById(id);
+                        currentMessage = message==null? null : message.getMessage();
                         currentMessageId = detailPart.substring(AUDITDETAILMESSAGEID.length());
                     } catch (NumberFormatException nfe) {
                         currentMessage = null;

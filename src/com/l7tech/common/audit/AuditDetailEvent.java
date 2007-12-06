@@ -12,13 +12,19 @@ import org.springframework.context.ApplicationEvent;
  */
 public class AuditDetailEvent extends ApplicationEvent {
     private final AuditDetail detail;
+    private final Throwable exception;
 
-    public AuditDetailEvent(Object source, AuditDetail detail) {
+    public AuditDetailEvent(Object source, AuditDetail detail, Throwable exception) {
         super(source);
         this.detail = detail;
+        this.exception = exception;
     }
 
     public AuditDetail getDetail() {
         return detail;
+    }
+
+    public Throwable getException() {
+        return exception;
     }
 }

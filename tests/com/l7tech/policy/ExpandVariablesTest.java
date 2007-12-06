@@ -36,7 +36,7 @@ public class ExpandVariablesTest extends TestCase {
 
     public void setUp() throws Exception {
         // put set up code here
-        Messages.getMessageById(0); // This really shouldn't be necessary, but somebody's gotta do it
+        Messages.getAuditDetailMessageById(0); // This really shouldn't be necessary, but somebody's gotta do it
     }
 
     public void tearDown() throws Exception {

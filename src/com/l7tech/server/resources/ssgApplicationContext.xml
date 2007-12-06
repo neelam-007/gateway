@@ -478,7 +478,7 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
         <property name="keystore" ref="keystore"/>
-        <!-- <property name="auditLogListener" ref="auditLogListener"/>-->
+        <property name="auditLogListener" ref="auditLogListener"/>
     </bean>
 
     <!-- server side Status Update Manager -->
