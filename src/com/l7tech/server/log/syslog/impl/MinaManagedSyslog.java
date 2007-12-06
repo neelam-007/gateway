@@ -8,6 +8,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.net.SocketAddress;
+import java.nio.channels.UnresolvedAddressException;
 
 import org.apache.mina.common.IoSession;
 import org.apache.mina.common.IoConnector;
@@ -302,6 +303,19 @@ public class MinaManagedSyslog extends ManagedSyslog {
         }
 
         /**
+         * Set the reconnect flag after a delay
+         */
+        private void flagReconnectAfterDelay() {
+            try {
+                Thread.sleep(getAndIncReconnectSleep());
+                reconnect.set( true );
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+        }
+
+        /**
          * Initiate connection to the syslog host
          */
         private void connect() {
@@ -314,21 +328,21 @@ public class MinaManagedSyslog extends ManagedSyslog {
             config.setThreadModel(ThreadModel.MANUAL);
 
             // start connect operation
-            final ConnectFuture connectFuture = connector.connect( address, handler, config );
-            connectFuture.addListener(new IoFutureListener() {
-                public void operationComplete(IoFuture future) {
-                    if ( !connectFuture.isConnected() ) {
-                        try {
-                            Thread.sleep(getAndIncReconnectSleep());
-                            reconnect.set( true );
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
+            try {
+                final ConnectFuture connectFuture = connector.connect( address, handler, config );
+                connectFuture.addListener(new IoFutureListener() {
+                    public void operationComplete(IoFuture future) {
+                        if ( !connectFuture.isConnected() ) {
+                            flagReconnectAfterDelay();
+                        } else {
+                            resetReconnectSleep();
                         }
-                    } else {
-                        resetReconnectSleep();
                     }
-                }
-            });
+                });
+            } catch (UnresolvedAddressException uae) {
+                fireDisconnected(); // needed for audit since no session is ever created
+                flagReconnectAfterDelay();
+            }
         }
 
         /**
@@ -343,7 +357,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
                         }
 
                         IoSession session = sessionRef.get();
-                        if ( session != null ) {
+                        if ( session != null && session.isConnected() && !session.isClosing() ) {
                             FormattedSyslogMessage message = messageQueue.poll(100, TimeUnit.MILLISECONDS);
                             if ( message != null ) {
                                 // format

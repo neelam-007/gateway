@@ -790,7 +790,7 @@
 
     <bean id="syslogManager" class="com.l7tech.server.log.syslog.SyslogManager"/>
 
-    <bean id="sinkManager" class="com.l7tech.server.log.SinkManager" parent="hibernateBean">
+    <bean id="sinkManager" class="com.l7tech.server.log.SinkManager" parent="hibernateBean" depends-on="systemAuditListener">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="syslogManager"/>
         <constructor-arg ref="trafficLogger"/>

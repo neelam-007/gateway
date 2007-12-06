@@ -29,6 +29,7 @@ class MinaSyslogHandler extends IoHandlerAdapter {
     /**
      * Handle new session
      */
+    @Override
     public void sessionCreated(final IoSession session) throws Exception {
         session.setAttribute(SessionLog.LOGGER, new SilentLogger());
         session.getFilterChain().addLast( "codec", CODEC_FILTER);
@@ -37,6 +38,7 @@ class MinaSyslogHandler extends IoHandlerAdapter {
     /**
      * Handle session open
      */
+    @Override
     public void sessionOpened(final IoSession session) throws Exception {
         sessionCallback.call(session);
     }
@@ -44,6 +46,7 @@ class MinaSyslogHandler extends IoHandlerAdapter {
     /**
      * Handle session close
      */
+    @Override
     public void sessionClosed(final IoSession session) throws Exception {
         sessionCallback.call(null);
     }
@@ -51,6 +54,7 @@ class MinaSyslogHandler extends IoHandlerAdapter {
     /**
      * Handle exception
      */
+    @Override
     public void exceptionCaught(final IoSession session, final Throwable throwable) throws Exception {
         // close session to cause reconnection
         session.close();
