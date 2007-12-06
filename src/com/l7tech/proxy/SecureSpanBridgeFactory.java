@@ -7,11 +7,11 @@ package com.l7tech.proxy;
 
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
@@ -25,10 +25,10 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.xml.namespace.QName;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ByteArrayInputStream;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
@@ -40,6 +40,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Obtain a SecureSpanBridge implementation.
@@ -48,6 +50,9 @@ import java.util.WeakHashMap;
  * @version 1.0
  */
 public class SecureSpanBridgeFactory {
+    protected static final Logger logger = Logger.getLogger(SecureSpanBridgeFactory.class.getName());
+    public static final String PROPERTY_MESSAGE_INTERCEPTOR = "com.l7tech.proxy.messageInterceptor";
+
     private static class CausedSendException extends SecureSpanBridge.SendException {
         CausedSendException(Throwable cause) {
             super();
@@ -165,8 +170,20 @@ public class SecureSpanBridgeFactory {
             });
         }
         final MessageProcessor mp = new MessageProcessor();
-        final RequestInterceptor nri = NullRequestInterceptor.INSTANCE;
+        final RequestInterceptor nri = getRequestInterceptor();
         return new SecureSpanBridgeImpl(ssg, nri, mp, pw);
+    }
+
+    private static RequestInterceptor getRequestInterceptor() {
+        String interceptorClassname = SyspropUtil.getString(PROPERTY_MESSAGE_INTERCEPTOR, NullRequestInterceptor.class.getName());
+
+        try {
+            return (RequestInterceptor)Class.forName(interceptorClassname).newInstance();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to instantiate configured message interceptor " + interceptorClassname + ": " + ExceptionUtils.getMessage(e) +
+                    "\n Will use NullRequestInterceptor", e);
+            return NullRequestInterceptor.INSTANCE;
+        }
     }
 
     static class SecureSpanBridgeImpl implements SecureSpanBridge {
