@@ -167,6 +167,16 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
         subjectCertSkiRadioButton.setEnabled(subjectCertEnabled);
         subjectCertThumbprintRadioButton.setEnabled(subjectCertEnabled);
 
+        if (subjectCertEnabled &&
+                !(subjectCertLiteralRadioButton.isSelected() ||
+                  subjectCertSkiRadioButton.isSelected() ||
+                  subjectCertThumbprintRadioButton.isSelected())
+                )
+        {
+            // Bug 4304 -- ensure at least one radio buttion is selected
+            subjectCertLiteralRadioButton.setSelected(true);
+        }
+
         subjectCertPanel.setVisible(subjectCertVisible);
         subjectCertIncludeCheckbox.setVisible(subjectCertVisible);
         subjectCertLiteralRadioButton.setVisible(subjectCertVisible);
