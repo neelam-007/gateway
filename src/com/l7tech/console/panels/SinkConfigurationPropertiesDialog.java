@@ -194,11 +194,13 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         JSpinner.NumberEditor numberEditor = new JSpinner.NumberEditor(fileMaxSizeField);
         fileMaxSizeField.setEditor(numberEditor);
         numberEditor.getModel().setMinimum(1);
+        numberEditor.getModel().setMaximum(1024 * 1024);
         numberEditor.getModel().setValue(1024);
 
         numberEditor = new JSpinner.NumberEditor(fileLogCount);
         fileLogCount.setEditor(numberEditor);
         numberEditor.getModel().setMinimum(1);
+        numberEditor.getModel().setMaximum(100);
         numberEditor.getModel().setValue(1);
 
         fileFormatField.setModel(new DefaultComboBoxModel(SinkConfiguration.FILE_FORMAT_SET.toArray()));
@@ -266,8 +268,12 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                     return null;
                 }
 
-                if(syslogHostField.getText().length() == 0) {
+                if( syslogHostField.getText().length() == 0 ) {
                     return resources.getString("syslogSettings.host.errors.empty");
+                }
+
+                if( !ValidationUtils.isValidDomain(syslogHostField.getText()) ) {
+                    return resources.getString("syslogSettings.host.errors.invalid");
                 }
 
                 return null;
@@ -392,7 +398,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         String value = sinkConfiguration.getProperty(SinkConfiguration.PROP_FILE_MAX_SIZE);
         fileMaxSizeField.setValue(value == null ? 1024 : Integer.parseInt(value));
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_FILE_LOG_COUNT);
-        fileLogCount.setValue(value == null ? 1 : Integer.parseInt(value));
+        fileLogCount.setValue(value == null ? 2 : Integer.parseInt(value));
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_FILE_FORMAT);
         if(value == null) {
             fileFormatField.setSelectedItem(SinkConfiguration.FILE_FORMAT_STANDARD);
