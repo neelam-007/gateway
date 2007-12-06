@@ -76,4 +76,23 @@ public interface LogSinkAdmin {
      * @return Whether the message was successfully sent or not
      */
     boolean sendTestSyslogMessage(SinkConfiguration sinkConfiguration, String message);
+
+    /**
+     * Access the reserved file system space.
+     *
+     * <p>The combined space for all logs must not exceed the allowed space.</p>
+     *
+     * <p>The reserved space will only include space allocated for enabled
+     * sinks.</p>
+     *
+     * @return The reserved space in bytes.
+     */
+    long getReservedFileSize();
+
+    /**
+     * Access the maximum file system space available for use.
+     *
+     * @return The maximum space in bytes.
+     */
+    long getMaximumFileSize();
 }

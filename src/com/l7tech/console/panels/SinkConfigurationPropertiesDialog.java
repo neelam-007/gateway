@@ -50,8 +50,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private JComboBox fileFormatField;
     private JButton syslogTestMessageButton;
 
+    private final SinkConfiguration sinkConfiguration;
     private InputValidator inputValidator;
-    private SinkConfiguration sinkConfiguration;
     private int testCount = 0;
     private boolean confirmed = false;
 
@@ -66,7 +66,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      */
     public SinkConfigurationPropertiesDialog(Frame owner, SinkConfiguration sinkConfiguration) {
         super(owner, DIALOG_TITLE);
-        initialize(sinkConfiguration);
+        this.sinkConfiguration = sinkConfiguration;
+        initialize();
     }
 
     /**
@@ -80,7 +81,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      */
     public SinkConfigurationPropertiesDialog(Dialog owner, SinkConfiguration sinkConfiguration) {
         super(owner, DIALOG_TITLE);
-        initialize(sinkConfiguration);
+        this.sinkConfiguration = sinkConfiguration;
+        initialize();
     }
 
     /**
@@ -94,11 +96,9 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     /**
      * Initializes this dialog window and sets all of the fields based on the provided SinkConfiguration
      * object.
-     *
-     * @param sinkConfiguration The SinkConfiguration to back this dialog
      */
-    private void initialize(SinkConfiguration sinkConfiguration) {
-        initializeBaseFields(sinkConfiguration);
+    private void initialize() {
+        initializeBaseFields();
         initializeFileFields();
         initializeSyslogFields();
         
@@ -113,16 +113,13 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
     /**
      * Initializes the base settings fields.
-     *
-     * @param sinkConfiguration The SinkConfiguration to back this dialog
      */
-    private void initializeBaseFields(SinkConfiguration sinkConfiguration) {
+    private void initializeBaseFields() {
         initResources();
 
         setTitle(resources.getString("sinkConfigurationProperties.window.title"));
         inputValidator = new InputValidator(this, resources.getString("sinkConfigurationProperties.window.title"));
 
-        this.sinkConfiguration = sinkConfiguration;
         setContentPane(contentPane);
         pack();
         setModal(true);
@@ -206,6 +203,53 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         fileFormatField.setModel(new DefaultComboBoxModel(SinkConfiguration.FILE_FORMAT_SET.toArray()));
         fileFormatField.setRenderer(new KeyedResourceRenderer(resources, "fileSettings.format.{0}.text"));
         fileFormatField.setSelectedIndex(1);
+
+        // add validation rule for maximum file use
+        inputValidator.addRule(new InputValidator.ValidationRule(){
+            public String getValidationError() {
+                String error = null;
+
+                long maximum = getMaximumLogFileSize();
+                long reserved = getReservedLogFileSize();
+
+                // deduct space used for previous configuration
+                reserved -= getSpaceUsed( sinkConfiguration );
+
+                // add space used for this configuration
+                SinkConfiguration tempConfig = new SinkConfiguration();
+                viewToModel( tempConfig );
+                reserved +=  getSpaceUsed( tempConfig );
+
+                if ( enabledField.isSelected() &&
+                     reserved > maximum ) {
+                    return MessageFormat.format(
+                            resources.getString("fileSettings.maxFileSize.errors.toolarge"),
+                            maximum,
+                            reserved);
+                }
+
+                return error;
+            }
+        });
+    }
+
+    /**
+     * Get the space used for the given sinkConfiguration.
+     */
+    private long getSpaceUsed( final SinkConfiguration sinkConfiguration ) {
+        long space = 0L;
+
+        if ( sinkConfiguration.isEnabled() && SinkConfiguration.SinkType.FILE == sinkConfiguration.getType() ) {
+            try {
+                long limit = Long.parseLong( sinkConfiguration.getProperty( SinkConfiguration.PROP_FILE_MAX_SIZE ) );
+                long count = Long.parseLong( sinkConfiguration.getProperty( SinkConfiguration.PROP_FILE_LOG_COUNT ) );
+
+                return 1024L * limit * count;
+            } catch (NumberFormatException nfe) {
+            }
+        }
+
+        return space;
     }
 
     /**
@@ -301,6 +345,32 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                 return null;
             }
         });
+    }
+
+    /**
+     * Get the reserved space for current log configuration (bytes)
+     */
+    private long getReservedLogFileSize() {
+        try {
+            LogSinkAdmin logSinkAdmin = Registry.getDefault().getLogSinkAdmin();
+            return logSinkAdmin.getReservedFileSize();
+        } catch ( IllegalStateException ise ) {
+            // no longer connected to server, just return a value that will validate
+            return 0L;
+        }
+    }
+
+    /**
+     * Get the maximum space for all log configurations (bytes) 
+     */
+    private long getMaximumLogFileSize() {
+        try {
+            LogSinkAdmin logSinkAdmin = Registry.getDefault().getLogSinkAdmin();
+            return logSinkAdmin.getMaximumFileSize();
+        } catch ( IllegalStateException ise ) {
+            // no longer connected to server, just return a value that will validate
+            return Long.MAX_VALUE;
+        }
     }
 
     /**

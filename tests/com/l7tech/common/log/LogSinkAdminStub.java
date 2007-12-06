@@ -30,4 +30,12 @@ public class LogSinkAdminStub implements LogSinkAdmin {
     public boolean sendTestSyslogMessage(SinkConfiguration sinkConfiguration, String message) {
         return true;
     }
+
+    public long getMaximumFileSize() {
+        return Long.MAX_VALUE;
+    }
+
+    public long getReservedFileSize() {
+        return 0;
+    }
 }

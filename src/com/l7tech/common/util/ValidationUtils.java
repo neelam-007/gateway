@@ -157,6 +157,56 @@ public class ValidationUtils {
         return ok;
     }
 
+    /**
+     * Check if an integer string is valid.
+     *
+     * @param intText The value as a string
+     * @param allowEmpty true to treat an empty string as valid
+     * @param min The minimum allowed value (inclusive)
+     * @param max The maximum allowed value (inclusive)
+     * @return True if a valid integer in the required range.
+     */
+    public static boolean isValidInteger(String intText, boolean allowEmpty, int min, int max) {
+        boolean valid = false;
+
+        if ( intText != null && intText.length() > 0 ) {
+            try {
+                int value = Integer.parseInt( intText );
+                valid = value >= min && value <= max;                
+            } catch ( NumberFormatException nfe ) {
+            }
+        } else {
+            valid = allowEmpty;
+        }
+
+        return valid;
+    }
+
+    /**
+     * Check if an integer string is a valid long.
+     *
+     * @param longText The value as a string
+     * @param allowEmpty true to treat an empty string as valid
+     * @param min The minimum allowed value (inclusive)
+     * @param max The maximum allowed value (inclusive)
+     * @return True if a valid integer in the required range.
+     */
+    public static boolean isValidLong(String longText, boolean allowEmpty, long min, long max) {
+        boolean valid = false;
+
+        if ( longText != null && longText.length() > 0 ) {
+            try {
+                long value = Long.parseLong( longText );
+                valid = value >= min && value <= max;
+            } catch ( NumberFormatException nfe ) {
+            }
+        } else {
+            valid = allowEmpty;
+        }
+
+        return valid;
+    }
+
     //- PRIVATE
 
     private static final String DOMAIN_ALLOWED_CHARS = LETTERS_LOWER + LETTERS_UPPER + DIGITS + ".-";

@@ -43,4 +43,12 @@ public class LogSinkAdminImpl implements LogSinkAdmin {
     public boolean sendTestSyslogMessage(SinkConfiguration sinkConfiguration, String message) {
         return sinkManager.test(sinkConfiguration, message);
     }
+
+    public long getMaximumFileSize() {
+        return sinkManager.getMaximumFileStorageSpace();
+    }
+
+    public long getReservedFileSize() {
+        return sinkManager.getReservedFileStorageSpace();
+    }
 }

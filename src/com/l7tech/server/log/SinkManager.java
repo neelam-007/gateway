@@ -2,6 +2,7 @@ package com.l7tech.server.log;
 
 import com.l7tech.common.log.SinkConfiguration;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.FindException;
@@ -10,6 +11,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.SyslogEvent;
 import com.l7tech.server.log.syslog.SyslogManager;
 import com.l7tech.server.log.syslog.SyslogConnectionListener;
+import com.l7tech.server.log.syslog.SyslogProtocol;
 
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,7 @@ import java.io.File;
 import java.io.StringReader;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.charset.Charset;
 
 /**
  * Provides the ability to do CRUD operations on SinkConfiguration rows in the database.
@@ -53,6 +56,48 @@ public class SinkManager
         this.serverConfig = serverConfig;
         this.syslogManager = syslogManager;
         this.trafficLogger = trafficLogger;
+    }
+
+    /**
+     * Get the file storage allocation for logs.
+     *
+     * @return The size in bytes.
+     */
+    public long getMaximumFileStorageSpace() {
+        long storage = DEFAULT_FILE_SPACE_LIMIT;
+
+        String value = serverConfig.getPropertyCached( SCPROP_FILE_LIMIT, 30000L );
+        if ( value != null ) {
+            try {
+                storage = Long.parseLong(value);
+            } catch ( NumberFormatException nfe ) {
+                logger.log(Level.WARNING, "Error parsing property ''{0}'', with value ''{1}'' as number.",
+                        new String[]{ SCPROP_FILE_LIMIT, value });
+            }
+        }
+
+        return storage;
+    }
+
+    /**
+     * Get the used file storage space in bytes.
+     *
+     * <p>This will calculate the space allocated for all currently enabled
+     * log sinks.</p>
+     *
+     * @return The size in bytes.
+     */
+    public long getReservedFileStorageSpace() {
+        long reservedSpace = 0;
+
+        Collection<SinkConfiguration> sinkConfigs = loadSinkConfigurations();
+        for ( SinkConfiguration sinkConfiguration : sinkConfigs ) {
+            if ( sinkConfiguration.isEnabled() && isValid( sinkConfiguration ) ) {
+                reservedSpace += getReservedSpace( sinkConfiguration );
+            }
+        }
+
+        return reservedSpace;
     }
 
     public Class<SinkConfiguration> getImpClass() {
@@ -145,9 +190,12 @@ public class SinkManager
 
     private static final Logger logger = Logger.getLogger(SinkManager.class.getName());
 
-    private static final String DEFAULT_TRAFFIC_LOG_NAME_POSTFIX = "_%g_%u.log";
     private static final String SCPROP_LOG_LEVELS = "logLevels";
+    private static final String SCPROP_FILE_LIMIT = "logFileSpaceMax";
+    private static final String DEFAULT_TRAFFIC_LOG_NAME_POSTFIX = "_%g_%u.log";
     private static final String TRAFFIC_LOGGER_NAME = "com.l7tech.traffic";
+    private static final long ONE_GIGABYTE = 1024L * 1024L * 1024L;
+    private static final long DEFAULT_FILE_SPACE_LIMIT = ONE_GIGABYTE * 5L; //5GB
 
     private final DispatchingMessageSink dispatchingSink = new DispatchingMessageSink();
     private final MessageSink publishingSink = new DelegatingMessageSink(dispatchingSink);
@@ -281,13 +329,22 @@ public class SinkManager
         Collection<SinkConfiguration> sinkConfigs = loadSinkConfigurations();
         for ( SinkConfiguration sinkConfiguration : sinkConfigs ) {
             if ( sinkConfiguration.isEnabled() ) {
+
                 if ( logger.isLoggable(Level.CONFIG) )
                     logger.log(Level.CONFIG, "Processing log sink configuration ''{0}''.", sinkConfiguration.getName());
-                MessageSinkSupport sink = buildSinkForConfiguration( sinkConfiguration );
-                if ( sink != null ) {
+
+                if ( !isValid( sinkConfiguration ) ) {
                     if ( logger.isLoggable(Level.CONFIG) )
-                        logger.log(Level.CONFIG, "Installing log sink ''{0}''.", sinkConfiguration.getName());
-                    sinks.add( sink );
+                        logger.log(Level.CONFIG, "Ignoring invalid log sink configuration ''{0}''.", sinkConfiguration.getName());                
+                } else {
+                    MessageSinkSupport sink = buildSinkForConfiguration( sinkConfiguration );
+
+                    if ( sink != null ) {
+                        if ( logger.isLoggable(Level.CONFIG) )
+                            logger.log(Level.CONFIG, "Installing log sink ''{0}''.", sinkConfiguration.getName());
+
+                        sinks.add( sink );
+                    }
                 }
             } else {
                 if ( logger.isLoggable(Level.CONFIG) )
@@ -414,6 +471,57 @@ public class SinkManager
     }
 
     /**
+     * Validate a SinkConfiguration
+     */
+    private boolean isValid( final SinkConfiguration configuration ) {
+        boolean valid = true;
+
+        // validate base configuration
+        String name = configuration.getName();
+        SinkConfiguration.SinkType type = configuration.getType();
+        SinkConfiguration.SeverityThreshold severity = configuration.getSeverity();
+
+        valid = name != null && type != null && severity != null &&
+                ValidationUtils.isValidCharacters(name, ValidationUtils.ALPHA_NUMERIC + "-_");
+
+        // perform type specific validation
+        if ( valid ) {
+            switch ( type ) {
+                case FILE:
+                    String format = configuration.getProperty( SinkConfiguration.PROP_FILE_FORMAT );
+                    String fileCount = configuration.getProperty( SinkConfiguration.PROP_FILE_LOG_COUNT );
+                    String fileLimit = configuration.getProperty( SinkConfiguration.PROP_FILE_MAX_SIZE );
+
+                    valid = format != null && fileCount != null && fileLimit != null &&
+                            ValidationUtils.isValidLong( fileCount, false, 1L, 1000L ) &&
+                            ValidationUtils.isValidLong( fileLimit, false, 1L, 2L * ONE_GIGABYTE );
+
+                    break;
+                case SYSLOG:
+                    String host = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_HOST );
+                    String port = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_PORT );
+                    String prot = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_PROTOCOL );
+                    String facility = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_FACILITY );
+
+                    valid = host != null && port != null && prot != null && facility != null &&
+                            ValidationUtils.isValidDomain( host ) &&
+                            ValidationUtils.isValidInteger( port, false, 1, 0xFFFF ) &&
+                            ValidationUtils.isValidInteger( facility, false, 0, 124) &&
+                            isValidProtocol( prot );
+
+                    if ( valid ) {
+                        String charset = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_CHAR_SET );
+                        valid = Charset.isSupported( charset );
+                    }
+
+                    break;
+            }
+        }
+
+        return valid;
+    }
+
+    /**
      * Build a MessageSink for the given configuration
      */
     private MessageSinkSupport buildSinkForConfiguration( final SinkConfiguration configuration ) {
@@ -437,6 +545,43 @@ public class SinkManager
         }
 
         return sink;
+    }
+
+    /**
+     * Get the file system space required for the given configuration
+     *
+     * The configuration should be validated before calling this method.
+     */
+    private long getReservedSpace( final SinkConfiguration configuration ) {
+        long space = 0;
+
+        SinkConfiguration.SinkType type = configuration.getType();
+        if ( type != null ) {
+            switch ( type ) {
+                case FILE:
+                    long configCount = Long.parseLong( configuration.getProperty( SinkConfiguration.PROP_FILE_LOG_COUNT ) );
+                    long configLimit = Long.parseLong( configuration.getProperty( SinkConfiguration.PROP_FILE_MAX_SIZE ) );
+                    space += ( configCount * configLimit * 1024L );
+                    break;
+            }
+        }
+
+        return space;
+    }
+
+    /**
+     * Check if the given string is a recognised SyslogProtocol value.
+     */
+    private boolean isValidProtocol( final String protocol ) {
+        boolean valid = false;
+
+        try {
+            SyslogProtocol.valueOf( protocol );
+            valid = true;
+        } catch ( IllegalArgumentException iae ) {
+        }
+
+        return valid;
     }
 
     /**
