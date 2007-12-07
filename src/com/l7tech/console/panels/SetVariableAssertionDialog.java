@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.panels;
 
@@ -157,7 +157,7 @@ public class SetVariableAssertionDialog extends JDialog {
 
                 String expression = _expressionTextArea.getText();
                 expression = expression.replace("\r\n", "\n").replace('\r', '\n').replace("\n", lineBreak.getCharacters()); // TODO optimize
-                assertion.expression(expression);
+                assertion.setExpression(expression);
 
                 _assertionModified = true;
                 dispose();

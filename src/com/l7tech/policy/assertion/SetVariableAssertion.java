@@ -77,7 +77,7 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
         }
     }
 
-    public void expression(String expression) {
+    public void setExpression(String expression) {
         setBase64Expression(HexUtils.encodeBase64(HexUtils.encodeUtf8(expression), true));
     }
 
