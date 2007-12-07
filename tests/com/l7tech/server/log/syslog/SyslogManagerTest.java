@@ -68,6 +68,7 @@ public class SyslogManagerTest extends TestCase {
         Pattern pattern = Pattern.compile(REGEX_STANDARD);
         Matcher matcher = pattern.matcher(result);
 
+        System.out.println("Checking for regex match [" + result + "]");
         assertTrue("Regex matches log message", matcher.matches());
         int outPriority = Integer.parseInt(matcher.group(1));
         String outDateStr = matcher.group(2);
@@ -448,8 +449,11 @@ public class SyslogManagerTest extends TestCase {
                 System.out.println("Session closed.");
             }
             public void messageReceived(IoSession iosession, Object obj) throws Exception {
-                holder[0] = ((ByteBuffer)obj).getString(Charset.defaultCharset().newDecoder());
-                latch.countDown();
+                String value = ((ByteBuffer)obj).getString(Charset.defaultCharset().newDecoder());
+                if ( value.length()!=0 ) {
+                    holder[0] = value;
+                    latch.countDown();
+                }
             }
         };
         SocketConnectorConfig config = new SocketConnectorConfig();
