@@ -1781,6 +1781,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageAuditAlertOptionsMenuItem());
             menu.add(getManageClusterLicensesMenuItem());
             menu.add(getChangePasswordMenuItem(false));
+            menu.add(getManageLogSinksAction());
             Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/Properties16.gif");
 
