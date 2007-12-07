@@ -6,6 +6,7 @@ package com.l7tech.server.message;
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.RequestId;
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Audit;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.Message;
@@ -24,7 +25,6 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
@@ -361,7 +361,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return value;
     }
 
-    public Map<String, Object> getVariableMap(String[] names, Auditor auditor) {
+    public Map<String, Object> getVariableMap(String[] names, Audit auditor) {
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         for (String name : names) {
             try {

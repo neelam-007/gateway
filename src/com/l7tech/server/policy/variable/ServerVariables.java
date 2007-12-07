@@ -295,6 +295,7 @@ public class ServerVariables {
                 String[] vals;
                 try {
                     vals = getParamValues(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, name, context);
+                    if (vals == null) return null;
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "Couldn't get HTTP parameter: " + name, e);
                     return null;

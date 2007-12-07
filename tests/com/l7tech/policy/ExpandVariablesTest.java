@@ -10,10 +10,12 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeHeaders;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.common.util.IteratorEnumeration;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -26,7 +28,6 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 
 /**
  * Class ExpandVariablesTest.
@@ -178,6 +179,14 @@ public class ExpandVariablesTest extends TestCase {
         assertTrue("Multivalued header values", Arrays.equals(new String[] {"foo", "bar"}, magic));
     }
 
+    public void testRequestHttpParam() throws Exception {
+        PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
+
+        final Map<String, Object> vars = pec.getVariableMap(new String[]{"request.http.parameter.foo"}, audit);
+        String paramValue = ExpandVariables.process("${request.http.parameter.foo}", vars, audit, true);
+        assertEquals(paramValue, "bar");
+    }
+
     public void testStrictNonexistentHeader() throws Exception {
         Message foo = makeTinyRequest();
 
@@ -243,7 +252,11 @@ public class ExpandVariablesTest extends TestCase {
         Message foo = new Message(DefaultStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(TINY_BODY.getBytes("UTF-8")));
         Map<String, MimeHeader> headers = new HashMap<String, MimeHeader>();
         headers.put("Content-Type", ContentTypeHeader.OCTET_STREAM_DEFAULT);
-        foo.attachHttpRequestKnob(new HttpRequestKnobAdapter(new MimeHeaders(headers)));
+
+        Map<String, String[]> params = new HashMap<String, String[]>();
+        params.put("foo", new String[] { "bar" });
+        params.put("baz", new String[] { "quux", "xyzzy"});
+        foo.attachHttpRequestKnob(new HttpRequestKnobAdapter("/foo", params, new MimeHeaders(headers)));
         return foo;
     }
 
@@ -268,10 +281,14 @@ public class ExpandVariablesTest extends TestCase {
     }
 
     private static class HttpRequestKnobAdapter implements HttpRequestKnob {
+        private final String uri;
         private final MimeHeaders headers;
+        private final Map<String, String[]> params;
 
-        private HttpRequestKnobAdapter(MimeHeaders headers) {
+        private HttpRequestKnobAdapter(String uri, Map<String, String[]> params, MimeHeaders headers) {
+            this.uri = uri;
             this.headers = headers;
+            this.params = params;
         }
 
         public HttpCookie[] getCookies() {
@@ -283,11 +300,11 @@ public class ExpandVariablesTest extends TestCase {
         }
 
         public String getRequestUri() {
-            return "/";
+            return uri;
         }
 
         public String getRequestUrl() {
-            return "http://ssg/";
+            return "http://ssg" + uri;
         }
 
         public URL getRequestURL() {
@@ -337,19 +354,21 @@ public class ExpandVariablesTest extends TestCase {
         }
 
         public String getParameter(String name) throws IOException {
-            return null;
+            String[] ss = params.get(name);
+            if (ss == null || ss.length == 0) return null;
+            return ss[0];
         }
 
         public Map getParameterMap() throws IOException {
-            return Collections.emptyMap();
+            return params;
         }
 
         public String[] getParameterValues(String s) throws IOException {
-            return new String[0];
+            return params.get(s);
         }
 
         public Enumeration getParameterNames() throws IOException {
-            return null;
+            return new IteratorEnumeration(params.keySet().iterator());
         }
 
         public Object getConnectionIdentifier() {
@@ -357,7 +376,7 @@ public class ExpandVariablesTest extends TestCase {
         }
 
         public String getQueryString() {
-            return null;
+            return getRequestURL().getQuery();
         }
 
         public String getRemoteAddress() {
