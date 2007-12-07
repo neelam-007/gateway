@@ -127,21 +127,34 @@ public class SilentConfigurator {
                 HexUtils.spewStream(encryptedConfig , os);
             } else {
                 Connection conn = null;
-                PreparedStatement stmt = null;
-                DBActions dba = null;
+                PreparedStatement pStmt = null;
+                Statement stmt = null;
+                ResultSet rs = null;
+                DBActions dba;
                 try {
                     dba = new DBActions(osf);
                     conn = dba.getConnection(dbinfo);
-                    stmt = conn.prepareStatement("update config_data set configdata=? where objectid=1");
-                    stmt.setBinaryStream(1, new ByteArrayInputStream(encryptedConfig), encryptedConfig.length);
-                    stmt.addBatch();
-                    stmt.executeBatch();
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                } catch (SQLException e) {
-                    e.printStackTrace();
+                    //check if there is already a row there
+                    stmt = conn.createStatement();
+                    rs = stmt.executeQuery("select * from config_data where objectid=1");
+                    if (!rs.first()) {
+                        //it's not there, so create it.
+                        stmt.execute("insert into config_data values (1, null);");
+                    } else {
+                        logger.info("The configuration data table is not empty. The contents will be overwritten.");
+                    }
+
+                    pStmt = conn.prepareStatement("update config_data set configdata=? where objectid=1");
+                    pStmt.setBinaryStream(1, new ByteArrayInputStream(encryptedConfig), encryptedConfig.length);
+                    pStmt.addBatch();
+                    int[] updateCounts = pStmt.executeBatch();
+                    if (updateCounts.length == 0 || updateCounts[0] == 0) {
+                        logger.severe("Updating the configuration data in the database failed.");
+                    }
                 } finally {
                     ResourceUtils.closeQuietly(stmt);
+                    ResourceUtils.closeQuietly(rs);
+                    ResourceUtils.closeQuietly(pStmt);
                     ResourceUtils.closeQuietly(conn);
                 }
             }
@@ -157,7 +170,12 @@ public class SilentConfigurator {
             hadException = e;
         } catch (InvalidAlgorithmParameterException e) {
             hadException = e;
-        } finally {
+        } catch (ClassNotFoundException e) {
+            hadException = e;
+        } catch (SQLException e) {
+            hadException = e;
+        }
+        finally {
             if (hadException != null) {
                 logger.severe("There was an error while saving the configuration data: " + ExceptionUtils.getMessage(hadException));
                 allIsWell = false;

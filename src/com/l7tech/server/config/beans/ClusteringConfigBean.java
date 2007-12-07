@@ -5,7 +5,6 @@ import com.l7tech.server.config.ConfigurationType;
 import com.l7tech.server.config.SharedWizardInfo;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
-import org.apache.commons.lang.StringUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -65,22 +64,11 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     }
 
     public void reset() {
-//        isNewHostName = false;
-//        clusterHostname = "";
-//        localHostName  = "";
-//        clusterType = ClusteringType.CLUSTER_MASTER;
     }
 
     public String getClusterHostname() {
         return clusterHostname;
     }
-
-//    public String getClusterHostname() {
-//        if (StringUtils.isEmpty(this.clusterHostname))
-//            setClusterHostname(getPartitionInformation().getOSSpecificFunctions().getClusterHostName());
-//
-//        return this.clusterHostname;
-//    }
 
     public void setClusterHostname(String clusterHostname) {
 
