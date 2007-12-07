@@ -6,17 +6,24 @@
 
 package com.l7tech.proxy;
 
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.proxy.datamodel.Policy;
+import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * Test the API version of the Bridge.
@@ -35,7 +42,7 @@ public class SecureSpanBridgeTest {
       "            <productid>224011405</productid>\n" +
       "            <amount>1000</amount>\n" +
       "            <price>1230</price>\n" +
-      "            <accountid>334</accountid>\n" +
+      "            <accountid>334</accountid><blah/><foo/><blatch>asdfasdfdsf</blatch>\n" +
       "        </placeOrder>\n" +
       "    </soap:Body>\n" +
       "</soap:Envelope>\n";
@@ -46,6 +53,9 @@ public class SecureSpanBridgeTest {
             System.out.println("Usage: testbridge gatewayhost username password");
             System.exit(1);
         }
+
+        System.setProperty(SecureSpanBridgeFactory.PROPERTY_MESSAGE_INTERCEPTOR, MyInterceptor.class.getName());
+
         int i = 0;
         String host = args[i++];
         String username = args[i++];
@@ -81,5 +91,36 @@ public class SecureSpanBridgeTest {
         result = bridge.send(soapaction, message);
         log.info("Got back http status " + result.getHttpStatus());
         log.info("Got back envelope:\n" + XmlUtil.nodeToString(result.getResponse()));
+    }
+
+    public static class MyInterceptor implements RequestInterceptor {
+        public void onFrontEndRequest(PolicyApplicationContext context) {
+        }
+
+        public void onFrontEndReply(PolicyApplicationContext context) {
+        }
+
+        public void onBackEndRequest(PolicyApplicationContext context, List<HttpHeader> headersSent) {
+            try {
+                log.info("\n\n\n\n*******Sending request: " + new String(context.getRequest().getMimeKnob().getFirstPart().getBytesIfAlreadyAvailable()));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public void onBackEndReply(PolicyApplicationContext context) {
+        }
+
+        public void onMessageError(Throwable t) {
+        }
+
+        public void onReplyError(Throwable t) {
+        }
+
+        public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Policy policy) {
+        }
+
+        public void onPolicyError(Ssg ssg, PolicyAttachmentKey binding, Throwable error) {
+        }
     }
 }

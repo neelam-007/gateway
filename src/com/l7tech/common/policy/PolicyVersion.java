@@ -77,4 +77,8 @@ public class PolicyVersion extends NamedEntityImp {
     public void setOrdinal(long ordinal) {
         this.ordinal = ordinal;
     }
+
+    public String toString() {
+        return "[PolicyVersion oid=" + getOid() + " policyOid=" + getPolicyOid() + ']';
+    }
 }

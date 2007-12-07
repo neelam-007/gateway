@@ -179,7 +179,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem validateMenuItem;
     private JMenuItem importMenuItem;
     private JMenuItem exportMenuItem;
-    private JMenuItem saveMenuItem;
+    private JMenuItem saveAndActivateMenuItem;
+    private JMenuItem saveOnlyMenuItem;
     private boolean disconnected = false;
     private String ssgURL;
     private SsmApplication ssmApplication;
@@ -421,7 +422,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             //fileMenu.setFocusable(false);
             menu.setText(resapplication.getString("File"));
             //menu.add(getNewPolicyMenuItem());
-            menu.add(getSaveMenuItem());
+            menu.add(getSaveAndActivateMenuItem());
+            menu.add(getSaveOnlyMenuItem());
             menu.add(getExportMenuItem());
             menu.add(getImportMenuItem());
             menu.add(getValidateMenuItem());
@@ -552,18 +554,32 @@ public class MainWindow extends JFrame implements SheetHolder {
         return preferences;
     }
 
-    private JMenuItem getSaveMenuItem() {
-        if (saveMenuItem == null) {
-            saveMenuItem = new JMenuItem();
-            saveMenuItem.setEnabled(false);
+    private JMenuItem getSaveAndActivateMenuItem() {
+        if (saveAndActivateMenuItem == null) {
+            saveAndActivateMenuItem = new JMenuItem();
+            saveAndActivateMenuItem.setEnabled(false);
             Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Save16.gif"));
-            saveMenuItem.setIcon(icon);
-            saveMenuItem.setText("Save");
-            int mnemonic = saveMenuItem.getText().toCharArray()[0];
-            saveMenuItem.setMnemonic(mnemonic);
-            saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+            saveAndActivateMenuItem.setIcon(icon);
+            saveAndActivateMenuItem.setText("Save and Activate");
+            int mnemonic = saveAndActivateMenuItem.getText().toCharArray()[0];
+            saveAndActivateMenuItem.setMnemonic(mnemonic);
+            saveAndActivateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK | ActionEvent.CTRL_MASK));
         }
-        return saveMenuItem;
+        return saveAndActivateMenuItem;
+    }
+
+    private JMenuItem getSaveOnlyMenuItem() {
+        if (saveOnlyMenuItem == null) {
+            saveOnlyMenuItem = new JMenuItem();
+            saveOnlyMenuItem.setEnabled(false);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Save16.gif"));
+            saveOnlyMenuItem.setIcon(icon);
+            saveOnlyMenuItem.setText("Save");
+            int mnemonic = saveOnlyMenuItem.getText().toCharArray()[0];
+            saveOnlyMenuItem.setMnemonic(mnemonic);
+            saveOnlyMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return saveOnlyMenuItem;
     }
 
     private BaseAction getNewAction() {
@@ -2660,7 +2676,8 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     public void firePolicyEditDone() {
         getValidateMenuItem().setEnabled(false);
-        getSaveMenuItem().setEnabled(false);
+        getSaveAndActivateMenuItem().setEnabled(false);
+        getSaveOnlyMenuItem().setEnabled(false);
         getExportMenuItem().setEnabled(false);
         getImportMenuItem().setEnabled(false);
     }
@@ -2668,7 +2685,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     public void firePolicyEdit(PolicyEditorPanel policyPanel) {
         // enable the items that make sense to show when a policy is being edited
         getValidateMenuItem().setAction(policyPanel.getValidateAction());
-        getSaveMenuItem().setAction(policyPanel.getSaveAndActivateAction());
+        getSaveAndActivateMenuItem().setAction(policyPanel.getSaveAndActivateAction());
+        getSaveOnlyMenuItem().setAction(policyPanel.getSaveOnlyAction());
         getExportMenuItem().setAction(policyPanel.getExportAction());
         getImportMenuItem().setAction(policyPanel.getImportAction());
     }

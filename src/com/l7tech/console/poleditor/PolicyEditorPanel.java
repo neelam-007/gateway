@@ -1025,7 +1025,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
     }
 
-    private Action getSaveOnlyAction() {
+    public Action getSaveOnlyAction() {
         if (saveOnlyAction != null) return saveOnlyAction;
         if (subject.getPolicyNode() == null) {
             saveOnlyAction = makeExportAction();
@@ -1040,7 +1040,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     private SecureAction makeSavePolicyAction(final boolean activateAsWell) {
-        return new SavePolicyAction(activateAsWell) {
+        SecureAction ret = new SavePolicyAction(activateAsWell) {
             protected void performAction() {
                 // fla, bugzilla 1094. all saves are now preceeded by a validation action
                 if (!validating) {
@@ -1057,6 +1057,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             }
         };
+        ret.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_S);
+        int mask = activateAsWell
+                   ? ActionEvent.ALT_MASK | ActionEvent.CTRL_MASK
+                   : ActionEvent.ALT_MASK;
+        ret.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, mask));
+        return ret;
     }
 
     private SecureAction makeExportAction() {

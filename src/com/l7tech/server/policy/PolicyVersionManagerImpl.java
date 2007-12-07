@@ -6,6 +6,7 @@ package com.l7tech.server.policy;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyVersion;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.AdminInfo;
@@ -82,16 +83,17 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
      *
      * @param newPolicy a possibly-mutated policy that has not yet been committed to the database.
      * @param activated if true, the newly saved revision should be marked as the active revision for this policy.
+     * @param newEntity if true, this is a new Policy entity being created
      * @throws ObjectModelException if there is a problem finding or updating information from the database
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    private void checkpointPolicy(Policy newPolicy, boolean activated) throws ObjectModelException {
+    private void checkpointPolicy(Policy newPolicy, boolean activated, boolean newEntity) throws ObjectModelException {
         final long policyOid = newPolicy.getOid();
         if (policyOid == Policy.DEFAULT_OID)
             throw new IllegalArgumentException("Unable to checkpoint policy without a valid OID");
 
         AdminInfo adminInfo = AdminInfo.find();
-        PolicyVersion ver = snapshot(newPolicy, adminInfo, activated);
+        PolicyVersion ver = snapshot(newPolicy, adminInfo, activated, newEntity);
         final long versionOid = save(ver);
 
         deleteStaleRevisions(policyOid, versionOid);
@@ -102,11 +104,18 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         }
     }
 
-    private void deleteStaleRevisions(long policyOid, long versionOid) throws FindException, DeleteException {
+    private void deleteStaleRevisions(final long policyOid, long versionOid) throws FindException, DeleteException {
         // Delete oldest anonymous revisions if we have exceeded MAX_REVISIONS
         // Revisions that have been assigned a name won't be deleted
         int numToKeep = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VERSIONING_MAX_REVISIONS, 20);
         List<PolicyVersion> revisions = new ArrayList<PolicyVersion>(findAllForPolicy(policyOid));
+
+        // Don't count revisions against the limit if they have been assigned names
+        revisions = Functions.grep(revisions, new Functions.Unary<Boolean,PolicyVersion>() {
+            public Boolean call(PolicyVersion policyVersion) {
+                return policyVersion.getPolicyOid() == policyOid && policyVersion.getName() != null && policyVersion.getName().length() > 0;
+            }
+        });
         Collections.sort(revisions, new Comparator<PolicyVersion>() {
             public int compare(PolicyVersion o1, PolicyVersion o2) {
                 return new Long(o2.getOrdinal()).compareTo(o1.getOrdinal());
@@ -115,7 +124,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         int num = revisions.size();
         if (num > numToKeep) {
             for (PolicyVersion revision : revisions) {
-                if (num > numToKeep && revision.getName() == null && revision.getPolicyOid() == policyOid && revision.getOid() != versionOid) {
+                if (num > numToKeep && revision.getPolicyOid() == policyOid && revision.getOid() != versionOid) {
                     delete(revision);
                     num--;
                     if (num <= numToKeep)
@@ -149,12 +158,20 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         }
     }
 
-    private static PolicyVersion snapshot(Policy policy, AdminInfo adminInfo, boolean activated) {
+    private static PolicyVersion snapshot(Policy policy, AdminInfo adminInfo, boolean activated, boolean newEntity) {
         long policyOid = policy.getOid();
         PolicyVersion ver = new PolicyVersion();
         ver.setPolicyOid(policyOid);
         ver.setActive(activated);
-        ver.setOrdinal(policy.getVersion());
+
+        // The entity version numbering for Policy starts at zero, but due to quirks in how save() vs update()
+        // behave, both the initial saved Policy and the first update() of an existing policy reach this code
+        // with a version number of zero.  So, we increment once to switch to one-based numbering, the increment
+        // once more if this isn't the initial save, so we get smooth "1,2,3,4,5" numbering of the ordinals.
+        int ordinal = policy.getVersion() + 1;
+        if (!newEntity) ordinal++;
+
+        ver.setOrdinal(ordinal);
         ver.setTime(System.currentTimeMillis());
         ver.setUserLogin(adminInfo.login);
         ver.setUserProviderOid(adminInfo.identityProviderOid);
@@ -171,7 +188,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
                 PolicyCheckpointEvent pce = (PolicyCheckpointEvent)event;
                 Policy policy = pce.getPolicyBeingSaved();
                 try {
-                    checkpointPolicy(policy, pce.isActivated());
+                    checkpointPolicy(policy, pce.isActivated(), pce.isNewEntity());
                 } catch (ObjectModelException e) {
                     logger.log(Level.WARNING, "Unable to checkpoint policy oid " + policy.getOid() + ": " + ExceptionUtils.getMessage(e), e);
                     throw new RuntimeException(e); // Must rethrow to ensure transaction rolled back

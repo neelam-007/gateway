@@ -33,6 +33,9 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
 
     private ApplicationContext applicationContext;
 
+    private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
+    private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
+
     public PolicyAdminImpl(PolicyManager policyManager, PolicyCache policyCache, PolicyVersionManager policyVersionManager, RoleManager roleManager) {
         this.policyManager = policyManager;
         this.policyCache = policyCache;
@@ -63,13 +66,13 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
 
         if (policy.getOid() == Policy.DEFAULT_OID) {
             final long oid = policyManager.save(policy);
-            checkpointPolicy(policy, activateAsWell);
+            checkpointPolicy(policy, activateAsWell, true);
             policyManager.addManagePolicyRole(policy);
             return oid;
         } else {
             try {
                 policyManager.update(policy);
-                checkpointPolicy(policy, activateAsWell);
+                checkpointPolicy(policy, true, false);
                 return policy.getOid();
             } catch (UpdateException e) {
                 throw new SaveException("Couldn't update policy", e.getCause());
@@ -78,28 +81,38 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
     }
 
     private long saveWithoutActivating(Policy policy) throws SaveException {
-        if (policy.getOid() == Policy.DEFAULT_OID) {
+        long policyOid = policy.getOid();
+        if (policyOid == Policy.DEFAULT_OID) {
             // Save new policy without activating it
             String revisionXml = policy.getXml();
             policy.disable();
             long oid = policyManager.save(policy);
             policyManager.addManagePolicyRole(policy);
-            checkpointPolicy(makeCopyWithDifferentXml(policy, revisionXml), false);
+            Policy toCheckpoint = makeCopyWithDifferentXml(policy, revisionXml);
+            toCheckpoint.setVersion(toCheckpoint.getVersion() - 1);
+            checkpointPolicy(toCheckpoint, false, true);
             return oid;
         }
 
         try {
             // Save updated policy without activating it or changing the enable/disable state of the currently-in-effect policy
             String revisionXml = policy.getXml();
-            Policy current = policyManager.findByPrimaryKey(policy.getOid());
-            if (current == null)
-                throw new SaveException("No existing policy found with OID=" + policy.getOid());
-            String currentXml = current.getXml();
-            policy.setXml(currentXml + ' ');
-            policyManager.save(policy);
-            checkpointPolicy(makeCopyWithDifferentXml(policy, revisionXml), false);
-            return policy.getOid();
+            Policy curPolicy = policyManager.findByPrimaryKey(policyOid);
+            if (curPolicy == null)
+                throw new SaveException("No existing policy found with OID=" + policyOid);
+            String curXml = curPolicy.getXml();
+            BeanUtils.copyProperties(policy, curPolicy, OMIT_VERSION_AND_XML);
+            curPolicy.setXml(curXml + ' '); // leave policy semantics unchanged but bump the version number
+            policyManager.update(curPolicy);
+            checkpointPolicy(makeCopyWithDifferentXml(curPolicy, revisionXml), false, false);
+            return policyOid;
         } catch (FindException e) {
+            throw new SaveException(e);
+        } catch (InvocationTargetException e) {
+            throw new SaveException(e);
+        } catch (IllegalAccessException e) {
+            throw new SaveException(e);
+        } catch (UpdateException e) {
             throw new SaveException(e);
         }
     }
@@ -107,8 +120,7 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
     private static Policy makeCopyWithDifferentXml(Policy policy, String revisionXml) throws SaveException {
         try {
             Policy toCheckpoint = new Policy(policy.getType(), policy.getName(), revisionXml, policy.isSoap());
-            BeanUtils.copyProperties(policy, toCheckpoint);
-            toCheckpoint.setXml(revisionXml);
+            BeanUtils.copyProperties(policy, toCheckpoint, OMIT_XML);
             return toCheckpoint;
         } catch (InvocationTargetException e) {
             throw new SaveException("Unable to copy Policy properties", e); // can't happen
@@ -117,8 +129,8 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         }
     }
 
-    private void checkpointPolicy(Policy toCheckpoint, boolean activate) {
-        applicationContext.publishEvent(new PolicyCheckpointEvent(this, toCheckpoint, activate));
+    private void checkpointPolicy(Policy toCheckpoint, boolean activate, boolean newEntity) {
+        applicationContext.publishEvent(new PolicyCheckpointEvent(this, toCheckpoint, activate, newEntity));
     }
 
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)

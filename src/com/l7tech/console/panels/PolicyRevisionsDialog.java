@@ -13,6 +13,7 @@ import com.l7tech.common.util.Functions;
 import com.l7tech.common.util.Pair;
 import com.l7tech.console.action.EditPolicyAction;
 import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.policy.LeafAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
@@ -21,6 +22,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.wsp.WspReader;
 
 import javax.swing.*;
@@ -56,7 +58,6 @@ public class PolicyRevisionsDialog extends JDialog {
     private final long policyOid;
     private final DateFormat dateFormat = DateFormat.getInstance();
 
-    private final TreeModel emptyTreeModel = new DefaultTreeModel(new DefaultMutableTreeNode(""));
     private final TreeCellRenderer defaultRenderer = new DefaultTreeCellRenderer();
     private final PolicyTreeCellRenderer policyTreeCellRenderer = new PolicyTreeCellRenderer();
 
@@ -109,7 +110,7 @@ public class PolicyRevisionsDialog extends JDialog {
         versionTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 enableOrDisableButtons();
-                showSelectedPolicyXml();
+                showSelectedPolicyXml(false);
             }
         });
 
@@ -143,6 +144,9 @@ public class PolicyRevisionsDialog extends JDialog {
             }
         });
 
+        Utilities.setEscKeyStrokeDisposes(this);
+        getRootPane().setDefaultButton(closeButton);
+
         pack();
         Utilities.centerOnScreen(this);
 
@@ -153,7 +157,7 @@ public class PolicyRevisionsDialog extends JDialog {
             versionTable.getSelectionModel().setSelectionInterval(actRow, actRow);
 
         enableOrDisableButtons();
-        showSelectedPolicyXml();
+        showSelectedPolicyXml(true);
     }
 
     private void doEdit(ActionEvent evt) {
@@ -221,6 +225,9 @@ public class PolicyRevisionsDialog extends JDialog {
                         tableModel.getRowObject(row).setActive(false);
                         tableModel.fireTableCellUpdated(row, COLUMN_IDX_ACTIVE);
                     }
+
+                    versionTable.clearSelection();
+                    showSelectedPolicyXml(true);
                 } catch (Exception e) {
                     showErrorMessage("Unable to Clear Active Version", "Unable to clear active version: " + ExceptionUtils.getMessage(e), e);
                 }
@@ -272,18 +279,19 @@ public class PolicyRevisionsDialog extends JDialog {
         editButton.setEnabled(sel);
     }
 
-    private void showSelectedPolicyXml() {
+    private void showSelectedPolicyXml(boolean initial) {
         Pair<Integer, PolicyVersion> version = getSelectedPolicyVersion();
         if (version == null) {
             policyTree.setCellRenderer(defaultRenderer);
-            policyTree.setModel(emptyTreeModel);
+            String message = initial ? "Policy disabled - no active version" : "No version selected";
+            policyTree.setModel(new DefaultTreeModel(makeMessageNode(message)));
             return;
         }
         try {
             String xml = getVersionXml(version.right);
             if (xml == null) {
                 policyTree.setCellRenderer(defaultRenderer);
-                policyTree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("Empty policy", false)));
+                policyTree.setModel(new DefaultTreeModel(makeMessageNode("Empty policy")));
                 return;
             }
             Assertion assertion = WspReader.getDefault().parsePermissively(xml);
@@ -293,8 +301,24 @@ public class PolicyRevisionsDialog extends JDialog {
             Utilities.expandTree(policyTree);
         } catch (IOException e1) {
             policyTree.setCellRenderer(defaultRenderer);
-            policyTree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("Bad policy XML: " + ExceptionUtils.getMessage(e1), false)));
+            policyTree.setModel(new DefaultTreeModel(makeMessageNode("Bad policy XML: " + ExceptionUtils.getMessage(e1))));
         }
+    }
+
+    private static TreeNode makeMessageNode(final String message) {
+        return new LeafAssertionTreeNode<CommentAssertion>(new CommentAssertion(message)) {
+            public String getName() {
+                return message;
+            }
+
+            protected String iconResource(boolean open) {
+                return null;
+            }
+
+            public String toString() {
+                return message;
+            }
+        };
     }
 
     private String getVersionXml(PolicyVersion version) {

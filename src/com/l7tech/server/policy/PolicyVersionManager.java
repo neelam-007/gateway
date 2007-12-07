@@ -36,7 +36,8 @@ public interface PolicyVersionManager extends EntityManager<PolicyVersion, Entit
      *
      * @param policyOid   the policy whose versions are to have the 'active' flag cleared.  Required.
      * @param versionOid  a version to leave alone (its 'active' flag will not be altered); or,
-     *                    {@link PolicyVersion#DEFAULT_OID} to deactivate all versions.    
+     *                    {@link PolicyVersion#DEFAULT_OID} to deactivate all versions.
+     * @throws UpdateException if there is a database problem or other issue updating the policy
      */
     void deactivateVersions(long policyOid, long versionOid) throws UpdateException;
 }

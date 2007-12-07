@@ -6,6 +6,8 @@ package com.l7tech.common.policy;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
+import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.wsp.WspReader;
@@ -14,6 +16,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Iterator;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -29,6 +32,8 @@ public class Policy extends NamedEntityImp {
     private boolean soap;
 
     private transient Assertion assertion;
+    private static final AllAssertion DISABLED_POLICY = new AllAssertion(Arrays.asList(new CommentAssertion("Policy disabled"), new FalseAssertion()));
+    private static final String DISABLED_POLICY_XML = WspWriter.getPolicyXml(DISABLED_POLICY).trim();
 
     @Deprecated // For Serialization and persistence only
     public Policy() {
@@ -122,9 +127,23 @@ public class Policy extends NamedEntityImp {
         this.soap = soap;
     }
 
+    /**
+     * Disable this policy.
+     * Currently this will replace the policy XML with a version that always fails.
+     * To reenable a disabled policy you currently must set the policy XML to something that works.
+     */
     public void disable() {
         // TODO find better way to disable policies
-        setXml(WspWriter.getPolicyXml(new FalseAssertion()));
+        setXml(DISABLED_POLICY_XML);
+    }
+
+    /**
+     * Detect if this policy has been disabled by calling {@link #disable}.
+     * @return true if this policy is currently disabled.  To reenable it, set a different policy xml.
+     */
+    public boolean isDisabled() {
+        String pxml = getXml();
+        return pxml == null || pxml.trim().equals(DISABLED_POLICY_XML); // trim() currently not optional
     }
 
     @SuppressWarnings({"RedundantIfStatement"})
