@@ -158,7 +158,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
                     "Please enter the passphrase to extract these settings: "},
                     null, null, null);
         try {
-                configData = silentConf.decryptConfigSettings(passphrase.toCharArray(), new String(configBytes, "UTF-8"));
+                configData = silentConf.decryptConfigSettings(passphrase.toCharArray(), configBytes);
             } catch (IllegalBlockSizeException e) {
                 exceptionMessage = "there was an error while trying to extract the settings. " + ExceptionUtils.getMessage(e);
             } catch (InvalidKeyException e) {

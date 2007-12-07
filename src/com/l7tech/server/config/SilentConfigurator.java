@@ -44,7 +44,7 @@ public class SilentConfigurator {
 
     public byte[] loadConfigFromDb(DBInformation dbinfo) {
         logger.info("Connecting to Database using " + dbinfo.getUsername() + "@" + dbinfo.getHostname() + "/" + dbinfo.getDbName());
-        InputStream is = null;
+        InputStream is;
 
         byte[] configBytes = null;
         try {
@@ -83,13 +83,13 @@ public class SilentConfigurator {
         return configBytes;
     }
 
-    public SilentConfigData decryptConfigSettings(char[] passphrase, String configData) throws IllegalBlockSizeException, IOException, InvalidKeyException, ParseException, BadPaddingException, InvalidAlgorithmParameterException {
-        XMLDecoder xdec = null;
-        SilentConfigData config = null;
-        byte[] decryptedConfigBytes = null;
+    public SilentConfigData decryptConfigSettings(char[] passphrase, byte[] configData) throws IllegalBlockSizeException, IOException, InvalidKeyException, ParseException, BadPaddingException, InvalidAlgorithmParameterException {
+        XMLDecoder xdec;
+        SilentConfigData config;
+        byte[] decryptedConfigBytes;
         boolean dontDecrypt = Boolean.getBoolean(SYS_PROP_DONTENCRYPT_CONFIGDATA);
         if (dontDecrypt) {
-            decryptedConfigBytes = configData.getBytes("UTF-8");
+            decryptedConfigBytes = configData;
         } else {
             decryptedConfigBytes = decryptWithPassphrase(configData, passphrase).getBytes("UTF-8");
         }
@@ -102,7 +102,7 @@ public class SilentConfigurator {
 
     public boolean saveConfigToDb(DBInformation dbinfo, char[] passphrase, SilentConfigData configData) {
         boolean allIsWell = true;
-        OutputStream os = null;
+        OutputStream os;
         XMLEncoder xenc = null;
         Throwable hadException = null;
         boolean dontEncrypt = Boolean.getBoolean(SYS_PROP_DONTENCRYPT_CONFIGDATA);
@@ -114,7 +114,7 @@ public class SilentConfigurator {
             xenc = null;
 
 
-            byte[] encryptedConfig = null;
+            byte[] encryptedConfig;
             if (dontEncrypt) {
                 logger.warning("*** The configuration data, which contains sensitive information, will not be encrypted. Ensure that the system property \"" + SYS_PROP_DONTENCRYPT_CONFIGDATA + "\" is not set ***");
                 encryptedConfig = baos.toByteArray();
@@ -188,22 +188,22 @@ public class SilentConfigurator {
     private String encryptWithPassphrase(byte[] configBytes, char[] passphrase) throws IOException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         String salt = generateSalt();
         AesKey key = getKey(salt, passphrase);
-        if (key != null) {
-            byte[] saltBytes = HexUtils.decodeBase64(salt);
-
-            Cipher aes = getAes();
-            aes.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(saltBytes));
-            byte[] ciphertextBytes = aes.doFinal(configBytes);
-
-            return salt + "$" + HexUtils.encodeBase64(ciphertextBytes, true);
+        if (key == null) {
+            return new String(configBytes);
         }
+        byte[] saltBytes = HexUtils.decodeBase64(salt);
 
-        return new String(configBytes);
+        Cipher aes = getAes();
+        aes.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(saltBytes));
+        byte[] ciphertextBytes = aes.doFinal(configBytes);
+
+        return  salt + "$" + HexUtils.encodeBase64(ciphertextBytes, true);
     }
 
 
-    private String decryptWithPassphrase(String encryptedConfig, char[] passphrase) throws ParseException, IOException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-        String[] components = encryptedConfig.split("\\$");
+    private String decryptWithPassphrase(byte[] encryptedConfig, char[] passphrase) throws ParseException, IOException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+        String encryptedConfigString = new String(encryptedConfig, "UTF-8");
+        String[] components = encryptedConfigString.split("\\$", 10);
 
         String salt = components[0];
         String ciphertextBase64 = components[1];
@@ -213,14 +213,15 @@ public class SilentConfigurator {
             throw new ParseException("Encrypted data does not have correct format: no ciphertext", 0);
 
         AesKey ourkey = getKey(salt, passphrase);
-        if (ourkey == null) return encryptedConfig;
+        if (ourkey == null)
+            return encryptedConfigString;
 
         byte[] saltBytes = HexUtils.decodeBase64(salt);
         byte[] ciphertextBytes = HexUtils.decodeBase64(ciphertextBase64);
 
-        Cipher aes = getAes();
-        aes.init(Cipher.DECRYPT_MODE, ourkey, new IvParameterSpec(saltBytes));
-        byte[] plaintextBytes = aes.doFinal(ciphertextBytes);
+        Cipher aesCipher = getAes();
+        aesCipher.init(Cipher.DECRYPT_MODE, ourkey, new IvParameterSpec(saltBytes));
+        byte[] plaintextBytes = aesCipher.doFinal(ciphertextBytes);
 
         return new String(plaintextBytes, "UTF-8");
 
@@ -231,17 +232,17 @@ public class SilentConfigurator {
             MessageDigest sha = MessageDigest.getInstance("SHA-512");
             if (password == null)
                 return null;
-            byte[] mpBytes = new String(password).getBytes("UTF-8");
+            byte[] pwdBytes = new String(password).getBytes("UTF-8");
             byte[] saltBytes = salt.getBytes("UTF-8");
 
             sha.reset();
-            sha.update(mpBytes);
+            sha.update(pwdBytes);
             sha.update(saltBytes);
-            sha.update(mpBytes);
+            sha.update(pwdBytes);
             byte[] stage1 = sha.digest();
 
             sha.reset();
-            sha.update(mpBytes);
+            sha.update(pwdBytes);
             sha.update(saltBytes);
             sha.update(stage1);
             byte[] keybytes = sha.digest();

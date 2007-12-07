@@ -12,13 +12,9 @@ import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.xml.sax.SAXException;
 
-import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
-import java.security.SecureRandom;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * User: megery
@@ -54,7 +50,6 @@ public class ConfigurationWizard {
     boolean jumpToApply = false;
     private SilentConfigData silentConfigData;
     private String configDataPassphrase;
-    private boolean shouldSaveConfigData;
 
     static {
         currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
@@ -198,7 +193,7 @@ public class ConfigurationWizard {
 
         while (iterator.hasNext()) {
             ConfigurationCommand command = iterator.next();
-            boolean successful = false;
+            boolean successful;
             if (isSilentMode) successful = command.executeSilent();
             else successful= command.execute();
 
@@ -236,7 +231,7 @@ public class ConfigurationWizard {
                 configData.setCaKeystore(caKeystoreBytes);
                 configData.setCaCert(caCertBytes);
                 SilentConfigurator sc = new SilentConfigurator(osFunctions);
-                sc.saveConfigToDb(sharedWizardInfo.getDbinfo(), "".toCharArray() ,configData);
+                sc.saveConfigToDb(sharedWizardInfo.getDbinfo(), getConfigDataPassphrase().toCharArray() ,configData);
             }
         }
     }
@@ -348,6 +343,10 @@ public class ConfigurationWizard {
 
     public void setConfigDataPassword(String passphrase) {
         this.configDataPassphrase = passphrase;
+    }
+
+    public String getConfigDataPassphrase() {
+        return configDataPassphrase;
     }
 
     public boolean shouldSaveConfigData() {
