@@ -15,7 +15,7 @@ popd >/dev/null
 #SSG_HOME should be set now
 
 ORIGINAL_JAVA_OPTS="${SSG_JAVA_OPTS} ${PARTITION_OPTS}"
-USER=$(whoami)
+USER=$LOGNAME
 SSGUSER="gateway"
 
 usage() {
