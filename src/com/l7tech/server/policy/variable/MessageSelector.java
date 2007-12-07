@@ -18,10 +18,11 @@ import java.io.IOException;
  * @author alex
 */
 class MessageSelector implements ExpandVariables.Selector {
+    // TODO these must all be lower case
     private static final String HTTP_HEADER_PREFIX = "http.header.";
-    private static final String HTTP_HEADERVALUES_PREFIX = "http.headerValues.";
+    private static final String HTTP_HEADERVALUES_PREFIX = "http.headervalues.";
     private static final String STATUS_NAME = "http.status";
-    private static final String MAINPART_NAME = "mainPart";
+    private static final String MAINPART_NAME = "mainpart";
     // TODO parts?
 
     public Class getContextObjectClass() {
@@ -38,13 +39,14 @@ class MessageSelector implements ExpandVariables.Selector {
 
         final MessageAttributeSelector selector;
 
-        if (name.startsWith(HTTP_HEADER_PREFIX))
+        final String lname = name.toLowerCase();
+        if (lname.startsWith(HTTP_HEADER_PREFIX))
             selector = singleHeaderSelector;
-        else if (name.startsWith(HTTP_HEADERVALUES_PREFIX))
+        else if (lname.startsWith(HTTP_HEADERVALUES_PREFIX))
             selector = multiHeaderSelector;
-        else if (STATUS_NAME.equals(name)) {
+        else if (STATUS_NAME.equals(lname)) {
             selector = statusSelector;
-        } else if (MAINPART_NAME.equals(name)) {
+        } else if (MAINPART_NAME.equals(lname)) {
             selector = mainPartSelector;
         } else {
             // TODO other Message attributes

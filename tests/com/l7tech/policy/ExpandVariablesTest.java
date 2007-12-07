@@ -172,6 +172,12 @@ public class ExpandVariablesTest extends TestCase {
         assertTrue("Multivalued header values", Arrays.equals(new String[] {"foo", "bar"}, magic));
     }
 
+    public void testMessageVariableMultiLiteralHeaderValuesCaseInsensitive() throws Exception {
+        Message foo = makeTinyRequest();
+        String[] magic = (String[]) ExpandVariables.processSingleVariableAsObject("${foo.http.HeaderVaLUes.magic}", makeVars(foo), audit);
+        assertTrue("Multivalued header values", Arrays.equals(new String[] {"foo", "bar"}, magic));
+    }
+
     public void testStrictNonexistentHeader() throws Exception {
         Message foo = makeTinyRequest();
 
